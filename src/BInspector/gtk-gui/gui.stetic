@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stetic-interface>
+  <widget class="Gtk.Window" id="MainWindow" design-size="400 300">
+    <property name="Title" translatable="yes">MainWindow</property>
+    <property name="WindowPosition">CenterOnParent</property>
+    <property name="Visible">True</property>
+    <property name="Events">0</property>
+    <signal name="DeleteEvent" handler="OnDeleteEvent" />
+    <child>
+      <widget class="Gtk.VBox" id="vbox1">
+        <property name="Visible">True</property>
+        <property name="Events">0</property>
+        <child>
+          <widget class="Gtk.HBox" id="hbox1">
+            <property name="Visible">True</property>
+            <property name="Events">0</property>
+            <child>
+              <widget class="Gtk.Entry" id="entry1">
+                <property name="Editable">True</property>
+                <property name="InvisibleChar">●</property>
+                <property name="Visible">True</property>
+                <property name="CanFocus">True</property>
+                <property name="Events">0</property>
+                <signal name="Activated" handler="OnEntry1Activated" />
+              </widget>
+              <packing>
+                <property name="Position">0</property>
+                <property name="AutoSize">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="Gtk.Button" id="buttonChooser">
+                <property name="Type">TextOnly</property>
+                <property name="Label" translatable="yes">choose</property>
+                <property name="IsDialogButton">False</property>
+                <property name="Visible">True</property>
+                <property name="CanFocus">True</property>
+                <property name="Events">0</property>
+                <signal name="Clicked" handler="OnButtonChooserClicked" />
+              </widget>
+              <packing>
+                <property name="Position">1</property>
+                <property name="AutoSize">True</property>
+                <property name="Expand">False</property>
+                <property name="Fill">False</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">0</property>
+            <property name="AutoSize">True</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.TreeView" id="treeview">
+            <property name="Visible">True</property>
+            <property name="CanFocus">True</property>
+            <property name="Events">0</property>
+          </widget>
+          <packing>
+            <property name="Position">1</property>
+            <property name="AutoSize">True</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</stetic-interface>

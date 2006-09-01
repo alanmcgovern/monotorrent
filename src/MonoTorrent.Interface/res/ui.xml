@@ -1,0 +1,49 @@
+<ui>
+    <menubar>
+        <menu action="File">
+            <menuitem action="New"/>
+            <menuitem action="Open"/>
+            <menuitem action="Quit"/>
+        </menu>
+        <menu action="Edit">
+            <menuitem action="Preferences"/>
+        </menu>
+        <menu action="View">
+            <menuitem action="Toolbar"/>
+            <menuitem action="Details"/>
+        </menu>
+        <menu action="Action">
+            <menuitem action="Start"/>
+            <menuitem action="Pause"/>
+            <menuitem action="Stop"/>
+            <separator/>
+            <menuitem action="Delete"/>
+        </menu>
+        <menu action="Help">
+            <menuitem action="About"/>
+        </menu>
+    </menubar>
+
+    <popup name="TorrentPopup">        
+        <menuitem action="Start"/>
+        <menuitem action="Pause"/>
+        <menuitem action="Stop"/>
+        <separator/>
+        <menuitem action="Delete"/>
+    </popup>
+
+    <toolbar>
+        <toolitem action="New"/>
+        <toolitem action="Open"/>
+        <separator/>
+        <toolitem action="Start"/>
+        <toolitem action="Pause"/>
+        <toolitem action="Stop"/>
+        <separator/>
+        <toolitem action="Delete"/>
+        <separator/>
+        <toolitem action="Preferences"/>
+        <separator/>
+        <toolitem action="Quit"/>
+    </toolbar>
+</ui>

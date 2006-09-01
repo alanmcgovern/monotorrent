@@ -1,0 +1,682 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MonoTorrent.Common</name>
+    </assembly>
+    <members>
+        <member name="T:MonoTorrent.Common.ITorrentManager">
+            <summary>
+            Interface used to interact with .torrents loaded into the Engine.
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Common.ITorrentManager.ChangedEvent">
+            <summary>
+            This event should be fired on change of every exposed property.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.ITorrentManager.Torrent">
+            <summary>
+            Returns a torrent instance.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.ITorrentManager.State">
+            <summary>
+            The current state of the torrent.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.ITorrentManager.Progress">
+            <summary>
+            The current progress of the torrent in percent.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.ITorrentManager.BytesDownloaded">
+            <summary>
+            The count of already downloaded bytes.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.ITorrentManager.BytesUploaded">
+            <summary>
+            The count of already downloaded bytes.
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.Torrent">
+            <summary>
+            The "Torrent" class for both Tracker and Client should inherit from this
+            as it contains the fields that are common to both.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.LoadTorrent(System.String)">
+            <summary>
+            This method loads a .torrent file from the specified path.
+            </summary>
+            <param name="path">The path to load the .torrent file from</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.LoadTorrent(MonoTorrent.Common.BEncodedDictionary)">
+            <summary>
+            This method loads the torrent information from a BEncoded dictionary
+            </summary>
+            <param name="torrentInformation">The dictionary from a decoded .torrent file</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.SaveTorrent(System.String,System.Boolean)">
+            <summary>
+            This method saves this .torrent file to the specified location
+            </summary>
+            <param name="path">The location to save the .torrent file to</param>
+            <param name="overwrite">If true, any existing file will be overwritten</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.ProcessInfo(MonoTorrent.Common.OrderedDictionary{System.String,MonoTorrent.Common.BEncodedValue})">
+            <summary>
+            This method is called internally to load the information found within the "Info" section
+            of the .torrent file
+            </summary>
+            <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.LoadHashPieces(System.Byte[])">
+            <summary>
+            This method is called internally to read out the hashes from the info section of the
+            .torrent file.
+            </summary>
+            <param name="data">The byte[]containing the hashes from the .torrent file</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.LoadTorrentFiles(System.Collections.Generic.List{MonoTorrent.Common.BEncodedValue})">
+            <summary>
+            This method is called internally to load in all the files found within the "Files" section
+            of the .torrents infohash
+            </summary>
+            <param name="list">The list containing the files available to download</param>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.GetEnumerator">
+            <summary>
+            This method returns an Enumerator so you can enumerate through the TorrentFiles
+            contained within this Torrent
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.Equals(System.Object)">
+            <summary>
+            Two Torrent instances are considered equal if they have the same infohash
+            </summary>
+            <param name="obj">The object to compare</param>
+            <returns>True if they are equal</returns>
+        </member>
+        <member name="M:MonoTorrent.Common.Torrent.GetHashCode">
+            <summary>
+            Returns the hashcode of the infohash byte[]
+            </summary>
+            <returns>int</returns>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Pieces">
+            <summary>
+            This is the array of hashes contained within the torrent.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.InfoHash">
+            <summary>
+            This is the infohash that is generated by putting the "Info" section of a .torrent
+            through a ManagedSHA1 hasher.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.AnnounceUrls">
+            <summary>
+            The announce URLs contained within the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.ED2K">
+            <summary>
+            The optional ED2K hash contained within the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.SHA1">
+            <summary>
+            The optional SHA1 hash contained within the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.CreatedBy">
+            <summary>
+            The optional string showing who/what created the .torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.CreationDate">
+            <summary>
+            The creation date of the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Encoding">
+            <summary>
+            The encoding used by the client that created the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.PublisherUrl">
+            <summary>
+            The Url of the publisher of either the content or the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Comment">
+            <summary>
+            The comment contained within the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Files">
+            <summary>
+            The list of files contained within the .torrent which are available for download
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Name">
+            <summary>
+            In the case of a single file torrent, this is the name of the file.
+            In the case of a multi file torrent, it is the name of the root folder.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Size">
+            <summary>
+            The total size of all the files that have to be downloaded.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.IsPrivate">
+            <summary>
+            Shows whether DHT is allowed or not. If it is a private torrent, no peer
+            sharing should be allowed.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Publisher">
+            <summary>
+            The name of the Publisher
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Source">
+            <summary>
+            The source of the .torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.PieceLength">
+            <summary>
+            The length of each piece in bytes.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.Nodes">
+            <summary>
+            FIXME: No idea what this is.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.TorrentPath">
+            <summary>
+            This is the path at which the .torrent file is located
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.Torrent.AzureusProperties">
+            <summary>
+            FIXME: No idea what this is.
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.Test.BEncodeTest">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benStringDecoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benNumberDecoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benListDecoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benDictionaryDecoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benDictionaryEncoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benStringEncoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benNumberEncoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.benListEncoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.corruptBenStringDecode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.corruptBenNumberDecode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.corruptBenListDecode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.corruptBenDictDecode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.BEncodeTest.corruptBenDataDecode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.StartUp">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.AnnounceUrl">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.CreationDate">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Comment">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.CreatedBy">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.ED2K">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Encoding">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Files">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Name">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Private">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.PublisherUrl">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.PieceLength">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Publisher">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Size">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.Source">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.Test.TorrentTest.SHA1">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncodedValue">
+            <summary>
+            Base interface for all BEncoded values.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedValue.Encode">
+            <summary>
+            Converts the Bencoded Value into a byte array
+            </summary>
+            <returns>Byte array containing the BEncoded Data</returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedValue.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decodes the data in the supplied StreamReader into BEncodedValues
+            </summary>
+            <param name="reader">The StreamReader containing the data</param>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncode">
+            <summary>
+            Class for decoding any BEncoded material
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncode.Decode(System.Byte[])">
+            <summary>
+            DEcode BEncoded data in the given byte array
+            </summary>
+            <param name="data">The byte array containing the BEncodeddata</param>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncode.Decode(System.IO.Stream)">
+            <summary>
+            Decode BEncoded data in the given stream 
+            </summary>
+            <param name="stream">The stream containing the BEncoded data</param>
+            <returns>BEncodedValue containing the data that was in the stream</returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncode.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decode BEncoded data using the given StreamReader
+            </summary>
+            <param name="reader">The StreamReader containing the BEncoded Data</param>
+            <returns>BEncodedValue containing the data that was in the StreamReader</returns>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncodedNumber">
+            <summary>
+            Class representing a BEncoded number
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedNumber.#ctor">
+            <summary>
+            Create a new BEncodedNumber
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedNumber.#ctor(System.Int64)">
+            <summary>
+            Create a new BEncoded number with the given value
+            </summary>
+            <param name="initialValue">The inital value of the BEncodedNumber</param>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedNumber.Encode">
+            <summary>
+            Create a BEncoded string representation of this number
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedNumber.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decodes a BEncoded number from the supplied StreamReader
+            </summary>
+            <param name="reader">StreamReader containing a BEncoded Number</param>
+        </member>
+        <member name="P:MonoTorrent.Common.BEncodedNumber.Number">
+            <summary>
+            The value of the BEncodedNumber
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncodedString">
+            <summary>
+            Class representing a BEncoded string
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedString.#ctor">
+            <summary>
+            Create a new BEncodedString
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedString.#ctor(System.String)">
+            <summary>
+            Create a new BEncodedString with the given value
+            </summary>
+            <param name="initialValue">Initial value for the string</param>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedString.Encode">
+            <summary>
+            Creates a BEncoded string representation of this string
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedString.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decodes a BEncodedString from the supplied StreamReader
+            </summary>
+            <param name="reader">The StreamReader containing the BEncodedString</param>
+        </member>
+        <member name="P:MonoTorrent.Common.BEncodedString.Text">
+            <summary>
+            The value of the BEncodedString
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncodedDictionary">
+            <summary>
+            Class representing a BEncoded Dictionary
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedDictionary.#ctor">
+            <summary>
+            Create a new BEncodedDictionary
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedDictionary.#ctor(MonoTorrent.Common.OrderedDictionary{System.String,MonoTorrent.Common.BEncodedValue})">
+            <summary>
+            Create a new BEncodedDictionary with the supplied initial value
+            </summary>
+            <param name="dictionary">The initial value for the BEncodedDictionary</param>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedDictionary.Encode">
+            <summary>
+            Creates a BEncoded string representation of the dictionary
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedDictionary.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decodes a BEncodedDictionary from the supplied StreamReader
+            </summary>
+            <param name="reader"></param>
+        </member>
+        <member name="P:MonoTorrent.Common.BEncodedDictionary.Dictionary">
+            <summary>
+            The value of the Dictionary
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.BEncodedList">
+            <summary>
+            Class representing a BEncoded list
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedList.#ctor">
+            <summary>
+            Create a new BEncoded List
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedList.#ctor(System.Int32)">
+            <summary>
+             Create a new BEncoded List with the given capacity
+            </summary>
+            <param name="capacity">Initial Capacity</param>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedList.#ctor(System.Collections.Generic.List{MonoTorrent.Common.BEncodedValue})">
+            <summary>
+            Create a new BEncoded List with the given value
+            </summary>
+            <param name="list">Initial Value</param>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedList.Encode">
+            <summary>
+            Creates a BEncoded string representation of the list
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:MonoTorrent.Common.BEncodedList.Decode(System.IO.BinaryReader)">
+            <summary>
+            Decodes a BEncodedList from the given StreamReader
+            </summary>
+            <param name="reader"></param>
+        </member>
+        <member name="T:MonoTorrent.Common.TorrentFile">
+            <summary>
+            This is the base class for the files available to download from within a .torrent.
+            This should be inherited by both Client and Tracker "TorrentFile" classes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentFile.#ctor(System.Int64,System.String,System.Byte[],System.Byte[],System.Byte[])">
+            <summary>
+            Class representing a file that is available for download from a .torrent file
+            </summary>
+            <param name="length">The length of the file in bytes</param>
+            <param name="path">The filename (and path) of the file</param>
+            <param name="md5">The MD5 hash of the file</param>
+            <param name="ed2k">The ED2K hash of the file</param>
+            <param name="sha1">The SHA1 hash of the file</param>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentFile.Length">
+            <summary>
+            The length of the file in bytes
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentFile.Path">
+            <summary>
+            In the case of a single torrent file, this is the name of the file.
+            In the case of a multi-file torrent this is the relative path of the file
+            (including the filename) from the base directory
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentFile.MD5">
+            <summary>
+            The MD5 hash of the file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentFile.ED2K">
+            <summary>
+            The ED2K hash of the file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentFile.SHA1">
+            <summary>
+            The SHA1 hash of the file
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Common.TorrentCreator">
+            <summary>
+            this class is used to create on disk torrent files.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.GetSize">
+            <summary>
+            returns the size of bytes required by the torrents with the current set properties.        
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.AddAnnounce(System.String)">
+            <summary>
+            this method adds an announce url to the list of announce urls.
+            if the list contains more than one entries the announce list is used
+            to store the list of announce urls.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.RemoveAnnounce(System.String)">
+            <summary>
+            removes an url from the list
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:MonoTorrent.Common.TorrentCreator.Create(System.String)" -->
+        <member name="M:MonoTorrent.Common.TorrentCreator.Create">
+            <summary>
+            creates an BencodedDictionary.
+            </summary>
+            <returns>a BEncodedDictionary representing the torrent</returns>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.CreateMultiFileTorrent">
+            <summary>
+            used for creating multi file mode torrents.
+            </summary>
+            <returns>the dictionary representing which is stored in the torrent file</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:MonoTorrent.Common.TorrentCreator.CreateSingleFileTorrent" -->
+        <!-- Badly formed XML comment ignored for member "M:MonoTorrent.Common.TorrentCreator.AddAllFileInfoDicts(System.String,MonoTorrent.Common.BEncodedList,System.Collections.Generic.List{System.String})" -->
+        <member name="M:MonoTorrent.Common.TorrentCreator.GetFileInfoDict(System.String,System.String)">
+            <summary>
+            this method is used for multi file mode torrents to return a dictionary with
+            file relevant informations. 
+            <param name="file">the file to report the informations for</param>
+            <param name="basePath">used to subtract the absolut path information</param>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.AddCommonStuff(MonoTorrent.Common.BEncodedDictionary)">
+            <summary>
+            this adds stuff common to single and multi file torrents
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Common.TorrentCreator.GetMD5(System.String)">
+            <summary>calculate md5sum of a file</summary>
+            <param name="fileName">the file to sum with md5</param>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:MonoTorrent.Common.TorrentCreator.CalcPiecesHash(System.Collections.Generic.List{System.String})" -->
+        <!-- Badly formed XML comment ignored for member "M:MonoTorrent.Common.TorrentCreator.AddString(MonoTorrent.Common.BEncodedDictionary,System.String,System.String)" -->
+        <member name="P:MonoTorrent.Common.TorrentCreator.Path">
+            <summary>the path from which you would like to make a torrent of.
+            path can be a file and a directory. 
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.PieceLength">
+            <summary>
+            this property sets the length of the pieces. default is 512 kb.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.Comment">
+            <summary>
+            this property sets the comment entry in the torrent file. default is string.Empty to conserve bandwidth.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.CreatedBy">
+            <summary>this property sets the created by entrie in the torrent file
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.StoreCreationDate">
+            <summary>this property sets wheather the optional field creation date should be included
+            in the torrent or not. default is false to conserve bandwidth. </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.StoreMD5">
+            <summary>this property sets wheather the optional field md5sum should be included. 
+            default is false to conserve bandwidth
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Common.TorrentCreator.StoreUTF8">
+            <summary>
+            this property instructs the creator to use add utf8 strings
+            default value is false to conserve bandwidth.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "T:MonoTorrent.Common.CatStreamReader" -->
+        <member name="F:MonoTorrent.Common.VersionInfo.ProtocolStringV100">
+            <summary>
+            Protocol string for version 1.0 of Bittorrent Protocol
+            </summary>
+        </member>
+        <member name="F:MonoTorrent.Common.VersionInfo.ClientVersion">
+            <summary>
+            The current version of the client
+            </summary>
+        </member>
+    </members>
+</doc>

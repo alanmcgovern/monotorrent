@@ -1,0 +1,32 @@
+<Project name="TrackerTest" fileversion="2.0" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
+  <Configurations active="Debug">
+    <Configuration name="Debug" ctype="DotNetProjectConfiguration">
+      <Output directory="./bin/Debug" assembly="TrackerTest" />
+      <Build debugmode="True" target="Exe" />
+      <Execution runwithwarnings="True" commandlineparameters="/tmp/testtorrent /tmp/test.torrent" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" definesymbols="DEBUG,TRACE" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+    </Configuration>
+    <Configuration name="Release" ctype="DotNetProjectConfiguration">
+      <Output directory="./bin/Release" assembly="TrackerTest" />
+      <Build debugmode="False" target="Exe" />
+      <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+    </Configuration>
+  </Configurations>
+  <DeploymentInformation strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
+  <Contents>
+    <File name="./Main.cs" subtype="Code" buildaction="Compile" />
+    <File name="./AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
+    <File name="./TrackerUnitTest.cs" subtype="Code" buildaction="Compile" />
+  </Contents>
+  <References>
+    <ProjectReference type="Project" localcopy="True" refto="Tracker" />
+    <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+    <ProjectReference type="Project" localcopy="True" refto="Common" />
+    <ProjectReference type="Gac" localcopy="True" refto="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <ProjectReference type="Gac" localcopy="True" refto="nunit.core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <ProjectReference type="Gac" localcopy="True" refto="System.Web, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  </References>
+</Project>

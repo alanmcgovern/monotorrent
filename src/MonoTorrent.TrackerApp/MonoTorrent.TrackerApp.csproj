@@ -1,0 +1,60 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MonoTorrent.TrackerApp</RootNamespace>
+    <AssemblyName>MonoTorrent.TrackerApp</AssemblyName>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{CBE6CA63-ABC5-441A-8238-660D4953FA71}</ProjectGuid>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <NoStdLib>False</NoStdLib>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <BaseAddress>4194304</BaseAddress>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <FileAlignment>4096</FileAlignment>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <Optimize>False</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>True</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj">
+      <Project>{BA61F399-BE56-445D-9C61-3A617F4BABEA}</Project>
+      <Name>MonoTorrent.Client</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MonoTorrent.Common\MonoTorrent.Common.csproj">
+      <Project>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</Project>
+      <Name>MonoTorrent.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MonoTorrent.Tracker\MonoTorrent.Tracker.csproj">
+      <Project>{AEF33476-D85B-45DD-9402-EC7093648FA1}</Project>
+      <Name>MonoTorrent.Tracker</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(SharpDevelopBinPath)\SharpDevelop.Build.CSharp.targets" />
+</Project>

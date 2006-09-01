@@ -1,0 +1,81 @@
+Readme for MonoTorrent:
+
+NOTE: You must use Mono 1.1.16.1 or higher to use the engine. 1.1.13.8 is *not* compatible.
+NOTE: Hashing performance under mono is (at the time of writing) slow,
+      so hashing torrents will take longer than on windows under MS.NET.
+      After the initial loading period, this shouldn't have much of an effect on performance.
+
+[The Tracker]
+============
+
+The code of the Tracker is located in MonoTorrent.Tracker. There is one sample Tracker implementation
+in MonoTorrent.TrackerApp. 
+
+The Tracker is a piece of Software which listens for HttpRequests. Each Request can either be an Announce
+or Scrape request. Therefore the Tracker needs code which handles HttpRequests. The Tracker was programmed
+in such a way that it is independent of the http handling code. The http handling code is called Frontend.
+There are currently two Frontends implemented. The first uses the class HttpListener. This implementation
+got most attention. The second one uses the Asp.Net infrastructe and the HttpHandles classes. It therefore
+could be used in xsp2, mod_mono or even in IIS. But the second implementation was just a proof of concept
+and is not tested but should be functional. There exists and Frontend directory which contains all the 
+Frontend handling code.
+
+There is also a Backend part of the Tracker. The backend is responsible for storing the Informations per
+Torrent which should be Announced to the peers. There is currently one Backend implementation which uses
+the .Net internal Datastructes List<> and Dictionary<> called SimpleTorrentManager. A Backend needs to 
+implement the ITorrentManager interface.
+
+If you would like to start the Tracker the TrackerEngine is the class you would like to use. The sequence
+below is enough to start the Tracker:
+
+	TrackerEngine engine = TrackerEngine.Instance
+	engine.Address = "127.0.0.1";
+	engine.Port = 10000;
+	engine.Frontend = TrackerFrontend.InternalHttp;
+	engine.Start();
+
+Adding Torrents is easy too. Just get an Tracker instance and call AddTorrent:
+
+	Torrent t = new Torrent();
+	t.LoadTorrent(path);
+	TrackerEngine.Instance.Tracker.AddTorrent(t);
+
+The two code snippets are enough to start a simple tracker. If you would like to tune the Tracker to use
+less Bandwidth you can set various things in the Tracker instance. One such thing would be to use the 
+compact response format:
+
+	Tracker.Instance.AllowNonCompact = true;
+
+The other place where you can tune is to implement the IIntervalAlgorithm. An implementor can controll at 
+which rate the peers should request an Announce or Scrape. Currently we have an static implementation 
+which uses static defaults taken from the original BitTorrent implementation. It's even possible to higher
+the intervals based on the number of peers using the Torrent. 
+
+Tracker.cs is the code where everything is glued together. It is something like the heart of the Tracker
+implementation.
+
+Howto Test:
+If you want to test the Tracker just compile it with MonoDevelop. The Tracker searches (and creates if not
+found) for a directory named ./torrents. In this Directory every Torrent is loaded on startup. To test 
+the Torrent you need some torrents pointing at the Tracker. This can be done with the unit test. Just 
+run gnunit2 and load the Common.dll in src/bin/Debug. Copy the single.torrent and torrentcreator.torrent 
+into src/bin/Debug/torrents and start the Tracker in MonoDevelop. Then you can load the Torrents in Azureus
+or BitTorrent and check if the Tracker reacts on Announces and Scrapes. 
+
+
+[The Client and Test Engine]
+To run the test engine you need to do the following:
+1) Make sure that MonoTorrent.Client.dll, MonoTorrent.Common.dll and testClient are all in the same folder
+2) Create two folders in that directory called "Torrents" and "Downloads".
+3) Put .torrent files one by one into the Torrents directory and launch TestClient.exe to download the .torrent. It will be downloaded to the "Downloads" directory
+4) You can download multiple files at once, but stats will only be shown for the first .torrent loaded into the engine.
+
+To use the library in your own application:
+Firstly, the public interface isn't really finished as of yet. There's a lot publicly visible that shouldn't be, so bear with me as the API changes.
+1) Create a new project and reference the MonoTorrent.Common and Client dll files.
+2) Use the MonoTorrent.Common and MonoTorrent.Client namespaces.
+3) Create a ClientEngine variable. (ClientEngine eng = new ClientEngine(....))
+4) Load a .torrent into the Engine using eng.LoadTorrent(string path);
+5) This returns an ITorrentManager instance (i.e. ITorrentManager myTorrentManager = eng.LoadTorrent("t.torrent");).
+6) To start downloading the torrent use eng.Start(myTorrentManager);
+7) Wait for it to finish. You can poll the torrent for information at fixed intervals, or update when events are fired. Its up to you.

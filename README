@@ -1,0 +1,5 @@
+This directory will contain the code for the Summer of Code Bittorrent libraries and clien
+
+Alan will be working on the Core of the BitTorrent API.
+Gregor will be working on the Tracker (the server).
+Piotr will be working on a GUI client

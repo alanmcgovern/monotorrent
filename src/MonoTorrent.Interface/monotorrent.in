@@ -1,0 +1,2 @@
+#!/bin/sh
+exec @MONO@ @pkglibdir@/@PACKAGE@.exe $MONO_EXTRA_ARGS $@

@@ -1,0 +1,56 @@
+<Project name="MonoTorrent.Interface" fileversion="2.0" language="C#" clr-version="Net_2_0" ctype="DotNetProject">
+  <Configurations active="Debug">
+    <Configuration name="Debug" ctype="DotNetProjectConfiguration">
+      <Output directory="./bin/Debug" assembly="MonoTorrent.Interface" />
+      <Build debugmode="True" target="Exe" />
+      <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+    </Configuration>
+    <Configuration name="Release" ctype="DotNetProjectConfiguration">
+      <Output directory="./bin/Release" assembly="MonoTorrent.Interface" />
+      <Build debugmode="False" target="Exe" />
+      <Execution runwithwarnings="True" consolepause="True" runtime="MsNet" clr-version="Net_2_0" />
+      <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
+    </Configuration>
+  </Configurations>
+  <DeployTargets />
+  <Contents>
+    <File name="./src/MonoTorrent.Interface/PathConstants.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Program.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/ActionConstants.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/DialogWithTitle.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/MainWindow.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/NewTorrentDialog.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/PreferencesDialog.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/TorrentChooserDialog.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/TorrentFilesView.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/TorrentsView.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/TorrentView.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/UIBuilder.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Settings/Configuration.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Settings/GConfSettingsStorage.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Settings/ISettingsStorage.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Settings/SettingsStorage.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Model/TorrentFilesList.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Model/TorrentsList.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Model/TorrentsRepository.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Helpers/Formatter.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Controller/PreferencesController.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Controller/TorrentsController.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Controller/WindowController.cs" subtype="Code" buildaction="Compile" />
+    <File name="./res/ui.xml" subtype="Code" buildaction="EmbedAsResource" />
+    <File name="./src/MonoTorrent.Interface/View/MonoTorrentStatusbar.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/View/TreeViewWithPopup.cs" subtype="Code" buildaction="Compile" />
+  </Contents>
+  <References>
+    <ProjectReference type="Project" localcopy="True" refto="Client" />
+    <ProjectReference type="Project" localcopy="True" refto="Common" />
+    <ProjectReference type="Project" localcopy="True" refto="Tracker" />
+    <ProjectReference type="Gac" localcopy="True" refto="gtk-sharp, Version=2.8.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <ProjectReference type="Gac" localcopy="True" refto="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
+    <ProjectReference type="Gac" localcopy="True" refto="gconf-sharp, Version=2.8.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+  </References>
+  <DeploymentInformation strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
+</Project>

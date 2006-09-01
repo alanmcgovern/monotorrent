@@ -1,0 +1,41 @@
+<Combine name="MonoTorrent" fileversion="2.0" outputpath="./build/bin/">
+  <Configurations active="Debug">
+    <Configuration name="Debug" ctype="CombineConfiguration">
+      <Entry build="True" name="Client" configuration="Debug" />
+      <Entry build="True" name="Tracker" configuration="Debug" />
+      <Entry build="True" name="TrackerTest" configuration="Debug" />
+      <Entry build="True" name="Common" configuration="Debug" />
+      <Entry build="True" name="BInspector" configuration="Debug" />
+      <Entry build="True" name="TestClient" configuration="Debug" />
+      <Entry build="False" name="MonoTorrent.Interface" configuration="Debug" />
+    </Configuration>
+    <Configuration name="Release" ctype="CombineConfiguration">
+      <Entry build="True" name="Client" configuration="Debug" />
+      <Entry build="True" name="Tracker" configuration="Debug" />
+      <Entry build="True" name="TrackerTest" configuration="Debug" />
+      <Entry build="True" name="Common" configuration="Debug" />
+      <Entry build="True" name="BInspector" configuration="Debug" />
+      <Entry build="True" name="TestClient" configuration="Debug" />
+      <Entry build="True" name="MonoTorrent.Interface" configuration="Debug" />
+    </Configuration>
+  </Configurations>
+  <DeployTargets />
+  <StartMode startupentry="TrackerTest" single="True">
+    <Execute type="None" entry="Client" />
+    <Execute type="None" entry="Tracker" />
+    <Execute type="None" entry="TrackerTest" />
+    <Execute type="None" entry="Common" />
+    <Execute type="None" entry="BInspector" />
+    <Execute type="None" entry="TestClient" />
+    <Execute type="None" entry="MonoTorrent.Interface" />
+  </StartMode>
+  <Entries>
+    <Entry filename="./Client.mdp" />
+    <Entry filename="./Tracker.mdp" />
+    <Entry filename="./TrackerTest.mdp" />
+    <Entry filename="./Common.mdp" />
+    <Entry filename="./BInspector/BInspector.mdp" />
+    <Entry filename="./TestClient/TestClient.mdp" />
+    <Entry filename="./MonoTorrent.Interface/MonoTorrent.Interface.mdp" />
+  </Entries>
+</Combine>

@@ -1,0 +1,78 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MonoTorrent.Common</RootNamespace>
+    <AssemblyName>MonoTorrent.Common</AssemblyName>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <NoStdLib>False</NoStdLib>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <BaseAddress>4194304</BaseAddress>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <FileAlignment>4096</FileAlignment>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework" />
+    <Reference Include="System">
+      <HintPath>..\..\..\Program Files\Mono-1.1.16.1\lib\mono\gac\System\2.0.0.0__b77a5c561934e089\System.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BEncode\BEncode.cs" />
+    <Compile Include="BEncode\BEncodedDictionary.cs" />
+    <Compile Include="BEncode\BEncodedList.cs" />
+    <Compile Include="BEncode\BEncodedNumber.cs" />
+    <Compile Include="BEncode\BEncodedString.cs" />
+    <Compile Include="BEncode\BEncodingException.cs" />
+    <Compile Include="BEncode\IBEncodedValue.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="IPeer.cs" />
+    <Compile Include="ITorrent.cs" />
+    <Compile Include="ITorrentFile.cs" />
+    <Compile Include="Peer.cs" />
+    <Compile Include="PeerID.cs" />
+    <Compile Include="Test\BEncodingTest.cs" />
+    <Compile Include="Test\TorrentCreatorTest.cs" />
+    <Compile Include="Test\TorrentTest.cs" />
+    <Compile Include="ToolBox.cs" />
+    <Compile Include="Torrent.cs" />
+    <Compile Include="TorrentFile.cs" />
+    <Compile Include="TorrentReader.cs" />
+    <Compile Include="VersionInfo.cs" />
+    <Compile Include="OrderedDictionary.cs" />
+    <Compile Include="TorrentCreator.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Test\testtorrent\" />
+  </ItemGroup>
+  <Import Project="$(SharpDevelopBinPath)\SharpDevelop.Build.CSharp.targets" />
+</Project>

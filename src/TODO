@@ -1,0 +1,69 @@
+[ Client DLL ]
+There's still loads of work to be done to make this a fully fledged Bittorrent Client. I've divided the work into three sections (for the moment). Features to be added, features to be improved and sections of code that need rearchitecting. I've also put a difficulty estimation for anyone interested in picking an item and completing it.
+
+-- FEATURES TO BE ADDED --
+	01) HTTP Seeding - The ability to use a normal HTTP/FTP download as a "seed". [MEDIUM-HIGH]
+	02) Connection Encryption - The ability to encrypt connections between compliant peers. [MEDIUM]
+	03) Implement the "fast peers" extensions. [MEDIUM-LOW]
+	04) Implement DHT/Peer Exchange. [MEDIUM-LOW]
+	05) Fast resume for loading preexisting torrents. [SIMPLE]
+	06) Rarest-first piece picking algoritm. [MEDIUM]
+	07) Recording who sends bad chunks and dropping them after they send X chunks. [LOW]
+	08) Add in uPnP to the engine to allow automatic port forwarding [integrating it [EASY], writing it [HARD]]
+	09) Add in support for TrackerError and TrackerWarning messages returned from a tracker update [LOW]
+	10) Choking and Optimistic Unchoking algorithm needed. [MEDIUM]
+	11) Anti-snubbing needs to be implemented [MEDIUM]
+    12) Tracker scraping needs to be implemented [LOW]
+	13) Allow "Pausing" and prioritising of files/selective downloading [MEDIUM] [ COMPLETE ]
+	14) Support SOCKS proxies
+	15) Automagic updates of the client - similar to azureus ideally
+	16) Add a "RemoveTorrent(ITorrentManager manager) and RemoveAllTorrents() method to ClientEngine
+	17) Put in more NUnit tests... i got lazy when it came to tests :p
+	18) Start using ABSTRACT BASE CLASSES for PeerTCP/PeerHTTP, TrackerTCP, TrackerUDP etc
+	19) FileSystemWatcher: AutoDownload .torrents in this directory
+	20) Use a IRequestable interface on PeerTCP and PeerHTTP to allow different requesting techniques.
+	21) Is the IConnectable interface for PeerTCP and PeerHTTP to abstract BeginConnect etc for the different types
+
+-- FEATURES TO BE IMPROVED --
+	01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
+	02) Support cancel messages [MEDIUM-LOW]
+	03) Block queuing needs to be improved to allow queuing of blocks over multiple pieces [LOW]
+	05) New super seeding algorithm. At the moment defaults to "seeding" which defaults to "downloading. [LOW]
+	06) End Game mode should be implemented [MEDIUM]
+	07) Architecture rethink. The overall layout and design needs to be looked at. [HIGH]
+	08) The public API needs to be looked at aswell. There's no real logic to it at the moment. [HIGH]
+	09) If we recieve a non-supported Protocol string, we need proper handling. Not sure how this is supposed to be handled... [LOW]
+	10) Update all peer messages and reduce complexity (LengthInBytes unneccessary. Can use the static readonly value)
+	11) Use PieceEventArgs properly [LOW]
+	12) Use a MemoryBuffer/DiskCache to avoid constant read/writes to the disk [MEDIUM-HIGH]
+	11) At the moment i'm only counting piecemessages as traffic. Change to count ALL messages (but you have to keep the traffic seperately! Piece messages must be recorded seperately) [LOW]
+	12) Fix the "negative download speed bug". This is a side effect of the above design choice. Should go away when 11 is completed. [LOW]
+	13) Implement "PeerID" to link a peer with the client they're running [LOW]
+	14) Change hash checking to only hashcheck after the write buffer has been flushed (does this matter?). It might cause hashfails in certain circumstances... but i don't know. [LOW]
+	15) If the "Started" event doesn't reach the tracker i should resend [LOW]
+	16) Tracker warning/error messages [LOW]
+	17) use the PeerID class [LOW]
+	18) Custom attributes for .torrent files
+	19) Fix global upload/download speed. Make it follow the settings [LOW] [ FIXED FOR PER TORRENT LIMITS ]
+	20) Count HashFails internally [LOW]
+	21) Support IPV6
+	22) Open .torrents from HTTP links [ COMPLETE ]
+	23) Support piece prioritisation (Video/Mp3 prioritisation automatically?)
+	24) Make sure IDisposible is revealed through interfaces as required, and all classes with Disposable members use IDisposible. This is one of the causes for piotr's GUI not being able to reopen a torrent that was just removed.
+	25) I'm using a foeach() loop when removing peers from the list in the Stop() method. Of course it breaks! It wasn't spotted before due to the ProcessExit event not firing when i close a console window.
+
+If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
+
+[ Tracker DLL ]
+
+-- FEATURES TO BE ADDED --
+	01) Use Asynchronous IO where possible and useful
+	02) Implement some events for the gui
+	03) Add some stats to Asp.Net frontend
+	04) Add http torrent upload to Asp.Net frontend
+	05) Refactor identification of Peers into a seperate class and use that for indexing in dictionaries
+
+-- FEATURES TO BE IMPROVED --
+	01) Asp.Net Frontend needs to be improved
+	02) Test Asp.Net Frontend with mod_mono
+	03) Improve doc

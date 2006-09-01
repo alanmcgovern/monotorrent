@@ -1,0 +1,145 @@
+# Polish translations for monotorrent package
+# Polskie tłumaczenia dla pakietu monotorrent.
+# Copyright (C) 2006 THE monotorrent'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the monotorrent package.
+# Piotr Wolny <gildur@gmail.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: monotorrent 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-06-23 20:16+0200\n"
+"PO-Revision-Date: 2006-06-23 20:09+0200\n"
+"Last-Translator: Piotr Wolny <gildur@gmail.com>\n"
+"Language-Team: Polish <translation-team-pl@lists.sourceforge.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+
+#: ../src/MonoTorrent.Interface/View/MainWindow.cs:38
+msgid "MonoTorrent"
+msgstr "MonoTorrent"
+
+#: ../src/MonoTorrent.Interface/View/TorrentsView.cs:43
+msgid "State"
+msgstr "Stan"
+
+#: ../src/MonoTorrent.Interface/View/TorrentsView.cs:44
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:88
+msgid "Name"
+msgstr "Nazwa"
+
+#: ../src/MonoTorrent.Interface/View/TorrentsView.cs:45
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:93
+msgid "Size"
+msgstr "Rozmiar"
+
+#: ../src/MonoTorrent.Interface/View/TorrentsView.cs:46
+msgid "Progress"
+msgstr "Postęp"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:80
+msgid "General"
+msgstr "Ogólne"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:82
+msgid "Files"
+msgstr "Pliki"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:89
+msgid "Comment"
+msgstr "Komentarz"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:90
+msgid "Announce URLs"
+msgstr "Rozgłoszeniowe URLe"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:91
+msgid "Creation date"
+msgstr "Data utworzenia"
+
+#: ../src/MonoTorrent.Interface/View/TorrentView.cs:92
+msgid "Created by"
+msgstr "Utworzony przez"
+
+#: ../src/MonoTorrent.Interface/View/TorrentFilesView.cs:43
+msgid "Path"
+msgstr "Ścieżka"
+
+#: ../src/MonoTorrent.Interface/View/TorrentFilesView.cs:44
+msgid "Length"
+msgstr "Długość"
+
+#: ../src/MonoTorrent.Interface/View/TorrentChooserDialog.cs:33
+msgid "Choose Torrent"
+msgstr "Wybierz Torrent"
+
+#: ../src/MonoTorrent.Interface/View/TorrentChooserDialog.cs:42
+msgid "Torrent Files"
+msgstr "Pliki Torrent"
+
+#: ../src/MonoTorrent.Interface/View/TorrentChooserDialog.cs:44
+msgid "All Files"
+msgstr "Wszystkie Pliki"
+
+#: ../src/MonoTorrent.Interface/View/PreferencesDialog.cs:39
+msgid "Preferences"
+msgstr "Ustawienia"
+
+#: ../src/MonoTorrent.Interface/View/PreferencesDialog.cs:80
+msgid "Maximum download speed:"
+msgstr "Maksymalna prędkość pobierania:"
+
+#: ../src/MonoTorrent.Interface/View/PreferencesDialog.cs:91
+msgid "Maximum upload speed:"
+msgstr "Maksymalna prędkość wysyłania:"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:80
+msgid "_File"
+msgstr "_Plik"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:82
+msgid "_Open..."
+msgstr "_Otwórz..."
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:85
+msgid "_Quit"
+msgstr "_Wyjdź"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:89
+msgid "_Edit"
+msgstr "_Edycja"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:91
+msgid "_Preferences"
+msgstr "_Ustawienia"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:95
+msgid "_Action"
+msgstr "_Akcja"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:97
+msgid "_Start"
+msgstr "_Start"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:99
+msgid "_Pause"
+msgstr "_Pauza"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:101
+msgid "S_top"
+msgstr "S_top"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:103
+msgid "_Delete"
+msgstr "_Usuń"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:106
+msgid "_Help"
+msgstr "Pomo_c"
+
+#: ../src/MonoTorrent.Interface/View/UIBuilder.cs:108
+msgid "_About"
+msgstr "_O programie"
