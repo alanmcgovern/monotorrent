@@ -35,6 +35,8 @@ using System.Net;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.Common;
 using System.Threading;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace MonoTorrent.Client
 {
@@ -195,6 +197,7 @@ namespace MonoTorrent.Client
         public bool HashChecked
         {
             get { return this.hashChecked; }
+            internal set { this.hashChecked = value; }
         }
         private bool hashChecked;
 
@@ -424,6 +427,8 @@ namespace MonoTorrent.Client
                             ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[0]);
             }
 
+            this.SaveFastResume();
+
             this.downloadQueue.Clear();
             this.uploadQueue.Clear();
             this.connectedPeers = new Peers();
@@ -433,6 +438,14 @@ namespace MonoTorrent.Client
             return handle;
         }
 
+        private void SaveFastResume()
+        {
+            using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
+            {
+                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+                fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
+            }
+        }
         /// <summary>
         /// Pauses the TorrentManager
         /// </summary>

@@ -38,6 +38,7 @@ using System.Net;
 using MonoTorrent.Client.PeerMessages;
 using System.IO;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace MonoTorrent.Client
 {
@@ -306,7 +307,29 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager(torrent, savePath, settings);
             this.torrents.Add(BitConverter.ToString(torrent.InfoHash), manager);
 
+            if (File.Exists(torrent.TorrentPath + ".fresume"))
+                if (LoadFastResume(manager))
+                    manager.HashChecked = true;
+
             return (manager);
+        }
+
+        private bool LoadFastResume(TorrentManager manager)
+        {
+            try
+            {
+                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
+                {
+                    XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file));
+                    return true;
+                }
+            }
+#warning Don't catch everything...
+            catch
+            {
+                return false;
+            }
         }
 
 

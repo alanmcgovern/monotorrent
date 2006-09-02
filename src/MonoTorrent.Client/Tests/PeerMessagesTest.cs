@@ -127,7 +127,7 @@ namespace MonoTorrent.Client.Tests
                     bf[i] = true;
 
             byte[] bfBytes = new byte[] { 5, 6, 7, 8, 9, 10 };
-            bf.FromByteArray(bfBytes, 0, bfBytes.Length);
+            bf.FromArray(bfBytes, 0, bfBytes.Length);
 
             for (int i = 0; i < bf.Length; i++)
                 if (i % 5 == 0)

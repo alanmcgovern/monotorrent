@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
         public void Decode(byte[] buffer, int offset, int length)
         {
-            bitField.FromByteArray(buffer, offset, length);
+            bitField.FromArray(buffer, offset, length);
         }
 
 #warning Copy this straight into the Peers Bitfield. Slightly more memory efficient :p

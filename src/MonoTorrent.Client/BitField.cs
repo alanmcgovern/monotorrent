@@ -327,7 +327,7 @@ namespace MonoTorrent.Client
         /// <param name="offset">The offset at which to start decoding the BitField at</param>
         /// <param name="length">The maximum number of bytes to read while decoding the BitField</param>
 #warning Check the remaining bits in the last byte to make sure they're 0. use the length parameter
-        public void FromByteArray(byte[] buffer, int offset, int length)
+        public void FromArray(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
@@ -347,6 +347,10 @@ namespace MonoTorrent.Client
             }
         }
 
+        internal void FromArray(int[] array)
+        {
+            this.array = array;
+        }
 
         /// <summary>
         /// Returns the length of this message in bytes
@@ -356,6 +360,7 @@ namespace MonoTorrent.Client
             get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
         }
         #endregion
+
 
         #region Overridden methods
         public override bool Equals(object obj)
