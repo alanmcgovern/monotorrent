@@ -55,11 +55,11 @@
     <File name="./MonoTorrent.Client/IPieceManager.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/EventArgs/MessageEventArgs.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/EventArgs/TorrentStateChangedEventArgs.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Client/Public Interfaces/IClientEngine.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Client/Public Interfaces/IEngineSettings.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Client/Public Interfaces/IPeerConnectionID.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Client/Public Interfaces/ITorrentManager.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/Managers/TrackerManager.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/IClientEngine.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/IEngineSettings.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/IPeerConnectionID.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/ITorrentManager.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
@@ -67,6 +67,7 @@
     <ProjectReference type="Project" localcopy="True" refto="Common" />
     <ProjectReference type="Gac" localcopy="True" refto="nunit.core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
     <ProjectReference type="Gac" localcopy="True" refto="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <ProjectReference type="Gac" localcopy="True" refto="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </References>
   <DeploymentInformation strategy="File">
     <excludeFiles />
