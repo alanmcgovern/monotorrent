@@ -440,11 +440,10 @@ namespace MonoTorrent.Client
 
         private void SaveFastResume()
         {
+            XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+
             using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
-            {
-                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
                 fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
-            }
         }
         /// <summary>
         /// Pauses the TorrentManager
