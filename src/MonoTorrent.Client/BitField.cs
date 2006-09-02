@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
             int start;
             int end;
 
-            for (int i = (startIndex/32); i < (endIndex/32); i++)
+            for (int i = (startIndex/32); i <= (endIndex/32); i++)
             {
                 if (this.array[i] == 0)        // This one has no true values
                     continue;
