@@ -369,7 +369,7 @@ namespace MonoTorrent.Client
                 this.state = TorrentState.Hashing;
                 if (this.OnTorrentStateChanged != null)
                     OnTorrentStateChanged(this, args);
-                
+
                 return;
             }
 
@@ -418,13 +418,13 @@ namespace MonoTorrent.Client
             handle = this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
-                while(this.connectingTo.Count > 0)
+                while (this.connectingTo.Count > 0)
                     lock (this.connectingTo[0])
                         ClientEngine.connectionManager.CleanupSocket(this.connectingTo[0]);
 
-                    while (this.connectedPeers.Count > 0)
-                        lock(this.connectedPeers[0])
-                            ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[0]);
+                while (this.connectedPeers.Count > 0)
+                    lock (this.connectedPeers[0])
+                        ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[0]);
             }
 
             this.SaveFastResume();
@@ -464,7 +464,7 @@ namespace MonoTorrent.Client
                         ClientEngine.connectionManager.CleanupSocket(id);
 
                 foreach (PeerConnectionID id in this.connectedPeers)
-                    lock(id)
+                    lock (id)
                         ClientEngine.connectionManager.CleanupSocket(id);
 
                 lock (this.downloadQueue)
@@ -510,10 +510,10 @@ namespace MonoTorrent.Client
                 if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
                     ClientEngine.connectionManager.ConnectToPeer(this);
 
-                for(int i =0; i < this.connectedPeers.Count; i++)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
                 {
                     id = this.connectedPeers[i];
-                    lock(id)
+                    lock (id)
                     {
                         if (id.Peer.Connection == null) // Shouldn't really happen...
                             continue;
@@ -556,6 +556,7 @@ namespace MonoTorrent.Client
 
                             this.uploadingTo--;
                             id.Peer.PiecesSent = 0;
+                            id.Peer.AmChoking = true;
                             id.Peer.IsRequestingPiecesCount = 0;
                             id.Peer.Connection.EnQueue(new ChokeMessage());
                             Console.WriteLine("ReChoking: " + this.uploadingTo);
@@ -617,8 +618,8 @@ namespace MonoTorrent.Client
                 if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
                 {
                     if (!id.Peer.BitField[p])
-                        if(id.Peer.Connection != null) // this shouldn't be null ever, but it is. Figure out why.
-                        id.Peer.Connection.EnQueue(new HaveMessage(p)); // It's being disposed of but not removed from the list...
+                        if (id.Peer.Connection != null) // this shouldn't be null ever, but it is. Figure out why.
+                            id.Peer.Connection.EnQueue(new HaveMessage(p)); // It's being disposed of but not removed from the list...
 
                     Monitor.Exit(id);
                 }
@@ -636,7 +637,7 @@ namespace MonoTorrent.Client
             Console.WriteLine(e.Tracker.ToString());
 
             // Data only returned if the tracker update was successful
-            if (e.Tracker.State != TrackerState.AnnounceSuccessful && e.Tracker.State != TrackerState.ScrapeSuccessful) 
+            if (e.Response == null || e.Tracker.State != TrackerState.AnnounceSuccessful && e.Tracker.State != TrackerState.ScrapeSuccessful)
                 return;
 
             try
@@ -654,42 +655,42 @@ namespace MonoTorrent.Client
 #warning DO STUFF
             }
             else    // Do a standard announce thingy
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
-            {
-                switch (keypair.Key.Text)
+                foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
                 {
-                    case ("tracker id"):
-                        this.trackerManager.CurrentTracker.TrackerId = keypair.Value.ToString();
-                        break;
+                    switch (keypair.Key.Text)
+                    {
+                        case ("tracker id"):
+                            this.trackerManager.CurrentTracker.TrackerId = keypair.Value.ToString();
+                            break;
 
-                    case ("min interval"):
-                        this.trackerManager.CurrentTracker.MinUpdateInterval = int.Parse(keypair.Value.ToString());
-                        break;
+                        case ("min interval"):
+                            this.trackerManager.CurrentTracker.MinUpdateInterval = int.Parse(keypair.Value.ToString());
+                            break;
 
-                    case ("interval"):
-                        this.trackerManager.CurrentTracker.UpdateInterval = int.Parse(keypair.Value.ToString());
-                        break;
+                        case ("interval"):
+                            this.trackerManager.CurrentTracker.UpdateInterval = int.Parse(keypair.Value.ToString());
+                            break;
 
-                    case ("peers"):
-                        if (keypair.Value is BEncodedList)          // Non-compact response
-                            peersAdded = this.AddPeers(((BEncodedList)keypair.Value));
-                        else if (keypair.Value is BEncodedString)   // Compact response
-                            peersAdded = this.AddPeers(((BEncodedString)keypair.Value).TextBytes);
+                        case ("peers"):
+                            if (keypair.Value is BEncodedList)          // Non-compact response
+                                peersAdded = this.AddPeers(((BEncodedList)keypair.Value));
+                            else if (keypair.Value is BEncodedString)   // Compact response
+                                peersAdded = this.AddPeers(((BEncodedString)keypair.Value).TextBytes);
 
-                        if (this.OnPeersAdded != null)
-                            this.OnPeersAdded((ITorrentManager)this, new PeersAddedEventArgs(peersAdded));
-                        break;
+                            if (this.OnPeersAdded != null)
+                                this.OnPeersAdded((ITorrentManager)this, new PeersAddedEventArgs(peersAdded));
+                            break;
 
-                    case("failure reason"):
-                        Console.Write("Failure reason detected");
-                        Console.Write(keypair.Value.ToString());
-                        break;
+                        case ("failure reason"):
+                            Console.Write("Failure reason detected");
+                            Console.Write(keypair.Value.ToString());
+                            break;
 
 
-                    default:
-                        break;  //FIXME Log these
+                        default:
+                            break;  //FIXME Log these
+                    }
                 }
-            }
         }
 
 
@@ -822,7 +823,7 @@ namespace MonoTorrent.Client
             lock (this.listLock)
                 foreach (PeerConnectionID id in this.connectedPeers)
                     lock (id)
-                        if (id.Peer.PeerType == PeerType.Leech || id.Peer.PeerType== PeerType.Unknown)
+                        if (id.Peer.PeerType == PeerType.Leech || id.Peer.PeerType == PeerType.Unknown)
                             leechs++;
 #warning Also counting unknowns for the moment. The spec has been updated, so I need to change the way i initialize bitfields. There should  never be unknowns
 
@@ -836,6 +837,16 @@ namespace MonoTorrent.Client
         public int AvailablePeers
         {
             get { return this.available.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+        }
+
+        /// <summary>
+        /// Called when a Piece has been hashed by the FileManager
+        /// </summary>
+        /// <param name="pieceHashedEventArgs">The event args for the event</param>
+        internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
+        {
+            if (this.OnPieceHashed != null)
+                this.OnPieceHashed((ITorrentManager)this, pieceHashedEventArgs);
         }
         #endregion
 
@@ -858,16 +869,5 @@ namespace MonoTorrent.Client
             this.diskManager.Dispose();
         }
         #endregion
-
-
-        /// <summary>
-        /// Called when a Piece has been hashed by the FileManager
-        /// </summary>
-        /// <param name="pieceHashedEventArgs">The event args for the event</param>
-        internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
-        {
-            if (this.OnPieceHashed != null)
-                this.OnPieceHashed((ITorrentManager)this, pieceHashedEventArgs);
-        }
     }
 }
