@@ -13,7 +13,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	09) Add in support for TrackerError and TrackerWarning messages returned from a tracker update [LOW]
 	10) Choking and Optimistic Unchoking algorithm needed. [MEDIUM]
 	11) Anti-snubbing needs to be implemented [MEDIUM]
-    12) Tracker scraping needs to be implemented [LOW]
+    12) Tracker scraping needs to be implemented [LOW] [ COMPLETE ]
 	13) Allow "Pausing" and prioritising of files/selective downloading [MEDIUM] [ COMPLETE ]
 	14) Support SOCKS proxies
 	15) Automagic updates of the client - similar to azureus ideally
