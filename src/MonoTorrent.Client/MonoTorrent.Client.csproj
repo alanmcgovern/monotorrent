@@ -28,7 +28,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\MonoTorrent.Client.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,6 +52,11 @@
     <Compile Include="Block.cs" />
     <Compile Include="ClientEngine.cs" />
     <Compile Include="ClientPeer.cs" />
+    <Compile Include="IClientEngine.cs" />
+    <Compile Include="IEngineSettings.cs" />
+    <Compile Include="IPeerConnectionID.cs" />
+    <Compile Include="ITorrentManager.cs" />
+    <Compile Include="Tracker.cs" />
     <Compile Include="ConnectionListener.cs" />
     <Compile Include="EventArgs\MessageEventArgs.cs" />
     <Compile Include="EventArgs\PeerConnectionEventArgs.cs" />
@@ -61,11 +65,7 @@
     <Compile Include="EventArgs\PieceHashedEventArgs.cs" />
     <Compile Include="EventArgs\TorrentStateChangedEventArgs.cs" />
     <Compile Include="EventArgs\TrackerEventArgs.cs" />
-    <Compile Include="Public Interfaces\IClientEngine.cs" />
-    <Compile Include="Public Interfaces\IEngineSettings.cs" />
-    <Compile Include="Public Interfaces\IPeerConnectionID.cs" />
     <Compile Include="IPieceManager.cs" />
-    <Compile Include="Public Interfaces\ITorrentManager.cs" />
     <Compile Include="Managers\ConnectionManager.cs" />
     <Compile Include="Managers\ConnectionMonitor.cs" />
     <Compile Include="Managers\FileManager.cs" />
@@ -102,6 +102,7 @@
       <Project>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</Project>
       <Name>MonoTorrent.Common</Name>
     </ProjectReference>
+    <Folder Include="Public Interfaces\" />
   </ItemGroup>
   <Import Project="$(SharpDevelopBinPath)\SharpDevelop.Build.CSharp.targets" />
 </Project>
