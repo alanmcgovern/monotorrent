@@ -77,10 +77,13 @@ namespace MonoTorrent.Common
 
     public enum TrackerState
     {
-        Active,
-        Inactive,
-        Updating,
-        UpdateFailed,
+        Unknown,
+        Announcing,
+        AnnouncingFailed,
+        AnnounceSuccessful,
+        Scraping,
+        ScrapingFailed,
+        ScrapeSuccessful
     }
 
     public enum TrackerFrontend

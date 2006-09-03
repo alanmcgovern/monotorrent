@@ -51,13 +51,13 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The TorrentManager for the TrackerConnection
+        /// Either Announcing or Scraping depending on which event is about to happen
         /// </summary>
-        public ITorrentManager TorrentManager
+        public Tracker Tracker
         {
-            get { return this.torrentManager; }
+            get { return this.tracker; }
         }
-        private ITorrentManager torrentManager;
+        private Tracker tracker;
         #endregion
 
 
@@ -67,10 +67,10 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="request">The HttpWebRequest that sent the Async Request</param>
         /// <param name="manager">The ITorrentManager associated with the TrackerConnection</param>
-        public TrackerConnectionID(HttpWebRequest request, ITorrentManager manager)
+        public TrackerConnectionID(HttpWebRequest request, Tracker tracker)
         {
+            this.tracker = tracker;
             this.request = request;
-            this.torrentManager = manager;
         }
         #endregion
     }

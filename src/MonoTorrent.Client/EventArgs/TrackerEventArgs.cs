@@ -42,11 +42,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The current status of the tracker update
         /// </summary>
-        public TrackerState State
+        public Tracker Tracker
         {
-            get { return this.state; }
+            get { return this.tracker; }
         }
-        private TrackerState state;
+        private Tracker tracker;
 
         /// <summary>
         /// The response (if any) of the tracker
@@ -65,9 +65,9 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="state">The current state of the update</param>
         /// <param name="response">The response of the tracker (if any)</param>
-        public TrackerUpdateEventArgs(TrackerState state, byte[] response)
+        public TrackerUpdateEventArgs(Tracker tracker, byte[] response)
         {
-            this.state = state;
+            this.tracker = tracker;
             this.response = response;
         }
         #endregion

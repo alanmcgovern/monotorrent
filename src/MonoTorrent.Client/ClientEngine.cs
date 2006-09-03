@@ -398,7 +398,11 @@ namespace MonoTorrent.Client
             PeerConnectionID id = null;
             try
             {
-                Socket peerSocket = ((Socket)result.AsyncState).EndAccept(result);
+                Socket peerSocket = ((Socket)result.AsyncState);
+                if (!peerSocket.Connected)
+                    return;
+
+                peerSocket = peerSocket.EndAccept(result);
 
                 ClientPeer peer = new ClientPeer((IPEndPoint)peerSocket.RemoteEndPoint, null);
                 peer.Connection = new PeerConnection(peerSocket);

@@ -1,5 +1,5 @@
 //
-// TrackerConnection.cs
+// TrackerManager.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -34,6 +34,7 @@ using System.IO;
 using MonoTorrent.Common;
 using System.Collections.ObjectModel;
 using System.Threading;
+using System.Web;
 
 namespace MonoTorrent.Client
 {
@@ -51,14 +52,14 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
+        private AsyncCallback responseReceived;
+        private TorrentManager manager;
+
+
         /// <summary>
-        /// The current state of the tracker
+        /// The infohash for the torrent
         /// </summary>
-        public TrackerState State
-        {
-            get { return this.state; }
-        }
-        private TrackerState state;
+        private string infoHash;
 
 
         /// <summary>
@@ -72,76 +73,33 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The ID for the current tracker
-        /// </summary>
-        public string TrackerId
-        {
-            get { return this.trackerId; }
-            internal set { this.trackerId = value; }
-        }
-        private string trackerId;
-
-
-        /// <summary>
-        /// The minimum update interval for the tracker
-        /// </summary>
-        public int MinUpdateInterval
-        {
-            get { return this.minUpdateInterval; }
-            internal set { this.minUpdateInterval = value; }
-        }
-        private int minUpdateInterval;
-
-
-        /// <summary>
-        /// The recommended update interval for the tracker
-        /// </summary>
-        public int UpdateInterval
-        {
-            get { return updateInterval; }
-            internal set { updateInterval = value; }
-        }
-        private int updateInterval;
-
-        
-        /// <summary>
-        /// The DateTime that the last tracker update was fired at
+        /// The time the last tracker update was sent to any tracker
         /// </summary>
         public DateTime LastUpdated
         {
-            get { return lastUpdated; }
+            get { return this.lastUpdated; }
         }
         private DateTime lastUpdated;
-
-        
-        /// <summary>
-        /// The infohash for the torrent
-        /// </summary>
-        private byte[] infoHash;
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Compact
-        {
-            get { return this.compact; }
-        }
-        private string compact;
 
 
         /// <summary>
         /// The announceURLs available for this torrent
         /// </summary>
-        public string[] AnnounceUrls
+        public Tracker[] Trackers
         {
-            get { return this.announceUrls; }
+            get { return this.trackers; }
         }
-        private string[] announceUrls;
-        private int lastUsedAnnounceUrl;
+        private Tracker[] trackers;
+        private int lastUsedTracker;
 
-        
-        private TorrentManager manager;
+
+        /// <summary>
+        /// Returns the tracker that is currently being actively used by the engine.
+        /// </summary>
+        public Tracker CurrentTracker
+        {
+            get { return this.trackers[this.lastUsedTracker]; } 
+        }
         #endregion
 
 
@@ -152,20 +110,34 @@ namespace MonoTorrent.Client
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
         public TrackerManager(TorrentManager manager)
         {
-            this.lastUsedAnnounceUrl = 0;
-            this.state = TrackerState.Inactive;
-            this.infoHash = manager.Torrent.InfoHash;
-            this.announceUrls = manager.Torrent.AnnounceUrls;
             this.manager = manager;
-            this.compact = "1";                             // Always use compact if possible.
-            this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
-            this.updateInterval = 300;                      // Update every 300 seconds.
-            this.minUpdateInterval = 180;                   // Don't update more frequently than this.
+            this.lastUsedTracker = 0;
+            this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
+
+            this.responseReceived = new AsyncCallback(this.ResponseRecieved);
+
+            // Check if this tracker supports scraping
+            this.trackers = new Tracker[manager.Torrent.AnnounceUrls.Length];
+            for (int i = 0; i < manager.Torrent.AnnounceUrls.Length; i++)
+                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.responseReceived);
         }
         #endregion
 
 
         #region Methods
+        /// <summary>
+        /// Scrapes the tracker for peer information.
+        /// </summary>
+        /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
+        /// <returns></returns>
+        public WaitHandle Scrape(bool requestSingle)
+        {
+            Tracker tracker = this.ChooseTracker();
+            WaitHandle handle = tracker.Scrape(requestSingle, this.infoHash);
+            this.UpdateRecieved(this, new TrackerUpdateEventArgs(tracker, null));
+            return handle;
+        }
+
         /// <summary>
         /// Sends a status update to the tracker
         /// </summary>
@@ -175,61 +147,14 @@ namespace MonoTorrent.Client
         /// <param name="clientEvent">The Event (if any) that represents this update</param>
         public WaitHandle SendUpdate(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent)
         {
-            IPAddress ipAddress;
-            TrackerConnectionID id;
-            HttpWebRequest request;
-            StringBuilder sb = new StringBuilder(256);
-
-            this.updateSucceeded = true;        // If the update ends up failing, reset this to false.
             this.lastUpdated = DateTime.Now;
-
-            ipAddress = ConnectionListener.ListenEndPoint.Address;
-            if (ipAddress != null && (ipAddress == IPAddress.Any || ipAddress == IPAddress.Loopback))
-                ipAddress = null;
-
-            sb.Append(ChooseTracker());        // FIXME: Should cycle through trackers if a problem is found
-            sb.Append("?info_hash=");
-            sb.Append(System.Web.HttpUtility.UrlEncode(this.infoHash));
-            sb.Append("&peer_id=");
-            sb.Append(ClientEngine.PeerId);
-            sb.Append("&port=");
-            sb.Append(ConnectionListener.ListenEndPoint.Port);
-            sb.Append("&uploaded=");
-            sb.Append(bytesUploaded);
-            sb.Append("&downloaded=");
-            sb.Append(bytesDownloaded);
-            sb.Append("&left=");
-            sb.Append(bytesLeft);
-            sb.Append("&compact=");
-            sb.Append(this.compact);
-            //sb.Append("&numwant=");
-            //sb.Append(150);             //FIXME: 50 is enough?
-            if (ipAddress != null)
-            {
-                sb.Append("&ip=");
-                sb.Append(ipAddress.ToString());
-            }
-            if (clientEvent != TorrentEvent.None)
-            {
-                sb.Append("&event=");
-                sb.Append(clientEvent.ToString().ToLower());
-            }
-
-            if ((trackerId != null) && (trackerId.Length > 0))
-            {
-                sb.Append("&trackerid=");
-                sb.Append(trackerId);
-            }
-            request = (HttpWebRequest)HttpWebRequest.Create(sb.ToString());
-            request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
-
-            id = new TrackerConnectionID(request, manager);
-            IAsyncResult res = request.BeginGetResponse(new AsyncCallback(ResponseRecieved), id);
+            Tracker tracker = this.ChooseTracker();
+            WaitHandle handle = tracker.SendUpdate(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
 
             if (this.UpdateRecieved != null)
-                this.UpdateRecieved(this.manager, new TrackerUpdateEventArgs(TrackerState.Updating, null));
+                this.UpdateRecieved(this.manager, new TrackerUpdateEventArgs(tracker, null));
 
-            return res.AsyncWaitHandle;
+            return handle;
         }
 
 
@@ -251,13 +176,18 @@ namespace MonoTorrent.Client
             }
             catch (WebException ex)
             {
-                this.state = TrackerState.Inactive;
+                this.updateSucceeded = false;
+
+                if (id.Tracker.State == TrackerState.Announcing)
+                    id.Tracker.State = TrackerState.AnnouncingFailed;
+                else if (id.Tracker.State == TrackerState.Scraping)
+                    id.Tracker.State = TrackerState.ScrapingFailed;
+
                 if (this.UpdateRecieved != null)
-                    UpdateRecieved(this.manager, new TrackerUpdateEventArgs(TrackerState.UpdateFailed, null));
+                    UpdateRecieved(this.manager, new TrackerUpdateEventArgs(id.Tracker, null));
                 return;
             }
 
-            this.state = TrackerState.Active;
             MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 0);
 
             using (BinaryReader reader = new BinaryReader(response.GetResponseStream()))
@@ -282,8 +212,14 @@ namespace MonoTorrent.Client
                 }
             }
             response.Close();
+
+            if (id.Tracker.State == TrackerState.Announcing)
+                id.Tracker.State= TrackerState.AnnounceSuccessful;
+            else if (id.Tracker.State == TrackerState.Scraping)
+                id.Tracker.State = TrackerState.ScrapeSuccessful;
+
             if (this.UpdateRecieved != null)
-                UpdateRecieved(this.manager, new TrackerUpdateEventArgs(this.state, dataStream.ToArray()));
+                UpdateRecieved(this.manager, new TrackerUpdateEventArgs(id.Tracker, dataStream.ToArray()));
         }
 
 
@@ -291,16 +227,21 @@ namespace MonoTorrent.Client
         /// If a tracker is unreachable, the next tracker is chosen from the list
         /// </summary>
         /// <returns></returns>
-        private string ChooseTracker()
+        private Tracker ChooseTracker()
         {
-            if (this.state == TrackerState.UpdateFailed)
+            if (!this.updateSucceeded)
             {
-                this.lastUsedAnnounceUrl++;
-                if (this.lastUsedAnnounceUrl == this.announceUrls.Length)
-                    this.lastUsedAnnounceUrl = 0;
+                this.lastUsedTracker++;
+                if (this.lastUsedTracker == this.trackers.Length)
+                    this.lastUsedTracker = 0;
             }
 
-            return this.announceUrls[this.lastUsedAnnounceUrl];
+            return this.trackers[this.lastUsedTracker];
+        }
+
+        internal void OnTrackerEvent(object sender, TrackerUpdateEventArgs e)
+        {
+            this.UpdateRecieved(sender, e);
         }
         #endregion
     }

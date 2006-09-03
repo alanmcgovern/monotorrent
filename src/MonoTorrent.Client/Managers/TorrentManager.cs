@@ -114,11 +114,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The tracker connection associated with this TorrentManager
         /// </summary>
-        public TrackerManager TrackerConnection
+        public TrackerManager TrackerManager
         {
-            get { return this.trackerConnection; }
+            get { return this.trackerManager; }
         }
-        private TrackerManager trackerConnection;
+        private TrackerManager trackerManager;
 
 
         /// <summary>
@@ -290,8 +290,8 @@ namespace MonoTorrent.Client
             this.torrent = torrent;
             this.settings = settings;
 
-            this.trackerConnection = new TrackerManager(this);
-            this.trackerConnection.UpdateRecieved += new EventHandler<TrackerUpdateEventArgs>(TrackerUpdateRecieved);
+            this.trackerManager = new TrackerManager(this);
+            this.trackerManager.UpdateRecieved += new EventHandler<TrackerUpdateEventArgs>(TrackerUpdateRecieved);
 
             this.connectedPeers = new Peers(16);
             this.available = new Peers(16);
@@ -398,7 +398,7 @@ namespace MonoTorrent.Client
                     this.OnTorrentStateChanged(this, args);
             }
 
-            this.trackerConnection.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
+            this.trackerManager.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
 
         /// <summary>
@@ -415,7 +415,7 @@ namespace MonoTorrent.Client
                 this.OnTorrentStateChanged(this, args);
 
             this.diskManager.FlushAll();
-            handle = this.trackerConnection.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while(this.connectingTo.Count > 0)
@@ -576,17 +576,17 @@ namespace MonoTorrent.Client
                     }
 
                     // If the last connection succeeded, then update at the regular interval
-                    if (this.trackerConnection.UpdateSucceeded)
+                    if (this.trackerManager.UpdateSucceeded)
                     {
-                        if (DateTime.Now > (this.trackerConnection.LastUpdated.AddSeconds(this.trackerConnection.UpdateInterval)))
+                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                         {
-                            this.trackerConnection.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
-                    else if (DateTime.Now > (this.trackerConnection.LastUpdated.AddSeconds(this.trackerConnection.MinUpdateInterval)))
+                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
-                        this.trackerConnection.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
             }
@@ -632,13 +632,11 @@ namespace MonoTorrent.Client
         {
             int peersAdded = 0;
             BEncodedDictionary dict = null;
-            if (e.State == TrackerState.Updating)
-                Console.WriteLine("Tracker update begun");
 
-            if (e.State == TrackerState.UpdateFailed || e.State == TrackerState.Inactive)
-                Console.WriteLine("Tracker update failed. The tracker failed to return a response");
+            Console.WriteLine(e.Tracker.ToString());
 
-            if (e.State != TrackerState.Active) // Data only returned if it's active.
+            // Data only returned if the tracker update was successful
+            if (e.Tracker.State != TrackerState.AnnounceSuccessful && e.Tracker.State != TrackerState.ScrapeSuccessful) 
                 return;
 
             try
@@ -651,20 +649,25 @@ namespace MonoTorrent.Client
                 return;
             }
 
+            if (e.Tracker.State == TrackerState.ScrapeSuccessful)
+            {
+#warning DO STUFF
+            }
+            else    // Do a standard announce thingy
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
             {
                 switch (keypair.Key.Text)
                 {
                     case ("tracker id"):
-                        this.trackerConnection.TrackerId = keypair.Value.ToString();
+                        this.trackerManager.CurrentTracker.TrackerId = keypair.Value.ToString();
                         break;
 
                     case ("min interval"):
-                        this.trackerConnection.MinUpdateInterval = int.Parse(keypair.Value.ToString());
+                        this.trackerManager.CurrentTracker.MinUpdateInterval = int.Parse(keypair.Value.ToString());
                         break;
 
                     case ("interval"):
-                        this.trackerConnection.UpdateInterval = int.Parse(keypair.Value.ToString());
+                        this.trackerManager.CurrentTracker.UpdateInterval = int.Parse(keypair.Value.ToString());
                         break;
 
                     case ("peers"):
