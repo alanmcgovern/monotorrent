@@ -33,6 +33,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.PeerMessages;
 using System.Net.Sockets;
 using System.Threading;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
@@ -192,7 +193,7 @@ namespace MonoTorrent.Client
             {
                 id.Peer.ProcessingQueue = true;
                 id.Peer.LastMessageSent = Environment.TickCount;
-                id.Peer.Connection = new PeerConnection(id.Peer.PeerEndpoint);
+                id.Peer.Connection = new StandardConnection(id.Peer.PeerEndpoint);
                 id.Peer.Connection.BeginConnect(id.Peer.PeerEndpoint, peerEndCreateConnection, id);
             }
         }

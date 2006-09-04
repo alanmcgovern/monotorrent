@@ -39,6 +39,7 @@ using MonoTorrent.Client.PeerMessages;
 using System.IO;
 using System.Threading;
 using System.Xml.Serialization;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
@@ -405,7 +406,7 @@ namespace MonoTorrent.Client
                 peerSocket = peerSocket.EndAccept(result);
 
                 ClientPeer peer = new ClientPeer((IPEndPoint)peerSocket.RemoteEndPoint, null);
-                peer.Connection = new PeerConnection(peerSocket);
+                peer.Connection = new StandardConnection(peerSocket);
                 id = new PeerConnectionID(peer);
 
                 id.Peer.Connection.BytesRecieved = 0;

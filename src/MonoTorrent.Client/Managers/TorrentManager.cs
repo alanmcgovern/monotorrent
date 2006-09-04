@@ -515,7 +515,7 @@ namespace MonoTorrent.Client
                     id = this.connectedPeers[i];
                     lock (id)
                     {
-                        if (id.Peer.Connection == null) // Shouldn't really happen...
+                        if (id.Peer.Connection == null)
                             continue;
 
                         if (counter++ % 20 == 0)     // Call it every second... ish

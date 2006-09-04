@@ -38,6 +38,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Mono.Security, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Mono.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Web" />
@@ -52,10 +56,14 @@
     <Compile Include="Block.cs" />
     <Compile Include="ClientEngine.cs" />
     <Compile Include="ClientPeer.cs" />
+    <Compile Include="Encryption\StandardConnection.cs" />
+    <Compile Include="Encryption\RC4FullConnection.cs" />
+    <Compile Include="Encryption\RC4HeaderConnection.cs" />
     <Compile Include="IClientEngine.cs" />
     <Compile Include="IEngineSettings.cs" />
     <Compile Include="IPeerConnectionID.cs" />
     <Compile Include="ITorrentManager.cs" />
+    <Compile Include="PeerBase.cs" />
     <Compile Include="Tracker.cs" />
     <Compile Include="ConnectionListener.cs" />
     <Compile Include="EventArgs\MessageEventArgs.cs" />
@@ -71,7 +79,7 @@
     <Compile Include="Managers\FileManager.cs" />
     <Compile Include="Managers\PieceManager.cs" />
     <Compile Include="Managers\TorrentManager.cs" />
-    <Compile Include="PeerConnection.cs" />
+    <Compile Include="PeerConnectionBase.cs" />
     <Compile Include="PeerConnectionId.cs" />
     <Compile Include="PeerMessages\BitfieldMessage.cs" />
     <Compile Include="PeerMessages\CancelMessage.cs" />
