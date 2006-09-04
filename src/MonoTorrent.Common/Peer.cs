@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// Peer.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
