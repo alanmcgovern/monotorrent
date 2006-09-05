@@ -46,13 +46,13 @@ namespace MonoTorrent.Common
     ///</summary>
     public class TorrentCreator
     {
-        private List<string> _announces;//list of announce urls
+        private List<string> announces;//list of announce urls
         private bool doDummy;//used for size calculating
 
 
         public TorrentCreator()
         {
-            _announces = new List<string>();
+            announces = new List<string>();
         }
 
         ///<summary>the path from which you would like to make a torrent of.
@@ -62,14 +62,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _path;
+                return path;
             }
             set
             {
-                _path = value;
+                path = value;
             }
         }
-        private string _path;
+        private string path;
 
         ///<summary>
         ///this property sets the length of the pieces. default is 512 kb.
@@ -78,14 +78,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _pieceLength;
+                return piece_length;
             }
             set
             {
-                _pieceLength = value;
+                piece_length = value;
             }
         }
-        private int _pieceLength = 2 << 18;
+        private int piece_length = 2 << 18;
 
         ///<summary>
         ///this property sets the comment entry in the torrent file. default is string.Empty to conserve bandwidth.
@@ -94,14 +94,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _comment;
+                return comment;
             }
             set
             {
-                _comment = value;
+                comment = value;
             }
         }
-        private string _comment = string.Empty;
+        private string comment = string.Empty;
 
         ///<summary>this property sets the created by entrie in the torrent file
         ///</summary>
@@ -109,14 +109,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _createdBy;
+                return created_by;
             }
             set
             {
-                _createdBy = value;
+                created_by = value;
             }
         }
-        private string _createdBy = string.Empty;
+        private string created_by = string.Empty;
 
         ///<summary>this property sets wheather the optional field creation date should be included
         ///in the torrent or not. default is false to conserve bandwidth. </summary>
@@ -124,14 +124,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _storeDate;
+                return store_date;
             }
             set
             {
-                _storeDate = value;
+                store_date = value;
             }
         }
-        private bool _storeDate = false;
+        private bool store_date = false;
 
         ///<summary>this property sets wheather the optional field md5sum should be included. 
         ///default is false to conserve bandwidth
@@ -140,14 +140,14 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _storeMD5;
+                return store_md5;
             }
             set
             {
-                _storeMD5 = value;
+                store_md5 = value;
             }
         }
-        private bool _storeMD5 = false;
+        private bool store_md5 = false;
 
 
         ///<summary>
@@ -158,27 +158,27 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return _storeUTF8;
+                return store_utf8;
             }
             set
             {
-                _storeUTF8 = value;
+                store_utf8 = value;
             }
         }
-        private bool _storeUTF8 = false;
+        private bool store_utf8 = false;
 
         public bool IgnoreDotFiles
         {
             get
             {
-                return _ignoreDotFiles;
+                return ignore_dot_files;
             }
             set
             {
-                _ignoreDotFiles = value;
+                ignore_dot_files = value;
             }
         }
-        private bool _ignoreDotFiles = true;
+        private bool ignore_dot_files = true;
 
         ///<summary>
         ///returns the size of bytes required by the torrents with the current set properties.        
@@ -198,7 +198,7 @@ namespace MonoTorrent.Common
         ///</summary>
         public void AddAnnounce(string url)
         {
-            _announces.Add(url);
+            announces.Add(url);
         }
 
         ///<summary>
@@ -206,7 +206,26 @@ namespace MonoTorrent.Common
         ///</summary>
         public void RemoveAnnounce(string url)
         {
-            _announces.Remove(url);
+            announces.Remove(url);
+        }
+        
+        /// <summary>
+        /// This can be used to add Custom Values to the Torrent. This may be used to add" httpseeds" 
+        /// to the Torrent.
+        /// </summary>        
+        public void AddCustom(KeyValuePair<BEncodedString, IBEncodedValue> customInfo)
+        {
+        	custom_info = customInfo;
+        	use_custom = true;
+        }
+        private KeyValuePair<BEncodedString, IBEncodedValue> custom_info;
+        private bool use_custom = false;
+        
+        /// <summary>This removes the Custom Values from the Torrent.
+        /// </summary>
+        public void RemoveCustom()
+        {
+        	use_custom = false;
         }
 
         ///<summary>
@@ -322,14 +341,14 @@ namespace MonoTorrent.Common
             {
                 if (Directory.Exists(path))
                 {
-                    if (_ignoreDotFiles && System.IO.Path.GetDirectoryName(path)[0] == '.')
+                    if (ignore_dot_files && System.IO.Path.GetDirectoryName(path)[0] == '.')
                         continue;
 
                     AddAllFileInfoDicts(path, filesList, paths);
                     continue;
                 }
 
-                if (_ignoreDotFiles && System.IO.Path.GetFileName(path)[0] == '.')
+                if (ignore_dot_files && System.IO.Path.GetFileName(path)[0] == '.')
                     continue;
 
                 filesList.Add(GetFileInfoDict(path, dir));
@@ -375,39 +394,38 @@ namespace MonoTorrent.Common
         ///</summary>
         private void AddCommonStuff(BEncodedDictionary torrent)
         {
-            Debug.WriteLine(_announces[0]);
-            torrent.Add("announce", new BEncodedString(_announces[0]));
+            Debug.WriteLine(announces[0]);
+            torrent.Add("announce", new BEncodedString(announces[0]));
 
-            if (_announces.Count > 1)
-            {
+            if (announces.Count > 1) {
                 BEncodedList announceList = new BEncodedList();
-                foreach (string announce in _announces)
+                foreach (string announce in announces)
                 {
                     announceList.Add(new BEncodedString(announce));
                 }
                 torrent.Add("announce-list", announceList);
             }
 
-            if (Comment.Length > 0)
-            {
+            if (Comment.Length > 0) {
                 AddString(torrent, "comment", Comment);
             }
 
-            if (CreatedBy.Length > 0)
-            {
+            if (CreatedBy.Length > 0) {
                 AddString(torrent, "created by", CreatedBy);
             }
 
-            if (StoreCreationDate)
-            {
+            if (StoreCreationDate) {
                 DateTime epocheStart = new DateTime(1970, 1, 1);
                 TimeSpan span = DateTime.Now - epocheStart;
                 Debug.WriteLine("creation date: " + DateTime.Now.ToString() + " - " + epocheStart.ToString() + " = " + span.ToString() + " : " + (long)span.TotalSeconds);
                 torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
-            }
-
+            }			
 
             torrent.Add("encoding", (BEncodedString)"UTF-8");
+            
+            if (use_custom) {
+            	torrent.Add(custom_info);
+            }
         }
 
         ///<summary>calculate md5sum of a file</summary>
