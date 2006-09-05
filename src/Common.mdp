@@ -13,7 +13,9 @@
       <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
   </Configurations>
-  <DeployTargets />
+  <DeploymentInformation strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
   <Contents>
     <File name="./MonoTorrent.Common/Enums.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/ITorrent.cs" subtype="Code" buildaction="Compile" />
@@ -25,7 +27,6 @@
     <File name="./MonoTorrent.Common/Peer.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/Torrent.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/Test/BEncodingTest.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Common/OrderedDictionary.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/ToolBox.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/Test/TorrentTest.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/Test/TorrentCreatorSingleFileTest.cs" subtype="Code" buildaction="Compile" />
@@ -48,7 +49,4 @@
     <ProjectReference type="Gac" localcopy="True" refto="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
     <ProjectReference type="Gac" localcopy="True" refto="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </References>
-  <DeploymentInformation strategy="File">
-    <excludeFiles />
-  </DeploymentInformation>
 </Project>

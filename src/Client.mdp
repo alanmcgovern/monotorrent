@@ -13,7 +13,9 @@
       <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
   </Configurations>
-  <DeployTargets />
+  <DeploymentInformation strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
   <Contents>
     <File name="./MonoTorrent.Client/BitField.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/Block.cs" subtype="Code" buildaction="Compile" />
@@ -60,6 +62,11 @@
     <File name="./MonoTorrent.Client/IEngineSettings.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/IPeerConnectionID.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Client/ITorrentManager.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/Encryption/RC4FullConnection.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/Encryption/RC4HeaderConnection.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/Encryption/StandardConnection.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/PeerConnectionBase.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Client/Tracker.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
@@ -69,7 +76,4 @@
     <ProjectReference type="Gac" localcopy="True" refto="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
     <ProjectReference type="Gac" localcopy="True" refto="System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </References>
-  <DeploymentInformation strategy="File">
-    <excludeFiles />
-  </DeploymentInformation>
 </Project>
