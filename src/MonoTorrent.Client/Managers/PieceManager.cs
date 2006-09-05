@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
 
                     return null;        // We've requested all the blocks in this piece
                 }
-#warning Find a nice way of cycling through all the priorities from top down. At the moment i'll just handle DoNotDownload priorities
+
                 int i = -1;
                 for (int k = 0; k < (this.priorities.Length-1); k++)    // ignore "DoNotDownloads"
                 {
