@@ -192,6 +192,15 @@ namespace MonoTorrent.Client.PeerMessages
                     && this.dataOffset == msg.dataOffset
                     && this.fileManager == msg.fileManager);
         }
+
+        public override int GetHashCode()
+        {
+            return (this.blockLength.GetHashCode()
+                ^ this.dataOffset.GetHashCode()
+                ^ this.pieceIndex.GetHashCode()
+                ^ this.startOffset.GetHashCode()
+                ^ this.fileManager.GetHashCode());
+        }
         #endregion
     }
 }
