@@ -62,6 +62,11 @@ If anyone finds bugs or anything in the code (which i'm sure there are many :p) 
 	03) Add some stats to Asp.Net frontend
 	04) Add http torrent upload to Asp.Net frontend
 	05) Refactor identification of Peers into a seperate class and use that for indexing in dictionaries
+	06) Integrate the Tracker into the GUI 
+	06.1) Add Torrent Generation to the GUI
+	07) Add some events to the tracker so the gui can display some stats
+	08) Change the backend to use the event form 07
+	
 
 -- FEATURES TO BE IMPROVED --
 	01) Asp.Net Frontend needs to be improved
