@@ -68,7 +68,6 @@
     <Compile Include="TorrentFile.cs" />
     <Compile Include="TorrentReader.cs" />
     <Compile Include="VersionInfo.cs" />
-    <Compile Include="OrderedDictionary.cs" />
     <Compile Include="TorrentCreator.cs" />
   </ItemGroup>
   <ItemGroup>
