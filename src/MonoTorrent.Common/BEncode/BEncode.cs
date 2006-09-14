@@ -67,6 +67,38 @@ namespace MonoTorrent.Common
         }
 
 
+
+        /// <summary>
+        /// Decode BEncoded data in the given byte array
+        /// </summary>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
+        /// <param name="offset">The offset at which the data starts at</param>
+        /// <param name="length">The number of bytes to be decoded</param>
+        /// <returns>BEncodedValue containing the data that was in the byte[]<returns>
+        public static IBEncodedValue Decode(byte[] buffer, int offset, int length)
+        {
+            using (MemoryStream stream = new MemoryStream(buffer, offset, length))
+            using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
+                return Decode(reader);
+        }
+
+
+        /// <summary>
+        /// Decode BEncoded data in the given byte array
+        /// </summary>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
+        /// <param name="offset">The offset at which the data starts at</param>
+        /// <param name="length">The number of bytes to be decoded</param>
+        /// <param name="e">The encoding of the data</param>
+        /// <returns>BEncodedValue containing the data that was in the byte[]<returns>
+        public static IBEncodedValue Decode(byte[] buffer, int offset, int length, Encoding e)
+        {
+            using (MemoryStream stream = new MemoryStream(buffer, offset, length))
+            using (BinaryReader reader = new BinaryReader(stream, e))
+                return Decode(reader);
+        }
+
+
         /// <summary>
         /// Decode BEncoded data in the given stream 
         /// </summary>
