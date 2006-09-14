@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PeerMessages
     public class RequestMessage : IPeerMessage
     {
         private const int messageLength = 13;
-        private const int messageId = 6;
+        public const int MessageId = 6;
 
         #region Member Variables
         /// <summary>
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client.PeerMessages
         public int Encode(byte[] buffer, int offset)
         {
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.requestLength)), 0, buffer, offset + 13, 4);
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client.PeerMessages
             if (this.requestLength > (32768 * 2))
                 ClientEngine.connectionManager.CleanupSocket(id);
 
-            if (!id.Peer.AmChoking)
+            if (!id.Peer.Connection.AmChoking)
                 id.Peer.Connection.EnQueue(new PieceMessage(id.TorrentManager.DiskManager, this.PieceIndex, this.startOffset, this.requestLength));
         }
 

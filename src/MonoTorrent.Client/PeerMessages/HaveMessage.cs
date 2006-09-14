@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PeerMessages
     public class HaveMessage : IPeerMessage
     {
         private const int messageLength = 5;
-        private const int messageId = 4;
+        public const int MessageId = 4;
 
 
         #region Member Variables
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.PeerMessages
         public int Encode(byte[] buffer, int offset)
         {
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(pieceIndex)), 0, buffer, offset + 5, 4);
 
             return (messageLength + 4);
@@ -104,33 +104,34 @@ namespace MonoTorrent.Client.PeerMessages
             this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
         }
 
+#warning The below is duplicate code
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-            if (id.Peer.BitField != null)
-                id.Peer.BitField[this.pieceIndex] = true;
+            if (id.Peer.Connection.BitField != null)
+                id.Peer.Connection.BitField[this.pieceIndex] = true;
 
-            for (int i = 0; i < id.Peer.BitField.Array.Length - 1; i++)
-                if (id.Peer.BitField.Array[0] != ~0)
+            for (int i = 0; i < id.Peer.Connection.BitField.Array.Length - 1; i++)
+                if (id.Peer.Connection.BitField.Array[0] != ~0)
                 {
-                    id.Peer.PeerType = MonoTorrent.Common.PeerType.Leech;
+                    id.Peer.IsSeeder = false;
                     return;
                 }
 
 
-            for (int i = 32 * (id.Peer.BitField.Length - 1); i < id.Peer.BitField.Length; i++)
+            for (int i = 32 * (id.Peer.Connection.BitField.Length - 1); i < id.Peer.Connection.BitField.Length; i++)
             {
-                if (!id.Peer.BitField[i])
+                if (!id.Peer.Connection.BitField[i])
                 {
-                    id.Peer.PeerType = MonoTorrent.Common.PeerType.Leech;
+                    id.Peer.IsSeeder = false;
                     return;
                 }
             }
 
-            id.Peer.PeerType = MonoTorrent.Common.PeerType.Seed;
+            id.Peer.IsSeeder = true;
         }
 
         /// <summary>

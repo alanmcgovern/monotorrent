@@ -28,6 +28,8 @@
 
 
 
+using System;
+using System.Net;
 namespace MonoTorrent.Client.PeerMessages
 {
     /// <summary>
@@ -47,36 +49,78 @@ namespace MonoTorrent.Client.PeerMessages
             // The first byte tells us what kind of message it is
             switch (buffer[offset])
             {
-                case 0:
-                    message = new ChokeMessage();
+                case AllowedFastMessage.MessageId:
+                    message = new AllowedFastMessage();
                     break;
-                case 1:
-                    message = new UnchokeMessage();
-                    break;
-                case 2:
-                    message = new InterestedMessage();
-                    break;
-                case 3:
-                    message = new NotInterestedMessage();
-                    break;
-                case 4:
-                    message = new HaveMessage();
-                    break;
-                case 5:
+
+                case BitfieldMessage.MessageId:     // 5
                     message = new BitfieldMessage(manager.Torrent.Pieces.Length);
                     break;
-                case 6:
-                    message = new RequestMessage();
-                    break;
-                case 7:
-                    message = new PieceMessage(manager.DiskManager);
-                    break;
-                case 8:
+
+                case CancelMessage.MessageId:       // 8
                     message = new CancelMessage();
                     break;
-                case 9:
+
+                case ChokeMessage.MessageId:        // 0
+                    message = new ChokeMessage();
+                    break;
+
+                case ExtendedListMessage.MessageId: // 20
+                    message = new ExtendedListMessage();
+                    break;
+
+                case HaveAllMessage.MessageId:
+                    message = new HaveAllMessage();
+                    break;
+
+                case HaveMessage.MessageId:         // 4
+                    message = new HaveMessage();
+                    break;
+
+                case HaveNoneMessage.MessageId:
+                    message = new HaveNoneMessage();
+                    break;
+
+                case InterestedMessage.MessageId:   // 2
+                    message = new InterestedMessage();
+                    break;
+ 
+                case NotInterestedMessage.MessageId:// 3
+                    message = new NotInterestedMessage();
+                    break;
+
+                case PieceMessage.MessageId:        // 7
+                    message = new PieceMessage(manager.DiskManager);
+                    break;
+
+                case PortMessage.MessageId:         // 9
                     message = new PortMessage();
                     break;
+                    
+                case RejectRequestMessage.MessageId:
+                    message = new RejectRequestMessage();
+                    break;
+
+                case RequestMessage.MessageId:      // 6
+                    message = new RequestMessage();
+                    break;
+
+                case SuggestPieceMessage.MessageId:
+                    message = new RequestMessage();
+                    break;
+
+                case UnchokeMessage.MessageId:      // 1
+                    message = new UnchokeMessage();
+                    break;
+
+
+                case 21:                            // An "extended" message
+                    switch (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, ++offset)))
+                    {
+                        default:
+                            throw new NotSupportedException();
+                    }
+
                 default:
 #warning LOG THESE
                     return null;        

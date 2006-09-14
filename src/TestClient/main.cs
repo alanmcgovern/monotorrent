@@ -140,8 +140,98 @@ namespace TestClient
             }
         }
         #endregion
+        
+        /*
+        public void Main()
+        {
+            // An ITorrentManager is passed out of the engine when you load a torrent. This is
+            // used for controlling the torrent.
+            ITorrentManager torrentManager;
 
+            // These are the default settings for the engine for this session
+            EngineSettings engineSettings = EngineSettings.DefaultSettings;
 
+            // The default location to download files to on your HardDrive, like a downloads folder
+            // All files will be downloaded using this as the base directory. Single file torrents will
+            // go directly into this directory, multifile torrents will create a directory within this
+            // and download there.
+            engineSettings.DefaultSavePath = @"D:\Downloads\Torrents";
+
+            // Maximum upload speed of 30 kB/sec. At upload speeds of less than 5kB/sec, there will
+            // be automatic download speed limiting to 5x the selected upload.
+            engineSettings.GlobalMaxUploadSpeed = 30;
+
+            // Every torrent loaded into the engine for this session will start off with these default settings
+            // unless other settings are specified.
+            TorrentSettings torrentSettings = TorrentSettings.DefaultSettings;
+
+            // Each torrent will be allowed a max of 10kB/sec upload speed
+            torrentSettings.MaxUploadSpeed = 10;
+
+            // Each torrent will have 4 upload slots to allow 2.5kB/sec per slot.
+            torrentSettings.UploadSlots = 4;
+
+            // Instantiate a new engine with the engineSettings and Default Torrent settings.
+            ClientEngine engine = new ClientEngine(engineSettings, torrentSettings);
+
+            // A torrent can be downloaded from the specified url, saved to the specified file and
+            // then loaded into the engine.
+            // torrentManager =engine.LoadTorrent(new Uri("http://example.com/example.torrent"), @"D:\Downloads\example.torrent");
+
+            // Alternatively a .torrent can just be loaded from the disk. This torrent will save
+            // to the DefaultSaveLocation as specified in the EngineSettings and will inherit the
+            // default settings that are set in the Engine.
+            //torrentManager = engine.LoadTorrent(@"D:\Downloads\Torrents\MyTorrentFile.torrent");
+
+            // This torrent would use the supplied settings instead of using the ones that were
+            // supplied when instantiating the engine
+            torrentManager = engine.LoadTorrent(@"D:\Downloads\Torrents\MyTorrentFile.torrent", TorrentSettings.DefaultSettings);
+
+            // If you have loaded multiple torrents into the engine, you can start them all at once with this:
+            // engine.Start();
+
+            // Or you can start one specific torrent by passing in that torrents ITorrentManager
+            engine.Start(torrentManager);
+
+            // You can hook into various events in order to display information on screen:
+            // Fired every time a peer is added through DHT, PEX or Tracker Updates
+            torrentManager.OnPeersAdded+=new EventHandler<PeersAddedEventArgs>(PeersAdded);
+
+            // Fired every time a piece is hashed
+            torrentManager.OnPieceHashed+=new EventHandler<PieceHashedEventArgs>(PieceHashed);
+
+            // Fired every time the torrent State changes (i.e. paused/hashing/downloading)
+            torrentManager.OnTorrentStateChanged+= new EventHandler<TorrentStateChangedEventArgs>(torrentStateChanged);
+            
+            // Fired every time a piece changes. i.e. block sent/received/written to disk
+            torrentManager.PieceManager.OnPieceChanged+=new EventHandler<PieceEventArgs>(pieceStateChanged);
+            
+            // Fired every time a connection is either created or destroyed
+            ClientEngine.connectionManager.OnPeerConnectionChanged+=new EventHandler<PeerConnectionEventArgs>(peerConnectionChanged);
+           
+            // Fired every time a peer message is sent
+            ClientEngine.connectionManager.OnPeerMessages+= new EventHandler<PeerMessageEventArgs>(peerMessageSentOrRecieved);
+
+            // Keep running while the torrent isn't stopped or paused.
+            while (torrentManager.State != TorrentState.Stopped || torrentManager.State != TorrentState.Paused)
+            {
+                Console.WriteLine(torrentManager.Progress());
+                System.Threading.Thread.Sleep(1000);
+
+                if (torrentManager.Progress() == 100.0)
+                {
+                    // If we want to stop a torrent, or the engine for whatever reason, we call engine.Stop()
+                    // A tracker update *must* be performed before the engine is shut down, so you must
+                    // wait for the waithandle to become signaled before continuing with the complete
+                    // shutdown of your client. Otherwise stats will not get reported correctly.
+                    WaitHandle[] handles = engine.Stop();
+                    WaitHandle.WaitAll(handles);
+                    return;
+                }
+            }
+        }
+
+        */
         #region events i've hooked into
         static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
         {

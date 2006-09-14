@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PeerMessages
     public class InterestedMessage : IPeerMessage
     {
         private const int messageLength = 1;
-        private const int messageId = 2;
+        public const int MessageId = 2;
 
 
         #region Constructors
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.PeerMessages
         public int Encode(byte[] buffer, int offset)
         {
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
 
             return (messageLength + 4);
         }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-            id.Peer.IsInterested = true;
+            id.Peer.Connection.IsInterested = true;
         }
 
 

@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class PieceMessage : IPeerMessage
     {
-        private const int messageId = 7;
+        public const int MessageId = 7;
         private const int messageLength = 9;
 
         #region Member Variables
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         public int Encode(byte[] buffer, int offset)
         {
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + blockLength)), 0, buffer, offset, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);

@@ -205,6 +205,7 @@ namespace MonoTorrent.Client
         /// <param name="value"></param>
         public void SetAll(bool value)
         {
+#warning Set the remaining bits in the last byte = 0.
             if (value)
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;

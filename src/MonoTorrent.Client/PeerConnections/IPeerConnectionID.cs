@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// IPeerConnectionID.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,12 +28,27 @@
 
 
 
-using System.Net;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using MonoTorrent.Common;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Client
 {
-    public interface IPeer
+    /// <summary>
+    /// The interface to access a PeerConnectionID from
+    /// </summary>
+    public interface IPeerConnectionID
     {
-        string PeerId { get; }
+        /// <summary>
+        /// The IPeer in this ID
+        /// </summary>
+        IPeer Peer { get; }
+
+
+        /// <summary>
+        /// The ITorrentManager in this ID
+        /// </summary>
+        ITorrentManager TorrentManager { get; }
     }
 }

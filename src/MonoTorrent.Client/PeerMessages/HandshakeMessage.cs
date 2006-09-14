@@ -30,15 +30,18 @@
 
 using System;
 using MonoTorrent.Common;
+using System.Net;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-#warning Make this an IPeerMessage too... Possibly rewrite for neatness
     /// <summary>
     /// 
     /// </summary>
-    public class HandshakeMessage
+    public class HandshakeMessage : IPeerMessage
     {
+        private const byte FastPeersFlag = 0x04;
+
+
         #region Member Variables
         /// <summary>
         /// The length of the protocol string
@@ -78,6 +81,16 @@ namespace MonoTorrent.Client.PeerMessages
             get { return this.peerId; }
         }
         private string peerId;
+
+
+        /// <summary>
+        /// True if the peer supports the Bittorrent FastPeerExtensions
+        /// </summary>
+        public bool SupportsFastPeer
+        {
+            get { return this.supportsFastPeer; }
+        }
+        private bool supportsFastPeer;
         #endregion
 
 
@@ -97,6 +110,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="peerId">The ID of the peer</param>
         /// <param name="protocolString">The protocol string to send</param>
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString)
+            : this()
         {
             this.infoHash = infoHash;
             this.peerId = peerId;
@@ -106,7 +120,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the HandshakeMessage into the supplied buffer
         /// </summary>
@@ -115,7 +129,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         public int Encode(byte[] buffer, int offset)
         {
-            int i = 0;
+            int i = offset;
 
             // Copy in the length of the protocol string
             buffer[i++] = (byte)protocolString.Length;
@@ -124,7 +138,9 @@ namespace MonoTorrent.Client.PeerMessages
             System.Text.Encoding.ASCII.GetBytes(protocolString, 0, protocolString.Length, buffer, i);
             i += protocolString.Length;
 
-            // Skip past the 8 reserved bytes
+            // The 8 reserved bits are here
+            if(ClientEngine.SupportsFastPeer)
+                buffer[i + 7] |= FastPeersFlag;
             i += 8;
 
             // Copy in the infohash
@@ -156,12 +172,49 @@ namespace MonoTorrent.Client.PeerMessages
             i += protocolStringLength;                               // Next bytes are protocol string
             i += 8;                                                   // 8 reserved bytes
             this.infoHash = new byte[20];
-            //Debug.WriteLine("03 Allocated: " + this.infoHash.Length.ToString());
+
             Buffer.BlockCopy(buffer, i, this.infoHash, 0, infoHash.Length);
             i += infoHash.Length;                                   // 20 byte infohash
 
             peerId = System.Text.Encoding.ASCII.GetString(buffer, i, 20);
             i += 20;                                                // 20 byte peerid
+            CheckForSupports(buffer, offset + protocolStringLength + 1);
+        }
+
+
+        private void CheckForSupports(byte[] buffer, int reservedBytesStartIndex)
+        {
+            this.supportsFastPeer = (FastPeersFlag & buffer[reservedBytesStartIndex + 7]) != 0;
+            //int bitNumber = 0;
+            //for (int i = reservedBytesStartIndex; i < reservedBytesStartIndex + 8; i++)
+            //{
+            //    if (buffer[i] != 0)
+            //    {
+            //        for (int j = 7; j >= 0; j--)
+            //        {
+            //            int temp = 1 << j;
+            //            if ((buffer[i] & temp) > 0)
+            //            {
+            //                int value = ((i - reservedBytesStartIndex) * 8 + 7 - j) + 1;
+            //                System.Diagnostics.Debug.Write("\n");
+            //                System.Diagnostics.Debug.Write(value.ToString());
+            //                System.Diagnostics.Debug.Write("\t" + this.PeerId);
+            //            }
+            //        }
+            //    }
+            //}
+        }
+
+
+        public void Handle(PeerConnectionID id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int ByteLength
+        {
+#warning Update this
+            get { return 68; }
         }
         #endregion
 
@@ -176,6 +229,7 @@ namespace MonoTorrent.Client.PeerMessages
             return "HandshakeMessage";
         }
 
+
         public override bool Equals(object obj)
         {
             HandshakeMessage msg = obj as HandshakeMessage;
@@ -183,12 +237,13 @@ namespace MonoTorrent.Client.PeerMessages
             if (msg == null)
                 return false;
 
-            if(!ToolBox.ByteMatch(this.infoHash, msg.infoHash))
+            if (!ToolBox.ByteMatch(this.infoHash, msg.infoHash))
                 return false;
 
             return (this.peerId == msg.peerId
                     && this.protocolString == msg.protocolString);
         }
+
 
         public override int GetHashCode()
         {

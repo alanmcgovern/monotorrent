@@ -1,14 +1,18 @@
 CSC=gmcs 
 OUT=../Client.dll
-REFERENCES=../Common.dll,System.Web
+REFERENCES=../Common.dll,System.Web,../Mono.Security.dll
 SOURCES=BitField.cs \
 Block.cs \
 ClientEngine.cs \
-ClientPeer.cs \
 ConnectionListener.cs \
-Encryption/RC4FullConnection.cs \
-Encryption/RC4HeaderConnection.cs \
-Encryption/StandardConnection.cs \
+IClientEngine.cs \
+IEngineSettings.cs \
+IPieceManager.cs \
+ITorrentManager.cs \
+Encryption/IEncryptor.cs \
+Encryption/NoEncryption.cs \
+Encryption/RC4FullEncryption.cs \
+Encryption/RC4HeaderEncryption.cs \
 EventArgs/MessageEventArgs.cs \
 EventArgs/PeerConnectionEventArgs.cs \
 EventArgs/PeersAddedEventArgs.cs \
@@ -16,21 +20,18 @@ EventArgs/PieceEventArgs.cs \
 EventArgs/PieceHashedEventArgs.cs \
 EventArgs/TorrentStateChangedEventArgs.cs \
 EventArgs/TrackerEventArgs.cs \
-IClientEngine.cs \
-IEngineSettings.cs \
-IPeerConnectionID.cs \
-IPieceManager.cs \
-ITorrentManager.cs \
+Peers/Peer.cs \
+Peers/Peers.cs \
+PeerConnections/PeerConnectionId.cs \
+PeerConnections/IPeerConnectionID.cs \
+PeerConnections/PeerConnectionBase.cs \
+PeerConnections/TCPConnection.cs \
 Managers/ConnectionManager.cs \
 Managers/ConnectionMonitor.cs \
 Managers/FileManager.cs \
 Managers/PieceManager.cs \
 Managers/TorrentManager.cs \
 Managers/TrackerManager.cs \
-PeerBase.cs \
-PeerConnectionBase.cs \
-PeerConnection.cs \
-PeerConnectionId.cs \
 PeerMessages/BitfieldMessage.cs \
 PeerMessages/CancelMessage.cs \
 PeerMessages/ChokeMessage.cs \
@@ -45,15 +46,23 @@ PeerMessages/PieceMessage.cs \
 PeerMessages/PortMessage.cs \
 PeerMessages/RequestMessage.cs \
 PeerMessages/UnchokeMessage.cs \
-Peers.cs \
-Piece.cs \
+PeerMessages/ExtendedMessages/ExtendedListMessage.cs \
+PeerMessages/FastPeerExtensions/AllowedFastMessage.cs \
+PeerMessages/FastPeerExtensions/HaveAllMessage.cs \
+PeerMessages/FastPeerExtensions/HaveNoneMessage.cs \
+PeerMessages/FastPeerExtensions/RejectRequestMessage.cs \
+PeerMessages/FastPeerExtensions/SuggestPieceMessage.cs \
 Settings/EngineSettings.cs \
 Settings/TorrentSettings.cs \
+Piece.cs \
 TrackerConnectionId.cs \
+AllowedFastAlgorithm.cs \
 Tracker.cs
+
 #Tests/BitFieldTest.cs \
 #Tests/FileManager.cs \
 #Tests/PeerMessagesTest.cs \
+#Tests/AllowedFastAlgorithmTest.cs \
 
 
 all: client

@@ -163,11 +163,12 @@ namespace MonoTorrent.Client
 
             this.announceUrl = announceUrl;
             this.requestCallback = requestCallback;
-            if (announceUrl.Substring(announceUrl.LastIndexOf('/') + 1, 8) == "announce")
+            int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
+            if (announceUrl.Substring(indexOfAnnounce, 8) == "announce")
             {
                 this.canScrape = true;
-                Regex r = new Regex("announce", RegexOptions.RightToLeft);
-                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1);
+                Regex r = new Regex("announce");
+                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, indexOfAnnounce);
             }
         }
         #endregion
@@ -219,8 +220,8 @@ namespace MonoTorrent.Client
             sb.Append(bytesLeft);
             sb.Append("&compact=");
             sb.Append(this.compact);
-            //sb.Append("&numwant=");
-            //sb.Append(150);             //FIXME: 50 is enough?
+            sb.Append("&numwant=");
+            sb.Append(150);             //FIXME: 50 is enough?
             if (ipAddress != null)
             {
                 sb.Append("&ip=");
@@ -241,7 +242,7 @@ namespace MonoTorrent.Client
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
 
             id = new TrackerConnectionID(request, this);
-            IAsyncResult res = request.BeginGetResponse(new AsyncCallback(this.requestCallback), id);
+            IAsyncResult res = request.BeginGetResponse(this.requestCallback, id);
 
             return res.AsyncWaitHandle;
         }

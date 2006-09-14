@@ -48,6 +48,10 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IClientEngine, IDisposable
     {
+        #region GlobalSupports
+        public const bool SupportsFastPeer = false;
+        #endregion
+
         #region Member Variables
         private System.Timers.Timer timer;
 
@@ -365,8 +369,6 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 12; i++)
                 sb.Append(rand.Next(0, 9));
 
-#warning HARDCODED CLIENT ID
-            return "-MO0001-152070484264";
             return sb.ToString();
         }
 
@@ -405,8 +407,8 @@ namespace MonoTorrent.Client
 
                 peerSocket = peerSocket.EndAccept(result);
 
-                ClientPeer peer = new ClientPeer((IPEndPoint)peerSocket.RemoteEndPoint, null);
-                peer.Connection = new StandardConnection(peerSocket);
+                Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
+                peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
                 id = new PeerConnectionID(peer);
 
                 id.Peer.Connection.BytesRecieved = 0;
@@ -467,7 +469,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
                 id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.connectionManager.IncomingConnectionAccepted), id);
-                id.Peer.ProcessingQueue = false;
+                id.Peer.Connection.ProcessingQueue = false;
                 return;
             }
 

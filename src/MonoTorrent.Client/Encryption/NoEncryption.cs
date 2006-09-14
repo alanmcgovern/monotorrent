@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// NoEncryption.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,12 +28,29 @@
 
 
 
+using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Net;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Client.Encryption
 {
-    public interface IPeer
+    public class NoEncryption : IEncryptor
     {
-        string PeerId { get; }
+        public NoEncryption()
+        {
+        }
+
+
+        public void Encrypt(byte[] buffer, int offset, int count)
+        {
+            return;
+        }
+
+
+        public void Decrypt(byte[] buffer, int offset, int count)
+        {
+            return;
+        }
     }
 }

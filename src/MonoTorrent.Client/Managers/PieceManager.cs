@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
                     Array.Copy(this.mybitField.Array, 0, bufferField.Array, 0, this.mybitField.Array.Length);
 
                 bufferField.Not();
-                bufferField.And(id.Peer.BitField);
+                bufferField.And(id.Peer.Connection.BitField);
 
                 if (requests.ContainsKey(id))       // There's a pending request on this peer
                 {
@@ -119,9 +119,9 @@ namespace MonoTorrent.Client
                 }
 
                 int i = -1;
-                for (int k = 0; k < (this.priorities.Length-1); k++)    // ignore "DoNotDownloads"
+                for (int k = 0; k < (this.priorities.Length - 1); k++)    // ignore "DoNotDownloads"
                 {
-                    for(int j = 0; j < this.torrentFiles.Length; j++)
+                    for (int j = 0; j < this.torrentFiles.Length; j++)
                     {
                         if (this.torrentFiles[j].Priority != (Priority)k)
                             continue;
@@ -144,7 +144,6 @@ namespace MonoTorrent.Client
                 return piece[0].CreateRequest();
             }
         }
-
 
         /// <summary>
         /// Returns the number of outstanding requests
@@ -172,7 +171,7 @@ namespace MonoTorrent.Client
                     Array.Copy(mybitField.Array, 0, isInterestingBuffer.Array, 0, mybitField.Array.Length);
                 
                 isInterestingBuffer.Not();
-                isInterestingBuffer.And(id.Peer.BitField);
+                isInterestingBuffer.And(id.Peer.Connection.BitField);
                 if (!isInterestingBuffer.AllFalse())
                     return true;                            // He's interesting if he has a piece we want
 
@@ -195,11 +194,12 @@ namespace MonoTorrent.Client
                     this.mybitField[piece.Index] = false;
                     this.requests.Remove(id);
                 }
-
-                id.Peer.AmRequestingPiecesCount = 0;
+                id.Peer.Connection.AmRequestingPiecesCount = 0;
             }
         }
 
+
+#warning Fix this up a little, it's a bit messy after the refactor.
         /// <summary>
         /// 
         /// </summary>
@@ -208,7 +208,6 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-#warning Fix this up a little, it's a bit messy after the refactor.
         internal void RecievedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, int writeIndex, int p, PieceMessage message)
         {
             id.TorrentManager.DiskManager.Write(recieveBuffer, offset, writeIndex, p);
@@ -232,7 +231,7 @@ namespace MonoTorrent.Client
                         if (this.OnPieceChanged != null)
                             this.OnPieceChanged((ITorrentManager)id.TorrentManager, new PieceEventArgs(message.PieceIndex, PieceEvent.BlockRecieved));
 
-                        id.Peer.AmRequestingPiecesCount--;
+                        id.Peer.Connection.AmRequestingPiecesCount--;
                         break;
                     }
                 }
@@ -255,5 +254,28 @@ namespace MonoTorrent.Client
             }
         }
         #endregion
+
+        internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage rejectRequestMessage)
+        {
+            lock (this.requests)
+            {
+                if (!this.requests.ContainsKey(id))
+                    return;
+
+                Piece p = this.requests[id];
+
+                if (p.Index != rejectRequestMessage.PieceIndex)
+                    return;
+
+                foreach (Block block in p)
+                {
+                    if (block.StartOffset != rejectRequestMessage.StartOffset)
+                        continue;
+
+                    block.Requested = false;
+                    break;
+                }
+            }
+        }
     }
 }

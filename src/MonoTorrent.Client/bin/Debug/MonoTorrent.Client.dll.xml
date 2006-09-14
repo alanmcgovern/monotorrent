@@ -1,475 +1,428 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>MonoTorrent.Client</name>
+        <name>obj\Debug\MonoTorrent.Client</name>
     </assembly>
     <members>
-        <member name="T:MonoTorrent.Client.PeerMessages.CancelMessage">
+        <member name="T:MonoTorrent.Client.IClientEngine">
             <summary>
-            
+            The interface to access the ClientEngine with
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IClientEngine.Settings">
+            <summary>
+            The settings for the engine
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.IClientEngine.LoadTorrent(System.String)">
+            <summary>
+            Loads a .torrent into the engine
+            </summary>
+            <param name="path">The path to load the .torrent from</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.IClientEngine.Start(MonoTorrent.Client.ITorrentManager)">
+            <summary>
+            Allows a TorrentManager to begin uploading/downloading
+            </summary>
+            <param name="torrent">The TorrentManager to start</param>
+        </member>
+        <member name="M:MonoTorrent.Client.IClientEngine.Pause(MonoTorrent.Client.ITorrentManager)">
+            <summary>
+            Suspends downloading and uploading without disposing of peer information
+            </summary>
+            <param name="torrent">The TorrentManager to suspend</param>
+        </member>
+        <member name="M:MonoTorrent.Client.IClientEngine.Stop(MonoTorrent.Client.ITorrentManager)">
+            <summary>
+            Stops uploading and downloading and disposes of peer information
+            </summary>
+            <param name="torrent">The TorrentManager to stop</param>
+        </member>
+        <member name="T:MonoTorrent.Client.IEngineSettings">
+            <summary>
+            The interface with which to access the EngineSettings
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.GlobalMaxDownloadSpeed">
+            <summary>
+            The maximum combined download speed for all torrents currently running
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.GlobalMaxUploadSpeed">
+            <summary>
+            The maximum combined upload speed for all torrents currently running
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.DefaultSavePath">
+            <summary>
+            The default directory to save torrents to
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.GlobalMaxConnections">
+            <summary>
+            The maximum combined concurrent open connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.GlobalMaxHalfOpenConnections">
+            <summary>
+            The maximum combined concurrent half open connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.IEngineSettings.ListenPort">
+            <summary>
+            The port to accept incoming connections on
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.ITorrentManager">
+            <summary>
+            Interface used to interact with .torrents loaded into the Engine.
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Client.ITorrentManager.OnPeersAdded">
+            <summary>
+            Event fired when new peers are found due to a tracker update
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Client.ITorrentManager.OnPieceHashed">
+            <summary>
+            Event fired every time a piece is hashed
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Client.ITorrentManager.OnTorrentStateChanged">
+            /<summary>
+            Event fired every time the TorrentManager's state changes
+            </summary></member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.Torrent">
+            <summary>
+            Returns a torrent instance.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.State">
+            <summary>
+            The current state of the torrent.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.BytesDownloaded">
+            <summary>
+            The count of already downloaded bytes.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.BytesUploaded">
+            <summary>
+            The count of already downloaded bytes.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.SavePath">
+            <summary>
+            The path to save the files to
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ITorrentManager.PieceManager">
+            <summary>
+            The piecemanager associated with this ITorrentManager
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ITorrentManager.Progress">
+            <summary>
+            The current progress of the torrent in percent.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ITorrentManager.DownloadSpeed">
+            <summary>
+            The current download speed in bytes per second
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.ITorrentManager.UploadSpeed">
+            <summary>
+            The current upload speed in bytes per second
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Common.IPieceManager">
+            <summary>
+            Interface for accessing the PieceManager
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Common.IPieceManager.OnPieceChanged">
+            <summary>
+            Event that's fired every time a Piece changes
             </summary>
         </member>
         <member name="T:MonoTorrent.Client.PeerMessages.IPeerMessage">
             <summary>
-            
+            Common interface for all PeerMessages
             </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
         </member>
         <member name="P:MonoTorrent.Client.PeerMessages.IPeerMessage.ByteLength">
             <summary>
-            
+            Returns the length of the message in bytes
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.#ctor">
+        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Encode(System.Byte[],System.Int32)">
             <summary>
-            
+            Encodes the PeerMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a peer message from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.IPeerMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="T:MonoTorrent.Client.IPeerConnectionID">
+            <summary>
+            The interface to access a PeerConnectionID from
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
+        <member name="P:MonoTorrent.Client.IPeerConnectionID.Peer">
             <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.StartOffset">
-            <summary>
-            
+            The IPeer in this ID
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.PieceIndex">
+        <member name="P:MonoTorrent.Client.IPeerConnectionID.TorrentManager">
             <summary>
-            
+            The ITorrentManager in this ID
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.RequestLength">
+        <member name="T:MonoTorrent.Client.BitField">
             <summary>
-            
+            This class is for represting the Peer's bitfield
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.ByteLength">
+        <member name="M:MonoTorrent.Client.BitField.#ctor(System.Int32)">
             <summary>
-            
+            Creates a new BitField
             </summary>
+            <param name="length">The length of the BitField</param>
+        </member>
+        <member name="P:MonoTorrent.Client.BitField.Item(System.Int32)">
+            <summary>
+            Returns the value of the BitField at the specified index
+            </summary>
+            <param name="index">The index of the BitField to check</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="P:MonoTorrent.Client.BitField.Length">
+            <summary>
+            Returns the length of the BitField
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.BitField.Array">
+            <summary>
+            The internal int array for the BitField
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.BitField.LengthInBytes">
+            <summary>
+            Returns the length of this message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.IEnumerable.GetEnumerator">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Clone">
+            <summary>
+            Clones the BitField
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Not">
+            <summary>
+            Performs binary NOT on all the elements of the bitarray
+            </summary>
+            <returns>Itself</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.And(MonoTorrent.Client.BitField)">
+            <summary>
+            Performs binary AND on all the elements of this BitField against the elements of the supplied BitField
+            </summary>
+            <param name="value">The BitField with which to perform the operation against</param>
+            <returns>Itself</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Or(MonoTorrent.Client.BitField)">
+            <summary>
+            Performs binary OR on all the elements of this BitField against the elements of the supplied BitField
+            </summary>
+            <param name="value">The BitField with which to perform the operation against</param>
+            <returns>Itself</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Xor(MonoTorrent.Client.BitField)">
+            <summary>
+            Performs binary EXCLUSIVE OR on all the elements of this BitField against the elements of the supplied BitField
+            </summary>
+            <param name="value">The BitField with which to perform the operation against</param>
+            <returns>Itself</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Get(System.Int32)">
+            <summary>
+            Returns the value of the BitField at the specified index
+            </summary>
+            <param name="index">The index to return</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.Set(System.Int32,System.Boolean)">
+            <summary>
+            Sets the value of the BitField at the specified index
+            </summary>
+            <param name="index">The index to set</param>
+            <param name="value">The value to set</param>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.SetAll(System.Boolean)">
+            <summary>
+            Sets all values in the BitArray to the specified value
+            </summary>
+            <param name="value">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.GetEnumerator">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.AllFalse">
+            <summary>
+            Returns True if all the elements in the BitField are false
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.FirstTrue">
+            <summary>
+            Returns the first index of the BitField that is true. If no elements are true, returns -1
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.FirstTrue(System.Int32,System.Int32)">
+            <summary>
+            Returns the first index of the BitField that is true between the start and end index
+            </summary>
+            <param name="startIndex">
+            </param>
+            <param name="endIndex">
+            </param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.ToByteArray(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the bitfield to a byte array
+            </summary>
+            <param name="buffer">The buffer to encode the BitField to</param>
+            <param name="offset">The index to start encoding at</param>
+        </member>
+        <member name="M:MonoTorrent.Client.BitField.FromArray(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a BitField from the supplied buffer
+            </summary>
+            <param name="buffer">The buffer containing the BitField</param>
+            <param name="offset">The offset at which to start decoding the BitField at</param>
+            <param name="length">The maximum number of bytes to read while decoding the BitField</param>
         </member>
         <member name="T:MonoTorrent.Client.Block">
             <summary>
-            
             </summary>
         </member>
         <member name="M:MonoTorrent.Client.Block.#ctor(System.Int32,System.Int32,System.Int32)">
             <summary>
-            
+            Creates a new Block
             </summary>
-            <param name="pieceIndex"></param>
-            <param name="startOffset"></param>
-            <param name="requestLength"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.Block.CreateRequest">
-            <summary>
-            
-            </summary>
-            <returns></returns>
+            <param name="pieceIndex">The index of the piece this block is from</param>
+            <param name="startOffset">The offset in bytes that this block starts at</param>
+            <param name="requestLength">The length in bytes of the block</param>
         </member>
         <member name="P:MonoTorrent.Client.Block.PieceIndex">
             <summary>
-            
+            The index of the piece
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.Block.StartOffset">
             <summary>
-            
+            The offset in bytes that this block starts at
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.Block.RequestLength">
             <summary>
-            
+            The length in bytes of this block
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.Block.Requested">
             <summary>
-            
+            True if this block has been requested
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.Block.Recieved">
             <summary>
-            
+            True if this piece has been recieved
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.EngineSettings.#ctor(System.Int32,System.Int32,System.String,System.Int32)">
+        <member name="M:MonoTorrent.Client.Block.CreateRequest">
             <summary>
-            Initialises a new engine settings with the supplied values
+            Creates a RequestMessage for this Block
             </summary>
-            <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
-            <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
-            <param name="defaultSavePath">The default path to save downloaded material to</param>
-            <param name="listenPort">The port to listen for incoming connections on</param>
+            <returns>
+            </returns>
         </member>
-        <member name="M:MonoTorrent.Client.EngineSettings.#ctor(System.Int32,System.Int32,System.String,System.Int32,System.Int32,System.Int32)">
+        <member name="T:MonoTorrent.Client.ClientEngine">
             <summary>
-            Initialises a new engine settings with the supplied values
-            </summary>
-            <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
-            <param name="globalMaxDownloadSpeed">The overall maximum download speed</param>
-            <param name="globalMaxUploadSpeed">The overall maximum upload speed</param>
-            <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
-            <param name="defaultSavePath">The default path to save downloaded material to</param>
-            <param name="listenPort">The port to listen for incoming connections on</param>
-        </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.DefaultSettings">
-            <summary>
-            These are hardcoded default settings. They should be good enough
-            for connections with upload between 128kB/sec and 512kB/sec
+            The Engine that contains the TorrentManagers
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.DefaultSavePath">
+        <member name="M:MonoTorrent.Client.ClientEngine.#ctor(MonoTorrent.Client.EngineSettings,MonoTorrent.Client.TorrentSettings)">
             <summary>
-            This is the default directory that torrents will be downloaded to
+            Creates a new ClientEngine
+            </summary>
+            <param name="engineSettings">The engine settings to use</param>
+            <param name="defaultTorrentSettings">The default settings for new torrents</param>
+        </member>
+        <member name="F:MonoTorrent.Client.ClientEngine.connectionManager">
+            <summary>
+            The connection manager which manages all the connections for the library
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxConnections">
+        <member name="P:MonoTorrent.Client.ClientEngine.PeerId">
             <summary>
-            This is the max open connections the library can have
+            Returns the engines PeerID
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxHalfOpenConnections">
+        <member name="P:MonoTorrent.Client.ClientEngine.Settings">
             <summary>
-            This is the max half-open connections the library can have
+            The engines settings
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxDownloadSpeed">
+        <member name="P:MonoTorrent.Client.ClientEngine.DefaultTorrentSettings">
             <summary>
-            This is the max allowable combined download speed of the library
+            The default settings to be used by newly added torrents
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxUploadSpeed">
+        <member name="P:MonoTorrent.Client.ClientEngine.Torrents">
             <summary>
-            This is the max allowable combined upload speed of the library
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.EngineSettings.ListenPort">
-            <summary>
-            The port to listen for incoming connections on
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerMessages.BitfieldMessage">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.#ctor(System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.#ctor(MonoTorrent.Client.BitField)">
-            <summary>
-            
-            </summary>
-            <param name="piecemap"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.BitfieldMessage.BitField">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.BitfieldMessage.ByteLength">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.TrackerConnection.#ctor(MonoTorrent.Common.Torrent)">
-            <summary>
-            Creates a new TrackerConnection for the supplied torrent file
-            </summary>
-            <param name="torrent">The torrent to create the tracker connection for</param>
-        </member>
-        <member name="M:MonoTorrent.Client.TrackerConnection.SendUpdate(System.Int64,System.Int64,System.Int64,MonoTorrent.Common.TorrentEvent)">
-            <summary>
-            Sends a status update to the tracker
-            </summary>
-            <param name="bytesDownloaded">The number of bytes downloaded since the last update</param>
-            <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
-            <param name="bytesLeft">The number of bytes left to download</param>
-            <param name="clientEvent">The Event (if any) that represents this update</param>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerMessages.PieceMessage">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.#ctor(System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="pieceIndex"></param>
-            <param name="startOffset"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="recieveBuffer"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.PieceIndex">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.StartOffset">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.BlockLength">
-            <summary>
-            The length of the block in bytes that was sent with this message
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.ByteLength">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerConnectionID">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerConnectionID.#ctor(MonoTorrent.Client.ClientPeer,MonoTorrent.Client.TorrentManager)">
-            <summary>
-            
-            </summary>
-            <param name="peer"></param>
-            <param name="manager"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerConnectionID.Equals(System.Object)">
-            <summary>
-            
-            </summary>
-            <param name="obj"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerConnectionID.GetHashCode">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerConnectionID.Peer">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerConnectionID.TorrentManager">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerMessages.HandshakeMessage">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.#ctor(System.Byte[],System.String,System.String)">
-            <summary>
-            
-            </summary>
-            <param name="infoHash"></param>
-            <param name="peerId"></param>
-            <param name="protocolString"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.Encode(System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="startIndex"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.Decode(System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="recieveBuffer"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.ProtocolStringLength">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.ProtocolString">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.InfoHash">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.PeerId">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerMessages.ChokeMessage">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.ChokeMessage.ByteLength">
-            <summary>
-            
+            The ITorrentManager's loaded into the engine
             </summary>
         </member>
         <member name="M:MonoTorrent.Client.ClientEngine.Start">
@@ -477,7 +430,7 @@
             Starts all torrents in the engine if they are not already started
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.ClientEngine.Start(MonoTorrent.Common.ITorrentManager)">
+        <member name="M:MonoTorrent.Client.ClientEngine.Start(MonoTorrent.Client.ITorrentManager)">
             <summary>
             Starts the specified torrent
             </summary>
@@ -488,22 +441,24 @@
             Stops all torrents in the engine and flushes out all peer information
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.ClientEngine.Stop(MonoTorrent.Common.ITorrentManager)">
+        <member name="M:MonoTorrent.Client.ClientEngine.Stop(MonoTorrent.Client.ITorrentManager)">
             <summary>
             Stops the specified torrent and flushes out all peer information
             </summary>
-            <param name="manager"></param>
+            <param name="manager">
+            </param>
         </member>
         <member name="M:MonoTorrent.Client.ClientEngine.Pause">
             <summary>
             Stops all torrents in the engine but retains all peer information
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.ClientEngine.Pause(MonoTorrent.Common.ITorrentManager)">
+        <member name="M:MonoTorrent.Client.ClientEngine.Pause(MonoTorrent.Client.ITorrentManager)">
             <summary>
             Stops the specified torrent but retains all peer information
             </summary>
-            <param name="manager"></param>
+            <param name="manager">
+            </param>
         </member>
         <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.String)">
             <summary>
@@ -512,11 +467,39 @@
             <param name="path">The path to the .torrent file</param>
             <returns>A TorrentManager used to control the torrent</returns>
         </member>
+        <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.Uri,System.String)">
+            <summary>
+            Loads a .torrent file from the specified URL
+            </summary>
+            <param name="url">The URL to download the .torrent from</param>
+            <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.Uri,System.String,System.String)">
+            <summary>
+            Loads a .torrent file from the specified URL
+            </summary>
+            <param name="url">The URL to download the .torrent from</param>
+            <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
+            <param name="savePath">The path to download the files to</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.Uri,System.String,System.String,MonoTorrent.Client.TorrentSettings)">
+            <summary>
+            Loads a .torrent from the specified URL
+            </summary>
+            <param name="url">The URL to download the .torrent from</param>
+            <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
+            <param name="savePath">The path to download the files to</param>
+            <param name="settings">The TorrentSettings to initialise the torrent with</param>
+            <returns>
+            </returns>
+        </member>
         <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.String,System.String)">
             <summary>
-            Loads a .torrent file from the specified path which will download to the specified save location.
-            The torrent will be initialised with the default values in the TorrentSettings supplied to the Engine
-            when the engine was initialised.
+            Loads a .torrent file from the specified path
             </summary>
             <param name="path">The path of the .torrent file</param>
             <param name="savePath">The path to download the files to</param>
@@ -524,385 +507,728 @@
         </member>
         <member name="M:MonoTorrent.Client.ClientEngine.LoadTorrent(System.String,System.String,MonoTorrent.Client.TorrentSettings)">
             <summary>
-            Loads a .torrent file from the specified path which will download to the specified save location
-            initialised with the specified setttings.
+            Loads a .torrent file from the specified path
             </summary>
             <param name="path">The path to the .torrent file</param>
             <param name="savePath">The path to download the files to</param>
             <param name="torrentSettings">The TorrentSettings to initialise the torrent with</param>
             <returns>A TorrentManager used to control the torrent</returns>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(MonoTorrent.Client.TorrentSettings)">
+        <member name="M:MonoTorrent.Client.ClientEngine.Dispose">
             <summary>
-            Creates a new TorrentSettings with the same settings as the supplied settings
-            </summary>
-            <param name="settings">The settings to copy</param>
-        </member>
-        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32)">
-            <summary>
-            Creates a new TorrentSettings with the specified uploadSlots and with
-            TorrentSettings.DefaultSettings values for everything else
-            </summary>
-            <param name="uploadSlots">The number of upload slots for this torrent</param>
-        </member>
-        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32,System.Int32)">
-            <summary>
-            Creates a new TorrentSettings with the specified uploadSlots and max connections with
-            TorrentSettings.DefaultSettings values for everything else
-            </summary>
-            <param name="uploadSlots">The number of upload slots for this torrent</param>
-            <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
-        </member>
-        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)">
-            <summary>
-            Creates a new TorrentSettings with the specified settings
-            </summary>
-            <param name="uploadSlots">The number of upload slots for this torrent</param>
-            <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
-            <param name="maxDownloadSpeed">The maximum download speed for this torrent</param>
-            <param name="maxUploadSpeed">The maximum upload speed for this torrent</param>
-        </member>
-        <member name="P:MonoTorrent.Client.TorrentSettings.DefaultSettings">
-            <summary>
-            These are hardcoded default settings. They should be good enough
-            for connections with upload between 128kB/sec and 512kB/sec
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentSettings.MaxDownloadSpeed">
+        <member name="M:MonoTorrent.Client.ClientEngine.Dispose(System.Boolean)">
             <summary>
-            The maximum download speed for the torrent
+            </summary>
+            <param name="disposing">
+            </param>
+        </member>
+        <member name="T:MonoTorrent.Client.ConnectionManagerException">
+            <summary>
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentSettings.MaxUploadSpeed">
+        <member name="M:MonoTorrent.Client.ConnectionManagerException.#ctor">
             <summary>
-            The maximum upload speed for the torrent
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentSettings.MaxConnections">
+        <member name="M:MonoTorrent.Client.ConnectionManagerException.#ctor(System.String)">
             <summary>
-            The maximum simultaneous open connections for the torrent
+            </summary>
+            <param name="message">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManagerException.#ctor(System.String,System.Exception)">
+            <summary>
+            </summary>
+            <param name="message">
+            </param>
+            <param name="innerException">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManagerException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            </summary>
+            <param name="info">
+            </param>
+            <param name="context">
+            </param>
+        </member>
+        <member name="P:MonoTorrent.Client.Encryption.TCPConnection.AllowedFastPieces">
+            <summary>
+            Contains the indexs of all the pieces we can request even if choked
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentSettings.UploadSlots">
+        <member name="P:MonoTorrent.Client.PeerMessages.RejectRequestMessage.StartOffset">
             <summary>
-            The number of upload slots for the torrent
+            The offset in bytes of the block of data
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.PieceManager.#ctor(MonoTorrent.Client.BitField)">
+        <member name="P:MonoTorrent.Client.PeerMessages.RejectRequestMessage.PieceIndex">
             <summary>
-            
+            The index of the piece
             </summary>
-            <param name="bitField"></param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.RejectRequestMessage.RequestLength">
+            <summary>
+            The length of the block of data
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.SuggestPieceMessage.#ctor">
+            <summary>
+            Creates a new SuggestPiece message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.SuggestPieceMessage.#ctor(System.Int32)">
+            <summary>
+            Creates a new SuggestPiece message
+            </summary>
+            <param name="pieceIndex">The suggested piece to download</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.SuggestPieceMessage.PieceIndex">
+            <summary>
+            The index of the suggested piece to request
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Peer.Connection">
+            <summary>
+            The connection associated with this peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Peer.PeerId">
+            <summary>
+            The ID of the peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Peer.IsSeeder">
+            <summary>
+            True if the peer is a seeder
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Peer.FailedConnectionAttempts">
+            <summary>
+            The number of times we tried to connect to the peer and failed
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Peer.Location">
+            <summary>
+            The location at which the peer can be connected to at
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.Tracker">
+            <summary>
+            Class representing an instance of a Tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.Compact">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.AnnounceUrl">
+            <summary>
+            The announce URL for this tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.ScrapeUrl">
+            <summary>
+            The Scrape URL for this tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.CanScrape">
+            <summary>
+            True if the tracker supports scrape requests
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.State">
+            <summary>
+            The current state of the tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.TrackerId">
+            <summary>
+            The ID for the current tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.MinUpdateInterval">
+            <summary>
+            The minimum update interval for the tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.UpdateInterval">
+            <summary>
+            The recommended update interval for the tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.LastUpdated">
+            <summary>
+            The DateTime that the last tracker update was fired at
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Tracker.UpdateSucceeded">
+            <summary>
+            True if the last tracker update succeeded
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.ListenerException">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ListenerException.#ctor">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ListenerException.#ctor(System.String)">
+            <summary>
+            </summary>
+            <param name="message">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ListenerException.#ctor(System.String,System.Exception)">
+            <summary>
+            </summary>
+            <param name="message">
+            </param>
+            <param name="innerException">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ListenerException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            </summary>
+            <param name="info">
+            </param>
+            <param name="context">
+            </param>
+        </member>
+        <member name="T:MonoTorrent.Client.ConnectionListener">
+            <summary>
+            Accepts incoming connections and passes them off to the right ITorrentManager
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Int32,System.AsyncCallback)">
+            <summary>
+            Creates a new connection listener listening at the specified port on any IP address
+            </summary>
+            <param name="listenPort">The port to listen on</param>
+            <param name="newConnectionCallback">The callback to invoke when a connection is recieved</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Int32,System.AsyncCallback,System.Net.IPAddress)">
+            <summary>
+            Creates a new connection listener listening at the specified port and IPAddress
+            </summary>
+            <param name="listenPort">The port to listen on</param>
+            <param name="newConnectionCallback">The callback to invoke when a connection is recieved</param>
+            <param name="listenAddress">The address to listen on</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Net.IPEndPoint,System.AsyncCallback)">
+            <summary>
+            Creates a new connection listener listening at the specified IPEndpoint
+            </summary>
+            <param name="endPoint">The IPEndpoint to listen at</param>
+            <param name="newConnectionCallback">The callback to invoke when a new connection is recieved</param>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionListener.ListenEndPoint">
+            <summary>
+            The Endpoint the listener should listen for connections on
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionListener.IsListening">
+            <summary>
+            Returns True if the listener is listening for incoming connections.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionListener.NewConnectionCallback">
+            <summary>
+            The AsyncCallback to invoke when a new connection is recieved
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.Start">
+            <summary>
+            Begin listening for incoming connections
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.Stop">
+            <summary>
+            Stop listening for incoming connections
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.Dispose">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionListener.Dispose(System.Boolean)">
+            <summary>
+            </summary>
+            <param name="disposing">
+            </param>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessageEventArgs">
+            <summary>
+            Provides the data needed to handle a PeerMessage event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessageEventArgs.#ctor(MonoTorrent.Client.PeerMessages.IPeerMessage,MonoTorrent.Common.Direction)">
+            <summary>
+            Creates a new PeerMessageEventArgs
+            </summary>
+            <param name="message">The peer message involved</param>
+            <param name="direction">The direction of the message</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessageEventArgs.Message">
+            <summary>
+            The Peer message that was just sent/recieved
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessageEventArgs.Direction">
+            <summary>
+            The direction of the message (outgoing/incoming)
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerConnectionEventArgs">
+            <summary>
+            Provides the data needed to handle a PeerConnection event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionEventArgs.#ctor(MonoTorrent.Common.PeerConnectionEvent)">
+            <summary>
+            Creates a new PeerConnectionEventArgs
+            </summary>
+            <param name="peerEvent">The peer event that just happened</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionEventArgs.PeerEvent">
+            <summary>
+            The peer event that just happened
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PeersAddedEventArgs">
+            <summary>
+            Provides the data needed to handle a PeersAdded event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeersAddedEventArgs.#ctor(System.Int32)">
+            <summary>
+            Creates a new PeersAddedEventArgs
+            </summary>
+            <param name="peersAdded">The number of peers just added</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeersAddedEventArgs.Count">
+            <summary>
+            The number of peers that were added in the last update
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PieceEventArgs">
+            <summary>
+            Provides the data needed to handle a Piece event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PieceEventArgs.#ctor(System.Int32,MonoTorrent.Common.PieceEvent)">
+            <summary>
+            Creates a new PieceEventArgs
+            </summary>
+            <param name="pieceIndex">The index of the piece involved</param>
+            <param name="pieceEvent">The PieceEvent that just happened</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceEventArgs.PieceIndex">
+            <summary>
+            The index of the piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceEventArgs.PieceEvent">
+            <summary>
+            The type of event that just happened
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PieceHashedEventArgs">
+            <summary>
+            Provides the data needed to handle a PieceHashed event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PieceHashedEventArgs.#ctor(System.Int32,System.Boolean)">
+            <summary>
+            Creates a new PieceHashedEventArgs
+            </summary>
+            <param name="pieceIndex">The index of the piece that was hashed</param>
+            <param name="hashPassed">True if the piece passed the hashcheck, false otherwise</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceHashedEventArgs.PieceIndex">
+            <summary>
+            The index of the piece that was just hashed
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceHashedEventArgs.HashPassed">
+            <summary>
+            The value of whether the piece passed or failed the hash check
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.TorrentStateChangedEventArgs">
+            <summary>
+            Provides the data needed to handle a TorrentStateChanged event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentStateChangedEventArgs.#ctor(MonoTorrent.Common.TorrentState,MonoTorrent.Common.TorrentState)">
+            <summary>
+            Creates a new TorrentStateChangedEventArgs
+            </summary>
+            <param name="oldState">The old state of the Torrent</param>
+            <param name="newState">The new state of the Torrent</param>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentStateChangedEventArgs.OldState">
+            <summary>
+            The old state for the torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentStateChangedEventArgs.NewState">
+            <summary>
+            The new state for the torrent
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.TrackerUpdateEventArgs">
+            <summary>
+            Provides the data needed to handle a TrackerUpdate event
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerUpdateEventArgs.#ctor(MonoTorrent.Client.Tracker,System.Byte[])">
+            <summary>
+            Creates a new TrackerUpdateEventArgs
+            </summary>
+            <param name="state">The current state of the update</param>
+            <param name="response">The response of the tracker (if any)</param>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerUpdateEventArgs.Tracker">
+            <summary>
+            The current status of the tracker update
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerUpdateEventArgs.Response">
+            <summary>
+            The response (if any) of the tracker
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.ConnectionManager">
+            <summary>
+            Main controller class for all incoming and outgoing connections
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.#ctor(MonoTorrent.Client.EngineSettings)">
+            <summary>
+            </summary>
+            <param name="settings">
+            </param>
+        </member>
+        <member name="E:MonoTorrent.Client.ConnectionManager.OnPeerConnectionChanged">
+            <summary>
+            Event that's fired every time a Peer connects or disconnects
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Client.ConnectionManager.OnPeerMessages">
+            <summary>
+            Event that's fired every time a message is sent or recieved from a Peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionManager.HalfOpenConnections">
+            <summary>
+            The number of half open connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionManager.MaxHalfOpenConnections">
+            <summary>
+            The maximum number of half open connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionManager.OpenConnections">
+            <summary>
+            The number of open connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionManager.MaxOpenConnections">
+            <summary>
+            The maximum number of open connections
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.ConnectToPeer(MonoTorrent.Client.TorrentManager)">
+            <summary>
+            </summary>
+            <param name="manager">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.EndCreateConnection(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when we try to create a remote connection
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.onPeerHandshakeSent(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when we send our handshake message
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.onPeerHandshakeRecieved(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when we recieve a peer handshake
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.onPeerMessageLengthRecieved(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when we recieve a peer message length
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.onPeerMessageRecieved(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when we recieve a peer message
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.onPeerMessageSent(System.IAsyncResult)">
+            <summary>
+            This method is called as part of the AsyncCallbacks when a peer message is sent
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.ProcessQueue(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            This method should be called to begin processing messages stored in the SendQueue
+            </summary>
+            <param name="id">The peer whose message queue you want to start processing</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.ResumePeer(MonoTorrent.Client.PeerConnectionID,System.Boolean)">
+            <summary>
+            Makes a peer start downloading/uploading
+            </summary>
+            <param name="id">The peer to resume</param>
+            <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.IncomingConnectionAccepted(System.IAsyncResult)">
+            <summary>
+            This method is called when the ClientEngine recieves a valid incoming connection
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionManager.CleanupSocket(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            This method is called when a connection needs to be closed and the resources for it released.
+            </summary>
+            <param name="id">The peer whose connection needs to be closed</param>
+        </member>
+        <member name="T:MonoTorrent.Client.ConnectionMonitor">
+            <summary>
+            This class is used to track upload/download speed and bytes uploaded/downloaded for each connection
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.#ctor">
+            <summary>
+            Creates a new ConnectionMonitor
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionMonitor.BytesDownloaded">
+            <summary>
+            Returns the total bytes downloaded from this peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.ConnectionMonitor.BytesUploaded">
+            <summary>
+            Returns the total bytes uploaded to this peer
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.DownloadSpeed">
+            <summary>
+            Calculates the current average download speed
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.UploadSpeed">
+            <summary>
+            Calculates the current average upload speed
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.BytesSent(System.Int32)">
+            <summary>
+            Update the ConnectionManager with bytes uploaded
+            </summary>
+            <param name="bytesUploaded">Bytes uploaded in the last time period</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.BytesRecieved(System.Int32)">
+            <summary>
+            Update the ConnectionManager with bytes downloaded
+            </summary>
+            <param name="bytesDownloaded">Bytes downloaded in the last time period</param>
+        </member>
+        <member name="M:MonoTorrent.Client.ConnectionMonitor.TimePeriodPassed">
+            <summary>
+            Called every time you want the stats to update. Ideally between every 0.5 and 2 seconds
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.FileManager">
+            <summary>
+            This class manages writing and reading of pieces from the disk
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.#ctor(MonoTorrent.Common.ITorrentFile,System.String,System.Int32)">
+            <summary>
+            Creates a new FileManager with read-only access
+            </summary>
+            <param name="file">The TorrentFile to open/create on disk</param>
+            <param name="savePath">The directory the file should be contained in</param>
+            <param name="pieceLength">The length of a "piece" for this file</param>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.#ctor(MonoTorrent.Common.ITorrentFile,System.String,System.Int32,System.IO.FileAccess)">
+            <summary>
+            Creates a new FileManager with the supplied FileAccess
+            </summary>
+            <param name="file">The TorrentFile you want to create/open on the disk</param>
+            <param name="savePath">The path to the directory that the file should be contained in</param>
+            <param name="pieceLength">The length of a "piece" for this file</param>
+            <param name="fileAccess">The access level for the file</param>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.#ctor(MonoTorrent.Common.ITorrentFile[],System.String,System.String,System.Int32)">
+            <summary>
+            Creates a new FileManager with read-only access
+            </summary>
+            <param name="files">The TorrentFiles you want to create/open on the disk</param>
+            <param name="baseDirectory">The name of the directory that the files are contained in</param>
+            <param name="savePath">The path to the directory that contains the baseDirectory</param>
+            <param name="pieceLength">The length of a "piece" for this file</param>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.#ctor(MonoTorrent.Common.ITorrentFile[],System.String,System.String,System.Int32,System.IO.FileAccess)">
+            <summary>
+            Creates a new FileManager with the supplied FileAccess
+            </summary>
+            <param name="files">The TorrentFiles you want to create/open on the disk</param>
+            <param name="baseDirectory">The name of the directory that the files are contained in</param>
+            <param name="savePath">The path to the directory that contains the baseDirectory</param>
+            <param name="pieceLength">The length of a "piece" for this file</param>
+            <param name="fileAccess">The access level for the files</param>
+        </member>
+        <member name="P:MonoTorrent.Client.FileManager.PieceLength">
+            <summary>
+            The length of a piece in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.GenerateFilePath(MonoTorrent.Common.ITorrentFile,System.String,System.String)">
+            <summary>
+            Generates the full path to the supplied ITorrentFile
+            </summary>
+            <param name="file">The ITorrentFile to generate the full path to</param>
+            <param name="baseDirectory">The name of the directory that the files are contained in</param>
+            <param name="savePath">The path to the directory that contains the BaseDirectory</param>
+            <returns>The full path to the TorrentFile</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.Read(System.Byte[],System.Int32,System.Int64,System.Int32)">
+            <summary>
+            This method reads 'count' number of bytes from the filestream starting at index 'offset'.
+            The bytes are read into the buffer starting at index 'bufferOffset'.
+            </summary>
+            <param name="buffer">The byte[] containing the bytes to write</param>
+            <param name="bufferOffset">The offset in the byte[] at which to save the data</param>
+            <param name="offset">The offset in the file at which to start reading the data</param>
+            <param name="count">The number of bytes to read</param>
+            <returns>The number of bytes successfully read</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.Write(System.Byte[],System.Int32,System.Int64,System.Int32)">
+            <summary>
+            This method reads 'count' number of bytes starting at the position 'offset' into the
+            byte[] 'buffer'. The data gets written in the buffer starting at index 'bufferOffset'
+            </summary>
+            <param name="buffer">The byte[] to read the data into</param>
+            <param name="bufferOffset">The offset within the array to save the data</param>
+            <param name="offset">The offset in the file from which to read the data</param>
+            <param name="count">The number of bytes to read</param>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.FlushAll">
+            <summary>
+            Flushes all data in the FileStreams to disk
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.GetHash(System.Int32)">
+            <summary>
+            Generates the hash for the given piece
+            </summary>
+            <param name="pieceIndex">The piece to generate the hash for</param>
+            <returns>The 20 byte SHA1 hash of the supplied piece</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.Dispose">
+            <summary>
+            Disposes all necessary objects
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.FileManager.Dispose(System.Boolean)">
+            <summary>
+            Disposes all necessary objects
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PieceManager">
+            <summary>
+            Contains the logic for choosing what piece to download next
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PieceManager.#ctor(MonoTorrent.Client.BitField,MonoTorrent.Common.TorrentFile[])">
+            <summary>
+            </summary>
+            <param name="bitField">
+            </param>
+        </member>
+        <member name="E:MonoTorrent.Client.PieceManager.OnPieceChanged">
+            <summary>
+            Event that's fired every time a Piece changes
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceManager.MyBitField">
+            <summary>
+            The bitfield for the torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PieceManager.CurrentRequestCount">
+            <summary>
+            Returns the number of outstanding requests
+            </summary>
         </member>
         <member name="M:MonoTorrent.Client.PieceManager.RequestPiece(MonoTorrent.Client.PeerConnectionID)">
             <summary>
-            
+            Requests the next available piece from the supplied peer
             </summary>
-            <param name="id"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PieceManager.RecievedPiece(MonoTorrent.Client.PeerConnectionID,MonoTorrent.Client.PeerMessages.PieceMessage)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="message"></param>
+            <param name="id">The peer to request a piece from</param>
+            <returns>A RequestMessage for the next free piece</returns>
         </member>
         <member name="M:MonoTorrent.Client.PieceManager.IsInteresting(MonoTorrent.Client.PeerConnectionID)">
             <summary>
-            Returns true if the peer has pieces that we're interested in downloading
+            Checks to see if a peer has a piece we want
             </summary>
-            <param name="id">The peer to check if we're interested in</param>
-            <returns></returns>
+            <param name="id">The peer to check to see if he's interesting or not</param>
+            <returns>True if the peer is interesting, false otherwise</returns>
         </member>
         <member name="M:MonoTorrent.Client.PieceManager.RemoveRequests(MonoTorrent.Client.PeerConnectionID)">
             <summary>
-            
+            Removes any outstanding requests from the supplied peer
             </summary>
-            <param name="id"></param>
+            <param name="id">The peer to remove outstanding requests from</param>
         </member>
-        <member name="M:MonoTorrent.Client.PieceManager.ByteMatch(System.Byte[],System.Byte[]@)">
+        <member name="M:MonoTorrent.Client.PieceManager.RecievedPieceMessage(MonoTorrent.Client.PeerConnectionID,System.Byte[],System.Int32,System.Int32,System.Int32,MonoTorrent.Client.PeerMessages.PieceMessage)">
             <summary>
-            
             </summary>
-            <param name="array1"></param>
-            <param name="array2"></param>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PieceManager.BitField">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.ClientPeer">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.ClientPeer.#ctor(System.Net.IPEndPoint,System.String)">
-            <summary>
-            
-            </summary>
-            <param name="remoteHost"></param>
-            <param name="peerId"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.ClientPeer.#ctor(System.String,System.Int32,System.String)">
-            <summary>
-            
-            </summary>
-            <param name="ipAddress"></param>
-            <param name="port"></param>
-            <param name="peerId"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.ClientPeer.Equals(System.Object)">
-            <summary>
-            
-            </summary>
-            <param name="obj"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.ClientPeer.GetHashCode">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.Connection">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.AmInterested">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.AmChoking">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.IsChoking">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.IsInterested">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.IsRequestingPiecesCount">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.AmRequestingPiecesCount">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.ProcessingQueue">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.ClientPeer.BitField">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="T:MonoTorrent.Client.DiskManager">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.DiskManager.#ctor(MonoTorrent.Client.TorrentManager,System.String)">
-            <summary>
-            
-            </summary>
-            <param name="manager"></param>
-            <param name="savePath"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.DiskManager.HashCheck">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.DiskManager.ReadBlock(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,MonoTorrent.Client.PeerMessages.RequestMessage)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="request"></param>
-        </member>
-        <member name="F:MonoTorrent.Client.DiskManager.tempo">
-            <summary>
-            
-            </summary>
-            <param name="piece"></param>
-            <param name="recieveBuffer"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="T:MonoTorrent.Client.PeerMessages.UnchokeMessage">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="packet"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.UnchokeMessage.ByteLength">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerConnection.#ctor(System.String,System.Int32)">
-            <summary>
-            Creates a new connection to the peer at the specificed IP address and port
-            </summary>
-            <param name="ip">The IPAddress to connect to</param>
-            <param name="port">The Port to connect to</param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerConnection.#ctor(System.Net.IPEndPoint)">
-            <summary>
-            Creates a new connection to the peer at the specified IPEndpoint
-            </summary>
-            <param name="peerEndpoint">The IPEndpoint to connect to</param>
-        </member>
-        <member name="T:MonoTorrent.Client.Piece">
-            <summary>
-            This class represents a Piece in the torrent
-            </summary>
-        </member>
-        <member name="F:MonoTorrent.Client.Piece.blockSize">
-            <summary>
-            The official client rejects any request about 16kb, so even thought it adds more overhead
-            I use the same size requests. All other clients accept up to 128kB requests (afaik).
-            In the future the Piece picker could adaptively choose blocksize.
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.Piece.#ctor(System.Int32,MonoTorrent.Common.Torrent)">
-            <summary>
-            
-            </summary>
-            <param name="pieceIndex"></param>
-            <param name="torrent"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.Piece.LastPiece(System.Int32,MonoTorrent.Common.Torrent)">
-            <summary>
-            
-            </summary>
-            <param name="pieceIndex"></param>
-            <param name="torrent"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.Piece.GetEnumerator">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.Piece.Blocks">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.Piece.Index">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.Piece.Item(System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="index"></param>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.Piece.AllBlocksRequested">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.Piece.AllBlocksRecieved">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.#ctor">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Encode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="sendBuffer"></param>
-            <param name="offSet"></param>
-            <returns></returns>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Decode(MonoTorrent.Client.PeerConnectionID,System.Byte[]@,System.Int32,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-            <param name="data"></param>
-            <param name="offset"></param>
-            <param name="length"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
-            <summary>
-            
-            </summary>
-            <param name="id"></param>
-        </member>
-        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.ToString">
-            <summary>
-            
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:MonoTorrent.Client.PeerMessages.NotInterestedMessage.ByteLength">
-            <summary>
-            
-            </summary>
+            <param name="id">
+            </param>
+            <param name="recieveBuffer">
+            </param>
+            <param name="offset">
+            </param>
+            <param name="writeIndex">
+            </param>
+            <param name="p">
+            </param>
         </member>
         <member name="T:MonoTorrent.Client.TorrentManager">
             <summary>
-            
             </summary>
         </member>
         <member name="M:MonoTorrent.Client.TorrentManager.#ctor(MonoTorrent.Common.Torrent,System.String,MonoTorrent.Client.TorrentSettings)">
@@ -913,48 +1239,30 @@
             <param name="savePath">The directory to save downloaded files to</param>
             <param name="settings">The settings to use for controlling connections</param>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.Start">
+        <member name="F:MonoTorrent.Client.TorrentManager.listLock">
             <summary>
-            If the TorrentManager isn't already downloading/seeding, it begins downloading/seeding
+            The object we use to syncronize list access
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.Pause">
+        <member name="E:MonoTorrent.Client.TorrentManager.OnPeersAdded">
             <summary>
-            If the TorrentManager is downloading/seeding, it then pauses all 
+            Event that's fired every time new peers are added from a tracker update
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.Stop">
+        <member name="E:MonoTorrent.Client.TorrentManager.OnPieceHashed">
             <summary>
-            Stops the TorrentManager
+            Event that's fired every time a piece is hashed
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(MonoTorrent.Client.PeerConnectionID)">
+        <member name="E:MonoTorrent.Client.TorrentManager.OnTorrentStateChanged">
             <summary>
-            Adds an individual peer to the list
+            Event that's fired every time the TorrentManagers state changes
             </summary>
-            <param name="peer">The peer to add</param>
-            <returns>The number of peers added</returns>
         </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(MonoTorrent.Client.Peers)">
+        <member name="P:MonoTorrent.Client.TorrentManager.AmHashing">
             <summary>
-            Adds an array of peers to the list
+            True if we are currently hashchecking
             </summary>
-            <param name="peers">The array of peers to add</param>
-            <returns>The number of peers added</returns>
-        </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(System.Collections.Generic.List{MonoTorrent.Common.BEncodedValue})">
-            <summary>
-            Adds a non-compact tracker response of peers to the list
-            </summary>
-            <param name="list">The list of peers to add</param>
-            <returns>The number of peers added</returns>
-        </member>
-        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(System.Byte[]@)">
-            <summary>
-            Adds a compact tracker response of peers to the list
-            </summary>
-            <param name="byteOrderedData">The byte[] containing the peers to add</param>
-            <returns>The number of peers added</returns>
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.Torrent">
             <summary>
@@ -963,7 +1271,7 @@
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.Settings">
             <summary>
-            The settings associated with this TorrentManager
+            The settings for with this TorrentManager
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.State">
@@ -971,22 +1279,22 @@
             The current state of the TorrentManager
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentManager.TrackerConnection">
+        <member name="P:MonoTorrent.Client.TorrentManager.TrackerManager">
             <summary>
             The tracker connection associated with this TorrentManager
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.PieceManager">
             <summary>
-            
+            The piecemanager for this TorrentManager
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.DiskManager">
             <summary>
-            
+            The DiskManager associated with this torrent
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentManager.AvailablePeers">
+        <member name="P:MonoTorrent.Client.TorrentManager.Available">
             <summary>
             The list of peers that are available to be connected to
             </summary>
@@ -996,14 +1304,14 @@
             The list of peers that we are currently connected to
             </summary>
         </member>
+        <member name="P:MonoTorrent.Client.TorrentManager.ConnectingTo">
+            <summary>
+            The list of peers that we are currently trying to connect to
+            </summary>
+        </member>
         <member name="P:MonoTorrent.Client.TorrentManager.OpenConnections">
             <summary>
             The number of peers that this torrent instance is connected to
-            </summary>
-        </member>
-        <member name="P:MonoTorrent.Client.TorrentManager.BitField">
-            <summary>
-            The array containing the list of pieces we have and don't have
             </summary>
         </member>
         <member name="P:MonoTorrent.Client.TorrentManager.HashChecked">
@@ -1026,58 +1334,1316 @@
             The directory to download the files to
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.TorrentManager.Progress">
+        <member name="P:MonoTorrent.Client.TorrentManager.UploadingTo">
             <summary>
-            Returns the current progress of the torrent in percent
+            The number of peers that we are currently uploading to
             </summary>
         </member>
-        <member name="E:MonoTorrent.Client.TorrentManager.ChangedEvent">
+        <member name="P:MonoTorrent.Client.TorrentManager.AvailablePeers">
             <summary>
-            
+            Returns the total number of peers available (including ones already connected to)
             </summary>
         </member>
-        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Int32,System.AsyncCallback)">
+        <member name="M:MonoTorrent.Client.TorrentManager.DownloadSpeed">
             <summary>
-            Creates a new connection listener listening at the specified port on any IP address
+            The current download speed in bytes per second
             </summary>
-            <param name="listenPort">The port to listen on</param>
+            <returns>
+            </returns>
         </member>
-        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Int32,System.AsyncCallback,System.Net.IPAddress)">
+        <member name="M:MonoTorrent.Client.TorrentManager.UploadSpeed">
             <summary>
-            Creates a new connection listener listening at the specified port and IPAddress
+            The current upload speed in bytes per second
             </summary>
-            <param name="listenPort">The port to listen on</param>
-            <param name="listenAddress">The address to listen on</param>
+            <returns>
+            </returns>
         </member>
-        <member name="M:MonoTorrent.Client.ConnectionListener.#ctor(System.Net.IPEndPoint,System.AsyncCallback)">
+        <member name="M:MonoTorrent.Client.TorrentManager.HashCheck(System.Object)">
             <summary>
-            Creates a new connection listener listening at the specified IPEndpoint
+            Hash checks the supplied torrent
             </summary>
-            <param name="endPoint">The IPEndpoint to listen at</param>
+            <param name="state">The TorrentManager to hashcheck</param>
         </member>
-        <member name="M:MonoTorrent.Client.ConnectionListener.Start">
+        <member name="M:MonoTorrent.Client.TorrentManager.Progress">
             <summary>
-            Begin listening for incoming connections
-            </summary>
-        </member>
-        <member name="M:MonoTorrent.Client.ConnectionListener.Stop">
-            <summary>
-            Stop listening for incoming connections
+            The current progress of the torrent in percent
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.ConnectionListener.ListenEndPoint">
+        <member name="M:MonoTorrent.Client.TorrentManager.Start">
             <summary>
-            The Endpoint the listener should listen for connections on
+            Starts the TorrentManager
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.ConnectionListener.IsListening">
+        <member name="M:MonoTorrent.Client.TorrentManager.Stop">
             <summary>
-            Returns True if the listener is listening for incoming connections.
+            Stops the TorrentManager
             </summary>
         </member>
-        <member name="P:MonoTorrent.Client.ConnectionListener.NewConnectionCallback">
+        <member name="M:MonoTorrent.Client.TorrentManager.Pause">
             <summary>
-            The AsyncCallback to invoke when a new connection is recieved
+            Pauses the TorrentManager
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Adds an individual peer to the list
+            </summary>
+            <param name="peer">The peer to add</param>
+            <returns>The number of peers added</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(MonoTorrent.Client.Peers)">
+            <summary>
+            Adds an array of peers to the list
+            </summary>
+            <param name="peers">The array of peers to add</param>
+            <returns>The number of peers added</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(MonoTorrent.Common.BEncodedList)">
+            <summary>
+            Adds a non-compact tracker response of peers to the list
+            </summary>
+            <param name="list">The list of peers to add</param>
+            <returns>The number of peers added</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.AddPeers(System.Byte[])">
+            <summary>
+            Adds a compact tracker response of peers to the list
+            </summary>
+            <param name="byteOrderedData">The byte[] containing the peers to add</param>
+            <returns>The number of peers added</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.Seeds">
+            <summary>
+            Returns the number of Seeds we are currently connected to
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.Leechs">
+            <summary>
+            Returns the number of Leechs we are currently connected to
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.HashedPiece(MonoTorrent.Client.PieceHashedEventArgs)">
+            <summary>
+            Called when a Piece has been hashed by the FileManager
+            </summary>
+            <param name="pieceHashedEventArgs">The event args for the event</param>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.Dispose">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentManager.Dispose(System.Boolean)">
+            <summary>
+            </summary>
+            <param name="disposing">
+            </param>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerConnectionBase">
+            <summary>
+            Holds the data for a connection to another peer
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionBase.#ctor(System.Int32,MonoTorrent.Client.Encryption.IEncryptor)">
+            <summary>
+            Creates a new connection to the peer at the specified IPEndpoint
+            </summary>
+            <param name="peerEndpoint">The IPEndpoint to connect to</param>
+        </member>
+        <member name="F:MonoTorrent.Client.PeerConnectionBase.BufferSize">
+            <summary>
+            The size of the send and recieve buffers. Defaults to 32bytes more than my default request size.
+            </summary>
+        </member>
+        <member name="F:MonoTorrent.Client.PeerConnectionBase.sendQueue">
+            <summary>
+            This holds the peermessages waiting to be sent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.SupportsFastPeer">
+            <summary>
+            True if the peer supports the Fast Peers extension
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.LastMessageSent">
+            <summary>
+            The time at which the last message was sent at
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.LastMessageRecieved">
+            <summary>
+            The time at which the last message was received at
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.BitField">
+            <summary>
+            The peers bitfield
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.PiecesSent">
+            <summary>
+            The number of pieces that we've sent the peer.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.IsRequestingPiecesCount">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.AmRequestingPiecesCount">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.ProcessingQueue">
+            <summary>
+            True if we are currently processing the peers message queue
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.BytesToSend">
+            <summary>
+            The total bytes to send from the buffer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.BytesSent">
+            <summary>
+            The total number of bytes sent from the current send buffer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.BytesRecieved">
+            <summary>
+            The total number of bytes recieved into the current recieve buffer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.BytesToRecieve">
+            <summary>
+            The total number of bytes to receive
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.Monitor">
+            <summary>
+            The connection Monitor for this peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.AmInterested">
+            <summary>
+            True if the peer has some pieces that we need
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.AmChoking">
+            <summary>
+            True if we are currently choking the peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.IsChoking">
+            <summary>
+            True if the peer is currently choking us
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.IsInterested">
+            <summary>
+            True if the peer is currently interested in us
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.Encryptor">
+            <summary>
+            The current encryption method being used to encrypt connections
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionBase.QueueLength">
+            <summary>
+            The length of the Message queue
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionBase.EnQueue(MonoTorrent.Client.PeerMessages.IPeerMessage)">
+            <summary>
+            Queues a PeerMessage up to be sent to the remote host
+            </summary>
+            <param name="msg">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionBase.DeQueue">
+            <summary>
+            Returns the PeerMessage at the head of the queue
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerConnectionID">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionID.#ctor(MonoTorrent.Client.Peer)">
+            <summary>
+            Creates a new PeerConnectionID
+            </summary>
+            <param name="peer">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionID.#ctor(MonoTorrent.Client.Peer,MonoTorrent.Client.TorrentManager)">
+            <summary>
+            </summary>
+            <param name="peer">
+            </param>
+            <param name="manager">
+            </param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionID.Peer">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerConnectionID.TorrentManager">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionID.Equals(System.Object)">
+            <summary>
+            </summary>
+            <param name="obj">
+            </param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerConnectionID.GetHashCode">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.BitfieldMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.#ctor(System.Int32)">
+            <summary>
+            Creates a new BitfieldMessage
+            </summary>
+            <param name="length">The length of the bitfield</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.#ctor(MonoTorrent.Client.BitField)">
+            <summary>
+            Creates a new BitfieldMessage
+            </summary>
+            <param name="bitfield">The bitfield to use</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.BitfieldMessage.BitField">
+            <summary>
+            The bitfield
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.BitfieldMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the BitfieldMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a RequestMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.BitfieldMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.CancelMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.#ctor">
+            <summary>
+            Creates a new CancelMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a new CancelMessage
+            </summary>
+            <param name="pieceIndex">The index of the piece to cancel</param>
+            <param name="startOffset">The offset in bytes of the block of data to cancel</param>
+            <param name="requestLength">The length in bytes of the block of data to cancel</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.PieceIndex">
+            <summary>
+            The index of the piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.StartOffset">
+            <summary>
+            The offset in bytes of the block of data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.RequestLength">
+            <summary>
+            The length in bytes of the block of data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.CancelMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the CancelMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a RequestMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.CancelMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.ChokeMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.#ctor">
+            <summary>
+            Creates a new ChokeMessage
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.ChokeMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the ChokeMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer to Encode</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a ChokeMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.ChokeMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.HandshakeMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.#ctor">
+            <summary>
+            Creates a new HandshakeMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.#ctor(System.Byte[],System.String,System.String)">
+            <summary>
+            Creates a new HandshakeMessage
+            </summary>
+            <param name="infoHash">The infohash of the torrent</param>
+            <param name="peerId">The ID of the peer</param>
+            <param name="protocolString">The protocol string to send</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.ProtocolStringLength">
+            <summary>
+            The length of the protocol string
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.ProtocolString">
+            <summary>
+            The protocol string to send
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.InfoHash">
+            <summary>
+            The infohash of the torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.PeerId">
+            <summary>
+            The ID of the peer
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HandshakeMessage.SupportsFastPeer">
+            <summary>
+            True if the peer supports the Bittorrent FastPeerExtensions
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the HandshakeMessage into the supplied buffer
+            </summary>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a HandshakeMessage from the supplied buffer
+            </summary>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HandshakeMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.HaveMessage">
+            <summary>
+            Represents a "Have" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.#ctor">
+            <summary>
+            Creates a new HaveMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.#ctor(System.Int32)">
+            <summary>
+            Creates a new HaveMessage
+            </summary>
+            <param name="pieceIndex">The index of the piece that you "have"</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HaveMessage.PieceIndex">
+            <summary>
+            The index of the piece that you "have"
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.HaveMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the HaveMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a HaveMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.HaveMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.InterestedMessage">
+            <summary>
+            Represents an "Interested" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.InterestedMessage.#ctor">
+            <summary>
+            Creates a new InterestedMessage
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.InterestedMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.InterestedMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the InterestedMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.InterestedMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes an InterestedMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.InterestedMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.InterestedMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.KeepAliveMessage">
+            <summary>
+            Represents a "KeepAlive" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.KeepAliveMessage.#ctor">
+            <summary>
+            Creates a new KeepAliveMessage
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.KeepAliveMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.KeepAliveMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the KeepAliveMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.KeepAliveMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a KeepAliveMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.KeepAliveMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.KeepAliveMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.NotInterestedMessage">
+            <summary>
+            Represents a "NotInterested" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.#ctor">
+            <summary>
+            Creates a new NotInterestedMessage
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.NotInterestedMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the NotInterestedMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a RequestMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.NotInterestedMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.PieceMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.#ctor(MonoTorrent.Client.FileManager)">
+            <summary>
+            Creates a new piece message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.#ctor(MonoTorrent.Client.FileManager,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a new piece message
+            </summary>
+            <param name="pieceIndex">The index of the piece</param>
+            <param name="startOffset">The start offset in bytes of the block of data</param>
+            <param name="blockLength">The length in bytes of the data</param>
+        </member>
+        <member name="F:MonoTorrent.Client.PeerMessages.PieceMessage.fileManager">
+            <summary>
+            The filemanager for this Piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.PieceIndex">
+            <summary>
+            The index of the piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.StartOffset">
+            <summary>
+            The start offset of the data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.BlockLength">
+            <summary>
+            The length of the data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PieceMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the PieceMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a PieceMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PieceMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.PortMessage">
+            <summary>
+            Represents a "Port" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.#ctor">
+            <summary>
+            Creates a new PortMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.#ctor(System.UInt16)">
+            <summary>
+            Creates a new Port Message
+            </summary>
+            <param name="port">The port to use</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PortMessage.Port">
+            <summary>
+            The port
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.PortMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the PortMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a Portessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PortMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.RequestMessage">
+            <summary>
+            Represents a "Request" message
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.#ctor">
+            <summary>
+            Creates a new RequestMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a new RequestMessage
+            </summary>
+            <param name="pieceIndex">The index of the piece to request</param>
+            <param name="startOffset">The offset in bytes of the block of data to request</param>
+            <param name="requestLength">The length of the block of data to request</param>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.RequestMessage.StartOffset">
+            <summary>
+            The offset in bytes of the block of data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.RequestMessage.PieceIndex">
+            <summary>
+            The index of the piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.RequestMessage.RequestLength">
+            <summary>
+            The length of the block of data
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.RequestMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the RequestMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a RequestMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.RequestMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.UnchokeMessage">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.#ctor">
+            <summary>
+            Creates a new UnchokeMessage
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.PeerMessages.UnchokeMessage.ByteLength">
+            <summary>
+            Returns the length of the message in bytes
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Encode(System.Byte[],System.Int32)">
+            <summary>
+            Encodes the UnChokeMessage into the supplied buffer
+            </summary>
+            <param name="id">The peer who we are about to send the message to</param>
+            <param name="buffer">The buffer to encode the message to</param>
+            <param name="offset">The offset at which to start encoding the data to</param>
+            <returns>The number of bytes encoded into the buffer</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Decode(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Decodes a RequestMessage from the supplied buffer
+            </summary>
+            <param name="id">The peer to decode the message from</param>
+            <param name="buffer">The buffer to decode the message from</param>
+            <param name="offset">The offset thats the message starts at</param>
+            <param name="length">The maximum number of bytes to read from the buffer</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.Handle(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Performs any necessary actions required to process the message
+            </summary>
+            <param name="id">The Peer who's message will be handled</param>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.UnchokeMessage.ToString">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.Peers">
+            <summary>
+            Represents a list of Peers that can be downloaded from
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.#ctor">
+            <summary>
+            Creates a new Peer list
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.#ctor(System.Int32)">
+            <summary>
+            Creates a new Peer list
+            </summary>
+            <param name="capacity">The initial capacity of the list</param>
+        </member>
+        <member name="P:MonoTorrent.Client.Peers.Item(System.Int32)">
+            <summary>
+            Returns the PeerConnectionID at the specified index
+            </summary>
+            <param name="index">The index of the PeerConnectionID to return</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="P:MonoTorrent.Client.Peers.Count">
+            <summary>
+            Returns the number of Peers in the list
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.Add(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Adds a peer to the PeerConnectionID
+            </summary>
+            <param name="peer">The peer to add</param>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.Remove(System.Int32)">
+            <summary>
+            Removes the PeerConnectionID at the specified index
+            </summary>
+            <param name="index">The index to remove the PeerConnectionID at</param>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.Remove(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Removes the supplied PeerConnectionID from the list
+            </summary>
+            <param name="id">The PeerConnectionID to remove</param>
+            <returns>True if the PeerConnectionID was removed</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.Contains(MonoTorrent.Client.PeerConnectionID)">
+            <summary>
+            Checks if the specified PeerConnectionID is in the list
+            </summary>
+            <param name="peer">The PeerConnectionID to search for</param>
+            <returns>True if the PeerConnectionID was found, false otherwise</returns>
+        </member>
+        <member name="M:MonoTorrent.Client.Peers.GetEnumerator">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.Piece">
+            <summary>
+            This class represents a Piece in the torrent
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Piece.#ctor(System.Int32,MonoTorrent.Common.ITorrent)">
+            <summary>
+            Creates a new Piece
+            </summary>
+            <param name="pieceIndex">The index of the piece</param>
+            <param name="torrent">The Torrent the piece is from</param>
+        </member>
+        <member name="F:MonoTorrent.Client.Piece.blockSize">
+            <summary>
+            The official client rejects any request about 16kb, so even thought it adds more overhead
+            I use the same size requests. All other clients accept up to 128kB requests (afaik).
+            In the future the Piece picker could adaptively choose blocksize.
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Piece.Item(System.Int32)">
+            <summary>
+            Returns the block at the specified index
+            </summary>
+            <param name="index">The index of the block</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="P:MonoTorrent.Client.Piece.Blocks">
+            <summary>
+            The blocks that this piece is composed of
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Piece.Index">
+            <summary>
+            The index of the piece
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Piece.AllBlocksRequested">
+            <summary>
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.Piece.AllBlocksRecieved">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Piece.LastPiece(System.Int32,MonoTorrent.Common.ITorrent)">
+            <summary>
+            Special logic required to create the "LastPiece" for a torrent
+            </summary>
+            <param name="pieceIndex">The index of the piece</param>
+            <param name="torrent">The ITorrent the piece is coming from</param>
+        </member>
+        <member name="M:MonoTorrent.Client.Piece.GetEnumerator">
+            <summary>
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.EngineSettings">
+            <summary>
+            Represents the Settings which need to be passed to the engine
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.EngineSettings.#ctor(System.Int32,System.Int32,System.String,System.Int32)">
+            <summary>
+            Initialises a new engine settings with the supplied values
+            </summary>
+            <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
+            <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
+            <param name="defaultSavePath">The default path to save downloaded material to</param>
+            <param name="listenPort">The port to listen for incoming connections on</param>
+        </member>
+        <member name="M:MonoTorrent.Client.EngineSettings.#ctor(System.Int32,System.Int32,System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Initialises a new engine settings with the supplied values
+            </summary>
+            <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
+            <param name="globalMaxDownloadSpeed">The overall maximum download speed</param>
+            <param name="globalMaxUploadSpeed">The overall maximum upload speed</param>
+            <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
+            <param name="defaultSavePath">The default path to save downloaded material to</param>
+            <param name="listenPort">The port to listen for incoming connections on</param>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.DefaultSavePath">
+            <summary>
+            This is the default directory that torrents will be downloaded to
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxConnections">
+            <summary>
+            This is the combined maximum open connections for all running torrents
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxHalfOpenConnections">
+            <summary>
+            This is the maximum half-open connections allowed
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxDownloadSpeed">
+            <summary>
+            This is the combined maximum download speed for all running torrents
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.GlobalMaxUploadSpeed">
+            <summary>
+            This is the combined maximum upload speed for all running torrents
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.ListenPort">
+            <summary>
+            The port to listen for incoming connections on
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.EngineSettings.DefaultSettings">
+            <summary>
+            These are hardcoded default settings. They should be good enough
+            for connections with upload between 128kB/sec and 512kB/sec
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.TorrentSettings">
+            <summary>
+            Class representing the "Settings" for individual torrents
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(MonoTorrent.Client.TorrentSettings)">
+            <summary>
+            Creates a new TorrentSettings
+            </summary>
+            <param name="settings">The settings to clone</param>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32)">
+            <summary>
+            Creates a new TorrentSettings with the specified number of upload slots and with
+            default settings for everything else
+            </summary>
+            <param name="uploadSlots">The number of upload slots for this torrent</param>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a new TorrentSettings with the specified number of uploadSlots and max connections and
+            default settings for everything else
+            </summary>
+            <param name="uploadSlots">The number of upload slots for this torrent</param>
+            <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
+        </member>
+        <member name="M:MonoTorrent.Client.TorrentSettings.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a new TorrentSettings with the specified settings
+            </summary>
+            <param name="uploadSlots">The number of upload slots for this torrent</param>
+            <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
+            <param name="maxDownloadSpeed">The maximum download speed for this torrent</param>
+            <param name="maxUploadSpeed">The maximum upload speed for this torrent</param>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentSettings.MaxDownloadSpeed">
+            <summary>
+            The maximum download speed for the torrent in kB/sec
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentSettings.MaxUploadSpeed">
+            <summary>
+            The maximum upload speed for the torrent in kB/sec
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentSettings.MaxConnections">
+            <summary>
+            The maximum simultaneous open connections for the torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentSettings.UploadSlots">
+            <summary>
+            The number of upload slots for the torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TorrentSettings.DefaultSettings">
+            <summary>
+            These are hardcoded default settings. They should be good enough
+            for connections with upload between 128kB/sec and 512kB/sec
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.Tests.FileManagerTest">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Tests.FileManagerTest.Setup">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Tests.FileManagerTest.GenerateTestFiles">
+            <summary>
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.Tests.FileManagerTest.RemoveTempFiles">
+            <summary>
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.TrackerManager">
+            <summary>
+            Represents the connection to a tracker that an ITorrentManager has
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerManager.#ctor(MonoTorrent.Client.TorrentManager)">
+            <summary>
+            Creates a new TrackerConnection for the supplied torrent file
+            </summary>
+            <param name="manager">The TorrentManager to create the tracker connection for</param>
+        </member>
+        <member name="F:MonoTorrent.Client.TrackerManager.infoHash">
+            <summary>
+            The infohash for the torrent
+            </summary>
+        </member>
+        <member name="E:MonoTorrent.Client.TrackerManager.UpdateRecieved">
+            <summary>
+            Event that's fired every time the state changes during a TrackerUpdate
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerManager.UpdateSucceeded">
+            <summary>
+            True if the last update succeeded
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerManager.LastUpdated">
+            <summary>
+            The time the last tracker update was sent to any tracker
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerManager.Trackers">
+            <summary>
+            The announceURLs available for this torrent
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerManager.CurrentTracker">
+            <summary>
+            Returns the tracker that is currently being actively used by the engine.
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerManager.Scrape(System.Boolean)">
+            <summary>
+            Scrapes the tracker for peer information.
+            </summary>
+            <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
+            <returns>
+            </returns>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerManager.SendUpdate(System.Int64,System.Int64,System.Int64,MonoTorrent.Common.TorrentEvent)">
+            <summary>
+            Sends a status update to the tracker
+            </summary>
+            <param name="bytesDownloaded">The number of bytes downloaded since the last update</param>
+            <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
+            <param name="bytesLeft">The number of bytes left to download</param>
+            <param name="clientEvent">The Event (if any) that represents this update</param>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerManager.ResponseRecieved(System.IAsyncResult)">
+            <summary>
+            Called as part of the Async SendUpdate reponse
+            </summary>
+            <param name="result">
+            </param>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerManager.ChooseTracker">
+            <summary>
+            If a tracker is unreachable, the next tracker is chosen from the list
+            </summary>
+            <returns>
+            </returns>
+        </member>
+        <member name="T:MonoTorrent.Client.TrackerConnectionID">
+            <summary>
+            Provides a method of keeping a TrackerConnection linked with its TorrentManager during an AsyncRequest
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.TrackerConnectionID.#ctor(System.Net.HttpWebRequest,MonoTorrent.Client.Tracker)">
+            <summary>
+            Creates a new TrackerConnectionID
+            </summary>
+            <param name="request">The HttpWebRequest that sent the Async Request</param>
+            <param name="manager">The ITorrentManager associated with the TrackerConnection</param>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerConnectionID.Request">
+            <summary>
+            The HttpWebRequest that fired the async event
+            </summary>
+        </member>
+        <member name="P:MonoTorrent.Client.TrackerConnectionID.Tracker">
+            <summary>
+            Either Announcing or Scraping depending on which event is about to happen
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.PeerwireEncoder">
+            <summary>
+            Class used for decoding an IPeerMessage
+            </summary>
+        </member>
+        <member name="M:MonoTorrent.Client.PeerMessages.PeerwireEncoder.Decode(System.Byte[],System.Int32,System.Int32,MonoTorrent.Client.TorrentManager)">
+            <summary>
+            Decodes a PeerMessage from the supplied peers recieve buffer
+            </summary>
+            <param name="id">The peer to decode a message from</param>
+            <returns>The PeerMessage decoded from the recieve buffer</returns>
+        </member>
+        <member name="T:MonoTorrent.Client.AllowedFastAlgorithm">
+            <summary>
+            Description of AllowedFastAlgorithm.
+            </summary>
+        </member>
+        <member name="T:MonoTorrent.Client.PeerMessages.ExtendedListMessage">
+            <summary>
+            This class represents the BT_EXTENDED_LST as listed by the Azurues Extended Messaging Protocol
             </summary>
         </member>
     </members>

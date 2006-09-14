@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// RC4FullEncryption.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,12 +28,35 @@
 
 
 
+using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Net;
+using System.Security.Cryptography;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Client.Encryption
 {
-    public interface IPeer
+    internal class RC4FullEncryption : IEncryptor
     {
-        string PeerId { get; }
+        private ICryptoTransform encryptor;
+        private ICryptoTransform decryptor;
+        private Mono.Security.Cryptography.RC4 rc4;
+
+        public RC4FullEncryption()
+        {
+            this.rc4 = Mono.Security.Cryptography.RC4.Create();
+            this.encryptor = rc4.CreateEncryptor();
+            this.decryptor = rc4.CreateDecryptor();
+        }
+
+        public void Encrypt(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Decrypt(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

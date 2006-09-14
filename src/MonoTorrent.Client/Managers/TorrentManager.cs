@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         {
             double total = 0;
             for (int i = 0; i < this.connectedPeers.Count; i++)
-                if (!this.connectedPeers[i].Peer.IsChoking)
+                if (!this.connectedPeers[i].Peer.Connection.IsChoking)
                     total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
 
             return total;
@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
             double total = 0;
 
             for (int i = 0; i < this.connectedPeers.Count; i++)
-                if (!this.connectedPeers[i].Peer.AmChoking)
+                if (!this.connectedPeers[i].Peer.Connection.AmChoking)
                     total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed();
 
             return total;
@@ -522,57 +522,59 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
                         bool isInteresting = this.pieceManager.IsInteresting(id);
-                        if (isInteresting && (!id.Peer.AmInterested))
+                        if (isInteresting && (!id.Peer.Connection.AmInterested))
                         {
                             // If we used to be not interested but now we are, send a message.
-                            id.Peer.AmInterested = true;
+                            id.Peer.Connection.AmInterested = true;
                             id.Peer.Connection.EnQueue(new InterestedMessage());
                         }
 
-                        else if (!isInteresting && id.Peer.AmInterested)
+                        else if (!isInteresting && id.Peer.Connection.AmInterested)
                         {
                             // If we used to be interested but now we're not, send a message
                             // We only become uninterested once we've recieved all our requested bits.
-                            id.Peer.AmInterested = false;
+                            id.Peer.Connection.AmInterested = false;
                             id.Peer.Connection.EnQueue(new NotInterestedMessage());
                         }
 
-                        if (id.Peer.AmChoking && id.Peer.IsInterested && this.uploadingTo < this.settings.UploadSlots)
+                        if (id.Peer.Connection.AmChoking && id.Peer.Connection.IsInterested && this.uploadingTo < this.settings.UploadSlots)
                         {
                             this.uploadingTo++;
-                            id.Peer.AmChoking = false;
+                            id.Peer.Connection.AmChoking = false;
                             id.Peer.Connection.EnQueue(new UnchokeMessage());
                             Console.WriteLine("UnChoking: " + this.uploadingTo);
                         }
 
-                        if (id.Peer.PiecesSent > 20)  // Send 20 blocks before moving on
+                        if (id.Peer.Connection.PiecesSent > 20)  // Send 20 blocks before moving on
                         {
                             for (int j = 0; j < id.Peer.Connection.QueueLength; j++)
                             {
                                 msg = id.Peer.Connection.DeQueue();
-                                if (!(msg is PieceMessage))
+                                if (msg is PieceMessage && id.Peer.Connection.SupportsFastPeer)
+                                    id.Peer.Connection.EnQueue(new RejectRequestMessage((PieceMessage)msg));
+                                else
                                     id.Peer.Connection.EnQueue(msg);
                             }
 
                             this.uploadingTo--;
-                            id.Peer.PiecesSent = 0;
-                            id.Peer.AmChoking = true;
-                            id.Peer.IsRequestingPiecesCount = 0;
+                            id.Peer.Connection.PiecesSent = 0;
+                            id.Peer.Connection.AmChoking = true;
+                            id.Peer.Connection.IsRequestingPiecesCount = 0;
                             id.Peer.Connection.EnQueue(new ChokeMessage());
                             Console.WriteLine("ReChoking: " + this.uploadingTo);
                         }
 
-                        while (!id.Peer.IsChoking && id.Peer.AmRequestingPiecesCount < 6 && id.Peer.AmInterested)
+                        while (!id.Peer.Connection.IsChoking && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
                         {
                             msg = this.pieceManager.RequestPiece(id);
                             if (msg == null)
                                 break;
 
                             id.Peer.Connection.EnQueue(msg);
-                            id.Peer.AmRequestingPiecesCount++;
+                            id.Peer.Connection.AmRequestingPiecesCount++;
                         }
 
-                        if (!(id.Peer.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
+                        if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
                             ClientEngine.connectionManager.ProcessQueue(id);
                     }
 
@@ -617,7 +619,7 @@ namespace MonoTorrent.Client
 #warning Shouldn't be possible to have a null connection here. Fix this
                 if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
                 {
-                    if (!id.Peer.BitField[p])
+                    if (!id.Peer.Connection.BitField[p])
                         if (id.Peer.Connection != null) // this shouldn't be null ever, but it is. Figure out why.
                             id.Peer.Connection.EnQueue(new HaveMessage(p)); // It's being disposed of but not removed from the list...
 
@@ -741,9 +743,8 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    id = new PeerConnectionID(new ClientPeer(dict["ip"].ToString(),
-                                    int.Parse(dict["port"].ToString()),
-                                    dict["peer id"].ToString()), this);
+                    id = new PeerConnectionID(new Peer(dict["peer id"].ToString(), dict["ip"].ToString() + ':' + dict["port"].ToString()),
+                                    this);
                     peersAdded += this.AddPeers(id);
                 }
                 catch
@@ -785,7 +786,9 @@ namespace MonoTorrent.Client
 
                 port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
                 i += 2;
-                id = new PeerConnectionID(new ClientPeer(sb.ToString(), port, null), this);
+                sb.Append(':');
+                sb.Append(port);
+                id = new PeerConnectionID(new Peer(null, sb.ToString()), this);
 
                 added += this.AddPeers(id);
             }
@@ -807,7 +810,7 @@ namespace MonoTorrent.Client
             lock (this.listLock)
                 foreach (PeerConnectionID id in this.connectedPeers)
                     lock (id)
-                        if (id.Peer.PeerType == PeerType.Seed)
+                        if (id.Peer.IsSeeder)
                             seeds++;
             return seeds;
         }
@@ -823,9 +826,8 @@ namespace MonoTorrent.Client
             lock (this.listLock)
                 foreach (PeerConnectionID id in this.connectedPeers)
                     lock (id)
-                        if (id.Peer.PeerType == PeerType.Leech || id.Peer.PeerType == PeerType.Unknown)
+                        if (!id.Peer.IsSeeder)
                             leechs++;
-#warning Also counting unknowns for the moment. The spec has been updated, so I need to change the way i initialize bitfields. There should  never be unknowns
 
             return leechs;
         }

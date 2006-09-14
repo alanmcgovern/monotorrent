@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class BitfieldMessage : IPeerMessage
     {
-        private const int messageId = 5;
+        public const int MessageId = 5;
 
         #region Member Variables
         /// <summary>
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         public int Encode(byte[] buffer, int offset)
         {
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(bitField.LengthInBytes + 1)), 0, buffer, offset, 4);
             this.bitField.ToByteArray(buffer, offset + 5);
 
@@ -112,27 +112,26 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-            id.Peer.BitField = this.bitField;
-            for (int i = 0; i < id.Peer.BitField.Array.Length - 1; i++)
-                if (id.Peer.BitField.Array[0] != ~0)        // Check every section except the last section
+            id.Peer.Connection.BitField = this.bitField;
+            for (int i = 0; i < id.Peer.Connection.BitField.Array.Length - 1; i++)
+                if (id.Peer.Connection.BitField.Array[0] != ~0)        // Check every section except the last section
                 {
-                    id.Peer.PeerType = PeerType.Leech;
+                    id.Peer.IsSeeder = false;
                     return;
                 }
 
 
             // Manually check each of the remaining positions in the last section
-#warning This relies on 32 bit ints. is there a better way?
-            for (int i = 32 * (id.Peer.BitField.Length - 1); i < id.Peer.BitField.Length; i++)
+            for (int i = sizeof(int) * 8 * (id.Peer.Connection.BitField.Length - 1); i < id.Peer.Connection.BitField.Length; i++)
             {
-                if (!id.Peer.BitField[i])
+                if (!id.Peer.Connection.BitField[i])
                 {
-                    id.Peer.PeerType = PeerType.Leech;
+                    id.Peer.IsSeeder = false;
                     return;
                 }
             }
 
-            id.Peer.PeerType = PeerType.Seed;
+            id.Peer.IsSeeder = true;
         }
 
 

@@ -68,7 +68,7 @@ namespace MonoTorrent.Common
         public int StartPieceIndex
         {
             get { return this.startPiece; }
-            internal set { this.endPiece = value; }
+            internal set { this.startPiece = value; }
         }
         private int startPiece;
 

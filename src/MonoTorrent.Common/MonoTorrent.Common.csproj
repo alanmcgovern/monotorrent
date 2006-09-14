@@ -19,6 +19,7 @@
     <FileAlignment>4096</FileAlignment>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
+    <DocumentationFile>bin\Debug\MonoTorrent.Common.dll.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

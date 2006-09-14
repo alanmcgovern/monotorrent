@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.PeerMessages
     public class NotInterestedMessage : IPeerMessage
     {
         private const int messageLength = 1;
-        private const int messageId = 3;
+        public const int MessageId = 3;
 
         #region Constructors
         /// <summary>
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.PeerMessages
         public int Encode(byte[] buffer, int offset)
         {
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
-            buffer[offset + 4] = (byte)messageId;
+            buffer[offset + 4] = (byte)MessageId;
 
             return (messageLength + 4);
         }
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client.PeerMessages
         public void Handle(PeerConnectionID id)
         {
 #warning Remove him from the send piece queue (when i have one)
-            id.Peer.IsInterested = false;
+            id.Peer.Connection.IsInterested = false;
         }
 
 

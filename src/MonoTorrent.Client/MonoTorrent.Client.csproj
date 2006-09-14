@@ -19,6 +19,7 @@
     <FileAlignment>4096</FileAlignment>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
+    <DocumentationFile>bin\Debug\MonoTorrent.Client.dll.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,15 +56,23 @@
     <Compile Include="BitField.cs" />
     <Compile Include="Block.cs" />
     <Compile Include="ClientEngine.cs" />
-    <Compile Include="ClientPeer.cs" />
-    <Compile Include="Encryption\StandardConnection.cs" />
-    <Compile Include="Encryption\RC4FullConnection.cs" />
-    <Compile Include="Encryption\RC4HeaderConnection.cs" />
+    <Compile Include="ConnectionManagerException.cs" />
+    <Compile Include="Encryption\NoEncryption.cs" />
+    <Compile Include="Encryption\IEncryptor.cs" />
+    <Compile Include="PeerConnections\HTTPConnection.cs" />
+    <Compile Include="PeerConnections\TCPConnection.cs" />
+    <Compile Include="Encryption\RC4FullEncryption.cs" />
+    <Compile Include="Encryption\RC4HeaderEncryption.cs" />
     <Compile Include="IClientEngine.cs" />
     <Compile Include="IEngineSettings.cs" />
-    <Compile Include="IPeerConnectionID.cs" />
     <Compile Include="ITorrentManager.cs" />
-    <Compile Include="PeerBase.cs" />
+    <Compile Include="PeerMessages\FastPeerExtensions\AllowedFastMessage.cs" />
+    <Compile Include="PeerMessages\FastPeerExtensions\HaveAllMessage.cs" />
+    <Compile Include="PeerMessages\FastPeerExtensions\HaveNoneMessage.cs" />
+    <Compile Include="PeerMessages\FastPeerExtensions\RejectRequestMessage.cs" />
+    <Compile Include="PeerMessages\FastPeerExtensions\SuggestPieceMessage.cs" />
+    <Compile Include="Peers\Peer.cs" />
+    <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Tracker.cs" />
     <Compile Include="ConnectionListener.cs" />
     <Compile Include="EventArgs\MessageEventArgs.cs" />
@@ -79,8 +88,8 @@
     <Compile Include="Managers\FileManager.cs" />
     <Compile Include="Managers\PieceManager.cs" />
     <Compile Include="Managers\TorrentManager.cs" />
-    <Compile Include="PeerConnectionBase.cs" />
-    <Compile Include="PeerConnectionId.cs" />
+    <Compile Include="PeerConnections\PeerConnectionBase.cs" />
+    <Compile Include="PeerConnections\PeerConnectionId.cs" />
     <Compile Include="PeerMessages\BitfieldMessage.cs" />
     <Compile Include="PeerMessages\CancelMessage.cs" />
     <Compile Include="PeerMessages\ChokeMessage.cs" />
@@ -94,7 +103,7 @@
     <Compile Include="PeerMessages\PortMessage.cs" />
     <Compile Include="PeerMessages\RequestMessage.cs" />
     <Compile Include="PeerMessages\UnchokeMessage.cs" />
-    <Compile Include="Peers.cs" />
+    <Compile Include="Peers\Peers.cs" />
     <Compile Include="Piece.cs" />
     <Compile Include="Settings\EngineSettings.cs" />
     <Compile Include="Settings\TorrentSettings.cs" />
@@ -104,6 +113,9 @@
     <Compile Include="Managers\TrackerManager.cs" />
     <Compile Include="TrackerConnectionId.cs" />
     <Compile Include="PeerMessages\PeerwireEncoder.cs" />
+    <Compile Include="PeerConnections\IPeerConnectionID.cs" />
+    <Compile Include="AllowedFastAlgorithm.cs" />
+    <Compile Include="PeerMessages\ExtendedMessages\ExtendedListMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Common\MonoTorrent.Common.csproj">

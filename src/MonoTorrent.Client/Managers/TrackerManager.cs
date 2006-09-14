@@ -147,6 +147,7 @@ namespace MonoTorrent.Client
         /// <param name="clientEvent">The Event (if any) that represents this update</param>
         public WaitHandle SendUpdate(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent)
         {
+            this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             Tracker tracker = this.ChooseTracker();
             WaitHandle handle = tracker.SendUpdate(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
@@ -177,6 +178,7 @@ namespace MonoTorrent.Client
             catch (WebException ex)
             {
                 this.updateSucceeded = false;
+                id.Tracker.UpdateSucceeded = false;
 
                 if (id.Tracker.State == TrackerState.Announcing)
                     id.Tracker.State = TrackerState.AnnouncingFailed;
