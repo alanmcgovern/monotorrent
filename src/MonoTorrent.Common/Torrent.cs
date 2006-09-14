@@ -271,6 +271,9 @@ namespace MonoTorrent.Common
         /// <param name="path">The path to load the .torrent file from</param>
         public void LoadTorrent(string path)
         {
+            if (String.IsNullOrEmpty("path"))
+                throw new ArgumentNullException("path");
+
             using (BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), System.Text.Encoding.UTF8))
             {
                 this.torrentPath = path;
