@@ -40,13 +40,6 @@ namespace MonoTorrent.Common
         Connected
     }
 
-    public enum PeerType
-    {
-        Unknown,
-        Seed,
-        Leech
-    }
-
     public enum Direction
     {
         Incoming,
