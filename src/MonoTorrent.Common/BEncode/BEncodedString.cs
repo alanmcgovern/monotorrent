@@ -291,6 +291,7 @@ namespace MonoTorrent.Common
 
         public int LengthInBytes(Encoding e)
         {
+#warning This isn't right.
             string output = this.textBytes.Length.ToString() + ":" + e.GetString(this.textBytes);
             int count = 0;
             count += e.GetByteCount(this.textBytes.Length.ToString());
