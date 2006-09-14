@@ -36,8 +36,6 @@ namespace MonoTorrent.Common
 {
     public class ToolBox
     {
-#warning If you want to encode the infohash to a string, use: System.Web.HttpUtility.UrlEncode(torrent.InfoHash)
-        [Obsolete]
         public static string GetHex(byte[] infoHash)
         {
             StringBuilder sb = new StringBuilder();
