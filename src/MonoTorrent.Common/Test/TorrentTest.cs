@@ -317,11 +317,5 @@ namespace MonoTorrent.Common.Test
         {
             Assert.IsTrue(ToolBox.ByteMatch(torrent.SHA1, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
         }
-
-
-
-
-#warning Multiple publisher URLs? are some associated with individual files?
-#warning All members are not exposed through the interface. Update this test when they are
     }
 }
