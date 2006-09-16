@@ -55,7 +55,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Encodes the ChokeMessage into the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to Encode</param>
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
@@ -71,7 +70,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Decodes a ChokeMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
@@ -88,7 +86,10 @@ namespace MonoTorrent.Client.PeerMessages
         public void Handle(PeerConnectionID id)
         {
             id.Peer.Connection.IsChoking = true;
-            id.TorrentManager.PieceManager.RemoveRequests(id);
+
+            // If he supports fast peer, messages are only rejected with a RejectRequest message
+            if (!ClientEngine.SupportsFastPeer)
+                id.TorrentManager.PieceManager.RemoveRequests(id);
         }
 
 
