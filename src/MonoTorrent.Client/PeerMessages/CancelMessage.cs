@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the CancelMessage into the supplied buffer
         /// </summary>
@@ -144,7 +144,25 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-#warning I can't handle this until i have my Send Queue. Remove the piece request from the sendqueue.
+            IPeerMessage msg;
+            for (int i = 0; i < id.Peer.Connection.QueueLength; i++)
+            {
+                msg = id.Peer.Connection.DeQueue();
+                if (!msg is PieceMessage)
+                {
+                    id.Peer.Connection.EnQueue(msg);
+                }
+                else
+                {
+                    PieceMessage piece = msg as PieceMessage;
+                    if (!(piece.PieceIndex == this.pieceIndex
+                        && piece.StartOffset == this.startOffset
+                        && piece.BlockLength = this.requestLength))
+                    {
+                        id.Peer.Connection.EnQueue(msg);
+                    }
+                }
+            }
         }
 
 
