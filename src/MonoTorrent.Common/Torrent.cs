@@ -66,6 +66,7 @@ namespace MonoTorrent.Common
     /// </summary>
     public class Torrent : ITorrent
     {
+        #region Constructors
         public Torrent()
         {
             this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -79,7 +80,10 @@ namespace MonoTorrent.Common
             this.publisherUrl = string.Empty;
             this.source = string.Empty;
         }
+        #endregion
 
+
+        #region Member Variables
         /// <summary>
         /// This is the array of hashes contained within the torrent.
         /// </summary>
@@ -264,14 +268,17 @@ namespace MonoTorrent.Common
             get { return this.azureusProperties; }
         }
         private IBEncodedValue azureusProperties;
+        #endregion
 
+
+        #region Methods
         /// <summary>
         /// This method loads a .torrent file from the specified path.
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         public void LoadTorrent(string path)
         {
-            if (String.IsNullOrEmpty("path"))
+            if (String.IsNullOrEmpty(path))
                 throw new ArgumentNullException("path");
 
             using (BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), System.Text.Encoding.UTF8))
@@ -378,6 +385,7 @@ namespace MonoTorrent.Common
             if (!path.ToLower().EndsWith(".torrent"))      // make sure it ends with .torrent
                 path += ".torrent";
 
+            throw new NotImplementedException();
             // This method should be used to save this torrent to the disk
         }
 
@@ -579,7 +587,10 @@ namespace MonoTorrent.Common
         {
             return this.torrentFiles.GetEnumerator();
         }
+        #endregion
 
+
+        #region Overidden Methods
         /// <summary>
         /// Two Torrent instances are considered equal if they have the same infohash
         /// </summary>
@@ -607,5 +618,11 @@ namespace MonoTorrent.Common
         {
             return this.infoHash.GetHashCode();
         }
+
+        public override string ToString()
+        {
+            return this.name;
+        }
+        #endregion
     }
 }
