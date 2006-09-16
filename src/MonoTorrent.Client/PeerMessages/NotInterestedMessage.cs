@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the NotInterestedMessage into the supplied buffer
         /// </summary>
@@ -71,7 +71,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Decodes a RequestMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
@@ -86,7 +85,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-#warning Remove him from the send piece queue (when i have one)
             id.Peer.Connection.IsInterested = false;
         }
 
