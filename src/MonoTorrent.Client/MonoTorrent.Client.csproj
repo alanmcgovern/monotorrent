@@ -18,8 +18,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <FileAlignment>4096</FileAlignment>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
     <DocumentationFile>bin\Debug\MonoTorrent.Client.dll.xml</DocumentationFile>
+    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -72,6 +72,7 @@
     <Compile Include="PeerMessages\FastPeerExtensions\RejectRequestMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\SuggestPieceMessage.cs" />
     <Compile Include="Peers\Peer.cs" />
+    <Compile Include="ProtocolException.cs" />
     <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Tracker.cs" />
     <Compile Include="ConnectionListener.cs" />

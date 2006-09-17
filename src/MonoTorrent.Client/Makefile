@@ -9,6 +9,7 @@ IClientEngine.cs \
 IEngineSettings.cs \
 IPieceManager.cs \
 ITorrentManager.cs \
+ProtocolException.cs \
 Encryption/IEncryptor.cs \
 Encryption/NoEncryption.cs \
 Encryption/RC4FullEncryption.cs \
