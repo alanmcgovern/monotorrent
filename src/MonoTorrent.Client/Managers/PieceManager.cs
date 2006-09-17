@@ -97,6 +97,23 @@ namespace MonoTorrent.Client
             lock (this.bufferField)
             {
                 Piece piece;
+
+                if (id.Peer.Connection.SuggestedPieces.Count > 0)
+                {
+                    while(this.mybitField[id.Peer.Connection.SuggestedPieces[0]]
+                        && id.Peer.Connection.SuggestedPieces.Count > 0)
+                        id.Peer.Connection.SuggestedPieces.RemoveAt(0);
+
+                    if (id.Peer.Connection.SuggestedPieces.Count != 0)
+                    {
+                        piece = new Piece(id.Peer.Connection.SuggestedPieces[0], id.TorrentManager.Torrent);
+                        piece[0].Requested = true;
+                        this.mybitField[id.Peer.Connection.SuggestedPieces[0]] = true;  // Flag this one as downloaded. If it hashfails, remove it
+                        this.requests.Add(id, piece);
+                        id.Peer.Connection.SuggestedPieces.RemoveAt(0);
+                        return piece[0].CreateRequest();
+                    }
+                }
                 lock (this.mybitField)
                     Array.Copy(this.mybitField.Array, 0, bufferField.Array, 0, this.mybitField.Array.Length);
 
