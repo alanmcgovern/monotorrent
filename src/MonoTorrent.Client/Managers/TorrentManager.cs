@@ -536,12 +536,12 @@ namespace MonoTorrent.Client
                             Console.WriteLine("UnChoking: " + this.uploadingTo);
                         }
 
-                        if (id.Peer.Connection.PiecesSent > 20)  // Send 20 blocks before moving on
+                        if (id.Peer.Connection.PiecesSent > 50)  // Send 50 blocks before moving on
                         {
                             for (int j = 0; j < id.Peer.Connection.QueueLength; j++)
                             {
                                 msg = id.Peer.Connection.DeQueue();
-                                if (msg is PieceMessage && id.Peer.Connection.SupportsFastPeer)
+                                if (msg is PieceMessage && id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                                     id.Peer.Connection.EnQueue(new RejectRequestMessage((PieceMessage)msg));
                                 else
                                     id.Peer.Connection.EnQueue(msg);
