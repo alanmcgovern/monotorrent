@@ -179,14 +179,14 @@ namespace MonoTorrent.Common
         public int LengthInBytes(Encoding e)
         {
             int length = 0;
-            length++;   // Dictionaries start with 'd'
+            length += e.GetByteCount("d");   // Dictionaries start with 'd'
 
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this.dictionary)
             {
                 length += keypair.Key.LengthInBytes(e);
                 length += keypair.Value.LengthInBytes(e);
             }
-            length++;   // Dictionaries end with 'e'
+            length += e.GetByteCount("e");   // Dictionaries end with 'e'
             return length;
         }
         #endregion

@@ -286,18 +286,13 @@ namespace MonoTorrent.Common
         #region Helper Methods
         public int LengthInBytes()
         {
-            return this.LengthInBytes(new UTF8Encoding(false, false));
+            return this.LengthInBytes(this.encoding);
         }
 
         public int LengthInBytes(Encoding e)
         {
-#warning This isn't right.
-            string output = this.textBytes.Length.ToString() + ":" + e.GetString(this.textBytes);
-            int count = 0;
-            count += e.GetByteCount(this.textBytes.Length.ToString());
-            count += 1; // for the ':'
-            count += this.textBytes.Length;
-            return count;
+            string output = this.textBytes.Length.ToString() + ":" + this.encoding.GetString(this.textBytes);
+            return e.GetByteCount(output);
         }
 
         public int CompareTo(BEncodedString other)
@@ -329,9 +324,8 @@ namespace MonoTorrent.Common
 
         public override string ToString()
         {
-            return new UTF8Encoding().GetString(textBytes);
+            return this.encoding.GetString(textBytes);
         }
         #endregion
-
     }
 }

@@ -177,11 +177,11 @@ namespace MonoTorrent.Common
         {
             int length = 0;
 
-            length++;   // Lists start with 'l'
+            length += e.GetByteCount("l");   // Lists start with 'l'
             foreach (IBEncodedValue item in this.list)
                 length += item.LengthInBytes(e);
 
-            length++;   // Lists end with 'e'
+            length += e.GetByteCount("e");   // Lists end with 'e'
             return length;
         }
         #endregion
