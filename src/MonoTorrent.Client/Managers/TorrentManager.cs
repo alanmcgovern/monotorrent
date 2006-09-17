@@ -69,16 +69,6 @@ namespace MonoTorrent.Client
         internal Queue<PeerConnectionID> downloadQueue;
         internal Queue<PeerConnectionID> uploadQueue;
 
-#warning TorrentState should now be enough to check if we are hashing
-        /// <summary>
-        /// True if we are currently hashchecking
-        /// </summary>
-        public bool AmHashing
-        {
-            get { return this.amHashing; }
-        }
-        private bool amHashing;
-
 
         /// <summary>
         /// The Torrent contained within this TorrentManager
@@ -360,16 +350,15 @@ namespace MonoTorrent.Client
         internal void Start()
         {
             TorrentStateChangedEventArgs args;
-            if (!this.hashChecked && !this.amHashing)
+            if (!this.hashChecked && !(this.state == TorrentState.Hashing))
             {
-                this.amHashing = true;
-                ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
-
                 args = new TorrentStateChangedEventArgs(this.state, TorrentState.Hashing);
                 this.state = TorrentState.Hashing;
+
                 if (this.OnTorrentStateChanged != null)
                     OnTorrentStateChanged(this, args);
 
+                ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
                 return;
             }
 
