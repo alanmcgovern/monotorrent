@@ -15,7 +15,7 @@ namespace MonoTorrent.Client
         public const int AllowedFastPieceCount = 10;
         private static SHA1Managed hasher = new SHA1Managed();
 
-		public static UInt32[] Calculate(byte[] addressBytes, byte[] infohash, int numberOfResults)
+		public static UInt32[] Calculate(byte[] addressBytes, byte[] infohash, int numberOfResults, UInt32 numberOfPieces)
 		{
             byte[] hashBuffer = new byte[24];   // The hash buffer to be used in hashing
             uint[] results = new uint[numberOfResults];   // The results array which will be returned
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < 20; i += 4)
                 {
                     UInt32 result = (UInt32)IPAddress.HostToNetworkOrder(BitConverter.ToInt32(hashBuffer, i));
-                    results[j++] = result % 1313;
+                    results[j++] = result % numberOfPieces;
                     if (j == results.Length)
                         return results;
                 }

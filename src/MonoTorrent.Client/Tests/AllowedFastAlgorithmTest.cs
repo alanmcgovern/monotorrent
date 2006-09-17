@@ -19,7 +19,7 @@ namespace MonoTorrent.Client.Tests
             for (int i = 0; i < infohash.Length; i++)
                 infohash[i] = (byte)170;
 
-            UInt32[] results = AllowedFastAlgorithm.Calculate(endpoint.Address.GetAddressBytes(), infohash, 9);
+            UInt32[] results = AllowedFastAlgorithm.Calculate(endpoint.Address.GetAddressBytes(), infohash, 9, (UInt32)1313);
             Assert.AreEqual(1059, results[0]);
             Assert.AreEqual(431, results[1]);
             Assert.AreEqual(808, results[2]);
