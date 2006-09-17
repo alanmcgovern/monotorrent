@@ -104,8 +104,8 @@ namespace MonoTorrent.Common
         {
             int written = 0;
 
-            buffer[offset + written] = (byte)'d';          //Dictionaries start with 'd'
-            written++;
+            //Dictionaries start with 'd'
+            written += e.GetBytes("d", 0, 1, buffer, offset);
 
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this)
             {
@@ -113,9 +113,8 @@ namespace MonoTorrent.Common
                 written += keypair.Value.Encode(buffer, offset + written, e);
             }
 
-            buffer[written + offset] = ((byte)'e');                 // Dictionaries end with 'e'
-            written++;
-
+            // Dictionaries end with 'e'
+            written += e.GetBytes("e", 0, 1, buffer, offset + written);                 
             return written;
         }
 

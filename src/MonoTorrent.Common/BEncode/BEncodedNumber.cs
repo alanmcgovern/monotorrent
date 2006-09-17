@@ -109,14 +109,9 @@ namespace MonoTorrent.Common
         public int Encode(byte[] buffer, int offset, Encoding e)
         {
             int written = 0;
-            buffer[offset + written] = (byte)'i';
-            written++;
-
+            written += e.GetBytes("i", 0, 1, buffer, offset);
             written += e.GetBytes(this.number.ToString(), 0, this.number.ToString().Length, buffer, offset + written);
-
-            buffer[offset + written] = (byte)'e';
-            written++;
-
+            written += e.GetBytes("e", 0, 1, buffer, offset + written);
             return written;
         }
 

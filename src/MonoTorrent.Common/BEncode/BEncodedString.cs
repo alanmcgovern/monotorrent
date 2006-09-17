@@ -235,14 +235,10 @@ namespace MonoTorrent.Common
         /// <returns>The number of bytes encoded</returns>
         public int Encode(byte[] buffer, int offset, Encoding e)
         {
-            int bytesWritten = 0;
-            string lengthString = this.textBytes.Length.ToString() + ":";
-
-            bytesWritten += e.GetBytes(lengthString, 0, lengthString.Length, buffer, offset);
-            Buffer.BlockCopy(this.textBytes, 0, buffer, bytesWritten + offset, this.textBytes.Length);
-            bytesWritten += this.textBytes.Length;
-
-            return bytesWritten;
+            string output = this.textBytes.Length + ":";
+            int written = e.GetBytes(output, 0, output.Length, buffer, offset);
+            Buffer.BlockCopy(this.textBytes, 0, buffer, offset + written, this.textBytes.Length);
+            return written + this.textBytes.Length;
         }
 
 
@@ -258,9 +254,9 @@ namespace MonoTorrent.Common
             try
             {
                 while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))         // read in how many characters
-                    sb.Append((char)reader.ReadByte());                                 // the string is
+                    sb.Append((char)reader.ReadChar());                                 // the string is
 
-                if (reader.ReadByte() != ':')                                            // remove the ':'
+                if (reader.ReadChar() != ':')                                            // remove the ':'
                     throw new BEncodingException("Invalid data found. Aborting");
 
                 letterCount = int.Parse(sb.ToString());
@@ -268,7 +264,7 @@ namespace MonoTorrent.Common
 
                 this.textBytes = new byte[letterCount];
 
-                if (reader.Read(textBytes, 0, textBytes.Length) != letterCount)
+                if (reader.Read(textBytes, 0, letterCount) != letterCount)
                     throw new BEncodingException("Couldn't decode string");
             }
             catch (BEncodingException ex)
@@ -291,8 +287,8 @@ namespace MonoTorrent.Common
 
         public int LengthInBytes(Encoding e)
         {
-            string output = this.textBytes.Length.ToString() + ":" + this.encoding.GetString(this.textBytes);
-            return e.GetByteCount(output);
+            string output = this.textBytes.Length.ToString() + ":";
+            return (e.GetByteCount(output) + this.textBytes.Length);
         }
 
         public int CompareTo(BEncodedString other)

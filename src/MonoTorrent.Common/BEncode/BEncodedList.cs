@@ -117,16 +117,14 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public int Encode(byte[] buffer, int offset, Encoding e)
         {
-            int bytesWritten = 0;
-            buffer[offset + bytesWritten] = (byte)'l';
-            bytesWritten++;
+            int written = 0;
+            written += e.GetBytes("l", 0, 1, buffer, offset);
 
             foreach (IBEncodedValue value in this.list)
-                bytesWritten += value.Encode(buffer, offset + bytesWritten, e);
+                written += value.Encode(buffer, offset + written, e);
 
-            buffer[offset + bytesWritten] = (byte)'e';
-            bytesWritten++;
-            return bytesWritten;
+            written += e.GetBytes("e", 0, 1, buffer, offset + written);
+            return written;
         }
 
         /// <summary>

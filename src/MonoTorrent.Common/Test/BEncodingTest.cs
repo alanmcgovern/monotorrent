@@ -51,6 +51,24 @@ namespace MonoTorrent.Common.Test
             BEncodedString str = s;
             Assert.AreEqual(s, str.Text);
         }
+
+        //[Test]
+        //public void EncodingUTF32()
+        //{
+        //    UTF8Encoding enc8 = new UTF8Encoding();
+        //    UTF32Encoding enc32 = new UTF32Encoding();
+        //    BEncodedDictionary val = new BEncodedDictionary();
+
+        //    val.Add("Test", (BEncodedNumber)1532);
+        //    val.Add("yeah", (BEncodedString)"whoop");
+        //    val.Add("mylist", new BEncodedList());
+        //    val.Add("mydict", new BEncodedDictionary());
+
+        //    byte[] utf8Result = val.Encode();
+        //    byte[] utf32Result = val.Encode(enc32);
+
+        //    Assert.AreEqual(enc8.GetString(utf8Result), enc32.GetString(utf32Result));
+        //}
         #endregion
 
 
@@ -67,6 +85,17 @@ namespace MonoTorrent.Common.Test
                 Assert.AreEqual(((BEncodedString)result).Text, "this is a test string");
             }
         }
+
+        //[Test]
+        //public void benStringDecodingUTF32()
+        //{
+        //    System.Text.Encoding e = new UTF32Encoding();
+        //    string text = "test";
+        //    byte[] data = e.GetBytes(text);
+
+        //    IBEncodedValue val = BEncode.Decode(data);
+        //    Assert.AreEqual(text, val.ToString());
+        //}
 
         [Test]
         public void benStringEncoding()
@@ -101,19 +130,19 @@ namespace MonoTorrent.Common.Test
             Assert.AreEqual(length, str.LengthInBytes());
         }
 
-        [Test]
-        public void benStringLengthInBytesUTF32()
-        {
-            string text = "thisisateststring";
-            System.Text.UTF32Encoding enc = new System.Text.UTF32Encoding();
+        //[Test]
+        //public void benStringLengthInBytesUTF32()
+        //{
+        //    string text = "thisisateststring";
+        //    System.Text.UTF32Encoding enc = new System.Text.UTF32Encoding();
 
-            BEncodedString str = new BEncodedString(text, enc);
-            int length = enc.GetByteCount(text);
-            length += enc.GetByteCount(text.Length.ToString());
-            length += enc.GetByteCount(":");
+        //    BEncodedString str = new BEncodedString(text, enc);
+        //    int length = enc.GetByteCount(text);
+        //    length += enc.GetByteCount(text.Length.ToString());
+        //    length += enc.GetByteCount(":");
 
-            Assert.AreEqual(length, str.LengthInBytes());
-        }
+        //    Assert.AreEqual(length, str.LengthInBytes());
+        //}
 
         [Test]
         [ExpectedException(typeof(BEncodingException))]
@@ -168,15 +197,15 @@ namespace MonoTorrent.Common.Test
             Assert.AreEqual(number.ToString().Length + 2, num.LengthInBytes());
         }
 
-        [Test]
-        public void benNumberLengthInBytesUTF32()
-        {
-            string output = "i12345e";
-            BEncodedNumber num = 12345;
-            UTF32Encoding enc = new UTF32Encoding();
+        //[Test]
+        //public void benNumberLengthInBytesUTF32()
+        //{
+        //    string output = "i12345e";
+        //    BEncodedNumber num = 12345;
+        //    UTF32Encoding enc = new UTF32Encoding();
 
-            Assert.AreEqual(enc.GetByteCount(output), num.LengthInBytes(enc));
-        }
+        //    Assert.AreEqual(enc.GetByteCount(output), num.LengthInBytes(enc));
+        //}
 
         [Test]
         [ExpectedException(typeof(BEncodingException))]
@@ -252,16 +281,16 @@ namespace MonoTorrent.Common.Test
             Assert.AreEqual(data.Length, list.LengthInBytes());
         }
 
-        [Test]
-        public void benListLengthInBytesUTF32()
-        {
-            string output = "l5:testse";
-            BEncodedList list = new BEncodedList();
-            list.Add((BEncodedString)"tests");
-            UTF32Encoding enc = new UTF32Encoding();
+        //[Test]
+        //public void benListLengthInBytesUTF32()
+        //{
+        //    string output = "l5:testse";
+        //    BEncodedList list = new BEncodedList();
+        //    list.Add((BEncodedString)"tests");
+        //    UTF32Encoding enc = new UTF32Encoding();
 
-            Assert.AreEqual(enc.GetByteCount(output), list.LengthInBytes(enc));
-        }
+        //    Assert.AreEqual(enc.GetByteCount(output), list.LengthInBytes(enc));
+        //}
 
         [Test]
         [ExpectedException(typeof(BEncodingException))]
@@ -273,7 +302,7 @@ namespace MonoTorrent.Common.Test
         #endregion
 
 
-        #region Dictionary Tests
+        #region BEncodedDictionary Tests
         [Test]
         public void benDictionaryDecoding()
         {
@@ -341,16 +370,16 @@ namespace MonoTorrent.Common.Test
             Assert.AreEqual(data.Length, dict.LengthInBytes());
         }
 
-        [Test]
-        public void benDictLengthInBytesUTF32()
-        {
-            string output = "d3:key5:testse";
-            BEncodedDictionary dict = new BEncodedDictionary();
-            dict.Add("key", (BEncodedString)"tests");
-            UTF32Encoding enc = new UTF32Encoding();
+        //[Test]
+        //public void benDictLengthInBytesUTF32()
+        //{
+        //    string output = "d3:key5:testse";
+        //    BEncodedDictionary dict = new BEncodedDictionary();
+        //    dict.Add("key", (BEncodedString)"tests");
+        //    UTF32Encoding enc = new UTF32Encoding();
 
-            Assert.AreEqual(enc.GetByteCount(output), dict.LengthInBytes(enc));
-        }
+        //    Assert.AreEqual(enc.GetByteCount(output), dict.LengthInBytes(enc));
+        //}
 
         [Test]
         [ExpectedException(typeof(BEncodingException))]
