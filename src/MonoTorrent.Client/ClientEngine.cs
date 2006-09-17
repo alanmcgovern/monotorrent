@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IClientEngine, IDisposable
     {
         #region GlobalSupports
-        public const bool SupportsFastPeer = false;
+        public static readonly bool SupportsFastPeer = false;
         #endregion
 
         #region Member Variables
@@ -329,8 +329,7 @@ namespace MonoTorrent.Client
 
                 return true;
             }
-#warning Don't catch everything...
-            catch
+            catch(System.Runtime.Serialization.SerializationException ex)
             {
                 return false;
             }
