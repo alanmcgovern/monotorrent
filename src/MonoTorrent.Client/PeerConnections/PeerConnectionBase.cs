@@ -305,6 +305,7 @@ namespace MonoTorrent.Client
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
         public PeerConnectionBase(int bitfieldLength, IEncryptor encryptor)
         {
+            this.suggestedPieces = new List<int>();
             this.encryptor = encryptor;
             this.amChoking = true;
             this.isChoking = true;
