@@ -495,6 +495,8 @@ namespace MonoTorrent.Client
 
             lock (this.listLock)
             {
+                counter++;
+
                 // If we havn't reached our max connected peers, connect to another one.
                 if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
                     ClientEngine.connectionManager.ConnectToPeer(this);
@@ -507,7 +509,7 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection == null)
                             continue;
 
-                        if (counter++ % 20 == 0)     // Call it every second... ish
+                        if (counter % 20 == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
                         bool isInteresting = this.pieceManager.IsInteresting(id);
