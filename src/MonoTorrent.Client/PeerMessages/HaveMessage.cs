@@ -38,8 +38,8 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class HaveMessage : IPeerMessage
     {
-        private const int messageLength = 5;
         public const int MessageId = 4;
+        private const int messageLength = 5;
 
 
         #region Member Variables
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the HaveMessage into the supplied buffer
         /// </summary>
@@ -133,6 +133,7 @@ namespace MonoTorrent.Client.PeerMessages
 
             id.Peer.IsSeeder = true;
         }
+
 
         /// <summary>
         /// Returns the length of the message in bytes

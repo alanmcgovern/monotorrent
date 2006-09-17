@@ -110,7 +110,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Encodes the PieceMessage into the supplied buffer
         /// </summary>
-        /// <param name="id">The peer who we are about to send the message to</param>
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
@@ -131,7 +130,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Decodes a PieceMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>

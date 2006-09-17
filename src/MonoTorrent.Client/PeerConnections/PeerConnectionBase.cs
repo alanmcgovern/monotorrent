@@ -43,161 +43,26 @@ namespace MonoTorrent.Client
     public abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
+#warning Use these to request pieces
         /// <summary>
-        /// True if the peer supports the Fast Peers extension
+        /// Contains the indexs of all the pieces we can request even if choked
         /// </summary>
-        public bool SupportsFastPeer
+        public List<int> AllowedFastPieces
         {
-            get { return this.supportsFastPeer; }
-            set { this.supportsFastPeer = value; }
+            get { return this.allowedFastPieces; }
         }
-        private bool supportsFastPeer;
+        private List<int> allowedFastPieces;
 
 
         /// <summary>
-        /// The size of the send and recieve buffers. Defaults to 32bytes more than my default request size.
+        /// True if we are currently choking the peer
         /// </summary>
-        private static readonly int BufferSize = ((1 << 14) + 32);
-
-
-        /// <summary>
-        /// The time at which the last message was sent at
-        /// </summary>
-        public DateTime LastMessageSent
+        public bool AmChoking
         {
-            get { return this.lastMessageSent; }
-            internal set { this.lastMessageSent = value; }
+            get { return this.amChoking; }
+            internal set { this.amChoking = value; }
         }
-        private DateTime lastMessageSent;
-
-
-        /// <summary>
-        /// The time at which the last message was received at
-        /// </summary>
-        public DateTime LastMessageRecieved
-        {
-            get { return this.lastMessageRecieved; }
-            internal set { this.lastMessageRecieved = value; }
-        }
-        private DateTime lastMessageRecieved;
-
-
-        /// <summary>
-        /// The peers bitfield
-        /// </summary>
-        public BitField BitField
-        {
-            get { return this.bitField; }
-            set { this.bitField = value; }
-        }
-        private BitField bitField;
-
-
-        /// <summary>
-        /// The number of pieces that we've sent the peer.
-        /// </summary>
-        public int PiecesSent
-        {
-            get { return this.piecesSent; }
-            internal set { this.piecesSent = value; }
-        }
-        private int piecesSent;
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public int IsRequestingPiecesCount
-        {
-            get { return this.isRequestingPiecesCount; }
-            set { this.isRequestingPiecesCount = value; }
-        }
-        private int isRequestingPiecesCount;
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public int AmRequestingPiecesCount
-        {
-            get { return this.amRequestingPiecesCount; }
-            set { this.amRequestingPiecesCount = value; }
-        }
-        private int amRequestingPiecesCount;
-
-
-        /// <summary>
-        /// True if we are currently processing the peers message queue
-        /// </summary>
-        public bool ProcessingQueue
-        {
-            get { return this.processingQueue; }
-            set { this.processingQueue = value; }
-        }
-        private bool processingQueue;
-
-        /// <summary>
-        /// The total bytes to send from the buffer
-        /// </summary>
-        public int BytesToSend
-        {
-            get { return this.bytesToSend; }
-            set { this.bytesToSend = value; }
-        }
-        private int bytesToSend;
-
-
-        /// <summary>
-        /// The total number of bytes sent from the current send buffer
-        /// </summary>
-        public int BytesSent
-        {
-            get { return this.bytesSent; }
-            set { this.bytesSent = value; }
-        }
-        private int bytesSent;
-
-
-        /// <summary>
-        /// The total number of bytes recieved into the current recieve buffer
-        /// </summary>
-        public int BytesRecieved
-        {
-            get { return this.bytesRecieved; }
-            set { this.bytesRecieved = value; }
-        }
-        private int bytesRecieved;
-
-
-        /// <summary>
-        /// The total number of bytes to receive
-        /// </summary>
-        public int BytesToRecieve
-        {
-            get { return this.bytesToRecieve; }
-            set { this.bytesToRecieve = value; }
-        }
-        private int bytesToRecieve;
-
-
-        /// <summary>
-        /// This holds the peermessages waiting to be sent
-        /// </summary>
-        private Queue<IPeerMessage> sendQueue;
-
-
-        internal byte[] recieveBuffer;
-        internal byte[] sendBuffer;
-
-
-        /// <summary>
-        /// The connection Monitor for this peer
-        /// </summary>
-        public ConnectionMonitor Monitor
-        {
-            get { return this.monitor; }
-        }
-        private ConnectionMonitor monitor;
+        private bool amChoking;
 
 
         /// <summary>
@@ -212,14 +77,86 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// True if we are currently choking the peer
+        /// 
         /// </summary>
-        public bool AmChoking
+        public int AmRequestingPiecesCount
         {
-            get { return this.amChoking; }
-            internal set { this.amChoking = value; }
+            get { return this.amRequestingPiecesCount; }
+            set { this.amRequestingPiecesCount = value; }
         }
-        private bool amChoking;
+        private int amRequestingPiecesCount;
+
+
+        /// <summary>
+        /// The peers bitfield
+        /// </summary>
+        public BitField BitField
+        {
+            get { return this.bitField; }
+            set { this.bitField = value; }
+        }
+        private BitField bitField;
+
+
+        /// <summary>
+        /// The total number of bytes recieved into the current recieve buffer
+        /// </summary>
+        public int BytesRecieved
+        {
+            get { return this.bytesRecieved; }
+            set { this.bytesRecieved = value; }
+        }
+        private int bytesRecieved;
+
+
+        /// <summary>
+        /// The total number of bytes sent from the current send buffer
+        /// </summary>
+        public int BytesSent
+        {
+            get { return this.bytesSent; }
+            set { this.bytesSent = value; }
+        }
+        private int bytesSent;
+
+
+        /// <summary>
+        /// The total number of bytes to receive
+        /// </summary>
+        public int BytesToRecieve
+        {
+            get { return this.bytesToRecieve; }
+            set { this.bytesToRecieve = value; }
+        }
+        private int bytesToRecieve;
+
+
+        /// <summary>
+        /// The total bytes to send from the buffer
+        /// </summary>
+        public int BytesToSend
+        {
+            get { return this.bytesToSend; }
+            set { this.bytesToSend = value; }
+        }
+        private int bytesToSend;
+
+
+        /// <summary>
+        /// The size of the send and recieve buffers. Defaults to 32bytes more than my default request size.
+        /// </summary>
+        private const int BufferSize = ((1 << 14) + 32);
+
+
+        /// <summary>
+        /// The current encryption method being used to encrypt connections
+        /// </summary>
+        public IEncryptor Encryptor
+        {
+            get { return this.encryptor; }
+            internal set { this.encryptor = value; }
+        }
+        private IEncryptor encryptor;
 
 
         /// <summary>
@@ -245,14 +182,119 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The current encryption method being used to encrypt connections
+        /// 
         /// </summary>
-        public IEncryptor Encryptor
+        public int IsRequestingPiecesCount
         {
-            get { return this.encryptor; }
-            internal set { this.encryptor = value; }
+            get { return this.isRequestingPiecesCount; }
+            set { this.isRequestingPiecesCount = value; }
         }
-        private IEncryptor encryptor;
+        private int isRequestingPiecesCount;
+
+
+        /// <summary>
+        /// The time at which the last message was received at
+        /// </summary>
+        public DateTime LastMessageRecieved
+        {
+            get { return this.lastMessageRecieved; }
+            internal set { this.lastMessageRecieved = value; }
+        }
+        private DateTime lastMessageRecieved;
+
+
+        /// <summary>
+        /// The time at which the last message was sent at
+        /// </summary>
+        public DateTime LastMessageSent
+        {
+            get { return this.lastMessageSent; }
+            internal set { this.lastMessageSent = value; }
+        }
+        private DateTime lastMessageSent;
+
+
+        /// <summary>
+        /// The connection Monitor for this peer
+        /// </summary>
+        public ConnectionMonitor Monitor
+        {
+            get { return this.monitor; }
+        }
+        private ConnectionMonitor monitor;
+
+
+        /// <summary>
+        /// The number of pieces that we've sent the peer.
+        /// </summary>
+        public int PiecesSent
+        {
+            get { return this.piecesSent; }
+            internal set { this.piecesSent = value; }
+        }
+        private int piecesSent;
+
+
+        /// <summary>
+        /// The port the peer is listening on for DHT
+        /// </summary>
+        public ushort Port
+        {
+            get { return this.port; }
+            internal set { this.port = value; }
+        }
+        private ushort port;
+
+
+        /// <summary>
+        /// True if we are currently processing the peers message queue
+        /// </summary>
+        public bool ProcessingQueue
+        {
+            get { return this.processingQueue; }
+            set { this.processingQueue = value; }
+        }
+        private bool processingQueue;
+
+
+        /// <summary>
+        /// The byte array used to buffer data before it's sent
+        /// </summary>
+        internal byte[] sendBuffer;
+
+
+        /// <summary>
+        /// This holds the peermessages waiting to be sent
+        /// </summary>
+        private Queue<IPeerMessage> sendQueue;
+
+
+        /// <summary>
+        /// True if the peer supports the Fast Peers extension
+        /// </summary>
+        public bool SupportsFastPeer
+        {
+            get { return this.supportsFastPeer; }
+            internal set { this.supportsFastPeer = value; }
+        }
+        private bool supportsFastPeer;
+
+
+        /// <summary>
+        /// A list of pieces that this peer has suggested we download. These should be downloaded
+        /// with higher priority than standard pieces.
+        /// </summary>
+        public List<int> SuggestedPieces
+        {
+            get { return this.suggestedPieces; }
+        }
+        private List<int> suggestedPieces;
+
+
+        /// <summary>
+        /// The byte array used to buffer data while it's being received
+        /// </summary>
+        internal byte[] recieveBuffer;
         #endregion
 
 
@@ -266,6 +308,7 @@ namespace MonoTorrent.Client
             this.encryptor = encryptor;
             this.amChoking = true;
             this.isChoking = true;
+            this.allowedFastPieces = new List<int>();
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessage>(4);

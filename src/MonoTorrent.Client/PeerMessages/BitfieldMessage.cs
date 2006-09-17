@@ -75,7 +75,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the BitfieldMessage into the supplied buffer
         /// </summary>

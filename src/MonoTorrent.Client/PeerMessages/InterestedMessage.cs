@@ -38,8 +38,8 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class InterestedMessage : IPeerMessage
     {
-        private const int messageLength = 1;
         public const int MessageId = 2;
+        private const int messageLength = 1;
 
 
         #region Constructors
@@ -52,11 +52,10 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the InterestedMessage into the supplied buffer
         /// </summary>
-        /// <param name="id">The peer who we are about to send the message to</param>
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
@@ -80,6 +79,7 @@ namespace MonoTorrent.Client.PeerMessages
         {
             // No decoding needed.
         }
+
 
         /// <summary>
         /// Performs any necessary actions required to process the message

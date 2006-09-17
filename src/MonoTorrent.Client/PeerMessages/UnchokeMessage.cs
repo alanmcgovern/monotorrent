@@ -38,8 +38,9 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class UnchokeMessage : IPeerMessage
     {
-        private const int messageLength = 1;
         public const int MessageId = 1;
+        private const int messageLength = 1;
+
 
         #region Constructors
         /// <summary>
@@ -51,7 +52,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the UnChokeMessage into the supplied buffer
         /// </summary>
@@ -69,9 +70,8 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         /// <summary>
-        /// Decodes a RequestMessage from the supplied buffer
+        /// Decodes an UnchokeMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>

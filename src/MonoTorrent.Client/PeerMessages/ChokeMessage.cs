@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the ChokeMessage into the supplied buffer
         /// </summary>
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.PeerMessages
             id.Peer.Connection.IsChoking = true;
 
             // If he supports fast peer, messages are only rejected with a RejectRequest message
-            if (!ClientEngine.SupportsFastPeer)
+            if (!id.Peer.Connection.SupportsFastPeer)
                 id.TorrentManager.PieceManager.RemoveRequests(id);
         }
 

@@ -38,8 +38,8 @@ namespace MonoTorrent.Client.PeerMessages
     /// </summary>
     public class RequestMessage : IPeerMessage
     {
-        private const int messageLength = 13;
         public const int MessageId = 6;
+        private const int messageLength = 13;
 
         #region Member Variables
         /// <summary>
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the RequestMessage into the supplied buffer
         /// </summary>
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         public void Handle(PeerConnectionID id)
         {
-            if (this.requestLength > (32768 * 2))
+            if (this.requestLength > (65536))
                 ClientEngine.connectionManager.CleanupSocket(id);
 
             if (!id.Peer.Connection.AmChoking)

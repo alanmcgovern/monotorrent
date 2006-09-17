@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the KeepAliveMessage into the supplied buffer
         /// </summary>
@@ -71,7 +71,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Decodes a KeepAliveMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
@@ -79,6 +78,7 @@ namespace MonoTorrent.Client.PeerMessages
         {
             // No decoding needed
         }
+
 
         /// <summary>
         /// Performs any necessary actions required to process the message

@@ -148,19 +148,18 @@ namespace MonoTorrent.Client.PeerMessages
             for (int i = 0; i < id.Peer.Connection.QueueLength; i++)
             {
                 msg = id.Peer.Connection.DeQueue();
-                if (!msg is PieceMessage)
+                if (!(msg is PieceMessage))
                 {
                     id.Peer.Connection.EnQueue(msg);
+                    continue;
                 }
-                else
+
+                PieceMessage piece = msg as PieceMessage;
+                if (!(piece.PieceIndex == this.pieceIndex
+                    && piece.StartOffset == this.startOffset
+                    && piece.BlockLength == this.requestLength))
                 {
-                    PieceMessage piece = msg as PieceMessage;
-                    if (!(piece.PieceIndex == this.pieceIndex
-                        && piece.StartOffset == this.startOffset
-                        && piece.BlockLength = this.requestLength))
-                    {
-                        id.Peer.Connection.EnQueue(msg);
-                    }
+                    id.Peer.Connection.EnQueue(msg);
                 }
             }
         }

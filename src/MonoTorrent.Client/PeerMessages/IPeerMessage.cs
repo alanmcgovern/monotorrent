@@ -48,7 +48,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Decodes a peer message from the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>

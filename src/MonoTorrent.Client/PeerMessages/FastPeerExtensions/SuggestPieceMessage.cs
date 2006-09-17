@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.PeerMessages
 
         public void Handle(PeerConnectionID id)
         {
-#warning Store a list of recommended pieces for the PiecePicking algorithm
+            id.Peer.Connection.SuggestedPieces.Add(this.pieceIndex);
         }
 
 

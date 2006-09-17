@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Encodes the PortMessage into the supplied buffer
         /// </summary>
@@ -82,8 +82,8 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         public int Encode(byte[] buffer, int offset)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
             buffer[offset + 4] = (byte)MessageId;
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.port)), 0, buffer, offset + 5, 2);
 
             return (messageLength + 4);
@@ -101,6 +101,8 @@ namespace MonoTorrent.Client.PeerMessages
         {
             this.port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToUInt16(buffer, offset));
         }
+
+
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>
@@ -109,6 +111,7 @@ namespace MonoTorrent.Client.PeerMessages
         {
             id.Peer.Connection.Port = this.port;
         }
+
 
         /// <summary>
         /// Returns the length of the message in bytes

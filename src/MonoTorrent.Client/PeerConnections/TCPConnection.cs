@@ -39,17 +39,6 @@ namespace MonoTorrent.Client.Encryption
     public class TCPConnection : PeerConnectionBase
     {
         #region Member Variables
-#warning Use these to request pieces
-        /// <summary>
-        /// Contains the indexs of all the pieces we can request even if choked
-        /// </summary>
-        public List<int> AllowedFastPieces
-        {
-            get { return this.allowedFastPieces; }
-        }
-        private List<int> allowedFastPieces;
-
-
         public IPEndPoint PeerEndPoint
         {
             get { return this.peerEndPoint; }
@@ -65,7 +54,6 @@ namespace MonoTorrent.Client.Encryption
         public TCPConnection(string location, int bitfieldLength, IEncryptor encryptor)
             : base(bitfieldLength, encryptor)
         {
-            this.allowedFastPieces = new List<int>();
             string[] s = location.Split(':');
             if (s.Length != 2)
                 throw new ArgumentException("Location should be in the form ipaddress:port", "location");
@@ -77,7 +65,6 @@ namespace MonoTorrent.Client.Encryption
         public TCPConnection(IPEndPoint endPoint, int bitfieldLength, IEncryptor encryptor)
             : base(bitfieldLength, encryptor)
         {
-            this.allowedFastPieces = new List<int>();
             this.peerEndPoint = endPoint;
             this.peerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
@@ -85,7 +72,6 @@ namespace MonoTorrent.Client.Encryption
         public TCPConnection(Socket socket, int bitfieldLength, IEncryptor encryptor)
             : base(bitfieldLength, encryptor)
         {
-            this.allowedFastPieces = new List<int>();
             this.peerEndPoint = (IPEndPoint)socket.RemoteEndPoint;
             this.peerSocket = socket;
         }
