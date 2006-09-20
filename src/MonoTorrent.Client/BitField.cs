@@ -133,6 +133,21 @@ namespace MonoTorrent.Client
             return this;
         }
 
+        /// <summary>
+        /// Performs binary NAND on all the elements of this bitarray against the elements of the supplied BitField
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        internal BitField NAnd(BitField value)
+        {
+            if (value == null)
+                throw new ArgumentNullException("value");
+
+            for (int i = 0; i < this.array.Length; i++)
+                this.array[i] &= ~value.array[i];
+
+            return this;
+        }
 
         /// <summary>
         /// Performs binary OR on all the elements of this BitField against the elements of the supplied BitField
