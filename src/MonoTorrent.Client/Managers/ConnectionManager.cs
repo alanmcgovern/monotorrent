@@ -209,7 +209,29 @@ namespace MonoTorrent.Client
                     {
                         id.Peer.FailedConnectionAttempts++;
                         id.Peer.Connection.ProcessingQueue = false;
-                        if(id.Peer.Connection != null)
+                        if (id.Peer.Connection != null)
+                            id.Peer.Connection.Dispose();
+                        id.Peer.Connection = null;
+
+                        id.TorrentManager.ConnectingTo.Remove(id);
+
+                        if (id.Peer.FailedConnectionAttempts < 10)   // We couldn't connect this time, so re-add to available
+                            id.TorrentManager.Available.Add(id);
+
+                        System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
+                    }
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                lock (id.TorrentManager.listLock)
+                {
+                    lock (id)
+                    {
+                        id.Peer.FailedConnectionAttempts++;
+                        id.Peer.Connection.ProcessingQueue = false;
+                        if (id.Peer.Connection != null)
                             id.Peer.Connection.Dispose();
                         id.Peer.Connection = null;
 
@@ -268,6 +290,11 @@ namespace MonoTorrent.Client
             }
 
             catch (SocketException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                cleanUp = true;
+            }
+            catch (ArgumentException ex)
             {
                 Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
@@ -348,6 +375,11 @@ namespace MonoTorrent.Client
                 Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                cleanUp = true;
+            }
             finally
             {
                 if (cleanUp)
@@ -390,6 +422,11 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
                 Console.WriteLine(ex.ToString());
+                cleanUp = true;
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -448,6 +485,11 @@ namespace MonoTorrent.Client
                 }
             }
             catch (SocketException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                cleanUp = true;
+            }
+            catch (ArgumentException ex)
             {
                 Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
@@ -518,6 +560,11 @@ namespace MonoTorrent.Client
                 Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                cleanUp = true;
+            }
             finally
             {
                 if (cleanUp)
@@ -568,6 +615,11 @@ namespace MonoTorrent.Client
                 }
             }
             catch (SocketException ex)
+            {
+                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                cleanUp = true;
+            }
+            catch (ArgumentException ex)
             {
                 Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
