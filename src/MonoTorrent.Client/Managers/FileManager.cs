@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         {
             lock (this.hashBuffer)
             {
-                int pieceStartIndex = this.pieceLength * pieceIndex;
+                long pieceStartIndex = (long)this.pieceLength * pieceIndex;
                 int bytesRead = this.Read(this.hashBuffer, 0, pieceStartIndex, this.pieceLength);
                 return hasher.ComputeHash(this.hashBuffer, 0, bytesRead);
             }
