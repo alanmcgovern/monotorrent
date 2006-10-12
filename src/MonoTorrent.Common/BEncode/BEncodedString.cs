@@ -169,7 +169,7 @@ namespace MonoTorrent.Common
         /// </summary>
         /// <param name="b">The byte array containing the string</param>
         /// <param name="offset">The offset into the array</param>
-        /// <param name="lenght">Specifies how long the string should be</param>
+        /// <param name="length">Specifies how long the string should be</param>
         public BEncodedString(byte[] b, int offset, int length)
             : this(b, offset, length, new UTF8Encoding(false, false))
         {
