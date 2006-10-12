@@ -224,7 +224,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 lock (id.TorrentManager.listLock)
                 {
                     lock (id)
@@ -296,7 +295,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -377,7 +375,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -426,7 +423,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -491,7 +487,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -562,7 +557,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -621,7 +615,6 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
