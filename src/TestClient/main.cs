@@ -128,11 +128,8 @@ namespace TestClient
         {
 #warning Maybe return a wait handle and wait for the response.
             WaitHandle[] handles = engine.Stop();
-            int a = Environment.TickCount;
-            WaitHandle.WaitAll(handles);
-            Console.WriteLine(Environment.TickCount - a);
-            Console.ReadLine(); Console.ReadLine(); Console.ReadLine(); Console.ReadLine();
-
+            if (handles != null)
+                WaitHandle.WaitAll(handles);
             foreach (TraceListener lst in Debug.Listeners)
             {
                 lst.Flush();
@@ -242,9 +239,9 @@ namespace TestClient
         {
             ITorrentManager manager = (ITorrentManager)sender;
             if (e.HashPassed)
-                Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex);
+                Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
             else
-                Debug.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex);
+                Debug.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
         }
         #endregion
     }
