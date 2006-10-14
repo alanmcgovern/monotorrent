@@ -340,7 +340,7 @@ namespace MonoTorrent.Client
                 if (this.PieceManager.MyBitField[i])
                     complete++;
 
-            complete -= this.pieceManager.CurrentRequestCount;
+            complete -= this.pieceManager.CurrentRequestCount();
             return (complete * 100.0 / this.PieceManager.MyBitField.Length);
         }
 
@@ -557,7 +557,8 @@ namespace MonoTorrent.Client
 
                         while (!id.Peer.Connection.IsChoking && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
                         {
-                            msg = this.pieceManager.RequestPiece(id);
+                            msg = this.pieceManager.PickPiece(id, this.connectedPeers);
+                            Console.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
                             if (msg == null)
                                 break;
 
@@ -596,7 +597,7 @@ namespace MonoTorrent.Client
             SeedingLogic();     // Initially just seed as per normal. This could be a V2.0 feature.
         }
 
-        internal void PieceRecieved(int p)
+        internal void PieceCompleted(int p)
         {
             // Only send a "have" message if the peer needs the piece.
             // This is "Have Suppression" as defined in the spec.
@@ -607,11 +608,10 @@ namespace MonoTorrent.Client
             // list as a lock as already been acquired.
             foreach (PeerConnectionID id in this.connectedPeers)
             {
-#warning Shouldn't be possible to have a null connection here. Fix this
                 if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
                 {
                     if (!id.Peer.Connection.BitField[p])
-                        if (id.Peer.Connection != null) // this shouldn't be null ever, but it is. Figure out why.
+                        if (id.Peer.Connection != null)                     // this shouldn't be null ever, but it is. Figure out why.
                             id.Peer.Connection.EnQueue(new HaveMessage(p)); // It's being disposed of but not removed from the list...
 
                     Monitor.Exit(id);
