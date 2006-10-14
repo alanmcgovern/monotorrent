@@ -18,9 +18,38 @@ namespace TestClient
         static ClientEngine engine;
         static List<ITorrentManager> torrents = new List<ITorrentManager>();
 
+        static void GenerateBencodes()
+        {
+        	UTF8Encoding enc = new UTF8Encoding();
+            TextWriter s = null;/// new FileStream(@"d:\bencodedstrings.txt", FileMode.OpenOrCreate);
+        	IBEncodedValue val = (BEncodedString)"this is a bencoded string";
+        	s.WriteLine(enc.GetString(val.Encode()));
+        	
+        	val = (BEncodedNumber)12345;
+        	s.WriteLine();
+        	s.WriteLine(enc.GetString(val.Encode()));
+        	
+        	BEncodedList list = new BEncodedList();
+        	list.Add((BEncodedString)"mystring");
+        	list.Add(new BEncodedNumber(12321));
+        	list.Add(new BEncodedList());
+        	
+        	s.WriteLine();
+        	s.WriteLine(enc.GetString(val.Encode()));
+        	
+        	BEncodedDictionary dict = new BEncodedDictionary();
+        	dict.Add("entry 1", new BEncodedNumber(6532));
+        	dict.Add("entry 2: a string", new BEncodedString("hola"));
+        	dict.Add("This is a dict", new BEncodedDictionary());
+        	
+        	s.WriteLine();
+        	s.WriteLine(enc.GetString(val.Encode()));
+        }
         static void Main(string[] args)
         {
+
             basePath = Environment.CurrentDirectory;
+
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
 
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
