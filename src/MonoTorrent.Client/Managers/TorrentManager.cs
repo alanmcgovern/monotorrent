@@ -243,9 +243,10 @@ namespace MonoTorrent.Client
         public double DownloadSpeed()
         {
             double total = 0;
-            for (int i = 0; i < this.connectedPeers.Count; i++)
-                if (!this.connectedPeers[i].Peer.Connection.IsChoking)
-                    total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
+            lock(this.listLock)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    if (!this.connectedPeers[i].Peer.Connection.IsChoking)
+                        total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
 
             return total;
         }
@@ -350,23 +351,27 @@ namespace MonoTorrent.Client
         internal void Start()
         {
             TorrentStateChangedEventArgs args;
-            if (!this.hashChecked && !(this.state == TorrentState.Hashing))
+            if (this.diskManager.InitialHashRequired)
             {
-                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Hashing);
-                this.state = TorrentState.Hashing;
+                if (!this.hashChecked && !(this.state == TorrentState.Hashing))
+                {
+                    args = new TorrentStateChangedEventArgs(this.state, TorrentState.Hashing);
+                    this.state = TorrentState.Hashing;
 
-                if (this.OnTorrentStateChanged != null)
-                    OnTorrentStateChanged(this, args);
+                    if (this.OnTorrentStateChanged != null)
+                        OnTorrentStateChanged(this, args);
 
-                ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
-                return;
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
+                    return;
+                }
+
+                else if (!this.hashChecked)
+                {
+                    return;
+                }
             }
 
-            else if (!this.hashChecked)
-            {
-                return;
-            }
-
+            this.diskManager.InitialHashRequired = false;
             if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                 throw new TorrentException("Torrent is already running");
 

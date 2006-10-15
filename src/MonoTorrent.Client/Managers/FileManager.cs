@@ -50,9 +50,22 @@ namespace MonoTorrent.Client
         }
         private readonly int pieceLength;
 
+
         private SHA1Managed hasher;
 
+
         private FileStream[] fileStreams;
+
+
+        /// <summary>
+        /// True if we need to hash the files (i.e. some were preexisting)
+        /// </summary>
+        internal bool InitialHashRequired
+        {
+            get { return this.initialHashRequired; }
+            set { this.initialHashRequired = value; }
+        }
+        private bool initialHashRequired;
         #endregion
 
 
@@ -102,6 +115,8 @@ namespace MonoTorrent.Client
         /// <param name="fileAccess">The access level for the files</param>
         public FileManager(ITorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
+            string filePath = null;
+            this.initialHashRequired = false;
             this.pieceLength = pieceLength;
             this.hasher = new SHA1Managed();
             this.hashBuffer = new byte[pieceLength];
@@ -112,7 +127,12 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < fileStreams.Length; i++)
             {
-                fileStreams[i] = new FileStream(GenerateFilePath(files[i], baseDirectory, savePath), FileMode.OpenOrCreate, fileAccess, FileShare.Read);
+                filePath = GenerateFilePath(files[i], baseDirectory, savePath);
+
+                if (File.Exists(filePath))
+                    this.initialHashRequired = true;
+
+                fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read);
 
                 // This hashing algorithm is written on the basis that the files are
                 // preallocated. Might change to not have to preallocate files in future,
