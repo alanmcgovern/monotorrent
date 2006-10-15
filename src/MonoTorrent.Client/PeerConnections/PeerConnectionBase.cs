@@ -149,6 +149,16 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// This is the message we're currently sending to a peer
+        /// </summary>
+        internal IPeerMessage CurrentlySendingMessage
+        {
+            get { return this.currentlySendingMessage; }
+            set { this.currentlySendingMessage = value; }
+        }
+        private IPeerMessage currentlySendingMessage;
+
+        /// <summary>
         /// The current encryption method being used to encrypt connections
         /// </summary>
         public IEncryptor Encryptor

@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using MonoTorrent.Common;
+using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {

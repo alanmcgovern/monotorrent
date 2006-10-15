@@ -91,13 +91,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The count of already downloaded bytes.
         /// </summary>
-        long BytesDownloaded { get; }
+        long DataBytesDownloaded { get; }
 
 
         /// <summary>
         /// The count of already downloaded bytes.
         /// </summary>
-        long BytesUploaded { get; }
+        long DataBytesUploaded { get; }
 
 
         /// <summary>

@@ -36,8 +36,8 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	10) Update all peer messages and reduce complexity (LengthInBytes unneccessary. Can use the static readonly value) [ COMPLETE ]
 	11) Use PieceEventArgs properly [LOW]
 	12) Use a MemoryBuffer/DiskCache to avoid constant read/writes to the disk [MEDIUM-HIGH]
-	11) At the moment i'm only counting piecemessages as traffic. Change to count ALL messages (but you have to keep the traffic seperately! Piece messages must be recorded seperately) [LOW]
-	12) Fix the "negative download speed bug". This is a side effect of the above design choice. Should go away when 11 is completed. [LOW]
+	11) At the moment i'm only counting piecemessages as traffic. Change to count ALL messages (but you have to keep the traffic seperately! Piece messages must be recorded seperately) [LOW] [ COMPLETE ] 
+	12) Fix the "negative download speed bug". This is a side effect of the above design choice. Should go away when 11 is completed. [LOW] [ COMPLETE ]
 	13) Implement "PeerID" to link a peer with the client they're running [LOW]
 	14) Change hash checking to only hashcheck after the write buffer has been flushed (does this matter?). It might cause hashfails in certain circumstances... but i don't know. [LOW]
 	15) If the "Started" event doesn't reach the tracker i should resend [LOW]
@@ -48,7 +48,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	20) Count HashFails internally [LOW]
 	21) Support IPV6
 	22) Open .torrents from HTTP links [ COMPLETE ]
-	23) Support piece prioritisation (Video/Mp3 prioritisation automatically?) [ COMPLETE ]
+	23) Support piece prioritisation (Video/Mp3 prioritisation automatically?) [ COMPLETE - No automatic prioritisation ]
 	24) Make sure IDisposible is revealed through interfaces as required, and all classes with Disposable members use IDisposible. This is one of the causes for piotr's GUI not being able to reopen a torrent that was just removed.
 	25) I'm using a foeach() loop when removing peers from the list in the Stop() method. Of course it breaks! It wasn't spotted before due to the ProcessExit event not firing when i close a console window. [ COMPLETE ]
 

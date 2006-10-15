@@ -193,25 +193,47 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The number of bytes downloaded this session
+        /// The number of bytes which have been downloaded for the BitTorrent protocol
         /// </summary>
-        public long BytesDownloaded
+        public long ProtocolBytesDownloaded
         {
-            get { return this.bytesDownloaded; }
-            internal set { this.bytesDownloaded = value; }
+            get { return this.protocolBytesDownloaded; }
+            internal set { this.protocolBytesDownloaded = value; }
         }
-        private long bytesDownloaded;
+        private long protocolBytesDownloaded;
+
 
 
         /// <summary>
-        /// The number of bytes uploaded this session
+        /// The number of bytes which have been uploaded for the BitTorrent protocol
         /// </summary>
-        public long BytesUploaded
+        public long ProtocolBytesUploaded
         {
-            get { return this.bytesUploaded; }
-            internal set { this.bytesUploaded = value; }
+            get { return this.protocolBytesDownloaded; }
+            internal set { this.protocolBytesDownloaded = value; }
         }
-        private long bytesUploaded;
+        private long protocolBytesUploaded;
+
+        /// <summary>
+        /// The number of bytes which have been downloaded for the files
+        /// </summary>
+        public long DataBytesDownloaded
+        {
+            get { return this.dataBytesDownloaded; }
+            internal set { this.dataBytesDownloaded = value; }
+        }
+        private long dataBytesDownloaded;
+
+
+        /// <summary>
+        /// The number of bytes which have been uploaded for the files
+        /// </summary>
+        public long DataBytesUploaded
+        {
+            get { return this.dataBytesUploaded; }
+            internal set { this.dataBytesUploaded = value; }
+        }
+        private long dataBytesUploaded;
 
 
         /// <summary>
@@ -409,7 +431,7 @@ namespace MonoTorrent.Client
                 this.OnTorrentStateChanged(this, args);
 
             this.diskManager.FlushAll();
-            handle = this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while (this.connectingTo.Count > 0)
@@ -580,13 +602,13 @@ namespace MonoTorrent.Client
                     {
                         if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                         {
-                            this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
                     else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
-                        this.trackerManager.SendUpdate(this.bytesDownloaded, this.bytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
             }

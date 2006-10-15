@@ -118,8 +118,8 @@ namespace TestClient
                         Debug.WriteLine("Number of seeds:  " + manager.Seeds());
                         Debug.WriteLine("Number of leechs: " + manager.Leechs());
                         Debug.WriteLine("Total available:  " + manager.AvailablePeers);
-                        Debug.WriteLine("Downloaded:       " + manager.BytesDownloaded / 1024);
-                        Debug.WriteLine("Uploaded:         " + manager.BytesUploaded / 1024);
+                        Debug.WriteLine("Downloaded:       " + manager.DataBytesDownloaded / 1024);
+                        Debug.WriteLine("Uploaded:         " + manager.DataBytesUploaded / 1024);
                         Debug.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Debug.WriteLine("\n");
                     }
@@ -158,7 +158,7 @@ namespace TestClient
         {
 #warning Maybe return a wait handle and wait for the response.
             WaitHandle[] handles = engine.Stop();
-            if (handles != null)
+            if (handles != null && handles.Length > 0)
                 WaitHandle.WaitAll(handles);
             foreach (TraceListener lst in Debug.Listeners)
             {
