@@ -120,6 +120,7 @@ namespace TestClient
                         Debug.WriteLine("Total available:  " + manager.AvailablePeers);
                         Debug.WriteLine("Downloaded:       " + manager.BytesDownloaded / 1024);
                         Debug.WriteLine("Uploaded:         " + manager.BytesUploaded / 1024);
+                        Debug.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Debug.WriteLine("\n");
                     }
                 }
