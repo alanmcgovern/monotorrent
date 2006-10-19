@@ -118,8 +118,10 @@ namespace TestClient
                         Debug.WriteLine("Number of seeds:  " + manager.Seeds());
                         Debug.WriteLine("Number of leechs: " + manager.Leechs());
                         Debug.WriteLine("Total available:  " + manager.AvailablePeers);
-                        Debug.WriteLine("Downloaded:       " + manager.DataBytesDownloaded / 1024);
-                        Debug.WriteLine("Uploaded:         " + manager.DataBytesUploaded / 1024);
+                        Debug.WriteLine("Downloaded:       " + manager.DataBytesDownloaded / 1024.0);
+                        Debug.WriteLine("Uploaded:         " + manager.DataBytesUploaded / 1024.0);
+                        Debug.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
+                        Debug.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
                         Debug.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Debug.WriteLine("\n");
                     }
