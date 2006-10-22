@@ -203,8 +203,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public long ProtocolBytesUploaded
         {
-            get { return this.protocolBytesDownloaded; }
-            internal set { this.protocolBytesDownloaded = value; }
+            get { return this.protocolBytesUploaded; }
+            internal set { this.protocolBytesUploaded = value; }
         }
         private long protocolBytesUploaded;
 
