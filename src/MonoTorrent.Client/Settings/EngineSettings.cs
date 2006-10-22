@@ -146,8 +146,8 @@ namespace MonoTorrent.Client
         {
             this.globalMaxConnections = globalMaxConnections;
             this.globalMaxDownloadSpeed = globalMaxDownloadSpeed;
-            this.globalMaxUploadSpeed = globalHalfOpenConnections;
-            this.globalMaxHalfOpenConnections = globalMaxUploadSpeed;
+            this.globalMaxUploadSpeed = globalMaxUploadSpeed;
+            this.globalMaxHalfOpenConnections = globalHalfOpenConnections;
             this.savePath = defaultSavePath;
             this.listenPort = listenPort;
         }
