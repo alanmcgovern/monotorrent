@@ -18,7 +18,6 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <FileAlignment>4096</FileAlignment>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,13 +57,11 @@
     <Compile Include="ConnectionManagerException.cs" />
     <Compile Include="Encryption\NoEncryption.cs" />
     <Compile Include="Encryption\IEncryptor.cs" />
+    <Compile Include="ListenerException.cs" />
     <Compile Include="PeerConnections\HTTPConnection.cs" />
     <Compile Include="PeerConnections\TCPConnection.cs" />
     <Compile Include="Encryption\RC4FullEncryption.cs" />
     <Compile Include="Encryption\RC4HeaderEncryption.cs" />
-    <Compile Include="IClientEngine.cs" />
-    <Compile Include="IEngineSettings.cs" />
-    <Compile Include="ITorrentManager.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\AllowedFastMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\HaveAllMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\HaveNoneMessage.cs" />
@@ -82,7 +79,6 @@
     <Compile Include="EventArgs\PieceHashedEventArgs.cs" />
     <Compile Include="EventArgs\TorrentStateChangedEventArgs.cs" />
     <Compile Include="EventArgs\TrackerEventArgs.cs" />
-    <Compile Include="IPieceManager.cs" />
     <Compile Include="Managers\ConnectionManager.cs" />
     <Compile Include="Managers\ConnectionMonitor.cs" />
     <Compile Include="Managers\FileManager.cs" />
@@ -113,7 +109,6 @@
     <Compile Include="Managers\TrackerManager.cs" />
     <Compile Include="TrackerConnectionId.cs" />
     <Compile Include="PeerMessages\PeerwireEncoder.cs" />
-    <Compile Include="PeerConnections\IPeerConnectionID.cs" />
     <Compile Include="AllowedFastAlgorithm.cs" />
     <Compile Include="PeerMessages\ExtendedMessages\ExtendedListMessage.cs" />
   </ItemGroup>
@@ -122,8 +117,6 @@
       <Project>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</Project>
       <Name>MonoTorrent.Common</Name>
     </ProjectReference>
-    <Folder Include="PiecePicking\" />
-    <Folder Include="Public Interfaces\" />
   </ItemGroup>
-  <Import Project="$(SharpDevelopBinPath)\SharpDevelop.Build.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
 </Project>

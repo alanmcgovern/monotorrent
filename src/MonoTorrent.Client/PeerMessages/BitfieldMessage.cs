@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    public class BitfieldMessage : IPeerMessage
+    internal class BitfieldMessage : IPeerMessage
     {
         public const int MessageId = 5;
 

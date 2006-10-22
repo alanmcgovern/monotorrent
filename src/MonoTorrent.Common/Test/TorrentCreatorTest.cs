@@ -137,7 +137,7 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void File1() 
         {
-            ITorrentFile creatorFile = fromTorrentCreator.Files[0];
+            TorrentFile creatorFile = fromTorrentCreator.Files[0];
             FileInfo info = new FileInfo(TestTorrentPath + Path.DirectorySeparatorChar + "test" + Path.DirectorySeparatorChar + "file.txt");
                 
             Assert.AreEqual(creatorFile.Length, info.Length , "length wrong");
@@ -148,7 +148,7 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void File2() 
         {            
-            ITorrentFile creatorFile = fromTorrentCreator.Files[1];
+            TorrentFile creatorFile = fromTorrentCreator.Files[1];
             FileInfo info = new FileInfo(TestTorrentPath + Path.DirectorySeparatorChar + "test01" + Path.DirectorySeparatorChar + "file.txt");
                 
             Assert.AreEqual(creatorFile.Length, info.Length , "length wrong");
@@ -158,7 +158,7 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void File3() 
         {            
-            ITorrentFile creatorFile = fromTorrentCreator.Files[2];
+            TorrentFile creatorFile = fromTorrentCreator.Files[2];
             FileInfo info = new FileInfo(TestTorrentPath + Path.DirectorySeparatorChar + "test02" + Path.DirectorySeparatorChar + "file.txt");
                 
             Assert.AreEqual(creatorFile.Length, info.Length , "length wrong");

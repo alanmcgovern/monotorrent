@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is for represting the Peer's bitfield
     /// </summary>
-    public class BitField : ICloneable, IEnumerable<bool>
+    internal class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
         /// <summary>

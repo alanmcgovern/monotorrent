@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides a method of keeping a TrackerConnection linked with its TorrentManager during an AsyncRequest
     /// </summary>
-    public struct TrackerConnectionID
+    internal struct TrackerConnectionID
     {
         #region Member Variables
         /// <summary>
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
         /// Creates a new TrackerConnectionID
         /// </summary>
         /// <param name="request">The HttpWebRequest that sent the Async Request</param>
-        /// <param name="manager">The ITorrentManager associated with the TrackerConnection</param>
+        /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
         public TrackerConnectionID(HttpWebRequest request, Tracker tracker)
         {
             this.tracker = tracker;

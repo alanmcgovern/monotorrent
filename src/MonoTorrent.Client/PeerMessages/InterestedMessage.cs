@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Represents an "Interested" message
     /// </summary>
-    public class InterestedMessage : IPeerMessage
+    internal class InterestedMessage : IPeerMessage
     {
         public const int MessageId = 2;
         private const int messageLength = 1;

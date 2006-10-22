@@ -5,7 +5,7 @@ using System.Net;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    public class RejectRequestMessage : IPeerMessage
+    internal class RejectRequestMessage : IPeerMessage
     {
         public const byte MessageId = 0x10;
         public readonly int messageLength = 13;

@@ -16,7 +16,7 @@ namespace TestClient
     {
         static string basePath;
         static ClientEngine engine;
-        static List<ITorrentManager> torrents = new List<ITorrentManager>();
+        static List<TorrentManager> torrents = new List<TorrentManager>();
 
         static void GenerateBencodes()
         {
@@ -64,11 +64,11 @@ namespace TestClient
 
         static private void TestEngine()
         {
-            engine = new ClientEngine(EngineSettings.DefaultSettings, TorrentSettings.DefaultSettings);
-            engine.Settings.DefaultSavePath = Path.Combine(basePath, "Downloads");
+            engine = new ClientEngine(EngineSettings.DefaultSettings(), TorrentSettings.DefaultSettings());
+            engine.Settings.SavePath = Path.Combine(basePath, "Downloads");
 
-            if (!Directory.Exists(engine.Settings.DefaultSavePath))
-                Directory.CreateDirectory(engine.Settings.DefaultSavePath);
+            if (!Directory.Exists(engine.Settings.SavePath))
+                Directory.CreateDirectory(engine.Settings.SavePath);
 
             if (!Directory.Exists(Path.Combine(basePath, "Torrents")))
                 Directory.CreateDirectory(Path.Combine(basePath, "Torrents"));
@@ -173,9 +173,9 @@ namespace TestClient
         /*
         public void Main()
         {
-            // An ITorrentManager is passed out of the engine when you load a torrent. This is
+            // An TorrentManager is passed out of the engine when you load a torrent. This is
             // used for controlling the torrent.
-            ITorrentManager torrentManager;
+            TorrentManager torrentManager;
 
             // These are the default settings for the engine for this session
             EngineSettings engineSettings = EngineSettings.DefaultSettings;
@@ -219,7 +219,7 @@ namespace TestClient
             // If you have loaded multiple torrents into the engine, you can start them all at once with this:
             // engine.Start();
 
-            // Or you can start one specific torrent by passing in that torrents ITorrentManager
+            // Or you can start one specific torrent by passing in that torrents TorrentManager
             engine.Start(torrentManager);
 
             // You can hook into various events in order to display information on screen:
@@ -269,7 +269,7 @@ namespace TestClient
 
         static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
         {
-            ITorrentManager manager = (ITorrentManager)sender;
+            TorrentManager manager = (TorrentManager)sender;
             if (e.HashPassed)
                 Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
             else

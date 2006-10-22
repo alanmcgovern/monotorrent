@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is used to track upload/download speed and bytes uploaded/downloaded for each connection
     /// </summary>
-    public class ConnectionMonitor
+    internal class ConnectionMonitor
     {
         #region Member Variables
         private int tempSentCount;

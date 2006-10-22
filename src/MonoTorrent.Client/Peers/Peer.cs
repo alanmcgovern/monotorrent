@@ -37,13 +37,13 @@ using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {
-    public class Peer : IPeer
+    internal class Peer
     {
         #region Member Variables
         /// <summary>
         /// The connection associated with this peer
         /// </summary>
-        public PeerConnectionBase Connection
+        internal PeerConnectionBase Connection
         {
             get { return this.connection; }
             set { this.connection = value; }

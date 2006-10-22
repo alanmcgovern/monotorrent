@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Contains the logic for choosing what piece to download next
     /// </summary>
-    public class PieceManager : IPieceManager
+    internal class PieceManager
     {
         #region Events
         /// <summary>
@@ -345,10 +345,10 @@ namespace MonoTorrent.Client
         {
             lock (this.requests)
             {
-                id.TorrentManager.DiskManager.Write(recieveBuffer, offset, writeIndex, p);
+                id.TorrentManager.FileManager.Write(recieveBuffer, offset, writeIndex, p);
 
                 if (this.OnPieceChanged != null)
-                    this.OnPieceChanged((ITorrentManager)id.TorrentManager, new PieceEventArgs(p, PieceEvent.BlockWrittenToDisk));
+                    this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(p, PieceEvent.BlockWrittenToDisk));
 
                 Piece piece = null;
                 List<Piece> pieces = this.requests[id];
@@ -379,7 +379,7 @@ namespace MonoTorrent.Client
                     block.Recieved = true;
 
                     if (this.OnPieceChanged != null)
-                        this.OnPieceChanged((ITorrentManager)id.TorrentManager, new PieceEventArgs(message.PieceIndex, PieceEvent.BlockRecieved));
+                        this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(message.PieceIndex, PieceEvent.BlockRecieved));
 
                     id.Peer.Connection.AmRequestingPiecesCount--;
                     break;
@@ -389,9 +389,9 @@ namespace MonoTorrent.Client
                     return;
 
                 if (this.OnPieceChanged != null)
-                    this.OnPieceChanged((ITorrentManager)id.TorrentManager, new PieceEventArgs(piece.Index, PieceEvent.PieceRecieved));
+                    this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(piece.Index, PieceEvent.PieceRecieved));
 
-                bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.DiskManager.GetHash(piece.Index));
+                bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
                 this.bitfield[message.PieceIndex] = result;
 
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));

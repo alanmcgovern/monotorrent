@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class represents a Piece in the torrent
     /// </summary>
-    public class Piece
+    internal class Piece
     {
         /// <summary>
         /// The official client rejects any request about 16kb, so even thought it adds more overhead
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The index of the piece</param>
         /// <param name="torrent">The Torrent the piece is from</param>
-        public Piece(int pieceIndex, ITorrent torrent)
+        public Piece(int pieceIndex, Torrent torrent)
         {
             this.index = pieceIndex;
 
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The index of the piece</param>
         /// <param name="torrent">The ITorrent the piece is coming from</param>
-        private void LastPiece(int pieceIndex, ITorrent torrent)
+        private void LastPiece(int pieceIndex, Torrent torrent)
         {
             int bytesRemaining = Convert.ToInt32(torrent.Size - (torrent.Pieces.Length - 1) * torrent.PieceLength);
             int numberOfBlocks = bytesRemaining / blockSize;

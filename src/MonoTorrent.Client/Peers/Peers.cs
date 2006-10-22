@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Represents a list of Peers that can be downloaded from
     /// </summary>
-    public class Peers
+    internal class Peers
     {
         #region Member Variables
         private List<PeerConnectionID> peerList;

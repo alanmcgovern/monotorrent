@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    public class HandshakeMessage : IPeerMessage
+    internal class HandshakeMessage : IPeerMessage
     {
         private const byte FastPeersFlag = 0x04;
 

@@ -37,7 +37,7 @@ namespace MonoTorrent.Tracker
     public interface ITorrentManager
     {
         ///<summary>identifies the torrent which we are managing</summary>
-        ITorrent Torrent
+        Torrent Torrent
         {
             get;
         }

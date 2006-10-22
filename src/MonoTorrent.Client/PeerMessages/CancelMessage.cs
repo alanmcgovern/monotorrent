@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    public class CancelMessage : IPeerMessage
+    internal class CancelMessage : IPeerMessage
     {
         private const int messageLength = 13;
         public const int MessageId = 8;

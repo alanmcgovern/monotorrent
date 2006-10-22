@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class TorrentManager : ITorrentManager, IDisposable
+    public class TorrentManager : IDisposable
     {
         #region Events
         /// <summary>
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
-        public ITorrent Torrent
+        public Torrent Torrent
         {
             get { return this.torrent; }
         }
@@ -86,7 +86,6 @@ namespace MonoTorrent.Client
         public TorrentSettings Settings
         {
             get { return this.settings; }
-            set { this.settings = value; }
         }
         private TorrentSettings settings;
 
@@ -114,7 +113,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The piecemanager for this TorrentManager
         /// </summary>
-        public PieceManager PieceManager
+        internal PieceManager PieceManager
         {
             get { return this.pieceManager; }
             //set { this.pieceManager = (PieceManager) value; }
@@ -122,26 +121,22 @@ namespace MonoTorrent.Client
         private PieceManager pieceManager;
 
 
-        IPieceManager ITorrentManager.PieceManager
-        {
-            get { return this.pieceManager; }
-        }
-
-
         /// <summary>
         /// The DiskManager associated with this torrent
         /// </summary>
-        public FileManager DiskManager
+        internal FileManager FileManager
         {
-            get { return this.diskManager; }
+            get { return this.fileManager; }
         }
-        private FileManager diskManager;
+        private FileManager fileManager;
 
 
         /// <summary>
         /// The object we use to syncronize list access
         /// </summary>
         internal object listLock = new object();
+
+
         /// <summary>
         /// The list of peers that are available to be connected to
         /// </summary>
@@ -203,7 +198,6 @@ namespace MonoTorrent.Client
         private long protocolBytesDownloaded;
 
 
-
         /// <summary>
         /// The number of bytes which have been uploaded for the BitTorrent protocol
         /// </summary>
@@ -213,6 +207,7 @@ namespace MonoTorrent.Client
             internal set { this.protocolBytesDownloaded = value; }
         }
         private long protocolBytesUploaded;
+
 
         /// <summary>
         /// The number of bytes which have been downloaded for the files
@@ -256,38 +251,6 @@ namespace MonoTorrent.Client
             internal set { this.uploadingTo = value; }
         }
         private int uploadingTo;
-
-
-        /// <summary>
-        /// The current download speed in bytes per second
-        /// </summary>
-        /// <returns></returns>
-        public double DownloadSpeed()
-        {
-            double total = 0;
-            lock(this.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    if (!this.connectedPeers[i].Peer.Connection.IsChoking)
-                        total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
-
-            return total;
-        }
-
-
-        /// <summary>
-        /// The current upload speed in bytes per second
-        /// </summary>
-        /// <returns></returns>
-        public double UploadSpeed()
-        {
-            double total = 0;
-
-            for (int i = 0; i < this.connectedPeers.Count; i++)
-                if (!this.connectedPeers[i].Peer.Connection.AmChoking)
-                    total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed();
-
-            return total;
-        }
         #endregion
 
 
@@ -317,7 +280,7 @@ namespace MonoTorrent.Client
             if (string.IsNullOrEmpty(savePath))
                 throw new TorrentException("Torrent savepath cannot be null");
 
-            this.diskManager = new FileManager(this.torrent.Files, this.torrent.Name, this.savePath, this.torrent.PieceLength, System.IO.FileAccess.ReadWrite);
+            this.fileManager = new FileManager(this.torrent.Files, this.torrent.Name, this.savePath, this.torrent.PieceLength, System.IO.FileAccess.ReadWrite);
             this.pieceManager = new PieceManager(new BitField(this.torrent.Pieces.Length), (TorrentFile[])this.torrent.Files);
         }
         #endregion
@@ -334,11 +297,11 @@ namespace MonoTorrent.Client
             TorrentManager manager = state as TorrentManager;
 
             if (manager == null)
-                throw new InvalidCastException("Error: object passed to HashCheck was not an ITorrentManager");
+                throw new InvalidCastException("Error: object passed to HashCheck was not an TorrentManager");
 
             for (int i = 0; i < manager.torrent.Pieces.Length; i++)
             {
-                result = ToolBox.ByteMatch(manager.torrent.Pieces[i], manager.diskManager.GetHash(i));
+                result = ToolBox.ByteMatch(manager.torrent.Pieces[i], manager.fileManager.GetHash(i));
                 lock (manager.pieceManager.MyBitField)
                     manager.pieceManager.MyBitField[i] = result;
 
@@ -352,6 +315,7 @@ namespace MonoTorrent.Client
             if (manager.state == TorrentState.Stopped || (manager.state == TorrentState.Paused) || manager.state == TorrentState.Hashing)
                 manager.Start();
         }
+
 
         /// <summary>
         /// The current progress of the torrent in percent
@@ -367,13 +331,14 @@ namespace MonoTorrent.Client
             return (complete * 100.0 / this.PieceManager.MyBitField.Length);
         }
 
+
         /// <summary>
         /// Starts the TorrentManager
         /// </summary>
         internal void Start()
         {
             TorrentStateChangedEventArgs args;
-            if (this.diskManager.InitialHashRequired)
+            if (this.fileManager.InitialHashRequired)
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
                 {
@@ -393,7 +358,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            this.diskManager.InitialHashRequired = false;
+            this.fileManager.InitialHashRequired = false;
             if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                 throw new TorrentException("Torrent is already running");
 
@@ -417,6 +382,7 @@ namespace MonoTorrent.Client
             this.trackerManager.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
 
+
         /// <summary>
         /// Stops the TorrentManager
         /// </summary>
@@ -430,7 +396,7 @@ namespace MonoTorrent.Client
             if (this.OnTorrentStateChanged != null)
                 this.OnTorrentStateChanged(this, args);
 
-            this.diskManager.FlushAll();
+            this.fileManager.FlushAll();
             handle = this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
@@ -454,6 +420,7 @@ namespace MonoTorrent.Client
             return handle;
         }
 
+
         private void SaveFastResume()
         {
             XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
@@ -461,6 +428,8 @@ namespace MonoTorrent.Client
             using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
                 fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
         }
+
+
         /// <summary>
         /// Pauses the TorrentManager
         /// </summary>
@@ -490,6 +459,7 @@ namespace MonoTorrent.Client
                     this.uploadQueue.Clear();
             }
         }
+
 
         int counter = 0;
         internal void DownloadLogic()
@@ -614,15 +584,18 @@ namespace MonoTorrent.Client
             }
         }
 
+
         internal void SeedingLogic()
         {
             DownloadLogic();
         }
 
+
         internal void SuperSeedingLogic()
         {
             SeedingLogic();     // Initially just seed as per normal. This could be a V2.0 feature.
         }
+
 
         internal void PieceCompleted(int p)
         {
@@ -649,7 +622,7 @@ namespace MonoTorrent.Client
 
 
         #region Methods to handle Tracker Update events
-        void TrackerUpdateRecieved(object sender, TrackerUpdateEventArgs e)
+        internal void TrackerUpdateRecieved(object sender, TrackerUpdateEventArgs e)
         {
             int peersAdded = 0;
             BEncodedDictionary dict = null;
@@ -698,7 +671,7 @@ namespace MonoTorrent.Client
                                 peersAdded = this.AddPeers(((BEncodedString)keypair.Value).TextBytes);
 
                             if (this.OnPeersAdded != null)
-                                this.OnPeersAdded((ITorrentManager)this, new PeersAddedEventArgs(peersAdded));
+                                this.OnPeersAdded(this, new PeersAddedEventArgs(peersAdded));
                             break;
 
                         case ("failure reason"):
@@ -719,7 +692,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer">The peer to add</param>
         /// <returns>The number of peers added</returns>
-        public int AddPeers(PeerConnectionID peer)
+        internal int AddPeers(PeerConnectionID peer)
         {
             lock (this.listLock)
             {
@@ -737,7 +710,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peers">The array of peers to add</param>
         /// <returns>The number of peers added</returns>
-        public int AddPeers(Peers peers)
+        internal int AddPeers(Peers peers)
         {
             int i = 0;
 
@@ -753,7 +726,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="list">The list of peers to add</param>
         /// <returns>The number of peers added</returns>
-        public int AddPeers(BEncodedList list)
+        internal int AddPeers(BEncodedList list)
         {
             PeerConnectionID id;
             int peersAdded = 0;
@@ -778,7 +751,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="byteOrderedData">The byte[] containing the peers to add</param>
         /// <returns>The number of peers added</returns>
-        public int AddPeers(byte[] byteOrderedData)
+        internal int AddPeers(byte[] byteOrderedData)
         {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes
@@ -852,12 +825,50 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// The current download speed in bytes per second
+        /// </summary>
+        /// <returns></returns>
+        public double DownloadSpeed()
+        {
+            double total = 0;
+            lock (this.listLock)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        if (this.connectedPeers[i].Peer.Connection != null)
+                            if (!this.connectedPeers[i].Peer.Connection.IsChoking)
+                                total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
+
+            return total;
+        }
+
+
+        /// <summary>
+        /// The current upload speed in bytes per second
+        /// </summary>
+        /// <returns></returns>
+        public double UploadSpeed()
+        {
+            double total = 0;
+
+            lock (this.connectedPeers)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        if (this.connectedPeers[i].Peer.Connection != null)
+                            if (!this.connectedPeers[i].Peer.Connection.AmChoking)
+                                total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed();
+
+            return total;
+        }
+
+
+        /// <summary>
         /// Returns the total number of peers available (including ones already connected to)
         /// </summary>
         public int AvailablePeers
         {
             get { return this.available.Count + this.connectedPeers.Count + this.connectingTo.Count; }
         }
+
 
         /// <summary>
         /// Called when a Piece has been hashed by the FileManager
@@ -866,7 +877,7 @@ namespace MonoTorrent.Client
         internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
         {
             if (this.OnPieceHashed != null)
-                this.OnPieceHashed((ITorrentManager)this, pieceHashedEventArgs);
+                this.OnPieceHashed(this, pieceHashedEventArgs);
         }
         #endregion
 
@@ -886,7 +897,7 @@ namespace MonoTorrent.Client
         /// <param name="disposing"></param>
         public void Dispose(bool disposing)
         {
-            this.diskManager.Dispose();
+            this.fileManager.Dispose();
         }
         #endregion
     }

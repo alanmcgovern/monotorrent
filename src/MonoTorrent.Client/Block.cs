@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class Block
+    internal class Block
     {
         #region Member Variables
         /// <summary>

@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Represents a "KeepAlive" message
     /// </summary>
-    public class KeepAliveMessage : IPeerMessage
+    internal class KeepAliveMessage : IPeerMessage
     {
         private const int messageLength = -1;   // has no payload
         public const int MessageId = -1;       // Has no messageId

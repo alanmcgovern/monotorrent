@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Class used for decoding an IPeerMessage
     /// </summary>
-    public class PeerwireEncoder
+    internal class PeerwireEncoder
     {
         /// <summary>
         /// Decodes a PeerMessage from the supplied peers recieve buffer
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case PieceMessage.MessageId:        // 7
-                    message = new PieceMessage(manager.DiskManager);
+                    message = new PieceMessage(manager.FileManager);
                     break;
 
                 case PortMessage.MessageId:         // 9

@@ -10,9 +10,9 @@ namespace MonoTorrent.Client
 	/// <summary>
 	/// Description of AllowedFastAlgorithm.
 	/// </summary>
-	public class AllowedFastAlgorithm
+	internal class AllowedFastAlgorithm
     {
-        public const int AllowedFastPieceCount = 10;
+        public const int AllowedFastPieceCount = 5;
         private static SHA1Managed hasher = new SHA1Managed();
 
 		public static UInt32[] Calculate(byte[] addressBytes, byte[] infohash, int numberOfResults, UInt32 numberOfPieces)

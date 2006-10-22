@@ -52,12 +52,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Event that's fired every time a message is sent or recieved from a Peer
         /// </summary>
-        public event EventHandler<PeerMessageEventArgs> OnPeerMessages;
+         internal event EventHandler<PeerMessageEventArgs> OnPeerMessages;
+        //FIXME: Should be public?
         #endregion
 
 
         #region Member Variables
-        private const int ChunkLength = 2048;
+        private const int ChunkLength = 2048;   // Download in 2kB chunks to allow for better rate limiting
 
         private EngineSettings settings;
 
@@ -134,7 +135,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="manager"></param>
-        public void ConnectToPeer(TorrentManager manager)
+        internal void ConnectToPeer(TorrentManager manager)
         {
             if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
                 return;
@@ -548,7 +549,7 @@ namespace MonoTorrent.Client
 
                     IPeerMessage message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesRecieved, id.TorrentManager);
                     if (this.OnPeerMessages != null)
-                        this.OnPeerMessages((IPeerConnectionID)id, new PeerMessageEventArgs(message, Direction.Incoming));
+                        this.OnPeerMessages(id, new PeerMessageEventArgs(message, Direction.Incoming));
                     message.Handle(id); // FIXME: Is everything threadsafe here? Well, i know it isn't :p
 
                     if (!(message is PieceMessage))
@@ -656,7 +657,7 @@ namespace MonoTorrent.Client
 
             IPeerMessage msg = id.Peer.Connection.DeQueue();
             if (this.OnPeerMessages != null)
-                this.OnPeerMessages((IPeerConnectionID)id, new PeerMessageEventArgs(msg, Direction.Outgoing));
+                this.OnPeerMessages(id, new PeerMessageEventArgs(msg, Direction.Outgoing));
 
             if (msg is PieceMessage)
                 id.Peer.Connection.PiecesSent++;
@@ -683,7 +684,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to resume</param>
         /// <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
-        public void ResumePeer(PeerConnectionID id, bool downloading)
+        internal void ResumePeer(PeerConnectionID id, bool downloading)
         {
             bool cleanUp = false;
 

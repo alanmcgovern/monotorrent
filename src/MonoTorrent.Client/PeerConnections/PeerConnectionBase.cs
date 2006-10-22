@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Holds the data for a connection to another peer
     /// </summary>
-    public abstract class PeerConnectionBase : IDisposable
+    internal abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
 #warning Use these to request pieces

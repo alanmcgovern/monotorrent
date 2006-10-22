@@ -67,7 +67,6 @@ namespace MonoTorrent.Common
         }
 
 
-
         /// <summary>
         /// Decode BEncoded data in the given byte array
         /// </summary>

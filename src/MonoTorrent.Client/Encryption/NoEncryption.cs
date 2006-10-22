@@ -35,7 +35,7 @@ using System.Net;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public class NoEncryption : IEncryptor
+    internal class NoEncryption : IEncryptor
     {
         public NoEncryption()
         {

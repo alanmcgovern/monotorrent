@@ -97,7 +97,7 @@ namespace MonoTorrent.Tracker
         ///<param name="torrent">
         ///The torrent which should be added. If it is already in the List the Method returns immidiatly.
         ///</param>
-        public void AddTorrent(ITorrent torrent)
+        public void AddTorrent(Torrent torrent)
         {                       
             //Console.WriteLine("adding torrent " + HttpUtility.UrlEncode(torrent.InfoHash) + " to the tracker"); 
             Console.WriteLine("adding torrent " + ToolBox.GetHex(torrent.InfoHash) + " to the tracker");
@@ -113,7 +113,7 @@ namespace MonoTorrent.Tracker
         ///<summary>This Method is used to Disable Torrents.
         ///</summary>
         ///<param>The Torrent to be removed from the Tracker</param>
-        public void RemoveTorrent(ITorrent torrent)
+        public void RemoveTorrent(Torrent torrent)
         {
             if (torrents.ContainsKey(ToolBox.GetHex(torrent.InfoHash)))
                 torrents.Remove(ToolBox.GetHex(torrent.InfoHash));

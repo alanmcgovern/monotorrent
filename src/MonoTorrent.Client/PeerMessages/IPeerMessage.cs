@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Common interface for all PeerMessages
     /// </summary>
-    public interface IPeerMessage
+    internal interface IPeerMessage
     {
         /// <summary>
         /// Encodes the PeerMessage into the supplied buffer

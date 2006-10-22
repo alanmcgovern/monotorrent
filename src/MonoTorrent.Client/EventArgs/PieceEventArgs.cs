@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a Piece event
     /// </summary>
-    public class PieceEventArgs : EventArgs
+    internal class PieceEventArgs : EventArgs
     {
         #region Member Variables
         /// <summary>

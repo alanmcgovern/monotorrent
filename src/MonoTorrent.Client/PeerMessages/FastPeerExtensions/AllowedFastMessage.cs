@@ -6,7 +6,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    public class AllowedFastMessage : IPeerMessage
+    internal class AllowedFastMessage : IPeerMessage
     {
         public const int MessageId = 0x11;
         private readonly int messageLength = 5;

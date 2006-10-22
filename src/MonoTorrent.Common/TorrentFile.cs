@@ -38,7 +38,7 @@ namespace MonoTorrent.Common
     /// This is the base class for the files available to download from within a .torrent.
     /// This should be inherited by both Client and Tracker "TorrentFile" classes
     /// </summary>
-    public class TorrentFile : ITorrentFile
+    public class TorrentFile
     {
         #region Member Variables
         /// <summary>

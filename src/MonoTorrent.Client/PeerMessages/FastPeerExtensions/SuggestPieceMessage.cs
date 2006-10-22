@@ -6,7 +6,7 @@ using System.Net;
 namespace MonoTorrent.Client.PeerMessages
 {
 #warning The only use for a SuggestPiece message is for when i load a piece into a Disk Cache and want to make use for it
-    public class SuggestPieceMessage : IPeerMessage
+    internal class SuggestPieceMessage : IPeerMessage
     {
         public const byte MessageId = 0x0D;
         private readonly int messageLength = 5;

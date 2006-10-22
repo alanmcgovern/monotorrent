@@ -36,7 +36,7 @@ using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public class TCPConnection : PeerConnectionBase
+    internal class TCPConnection : PeerConnectionBase
     {
         #region Member Variables
         public IPEndPoint PeerEndPoint

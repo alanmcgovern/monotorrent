@@ -5,7 +5,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.PeerConnections
 {
-    public class HTTPConnection : PeerConnectionBase
+    internal class HTTPConnection : PeerConnectionBase
     {
         public HTTPConnection(string location, int bitfieldLength, IEncryptor encryptor)
             : base(bitfieldLength, encryptor)

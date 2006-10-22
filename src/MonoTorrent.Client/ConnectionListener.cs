@@ -35,56 +35,9 @@ using System.Net.Sockets;
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// 
+    /// Accepts incoming connections and passes them off to the right TorrentManager
     /// </summary>
-    public class ListenerException : Exception
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public ListenerException()
-            : base()
-        {
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public ListenerException(string message)
-            : base(message)
-        {
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="innerException"></param>
-        public ListenerException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        public ListenerException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
-            : base(info, context)
-        {
-        }
-    }
-
-
-    /// <summary>
-    /// Accepts incoming connections and passes them off to the right ITorrentManager
-    /// </summary>
-    public class ConnectionListener : IDisposable
+    internal class ConnectionListener : IDisposable
     {
         #region Member Variables
         private Socket socket;

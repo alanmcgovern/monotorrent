@@ -83,6 +83,14 @@ namespace MonoTorrent.Client
         #endregion
 
 
+        #region Defaults
+        private const int DefaultMaxConnections = 4;
+        private const int DefaultUploadSlots = 60;
+        private const int DefaultDownloadSpeed = 0;
+        private const int DefaultUploadSpeed = 0;
+        #endregion
+
+
         #region Constructors
         private TorrentSettings()
         {
@@ -108,7 +116,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         public TorrentSettings(int uploadSlots)
-            : this(uploadSlots, DefaultSettings.maxConnections, DefaultSettings.maxDownloadSpeed, DefaultSettings.maxUploadSpeed)
+            : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed)
         {
         }
 
@@ -120,7 +128,7 @@ namespace MonoTorrent.Client
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         /// <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections)
-            : this(uploadSlots, maxConnections, DefaultSettings.maxDownloadSpeed, DefaultSettings.maxUploadSpeed)
+            : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed)
         {
         }
 
@@ -144,20 +152,11 @@ namespace MonoTorrent.Client
 
         #region Default Settings
         /// <summary>
-        /// These are hardcoded default settings. They should be good enough
-        /// for connections with upload between 128kB/sec and 512kB/sec
+        /// Creates a new instance of the Default settings. 
         /// </summary>
-        public static TorrentSettings DefaultSettings
+        public static TorrentSettings DefaultSettings()
         {
-            get
-            {
-                TorrentSettings sett = new TorrentSettings();
-                sett.maxConnections = 50;
-                sett.maxDownloadSpeed = 0;
-                sett.maxUploadSpeed = 0;
-                sett.uploadSlots = 4;
-                return sett;
-            }
+            return new TorrentSettings(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed);
         }
         #endregion
     }

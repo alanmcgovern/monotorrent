@@ -48,6 +48,7 @@ namespace MonoTorrent.Client
         }
         private int pieceIndex;
 
+
         /// <summary>
         /// The value of whether the piece passed or failed the hash check
         /// </summary>

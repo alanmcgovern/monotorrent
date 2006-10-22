@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Represents a "Request" message
     /// </summary>
-    public class RequestMessage : IPeerMessage
+    internal class RequestMessage : IPeerMessage
     {
         public const int MessageId = 6;
         private const int messageLength = 13;
@@ -142,7 +142,7 @@ namespace MonoTorrent.Client.PeerMessages
                 ClientEngine.connectionManager.CleanupSocket(id);
 
             if (!id.Peer.Connection.AmChoking)
-                id.Peer.Connection.EnQueue(new PieceMessage(id.TorrentManager.DiskManager, this.PieceIndex, this.startOffset, this.requestLength));
+                id.Peer.Connection.EnQueue(new PieceMessage(id.TorrentManager.FileManager, this.PieceIndex, this.startOffset, this.requestLength));
         }
 
 

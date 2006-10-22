@@ -64,7 +64,7 @@ namespace MonoTorrent.Common
     /// The "Torrent" class for both Tracker and Client should inherit from this
     /// as it contains the fields that are common to both.
     /// </summary>
-    public class Torrent : ITorrent
+    public class Torrent
     {
         #region Constructors
         public Torrent()
@@ -178,7 +178,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The list of files contained within the .torrent which are available for download
         /// </summary>
-        public ITorrentFile[] Files
+        public TorrentFile[] Files
         {
             get { return this.torrentFiles; }
         }

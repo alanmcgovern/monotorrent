@@ -18,7 +18,6 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <FileAlignment>4096</FileAlignment>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <TargetFrameworkVersion>Mono v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,9 +54,6 @@
     <Compile Include="BEncode\BEncodingException.cs" />
     <Compile Include="BEncode\IBEncodedValue.cs" />
     <Compile Include="Enums.cs" />
-    <Compile Include="IPeer.cs" />
-    <Compile Include="ITorrent.cs" />
-    <Compile Include="ITorrentFile.cs" />
     <Compile Include="Peer.cs" />
     <Compile Include="PeerID.cs" />
     <Compile Include="Test\BEncodingTest.cs" />
@@ -72,5 +68,5 @@
     <Compile Include="VersionInfo.cs" />
     <Compile Include="TorrentCreator.cs" />
   </ItemGroup>
-  <Import Project="$(SharpDevelopBinPath)\SharpDevelop.Build.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
 </Project>

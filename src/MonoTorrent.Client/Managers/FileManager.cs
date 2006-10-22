@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class manages writing and reading of pieces from the disk
     /// </summary>
-    public class FileManager : System.IDisposable
+    internal class FileManager : System.IDisposable
     {
         #region Member Variables
         /// <summary>
@@ -76,8 +76,8 @@ namespace MonoTorrent.Client
         /// <param name="file">The TorrentFile to open/create on disk</param>
         /// <param name="savePath">The directory the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        public FileManager(ITorrentFile file, string savePath, int pieceLength)
-            : this(new ITorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
+        public FileManager(TorrentFile file, string savePath, int pieceLength)
+            : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
         {
         }
 
@@ -88,8 +88,8 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the file</param>
-        public FileManager(ITorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
-            : this(new ITorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
+        public FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
+            : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
         {
         }
 
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        public FileManager(ITorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
+        public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
             : this(files, baseDirectory, savePath, pieceLength, FileAccess.Read)
         {
         }
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-        public FileManager(ITorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
+        public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
             string filePath = null;
             this.initialHashRequired = false;
@@ -146,13 +146,13 @@ namespace MonoTorrent.Client
 
         #region Helper Methods
         /// <summary>
-        /// Generates the full path to the supplied ITorrentFile
+        /// Generates the full path to the supplied TorrentFile
         /// </summary>
-        /// <param name="file">The ITorrentFile to generate the full path to</param>
+        /// <param name="file">The TorrentFile to generate the full path to</param>
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the BaseDirectory</param>
         /// <returns>The full path to the TorrentFile</returns>
-        private string GenerateFilePath(ITorrentFile file, string baseDirectory, string savePath)
+        private string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
         {
             string path = string.Empty;
 
@@ -175,7 +175,7 @@ namespace MonoTorrent.Client
         /// <param name="offset">The offset in the file at which to start reading the data</param>
         /// <param name="count">The number of bytes to read</param>
         /// <returns>The number of bytes successfully read</returns>
-        public int Read(byte[] buffer, int bufferOffset, long offset, int count)
+        internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
         {
             int i = 0;
             int bytesRead = 0;
@@ -216,7 +216,7 @@ namespace MonoTorrent.Client
         /// <param name="bufferOffset">The offset within the array to save the data</param>
         /// <param name="offset">The offset in the file from which to read the data</param>
         /// <param name="count">The number of bytes to read</param>
-        public void Write(byte[] buffer, int bufferOffset, long offset, int count)
+        internal void Write(byte[] buffer, int bufferOffset, long offset, int count)
         {
             int i = 0;
             long bytesWritten = 0;

@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class PeerConnectionID : IPeerConnectionID
+    internal class PeerConnectionID
     {
         #region Member Variables
         /// <summary>
@@ -114,16 +114,5 @@ namespace MonoTorrent.Client
             return this.peer.GetHashCode();
         }
         #endregion
-
-
-        IPeer IPeerConnectionID.Peer
-        {
-            get { return this.peer; }
-        }
-
-        ITorrentManager IPeerConnectionID.TorrentManager
-        {
-            get { return this.torrentManager; }
-        }
     }
 }

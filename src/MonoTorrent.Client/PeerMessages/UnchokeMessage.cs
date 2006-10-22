@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    public class UnchokeMessage : IPeerMessage
+    internal class UnchokeMessage : IPeerMessage
     {
         public const int MessageId = 1;
         private const int messageLength = 1;

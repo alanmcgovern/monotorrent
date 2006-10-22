@@ -29,24 +29,25 @@
 
 
 using MonoTorrent.Common;
+using System.Reflection;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// Represents the Settings which need to be passed to the engine
     /// </summary>
-    public class EngineSettings : IEngineSettings
+    public class EngineSettings
     {
         #region Member Variables
         /// <summary>
         /// This is the default directory that torrents will be downloaded to
         /// </summary>
-        public string DefaultSavePath
+        public string SavePath
         {
-            get { return this.defaultSavePath; }
-            set { this.defaultSavePath = value; }
+            get { return this.savePath; }
+            set { this.savePath = value; }
         }
-        private string defaultSavePath;
+        private string savePath;
 
 
         /// <summary>
@@ -105,6 +106,16 @@ namespace MonoTorrent.Client
         #endregion
 
 
+        #region Defaults
+        private const string DefaultSavePath = "";
+        private const int DefaultMaxConnections = 150;
+        private const int DefaultMaxDownloadSpeed = 0;
+        private const int DefaultMaxUploadSpeed = 0;
+        private const int DefaultMaxHalfOpenConnections = 5;
+        private const int DefaultListenPort = 52138;
+        #endregion
+
+
         #region Constructors
         private EngineSettings()
         {
@@ -118,7 +129,7 @@ namespace MonoTorrent.Client
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
         public EngineSettings(int globalMaxConnections, int globalHalfOpenConnections, string defaultSavePath, int listenPort)
-            : this(globalMaxConnections, globalHalfOpenConnections, defaultSavePath, listenPort, 0, 0)
+            : this(globalMaxConnections, globalHalfOpenConnections, defaultSavePath, listenPort, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed)
         {
         }
 
@@ -137,7 +148,7 @@ namespace MonoTorrent.Client
             this.globalMaxDownloadSpeed = globalMaxDownloadSpeed;
             this.globalMaxUploadSpeed = globalHalfOpenConnections;
             this.globalMaxHalfOpenConnections = globalMaxUploadSpeed;
-            this.defaultSavePath = defaultSavePath;
+            this.savePath = defaultSavePath;
             this.listenPort = listenPort;
         }
         #endregion
@@ -145,22 +156,16 @@ namespace MonoTorrent.Client
 
         #region Default Settings
         /// <summary>
-        /// These are hardcoded default settings. They should be good enough
-        /// for connections with upload between 128kB/sec and 512kB/sec
+        /// Returns a new copy of the default settings for the engine
         /// </summary>
-        public static EngineSettings DefaultSettings
+        public static EngineSettings DefaultSettings()
         {
-            get
-            {
-                EngineSettings sett = new EngineSettings();
-                sett.defaultSavePath = string.Empty;
-                sett.globalMaxConnections = 150;
-                sett.globalMaxDownloadSpeed = 0;
-                sett.globalMaxUploadSpeed = 0;
-                sett.globalMaxHalfOpenConnections = 5;
-                sett.listenPort = 52138;
-                return sett;
-            }
+            return new EngineSettings(DefaultMaxConnections,
+                DefaultMaxHalfOpenConnections,
+                DefaultSavePath,
+                DefaultListenPort,
+                DefaultMaxDownloadSpeed,
+                DefaultMaxUploadSpeed);
         }
         #endregion
     }

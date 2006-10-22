@@ -39,7 +39,7 @@ using System.Web;
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Represents the connection to a tracker that an ITorrentManager has
+    /// Represents the connection to a tracker that an TorrentManager has
     /// </summary>
     public class TrackerManager
     {
@@ -83,14 +83,14 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The announceURLs available for this torrent
+        /// The trackers available
         /// </summary>
         public Tracker[] Trackers
         {
             get { return this.trackers; }
         }
         private Tracker[] trackers;
-        private int lastUsedTracker;
+        private int currentTrackerIndex;
 
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public Tracker CurrentTracker
         {
-            get { return this.trackers[this.lastUsedTracker]; } 
+            get { return this.trackers[this.currentTrackerIndex]; } 
         }
         #endregion
 
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
         public TrackerManager(TorrentManager manager)
         {
             this.manager = manager;
-            this.lastUsedTracker = 0;
+            this.currentTrackerIndex = 0;
             this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
 
             this.responseReceived = new AsyncCallback(this.ResponseRecieved);
@@ -233,12 +233,12 @@ namespace MonoTorrent.Client
         {
             if (!this.updateSucceeded)
             {
-                this.lastUsedTracker++;
-                if (this.lastUsedTracker == this.trackers.Length)
-                    this.lastUsedTracker = 0;
+                this.currentTrackerIndex++;
+                if (this.currentTrackerIndex == this.trackers.Length)
+                    this.currentTrackerIndex = 0;
             }
 
-            return this.trackers[this.lastUsedTracker];
+            return this.trackers[this.currentTrackerIndex];
         }
 
         internal void OnTrackerEvent(object sender, TrackerUpdateEventArgs e)

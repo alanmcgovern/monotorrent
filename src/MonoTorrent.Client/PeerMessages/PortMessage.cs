@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Represents a "Port" message
     /// </summary>
-    public class PortMessage : IPeerMessage
+    internal class PortMessage : IPeerMessage
     {
         private const int messageLength = 3;
         public const int MessageId = 9;

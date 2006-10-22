@@ -45,19 +45,19 @@ namespace MonoTorrent.Tracker
     {
         PeerManager peers;
         
-        public SimpleTorrentManager(ITorrent torrent)
+        public SimpleTorrentManager(Torrent torrent)
         {
             this.torrent = torrent;
             peers = new PeerManager();
         }
         
-        public ITorrent Torrent
+        public Torrent Torrent
         {
             get {
                 return torrent;
             }
         }
-        private ITorrent torrent;
+        private Torrent torrent;
         
         public int Count
         {

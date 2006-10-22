@@ -50,6 +50,7 @@ namespace MonoTorrent.Client
         }
         private TorrentState oldState;
 
+
         /// <summary>
         /// The new state for the torrent
         /// </summary>
