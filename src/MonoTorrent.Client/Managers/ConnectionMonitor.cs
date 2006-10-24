@@ -172,9 +172,13 @@ namespace MonoTorrent.Client
                 {
                     int currentTime = Environment.TickCount;
                     int difference = currentTime - this.lastUpdateTime;
+                    
                     if (difference < 0)
                         difference = currentTime;   // Accounts for the rollover of Env.TickCount
 
+                    if (difference < 500)
+                        return;
+#warning This isn't the best way to solve the issue of NaN download speeds. I think it's because it can take >20ms for the locking to allow a thread to run through
                     this.downloadSpeeds[this.downloadSpeedIndex++] = tempRecvCount / (difference / 1000.0);
                     this.uploadSpeeds[this.uploadSpeedIndex++] = tempSentCount / (difference / 1000.0);
 
