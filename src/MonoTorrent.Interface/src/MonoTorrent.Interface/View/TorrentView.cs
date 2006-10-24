@@ -34,7 +34,7 @@ namespace MonoTorrent.Interface.View
 {
     public class TorrentView : Notebook
     {
-        private ITorrent model;
+        private Torrent model;
 
         private Label nameLabel;
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Interface.View
             Update();
         }
 
-        public ITorrent Model {
+        public Torrent Model {
             set {
                 model = value;
                 Update();
