@@ -84,8 +84,8 @@ namespace MonoTorrent.Client
 
 
         #region Defaults
-        private const int DefaultMaxConnections = 4;
-        private const int DefaultUploadSlots = 60;
+        private const int DefaultMaxConnections = 60;
+        private const int DefaultUploadSlots = 4;
         private const int DefaultDownloadSpeed = 0;
         private const int DefaultUploadSpeed = 0;
         #endregion
