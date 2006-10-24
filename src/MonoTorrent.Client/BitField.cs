@@ -220,7 +220,6 @@ namespace MonoTorrent.Client
         /// <param name="value"></param>
         public void SetAll(bool value)
         {
-#warning Set the remaining bits in the last byte = 0.
             if (value)
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
@@ -228,6 +227,11 @@ namespace MonoTorrent.Client
             else
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = 0;
+
+            // clear out the remaining space
+            int end = ((int)((this.length + 31) / 32)) * 32;
+            for (int i = this.length; i < end; ++i)
+                this.array[i >> 5] &= ~(1 << (i & 31));
         }
 
         /// <summary>
