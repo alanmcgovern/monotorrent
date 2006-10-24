@@ -446,7 +446,7 @@ namespace MonoTorrent.Client
 #warning Is there a deadlock possibility here?
                 for (int i = 0; i < this.connectingTo.Count; i++)
                     lock (this.connectingTo[i])
-                        ClientEngine.connectionManager.CleanupSocket(this.connectingTo[i];
+                        ClientEngine.connectionManager.CleanupSocket(this.connectingTo[i]);
                 
                 for(int i =0; i <this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
@@ -610,13 +610,21 @@ namespace MonoTorrent.Client
             // list as a lock as already been acquired.
             foreach (PeerConnectionID id in this.connectedPeers)
             {
-                if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
+                lock (this.listLock)
                 {
-                    if (!id.Peer.Connection.BitField[p])
-                        if (id.Peer.Connection != null)                     // this shouldn't be null ever, but it is. Figure out why.
-                            id.Peer.Connection.EnQueue(new HaveMessage(p)); // It's being disposed of but not removed from the list...
-
-                    Monitor.Exit(id);
+                    if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
+                    {
+                        try
+                        {
+                            if (id.Peer.Connection != null)
+                                if (!id.Peer.Connection.BitField[p])
+                                    id.Peer.Connection.EnQueue(new HaveMessage(p));
+                        }
+                        finally
+                        {
+                            Monitor.Exit(id);
+                        }
+                    }
                 }
             }
         }
