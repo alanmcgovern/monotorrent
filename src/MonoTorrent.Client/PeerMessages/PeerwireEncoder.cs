@@ -68,8 +68,6 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case ExtendedListMessage.MessageId: // 20
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new ExtendedListMessage();
                     break;
 
@@ -136,7 +134,9 @@ namespace MonoTorrent.Client.PeerMessages
                     }
 
                 default:
-                    throw new ProtocolException("Unknown message: " + BitConverter.ToString(buffer, offset, count));
+                    message = new UnknownMessage();
+                    break;
+#warning This should also be handled. Does the spec call for closing or ignoring? Closing iirc.
             }
 
             // The message length is given in the second byte and the message body follows directly after that
