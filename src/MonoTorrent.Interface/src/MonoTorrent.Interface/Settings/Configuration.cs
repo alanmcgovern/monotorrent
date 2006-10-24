@@ -67,11 +67,11 @@ namespace MonoTorrent.Interface.Settings
                 try {
                     return (int) storage.Retrieve("ListenPort");
                 } catch (Exception) {
-                    return EngineSettings.DefaultSettings.ListenPort;
+                    return EngineSettings.DefaultSettings().ListenPort;
                 }
             }
             set {
-                storage.Store("MaximumDownloadSpeed", value);
+                storage.Store("ListenPort", value);
             }
         }
 
