@@ -143,12 +143,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The size of the send and recieve buffers. Defaults to 32bytes more than my default request size.
-        /// </summary>
-        private const int BufferSize = ((1 << 14) + 32);
-
-
-        /// <summary>
         /// This is the message we're currently sending to a peer
         /// </summary>
         internal IPeerMessage CurrentlySendingMessage
@@ -157,6 +151,7 @@ namespace MonoTorrent.Client
             set { this.currentlySendingMessage = value; }
         }
         private IPeerMessage currentlySendingMessage;
+
 
         /// <summary>
         /// The current encryption method being used to encrypt connections
@@ -189,6 +184,16 @@ namespace MonoTorrent.Client
             internal set { this.isInterested = value; }
         }
         private bool isInterested;
+
+
+        // True if the peer has pieces that i might like to request. If he is interesting to me
+        // i need to send an InterestedMessage.
+        internal bool IsInterestingToMe
+        {
+            get { return this.isinterestingtoMe; }
+            set { this.isinterestingtoMe = value; }
+        }
+        private bool isinterestingtoMe;
 
 
         /// <summary>
@@ -313,7 +318,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection to the peer at the specified IPEndpoint
         /// </summary>
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
-        public PeerConnectionBase(int bitfieldLength, IEncryptor encryptor)
+        protected PeerConnectionBase(int bitfieldLength, IEncryptor encryptor)
         {
             this.suggestedPieces = new List<int>();
             this.encryptor = encryptor;
@@ -323,8 +328,6 @@ namespace MonoTorrent.Client
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessage>(4);
-            this.sendBuffer = new byte[BufferSize];
-            this.recieveBuffer = new byte[BufferSize];
         }
         #endregion
 

@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         #region Member Variables
         private System.Timers.Timer timer;
 
-
+        internal static BufferManager BufferManager = new BufferManager();
         /// <summary>
         /// Returns the engines PeerID
         /// </summary>

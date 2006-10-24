@@ -350,6 +350,10 @@ namespace MonoTorrent.Client
                 if (this.OnPieceChanged != null)
                     this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(p, PieceEvent.BlockWrittenToDisk));
 
+                if (!this.requests.ContainsKey(id))
+                    return;
+#warning I should close the connection, but at the moment i'm in a bug fixing mood
+
                 Piece piece = null;
                 List<Piece> pieces = this.requests[id];
                 
@@ -397,7 +401,10 @@ namespace MonoTorrent.Client
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
                 if (result)
+                {
+                    id.Peer.Connection.IsInterestingToMe = this.IsInteresting(id);
                     id.TorrentManager.PieceCompleted(piece.Index);
+                }
 
                 pieces.Remove(piece);
 

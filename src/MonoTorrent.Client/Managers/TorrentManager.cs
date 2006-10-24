@@ -494,6 +494,9 @@ namespace MonoTorrent.Client
 
             lock (this.listLock)
             {
+                if (counter == 0)
+                    GC.Collect();
+
                 counter++;
 
                 // If we havn't reached our max connected peers, connect to another one.
@@ -511,15 +514,15 @@ namespace MonoTorrent.Client
                         if (counter % 20 == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
-                        bool isInteresting = this.pieceManager.IsInteresting(id);
-                        if (isInteresting && (!id.Peer.Connection.AmInterested))
+                        
+                        if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
                         {
                             // If we used to be not interested but now we are, send a message.
                             id.Peer.Connection.AmInterested = true;
                             id.Peer.Connection.EnQueue(new InterestedMessage());
                         }
 
-                        else if (!isInteresting && id.Peer.Connection.AmInterested)
+                        else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
                         {
                             // If we used to be interested but now we're not, send a message
                             // We only become uninterested once we've recieved all our requested bits.
@@ -870,7 +873,7 @@ namespace MonoTorrent.Client
         {
             double total = 0;
 
-            lock (this.connectedPeers)
+            lock (this.listLock)
                 for (int i = 0; i < this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
                         if (this.connectedPeers[i].Peer.Connection != null)

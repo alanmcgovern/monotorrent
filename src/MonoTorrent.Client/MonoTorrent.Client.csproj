@@ -58,6 +58,7 @@
     <Compile Include="Encryption\NoEncryption.cs" />
     <Compile Include="Encryption\IEncryptor.cs" />
     <Compile Include="ListenerException.cs" />
+    <Compile Include="Managers\BufferManager.cs" />
     <Compile Include="PeerConnections\HTTPConnection.cs" />
     <Compile Include="PeerConnections\TCPConnection.cs" />
     <Compile Include="Encryption\RC4FullEncryption.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="PeerMessages\FastPeerExtensions\HaveNoneMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\RejectRequestMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\SuggestPieceMessage.cs" />
+    <Compile Include="PeerMessages\UnknownMessage.cs" />
     <Compile Include="Peers\Peer.cs" />
     <Compile Include="ProtocolException.cs" />
     <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
