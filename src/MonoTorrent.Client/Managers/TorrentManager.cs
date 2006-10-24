@@ -452,10 +452,10 @@ namespace MonoTorrent.Client
                     lock (this.connectedPeers[i])
                         ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[i]);
 
-                lock (this.downloadQueue)
+                lock (this.listLock)
                     this.downloadQueue.Clear();
 
-                lock (this.uploadQueue)
+                lock (this.listLock)
                     this.uploadQueue.Clear();
 
                 this.SaveFastResume();
@@ -469,10 +469,10 @@ namespace MonoTorrent.Client
             IPeerMessage msg;
             PeerConnectionID id;
 
-            if (this.state == TorrentState.Downloading && this.Progress() == 100.0)
-                this.state = TorrentState.Seeding;
+            //if (this.state == TorrentState.Downloading && this.Progress() == 100.0)
+            //    this.state = TorrentState.Seeding;
 
-            lock (this.downloadQueue)
+            lock (this.listLock)
             {
                 if (this.settings.MaxDownloadSpeed > 0)
                     while ((this.DownloadSpeed() < this.settings.MaxDownloadSpeed * 1024) && this.downloadQueue.Count > 0)
@@ -482,7 +482,7 @@ namespace MonoTorrent.Client
                         ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
             }
 
-            lock (this.uploadQueue)
+            lock (this.listLock)
             {
                 if (this.settings.MaxUploadSpeed > 0)
                     while ((this.UploadSpeed() < this.settings.MaxUploadSpeed * 1024) && (this.uploadQueue.Count > 0))
