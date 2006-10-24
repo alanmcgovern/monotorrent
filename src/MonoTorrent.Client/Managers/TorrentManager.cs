@@ -443,20 +443,22 @@ namespace MonoTorrent.Client
                 if (this.OnTorrentStateChanged != null)
                     this.OnTorrentStateChanged(this, args);
 
-
-                foreach (PeerConnectionID id in this.connectingTo)
-                    lock (id)
-                        ClientEngine.connectionManager.CleanupSocket(id);
-
-                foreach (PeerConnectionID id in this.connectedPeers)
-                    lock (id)
-                        ClientEngine.connectionManager.CleanupSocket(id);
+#warning Is there a deadlock possibility here?
+                for (int i = 0; i < this.connectingTo.Count; i++)
+                    lock (this.connectingTo[i])
+                        ClientEngine.connectionManager.CleanupSocket(this.connectingTo[i];
+                
+                for(int i =0; i <this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[i]);
 
                 lock (this.downloadQueue)
                     this.downloadQueue.Clear();
 
                 lock (this.uploadQueue)
                     this.uploadQueue.Clear();
+
+                this.SaveFastResume();
             }
         }
 
