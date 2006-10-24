@@ -553,9 +553,9 @@ namespace MonoTorrent.Client
                     message.Handle(id); // FIXME: Is everything threadsafe here? Well, i know it isn't :p
 
                     if (!(message is PieceMessage))
-                    {
-                        id.TorrentManager.DataBytesDownloaded -= message.ByteLength;
-                        id.TorrentManager.ProtocolBytesDownloaded += message.ByteLength;
+                    {   // The '-4' is because of the messagelength int which has already been counted in a different method
+                        id.TorrentManager.DataBytesDownloaded -= (message.ByteLength-4);
+                        id.TorrentManager.ProtocolBytesDownloaded += (message.ByteLength-4);
                     }
 
                     id.Peer.Connection.LastMessageRecieved = DateTime.Now;
