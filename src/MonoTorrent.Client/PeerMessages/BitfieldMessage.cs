@@ -132,6 +132,8 @@ namespace MonoTorrent.Client.PeerMessages
             }
 
             id.Peer.IsSeeder = true;
+
+            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
         }
 
 

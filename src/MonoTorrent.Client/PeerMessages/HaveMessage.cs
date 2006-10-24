@@ -130,8 +130,9 @@ namespace MonoTorrent.Client.PeerMessages
                     return;
                 }
             }
-
+#warning This code is duplicated in the PieceMessage i think
             id.Peer.IsSeeder = true;
+            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
         }
 
 

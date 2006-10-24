@@ -328,6 +328,7 @@ namespace MonoTorrent.Client
 
             try
             {
+                lock(id.TorrentManager.listLock)
                 lock (id)
                 {
                     if (id.Peer.Connection == null)
@@ -569,8 +570,8 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection.BytesRecieved != id.Peer.Connection.BytesToRecieve)
                         {
-                            
-                                id.TorrentManager.downloadQueue.Enqueue(id);
+
+                            id.TorrentManager.downloadQueue.Enqueue(id);
 
                             return;
                         }
@@ -603,6 +604,12 @@ namespace MonoTorrent.Client
             }
             catch (ArgumentException ex)
             {
+#warning should be unneccessary
+                cleanUp = true;
+            }
+            catch (NullReferenceException ex)
+            {
+#warning should be unneccessary
                 cleanUp = true;
             }
             finally
