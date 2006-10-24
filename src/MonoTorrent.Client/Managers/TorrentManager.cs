@@ -681,6 +681,7 @@ namespace MonoTorrent.Client
 
 
                         default:
+                            System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key + " Value: " + keypair.Value);
                             break;  //FIXME Log these
                     }
                 }
@@ -734,12 +735,21 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    id = new PeerConnectionID(new Peer(dict["peer id"].ToString(), dict["ip"].ToString() + ':' + dict["port"].ToString()),
-                                    this);
+                    string peerId;
+
+                    if (dict.ContainsKey("peer id"))
+                        peerId = dict["peer id"].ToString();
+                    else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
+                        peerId = dict["peer_id"].ToString();
+                    else
+                        peerId = string.Empty;
+
+                    id = new PeerConnectionID(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()), this);
                     peersAdded += this.AddPeers(id);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    System.Diagnostics.Trace.WriteLine(ex.ToString());
                 }
             }
             return peersAdded;
