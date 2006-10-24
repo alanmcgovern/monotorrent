@@ -138,7 +138,9 @@ namespace MonoTorrent.Client.PeerMessages
             System.Text.Encoding.ASCII.GetBytes(protocolString, 0, protocolString.Length, buffer, i);
             i += protocolString.Length;
 
-            // The 8 reserved bits are here
+            // The 8 reserved bits are here. Make sure they are zeroed.
+            for (int j = 20; j < 28; j++)
+                buffer[j] = 0;
             if(ClientEngine.SupportsFastPeer)
                 buffer[i + 7] |= FastPeersFlag;
             i += 8;
