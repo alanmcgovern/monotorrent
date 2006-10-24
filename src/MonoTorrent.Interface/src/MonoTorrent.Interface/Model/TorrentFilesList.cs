@@ -34,9 +34,9 @@ namespace MonoTorrent.Interface.Model
         {
         }
 
-        public TorrentFilesList(ITorrent torrent) : this()
+        public TorrentFilesList(Torrent torrent) : this()
         {
-            foreach (ITorrentFile torrentFile in torrent) {
+            foreach (TorrentFile torrentFile in torrent) {
                 AppendValues(torrentFile.Path, torrentFile.Length.ToString());
             }
         }

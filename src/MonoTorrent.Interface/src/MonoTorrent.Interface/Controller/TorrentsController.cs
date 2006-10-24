@@ -43,11 +43,11 @@ namespace MonoTorrent.Interface.Controller
 
         private TorrentView torrentView;
 
-        private IClientEngine clientEngine;
+        private ClientEngine clientEngine;
 
         private TorrentsList torrents;
 
-        public TorrentsController(MainWindow window, IClientEngine clientEngine)
+        public TorrentsController(MainWindow window, ClientEngine clientEngine)
         {
             this.torrents = new TorrentsList();
             this.window = window;
@@ -134,7 +134,7 @@ namespace MonoTorrent.Interface.Controller
             if ((ResponseType) dialog.Run() == ResponseType.Ok) {
                 try {
                     string path = repository.Add(dialog.Filename);
-                    ITorrentManager torrent = clientEngine.LoadTorrent(path);
+                    TorrentManager torrent = clientEngine.LoadTorrent(path);
                     TreeIter row = torrents.AddTorrent(torrent);
                     torrentsView.Selection.SelectIter(row);
                 } catch (Exception exception) {
@@ -175,7 +175,7 @@ namespace MonoTorrent.Interface.Controller
         {
             Dialog dialog;
             TreeIter row;
-            ITorrentManager torrent;
+            TorrentManager torrent;
 
             torrentsView.Selection.GetSelected(out row);
             torrent = torrents.GetTorrent(row);
@@ -218,7 +218,7 @@ namespace MonoTorrent.Interface.Controller
             ui.SetSensitive(ActionConstants.STOP, false);
             ui.SetSensitive(ActionConstants.PAUSE, false);
             if (torrentsView.Selection.CountSelectedRows() > 0) {
-                ITorrentManager torrent = GetSelectedTorrent();
+                TorrentManager torrent = GetSelectedTorrent();
 
                 ui.SetSensitive(ActionConstants.DELETE, true);
                 if (torrent.State == TorrentState.Stopped
@@ -244,7 +244,7 @@ namespace MonoTorrent.Interface.Controller
             }
         }
 
-        private ITorrentManager GetSelectedTorrent()
+        private TorrentManager GetSelectedTorrent()
         {
             TreeIter row;
             torrentsView.Selection.GetSelected(out row);

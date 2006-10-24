@@ -36,7 +36,7 @@ namespace MonoTorrent.Interface.Model
     {
         public event EventHandler TorrentStateChanged;
 
-        private Dictionary<TreeIter, ITorrentManager> rowsToTorrents;
+        private Dictionary<TreeIter, TorrentManager> rowsToTorrents;
 
         public TorrentsList() :  base(
                 typeof(string), typeof(string), typeof(string), 
@@ -44,13 +44,13 @@ namespace MonoTorrent.Interface.Model
                 typeof(string), typeof(string), typeof(string),
                 typeof(string), typeof(string))
         {
-            this.rowsToTorrents = new Dictionary<TreeIter, ITorrentManager>();
+            this.rowsToTorrents = new Dictionary<TreeIter, TorrentManager>();
             ClientEngine.connectionManager.OnPeerConnectionChanged
                     += OnPeerChange;
             ClientEngine.connectionManager.OnPeerMessages += OnPeerChange;
         }
 
-        public TreeIter AddTorrent(ITorrentManager torrent)
+        public TreeIter AddTorrent(TorrentManager torrent)
         {
             TreeIter row = Append();
             UpdateRow(row, torrent);
@@ -71,7 +71,7 @@ namespace MonoTorrent.Interface.Model
             return Remove(ref row);
         }
 
-        public ITorrentManager GetTorrent(TreeIter row)
+        public TorrentManager GetTorrent(TreeIter row)
         {
             return rowsToTorrents[row];
         }
@@ -83,7 +83,7 @@ namespace MonoTorrent.Interface.Model
 
         private void OnTorrentChangeSync(object sender, EventArgs args)
         {
-            ITorrentManager torrent = (ITorrentManager) sender;
+            TorrentManager torrent = (TorrentManager) sender;
             UpdateStats(FindRow(torrent), torrent);
         }
 
@@ -94,7 +94,7 @@ namespace MonoTorrent.Interface.Model
 
         private void OnTorrentStateChangeSync(object sender, EventArgs args)
         {
-            ITorrentManager torrent = (ITorrentManager) sender;
+            TorrentManager torrent = (TorrentManager) sender;
             UpdateState(FindRow(torrent), torrent);
         }
 
@@ -105,12 +105,12 @@ namespace MonoTorrent.Interface.Model
 
         private void OnPeerChangeSync(object sender, EventArgs args)
         {
-            IPeerConnectionID connection = (IPeerConnectionID) sender;
-            ITorrentManager torrent = connection.TorrentManager;
+            PeerConnectionID connection = (PeerConnectionID) sender;
+            TorrentManager torrent = connection.TorrentManager;
             UpdateStats(FindRow(torrent), torrent);
         }
 
-        private TreeIter FindRow(ITorrentManager torrent)
+        private TreeIter FindRow(TorrentManager torrent)
         {
             foreach (TreeIter row in rowsToTorrents.Keys) {
                 if (rowsToTorrents[row] == torrent) {
@@ -120,7 +120,7 @@ namespace MonoTorrent.Interface.Model
             return TreeIter.Zero;
         }
 
-        private void UpdateRow(TreeIter row, ITorrentManager torrent)
+        private void UpdateRow(TreeIter row, TorrentManager torrent)
         {
             UpdateState(row, torrent);
             SetValue(row, 1, torrent.Torrent.Name);
@@ -128,11 +128,11 @@ namespace MonoTorrent.Interface.Model
             UpdateStats(row, torrent);
         }
 
-        private void UpdateStats(TreeIter row, ITorrentManager torrent)
+        private void UpdateStats(TreeIter row, TorrentManager torrent)
         {
             SetValue(row, 3, Formatter.FormatPercent(torrent.Progress()));
-            SetValue(row, 4, Formatter.FormatSize(torrent.BytesDownloaded));
-            SetValue(row, 5, Formatter.FormatSize(torrent.BytesUploaded));
+            SetValue(row, 4, Formatter.FormatSize(torrent.DataBytesDownloaded));
+            SetValue(row, 5, Formatter.FormatSize(torrent.DataBytesUploaded));
             SetValue(row, 6, Formatter.FormatSpeed(torrent.DownloadSpeed()));
             SetValue(row, 7, Formatter.FormatSpeed(torrent.UploadSpeed()));
             SetValue(row, 9, torrent.Leechs().ToString());
@@ -140,7 +140,7 @@ namespace MonoTorrent.Interface.Model
             SetValue(row, 10, torrent.AvailablePeers.ToString());
         }
 
-        private void UpdateState(TreeIter row, ITorrentManager torrent)
+        private void UpdateState(TreeIter row, TorrentManager torrent)
         {
             SetValue(row, 0, torrent.State.ToString());
             FireTorrentStateChanged();

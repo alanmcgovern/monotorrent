@@ -38,10 +38,10 @@ namespace MonoTorrent.Interface.Controller
 
         private Configuration config;
 
-        private IEngineSettings engineSettings;
+        private EngineSettings engineSettings;
 
         public PreferencesController(MainWindow window,
-                IEngineSettings engineSettings)
+                EngineSettings engineSettings)
         {
             this.window = window;
             this.engineSettings = engineSettings;
