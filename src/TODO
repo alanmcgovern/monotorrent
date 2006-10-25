@@ -23,6 +23,8 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	19) FileSystemWatcher: AutoDownload .torrents in this directory
 	20) Use a IRequestable interface on PeerTCP and PeerHTTP to allow different requesting techniques.
 	21) Is the IConnectable interface for PeerTCP and PeerHTTP to abstract BeginConnect etc for the different types
+	22) Make sure results from scraping are saved somewhere and readily accessible
+
 
 -- FEATURES TO BE IMPROVED --
 	01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
