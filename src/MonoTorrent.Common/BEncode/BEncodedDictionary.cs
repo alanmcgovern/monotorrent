@@ -137,7 +137,7 @@ namespace MonoTorrent.Common
                 {
                     key = (BEncodedString)BEncode.Decode(reader); ;     // keys have to be BEncoded strings
                     if (oldkey != null)
-                        if (string.Compare(oldkey.Text, key.Text) > 0)
+                        if (string.CompareOrdinal(oldkey.Text, key.Text) > 0) 
                             throw new BEncodingException("Illegal BEncodedDictionary. The attributes are not ordered correctly");
                     oldkey = key;
                     
