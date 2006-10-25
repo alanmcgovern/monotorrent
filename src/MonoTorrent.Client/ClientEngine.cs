@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
             this.defaultTorrentSettings = defaultTorrentSettings;
             this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(IncomingConnectionRecieved));
 #warning I don't like this timer, but is there any other better way to do it?
-            this.timer = new System.Timers.Timer(50);
+            this.timer = new System.Timers.Timer(25);
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
             this.torrents = new Dictionary<string, TorrentManager>();
             this.peerHandshakeRecieved = new AsyncCallback(this.onPeerHandshakeRecieved);
