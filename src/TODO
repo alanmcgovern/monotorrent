@@ -31,7 +31,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	05) New super seeding algorithm. At the moment defaults to "seeding" which defaults to "downloading. [LOW]
 	06) End Game mode should be implemented [MEDIUM]
 	07) Architecture rethink. The overall layout and design needs to be looked at. [HIGH]
-	08) The public API needs to be looked at aswell. There's no real logic to it at the moment. [HIGH]
+	08) The public API needs to be looked at aswell. There's no real logic to it at the moment. [HIGH] [ 1/2 done ]
 	09) If we recieve a non-supported Protocol string, we need proper handling. Not sure how this is supposed to be handled... [LOW]
 	10) Update all peer messages and reduce complexity (LengthInBytes unneccessary. Can use the static readonly value) [ COMPLETE ]
 	11) Use PieceEventArgs properly [LOW]
@@ -66,6 +66,7 @@ If anyone finds bugs or anything in the code (which i'm sure there are many :p) 
 	06.1) Add Torrent Generation to the GUI
 	07) Add some events to the tracker so the gui can display some stats
 	08) Change the backend to use the event form 07
+	09) Add in support for NAT-Checking (checking if peers are connectable). If they aren't, send em a warning message
 	
 
 -- FEATURES TO BE IMPROVED --
