@@ -52,8 +52,21 @@ namespace MonoTorrent.Interface.View
         {
             ui = new UIManager();
             actions = new ActionGroup("actions");
-            
-            ui.AddUiFromResource("ui.xml");
+
+            string uiXml = "ui.xml";
+
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetCallingAssembly();
+
+            string[] names = assembly.GetManifestResourceNames();
+
+            foreach (string name in names)
+                if (name.EndsWith(uiXml))
+                {
+                    uiXml = name;
+                    break;
+                }
+
+            ui.AddUiFromResource(uiXml);
             InitActions();
         }
 

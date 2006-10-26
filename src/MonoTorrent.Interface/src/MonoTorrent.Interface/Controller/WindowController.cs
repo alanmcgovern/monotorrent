@@ -71,8 +71,8 @@ namespace MonoTorrent.Interface.Controller
         private void InitControllers()
         {
             ClientEngine clientEngine = new ClientEngine(
-                    EngineSettings.DefaultSettings,
-                    TorrentSettings.DefaultSettings);
+                    EngineSettings.DefaultSettings(),
+                    TorrentSettings.DefaultSettings());
             new PreferencesController(window, clientEngine.Settings);
             new TorrentsController(window, clientEngine);
         }

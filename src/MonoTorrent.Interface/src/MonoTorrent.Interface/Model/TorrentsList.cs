@@ -47,7 +47,7 @@ namespace MonoTorrent.Interface.Model
             this.rowsToTorrents = new Dictionary<TreeIter, TorrentManager>();
             ClientEngine.connectionManager.OnPeerConnectionChanged
                     += OnPeerChange;
-            ClientEngine.connectionManager.OnPeerMessages += OnPeerChange;
+            //ClientEngine.connectionManager.OnPeerMessages += OnPeerChange;
         }
 
         public TreeIter AddTorrent(TorrentManager torrent)
@@ -58,13 +58,13 @@ namespace MonoTorrent.Interface.Model
             torrent.OnPieceHashed += OnTorrentChange;
             torrent.OnPeersAdded += OnTorrentChange;
             torrent.OnTorrentStateChanged += OnTorrentStateChange;
-            torrent.PieceManager.OnPieceChanged += OnTorrentChange;
+            //torrent.PieceManager.OnPieceChanged += OnTorrentChange;
             return row;
         }
 
         public bool RemoveTorrent(ref TreeIter row)
         {
-            rowsToTorrents[row].PieceManager.OnPieceChanged -= OnTorrentChange;
+            //rowsToTorrents[row].PieceManager.OnPieceChanged -= OnTorrentChange;
             rowsToTorrents[row].OnPeersAdded -= OnTorrentChange;
             rowsToTorrents[row].OnPieceHashed -= OnTorrentChange;
             rowsToTorrents.Remove(row);

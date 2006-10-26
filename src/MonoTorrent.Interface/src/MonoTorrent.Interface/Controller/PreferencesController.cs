@@ -61,13 +61,13 @@ namespace MonoTorrent.Interface.Controller
         private void OnPreferences(object sender, EventArgs args)
         {
             PreferencesDialog dialog = new PreferencesDialog(window);
-            dialog.DownloadPath = engineSettings.DefaultSavePath;
+            dialog.DownloadPath = engineSettings.SavePath;
             dialog.ListenPort = engineSettings.ListenPort;
             dialog.MaxDlSpeed = engineSettings.GlobalMaxDownloadSpeed;
             dialog.MaxUlSpeed = engineSettings.GlobalMaxUploadSpeed;
             
             if (dialog.Run() == (int) ResponseType.Ok) {
-                engineSettings.DefaultSavePath = dialog.DownloadPath;
+                engineSettings.SavePath = dialog.DownloadPath;
                 engineSettings.ListenPort = dialog.ListenPort;
                 engineSettings.GlobalMaxDownloadSpeed = dialog.MaxDlSpeed;
                 engineSettings.GlobalMaxUploadSpeed = dialog.MaxUlSpeed;
@@ -78,7 +78,7 @@ namespace MonoTorrent.Interface.Controller
 
         private void RetrievePreferences()
         {
-            engineSettings.DefaultSavePath = config.DownloadPath;
+            engineSettings.SavePath = config.DownloadPath;
             engineSettings.ListenPort = config.ListenPort;
             engineSettings.GlobalMaxDownloadSpeed = config.MaximumDownloadSpeed;
             engineSettings.GlobalMaxUploadSpeed = config.MaximumUploadSpeed;
@@ -88,7 +88,7 @@ namespace MonoTorrent.Interface.Controller
 
         private void StorePreferences()
         {
-            config.DownloadPath = engineSettings.DefaultSavePath;
+            config.DownloadPath = engineSettings.SavePath;
             config.ListenPort = engineSettings.ListenPort;
             config.MaximumDownloadSpeed = engineSettings.GlobalMaxDownloadSpeed;
             config.MaximumUploadSpeed = engineSettings.GlobalMaxUploadSpeed;

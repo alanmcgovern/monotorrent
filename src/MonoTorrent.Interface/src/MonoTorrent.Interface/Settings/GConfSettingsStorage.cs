@@ -23,6 +23,7 @@
 
 namespace MonoTorrent.Interface.Settings
 {
+#warning This needs to use a cross platform settings storage. This aint good enough
     public class GConfSettingsStorage : ISettingsStorage
     {
         private string baseKey;
@@ -32,17 +33,20 @@ namespace MonoTorrent.Interface.Settings
         public GConfSettingsStorage(string baseKey)
         {
             this.baseKey = baseKey;
-            this.client = new GConf.Client();
+            //this.client = new GConf.Client();
         }
 
         public void Store(string key, object val)
         {
-            client.Set(baseKey + key, val);
+#warning No storing of settings done
+            //client.Set(baseKey + key, val);
         }
 
         public object Retrieve(string key)
         {
-            return client.Get(baseKey + key);
+#warning no saving of settings either ;)
+            return "1";
+            //return client.Get(baseKey + key);
         }
     }
 }
