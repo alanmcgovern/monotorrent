@@ -366,15 +366,15 @@ namespace MonoTorrent.Client
         #region Async Methods
         internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerConnectionID id);
 
-        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id);
+        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
 
-        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id);
+        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
 
         internal abstract void EndConnect(System.IAsyncResult result);
 
-        internal abstract int EndReceive(System.IAsyncResult result);
+        internal abstract int EndReceive(System.IAsyncResult result, out SocketError errorCode);
 
-        internal abstract int EndSend(System.IAsyncResult result);
+        internal abstract int EndSend(System.IAsyncResult result, out SocketError errorCode);
 
         public abstract void Dispose();
         #endregion

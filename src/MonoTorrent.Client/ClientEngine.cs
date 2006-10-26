@@ -422,7 +422,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesRecieved = 0;
                 id.Peer.Connection.BytesToRecieve = 68;
 
-                id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeRecieved, id);
+                id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
             }
             catch (SocketException ex)
             {
@@ -438,7 +438,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                int bytesRecieved = id.Peer.Connection.EndReceive(result);
+                int bytesRecieved = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                 if (bytesRecieved == 0)
                 {
                     CleanupSocket(id);
@@ -448,7 +448,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesRecieved += bytesRecieved;
                 if (id.Peer.Connection.BytesRecieved != id.Peer.Connection.BytesToRecieve)
                 {
-                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesRecieved, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved, SocketFlags.None, peerHandshakeRecieved, id);
+                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesRecieved, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
                     return;
                 }
 
@@ -476,7 +476,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
                 id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
-                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.connectionManager.IncomingConnectionAccepted), id);
+                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.connectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
                 id.Peer.Connection.ProcessingQueue = false;
                 return;
             }

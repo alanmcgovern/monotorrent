@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.Encryption;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client.PeerConnections
 {
@@ -17,12 +18,12 @@ namespace MonoTorrent.Client.PeerConnections
             throw new NotImplementedException();
         }
 
-        internal override void BeginReceive(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id)
+        internal override void BeginReceive(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }
 
-        internal override void BeginSend(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id)
+        internal override void BeginSend(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }
@@ -32,12 +33,12 @@ namespace MonoTorrent.Client.PeerConnections
             throw new NotImplementedException();
         }
 
-        internal override int EndReceive(IAsyncResult result)
+        internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }
 
-        internal override int EndSend(IAsyncResult result)
+        internal override int EndSend(IAsyncResult result, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }

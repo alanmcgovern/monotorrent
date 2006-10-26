@@ -571,20 +571,21 @@ namespace MonoTorrent.Client
                         if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
                             ClientEngine.connectionManager.ProcessQueue(id);
                     }
+                }
 
-                    // If the last connection succeeded, then update at the regular interval
-                    if (this.trackerManager.UpdateSucceeded)
-                    {
-                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
-                        {
-                            this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
-                        }
-                    }
-                    // Otherwise update at the min interval
-                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
+                if(counter%100 ==0)
+                // If the last connection succeeded, then update at the regular interval
+                if (this.trackerManager.UpdateSucceeded)
+                {
+                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                     {
                         this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
+                }
+                // Otherwise update at the min interval
+                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
+                {
+                    this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                 }
             }
         }

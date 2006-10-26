@@ -29,12 +29,13 @@
 
 
 using MonoTorrent.Common;
+using System.Net.Sockets;
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// 
     /// </summary>
-    internal class PeerConnectionID
+    public class PeerConnectionID
     {
         #region Member Variables
         /// <summary>
@@ -60,6 +61,8 @@ namespace MonoTorrent.Client
             }
         }
         private TorrentManager torrentManager;
+
+        internal SocketError ErrorCode;
         #endregion
 
 
@@ -112,6 +115,15 @@ namespace MonoTorrent.Client
         public override int GetHashCode()
         {
             return this.peer.GetHashCode();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return this.peer.Location;
         }
         #endregion
     }
