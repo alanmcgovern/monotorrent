@@ -66,8 +66,8 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
-        internal Queue<PeerConnectionID> downloadQueue;
-        internal Queue<PeerConnectionID> uploadQueue;
+        //internal Queue<PeerConnectionID> downloadQueue;
+        //internal Queue<PeerConnectionID> uploadQueue;
 
 
         /// <summary>
@@ -271,8 +271,8 @@ namespace MonoTorrent.Client
 
             this.connectedPeers = new Peers(16);
             this.available = new Peers(16);
-            this.uploadQueue = new Queue<PeerConnectionID>(16);
-            this.downloadQueue = new Queue<PeerConnectionID>(16);
+            //this.uploadQueue = new Queue<PeerConnectionID>(16);
+            //this.downloadQueue = new Queue<PeerConnectionID>(16);
             this.connectingTo = new Peers(ClientEngine.connectionManager.MaxHalfOpenConnections);
 
             this.savePath = savePath;
@@ -411,8 +411,8 @@ namespace MonoTorrent.Client
 
             this.SaveFastResume();
 
-            this.downloadQueue.Clear();
-            this.uploadQueue.Clear();
+            //this.downloadQueue.Clear();
+            //this.uploadQueue.Clear();
             this.connectedPeers = new Peers();
             this.available = new Peers();
             this.connectingTo = new Peers();
@@ -452,11 +452,11 @@ namespace MonoTorrent.Client
                     lock (this.connectedPeers[i])
                         ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[i]);
 
-                lock (this.listLock)
-                    this.downloadQueue.Clear();
+                //lock (this.listLock)
+                //    this.downloadQueue.Clear();
 
-                lock (this.listLock)
-                    this.uploadQueue.Clear();
+                //lock (this.listLock)
+                //    this.uploadQueue.Clear();
 
                 this.SaveFastResume();
             }
@@ -472,25 +472,25 @@ namespace MonoTorrent.Client
             //if (this.state == TorrentState.Downloading && this.Progress() == 100.0)
             //    this.state = TorrentState.Seeding;
 
-            lock (this.listLock)
-            {
-                if (this.settings.MaxDownloadSpeed > 0)
-                    while ((this.DownloadSpeed() < this.settings.MaxDownloadSpeed * 1024) && this.downloadQueue.Count > 0)
-                        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
-                else
-                    while (this.downloadQueue.Count > 0)
-                        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
-            }
+            //lock (this.listLock)
+            //{
+                //if (this.settings.MaxDownloadSpeed > 0)
+                //    while ((this.DownloadSpeed() < this.settings.MaxDownloadSpeed * 1024) && this.downloadQueue.Count > 0)
+                //        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
+                //else
+                //    while (this.downloadQueue.Count > 0)
+                //        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
+            //}
 
-            lock (this.listLock)
-            {
-                if (this.settings.MaxUploadSpeed > 0)
-                    while ((this.UploadSpeed() < this.settings.MaxUploadSpeed * 1024) && (this.uploadQueue.Count > 0))
-                        ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
-                else
-                    while (this.uploadQueue.Count > 0)
-                        ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
-            }
+            //lock (this.listLock)
+            //{
+            //    if (this.settings.MaxUploadSpeed > 0)
+            //        while ((this.UploadSpeed() < this.settings.MaxUploadSpeed * 1024) && (this.uploadQueue.Count > 0))
+            //            ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
+            //    else
+            //        while (this.uploadQueue.Count > 0)
+            //            ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
+            //}
 
             lock (this.listLock)
             {
@@ -560,10 +560,10 @@ namespace MonoTorrent.Client
                         while (!id.Peer.Connection.IsChoking && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
                         {
                             msg = this.pieceManager.PickPiece(id, this.connectedPeers);
-                            Console.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
                             if (msg == null)
                                 break;
 
+                            Console.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }

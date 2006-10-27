@@ -37,7 +37,10 @@ namespace MonoTorrent.Client
                         return new byte[SmallMessageBufferSize];
                     }
                     else
+                    {
+                        return new byte[SmallMessageBufferSize];
                         return this.smallMessageBuffers.Dequeue();
+                    }
                 }
 
             else if (type == BufferType.LargeMessageBuffer)
@@ -49,7 +52,10 @@ namespace MonoTorrent.Client
                         return new byte[LargeMessageBufferSize];
                     }
                     else
+                    {
+                        return new byte[LargeMessageBufferSize];
                         return this.largeMessageBuffers.Dequeue();
+                    }
                 }
 
             else
@@ -59,6 +65,9 @@ namespace MonoTorrent.Client
 
         public void FreeBuffer(byte[] buffer)
         {
+            buffer = null;
+            return;
+
             if (buffer == null)
                 return;
 

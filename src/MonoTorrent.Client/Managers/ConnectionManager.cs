@@ -269,6 +269,7 @@ namespace MonoTorrent.Client
 
             try
             {
+                lock(id.TorrentManager.listLock)
                 lock (id)
                 {
                     if (id.Peer.Connection == null)
@@ -425,6 +426,7 @@ namespace MonoTorrent.Client
 
             try
             {
+                lock(id.TorrentManager.listLock)
                 lock (id)
                 {
                     if (id.Peer.Connection == null)
@@ -536,9 +538,10 @@ namespace MonoTorrent.Client
                         else
                         {
 
-                            id.TorrentManager.downloadQueue.Enqueue(id);
+                            //id.TorrentManager.downloadQueue.Enqueue(id);
                             //int bytesRemaining = (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved) > ChunkLength ? ChunkLength : (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved);
-                            //id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, bytesRemaining, SocketFlags.None, peerMessageRecieved, id);
+                            
+                            id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved, SocketFlags.None, peerMessageRecieved, id, out id.ErrorCode);
                         }
                     }
             }
@@ -595,13 +598,17 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection.BytesRecieved != id.Peer.Connection.BytesToRecieve)
                         {
-
-                            id.TorrentManager.downloadQueue.Enqueue(id);
-
+                            id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer,
+                                                            id.Peer.Connection.BytesRecieved,
+                                                            id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved,
+                                                            SocketFlags.None,
+                                                            this.peerMessageRecieved, id, out id.ErrorCode);
+                            return;
+                            //id.TorrentManager.downloadQueue.Enqueue(id);
                             return;
                         }
 
-                        IPeerMessage message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesRecieved, id.TorrentManager);
+                        IPeerMessage message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
                         if (this.OnPeerMessages != null)
                             this.OnPeerMessages(id, new PeerMessageEventArgs(message, Direction.Incoming));
                         message.Handle(id); // FIXME: Is everything threadsafe here? Well, i know it isn't :p
@@ -637,7 +644,7 @@ namespace MonoTorrent.Client
 #warning should be unneccessary
                 cleanUp = true;
             }
-            catch
+            catch(Exception ex)
             {
 #warning remove this.
                 cleanUp = true;
@@ -689,8 +696,12 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection.BytesSent != id.Peer.Connection.BytesToSend)
                         {
-
-                            id.TorrentManager.uploadQueue.Enqueue(id);
+                            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer,
+                                                        id.Peer.Connection.BytesSent,
+                                                        id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent,
+                                                        SocketFlags.None,
+                                                        this.peerMessageSent, id, out id.ErrorCode);
+                            //id.TorrentManager.uploadQueue.Enqueue(id);
                             return;
                         }
 
@@ -749,7 +760,12 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesSent = 0;
                 id.Peer.Connection.BytesToSend = msg.Encode(id.Peer.Connection.sendBuffer, 0);
                 id.Peer.Connection.CurrentlySendingMessage = msg;
-                id.TorrentManager.uploadQueue.Enqueue(id);
+                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer,
+                                            id.Peer.Connection.BytesSent,
+                                            id.Peer.Connection.BytesToSend,
+                                            SocketFlags.None,
+                                            this.peerMessageSent, id, out id.ErrorCode);
+                //id.TorrentManager.uploadQueue.Enqueue(id);
             }
             catch (SocketException ex)
             {
