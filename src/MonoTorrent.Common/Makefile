@@ -8,15 +8,13 @@ SOURCES=BEncode/BEncode.cs \
 	BEncode/BEncodingException.cs \
 	BEncode/IBEncodedValue.cs \
 	Enums.cs \
-	IPeer.cs \
-	ITorrent.cs \
-	ITorrentFile.cs \
 	Peer.cs \
 	PeerID.cs \
 	ToolBox.cs \
 	TorrentCreator.cs \
 	Torrent.cs \
 	TorrentFile.cs \
+	TorrentException.cs \
 	TorrentReader.cs \
 	VersionInfo.cs \
 #	Test/BEncodingTest.cs \
@@ -30,5 +28,5 @@ SOURCES=BEncode/BEncode.cs \
 all: common
 
 common: $(SOURCES)
-	$(CSC) $(SOURCES) -target:library -out:$(OUT)
+	$(CSC) $(SOURCES) -target:library -d:DEBUG -out:$(OUT)
 	

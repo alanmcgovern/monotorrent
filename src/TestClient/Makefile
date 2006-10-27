@@ -6,4 +6,4 @@ SOURCES=main.cs
 all: testclient
 
 testclient: $(SOURCES)
-	$(CSC) $(SOURCES) -target:exe -out:$(OUT) -r:$(REFERENCES)
+	$(CSC) $(SOURCES) -target:exe -d:DEBUG -out:$(OUT) -r:$(REFERENCES)

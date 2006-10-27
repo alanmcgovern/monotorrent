@@ -5,10 +5,7 @@ SOURCES=BitField.cs \
 Block.cs \
 ClientEngine.cs \
 ConnectionListener.cs \
-IClientEngine.cs \
-IEngineSettings.cs \
-IPieceManager.cs \
-ITorrentManager.cs \
+ListenerException.cs \
 ProtocolException.cs \
 Encryption/IEncryptor.cs \
 Encryption/NoEncryption.cs \
@@ -24,9 +21,9 @@ EventArgs/TrackerEventArgs.cs \
 Peers/Peer.cs \
 Peers/Peers.cs \
 PeerConnections/PeerConnectionId.cs \
-PeerConnections/IPeerConnectionID.cs \
 PeerConnections/PeerConnectionBase.cs \
 PeerConnections/TCPConnection.cs \
+Managers/BufferManager.cs \
 Managers/ConnectionManager.cs \
 Managers/ConnectionMonitor.cs \
 Managers/FileManager.cs \
@@ -69,4 +66,4 @@ Tracker.cs
 all: client
 
 client: $(SOURCES)
-	$(CSC) -r:$(REFERENCES) -target:library -out:$(OUT) $(SOURCES)
+	$(CSC) -r:$(REFERENCES) -target:library -d:DEBUG -out:$(OUT) $(SOURCES)
