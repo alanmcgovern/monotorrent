@@ -32,29 +32,25 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         #region Methods
-#warning Not implemented... temp fix for other clients issue. I should disconnect if someone sends me this and i don't support
         public int Encode(byte[] buffer, int offset)
         {
-            return 0;
             throw new Exception("The method or operation is not implemented.");
         }
 
         public void Decode(byte[] buffer, int offset, int length)
         {
-            return;
             this.dictionary = (BEncodedDictionary)BEncode.Decode(buffer, offset, length);
         }
 
         public void Handle(PeerConnectionID id)
         {
-            return;
             throw new Exception("The method or operation is not implemented.");
         }
 
         public int ByteLength
         {
 
-            get { return 0; }// throw new Exception("The method or operation is not implemented."); }
+            get { throw new Exception("The method or operation is not implemented."); }
         }
         #endregion
     }
