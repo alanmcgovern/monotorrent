@@ -86,12 +86,18 @@ namespace MonoTorrent.Client.Encryption
 
         internal override void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
-            this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
+#warning Until mono supports the 'out errorcode' overload, we continue as before
+            errorCode = SocketError.Success;
+            this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, asyncCallback, id);
+            //this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
         internal override void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
-            this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
+#warning Until mono supports the 'out errorcode' overload, we continue as before
+            errorCode = SocketError.Success;
+            this.peerSocket.BeginSend(buffer, offset, count, socketFlags, asyncCallback, id);
+            //this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
         internal override void EndConnect(IAsyncResult result)
@@ -101,12 +107,18 @@ namespace MonoTorrent.Client.Encryption
 
         internal override int EndSend(IAsyncResult result, out SocketError errorCode)
         {
-            return this.peerSocket.EndSend(result, out errorCode);
+#warning Until mono supports the 'out errorcode' overload, we continue as before
+            errorCode = SocketError.Success;
+            return this.peerSocket.EndSend(result);
+            //return this.peerSocket.EndSend(result, out errorCode);
         }
 
         internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
-            return this.peerSocket.EndReceive(result, out errorCode);
+#warning Until mono supports the 'out errorcode' overload, we continue as before
+            errorCode = SocketError.Success;
+            return this.peerSocket.EndReceive(result);
+            //return this.peerSocket.EndReceive(result, out errorCode);
         }
 
         public override void Dispose()
