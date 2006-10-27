@@ -34,6 +34,7 @@ using MonoTorrent.Client.PeerMessages;
 using System.Net.Sockets;
 using System.Threading;
 using MonoTorrent.Client.Encryption;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -204,13 +205,14 @@ namespace MonoTorrent.Client
 
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 lock (id.TorrentManager.listLock)
                 {
                     lock (id)
                     {
                         id.Peer.FailedConnectionAttempts++;
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                        id.Peer.Connection.sendBuffer = null;
 
                         if (id.Peer.Connection != null)
                         {
@@ -235,6 +237,7 @@ namespace MonoTorrent.Client
                     lock (id)
                     {
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                        id.Peer.Connection.sendBuffer = null;
                         id.Peer.FailedConnectionAttempts++;
                         id.Peer.Connection.ProcessingQueue = false;
                         if (id.Peer.Connection != null)
@@ -298,6 +301,7 @@ namespace MonoTorrent.Client
                     }
 
                     ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                    id.Peer.Connection.sendBuffer = null;
                     id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
                     id.Peer.Connection.BytesRecieved = 0;
                     id.Peer.Connection.BytesToRecieve = 68;       // FIXME: Will fail if protocol version changes. FIX THIS
@@ -307,7 +311,7 @@ namespace MonoTorrent.Client
 
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -394,6 +398,7 @@ namespace MonoTorrent.Client
                         }
 
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                        id.Peer.Connection.recieveBuffer = null;
                         id.Peer.Connection.sendBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
 
                         id.Peer.Connection.BytesSent = 0;
@@ -404,7 +409,7 @@ namespace MonoTorrent.Client
 
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -455,6 +460,7 @@ namespace MonoTorrent.Client
                     }
 
                     ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                    id.Peer.Connection.sendBuffer = null;
                     id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
 
                     id.Peer.Connection.BytesRecieved = 0;
@@ -465,7 +471,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.ToString());
+                Debug.WriteLine(ex.ToString());
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -524,6 +530,7 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.BytesToRecieve = System.Net.IPAddress.NetworkToHostOrder(networkOrderLength);
 
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                        id.Peer.Connection.recieveBuffer = null;
                         if (id.Peer.Connection.BytesToRecieve > BufferManager.SmallMessageBufferSize)
                             id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
                         else
@@ -547,7 +554,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -621,6 +628,7 @@ namespace MonoTorrent.Client
 
                         id.Peer.Connection.LastMessageRecieved = DateTime.Now;
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                        id.Peer.Connection.recieveBuffer = null;
                         id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
 
                         id.Peer.Connection.BytesRecieved = 0;
@@ -631,7 +639,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -706,6 +714,7 @@ namespace MonoTorrent.Client
                         }
 
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                        id.Peer.Connection.sendBuffer = null;
 
                         id.Peer.Connection.LastMessageSent = DateTime.Now;
                         this.ProcessQueue(id);
@@ -713,7 +722,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             catch (ArgumentException ex)
@@ -769,7 +778,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 CleanupSocket(id);
             }
         }
@@ -808,7 +817,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -870,7 +879,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
-                Console.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
+                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
             finally
@@ -897,7 +906,9 @@ namespace MonoTorrent.Client
                     if (id.Peer.Connection != null)
                     {
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                        id.Peer.Connection.sendBuffer = null;
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                        id.Peer.Connection.recieveBuffer = null;
 
                         if (!id.Peer.Connection.AmChoking)
                             id.TorrentManager.UploadingTo--;

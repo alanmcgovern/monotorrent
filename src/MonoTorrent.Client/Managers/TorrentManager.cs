@@ -37,6 +37,7 @@ using MonoTorrent.Common;
 using System.Threading;
 using System.IO;
 using System.Xml.Serialization;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -535,7 +536,7 @@ namespace MonoTorrent.Client
                             this.uploadingTo++;
                             id.Peer.Connection.AmChoking = false;
                             id.Peer.Connection.EnQueue(new UnchokeMessage());
-                            Console.WriteLine("UnChoking: " + this.uploadingTo);
+                            Debug.WriteLine("UnChoking: " + this.uploadingTo);
                         }
 
                         if (id.Peer.Connection.PiecesSent > 50)  // Send 50 blocks before moving on
@@ -554,7 +555,7 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.AmChoking = true;
                             id.Peer.Connection.IsRequestingPiecesCount = 0;
                             id.Peer.Connection.EnQueue(new ChokeMessage());
-                            Console.WriteLine("ReChoking: " + this.uploadingTo);
+                            Debug.WriteLine("ReChoking: " + this.uploadingTo);
                         }
 
                         while (!id.Peer.Connection.IsChoking && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
@@ -563,7 +564,7 @@ namespace MonoTorrent.Client
                             if (msg == null)
                                 break;
 
-                            Console.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
+                            Debug.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }
@@ -641,7 +642,7 @@ namespace MonoTorrent.Client
             int peersAdded = 0;
             BEncodedDictionary dict = null;
 
-            Console.WriteLine(e.Tracker.ToString());
+            Debug.WriteLine(e.Tracker.ToString());
 
             // Data only returned if the tracker update was successful
             if (e.Response == null || e.Tracker.State != TrackerState.AnnounceSuccessful && e.Tracker.State != TrackerState.ScrapeSuccessful)
@@ -653,7 +654,7 @@ namespace MonoTorrent.Client
             }
             catch (BEncodingException ex)
             {
-                Console.WriteLine("Tracker update failed: The tracker returned a corrupt or incomplete response");
+                Debug.WriteLine("Tracker update failed: The tracker returned a corrupt or incomplete response");
                 return;
             }
 

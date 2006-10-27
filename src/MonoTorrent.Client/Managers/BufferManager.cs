@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -33,12 +34,12 @@ namespace MonoTorrent.Client
                 {
                     if (this.smallMessageBuffers.Count == 0)
                     {
-                        Console.WriteLine((++smallbuffers).ToString() + " Small Buffers");
+                        Debug.WriteLine((++smallbuffers).ToString() + " Small Buffers");
                         return new byte[SmallMessageBufferSize];
                     }
                     else
                     {
-                        return new byte[SmallMessageBufferSize];
+                        //return new byte[SmallMessageBufferSize];
                         return this.smallMessageBuffers.Dequeue();
                     }
                 }
@@ -48,12 +49,12 @@ namespace MonoTorrent.Client
                 {
                     if (this.largeMessageBuffers.Count == 0)
                     {
-                        Console.WriteLine((++largebuffers).ToString() + " Large Buffers");
+                        Debug.WriteLine((++largebuffers).ToString() + " Large Buffers");
                         return new byte[LargeMessageBufferSize];
                     }
                     else
                     {
-                        return new byte[LargeMessageBufferSize];
+                        //return new byte[LargeMessageBufferSize];
                         return this.largeMessageBuffers.Dequeue();
                     }
                 }
@@ -65,8 +66,8 @@ namespace MonoTorrent.Client
 
         public void FreeBuffer(byte[] buffer)
         {
-            buffer = null;
-            return;
+            //buffer = null;
+            //return;
 
             if (buffer == null)
                 return;
