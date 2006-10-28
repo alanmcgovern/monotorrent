@@ -37,6 +37,7 @@ PeerMessages/HandshakeMessage.cs \
 PeerMessages/HaveMessage.cs \
 PeerMessages/InterestedMessage.cs \
 PeerMessages/IPeerMessage.cs \
+PeerMessages/IPeerMessageInternal.cs \
 PeerMessages/KeepAliveMessage.cs \
 PeerMessages/NotInterestedMessage.cs \
 PeerMessages/PeerwireEncoder.cs \
