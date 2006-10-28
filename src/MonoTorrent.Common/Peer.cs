@@ -71,7 +71,7 @@ namespace MonoTorrent.Common
         }
         private int lastMessageRecieved;
 
-        public Peer(IPEndPoint peerEndpoint, string peerId)
+        protected Peer(IPEndPoint peerEndpoint, string peerId)
         {
             this.peerEndpoint = peerEndpoint;
             this.peerId = peerId;
