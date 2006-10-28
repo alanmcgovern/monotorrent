@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is for represting the Peer's bitfield
     /// </summary>
-    internal class BitField : ICloneable, IEnumerable<bool>
+    public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
         /// <summary>
@@ -87,8 +87,9 @@ namespace MonoTorrent.Client
         public bool this[int index]
         {
             get { return this.Get(index); }
-            set { this.Set(index, value); }
+            internal set { this.Set(index, value); }
         }
+
 
         /// <summary>
         /// Clones the BitField
@@ -108,7 +109,7 @@ namespace MonoTorrent.Client
         /// Performs binary NOT on all the elements of the bitarray
         /// </summary>
         /// <returns>Itself</returns>
-        public BitField Not()
+        internal BitField Not()
         {
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
@@ -122,7 +123,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        public BitField And(BitField value)
+        internal BitField And(BitField value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -132,6 +133,7 @@ namespace MonoTorrent.Client
 
             return this;
         }
+
 
         /// <summary>
         /// Performs binary NAND on all the elements of this bitarray against the elements of the supplied BitField
@@ -149,12 +151,13 @@ namespace MonoTorrent.Client
             return this;
         }
 
+
         /// <summary>
         /// Performs binary OR on all the elements of this BitField against the elements of the supplied BitField
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        public BitField Or(BitField value)
+        internal BitField Or(BitField value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -171,7 +174,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        public BitField Xor(BitField value)
+        internal BitField Xor(BitField value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -188,7 +191,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="index">The index to return</param>
         /// <returns></returns>
-        public bool Get(int index)
+        internal bool Get(int index)
         {
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
@@ -202,7 +205,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="index">The index to set</param>
         /// <param name="value">The value to set</param>
-        public void Set(int index, bool value)
+        internal void Set(int index, bool value)
         {
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
@@ -218,7 +221,7 @@ namespace MonoTorrent.Client
         /// Sets all values in the BitArray to the specified value
         /// </summary>
         /// <param name="value"></param>
-        public void SetAll(bool value)
+        internal void SetAll(bool value)
         {
             if (value)
                 for (int i = 0; i < this.array.Length; i++)
@@ -233,6 +236,7 @@ namespace MonoTorrent.Client
             for (int i = this.length; i < end; ++i)
                 this.array[i >> 5] &= ~(1 << (i & 31));
         }
+        
 
         /// <summary>
         /// 
@@ -243,6 +247,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.length; i++)
                 yield return Get(i);
         }
+
 
         /// <summary>
         /// 
@@ -261,7 +266,7 @@ namespace MonoTorrent.Client
         /// Returns True if all the elements in the BitField are false
         /// </summary>
         /// <returns></returns>
-        public bool AllFalse()
+        internal bool AllFalse()
         {
             for (int i = 0; i < this.array.Length; i++)
                 if (array[i] != 0)
@@ -274,7 +279,7 @@ namespace MonoTorrent.Client
         /// Returns the first index of the BitField that is true. If no elements are true, returns -1
         /// </summary>
         /// <returns></returns>
-        public int FirstTrue()
+        internal int FirstTrue()
         {
             return this.FirstTrue(0, this.length);
         }
@@ -285,7 +290,7 @@ namespace MonoTorrent.Client
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        public int FirstTrue(int startIndex, int endIndex)
+        internal int FirstTrue(int startIndex, int endIndex)
         {
             int start;
             int end;
@@ -313,7 +318,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The buffer to encode the BitField to</param>
         /// <param name="offset">The index to start encoding at</param>
-        public void ToByteArray(byte[] buffer, int offset)
+        internal void ToByteArray(byte[] buffer, int offset)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
@@ -347,7 +352,7 @@ namespace MonoTorrent.Client
         /// <param name="offset">The offset at which to start decoding the BitField at</param>
         /// <param name="length">The maximum number of bytes to read while decoding the BitField</param>
 #warning Check the remaining bits in the last byte to make sure they're 0. use the length parameter
-        public void FromArray(byte[] buffer, int offset, int length)
+        internal void FromArray(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
@@ -397,10 +402,12 @@ namespace MonoTorrent.Client
             return true;
         }
 
+
         public override int GetHashCode()
         {
             return this.array.GetHashCode();
         }
+
 
         public override string ToString()
         {
