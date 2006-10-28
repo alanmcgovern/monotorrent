@@ -195,7 +195,8 @@ namespace MonoTorrent.Client
             int i = 0;
             WaitHandle[] waitHandles = new WaitHandle[this.torrents.Count];
             foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                waitHandles[i++] = Stop(keypair.Value);
+                if (keypair.Value.State != TorrentState.Stopped)
+                    waitHandles[i++] = Stop(keypair.Value);
 
             return waitHandles;
         }
@@ -207,8 +208,10 @@ namespace MonoTorrent.Client
         /// <param name="manager"></param>
         public WaitHandle Stop(TorrentManager manager)
         {
-            WaitHandle handle = null;
-            manager.Stop();
+            if (manager.State == TorrentState.Stopped)
+                throw new TorrentException("This torrent is already stopped");
+
+            WaitHandle handle = manager.Stop(); ;
 
             foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
                 if (keypair.Value.State != TorrentState.Paused && keypair.Value.State != TorrentState.Stopped)
