@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
             sb.Append("&compact=");
             sb.Append(this.compact);
             sb.Append("&numwant=");
-            sb.Append(50);             //FIXME: 50 is enough?
+            sb.Append(100);
             if (ipAddress != null)
             {
                 sb.Append("&ip=");
