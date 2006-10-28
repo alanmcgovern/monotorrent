@@ -612,7 +612,6 @@ namespace MonoTorrent.Client
                                                             this.peerMessageRecieved, id, out id.ErrorCode);
                             return;
                             //id.TorrentManager.downloadQueue.Enqueue(id);
-                            return;
                         }
 
                         IPeerMessage message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
