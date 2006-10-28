@@ -32,7 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
-using MonoTorrent.Common;
+//using MonoTorrent.Common;
 using System.Timers;
 using System.Net;
 using MonoTorrent.Client.PeerMessages;
@@ -40,6 +40,7 @@ using System.IO;
 using System.Threading;
 using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -460,10 +461,12 @@ namespace MonoTorrent.Client
                 peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
                 id = new PeerConnectionID(peer);
 
+                id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
                 id.Peer.Connection.BytesRecieved = 0;
                 id.Peer.Connection.BytesToRecieve = 68;
 
                 id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
+                this.listener.BeginAccept();
             }
             catch (SocketException ex)
             {
@@ -498,7 +501,6 @@ namespace MonoTorrent.Client
                     return;
                 }
 
-
                 HandshakeMessage handshake = new HandshakeMessage();
                 handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
 
@@ -513,11 +515,15 @@ namespace MonoTorrent.Client
                 }
 
                 id.Peer.PeerId = handshake.PeerId;
+                id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
                 id.TorrentManager = man;
-                handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
+                ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                id.Peer.Connection.recieveBuffer = null;
 
+                handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
                 BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
 
+                id.Peer.Connection.sendBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
                 id.Peer.Connection.BytesSent = 0;
                 id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
                 id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);

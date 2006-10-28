@@ -140,6 +140,12 @@ namespace MonoTorrent.Client
         }
 
 
+        public void BeginAccept()
+        {
+            this.socket.BeginAccept(this.newConnectionCallback, this.socket);
+        }
+
+
         /// <summary>
         /// 
         /// </summary>

@@ -858,6 +858,12 @@ namespace MonoTorrent.Client
                             return;
                         }
 
+                        if (id.Peer.PeerId == ClientEngine.PeerId) // The tracker gave us our own IP/Port combination
+                        {
+                            CleanupSocket(id);
+                            return;
+                        }
+
                         if (id.TorrentManager.ConnectedPeers.Contains(id) || id.TorrentManager.ConnectingTo.Contains(id))
                         {
                             id.Peer.Connection.Dispose();
@@ -867,10 +873,13 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Available.Remove(id);
                         id.TorrentManager.ConnectedPeers.Add(id);
 
+                        ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
+                        id.Peer.Connection.sendBuffer = null;
+
+                        id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
                         id.Peer.Connection.BytesRecieved = 0;
                         id.Peer.Connection.BytesToRecieve = 4;
                         id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesRecieved, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.peerMessageLengthRecieved, id, out id.ErrorCode);
-
                         if (this.OnPeerConnectionChanged != null)
                             this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.IncomingConnectionRecieved));
                     }
@@ -917,7 +926,8 @@ namespace MonoTorrent.Client
 
                     id.TorrentManager.ConnectedPeers.Remove(id);
                     id.TorrentManager.ConnectingTo.Remove(id);
-                    id.TorrentManager.Available.Add(id);
+                    if (id.Peer.PeerId != ClientEngine.PeerId)
+                        id.TorrentManager.Available.Add(id);
 
                     if (this.OnPeerConnectionChanged != null)
                         this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.Disconnected));
