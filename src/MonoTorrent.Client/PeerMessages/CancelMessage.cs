@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    internal class CancelMessage : IPeerMessage
+    public class CancelMessage : IPeerMessageInternal, IPeerMessage
     {
         private const int messageLength = 13;
         public const int MessageId = 8;
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
-        public int Encode(byte[] buffer, int offset)
+        internal int Encode(byte[] buffer, int offset)
         {
             buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        public void Decode(byte[] buffer, int offset, int length)
+        internal void Decode(byte[] buffer, int offset, int length)
         {
             this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
             offset += 4;
@@ -142,9 +142,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        public void Handle(PeerConnectionID id)
+        internal void Handle(PeerConnectionID id)
         {
-            IPeerMessage msg;
+            IPeerMessageInternal msg;
             for (int i = 0; i < id.Peer.Connection.QueueLength; i++)
             {
                 msg = id.Peer.Connection.DeQueue();
@@ -203,6 +203,31 @@ namespace MonoTorrent.Client.PeerMessages
                 ^ this.requestLength.GetHashCode()
                 ^ this.startOffset.GetHashCode());
         }
+        #endregion
+
+
+        #region IPeerMessageInternal Explicit Calls
+
+        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        {
+            return this.Encode(buffer, offset);
+        }
+
+        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        {
+            this.Decode(buffer, offset, length);
+        }
+
+        void IPeerMessageInternal.Handle(PeerConnectionID id)
+        {
+            this.Handle(id);
+        }
+
+        int IPeerMessageInternal.ByteLength
+        {
+            get { return this.ByteLength; }
+        }
+
         #endregion
     }
 }

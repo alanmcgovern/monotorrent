@@ -145,12 +145,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This is the message we're currently sending to a peer
         /// </summary>
-        internal IPeerMessage CurrentlySendingMessage
+        internal IPeerMessageInternal CurrentlySendingMessage
         {
             get { return this.currentlySendingMessage; }
             set { this.currentlySendingMessage = value; }
         }
-        private IPeerMessage currentlySendingMessage;
+        private IPeerMessageInternal currentlySendingMessage;
 
 
         /// <summary>
@@ -281,7 +281,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This holds the peermessages waiting to be sent
         /// </summary>
-        private Queue<IPeerMessage> sendQueue;
+        private Queue<IPeerMessageInternal> sendQueue;
 
 
         /// <summary>
@@ -327,7 +327,7 @@ namespace MonoTorrent.Client
             this.allowedFastPieces = new List<int>();
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
-            this.sendQueue = new Queue<IPeerMessage>(4);
+            this.sendQueue = new Queue<IPeerMessageInternal>(4);
         }
         #endregion
 
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client
         /// Queues a PeerMessage up to be sent to the remote host
         /// </summary>
         /// <param name="msg"></param>
-        public void EnQueue(IPeerMessage msg)
+        public void EnQueue(IPeerMessageInternal msg)
         {
             sendQueue.Enqueue(msg);
         }
@@ -347,7 +347,7 @@ namespace MonoTorrent.Client
         /// Returns the PeerMessage at the head of the queue
         /// </summary>
         /// <returns></returns>
-        public IPeerMessage DeQueue()
+        public IPeerMessageInternal DeQueue()
         {
             return sendQueue.Dequeue();
         }

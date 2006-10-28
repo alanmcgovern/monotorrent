@@ -53,8 +53,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Event that's fired every time a message is sent or recieved from a Peer
         /// </summary>
-        internal event EventHandler<PeerMessageEventArgs> OnPeerMessages;
-        //FIXME: Should be public?
+        public event EventHandler<PeerMessageEventArgs> OnPeerMessages;
         #endregion
 
 
@@ -333,7 +332,7 @@ namespace MonoTorrent.Client
         private void onPeerHandshakeRecieved(IAsyncResult result)
         {
             bool cleanUp = false;
-            IPeerMessage msg;
+            IPeerMessageInternal msg;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
 
             try
@@ -614,10 +613,10 @@ namespace MonoTorrent.Client
                             //id.TorrentManager.downloadQueue.Enqueue(id);
                         }
 
-                        IPeerMessage message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
+                        IPeerMessageInternal message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
                         if (this.OnPeerMessages != null)
-                            this.OnPeerMessages(id, new PeerMessageEventArgs(message, Direction.Incoming));
-                        message.Handle(id); // FIXME: Is everything threadsafe here? Well, i know it isn't :p
+                            this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
+                        message.Handle(id);
 
                         if (!(message is PieceMessage))
                         {   // The '-4' is because of the messagelength int which has already been counted in a different method
@@ -711,7 +710,8 @@ namespace MonoTorrent.Client
                             //id.TorrentManager.uploadQueue.Enqueue(id);
                             return;
                         }
-
+                        if(this.OnPeerMessages != null)
+                            this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
                         id.Peer.Connection.sendBuffer = null;
 
@@ -750,10 +750,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            IPeerMessage msg = id.Peer.Connection.DeQueue();
-            if (this.OnPeerMessages != null)
-                this.OnPeerMessages(id, new PeerMessageEventArgs(msg, Direction.Outgoing));
-
+            IPeerMessageInternal msg = id.Peer.Connection.DeQueue();
             if (msg is PieceMessage)
                 id.Peer.Connection.PiecesSent++;
 
@@ -913,13 +910,18 @@ namespace MonoTorrent.Client
 
                     if (id.Peer.Connection != null)
                     {
+                        if (this.OnPeerConnectionChanged != null)
+                            this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.Disconnected));
+
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.sendBuffer);
-                        id.Peer.Connection.sendBuffer = null;
                         ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                        id.Peer.Connection.sendBuffer = null;
                         id.Peer.Connection.recieveBuffer = null;
+
 
                         if (!id.Peer.Connection.AmChoking)
                             id.TorrentManager.UploadingTo--;
+
                         id.Peer.Connection.Dispose();
                         id.Peer.Connection = null;
                     }
@@ -928,9 +930,6 @@ namespace MonoTorrent.Client
                     id.TorrentManager.ConnectingTo.Remove(id);
                     if (id.Peer.PeerId != ClientEngine.PeerId)
                         id.TorrentManager.Available.Add(id);
-
-                    if (this.OnPeerConnectionChanged != null)
-                        this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.Disconnected));
                 }
             }
         }

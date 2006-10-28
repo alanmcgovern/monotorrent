@@ -1,5 +1,5 @@
 //
-// MessageEventArgs.cs
+// IPeerMessageInternal.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -28,51 +28,42 @@
 
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using MonoTorrent.Client.PeerMessages;
-
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.PeerMessages
 {
     /// <summary>
-    /// Provides the data needed to handle a PeerMessage event
+    /// Common interface for all PeerMessages
     /// </summary>
-    public class PeerMessageEventArgs : EventArgs
+    internal interface IPeerMessageInternal
     {
-        #region Member Variables
         /// <summary>
-        /// The Peer message that was just sent/recieved
+        /// Encodes the PeerMessage into the supplied buffer
         /// </summary>
-        public IPeerMessage Message
-        {
-            get { return this.message; }
-        }
-        private IPeerMessage message;
-
-        /// <summary>
-        /// The direction of the message (outgoing/incoming)
-        /// </summary>
-        public Direction Direction
-        {
-            get { return this.direction; }
-        }
-        private Direction direction;
-        #endregion
+        /// <param name="id">The peer who we are about to send the message to</param>
+        /// <param name="buffer">The buffer to encode the message to</param>
+        /// <param name="offset">The offset at which to start encoding the data to</param>
+        /// <returns>The number of bytes encoded into the buffer</returns>
+        int Encode(byte[] buffer, int offset);
 
 
-        #region Constructors
         /// <summary>
-        /// Creates a new PeerMessageEventArgs
+        /// Decodes a peer message from the supplied buffer
         /// </summary>
-        /// <param name="message">The peer message involved</param>
-        /// <param name="direction">The direction of the message</param>
-        public PeerMessageEventArgs(IPeerMessage message, Direction direction)
-        {
-            this.message = message;
-            this.direction = direction;
-        }
-        #endregion
+        /// <param name="buffer">The buffer to decode the message from</param>
+        /// <param name="offset">The offset thats the message starts at</param>
+        /// <param name="length">The maximum number of bytes to read from the buffer</param>
+        void Decode(byte[] buffer, int offset, int length);
+
+
+        /// <summary>
+        /// Performs any necessary actions required to process the message
+        /// </summary>
+        /// <param name="id">The Peer who's message will be handled</param>
+        void Handle(PeerConnectionID id);
+
+
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        int ByteLength { get; }
     }
 }

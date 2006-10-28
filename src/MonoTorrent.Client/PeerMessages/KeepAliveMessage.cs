@@ -33,7 +33,7 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// Represents a "KeepAlive" message
     /// </summary>
-    internal class KeepAliveMessage : IPeerMessage
+    public class KeepAliveMessage : IPeerMessageInternal, IPeerMessage
     {
         private const int messageLength = -1;   // has no payload
         public const int MessageId = -1;       // Has no messageId
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
-        public int Encode(byte[] buffer, int offset)
+        internal int Encode(byte[] buffer, int offset)
         {
             buffer[offset] = 0;
             buffer[offset + 1] = 0;
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        public void Decode(byte[] buffer, int offset, int length)
+        internal void Decode(byte[] buffer, int offset, int length)
         {
             // No decoding needed
         }
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        public void Handle(PeerConnectionID id)
+        internal void Handle(PeerConnectionID id)
         {
             // No handling needed
         }
@@ -120,6 +120,31 @@ namespace MonoTorrent.Client.PeerMessages
         {
             return this.ToString().GetHashCode();
         }
+        #endregion
+
+
+        #region IPeerMessageInternal Explicit Calls
+
+        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        {
+            return this.Encode(buffer, offset);
+        }
+
+        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        {
+            this.Decode(buffer, offset, length);
+        }
+
+        void IPeerMessageInternal.Handle(PeerConnectionID id)
+        {
+            this.Handle(id);
+        }
+
+        int IPeerMessageInternal.ByteLength
+        {
+            get { return this.ByteLength; }
+        }
+
         #endregion
     }
 }

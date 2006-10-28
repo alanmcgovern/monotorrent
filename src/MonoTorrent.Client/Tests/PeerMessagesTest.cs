@@ -14,8 +14,8 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void IPeerMessageDecoding()
         {
-            IPeerMessage msg;
-            IPeerMessage result;
+            IPeerMessageInternal msg;
+            IPeerMessageInternal result;
             TorrentManager manager = null;
 
             byte[] buffer = new byte[1000];
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void CancelEncoding()
         {
-            IPeerMessage msg = new CancelMessage(15, 1024, 16384);
+            IPeerMessageInternal msg = new CancelMessage(15, 1024, 16384);
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Console.WriteLine(BitConverter.ToString(buffer));
@@ -166,7 +166,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void ChokeEncoding()
         {
-            IPeerMessage msg = new ChokeMessage();
+            IPeerMessageInternal msg = new ChokeMessage();
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Assert.AreEqual("00-00-00-01-00", BitConverter.ToString(buffer));
@@ -199,7 +199,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void HaveEncoding()
         {
-            IPeerMessage msg = new HaveMessage(150);
+            IPeerMessageInternal msg = new HaveMessage(150);
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Assert.AreEqual("00-00-00-05-04-00-00-00-96", BitConverter.ToString(buffer));
@@ -220,7 +220,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void InterestedEncoding()
         {
-            IPeerMessage msg = new InterestedMessage();
+            IPeerMessageInternal msg = new InterestedMessage();
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Assert.AreEqual("00-00-00-01-02", BitConverter.ToString(buffer));
@@ -241,7 +241,7 @@ namespace MonoTorrent.Client.Tests
         public void KeepAliveEncoding()
         {
             byte[] buffer = new byte[4];
-            IPeerMessage msg = new KeepAliveMessage();
+            IPeerMessageInternal msg = new KeepAliveMessage();
             msg.Encode(buffer, 0);
             Assert.IsTrue(buffer[0] == 0
                             && buffer[1] == 0
@@ -259,7 +259,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void NotInterestedEncoding()
         {
-            IPeerMessage msg = new NotInterestedMessage();
+            IPeerMessageInternal msg = new NotInterestedMessage();
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Assert.AreEqual("00-00-00-01-03", BitConverter.ToString(buffer));
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void PortEncoding()
         {
-            IPeerMessage msg = new PortMessage(2500);
+            IPeerMessageInternal msg = new PortMessage(2500);
             byte[] buffer = new byte[msg.ByteLength];
             msg.Encode(buffer, 0);
             Assert.AreEqual("00-00-00-03-09-00-00", BitConverter.ToString(buffer));
@@ -358,7 +358,7 @@ namespace MonoTorrent.Client.Tests
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(1)), 0, buffer, 0, 4);
             buffer[4] = (byte)1;
 
-            IPeerMessage msg = PeerwireEncoder.Decode(buffer, 4, 1, null);
+            IPeerMessageInternal msg = PeerwireEncoder.Decode(buffer, 4, 1, null);
             Assert.IsTrue(msg is UnchokeMessage);
         }
     }

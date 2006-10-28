@@ -467,7 +467,7 @@ namespace MonoTorrent.Client
         int counter = 0;
         internal void DownloadLogic()
         {
-            IPeerMessage msg;
+            IPeerMessageInternal msg;
             PeerConnectionID id;
 
             //if (this.state == TorrentState.Downloading && this.Progress() == 100.0)

@@ -42,9 +42,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// </summary>
         /// <param name="id">The peer to decode a message from</param>
         /// <returns>The PeerMessage decoded from the recieve buffer</returns>
-        public static IPeerMessage Decode(byte[] buffer, int offset, int count, TorrentManager manager)
+        public static IPeerMessageInternal Decode(byte[] buffer, int offset, int count, TorrentManager manager)
         {
-            IPeerMessage message = null;
+            IPeerMessageInternal message = null;
 
             // The first byte tells us what kind of message it is
             switch (buffer[offset])

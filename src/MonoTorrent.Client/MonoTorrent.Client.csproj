@@ -68,6 +68,7 @@
     <Compile Include="PeerMessages\FastPeerExtensions\HaveNoneMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\RejectRequestMessage.cs" />
     <Compile Include="PeerMessages\FastPeerExtensions\SuggestPieceMessage.cs" />
+    <Compile Include="PeerMessages\IPeerMessage.cs" />
     <Compile Include="PeerMessages\UnknownMessage.cs" />
     <Compile Include="Peers\Peer.cs" />
     <Compile Include="ProtocolException.cs" />
@@ -94,7 +95,7 @@
     <Compile Include="PeerMessages\HandshakeMessage.cs" />
     <Compile Include="PeerMessages\HaveMessage.cs" />
     <Compile Include="PeerMessages\InterestedMessage.cs" />
-    <Compile Include="PeerMessages\IPeerMessage.cs" />
+    <Compile Include="PeerMessages\IPeerMessageInternal.cs" />
     <Compile Include="PeerMessages\KeepAliveMessage.cs" />
     <Compile Include="PeerMessages\NotInterestedMessage.cs" />
     <Compile Include="PeerMessages\PieceMessage.cs" />
