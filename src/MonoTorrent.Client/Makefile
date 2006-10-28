@@ -44,6 +44,7 @@ PeerMessages/PieceMessage.cs \
 PeerMessages/PortMessage.cs \
 PeerMessages/RequestMessage.cs \
 PeerMessages/UnchokeMessage.cs \
+PeerMessages/UnknownMessage.cs \
 PeerMessages/ExtendedMessages/ExtendedListMessage.cs \
 PeerMessages/FastPeerExtensions/AllowedFastMessage.cs \
 PeerMessages/FastPeerExtensions/HaveAllMessage.cs \
