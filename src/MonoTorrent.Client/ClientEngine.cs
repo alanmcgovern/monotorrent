@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         #region Member Variables
         private System.Timers.Timer timer;
 
-        internal static BufferManager BufferManager = new BufferManager();
+        internal static readonly BufferManager BufferManager = new BufferManager();
         /// <summary>
         /// Returns the engines PeerID
         /// </summary>
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
         {
             get { return peerId; }
         }
-        private static string peerId;
+        private static readonly string peerId = GeneratePeerId();
 
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The connection manager which manages all the connections for the library
         /// </summary>
-        public static ConnectionManager connectionManager; //FIXME: Fix this. Better way of doing it?
+        public static ConnectionManager ConnectionManager; //FIXME: Fix this. Better way of doing it?
         private ConnectionListener listener;
 
         private AsyncCallback peerHandshakeRecieved;
@@ -117,9 +117,7 @@ namespace MonoTorrent.Client
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings engineSettings, TorrentSettings defaultTorrentSettings)
         {
-            peerId = GeneratePeerId();
-
-            connectionManager = new ConnectionManager(engineSettings);
+            ConnectionManager = new ConnectionManager(engineSettings);
             this.settings = engineSettings;
             this.defaultTorrentSettings = defaultTorrentSettings;
             this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(IncomingConnectionRecieved));
@@ -327,6 +325,11 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// Loads fast resume data if it exists
+        /// </summary>
+        /// <param name="manager">The manager to load fastresume data for</param>
+        /// <returns></returns>
         private bool LoadFastResume(TorrentManager manager)
         {
             try
@@ -344,6 +347,10 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// Removes the specified torrent from the engine
+        /// </summary>
+        /// <param name="manager"></param>
         public void RemoveTorrent(TorrentManager manager)
         {
             ((TorrentManager)manager).Stop();
@@ -352,6 +359,9 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// Removes all torrents from the Engine
+        /// </summary>
         public void RemoveAll()
         {
             foreach (TorrentManager manager in this.torrents.Values)
@@ -368,7 +378,11 @@ namespace MonoTorrent.Client
 
 
         #region Misc
-        private string GeneratePeerId()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
             Random rand = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds);
@@ -380,6 +394,12 @@ namespace MonoTorrent.Client
             return sb.ToString();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void LogicTick(object sender, ElapsedEventArgs e)
         {
             foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
@@ -404,6 +424,11 @@ namespace MonoTorrent.Client
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="result"></param>
         private void IncomingConnectionRecieved(IAsyncResult result)
         {
             PeerConnectionID id = null;
@@ -431,6 +456,11 @@ namespace MonoTorrent.Client
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="result"></param>
         private void onPeerHandshakeRecieved(IAsyncResult result)
         {
             TorrentManager man = null;
@@ -476,7 +506,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
                 id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
-                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.connectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
+                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
                 id.Peer.Connection.ProcessingQueue = false;
                 return;
             }
@@ -487,10 +517,16 @@ namespace MonoTorrent.Client
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
         private void CleanupSocket(PeerConnectionID id)
         {
             id.Peer.Connection.Dispose();
         }
+
 
         /// <summary>
         /// 
@@ -500,12 +536,15 @@ namespace MonoTorrent.Client
             this.Dispose(true);
         }
 
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="disposing"></param>
         public void Dispose(bool disposing)
         {
+            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+                keypair.Value.Dispose();
             this.listener.Dispose();
             this.timer.Dispose();
         }

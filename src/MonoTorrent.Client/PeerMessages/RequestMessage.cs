@@ -139,7 +139,7 @@ namespace MonoTorrent.Client.PeerMessages
         public void Handle(PeerConnectionID id)
         {
             if (this.requestLength > (65536))
-                ClientEngine.connectionManager.CleanupSocket(id);
+                ClientEngine.ConnectionManager.CleanupSocket(id);
 
             if (!id.Peer.Connection.AmChoking)
                 id.Peer.Connection.EnQueue(new PieceMessage(id.TorrentManager.FileManager, this.PieceIndex, this.startOffset, this.requestLength));

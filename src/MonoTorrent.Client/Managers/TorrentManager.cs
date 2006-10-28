@@ -274,7 +274,7 @@ namespace MonoTorrent.Client
             this.available = new Peers(16);
             //this.uploadQueue = new Queue<PeerConnectionID>(16);
             //this.downloadQueue = new Queue<PeerConnectionID>(16);
-            this.connectingTo = new Peers(ClientEngine.connectionManager.MaxHalfOpenConnections);
+            this.connectingTo = new Peers(ClientEngine.ConnectionManager.MaxHalfOpenConnections);
 
             this.savePath = savePath;
 
@@ -403,11 +403,11 @@ namespace MonoTorrent.Client
             {
                 while (this.connectingTo.Count > 0)
                     lock (this.connectingTo[0])
-                        ClientEngine.connectionManager.CleanupSocket(this.connectingTo[0]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[0]);
 
                 while (this.connectedPeers.Count > 0)
                     lock (this.connectedPeers[0])
-                        ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[0]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[0]);
             }
 
             this.SaveFastResume();
@@ -447,11 +447,11 @@ namespace MonoTorrent.Client
 #warning Is there a deadlock possibility here?
                 for (int i = 0; i < this.connectingTo.Count; i++)
                     lock (this.connectingTo[i])
-                        ClientEngine.connectionManager.CleanupSocket(this.connectingTo[i]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[i]);
                 
                 for(int i =0; i <this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
-                        ClientEngine.connectionManager.CleanupSocket(this.connectedPeers[i]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[i]);
 
                 //lock (this.listLock)
                 //    this.downloadQueue.Clear();
@@ -502,7 +502,7 @@ namespace MonoTorrent.Client
 
                 // If we havn't reached our max connected peers, connect to another one.
                 if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
-                    ClientEngine.connectionManager.ConnectToPeer(this);
+                    ClientEngine.ConnectionManager.ConnectToPeer(this);
 
                 for (int i = 0; i < this.connectedPeers.Count; i++)
                 {
@@ -570,7 +570,7 @@ namespace MonoTorrent.Client
                         }
 
                         if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
-                            ClientEngine.connectionManager.ProcessQueue(id);
+                            ClientEngine.ConnectionManager.ProcessQueue(id);
                     }
                 }
 

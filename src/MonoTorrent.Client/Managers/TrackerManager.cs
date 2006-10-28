@@ -138,6 +138,7 @@ namespace MonoTorrent.Client
             return handle;
         }
 
+
         /// <summary>
         /// Sends a status update to the tracker
         /// </summary>
@@ -240,6 +241,7 @@ namespace MonoTorrent.Client
 
             return this.trackers[this.currentTrackerIndex];
         }
+
 
         internal void OnTrackerEvent(object sender, TrackerUpdateEventArgs e)
         {
