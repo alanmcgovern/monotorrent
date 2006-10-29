@@ -473,6 +473,9 @@ namespace MonoTorrent.Client
                 if (id != null)
                     this.CleanupSocket(id);
             }
+            catch (ObjectDisposedException)
+            {
+            }
         }
 
 
@@ -487,50 +490,60 @@ namespace MonoTorrent.Client
 
             try
             {
-                int bytesRecieved = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
-                if (bytesRecieved == 0)
+                lock (id)
                 {
-                    CleanupSocket(id);
+                    if (id.Peer.Connection == null)
+                    {
+                        id.Peer.Connection.Dispose();
+                        id.Peer.Connection = null;
+                        return;
+                    }
+
+                    int bytesRecieved = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
+                    if (bytesRecieved == 0)
+                    {
+                        CleanupSocket(id);
+                        return;
+                    }
+
+                    id.Peer.Connection.BytesRecieved += bytesRecieved;
+                    if (id.Peer.Connection.BytesRecieved != id.Peer.Connection.BytesToRecieve)
+                    {
+                        id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesRecieved, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
+                        return;
+                    }
+
+                    HandshakeMessage handshake = new HandshakeMessage();
+                    handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+
+                    foreach (TorrentManager manager in this.torrents.Values)
+                        if (ToolBox.ByteMatch(handshake.infoHash, manager.Torrent.InfoHash))
+                            man = manager;
+
+                    if (man == null)        // We're not hosting that torrent
+                    {
+                        CleanupSocket(id);
+                        return;
+                    }
+
+                    id.Peer.PeerId = handshake.PeerId;
+                    id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
+                    id.TorrentManager = man;
+                    ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
+                    id.Peer.Connection.recieveBuffer = null;
+
+                    handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
+                    BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
+
+                    id.Peer.Connection.sendBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
+                    id.Peer.Connection.BytesSent = 0;
+                    id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
+                    id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
+
+                    id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
+                    id.Peer.Connection.ProcessingQueue = false;
                     return;
                 }
-
-                id.Peer.Connection.BytesRecieved += bytesRecieved;
-                if (id.Peer.Connection.BytesRecieved != id.Peer.Connection.BytesToRecieve)
-                {
-                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesRecieved, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesRecieved, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
-                    return;
-                }
-
-                HandshakeMessage handshake = new HandshakeMessage();
-                handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
-
-                foreach (TorrentManager manager in this.torrents.Values)
-                    if (ToolBox.ByteMatch(handshake.infoHash, manager.Torrent.InfoHash))
-                        man = manager;
-
-                if (man == null)        // We're not hosting that torrent
-                {
-                    CleanupSocket(id);
-                    return;
-                }
-
-                id.Peer.PeerId = handshake.PeerId;
-                id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
-                id.TorrentManager = man;
-                ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
-                id.Peer.Connection.recieveBuffer = null;
-
-                handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
-                BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
-
-                id.Peer.Connection.sendBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
-                id.Peer.Connection.BytesSent = 0;
-                id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
-                id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
-
-                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
-                id.Peer.Connection.ProcessingQueue = false;
-                return;
             }
 
             catch (SocketException ex)
