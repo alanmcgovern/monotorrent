@@ -24,7 +24,8 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	20) Use a IRequestable interface on PeerTCP and PeerHTTP to allow different requesting techniques.
 	21) Is the IConnectable interface for PeerTCP and PeerHTTP to abstract BeginConnect etc for the different types
 	22) Make sure results from scraping are saved somewhere and readily accessible
-
+    23) Reimplement Upload/Download rate limiting. I need a better way than the last implementation which artificially limited each connection to ~100kB/sec
+    24) Update the rest of the Events to make sure they're all ok
 
 -- FEATURES TO BE IMPROVED --
 	01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
