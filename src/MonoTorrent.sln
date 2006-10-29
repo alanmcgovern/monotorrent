@@ -1,5 +1,6 @@
-﻿Microsoft Visual Studio Solution File, Format Version 9.00
-# SharpDevelop 2.0.0.1591
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Client", "MonoTorrent.Client\MonoTorrent.Client.csproj", "{BA61F399-BE56-445D-9C61-3A617F4BABEA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B49212EE-36F4-42DA-BA8C-6589DCA535D9} = {B49212EE-36F4-42DA-BA8C-6589DCA535D9}
@@ -12,6 +13,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Tracker", "MonoTorrent.Tracker\MonoTorrent.Tracker.csproj", "{AEF33476-D85B-45DD-9402-EC7093648FA1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.TrackerApp", "MonoTorrent.TrackerApp\MonoTorrent.TrackerApp.csproj", "{CBE6CA63-ABC5-441A-8238-660D4953FA71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Interface", "MonoTorrent.Interface\MonoTorrent.Interface.csproj", "{3FCD97B5-CC78-4796-8B41-8D34069FA15B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,26 +34,18 @@ Global
 		{3E3F0492-9EFB-40B6-A983-B6659C8431F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E3F0492-9EFB-40B6-A983-B6659C8431F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E3F0492-9EFB-40B6-A983-B6659C8431F4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9AA99F4C-CAB9-4266-805F-EFAFB4A9F57C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9AA99F4C-CAB9-4266-805F-EFAFB4A9F57C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9AA99F4C-CAB9-4266-805F-EFAFB4A9F57C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9AA99F4C-CAB9-4266-805F-EFAFB4A9F57C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4BDDB00D-DFF3-4BB4-A1EC-ABD9F3F3F925}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4BDDB00D-DFF3-4BB4-A1EC-ABD9F3F3F925}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4BDDB00D-DFF3-4BB4-A1EC-ABD9F3F3F925}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4BDDB00D-DFF3-4BB4-A1EC-ABD9F3F3F925}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3AFF5907-2574-49AF-B2EB-8B39207AD566}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3AFF5907-2574-49AF-B2EB-8B39207AD566}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3AFF5907-2574-49AF-B2EB-8B39207AD566}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3AFF5907-2574-49AF-B2EB-8B39207AD566}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEF33476-D85B-45DD-9402-EC7093648FA1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBE6CA63-ABC5-441A-8238-660D4953FA71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FCD97B5-CC78-4796-8B41-8D34069FA15B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FCD97B5-CC78-4796-8B41-8D34069FA15B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FCD97B5-CC78-4796-8B41-8D34069FA15B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FCD97B5-CC78-4796-8B41-8D34069FA15B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
