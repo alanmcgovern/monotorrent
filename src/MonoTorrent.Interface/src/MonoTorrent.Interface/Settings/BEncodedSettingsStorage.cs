@@ -80,7 +80,10 @@ namespace MonoTorrent.Interface.Settings
 
             }
 
-            settings.Add(key, value);
+            if (this.settings.ContainsKey(key))
+                this.settings[key] = value;
+            else
+                settings.Add(key, value);
         }
 
         public object Retrieve(string key)
