@@ -28,5 +28,11 @@ namespace MonoTorrent.Interface.Settings
         void Store(string key, object val);
 
         object Retrieve(string key);
+
+        
+        /// <summary>
+        /// Makes sure all settings are written to disk
+        /// </summary>
+        void Flush();
     }
 }

@@ -48,7 +48,7 @@ namespace MonoTorrent.Interface.Model
 
         public string[] GetPaths()
         {
-            return Directory.GetFiles(path);
+            return Directory.GetFiles(path, "*.torrent");
         }
     }
 }

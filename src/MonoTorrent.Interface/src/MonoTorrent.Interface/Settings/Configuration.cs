@@ -52,7 +52,7 @@ namespace MonoTorrent.Interface.Settings
         public string DownloadPath {
             get {
                 try {
-                    return (string) storage.Retrieve("DownloadPath");
+                    return storage.Retrieve("DownloadPath").ToString();
                 } catch (Exception) {
                     return PathConstants.DOWNLOAD_DIR;
                 }
@@ -65,7 +65,7 @@ namespace MonoTorrent.Interface.Settings
         public int ListenPort {
             get {
                 try {
-                    return (int) storage.Retrieve("ListenPort");
+                    return int.Parse(storage.Retrieve("ListenPort").ToString());
                 } catch (Exception) {
                     return EngineSettings.DefaultSettings().ListenPort;
                 }
@@ -78,7 +78,7 @@ namespace MonoTorrent.Interface.Settings
         public int MaximumDownloadSpeed {
             get {
                 try {
-                    return (int) storage.Retrieve("MaximumDownloadSpeed");
+                    return int.Parse(storage.Retrieve("MaximumDownloadSpeed").ToString());
                 } catch (Exception) {
                     return 0;
                 }
@@ -91,7 +91,7 @@ namespace MonoTorrent.Interface.Settings
         public int MaximumUploadSpeed {
             get {
                 try {
-                    return (int) storage.Retrieve("MaximumUploadSpeed");
+                    return int.Parse(storage.Retrieve("MaximumUploadSpeed").ToString());
                 } catch (Exception) {
                     return 0;
                 }
@@ -104,7 +104,7 @@ namespace MonoTorrent.Interface.Settings
         public bool DisplayDetails {
             get {
                 try {
-                    return (bool) storage.Retrieve("DisplayDetails");
+                    return Boolean.Parse(storage.Retrieve("DisplayDetails").ToString());
                 } catch (Exception) {
                     return true;
                 }
@@ -117,7 +117,7 @@ namespace MonoTorrent.Interface.Settings
         public bool DisplayToolbar {
             get {
                 try {
-                    return (bool) storage.Retrieve("DisplayToolbar");
+                    return Boolean.Parse(storage.Retrieve("DisplayToolbar").ToString());
                 } catch (Exception) {
                     return true;
                 }
@@ -130,7 +130,7 @@ namespace MonoTorrent.Interface.Settings
         public int WindowWidth {
             get {
                 try {
-                    return (int) storage.Retrieve("WindowWidth");
+                    return int.Parse(storage.Retrieve("WindowWidth").ToString());
                 } catch (Exception) {
                     return 640;
                 }
@@ -143,7 +143,7 @@ namespace MonoTorrent.Interface.Settings
         public int WindowHeight {
             get {
                 try {
-                    return (int) storage.Retrieve("WindowHeight");
+                    return int.Parse(storage.Retrieve("WindowHeight").ToString());
                 } catch (Exception) {
                     return 480;
                 }
@@ -156,7 +156,7 @@ namespace MonoTorrent.Interface.Settings
         public int SplitterPosition {
             get {
                 try {
-                    return (int) storage.Retrieve("SplitterPosition");
+                    return int.Parse(storage.Retrieve("SplitterPosition").ToString());
                 } catch (Exception) {
                     return 200;
                 }

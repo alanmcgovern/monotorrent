@@ -49,6 +49,7 @@
     <Compile Include="src\MonoTorrent.Interface\Model\TorrentsRepository.cs" />
     <Compile Include="src\MonoTorrent.Interface\PathConstants.cs" />
     <Compile Include="src\MonoTorrent.Interface\Program.cs" />
+    <Compile Include="src\MonoTorrent.Interface\Settings\BEncodedSettingsStorage.cs" />
     <Compile Include="src\MonoTorrent.Interface\Settings\Configuration.cs" />
     <Compile Include="src\MonoTorrent.Interface\Settings\GConfSettingsStorage.cs" />
     <Compile Include="src\MonoTorrent.Interface\Settings\ISettingsStorage.cs" />
@@ -79,6 +80,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Program Files\Mono-1.1.18\lib\mono\2.0\Mono.Posix.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj">
@@ -89,5 +93,8 @@
       <Project>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</Project>
       <Name>MonoTorrent.Common</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="COPYING" />
   </ItemGroup>
 </Project>

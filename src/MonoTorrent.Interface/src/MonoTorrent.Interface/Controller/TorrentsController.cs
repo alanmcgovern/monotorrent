@@ -83,7 +83,7 @@ namespace MonoTorrent.Interface.Controller
         {
             foreach (string path in repository.GetPaths()) {
                 try {
-                    torrents.AddTorrent(clientEngine.LoadTorrent(path));
+                    torrents.AddTorrent(clientEngine.LoadTorrent(path, PathConstants.DOWNLOAD_DIR));
                 } catch (Exception exception) {
                     System.Console.WriteLine(exception);
                     Dialog errorDialog = new MessageDialog(window,

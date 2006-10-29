@@ -21,6 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+using System.IO;
 namespace MonoTorrent.Interface.Settings
 {
     public class SettingsStorage : ISettingsStorage
@@ -40,17 +41,23 @@ namespace MonoTorrent.Interface.Settings
 
         private SettingsStorage()
         {
-            storage = new GConfSettingsStorage("/apps/monotorrent/");
+            storage = new BEncodedSettingsStorage(Path.Combine(PathConstants.CONFIG_DIR, "settings.txt"));
         }
 
         public void Store(string key, object val)
         {
             storage.Store(key, val);
+            storage.Flush();
         }
 
         public object Retrieve(string key)
         {
             return storage.Retrieve(key);
+        }
+
+        public void Flush()
+        {
+            this.storage.Flush();
         }
     }
 }

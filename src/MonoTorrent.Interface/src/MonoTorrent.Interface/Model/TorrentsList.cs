@@ -45,7 +45,7 @@ namespace MonoTorrent.Interface.Model
                 typeof(string), typeof(string))
         {
             this.rowsToTorrents = new Dictionary<TreeIter, TorrentManager>();
-            ClientEngine.connectionManager.OnPeerConnectionChanged
+            ClientEngine.ConnectionManager.OnPeerConnectionChanged
                     += OnPeerChange;
             //ClientEngine.connectionManager.OnPeerMessages += OnPeerChange;
         }

@@ -97,12 +97,19 @@ namespace MonoTorrent.Interface.Controller
             dialog.Name = AssemblyInfo.Title;
             dialog.Copyright = AssemblyInfo.Copyright;
             dialog.Version = AssemblyInfo.Version;
-            using (StreamReader licenseReader = new StreamReader(
-                    assembly.GetManifestResourceStream("COPYING"))) {
-                dialog.License = licenseReader.ReadToEnd();
+            foreach (string name in assembly.GetManifestResourceNames())
+            {
+                if (!name.EndsWith("COPYING"))
+                    continue;
+
+                using (StreamReader licenseReader = new StreamReader(assembly.GetManifestResourceStream(name)))
+                {
+                    dialog.License = licenseReader.ReadToEnd();
+                    dialog.Run();
+                    dialog.Destroy();
+                    return;
+                }
             }
-            dialog.Run();
-            dialog.Destroy();
         }
     }
 }

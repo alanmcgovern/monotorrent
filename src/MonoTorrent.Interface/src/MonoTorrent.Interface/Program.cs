@@ -43,7 +43,10 @@ namespace MonoTorrent.Interface
 
         private static void Init()
         {
-            string basedir = Path.Combine(System.Reflection.Assembly.GetExecutingAssembly().Location, "locale");
+
+            string basedir = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            basedir = basedir.Substring(0, basedir.Length - Path.GetFileName(basedir).Length);
+            basedir = Path.Combine(basedir, "locale");
             Catalog.Init("monotorrent", basedir);
             CreateDirs();
             Application.Init();
@@ -58,9 +61,8 @@ namespace MonoTorrent.Interface
 
         private static void CreateDir(string path)
         {
-            if (!Directory.Exists(path)) {
+            if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
-            }
         }
 
         private static void Run()
