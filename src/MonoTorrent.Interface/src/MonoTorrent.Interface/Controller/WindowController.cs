@@ -34,6 +34,7 @@ using MonoTorrent.Interface;
 using MonoTorrent.Interface.Helpers;
 using MonoTorrent.Interface.Settings;
 using MonoTorrent.Interface.View;
+using System.Threading;
 
 namespace MonoTorrent.Interface.Controller
 {
@@ -41,6 +42,7 @@ namespace MonoTorrent.Interface.Controller
     {
         private Configuration config;
         private MainWindow window;
+        private ClientEngine clientEngine;
 
         public WindowController(MainWindow window)
         {
@@ -70,7 +72,7 @@ namespace MonoTorrent.Interface.Controller
 
         private void InitControllers()
         {
-            ClientEngine clientEngine = new ClientEngine(
+            clientEngine = new ClientEngine(
                     EngineSettings.DefaultSettings(),
                     TorrentSettings.DefaultSettings());
             new PreferencesController(window, clientEngine.Settings);
@@ -86,6 +88,8 @@ namespace MonoTorrent.Interface.Controller
             config.WindowWidth = window.Allocation.Width;
             config.WindowHeight = window.Allocation.Height;
             config.SplitterPosition = window.SplitterPosition;
+            WaitHandle[] handles = clientEngine.RemoveAll();
+            WaitHandle.WaitAll(handles);
             Application.Quit();
         }
 
