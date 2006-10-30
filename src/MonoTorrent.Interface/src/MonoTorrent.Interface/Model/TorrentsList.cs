@@ -29,6 +29,7 @@ using Gtk;
 using MonoTorrent.Client;
 
 using MonoTorrent.Interface.Helpers;
+using System.Text;
 
 namespace MonoTorrent.Interface.Model
 {
@@ -73,7 +74,14 @@ namespace MonoTorrent.Interface.Model
 
         public TorrentManager GetTorrent(TreeIter row)
         {
-            return rowsToTorrents[row];
+            // FIXME
+            // This is a fix for a bug i'm having (possibly only my own system, but possibly anyone on windows + mono.
+            // I need to compare by stamp as i'm getting keynotfound exceptions even though the row is there.
+            foreach (KeyValuePair<TreeIter, TorrentManager> keypair in this.rowsToTorrents)
+                if (keypair.Key.Stamp == row.Stamp)
+                    return keypair.Value;
+
+            throw new ArgumentException("row");
         }
 
         private void OnTorrentChange(object sender, EventArgs args)

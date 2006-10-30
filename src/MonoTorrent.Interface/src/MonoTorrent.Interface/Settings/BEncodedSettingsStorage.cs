@@ -57,7 +57,7 @@ namespace MonoTorrent.Interface.Settings
                         using (BinaryReader reader = new BinaryReader(new FileStream(baseKey, FileMode.Open)))
                             this.settings = (BEncodedDictionary)BEncode.Decode(reader);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
         }

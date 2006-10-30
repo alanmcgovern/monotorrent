@@ -201,8 +201,19 @@ namespace MonoTorrent.Interface.Controller
 
         private void OnSelectionChanged(object sender, EventArgs args)
         {
-            UpdateSensitive();
-            UpdateTorrent();
+        	try
+        	{
+	            UpdateSensitive();
+	            UpdateTorrent();
+        	}
+        	catch(Exception exception)
+        	{
+        		Dialog errorDialog = new MessageDialog(window,
+                        DialogFlags.Modal, MessageType.Error,
+                        ButtonsType.Ok, exception.Message + "\r\n" + exception.StackTrace);
+                errorDialog.Run();
+                errorDialog.Destroy();
+        	}
         }
 
         private void OnTorrentStateChanged(object sender, EventArgs args)

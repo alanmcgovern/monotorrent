@@ -22,6 +22,7 @@
  */
 
 using System;
+using GConf;
 namespace MonoTorrent.Interface.Settings
 {
     [Obsolete("Not crossplatform, so don't use it")]
