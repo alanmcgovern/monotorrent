@@ -176,7 +176,7 @@ namespace MonoTorrent.Client
             {
                 response = (HttpWebResponse)id.Request.EndGetResponse(result);
             }
-            catch (WebException ex)
+            catch (WebException)
             {
                 this.updateSucceeded = false;
                 id.Tracker.UpdateSucceeded = false;

@@ -361,7 +361,7 @@ namespace MonoTorrent.Client
 
                 return true;
             }
-            catch (System.Runtime.Serialization.SerializationException ex)
+            catch
             {
                 return false;
             }
@@ -468,7 +468,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeRecieved, id, out id.ErrorCode);
                 this.listener.BeginAccept();
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 if (id != null)
                     this.CleanupSocket(id);
@@ -546,7 +546,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 CleanupSocket(id);
             }

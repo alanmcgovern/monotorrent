@@ -652,7 +652,7 @@ namespace MonoTorrent.Client
             {
                 dict = (BEncodedDictionary)BEncode.Decode(e.Response);
             }
-            catch (BEncodingException ex)
+            catch (BEncodingException)
             {
                 Debug.WriteLine("Tracker update failed: The tracker returned a corrupt or incomplete response");
                 return;

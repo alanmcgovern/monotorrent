@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
                     }
                 }
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 lock (id.TorrentManager.listLock)
                 {
@@ -313,7 +313,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 cleanUp = true;
             }
@@ -411,7 +411,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 cleanUp = true;
             }
@@ -473,7 +473,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.ToString());
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 cleanUp = true;
             }
@@ -556,7 +556,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 cleanUp = true;
             }
@@ -640,17 +640,17 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
 #warning should be unneccessary
                 cleanUp = true;
             }
-            catch (NullReferenceException ex)
+            catch (NullReferenceException)
             {
 #warning should be unneccessary
                 cleanUp = true;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
 #warning remove this.
                 cleanUp = true;
@@ -724,7 +724,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
+            catch (ArgumentException)
             {
                 cleanUp = true;
             }
