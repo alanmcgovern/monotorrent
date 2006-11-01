@@ -13,13 +13,9 @@
       <CodeGeneration compiler="Csc" warninglevel="4" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" generatexmldocumentation="False" ctype="CSharpCompilerParameters" />
     </Configuration>
   </Configurations>
-  <DeploymentInformation strategy="File">
-    <excludeFiles />
-  </DeploymentInformation>
+  <DeployTargets />
   <Contents>
     <File name="./MonoTorrent.Common/Enums.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Common/ITorrent.cs" subtype="Code" buildaction="Compile" />
-    <File name="./MonoTorrent.Common/ITorrentFile.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/TorrentFile.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/VersionInfo.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/TorrentCreator.cs" subtype="Code" buildaction="Compile" />
@@ -40,8 +36,9 @@
     <File name="./MonoTorrent.Common/BEncode/IBEncodedValue.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/PeerID.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/Buildfile" subtype="Code" buildaction="Nothing" />
-    <File name="./MonoTorrent.Common/IPeer.cs" subtype="Code" buildaction="Compile" />
     <File name="./MonoTorrent.Common/TorrentReader.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Common/TorrentException.cs" subtype="Code" buildaction="Compile" />
+    <File name="./MonoTorrent.Common/Test/testtorrent" subtype="Directory" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Gac" localcopy="True" refto="System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
@@ -49,4 +46,7 @@
     <ProjectReference type="Gac" localcopy="True" refto="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
     <ProjectReference type="Gac" localcopy="True" refto="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   </References>
+  <DeploymentInformation strategy="File">
+    <excludeFiles />
+  </DeploymentInformation>
 </Project>

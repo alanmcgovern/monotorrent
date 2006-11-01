@@ -41,6 +41,8 @@
     <File name="./res/ui.xml" subtype="Code" buildaction="EmbedAsResource" />
     <File name="./src/MonoTorrent.Interface/View/MonoTorrentStatusbar.cs" subtype="Code" buildaction="Compile" />
     <File name="./src/MonoTorrent.Interface/View/TreeViewWithPopup.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Helpers/AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
+    <File name="./src/MonoTorrent.Interface/Settings/BEncodedSettingsStorage.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <References>
     <ProjectReference type="Project" localcopy="True" refto="Client" />
