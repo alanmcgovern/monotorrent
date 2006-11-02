@@ -38,6 +38,9 @@ namespace MonoTorrent.Client
     /// </summary>
     internal class ConnectionMonitor
     {
+        private const int ArraySize = 8;
+
+
         #region Member Variables
         private int tempSentCount;
         private int tempRecvCount;
@@ -58,6 +61,7 @@ namespace MonoTorrent.Client
         }
         private long bytesDownloaded;
 
+
         /// <summary>
         /// Returns the total bytes uploaded to this peer
         /// </summary>
@@ -66,6 +70,28 @@ namespace MonoTorrent.Client
             get { return this.bytesUploaded; }
         }
         private long bytesUploaded;
+
+
+        /// <summary>
+        /// The current average download speed in bytes per second
+        /// </summary>
+        /// <returns></returns>
+        public double DownloadSpeed
+        {
+            get { return this.downloadSpeed; }
+        }
+        private double downloadSpeed;
+
+
+        /// <summary>
+        /// The current average upload speed in byte/second
+        /// </summary>
+        /// <returns></returns>
+        public double UploadSpeed
+        {
+            get { return this.uploadSpeed; }
+        }
+        private double uploadSpeed;
         #endregion
 
 
@@ -76,73 +102,23 @@ namespace MonoTorrent.Client
         public ConnectionMonitor()
         {
             this.lastUpdateTime = Environment.TickCount;
-            this.uploadSpeeds = new double[16];
-            this.downloadSpeeds = new double[16];
+            this.uploadSpeeds = new double[ArraySize];
+            this.downloadSpeeds = new double[ArraySize];
         }
         #endregion
 
 
         #region Helper Methods
         /// <summary>
-        /// Calculates the current average download speed
-        /// </summary>
-        /// <returns></returns>
-        public double DownloadSpeed()
-        {
-            int count = 0;
-            double total = 0;
-
-            lock (this.downloadSpeeds)
-                for (int i = 0; i < this.downloadSpeeds.Length; i++)
-                {
-                    if (this.downloadSpeeds[i] == 0)
-                        count++;
-
-                    total += this.downloadSpeeds[i];
-                }
-
-            if (count == this.downloadSpeeds.Length)
-                count--;
-
-            return total / (this.downloadSpeeds.Length - count);
-        }
-
-
-        /// <summary>
-        /// Calculates the current average upload speed
-        /// </summary>
-        /// <returns></returns>
-        public double UploadSpeed()
-        {
-            int count = 0;
-            double total = 0;
-
-            lock (this.uploadSpeeds)
-                for (int i = 0; i < this.uploadSpeeds.Length; i++)
-                {
-                    if (this.uploadSpeeds[i] == 0)
-                        count++;
-
-                    total += this.uploadSpeeds[i];
-                }
-
-            if (count == this.uploadSpeeds.Length)
-                count--;
-
-            return total / (this.uploadSpeeds.Length - count);
-        }
-
-
-        /// <summary>
         /// Update the ConnectionManager with bytes uploaded
         /// </summary>
         /// <param name="bytesUploaded">Bytes uploaded in the last time period</param>
-        public void BytesSent(int bytesUploaded)
+        internal void BytesSent(int bytesUploaded)
         {
             lock (this.uploadSpeeds)
             {
                 this.bytesUploaded += bytesUploaded;
-                this.tempSentCount += bytesUploaded;   
+                this.tempSentCount += bytesUploaded;
             }
         }
 
@@ -151,7 +127,7 @@ namespace MonoTorrent.Client
         /// Update the ConnectionManager with bytes downloaded
         /// </summary>
         /// <param name="bytesDownloaded">Bytes downloaded in the last time period</param>
-        public void BytesRecieved(int bytesDownloaded)
+        internal void BytesRecieved(int bytesDownloaded)
         {
             lock (this.downloadSpeeds)
             {
@@ -164,30 +140,58 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Called every time you want the stats to update. Ideally between every 0.5 and 2 seconds
         /// </summary>
-        public void TimePeriodPassed()
+        internal void TimePeriodPassed()
         {
             lock (this.downloadSpeeds)
             {
                 lock (this.uploadSpeeds)
                 {
+                    int count = 0;
+                    double total = 0;
                     int currentTime = Environment.TickCount;
                     int difference = currentTime - this.lastUpdateTime;
-                    
+
                     if (difference < 0)
                         difference = currentTime;   // Accounts for the rollover of Env.TickCount
 
-                    if (difference < 500)
-                        return;
-#warning This isn't the best way to solve the issue of NaN download speeds. I think it's because it can take >20ms for the locking to allow a thread to run through
+
                     this.downloadSpeeds[this.downloadSpeedIndex++] = tempRecvCount / (difference / 1000.0);
                     this.uploadSpeeds[this.uploadSpeedIndex++] = tempSentCount / (difference / 1000.0);
 
-                    if (this.downloadSpeedIndex == this.downloadSpeeds.Length)
+                    if (this.downloadSpeedIndex == ArraySize)
                         this.downloadSpeedIndex = 0;
 
-                    if (this.uploadSpeedIndex == this.uploadSpeeds.Length)
+                    if (this.uploadSpeedIndex == ArraySize)
                         this.uploadSpeedIndex = 0;
 
+
+
+                    for (int i = 0; i < this.downloadSpeeds.Length; i++)
+                    {
+                        if (this.downloadSpeeds[i] == 0)
+                            count++;
+
+                        total += this.downloadSpeeds[i];
+                    }
+                    if (count == ArraySize)
+                        count--;
+
+                    this.downloadSpeed = (total / (ArraySize - count));
+
+
+                    count = 0;
+                    total = 0;
+                    for (int i = 0; i < this.uploadSpeeds.Length; i++)
+                    {
+                        if (this.uploadSpeeds[i] == 0)
+                            count++;
+
+                        total += this.uploadSpeeds[i];
+                    }
+                    if (count == this.uploadSpeeds.Length)
+                        count--;
+
+                    this.uploadSpeed = (total / (ArraySize - count));
 
                     this.tempRecvCount = 0;
                     this.tempSentCount = 0;

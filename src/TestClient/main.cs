@@ -98,7 +98,7 @@ namespace TestClient
             bool running = true;
             while (running)
             {
-                if ((i++) % 50 == 0)
+                if ((i++) % 5 == 0)
                 {
                     running = false;
                     Console.Clear();
@@ -108,21 +108,22 @@ namespace TestClient
                             running = true;
 
                         Console.WriteLine("Torrent:          " + manager.Torrent.Name);
-                        //Debug.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
-                        //Debug.WriteLine("Half opens:       " + ClientEngine.connectionManager.HalfOpenConnections);
-                        //Debug.WriteLine("Max open:         " + ClientEngine.connectionManager.MaxOpenConnections);
+                        Console.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
+                        Console.WriteLine("Half opens:       " + ClientEngine.ConnectionManager.HalfOpenConnections);
+                        Console.WriteLine("Max open:         " + ClientEngine.ConnectionManager.MaxOpenConnections);
                         Console.WriteLine("Progress:         " + string.Format(manager.Progress().ToString(), ("{0:0.00}")));
                         Console.WriteLine("Download Speed:   " + string.Format("{0:0.00}", manager.DownloadSpeed() / 1024));
                         Console.WriteLine("Upload Speed:     " + string.Format("{0:0.00}", manager.UploadSpeed() / 1024));
-                        //Debug.WriteLine("Torrent State:    " + manager.State.ToString());
-                        //Debug.WriteLine("Number of seeds:  " + manager.Seeds());
-                        //Debug.WriteLine("Number of leechs: " + manager.Leechs());
-                        //Debug.WriteLine("Total available:  " + manager.AvailablePeers);
+                        Console.WriteLine("Torrent State:    " + manager.State.ToString());
+                        Console.WriteLine("Number of seeds:  " + manager.Seeds());
+                        Console.WriteLine("Number of leechs: " + manager.Leechs());
+                        Console.WriteLine("Total available:  " + manager.AvailablePeers);
                         Console.WriteLine("Downloaded:       " + manager.DataBytesDownloaded / 1024.0);
                         Console.WriteLine("Uploaded:         " + manager.DataBytesUploaded / 1024.0);
-                        //Debug.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
-                        //Debug.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
-                        //Debug.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
+                        Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
+                        Console.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
+                        Console.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
+                        Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         //Console.WriteLine("\n");
                     }
                 }
@@ -147,8 +148,7 @@ namespace TestClient
 
         static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Console.WriteLine("Unhandled");
-            Debug.WriteLine(sender.ToString());
+            shutdown();
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e)

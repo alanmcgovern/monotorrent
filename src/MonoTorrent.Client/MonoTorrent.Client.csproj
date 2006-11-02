@@ -72,6 +72,7 @@
     <Compile Include="PeerMessages\UnknownMessage.cs" />
     <Compile Include="Peers\Peer.cs" />
     <Compile Include="ProtocolException.cs" />
+    <Compile Include="RateLimiter.cs" />
     <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Tracker.cs" />
     <Compile Include="ConnectionListener.cs" />

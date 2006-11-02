@@ -32,7 +32,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
-//using MonoTorrent.Common;
 using System.Timers;
 using System.Net;
 using MonoTorrent.Client.PeerMessages;
@@ -124,7 +123,7 @@ namespace MonoTorrent.Client
         /// The timer used to call the logic methods for the torrent managers
         /// </summary>
         private System.Timers.Timer timer;
-
+        private int tickCount;
 
 
         /// <summary>
@@ -421,20 +420,21 @@ namespace MonoTorrent.Client
         /// <param name="e"></param>
         private void LogicTick(object sender, ElapsedEventArgs e)
         {
+            tickCount++;
             foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
             {
                 switch (keypair.Value.State)
                 {
                     case (TorrentState.Downloading):
-                        keypair.Value.DownloadLogic();
+                        keypair.Value.DownloadLogic(tickCount);
                         break;
 
                     case (TorrentState.Seeding):
-                        keypair.Value.SeedingLogic();
+                        keypair.Value.SeedingLogic(tickCount);
                         break;
 
                     case (TorrentState.SuperSeeding):
-                        keypair.Value.SuperSeedingLogic();
+                        keypair.Value.SuperSeedingLogic(tickCount);
                         break;
 
                     default:
@@ -492,13 +492,6 @@ namespace MonoTorrent.Client
             {
                 lock (id)
                 {
-                    if (id.Peer.Connection == null)
-                    {
-                        id.Peer.Connection.Dispose();
-                        id.Peer.Connection = null;
-                        return;
-                    }
-
                     int bytesRecieved = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                     if (bytesRecieved == 0)
                     {
@@ -514,7 +507,15 @@ namespace MonoTorrent.Client
                     }
 
                     HandshakeMessage handshake = new HandshakeMessage();
-                    handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                    try
+                    {
+                        handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                    }
+                    catch
+                    {
+                        CleanupSocket(id);
+                        return;
+                    }
 
                     foreach (TorrentManager manager in this.torrents.Values)
                         if (ToolBox.ByteMatch(handshake.infoHash, manager.Torrent.InfoHash))
@@ -550,6 +551,10 @@ namespace MonoTorrent.Client
             {
                 CleanupSocket(id);
             }
+            catch (NullReferenceException)
+            {
+#warning Why is this happening?
+            }
         }
 
 
@@ -559,6 +564,7 @@ namespace MonoTorrent.Client
         /// <param name="id"></param>
         private void CleanupSocket(PeerConnectionID id)
         {
+            lock(id)
             id.Peer.Connection.Dispose();
         }
 
@@ -587,6 +593,26 @@ namespace MonoTorrent.Client
 
             this.listener.Dispose();
             this.timer.Dispose();
+        }
+
+
+        public double TotalDownloadSpeed()
+        {
+            double total = 0;
+            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+                total += keypair.Value.DownloadSpeed();
+
+            return total;
+        }
+
+
+        public double TotalUploadSpeed()
+        {
+            double total = 0;
+            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+                total += keypair.Value.UploadSpeed();
+
+            return total;
         }
         #endregion
     }
