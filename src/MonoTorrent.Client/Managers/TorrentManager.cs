@@ -133,6 +133,12 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Contains the logic to decide how many chunks we can download
+        /// </summary>
+        private RateLimiter rateLimiter;
+
+
+        /// <summary>
         /// The object we use to syncronize list access
         /// </summary>
         internal object listLock = new object();
@@ -272,8 +278,8 @@ namespace MonoTorrent.Client
 
             this.connectedPeers = new Peers(16);
             this.available = new Peers(16);
-            //this.uploadQueue = new Queue<PeerConnectionID>(16);
-            //this.downloadQueue = new Queue<PeerConnectionID>(16);
+            this.uploadQueue = new Queue<PeerConnectionID>(16);
+            this.downloadQueue = new Queue<PeerConnectionID>(16);
             this.connectingTo = new Peers(ClientEngine.ConnectionManager.MaxHalfOpenConnections);
 
             this.savePath = savePath;
@@ -287,52 +293,7 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Torrent controlling methods
-        /// <summary>
-        /// Hash checks the supplied torrent
-        /// </summary>
-        /// <param name="state">The TorrentManager to hashcheck</param>
-        private void HashCheck(object state)
-        {
-            bool result;
-            TorrentManager manager = state as TorrentManager;
-
-            if (manager == null)
-                throw new InvalidCastException("Error: object passed to HashCheck was not an TorrentManager");
-
-            for (int i = 0; i < manager.torrent.Pieces.Length; i++)
-            {
-                result = ToolBox.ByteMatch(manager.torrent.Pieces[i], manager.fileManager.GetHash(i));
-                lock (manager.pieceManager.MyBitField)
-                    manager.pieceManager.MyBitField[i] = result;
-
-                if (manager.OnPieceHashed != null)
-                    manager.OnPieceHashed(this, new PieceHashedEventArgs(i, result));
-            }
-
-            manager.hashChecked = true;
-
-#warning Don't *always* start the torrent in the future.
-            if (manager.state == TorrentState.Stopped || (manager.state == TorrentState.Paused) || manager.state == TorrentState.Hashing)
-                manager.Start();
-        }
-
-
-        /// <summary>
-        /// The current progress of the torrent in percent
-        /// </summary>
-        public double Progress()
-        {
-            double complete = 0;
-            for (int i = 0; i < this.PieceManager.MyBitField.Length; i++)
-                if (this.PieceManager.MyBitField[i])
-                    complete++;
-
-            complete -= this.pieceManager.CurrentRequestCount();
-            return (complete * 100.0 / this.PieceManager.MyBitField.Length);
-        }
-
-
+        #region Start/Stop/Pause
         /// <summary>
         /// Starts the TorrentManager
         /// </summary>
@@ -343,7 +304,12 @@ namespace MonoTorrent.Client
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
                 {
-                    UpdateState(TorrentState.Hashing);
+                    args = new TorrentStateChangedEventArgs(this.state, TorrentState.Hashing);
+                    this.state = TorrentState.Hashing;
+
+                    if (this.OnTorrentStateChanged != null)
+                        OnTorrentStateChanged(this, args);
+
                     ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
                     return;
                 }
@@ -359,9 +325,21 @@ namespace MonoTorrent.Client
                 throw new TorrentException("Torrent is already running");
 
             if (this.Progress() == 100.0)
-                UpdateState(TorrentState.Seeding);
+            {
+                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Seeding);
+                this.state = TorrentState.Seeding;
+
+                if (this.OnTorrentStateChanged != null)
+                    this.OnTorrentStateChanged(this, args);
+            }
+
             else
-                UpdateState(TorrentState.Downloading);
+            {
+                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Downloading);
+                this.state = TorrentState.Downloading;
+                if (this.OnTorrentStateChanged != null)
+                    this.OnTorrentStateChanged(this, args);
+            }
 
             this.trackerManager.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
@@ -373,10 +351,14 @@ namespace MonoTorrent.Client
         internal WaitHandle Stop()
         {
             WaitHandle handle;
+            TorrentStateChangedEventArgs args;
 
-            UpdateState(TorrentState.Stopped);
+            args = new TorrentStateChangedEventArgs(this.state, TorrentState.Stopped);
+            this.state = TorrentState.Stopped;
+            if (this.OnTorrentStateChanged != null)
+                this.OnTorrentStateChanged(this, args);
+
             this.fileManager.FlushAll();
-
             handle = this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
@@ -398,15 +380,6 @@ namespace MonoTorrent.Client
         }
 
 
-        private void SaveFastResume()
-        {
-            XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
-
-            using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
-                fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
-        }
-
-
         /// <summary>
         /// Pauses the TorrentManager
         /// </summary>
@@ -415,8 +388,12 @@ namespace MonoTorrent.Client
             TorrentStateChangedEventArgs args;
             lock (this.listLock)
             {
-                UpdateState(TorrentState.Paused);
+                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Paused);
+                this.state = TorrentState.Paused;
+                if (this.OnTorrentStateChanged != null)
+                    this.OnTorrentStateChanged(this, args);
 
+#warning Is there a deadlock possibility here?
                 for (int i = 0; i < this.connectingTo.Count; i++)
                     lock (this.connectingTo[i])
                         ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[i]);
@@ -428,44 +405,26 @@ namespace MonoTorrent.Client
                 this.SaveFastResume();
             }
         }
+        #endregion
 
 
-        int counter = 0;
-        internal void DownloadLogic()
+        #region Downloading/Seeding/SuperSeeding
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="counter"></param>
+        internal void DownloadLogic(int counter)
         {
             IPeerMessageInternal msg;
             PeerConnectionID id;
 
-            //if (this.state == TorrentState.Downloading && this.Progress() == 100.0)
-            //    this.state = TorrentState.Seeding;
-
-            //lock (this.listLock)
-            //{
-                //if (this.settings.MaxDownloadSpeed > 0)
-                //    while ((this.DownloadSpeed() < this.settings.MaxDownloadSpeed * 1024) && this.downloadQueue.Count > 0)
-                //        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
-                //else
-                //    while (this.downloadQueue.Count > 0)
-                //        ClientEngine.connectionManager.ResumePeer(this.downloadQueue.Dequeue(), true);
-            //}
-
-            //lock (this.listLock)
-            //{
-            //    if (this.settings.MaxUploadSpeed > 0)
-            //        while ((this.UploadSpeed() < this.settings.MaxUploadSpeed * 1024) && (this.uploadQueue.Count > 0))
-            //            ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
-            //    else
-            //        while (this.uploadQueue.Count > 0)
-            //            ClientEngine.connectionManager.ResumePeer(this.uploadQueue.Dequeue(), false);
-            //}
+            lock (this.listLock)
+                if (this.downloadQueue.Count > 0 || this.uploadQueue.Count > 0)
+                    this.ResumePeers();
 
             lock (this.listLock)
             {
-                if (counter == 0)
-                    GC.Collect();
-
-                counter++;
-
                 // If we havn't reached our max connected peers, connect to another one.
                 if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
                     ClientEngine.ConnectionManager.ConnectToPeer(this);
@@ -478,10 +437,10 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection == null)
                             continue;
 
-                        if (counter % 20 == 0)     // Call it every second... ish
+                        if (counter % 40 == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
-                        
+
                         if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
                         {
                             // If we used to be not interested but now we are, send a message.
@@ -530,7 +489,6 @@ namespace MonoTorrent.Client
                             if (msg == null)
                                 break;
 
-                            Debug.WriteLine(((RequestMessage)msg).PieceIndex.ToString() + " - " + ((RequestMessage)msg).StartOffset.ToString());
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }
@@ -542,6 +500,7 @@ namespace MonoTorrent.Client
 
                 if (counter % 100 == 0)
                 {
+                    UpdateState(TorrentState.Seeding);
                     // If the last connection succeeded, then update at the regular interval
                     if (this.trackerManager.UpdateSucceeded)
                     {
@@ -556,54 +515,32 @@ namespace MonoTorrent.Client
                         this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
-
-                if (this.Progress() == 100.0)
-                    UpdateState(TorrentState.Seeding);
+                if (counter % 40 == 0)
+                    this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
+                                                          (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
+                                                          (int)(this.DownloadSpeed()),
+                                                          (int)(this.UploadSpeed()));
             }
         }
 
 
-        internal void SeedingLogic()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="counter"></param>
+        internal void SeedingLogic(int counter)
         {
-            DownloadLogic();
+            DownloadLogic(counter);
         }
 
 
-        internal void SuperSeedingLogic()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="counter"></param>
+        internal void SuperSeedingLogic(int counter)
         {
-            SeedingLogic();     // Initially just seed as per normal. This could be a V2.0 feature.
-        }
-
-
-        internal void PieceCompleted(int p)
-        {
-            // Only send a "have" message if the peer needs the piece.
-            // This is "Have Suppression" as defined in the spec.
-
-            // At the moment the only way to enter this method is
-            // when a Piece message is recieved and it gets handled.
-            // Therefore this is theadsafe access to the ConnectedPeers
-            // list as a lock as already been acquired.
-            foreach (PeerConnectionID id in this.connectedPeers)
-            {
-#warning This shouldn't be necessary anymore
-                lock (this.listLock)
-                {
-                    if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
-                    {
-                        try
-                        {
-                            if (id.Peer.Connection != null)
-                                if (!id.Peer.Connection.BitField[p])
-                                    id.Peer.Connection.EnQueue(new HaveMessage(p));
-                        }
-                        finally
-                        {
-                            Monitor.Exit(id);
-                        }
-                    }
-                }
-            }
+            SeedingLogic(counter);     // Initially just seed as per normal. This could be a V2.0 feature.
         }
         #endregion
 
@@ -786,17 +723,58 @@ namespace MonoTorrent.Client
 
         #endregion
 
+
+        #region Code to call Events
+        /// <summary>
+        /// Called when a Piece has been hashed by the FileManager
+        /// </summary>
+        /// <param name="pieceHashedEventArgs">The event args for the event</param>
+        internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
+        {
+            if (this.OnPieceHashed != null)
+                this.OnPieceHashed(this, pieceHashedEventArgs);
+        }
+
+
         private void UpdateState(TorrentState newState)
         {
             if (this.state == newState)
                 return;
 
             TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this.state, newState);
-            this.state = newState;
+            this.state = TorrentState.Seeding;
 
-            if (this.OnTorrentStateChanged != null)
-                this.OnTorrentStateChanged(this, e);
+            if (this.OnTorrentStateChanged == null)
+                return;
+            this.OnTorrentStateChanged(this, e);
         }
+
+        #endregion
+
+
+        #region Rate limiting
+        internal Queue<PeerConnectionID> downloadQueue;
+        internal Queue<PeerConnectionID> uploadQueue;
+
+
+        /// <summary>
+        /// Restarts peers which have been suspended from downloading/uploading due to rate limiting
+        /// </summary>
+        /// <param name="downloading"></param>
+        internal void ResumePeers()
+        {
+            while (this.downloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
+                if (ClientEngine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
+                    Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
+
+            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0)|| this.settings.MaxUploadSpeed == 0))
+                if (ClientEngine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
+                    Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
+            //Console.WriteLine("Upload: " + this.rateLimiter.UploadChunks);
+        }
+        #endregion
+
+
         #region Misc
         /// <summary>
         /// Returns the number of Seeds we are currently connected to
@@ -832,6 +810,15 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Returns the total number of peers available (including ones already connected to)
+        /// </summary>
+        public int AvailablePeers
+        {
+            get { return this.available.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+        }
+
+
+        /// <summary>
         /// The current download speed in bytes per second
         /// </summary>
         /// <returns></returns>
@@ -842,8 +829,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
                         if (this.connectedPeers[i].Peer.Connection != null)
-                            if (!this.connectedPeers[i].Peer.Connection.IsChoking)
-                                total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed();
+                            total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed;
 
             return total;
         }
@@ -861,35 +847,87 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
                         if (this.connectedPeers[i].Peer.Connection != null)
-                            if (!this.connectedPeers[i].Peer.Connection.AmChoking)
-                                total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed();
+                            total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed;
 
             return total;
         }
 
 
         /// <summary>
-        /// Returns the total number of peers available (including ones already connected to)
+        /// Saves data to allow fastresumes to the disk
         /// </summary>
-        public int AvailablePeers
+        private void SaveFastResume()
         {
-            get { return this.available.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+            XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+
+            using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
+                fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
         }
 
 
         /// <summary>
-        /// Called when a Piece has been hashed by the FileManager
+        /// Hash checks the supplied torrent
         /// </summary>
-        /// <param name="pieceHashedEventArgs">The event args for the event</param>
-        internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
+        /// <param name="state">The TorrentManager to hashcheck</param>
+        private void HashCheck(object state)
         {
-            if (this.OnPieceHashed != null)
-                this.OnPieceHashed(this, pieceHashedEventArgs);
+            bool result;
+            TorrentManager manager = state as TorrentManager;
+
+            if (manager == null)
+                return;
+
+            for (int i = 0; i < manager.torrent.Pieces.Length; i++)
+            {
+                result = ToolBox.ByteMatch(manager.torrent.Pieces[i], manager.fileManager.GetHash(i));
+                lock (manager.pieceManager.MyBitField)
+                    manager.pieceManager.MyBitField[i] = result;
+
+                if (manager.OnPieceHashed != null)
+                    manager.OnPieceHashed(this, new PieceHashedEventArgs(i, result));
+            }
+
+            manager.hashChecked = true;
+
+#warning Don't *always* start the torrent in the future.
+            if (manager.state == TorrentState.Stopped || (manager.state == TorrentState.Paused) || manager.state == TorrentState.Hashing)
+                manager.Start();
         }
-        #endregion
 
 
-        #region  Dispose methods
+        /// <summary>
+        /// The current progress of the torrent in percent
+        /// </summary>
+        public double Progress()
+        {
+            double complete = 0;
+            for (int i = 0; i < this.PieceManager.MyBitField.Length; i++)
+                if (this.PieceManager.MyBitField[i])
+                    complete++;
+
+            complete -= this.pieceManager.CurrentRequestCount();
+            return (complete * 100.0 / this.PieceManager.MyBitField.Length);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="p"></param>
+        internal void PieceCompleted(int p)
+        {
+            // Only send a "have" message if the peer needs the piece.
+            // This is "Have Suppression" as defined in the spec.
+
+            lock (this.listLock)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        if (this.connectedPeers[i].Peer.Connection != null)
+                            if (!this.connectedPeers[i].Peer.Connection.BitField[p])
+                                this.connectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(p));
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -897,6 +935,7 @@ namespace MonoTorrent.Client
         {
             this.Dispose(true);
         }
+
 
         /// <summary>
         /// 
