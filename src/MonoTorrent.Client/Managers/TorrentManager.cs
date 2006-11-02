@@ -343,12 +343,7 @@ namespace MonoTorrent.Client
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
                 {
-                    args = new TorrentStateChangedEventArgs(this.state, TorrentState.Hashing);
-                    this.state = TorrentState.Hashing;
-
-                    if (this.OnTorrentStateChanged != null)
-                        OnTorrentStateChanged(this, args);
-
+                    UpdateState(TorrentState.Hashing);
                     ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
                     return;
                 }
@@ -364,21 +359,9 @@ namespace MonoTorrent.Client
                 throw new TorrentException("Torrent is already running");
 
             if (this.Progress() == 100.0)
-            {
-                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Seeding);
-                this.state = TorrentState.Seeding;
-
-                if (this.OnTorrentStateChanged != null)
-                    this.OnTorrentStateChanged(this, args);
-            }
-
+                UpdateState(TorrentState.Seeding);
             else
-            {
-                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Downloading);
-                this.state = TorrentState.Downloading;
-                if (this.OnTorrentStateChanged != null)
-                    this.OnTorrentStateChanged(this, args);
-            }
+                UpdateState(TorrentState.Downloading);
 
             this.trackerManager.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
@@ -390,14 +373,10 @@ namespace MonoTorrent.Client
         internal WaitHandle Stop()
         {
             WaitHandle handle;
-            TorrentStateChangedEventArgs args;
 
-            args = new TorrentStateChangedEventArgs(this.state, TorrentState.Stopped);
-            this.state = TorrentState.Stopped;
-            if (this.OnTorrentStateChanged != null)
-                this.OnTorrentStateChanged(this, args);
-
+            UpdateState(TorrentState.Stopped);
             this.fileManager.FlushAll();
+
             handle = this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
@@ -411,9 +390,6 @@ namespace MonoTorrent.Client
             }
 
             this.SaveFastResume();
-
-            //this.downloadQueue.Clear();
-            //this.uploadQueue.Clear();
             this.connectedPeers = new Peers();
             this.available = new Peers();
             this.connectingTo = new Peers();
@@ -439,25 +415,15 @@ namespace MonoTorrent.Client
             TorrentStateChangedEventArgs args;
             lock (this.listLock)
             {
-                args = new TorrentStateChangedEventArgs(this.state, TorrentState.Paused);
-                this.state = TorrentState.Paused;
-                if (this.OnTorrentStateChanged != null)
-                    this.OnTorrentStateChanged(this, args);
+                UpdateState(TorrentState.Paused);
 
-#warning Is there a deadlock possibility here?
                 for (int i = 0; i < this.connectingTo.Count; i++)
                     lock (this.connectingTo[i])
                         ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[i]);
-                
-                for(int i =0; i <this.connectedPeers.Count; i++)
+
+                for (int i = 0; i < this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
                         ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[i]);
-
-                //lock (this.listLock)
-                //    this.downloadQueue.Clear();
-
-                //lock (this.listLock)
-                //    this.uploadQueue.Clear();
 
                 this.SaveFastResume();
             }
@@ -574,20 +540,25 @@ namespace MonoTorrent.Client
                     }
                 }
 
-                if(counter%100 ==0)
-                // If the last connection succeeded, then update at the regular interval
-                if (this.trackerManager.UpdateSucceeded)
+                if (counter % 100 == 0)
                 {
-                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
+                    // If the last connection succeeded, then update at the regular interval
+                    if (this.trackerManager.UpdateSucceeded)
+                    {
+                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
+                        {
+                            this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        }
+                    }
+                    // Otherwise update at the min interval
+                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
                         this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
-                // Otherwise update at the min interval
-                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
-                {
-                    this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
-                }
+
+                if (this.Progress() == 100.0)
+                    UpdateState(TorrentState.Seeding);
             }
         }
 
@@ -615,6 +586,7 @@ namespace MonoTorrent.Client
             // list as a lock as already been acquired.
             foreach (PeerConnectionID id in this.connectedPeers)
             {
+#warning This shouldn't be necessary anymore
                 lock (this.listLock)
                 {
                     if (Monitor.TryEnter(id, 5))    // The peer who we recieved the piece off is already locked on
@@ -814,7 +786,17 @@ namespace MonoTorrent.Client
 
         #endregion
 
+        private void UpdateState(TorrentState newState)
+        {
+            if (this.state == newState)
+                return;
 
+            TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this.state, newState);
+            this.state = newState;
+
+            if (this.OnTorrentStateChanged != null)
+                this.OnTorrentStateChanged(this, e);
+        }
         #region Misc
         /// <summary>
         /// Returns the number of Seeds we are currently connected to
