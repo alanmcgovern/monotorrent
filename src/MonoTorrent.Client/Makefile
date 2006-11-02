@@ -7,6 +7,7 @@ ClientEngine.cs \
 ConnectionListener.cs \
 ListenerException.cs \
 ProtocolException.cs \
+RateLimiter.cs \
 Encryption/IEncryptor.cs \
 Encryption/NoEncryption.cs \
 Encryption/RC4FullEncryption.cs \
