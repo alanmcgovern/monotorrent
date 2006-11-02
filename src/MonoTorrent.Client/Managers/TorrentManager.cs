@@ -474,7 +474,8 @@ namespace MonoTorrent.Client
 
                 if (counter % 100 == 0)
                 {
-                    UpdateState(TorrentState.Seeding);
+                    if(this.Progress() == 100.0)
+                        UpdateState(TorrentState.Seeding);
                     // If the last connection succeeded, then update at the regular interval
                     if (this.trackerManager.UpdateSucceeded)
                     {
