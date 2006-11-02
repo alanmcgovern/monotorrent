@@ -373,7 +373,10 @@ namespace MonoTorrent.Client
         /// <param name="manager"></param>
         public WaitHandle Remove(TorrentManager manager)
         {
-            WaitHandle handle = this.Stop(manager);
+            WaitHandle handle = null;
+            if (manager.State != TorrentState.Stopped)
+                handle = this.Stop(manager);
+
             this.torrents.Remove(BitConverter.ToString(manager.Torrent.InfoHash));
             manager.Dispose();
             return handle;
@@ -385,10 +388,15 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle[] RemoveAll()
         {
-            int i = 0;
             WaitHandle[] handles = new WaitHandle[this.torrents.Count];
+            List<TorrentManager> mans = new List<TorrentManager>(this.torrents.Count);
+
             foreach (TorrentManager manager in this.torrents.Values)
-                handles[i++] = this.Remove(manager);
+                mans.Add(manager);
+
+            this.torrents.Clear();
+            for (int i = 0; i < mans.Count; i++)
+                handles[i] = Remove(mans[i]);
 
             return handles;
         }
@@ -585,11 +593,12 @@ namespace MonoTorrent.Client
         public void Dispose(bool disposing)
         {
             WaitHandle[] handles = this.RemoveAll();
-            if (handles.Length > 0)
-                WaitHandle.WaitAll(handles);
+            for (int i = 0; i < handles.Length; i++)
+                if (handles[i] != null)
+                    handles[i].WaitOne();
 
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                keypair.Value.Dispose();
+            //foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+            //    keypair.Value.Dispose();
 
             this.listener.Dispose();
             this.timer.Dispose();
