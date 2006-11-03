@@ -13,7 +13,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	09) Add in support for TrackerError and TrackerWarning messages returned from a tracker update [LOW]
 	10) Choking and Optimistic Unchoking algorithm needed. [MEDIUM]
 	11) Anti-snubbing needs to be implemented [MEDIUM]
-    12) Tracker scraping needs to be implemented [LOW] [ COMPLETE ]
+        12) Tracker scraping needs to be implemented [LOW] [ COMPLETE ]
 	13) Allow "Pausing" and prioritising of files/selective downloading [MEDIUM] [ COMPLETE ]
 	14) Support SOCKS proxies
 	15) Automagic updates of the client - similar to azureus ideally
@@ -24,8 +24,9 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	20) Use a IRequestable interface on PeerTCP and PeerHTTP to allow different requesting techniques.
 	21) Is the IConnectable interface for PeerTCP and PeerHTTP to abstract BeginConnect etc for the different types
 	22) Make sure results from scraping are saved somewhere and readily accessible
-    23) Reimplement Upload/Download rate limiting. I need a better way than the last implementation which artificially limited each connection to ~100kB/sec
-    24) Update the rest of the Events to make sure they're all ok
+        23) Reimplement Upload/Download rate limiting. I need a better way than the last implementation which artificially limited each connection to ~100kB/sec  [ COMPLETE ] I've recorded over 7MB/Sec download and 10MB/Sec upload (megabytes)
+        24) Update the rest of the Events to make sure they're all ok [ LOW - needs docs to explain safe usage too ]
+        25) Implement End Game Mode. This is a priority [LOW]
 
 -- FEATURES TO BE IMPROVED --
 	01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
@@ -54,6 +55,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 	23) Support piece prioritisation (Video/Mp3 prioritisation automatically?) [ COMPLETE - No automatic prioritisation ]
 	24) Make sure IDisposible is revealed through interfaces as required, and all classes with Disposable members use IDisposible. This is one of the causes for piotr's GUI not being able to reopen a torrent that was just removed.
 	25) I'm using a foeach() loop when removing peers from the list in the Stop() method. Of course it breaks! It wasn't spotted before due to the ProcessExit event not firing when i close a console window. [ COMPLETE ]
+    26) There are cases where closing the library returns a null WaitHandle causing a crash. Find out why.
 
 If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
 
