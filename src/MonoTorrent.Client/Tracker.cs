@@ -205,7 +205,7 @@ namespace MonoTorrent.Client
             if (ipAddress != null && (ipAddress == IPAddress.Any || ipAddress == IPAddress.Loopback))
                 ipAddress = null;
 
-            sb.Append(this.announceUrl);        // FIXME: Should cycle through trackers if a problem is found
+            sb.Append(this.announceUrl);
             sb.Append("?info_hash=");
             sb.Append(infohash);
             sb.Append("&peer_id=");
