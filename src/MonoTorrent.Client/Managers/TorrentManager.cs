@@ -581,7 +581,7 @@ namespace MonoTorrent.Client
 
                         default:
                             System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key + " Value: " + keypair.Value);
-                            break;  //FIXME Log these
+                            break;
                     }
                 }
         }
