@@ -95,7 +95,7 @@ namespace MonoTorrent.Common
 
     public enum PeerConnectionEvent
     {
-        IncomingConnectionRecieved,
+        IncomingConnectionReceived,
         OutgoingConnectionCreated,
         Disconnected
     }
@@ -103,10 +103,10 @@ namespace MonoTorrent.Common
     public enum PieceEvent
     {
         BlockSent,
-        BlockRecieved,
+        BlockReceived,
         BlockWrittenToDisk,
         PieceSent,
-        PieceRecieved,
+        PieceReceived,
         PieceHashFailed,
         PieceHashSucceeded,
         PieceBuffered,          // These two

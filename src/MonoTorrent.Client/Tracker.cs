@@ -43,36 +43,14 @@ namespace MonoTorrent.Client
     public class Tracker
     {
         #region Member Variables
-        private AsyncCallback requestCallback;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Compact
-        {
-            get { return this.compact; }
-        }
-        private string compact;
+        private AsyncCallback announceCallback;
+        private AsyncCallback scrapeCallback;
 
 
         /// <summary>
         /// The announce URL for this tracker
         /// </summary>
-        public string AnnounceUrl
-        {
-            get { return this.announceUrl; }
-        }
         private string announceUrl;
-
-
-        /// <summary>
-        /// The Scrape URL for this tracker
-        /// </summary>
-        public string ScrapeUrl
-        {
-            get { return this.scrapeUrl; }
-        }
-        private string scrapeUrl;
 
 
         /// <summary>
@@ -83,6 +61,97 @@ namespace MonoTorrent.Client
             get { return this.canScrape; }
         }
         private bool canScrape;
+
+
+        /// <summary>
+        /// The number of seeders downloading the torrent
+        /// </summary>
+        public int Complete
+        {
+            get { return this.complete; }
+            internal set { this.complete = value; }
+        }
+        private int complete;
+
+
+        /// <summary>
+        /// The number of times the torrent was downloaded
+        /// </summary>
+        public int Downloaded
+        {
+            get { return this.downloaded; }
+            internal set { this.downloaded = value; }
+        }
+        private int downloaded;
+
+
+        /// <summary>
+        /// The error message returned by the tracker
+        /// </summary>
+        public string FailureMessage
+        {
+            get { return this.failureMessage; }
+            internal set { this.failureMessage = value; }
+        }
+        private string failureMessage;
+
+
+        /// <summary>
+        /// The number of peers downloading the torrent who are not seeders.
+        /// </summary>
+        public int Incomplete
+        {
+            get { return this.inComplete; }
+            internal set { this.inComplete = value; }
+        }
+        private int inComplete;
+
+
+        /// <summary>
+        /// The DateTime that the last tracker update was fired at
+        /// </summary>
+        public DateTime LastUpdated
+        {
+            get { return lastUpdated; }
+        }
+        private DateTime lastUpdated;
+
+
+        /// <summary>
+        /// The minimum update interval for the tracker
+        /// </summary>
+        public int MinUpdateInterval
+        {
+            get { return this.minUpdateInterval; }
+            internal set { this.minUpdateInterval = value; }
+        }
+        private int minUpdateInterval;
+
+
+        /// <summary>
+        /// The Scrape URL for this tracker
+        /// </summary>
+        //public string ScrapeUrl
+        //{
+        //    get { return this.scrapeUrl; }
+        //}
+        private string scrapeUrl;
+
+
+        internal bool SendingStatedEvent
+        {
+            get { return this.sendingStartedEvent; }
+            set { this.sendingStartedEvent = value; }
+        }
+        private bool sendingStartedEvent;
+
+
+        internal bool StartedEventSentSuccessfully
+        {
+            get { return this.startedEventSentSuccessfully; }
+            set { this.startedEventSentSuccessfully = value; }
+        }
+        private bool startedEventSentSuccessfully;
 
 
         /// <summary>
@@ -108,17 +177,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The minimum update interval for the tracker
-        /// </summary>
-        public int MinUpdateInterval
-        {
-            get { return this.minUpdateInterval; }
-            internal set { this.minUpdateInterval = value; }
-        }
-        private int minUpdateInterval;
-
-
-        /// <summary>
         /// The recommended update interval for the tracker
         /// </summary>
         public int UpdateInterval
@@ -130,16 +188,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The DateTime that the last tracker update was fired at
-        /// </summary>
-        public DateTime LastUpdated
-        {
-            get { return lastUpdated; }
-        }
-        private DateTime lastUpdated;
-
-
-        /// <summary>
         /// True if the last tracker update succeeded
         /// </summary>
         public bool UpdateSucceeded
@@ -148,21 +196,31 @@ namespace MonoTorrent.Client
             internal set { this.updateSucceeded = value; }
         }
         private bool updateSucceeded;
+
+
+        /// <summary>
+        /// The warning message returned by the tracker
+        /// </summary>
+        public string WarningMessage
+        {
+            get { return this.warningMessage; }
+            internal set { this.warningMessage = value; }
+        }
+        private string warningMessage;
         #endregion
 
 
         #region Constructors
-        public Tracker(string announceUrl, AsyncCallback requestCallback)
+        public Tracker(string announceUrl, AsyncCallback announceCallback, AsyncCallback scrapeCallback)
         {
-            this.compact = "1";                             // Always use compact if possible.
             this.state = TrackerState.Unknown;
             this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
             this.updateInterval = 300;                      // Update every 300 seconds.
             this.minUpdateInterval = 180;                   // Don't update more frequently than this.
 
-
             this.announceUrl = announceUrl;
-            this.requestCallback = requestCallback;
+            this.announceCallback = announceCallback;
+            this.scrapeCallback = scrapeCallback;
             int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
             if (announceUrl.Substring(indexOfAnnounce, 8) == "announce")
             {
@@ -175,10 +233,9 @@ namespace MonoTorrent.Client
 
 
         #region Methods
-        public WaitHandle Scrape(bool requestSingle, string infohash)
+        internal WaitHandle Scrape(bool requestSingle, string infohash)
         {
             HttpWebRequest request;
-            this.state = TrackerState.Scraping;
 
             if (requestSingle)
                 request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "?infohash=" + infohash);
@@ -186,11 +243,11 @@ namespace MonoTorrent.Client
                 request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl);
 
             TrackerConnectionID id = new TrackerConnectionID(request, this);
-            return request.BeginGetResponse(requestCallback, id).AsyncWaitHandle;
+            return request.BeginGetResponse(announceCallback, id).AsyncWaitHandle;
         }
 
 
-        public WaitHandle SendUpdate(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent, string infohash)
+        internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent, string infohash)
         {
             IPAddress ipAddress;
             TrackerConnectionID id;
@@ -199,7 +256,6 @@ namespace MonoTorrent.Client
 
             this.updateSucceeded = true;        // If the update ends up failing, reset this to false.
             this.lastUpdated = DateTime.Now;
-            this.state = TrackerState.Announcing;
 
             ipAddress = ConnectionListener.ListenEndPoint.Address;
             if (ipAddress != null && (ipAddress == IPAddress.Any || ipAddress == IPAddress.Loopback))
@@ -218,8 +274,7 @@ namespace MonoTorrent.Client
             sb.Append(bytesDownloaded);
             sb.Append("&left=");
             sb.Append(bytesLeft);
-            sb.Append("&compact=");
-            sb.Append(this.compact);
+            sb.Append("&compact=1");    // Always use compact response
             sb.Append("&numwant=");
             sb.Append(100);
             if (ipAddress != null)
@@ -227,10 +282,20 @@ namespace MonoTorrent.Client
                 sb.Append("&ip=");
                 sb.Append(ipAddress.ToString());
             }
-            if (clientEvent != TorrentEvent.None)
+
+            // If we have successfully sent the started event, we just continue as normal
+            if (this.startedEventSentSuccessfully)
             {
-                sb.Append("&event=");
-                sb.Append(clientEvent.ToString().ToLower());
+                if (clientEvent != TorrentEvent.None)
+                {
+                    sb.Append("&event=");
+                    sb.Append(clientEvent.ToString().ToLower());
+                }
+            }
+            else // Otherwise we must override the supplied event and send the started event
+            {
+                sb.Append("&event=started");
+                this.sendingStartedEvent = true;
             }
 
             if ((trackerId != null) && (trackerId.Length > 0))
@@ -242,7 +307,7 @@ namespace MonoTorrent.Client
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
 
             id = new TrackerConnectionID(request, this);
-            IAsyncResult res = request.BeginGetResponse(this.requestCallback, id);
+            IAsyncResult res = request.BeginGetResponse(this.announceCallback, id);
 
             return res.AsyncWaitHandle;
         }

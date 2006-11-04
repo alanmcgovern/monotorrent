@@ -124,12 +124,22 @@ namespace TestClient
                         Console.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
                         Console.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
                         Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        //Console.WriteLine("\n");
+                        Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
+                        Console.WriteLine("Scrape incomplete:" + manager.TrackerManager.CurrentTracker.Incomplete);
+                        Console.WriteLine("Scrape downloaded:" + manager.TrackerManager.CurrentTracker.Downloaded);
+                        Console.WriteLine("Warning Message:  " + manager.TrackerManager.CurrentTracker.WarningMessage);
+                        Console.WriteLine("Failure Message:  " + manager.TrackerManager.CurrentTracker.FailureMessage);
+                        Console.WriteLine("\n");
                     }
                 }
-
                 System.Threading.Thread.Sleep(100);
             }
+
+            WaitHandle[] a = engine.Stop();
+            for (int j = 0; j < a.Length; j++)
+                if (a[j] != null)
+                    a[j].WaitOne();
+            engine.Dispose();
         }
 
         #region Shutdown methods
@@ -160,8 +170,9 @@ namespace TestClient
         {
 #warning Maybe return a wait handle and wait for the response.
             WaitHandle[] handles = engine.Stop();
-            if (handles != null && handles.Length > 0)
-                WaitHandle.WaitAll(handles);
+            for (int i = 0; i < handles.Length; i++)
+                if (handles[i] != null)
+                    handles[i].WaitOne();
             foreach (TraceListener lst in Debug.Listeners)
             {
                 lst.Flush();

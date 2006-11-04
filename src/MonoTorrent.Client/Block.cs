@@ -80,14 +80,14 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// True if this piece has been recieved
+        /// True if this piece has been Received
         /// </summary>
-        public bool Recieved
+        public bool Received
         {
-            get { return this.recieved; }
-            set { this.recieved = value; }
+            get { return this.received; }
+            set { this.received = value; }
         }
-        private bool recieved;
+        private bool received;
 #endregion
 
 

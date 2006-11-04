@@ -152,8 +152,8 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerConnectionID id)
         {
             int writeIndex = this.StartOffset + this.PieceIndex * this.fileManager.PieceLength;
-            id.TorrentManager.PieceManager.RecievedPieceMessage(id, id.Peer.Connection.recieveBuffer, this.dataOffset, writeIndex, this.blockLength, this);
-            //id.TorrentManager.PieceManager.RecievedPiece(id, this);
+            id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this.dataOffset, writeIndex, this.blockLength, this);
+            //id.TorrentManager.PieceManager.ReceivedPiece(id, this);
         }
 
 

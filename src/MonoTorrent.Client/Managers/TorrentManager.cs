@@ -274,7 +274,6 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.trackerManager = new TrackerManager(this);
-            this.trackerManager.UpdateRecieved += new EventHandler<TrackerUpdateEventArgs>(TrackerUpdateRecieved);
 
             this.connectedPeers = new Peers(16);
             this.available = new Peers(16);
@@ -323,7 +322,7 @@ namespace MonoTorrent.Client
             else
                 UpdateState(TorrentState.Downloading);
 
-            this.trackerManager.SendUpdate(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
+            this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
 
 
@@ -337,7 +336,7 @@ namespace MonoTorrent.Client
             UpdateState(TorrentState.Stopped);
 
             this.fileManager.FlushAll();
-            handle = this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while (this.connectingTo.Count > 0)
@@ -425,7 +424,7 @@ namespace MonoTorrent.Client
                         else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
                         {
                             // If we used to be interested but now we're not, send a message
-                            // We only become uninterested once we've recieved all our requested bits.
+                            // We only become uninterested once we've Received all our requested bits.
                             id.Peer.Connection.AmInterested = false;
                             id.Peer.Connection.EnQueue(new NotInterestedMessage());
                         }
@@ -481,13 +480,13 @@ namespace MonoTorrent.Client
                     {
                         if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                         {
-                            this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
                     else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
-                        this.trackerManager.SendUpdate(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
                 if (counter % 40 == 0)
@@ -520,73 +519,7 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Methods to handle Tracker Update events
-        internal void TrackerUpdateRecieved(object sender, TrackerUpdateEventArgs e)
-        {
-            int peersAdded = 0;
-            BEncodedDictionary dict = null;
-
-            Debug.WriteLine(e.Tracker.ToString());
-
-            // Data only returned if the tracker update was successful
-            if (e.Response == null || e.Tracker.State != TrackerState.AnnounceSuccessful && e.Tracker.State != TrackerState.ScrapeSuccessful)
-                return;
-
-            try
-            {
-                dict = (BEncodedDictionary)BEncode.Decode(e.Response);
-            }
-            catch (BEncodingException)
-            {
-                Debug.WriteLine("Tracker update failed: The tracker returned a corrupt or incomplete response");
-                return;
-            }
-
-            if (e.Tracker.State == TrackerState.ScrapeSuccessful)
-            {
-#warning DO STUFF
-            }
-            else    // Do a standard announce thingy
-                foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
-                {
-                    switch (keypair.Key.Text)
-                    {
-                        case ("tracker id"):
-                            this.trackerManager.CurrentTracker.TrackerId = keypair.Value.ToString();
-                            break;
-
-                        case ("min interval"):
-                            this.trackerManager.CurrentTracker.MinUpdateInterval = int.Parse(keypair.Value.ToString());
-                            break;
-
-                        case ("interval"):
-                            this.trackerManager.CurrentTracker.UpdateInterval = int.Parse(keypair.Value.ToString());
-                            break;
-
-                        case ("peers"):
-                            if (keypair.Value is BEncodedList)          // Non-compact response
-                                peersAdded = this.AddPeers(((BEncodedList)keypair.Value));
-                            else if (keypair.Value is BEncodedString)   // Compact response
-                                peersAdded = this.AddPeers(((BEncodedString)keypair.Value).TextBytes);
-
-                            if (this.OnPeersAdded != null)
-                                this.OnPeersAdded(this, new PeersAddedEventArgs(peersAdded));
-                            break;
-
-                        case ("failure reason"):
-                            Console.Write("Failure reason detected");
-                            Console.Write(keypair.Value.ToString());
-                            break;
-
-
-                        default:
-                            System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key + " Value: " + keypair.Value);
-                            break;
-                    }
-                }
-        }
-
-
+        #region AddPeers methods
         /// <summary>
         /// Adds an individual peer to the list
         /// </summary>
@@ -606,22 +539,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Adds an array of peers to the list
-        /// </summary>
-        /// <param name="peers">The array of peers to add</param>
-        /// <returns>The number of peers added</returns>
-        internal int AddPeers(Peers peers)
-        {
-            int i = 0;
-
-            foreach (PeerConnectionID id in peers)
-                i += this.AddPeers(id);
-
-            return i;
-        }
-
-
-        /// <summary>
         /// Adds a non-compact tracker response of peers to the list
         /// </summary>
         /// <param name="list">The list of peers to add</param>
@@ -629,7 +546,7 @@ namespace MonoTorrent.Client
         internal int AddPeers(BEncodedList list)
         {
             PeerConnectionID id;
-            int peersAdded = 0;
+            int added = 0;
             foreach (BEncodedDictionary dict in list)
             {
                 try
@@ -644,14 +561,17 @@ namespace MonoTorrent.Client
                         peerId = string.Empty;
 
                     id = new PeerConnectionID(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()), this);
-                    peersAdded += this.AddPeers(id);
+                    added += this.AddPeers(id);
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Trace.WriteLine(ex.ToString());
                 }
             }
-            return peersAdded;
+
+            if (this.OnPeersAdded != null)
+                this.OnPeersAdded(this, new PeersAddedEventArgs(added));
+            return added;
         }
 
 
@@ -693,6 +613,8 @@ namespace MonoTorrent.Client
                 added += this.AddPeers(id);
             }
 
+            if (this.OnPeersAdded != null)
+                this.OnPeersAdded(this, new PeersAddedEventArgs(added));
             return added;
         }
 

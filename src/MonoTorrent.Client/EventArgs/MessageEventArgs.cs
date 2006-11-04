@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
         /// <summary>
-        /// The Peer message that was just sent/recieved
+        /// The Peer message that was just sent/Received
         /// </summary>
         public IPeerMessage Message
         {

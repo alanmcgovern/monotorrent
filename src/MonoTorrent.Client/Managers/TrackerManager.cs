@@ -35,6 +35,8 @@ using MonoTorrent.Common;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Web;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
@@ -47,12 +49,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Event that's fired every time the state changes during a TrackerUpdate
         /// </summary>
-        public event EventHandler<TrackerUpdateEventArgs> UpdateRecieved;
+        public event EventHandler<TrackerStateChangedEventArgs> OnTrackerStateChange;
         #endregion
 
 
         #region Member Variables
-        private AsyncCallback responseReceived;
+        private AsyncCallback announceReceived;
+        private AsyncCallback scrapeReceived;
         private TorrentManager manager;
 
 
@@ -114,17 +117,128 @@ namespace MonoTorrent.Client
             this.currentTrackerIndex = 0;
             this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
 
-            this.responseReceived = new AsyncCallback(this.ResponseRecieved);
+            this.announceReceived = new AsyncCallback(this.AnnounceReceived);
+            this.scrapeReceived = new AsyncCallback(this.ScrapeReceived);
 
             // Check if this tracker supports scraping
             this.trackers = new Tracker[manager.Torrent.AnnounceUrls.Length];
             for (int i = 0; i < manager.Torrent.AnnounceUrls.Length; i++)
-                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.responseReceived);
+                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived);
         }
         #endregion
 
 
         #region Methods
+        /// <summary>
+        /// Sends a status update to the tracker
+        /// </summary>
+        /// <param name="bytesDownloaded">The number of bytes downloaded since the last update</param>
+        /// <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
+        /// <param name="bytesLeft">The number of bytes left to download</param>
+        /// <param name="clientEvent">The Event (if any) that represents this update</param>
+        public WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent)
+        {
+            this.updateSucceeded = true;
+            this.lastUpdated = DateTime.Now;
+            Tracker tracker = this.ChooseTracker();
+            WaitHandle handle = tracker.Announce(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
+
+            UpdateState(tracker, TrackerState.Announcing);
+            return handle;
+        }
+
+
+        /// <summary>
+        /// Called as part of the Async SendUpdate reponse
+        /// </summary>
+        /// <param name="result"></param>
+        private void AnnounceReceived(IAsyncResult result)
+        {
+            BEncodedDictionary dict = DecodeResponse(result);
+            TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
+
+            if (dict.ContainsKey("custom error"))
+            {
+                id.Tracker.SendingStatedEvent = false;
+                this.updateSucceeded = false;
+                id.Tracker.UpdateSucceeded = false;
+                id.Tracker.FailureMessage = dict["custom error"].ToString();
+                UpdateState(id.Tracker, TrackerState.AnnouncingFailed);
+            }
+            else
+            {
+                if (id.Tracker.SendingStatedEvent)
+                {
+                    id.Tracker.SendingStatedEvent = false;
+                    id.Tracker.StartedEventSentSuccessfully = true;
+                }
+                UpdateState(id.Tracker, TrackerState.AnnounceSuccessful);
+                HandleAnnounce(id, dict);
+            }
+        }
+
+
+        /// <summary>
+        /// Handles the parsing of the dictionary when an announce result has been received
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dict"></param>
+        private void HandleAnnounce(TrackerConnectionID id, BEncodedDictionary dict)
+        {
+            int peersAdded = 0;
+            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
+            {
+                switch (keypair.Key.Text)
+                {
+
+                    case ("complete"):
+                        id.Tracker.Complete = Convert.ToInt32(keypair.Value.ToString());
+                        break;
+
+                    case ("incomplete"):
+                        id.Tracker.Incomplete = Convert.ToInt32(keypair.Value.ToString());
+                        break;
+
+                    case ("downloaded"):
+                        id.Tracker.Downloaded = Convert.ToInt32(keypair.Value.ToString());
+                        break;
+
+                    case ("tracker id"):
+                        id.Tracker.TrackerId = keypair.Value.ToString();
+                        break;
+
+                    case ("min interval"):
+                        id.Tracker.MinUpdateInterval = int.Parse(keypair.Value.ToString());
+                        break;
+
+                    case ("interval"):
+                        id.Tracker.UpdateInterval = int.Parse(keypair.Value.ToString());
+                        break;
+
+                    case ("peers"):
+                        if (keypair.Value is BEncodedList)          // Non-compact response
+                            peersAdded = this.manager.AddPeers(((BEncodedList)keypair.Value));
+                        else if (keypair.Value is BEncodedString)   // Compact response
+                            peersAdded = this.manager.AddPeers(((BEncodedString)keypair.Value).TextBytes);
+                        break;
+
+                    case ("failure reason"):
+                        id.Tracker.FailureMessage = keypair.Value.ToString();
+                        break;
+
+                    case ("warning message"):
+                        id.Tracker.WarningMessage = keypair.Value.ToString();
+                        break;
+
+                    default:
+                        System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                        break;
+                }
+            }
+        }
+
+
+
         /// <summary>
         /// Scrapes the tracker for peer information.
         /// </summary>
@@ -134,37 +248,78 @@ namespace MonoTorrent.Client
         {
             Tracker tracker = this.ChooseTracker();
             WaitHandle handle = tracker.Scrape(requestSingle, this.infoHash);
-            this.UpdateRecieved(this, new TrackerUpdateEventArgs(tracker, null));
+
+            UpdateState(tracker, TrackerState.Scraping);
             return handle;
         }
 
 
         /// <summary>
-        /// Sends a status update to the tracker
-        /// </summary>
-        /// <param name="bytesDownloaded">The number of bytes downloaded since the last update</param>
-        /// <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
-        /// <param name="bytesLeft">The number of bytes left to download</param>
-        /// <param name="clientEvent">The Event (if any) that represents this update</param>
-        public WaitHandle SendUpdate(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent)
-        {
-            this.updateSucceeded = true;
-            this.lastUpdated = DateTime.Now;
-            Tracker tracker = this.ChooseTracker();
-            WaitHandle handle = tracker.SendUpdate(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
-
-            if (this.UpdateRecieved != null)
-                this.UpdateRecieved(this.manager, new TrackerUpdateEventArgs(tracker, null));
-
-            return handle;
-        }
-
-
-        /// <summary>
-        /// Called as part of the Async SendUpdate reponse
+        /// 
         /// </summary>
         /// <param name="result"></param>
-        private void ResponseRecieved(IAsyncResult result)
+        private void ScrapeReceived(IAsyncResult result)
+        {
+            BEncodedDictionary d;
+            BEncodedDictionary dict = DecodeResponse(result);
+            TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
+
+            if (dict.ContainsKey("custom error"))
+                return;
+
+            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
+            {
+                d = (BEncodedDictionary)keypair.Value;
+                foreach (KeyValuePair<BEncodedString, IBEncodedValue> kp in d)
+                {
+                    switch (kp.Key.ToString())
+                    {
+                        case ("complete"):
+                            id.Tracker.Complete = Convert.ToInt32(keypair.Value.ToString());
+                            break;
+
+                        case ("downloaded"):
+                            id.Tracker.Downloaded = Convert.ToInt32(keypair.Value.ToString());
+                            break;
+
+                        case ("incomplete"):
+                            id.Tracker.Incomplete = Convert.ToInt32(keypair.Value.ToString());
+                            break;
+
+                        default:
+                            System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                            break;
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Wrapper method to call the OnStateChanged event correctly
+        /// </summary>
+        /// <param name="tracker"></param>
+        /// <param name="newState"></param>
+        internal void UpdateState(Tracker tracker, TrackerState newState)
+        {
+            if (tracker.State == newState)
+                return;
+
+            tracker.State = newState;
+            if (this.OnTrackerStateChange == null)
+                return;
+
+            TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(tracker, tracker.State, newState);
+            this.OnTrackerStateChange(this.manager, e);
+        }
+
+
+        /// <summary>
+        /// Decodes the response from a HTTPWebRequest
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        private BEncodedDictionary DecodeResponse(IAsyncResult result)
         {
             int bytesRead = 0;
             int totalRead = 0;
@@ -175,54 +330,48 @@ namespace MonoTorrent.Client
             try
             {
                 response = (HttpWebResponse)id.Request.EndGetResponse(result);
+
+                using (MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 256))
+                {
+
+                    using (BinaryReader reader = new BinaryReader(response.GetResponseStream()))
+                    {
+                        // If there is a ContentLength, use that to decide how much we read.
+                        if (response.ContentLength > 0)
+                        {
+                            while (totalRead < response.ContentLength)
+                            {
+                                bytesRead = reader.Read(buffer, 0, buffer.Length);
+                                dataStream.Write(buffer, 0, bytesRead);
+                                totalRead += bytesRead;
+                            }
+                        }
+
+
+
+                        else    // A compact response doesn't always have a content length, so we
+                        {       // just have to keep reading until we think we have everything.
+                            while ((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+                                dataStream.Write(buffer, 0, bytesRead);
+                        }
+                    }
+                    response.Close();
+                    dataStream.Seek(0, SeekOrigin.Begin);
+                    return (BEncodedDictionary)BEncode.Decode(dataStream);
+                }
             }
             catch (WebException)
             {
-                this.updateSucceeded = false;
-                id.Tracker.UpdateSucceeded = false;
-
-                if (id.Tracker.State == TrackerState.Announcing)
-                    id.Tracker.State = TrackerState.AnnouncingFailed;
-                else if (id.Tracker.State == TrackerState.Scraping)
-                    id.Tracker.State = TrackerState.ScrapingFailed;
-
-                if (this.UpdateRecieved != null)
-                    UpdateRecieved(this.manager, new TrackerUpdateEventArgs(id.Tracker, null));
-                return;
+                BEncodedDictionary dict = new BEncodedDictionary();
+                dict.Add("custom error", (BEncodedString)"The tracker could not be contacted");
+                return dict;
             }
-
-            MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 0);
-
-            using (BinaryReader reader = new BinaryReader(response.GetResponseStream()))
+            catch (BEncodingException)
             {
-                // If there is a ContentLength, use that to decide how much we read.
-                if (response.ContentLength > 0)
-                {
-                    while (totalRead < response.ContentLength)
-                    {
-                        bytesRead = reader.Read(buffer, 0, buffer.Length);
-                        dataStream.Write(buffer, 0, bytesRead);
-                        totalRead += bytesRead;
-                    }
-                }
-
-
-
-                else    // A compact response doesn't always have a content length, so we
-                {       // just have to keep reading until we think we have everything.
-                    while ((bytesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
-                        dataStream.Write(buffer, 0, bytesRead);
-                }
+                BEncodedDictionary dict = new BEncodedDictionary();
+                dict.Add("custom error", (BEncodedString)"The tracker returned an invalid or incomplete response");
+                return dict;
             }
-            response.Close();
-
-            if (id.Tracker.State == TrackerState.Announcing)
-                id.Tracker.State= TrackerState.AnnounceSuccessful;
-            else if (id.Tracker.State == TrackerState.Scraping)
-                id.Tracker.State = TrackerState.ScrapeSuccessful;
-
-            if (this.UpdateRecieved != null)
-                UpdateRecieved(this.manager, new TrackerUpdateEventArgs(id.Tracker, dataStream.ToArray()));
         }
 
 
@@ -240,12 +389,6 @@ namespace MonoTorrent.Client
             }
 
             return this.trackers[this.currentTrackerIndex];
-        }
-
-
-        internal void OnTrackerEvent(object sender, TrackerUpdateEventArgs e)
-        {
-            this.UpdateRecieved(sender, e);
         }
         #endregion
     }

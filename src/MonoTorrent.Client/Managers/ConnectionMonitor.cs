@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
         /// Update the ConnectionManager with bytes downloaded
         /// </summary>
         /// <param name="bytesDownloaded">Bytes downloaded in the last time period</param>
-        internal void BytesRecieved(int bytesDownloaded)
+        internal void BytesReceived(int bytesDownloaded)
         {
             lock (this.downloadSpeeds)
             {

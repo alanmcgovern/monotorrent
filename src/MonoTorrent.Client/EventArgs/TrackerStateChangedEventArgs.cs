@@ -1,5 +1,5 @@
 //
-// TrackerEventArgs.cs
+// TrackerStateChangedEventArgs.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a TrackerUpdate event
     /// </summary>
-    public class TrackerUpdateEventArgs : EventArgs
+    public class TrackerStateChangedEventArgs : EventArgs
     {
         #region Member Variables
         /// <summary>
@@ -48,14 +48,19 @@ namespace MonoTorrent.Client
         }
         private Tracker tracker;
 
-        /// <summary>
-        /// The response (if any) of the tracker
-        /// </summary>
-        public byte[] Response
+
+        public TrackerState OldState
         {
-            get { return this.response; }
+            get { return this.oldState; }
         }
-        private byte[] response;
+        private TrackerState oldState;
+
+
+        public TrackerState NewState
+        {
+            get { return this.newState; }
+        }
+        private TrackerState newState;
         #endregion
 
 
@@ -65,10 +70,11 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="state">The current state of the update</param>
         /// <param name="response">The response of the tracker (if any)</param>
-        public TrackerUpdateEventArgs(Tracker tracker, byte[] response)
+        public TrackerStateChangedEventArgs(Tracker tracker, TrackerState oldState, TrackerState newState)
         {
             this.tracker = tracker;
-            this.response = response;
+            this.oldState = oldState;
+            this.newState = newState;
         }
         #endregion
     }

@@ -82,7 +82,7 @@
     <Compile Include="EventArgs\PieceEventArgs.cs" />
     <Compile Include="EventArgs\PieceHashedEventArgs.cs" />
     <Compile Include="EventArgs\TorrentStateChangedEventArgs.cs" />
-    <Compile Include="EventArgs\TrackerEventArgs.cs" />
+    <Compile Include="EventArgs\TrackerStateChangedEventArgs.cs" />
     <Compile Include="Managers\ConnectionManager.cs" />
     <Compile Include="Managers\ConnectionMonitor.cs" />
     <Compile Include="Managers\FileManager.cs" />

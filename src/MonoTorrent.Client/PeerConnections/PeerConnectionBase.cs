@@ -99,14 +99,14 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The total number of bytes recieved into the current recieve buffer
+        /// The total number of bytes Received into the current recieve buffer
         /// </summary>
-        public int BytesRecieved
+        public int BytesReceived
         {
-            get { return this.bytesRecieved; }
-            set { this.bytesRecieved = value; }
+            get { return this.bytesReceived; }
+            set { this.bytesReceived = value; }
         }
-        private int bytesRecieved;
+        private int bytesReceived;
 
 
         /// <summary>
@@ -210,12 +210,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The time at which the last message was received at
         /// </summary>
-        public DateTime LastMessageRecieved
+        public DateTime LastMessageReceived
         {
-            get { return this.lastMessageRecieved; }
-            internal set { this.lastMessageRecieved = value; }
+            get { return this.lastMessageReceived; }
+            internal set { this.lastMessageReceived = value; }
         }
-        private DateTime lastMessageRecieved;
+        private DateTime lastMessageReceived;
 
 
         /// <summary>

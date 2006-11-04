@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
         private bool isListening;
 
         /// <summary>
-        /// The AsyncCallback to invoke when a new connection is recieved
+        /// The AsyncCallback to invoke when a new connection is Received
         /// </summary>
         public AsyncCallback NewConnectionCallback
         {
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection listener listening at the specified port on any IP address
         /// </summary>
         /// <param name="listenPort">The port to listen on</param>
-        /// <param name="newConnectionCallback">The callback to invoke when a connection is recieved</param>
+        /// <param name="newConnectionCallback">The callback to invoke when a connection is Received</param>
         public ConnectionListener(int listenPort, AsyncCallback newConnectionCallback)
             : this(listenPort, newConnectionCallback, IPAddress.Any)
         {
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection listener listening at the specified port and IPAddress
         /// </summary>
         /// <param name="listenPort">The port to listen on</param>
-        /// <param name="newConnectionCallback">The callback to invoke when a connection is recieved</param>
+        /// <param name="newConnectionCallback">The callback to invoke when a connection is Received</param>
         /// <param name="listenAddress">The address to listen on</param>
         public ConnectionListener(int listenPort, AsyncCallback newConnectionCallback, IPAddress listenAddress)
             : this(new IPEndPoint(listenAddress, listenPort), newConnectionCallback)
@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection listener listening at the specified IPEndpoint
         /// </summary>
         /// <param name="endPoint">The IPEndpoint to listen at</param>
-        /// <param name="newConnectionCallback">The callback to invoke when a new connection is recieved</param>
+        /// <param name="newConnectionCallback">The callback to invoke when a new connection is Received</param>
         public ConnectionListener(IPEndPoint endPoint, AsyncCallback newConnectionCallback)
         {
             listenEndPoint = endPoint;

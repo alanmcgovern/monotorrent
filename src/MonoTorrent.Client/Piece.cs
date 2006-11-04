@@ -152,12 +152,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        public bool AllBlocksRecieved
+        public bool AllBlocksReceived
         {
             get
             {
                 foreach (Block block in this.blocks)
-                    if (!block.Recieved)
+                    if (!block.Received)
                         return false;
 
                 return true;
