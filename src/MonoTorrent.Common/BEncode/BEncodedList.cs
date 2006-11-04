@@ -77,53 +77,32 @@ namespace MonoTorrent.Common
 
         #region Encode/Decode Methods
         /// <summary>
-        /// Encodes the list to a byte[] using UTF8 Encoding
+        /// Encodes the list to a byte[] using the supplied Encoding
         /// </summary>
         /// <returns></returns>
         public byte[] Encode()
         {
-            return this.Encode(new UTF8Encoding(false, false));
-        }
-
-        /// <summary>
-        /// Encodes the list to a byte[] using the supplied Encoding
-        /// </summary>
-        /// <param name="e">The encoding to use</param>
-        /// <returns></returns>
-        public byte[] Encode(Encoding e)
-        {
-            byte[] buffer = new byte[this.LengthInBytes(e)];
-            this.Encode(buffer, 0, e);
+            byte[] buffer = new byte[this.LengthInBytes()];
+            this.Encode(buffer, 0);
             return buffer;
         }
 
-        /// <summary>
-        /// Encodes the list to the buffer starting at the specified index using UTF8 Encoding
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the list to</param>
-        /// <param name="offset">The offset to start writing the data at</param>
-        /// <returns></returns>
-        public int Encode(byte[] buffer, int offset)
-        {
-            return this.Encode(buffer, offset, new UTF8Encoding(false, false));
-        }
 
         /// <summary>
         /// Encodes the list to a byte[] using the supplied encoding
         /// </summary>
         /// <param name="buffer">The buffer to encode the list to</param>
         /// <param name="offset">The offset to start writing the data at</param>
-        /// <param name="e">The encoding to use</param>
         /// <returns></returns>
-        public int Encode(byte[] buffer, int offset, Encoding e)
+        public int Encode(byte[] buffer, int offset)
         {
             int written = 0;
-            written += e.GetBytes("l", 0, 1, buffer, offset);
+            written += System.Text.Encoding.UTF8.GetBytes("l", 0, 1, buffer, offset);
 
             foreach (IBEncodedValue value in this.list)
-                written += value.Encode(buffer, offset + written, e);
+                written += value.Encode(buffer, offset + written);
 
-            written += e.GetBytes("e", 0, 1, buffer, offset + written);
+            written += System.Text.Encoding.UTF8.GetBytes("e", 0, 1, buffer, offset + written);
             return written;
         }
 
@@ -158,28 +137,19 @@ namespace MonoTorrent.Common
 
         #region Helper Methods
         /// <summary>
-        /// Returns the size of the list in bytes using UTF8 encoding
-        /// </summary>
-        /// <returns></returns>
-        public int LengthInBytes()
-        {
-            return this.LengthInBytes(new UTF8Encoding(false, false));
-        }
-
-        /// <summary>
         /// Returns the size of the list in bytes using the supplied encoding
         /// </summary>
         /// <param name="e">The encoding to use</param>
         /// <returns></returns>
-        public int LengthInBytes(Encoding e)
+        public int LengthInBytes()
         {
             int length = 0;
 
-            length += e.GetByteCount("l");   // Lists start with 'l'
+            length += System.Text.Encoding.UTF8.GetByteCount("l");   // Lists start with 'l'
             foreach (IBEncodedValue item in this.list)
-                length += item.LengthInBytes(e);
+                length += item.LengthInBytes();
 
-            length += e.GetByteCount("e");   // Lists end with 'e'
+            length += System.Text.Encoding.UTF8.GetByteCount("e");   // Lists end with 'e'
             return length;
         }
         #endregion

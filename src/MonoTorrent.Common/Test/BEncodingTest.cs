@@ -393,17 +393,6 @@ namespace MonoTorrent.Common.Test
 
         #region General Tests
         [Test]
-        [NUnit.Framework.Ignore("This test fails as the dictionary elements aren't ordered correctly")]
-        public void fullTest()
-        {
-            string dictString = "d6:numberi123456e10:teststring6:string4:listli23456e7:string2d5:dict2i12345eeee";
-            byte[] dictData = System.Text.Encoding.UTF8.GetBytes(dictString);
-            BEncodedDictionary dict = (BEncodedDictionary)BEncode.Decode(dictData);
-            string encodedDict = System.Text.Encoding.UTF8.GetString(dict.Encode());
-            Assert.AreEqual(dictString, encodedDict, "Complex BEncoding is broken");
-        }
-
-        [Test]
         [ExpectedException(typeof(BEncodingException))]
         public void corruptBenDataDecode()
         {

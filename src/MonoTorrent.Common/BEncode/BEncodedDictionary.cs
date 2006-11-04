@@ -109,8 +109,8 @@ namespace MonoTorrent.Common
 
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this)
             {
-                written += keypair.Key.Encode(buffer, offset + written, e);
-                written += keypair.Value.Encode(buffer, offset + written, e);
+                written += keypair.Key.Encode(buffer, offset + written);
+                written += keypair.Value.Encode(buffer, offset + written);
             }
 
             // Dictionaries end with 'e'
@@ -182,8 +182,8 @@ namespace MonoTorrent.Common
 
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this.dictionary)
             {
-                length += keypair.Key.LengthInBytes(e);
-                length += keypair.Value.LengthInBytes(e);
+                length += keypair.Key.LengthInBytes();
+                length += keypair.Value.LengthInBytes();
             }
             length += e.GetByteCount("e");   // Dictionaries end with 'e'
             return length;

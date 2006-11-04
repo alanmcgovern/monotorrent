@@ -47,12 +47,6 @@ namespace MonoTorrent.Common
         byte[] Encode();
 
 
-        /// <summary>
-        /// Encodes the BEncodedValue into a byte array
-        /// </summary>
-        /// <returns>Byte array containing the BEncoded Data</returns>
-        byte[] Encode(Encoding e);
-
 
         /// <summary>
         /// Encodes the BEncodedValue into the supplied buffer
@@ -62,14 +56,6 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         int Encode(byte[] buffer, int offset);
 
-
-        /// <summary>
-        /// Encodes the BEncodedValue into the supplied buffer
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the information to</param>
-        /// <param name="offset">The offset in the buffer to start writing the data</param>
-        /// <returns></returns>
-        int Encode(byte[] buffer, int offset, Encoding e);
 
 
         /// <summary>
@@ -84,12 +70,5 @@ namespace MonoTorrent.Common
         /// </summary>
         /// <returns></returns>
         int LengthInBytes();
-
-
-        /// <summary>
-        /// Returns the size of the byte[] needed to encode this BEncodedValue
-        /// </summary>
-        /// <returns></returns>
-        int LengthInBytes(Encoding e);
     }
 }
