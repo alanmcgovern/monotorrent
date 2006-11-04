@@ -132,7 +132,7 @@ namespace MonoTorrent.Client
                 if (File.Exists(filePath))
                     this.initialHashRequired = true;
 
-                fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read);
+                fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read, 65536);
 
                 // This hashing algorithm is written on the basis that the files are
                 // preallocated. Might change to not have to preallocate files in future,
