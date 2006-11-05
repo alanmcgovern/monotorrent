@@ -1,52 +1,14 @@
-//
-// PieceManager.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-
 using System;
 using System.Collections.Generic;
-using MonoTorrent.Client.PeerMessages;
+using System.Text;
 using MonoTorrent.Common;
+using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Contains the logic for choosing what piece to download next
-    /// </summary>
-    internal class PieceManager
+    internal class StandardPicker : IPiecePicker
     {
-        #region Events
-        /// <summary>
-        /// Event that's fired every time a Piece changes
-        /// </summary>
-        public event EventHandler<PieceEventArgs> OnPieceChanged;
-        #endregion
-
+        
 
         #region Member Variables
         private int[] priorities;
@@ -56,9 +18,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public BitField MyBitField
         {
-            get { return this.bitfield; }
+            get { return this.myBitfield; }
         }
-        private BitField bitfield;
+        private BitField myBitfield;
 
         private BitField bufferBitfield;
         private BitField previousBitfield;
@@ -68,81 +30,6 @@ namespace MonoTorrent.Client
         private TorrentFile[] torrentFiles;
         private Dictionary<PeerConnectionID, List<Piece>> requests;
 
-        /// <summary>
-        /// Requests the next available piece from the supplied peer
-        /// </summary>
-        /// <param name="id">The peer to request a piece from</param>
-        /// <returns>A RequestMessage for the next free piece</returns>
-        //public RequestMessage RequestPiece(PeerConnectionID id, Peers otherPeers)
-        //{
-        //    throw new NotImplementedException();
-        //    //lock (this.bufferField)
-        //    //{
-        //    //    Piece piece;
-
-        //    //    if (id.Peer.Connection.SuggestedPieces.Count > 0)
-        //    //    {
-        //    //        while(this.mybitField[id.Peer.Connection.SuggestedPieces[0]]
-        //    //            && id.Peer.Connection.SuggestedPieces.Count > 0)
-        //    //            id.Peer.Connection.SuggestedPieces.RemoveAt(0);
-
-        //    //        if (id.Peer.Connection.SuggestedPieces.Count != 0)
-        //    //        {
-        //    //            piece = new Piece(id.Peer.Connection.SuggestedPieces[0], id.TorrentManager.Torrent);
-        //    //            piece[0].Requested = true;
-        //    //            this.mybitField[id.Peer.Connection.SuggestedPieces[0]] = true;  // Flag this one as downloaded. If it hashfails, remove it
-        //    //            this.requests.Add(id, piece);
-        //    //            id.Peer.Connection.SuggestedPieces.RemoveAt(0);
-        //    //            return piece[0].CreateRequest();
-        //    //        }
-        //    //    }
-        //    //    lock (this.mybitField)
-        //    //        Array.Copy(this.mybitField.Array, 0, bufferField.Array, 0, this.mybitField.Array.Length);
-
-        //    //    bufferField.Not();
-        //    //    bufferField.And(id.Peer.Connection.BitField);
-
-        //    //    if (requests.ContainsKey(id))       // There's a pending request on this peer
-        //    //    {
-        //    //        piece = requests[id];
-        //    //        foreach (Block block in piece)
-        //    //        {
-        //    //            if (!block.Requested)
-        //    //            {
-        //    //                block.Requested = true;
-        //    //                return block.CreateRequest();
-        //    //            }
-        //    //        }
-
-        //    //        return null;        // We've requested all the blocks in this piece
-        //    //    }
-
-        //    //    int i = -1;
-        //    //    for (int k = 0; k < (this.priorities.Length - 1); k++)    // ignore "DoNotDownloads"
-        //    //    {
-        //    //        for (int j = 0; j < this.torrentFiles.Length; j++)
-        //    //        {
-        //    //            if (this.torrentFiles[j].Priority != (Priority)k)
-        //    //                continue;
-
-        //    //            i = bufferField.FirstTrue(this.torrentFiles[j].StartPieceIndex, this.torrentFiles[j].EndPieceIndex);
-        //    //            if (i == -1)
-        //    //                continue;
-
-        //    //            break;
-        //    //        }
-        //    //    }
-
-        //    //    if (i == -1)
-        //    //        return null;
-
-        //    //    piece = new Piece(i, id.TorrentManager.Torrent);
-        //    //    piece[0].Requested = true;
-        //    //    this.mybitField[i] = true;  // Flag this one as downloaded. If it hashfails, remove it
-        //    //    this.requests.Add(id, piece);
-        //    //    return piece[0].CreateRequest();
-        //    //}
-        //}
 
         /// <summary>
         /// Returns the number of outstanding requests
@@ -165,7 +52,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="bitField"></param>
-        public PieceManager(BitField bitField, TorrentFile[] torrentFiles)
+        internal StandardPicker(BitField bitField, TorrentFile[] torrentFiles)
         {
             this.torrentFiles = torrentFiles;
             this.requests = new Dictionary<PeerConnectionID, List<Piece>>(32);
@@ -174,9 +61,9 @@ namespace MonoTorrent.Client
             Array.Sort<int>(this.priorities);
             Array.Reverse(this.priorities);
 
-            this.bitfield = bitField;
-            this.bufferBitfield = new BitField(bitfield.Length);
-            this.previousBitfield = new BitField(bitfield.Length);
+            this.myBitfield = bitField;
+            this.bufferBitfield = new BitField(myBitfield.Length);
+            this.previousBitfield = new BitField(myBitfield.Length);
             this.torrentFiles = torrentFiles;
             this.requests = new Dictionary<PeerConnectionID, List<Piece>>();
 
@@ -194,7 +81,7 @@ namespace MonoTorrent.Client
             int requestIndex = 0;
             Priority highestPriorityFound = Priority.DoNotDownload;
 
-            lock (this.bitfield)
+            lock (this.myBitfield)
             {
                 // If there is already a request there, request the next block.
                 if (this.requests.ContainsKey(id))
@@ -214,7 +101,7 @@ namespace MonoTorrent.Client
                 while (id.Peer.Connection.SuggestedPieces.Count > 0)
                 {
                     // If we already have that piece, then remove it from the suggested pieces
-                    if (this.bitfield[id.Peer.Connection.SuggestedPieces[0]])
+                    if (AlreadyHaveOrRequested(id.Peer.Connection.SuggestedPieces[0]))
                     {
                         id.Peer.Connection.SuggestedPieces.RemoveAt(0);
                         continue;
@@ -222,12 +109,11 @@ namespace MonoTorrent.Client
 
                     requestIndex = id.Peer.Connection.SuggestedPieces[0];
                     id.Peer.Connection.SuggestedPieces.RemoveAt(0);
-                    this.bitfield[requestIndex] = true;
                     return this.GenerateRequest(id, requestIndex);
                 }
 
                 // Now we see what pieces the peer has that we don't have and try and request one
-                Buffer.BlockCopy(this.bitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
                 this.bufferBitfield.Not();
                 this.bufferBitfield.And(id.Peer.Connection.BitField);
 
@@ -250,13 +136,38 @@ namespace MonoTorrent.Client
                 // Once we have a bitfield containing just the pieces we need, we request one.
                 // FIXME: we need to make sure we take one from the highest priority available.
                 // At the moment it just takes anything.
-                requestIndex = this.previousBitfield.FirstTrue();
+                requestIndex = 0;
+                while (true)
+                {
+                    requestIndex = this.previousBitfield.FirstTrue(requestIndex, id.Peer.Connection.BitField.Length);
+
+                    if (requestIndex == -1)
+                        break;
+
+                    if (AlreadyHaveOrRequested(requestIndex))
+                        requestIndex++;
+                    else
+                        break;
+                }
+
                 if (requestIndex < 0)
                     return null;
 
-                this.bitfield[requestIndex] = true;
                 return this.GenerateRequest(id, requestIndex);
             }
+        }
+
+        private bool AlreadyHaveOrRequested(int index)
+        {
+            if (this.myBitfield[index])
+                return true;
+
+            foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
+                foreach (Piece p in keypair.Value)
+                    if (p.Index == index)
+                        return true;
+
+            return false;
         }
 
 
@@ -285,7 +196,6 @@ namespace MonoTorrent.Client
         }
 
 
-
         /// <summary>
         /// Checks to see if a peer has a piece we want
         /// </summary>
@@ -295,8 +205,8 @@ namespace MonoTorrent.Client
         {
             lock (this.isInterestingBuffer)     // I reuse a BitField as a buffer so i don't have to keep allocating new ones
             {
-                lock (this.bitfield)
-                    Array.Copy(this.bitfield.Array, 0, isInterestingBuffer.Array, 0, this.bitfield.Array.Length);
+                lock (this.myBitfield)
+                    Array.Copy(this.myBitfield.Array, 0, isInterestingBuffer.Array, 0, this.myBitfield.Array.Length);
 
                 isInterestingBuffer.Not();
                 isInterestingBuffer.And(id.Peer.Connection.BitField);
@@ -313,7 +223,7 @@ namespace MonoTorrent.Client
         /// Removes any outstanding requests from the supplied peer
         /// </summary>
         /// <param name="id">The peer to remove outstanding requests from</param>
-        internal void RemoveRequests(PeerConnectionID id)
+        public void RemoveRequests(PeerConnectionID id)
         {
             lock (this.requests)
             {
@@ -322,7 +232,7 @@ namespace MonoTorrent.Client
                     List<Piece> pieces = this.requests[id];
 
                     for (int i = 0; i < pieces.Count; i++)
-                        this.bitfield[pieces[i].Index] = false;
+                        this.myBitfield[pieces[i].Index] = false;
 
                     this.requests.Remove(id);
                 }
@@ -341,22 +251,18 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        internal void ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, int writeIndex, int p, PieceMessage message)
+
+        public void ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, int writeIndex, int p, PieceMessage message)
         {
             lock (this.requests)
             {
-                id.TorrentManager.FileManager.Write(recieveBuffer, offset, writeIndex, p);
-
-                if (this.OnPieceChanged != null)
-                    this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(p, PieceEvent.BlockWrittenToDisk));
-
                 if (!this.requests.ContainsKey(id))
                     return;
 #warning I should close the connection, but at the moment i'm in a bug fixing mood
 
                 Piece piece = null;
                 List<Piece> pieces = this.requests[id];
-                
+
                 for (int i = 0; i < pieces.Count; i++)
                 {
                     if (pieces[i].Index != message.PieceIndex)
@@ -382,21 +288,19 @@ namespace MonoTorrent.Client
 
                     block.Received = true;
 
-                    if (this.OnPieceChanged != null)
-                        this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(message.PieceIndex, PieceEvent.BlockReceived));
 
                     id.Peer.Connection.AmRequestingPiecesCount--;
                     break;
                 }
 
+                id.TorrentManager.FileManager.Write(recieveBuffer, offset, writeIndex, p);
+
+
                 if (!piece.AllBlocksReceived)
                     return;
 
-                if (this.OnPieceChanged != null)
-                    this.OnPieceChanged(id.TorrentManager, new PieceEventArgs(piece.Index, PieceEvent.PieceReceived));
-
                 bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
-                this.bitfield[message.PieceIndex] = result;
+                this.myBitfield[message.PieceIndex] = result;
 
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
@@ -414,7 +318,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage rejectRequestMessage)
+        public void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage rejectRequestMessage)
         {
             lock (this.requests)
             {

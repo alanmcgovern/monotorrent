@@ -129,6 +129,7 @@ namespace TestClient
                         Console.WriteLine("Scrape downloaded:" + manager.TrackerManager.CurrentTracker.Downloaded);
                         Console.WriteLine("Warning Message:  " + manager.TrackerManager.CurrentTracker.WarningMessage);
                         Console.WriteLine("Failure Message:  " + manager.TrackerManager.CurrentTracker.FailureMessage);
+                        Console.WriteLine("Endgame Mode:     " + manager.PieceManager.InEndGameMode.ToString());
                         Console.WriteLine("\n");
                     }
                 }

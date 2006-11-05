@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The piecemanager for this TorrentManager
         /// </summary>
-        internal PieceManager PieceManager
+        public PieceManager PieceManager
         {
             get { return this.pieceManager; }
             //set { this.pieceManager = (PieceManager) value; }
@@ -805,7 +805,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public double Progress
         {
-            get { return (((this.pieceManager.MyBitField.TrueCount - this.pieceManager.CurrentRequestCount()) * 100.0) / this.pieceManager.MyBitField.Length); }
+            get { return (this.pieceManager.MyBitField.TrueCount * 100.0) / this.pieceManager.MyBitField.Length; }
         }
 
 

@@ -71,6 +71,9 @@
     <Compile Include="PeerMessages\IPeerMessage.cs" />
     <Compile Include="PeerMessages\UnknownMessage.cs" />
     <Compile Include="Peers\Peer.cs" />
+    <Compile Include="PiecePicking\EndGamePicker.cs" />
+    <Compile Include="PiecePicking\IPiecePicker.cs" />
+    <Compile Include="PiecePicking\StandardPicker.cs" />
     <Compile Include="ProtocolException.cs" />
     <Compile Include="RateLimiter.cs" />
     <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
@@ -86,7 +89,7 @@
     <Compile Include="Managers\ConnectionManager.cs" />
     <Compile Include="Managers\ConnectionMonitor.cs" />
     <Compile Include="Managers\FileManager.cs" />
-    <Compile Include="Managers\PieceManager.cs" />
+    <Compile Include="PiecePicking\PieceManager.cs" />
     <Compile Include="Managers\TorrentManager.cs" />
     <Compile Include="PeerConnections\PeerConnectionBase.cs" />
     <Compile Include="PeerConnections\PeerConnectionId.cs" />
