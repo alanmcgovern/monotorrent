@@ -323,7 +323,9 @@ namespace MonoTorrent.Client
 
                 start = i * 32;
                 end = start + 32;
+                start = (start < startIndex) ? startIndex : start;
                 end = (end > this.length) ? this.length : end;
+                end = (end > endIndex) ? endIndex : end;
 
                 for (int j = start; j < end; j++)
                     if (Get(j))     // This piece is true
