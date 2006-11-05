@@ -389,7 +389,7 @@ namespace MonoTorrent.Client
                             if (id.TorrentManager.PieceManager.MyBitField.AllFalse())
                                 msg = new HaveNoneMessage();
 
-                            else if (id.TorrentManager.Progress() == 100.0)
+                            else if (id.TorrentManager.Progress == 100.0)
                                 msg = new HaveAllMessage();
 
                             else

@@ -111,7 +111,7 @@ namespace TestClient
                         Console.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
                         Console.WriteLine("Half opens:       " + ClientEngine.ConnectionManager.HalfOpenConnections);
                         Console.WriteLine("Max open:         " + ClientEngine.ConnectionManager.MaxOpenConnections);
-                        Console.WriteLine("Progress:         " + string.Format(manager.Progress().ToString(), ("{0:0.00}")));
+                        Console.WriteLine("Progress:         " + string.Format(manager.Progress.ToString(), ("{0:0.00}")));
                         Console.WriteLine("Download Speed:   " + string.Format("{0:0.00}", manager.DownloadSpeed() / 1024));
                         Console.WriteLine("Upload Speed:     " + string.Format("{0:0.00}", manager.UploadSpeed() / 1024));
                         Console.WriteLine("Torrent State:    " + manager.State.ToString());

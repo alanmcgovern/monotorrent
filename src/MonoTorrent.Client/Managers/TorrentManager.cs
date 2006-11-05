@@ -317,12 +317,12 @@ namespace MonoTorrent.Client
             if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                 throw new TorrentException("Torrent is already running");
 
-            if (this.Progress() == 100.0)
+            if (this.Progress == 100.0)
                 UpdateState(TorrentState.Seeding);
             else
                 UpdateState(TorrentState.Downloading);
 
-            this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
+            this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
         }
 
 
@@ -336,7 +336,7 @@ namespace MonoTorrent.Client
             UpdateState(TorrentState.Stopped);
 
             this.fileManager.FlushAll();
-            handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while (this.connectingTo.Count > 0)
@@ -473,20 +473,20 @@ namespace MonoTorrent.Client
 
                 if (counter % 100 == 0)
                 {
-                    if(this.Progress() == 100.0)
+                    if(this.Progress == 100.0)
                         UpdateState(TorrentState.Seeding);
                     // If the last connection succeeded, then update at the regular interval
                     if (this.trackerManager.UpdateSucceeded)
                     {
                         if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                         {
-                            this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
                     else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
-                        this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress() / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
                 if (counter % 40 == 0)
@@ -794,9 +794,9 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The current progress of the torrent in percent
         /// </summary>
-        public double Progress()
+        public double Progress
         {
-            return ((this.pieceManager.MyBitField.TrueCount * 100.0) / this.pieceManager.MyBitField.Length);
+            get { return ((this.pieceManager.MyBitField.TrueCount * 100.0) / this.pieceManager.MyBitField.Length); }
         }
 
 
