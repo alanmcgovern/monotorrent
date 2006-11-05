@@ -59,6 +59,16 @@ namespace MonoTorrent.Client
             get { return this.array; }
         }
         private int[] array;
+
+
+        /// <summary>
+        /// Returns the number of elements in the array which are "true" (i.e. the bit is set to 1)
+        /// </summary>
+        public int TrueCount
+        {
+            get { return this.trueCount; }
+        }
+        private int trueCount;
         #endregion
 
 
@@ -211,9 +221,18 @@ namespace MonoTorrent.Client
                 throw new ArgumentOutOfRangeException("index");
 
             if (value)
+            {
+                if ((this.array[index >> 5] & (1 << (index & 31))) == 0)// If it's not already true
+                    trueCount++;                                        // Increase true count
                 this.array[index >> 5] |= (1 << (index & 31));
+
+            }
             else
+            {
+                if ((this.array[index >> 5] & (1 << (index & 31))) != 0)// If it's not already false
+                    trueCount--;                                        // Decrease true count
                 this.array[index >> 5] &= ~(1 << (index & 31));
+            }
         }
 
 
@@ -235,6 +254,8 @@ namespace MonoTorrent.Client
             int end = ((int)((this.length + 31) / 32)) * 32;
             for (int i = this.length; i < end; ++i)
                 this.array[i >> 5] &= ~(1 << (i & 31));
+
+            this.trueCount = this.length;
         }
         
 
@@ -354,14 +375,20 @@ namespace MonoTorrent.Client
 #warning Check the remaining bits in the last byte to make sure they're 0. use the length parameter
         internal void FromArray(byte[] buffer, int offset, int length)
         {
+            bool temp;
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
+            this.trueCount = 0;
             byte p = 128;
 
             for (int i = 0; i < this.length; i++)
             {
-                this[i] = ((buffer[offset] & p) != 0);
+                temp = ((buffer[offset] & p) != 0);
+                if (temp)
+                    this.trueCount++;
+
+                this[i] = temp;
                 p >>= 1;
 
                 if (p != 0)
@@ -374,7 +401,11 @@ namespace MonoTorrent.Client
 
         internal void FromArray(int[] array)
         {
+            this.trueCount = 0;
             this.array = array;
+            for (int i = 0; i < this.length; i++)
+                if (this.Get(i))
+                    trueCount++;
         }
 
         /// <summary>

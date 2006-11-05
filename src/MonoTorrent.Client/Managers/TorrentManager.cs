@@ -796,13 +796,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public double Progress()
         {
-            double complete = 0;
-            for (int i = 0; i < this.PieceManager.MyBitField.Length; i++)
-                if (this.PieceManager.MyBitField[i])
-                    complete++;
-
-            complete -= this.pieceManager.CurrentRequestCount();
-            return (complete * 100.0 / this.PieceManager.MyBitField.Length);
+            return ((this.pieceManager.MyBitField.TrueCount * 100.0) / this.pieceManager.MyBitField.Length);
         }
 
 
