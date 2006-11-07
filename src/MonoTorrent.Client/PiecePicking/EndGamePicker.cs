@@ -2,12 +2,164 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    internal class EndGamePieceManager
+    internal class EndGamePicker : IPiecePicker
     {
-        /*
+        #region Member Variables
+        private object requestsLocker = new object();
+        private List<Piece> pieces;
+        private List<Block> blocks;
+        private List<PeerConnectionID> requesters;
+        #endregion
+
+
+        #region Constructors
+        public EndGamePicker(BitField myBitfield, Torrent torrent)
+        {
+            this.myBitfield = myBitfield;
+            this.pieces = new List<Piece>(this.myBitfield.Length - this.myBitfield.TrueCount);
+            for (int i = 0; i < this.myBitfield.Length; i++)
+                if (!this.myBitfield[i])
+                    this.pieces.Add(new Piece(i, torrent));
+
+            this.blocks = new List<Block>(this.pieces.Count * this.pieces[0].Blocks.Length);
+            for (int i = 0; i < this.pieces.Count; i++)
+                for (int j = 0; j < this.pieces[i].Blocks.Length; j++)
+                    this.blocks.Add(this.pieces[i][j]);
+        }
+        #endregion
+
+
+        #region Methods
+        public bool IsInteresting(PeerConnectionID id)
+        {
+            lock (this.requestsLocker)
+            {
+                for(int i=0; i<this.pieces.Count;i++)
+                    if (!id.Peer.Connection.BitField[pieces[i].Index])
+                        return true;
+
+                return false;
+            }
+        }
+
+        public RequestMessage PickPiece(PeerConnectionID id, Peers otherPeers)
+        {
+            lock (this.requestsLocker)
+            {
+                for (int i = 0; i < this.blocks.Count; i++)
+                {
+                    if (!id.Peer.Connection.BitField[this.blocks[i].PieceIndex])
+                        continue;
+
+                    Block b = this.blocks[i];
+                    this.blocks.RemoveAt(i);
+                    this.blocks.Add(b);
+                    b.Requested = true;
+                    return b.CreateRequest();
+                }
+
+                return null;
+            }
+        }
+
+        public BitField MyBitField
+        {
+            get { return this.myBitfield; }
+        }
+        private BitField myBitfield;
+
+
+        public List<Piece> CurrentPieces()
+        {
+            return this.pieces;
+        }
+
+
+        public int CurrentRequestCount()
+        {
+            return this.pieces.Count;
+        }
+
+
+        public void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message)
+        {
+            // FIXME: Remove a request
+        }
+
+
+        public void RemoveRequests(PeerConnectionID id)
+        {
+            // In End Game mode requests aren't tracked... they should be though
+        }
+
+
+        public void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message)
+        {
+            lock (this.requestsLocker)
+            {
+                Piece p = null;
+                Block b = null;
+                for (int i = 0; i < this.pieces.Count; i++)
+                    if (this.pieces[i].Index == message.PieceIndex)
+                        p = this.pieces[i];
+
+                if (p == null)
+                    return;
+
+                for (int i = 0; i < p.Blocks.Length; i++)
+                    if (p[i].StartOffset == message.StartOffset)
+                        b = p[i];
+
+                if (b == null)
+                    return;
+
+                if (message.BlockLength != b.RequestLength)
+                    throw new Exception("Request length should match block length");
+
+                if(!b.Received)
+                    id.TorrentManager.FileManager.Write(buffer, dataOffset, writeIndex, blockLength);
+                b.Received = true;
+                id.Peer.Connection.AmRequestingPiecesCount--;
+                
+                if (!p.AllBlocksReceived)
+                    return;
+
+                bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[p.Index], id.TorrentManager.FileManager.GetHash(p.Index));
+                this.myBitfield[message.PieceIndex] = result;
+
+                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(p.Index, result));
+
+                if (result)
+                {
+                    id.Peer.Connection.IsInterestingToMe = this.IsInteresting(id);
+                    id.TorrentManager.PieceCompleted(p.Index);
+                    for (int i = 0; i < p.Blocks.Length; i++)
+                        this.blocks.Remove(p[i]);
+
+                    this.pieces.Remove(p);
+                }
+                else
+                {
+                    for (int i = 0; i < p.Blocks.Length; i++)
+                    {
+                        p.Blocks[i].Requested = false;
+                        p.Blocks[i].Received = false;
+                    }
+                }
+            }
+        }
+        #endregion
+
+
+    }
+}
+
+#region crap
+/*
         List<Piece> endGamePieces;
         private RequestMessage EndGamePicker(PeerConnectionID id, Peers otherPeers)
         {
@@ -108,5 +260,5 @@ namespace MonoTorrent.Client
             }
         }
 */
-    }
-}
+
+#endregion

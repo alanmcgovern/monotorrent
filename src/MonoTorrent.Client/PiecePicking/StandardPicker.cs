@@ -8,8 +8,6 @@ namespace MonoTorrent.Client
 {
     internal class StandardPicker : IPiecePicker
     {
-        
-
         #region Member Variables
         private int[] priorities;
 
@@ -252,7 +250,7 @@ namespace MonoTorrent.Client
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
 
-        public void ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, int writeIndex, int p, PieceMessage message)
+        public void ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, long writeIndex, int p, PieceMessage message)
         {
             lock (this.requests)
             {
@@ -351,5 +349,17 @@ namespace MonoTorrent.Client
             }
         }
         #endregion
+
+        public List<Piece> CurrentPieces()
+        {
+            List<Piece> pieces = new List<Piece>(this.requests.Count * 2);
+            lock (this.requests)
+            {
+                foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
+                    for (int i = 0; i < keypair.Value.Count; i++)
+                        pieces.Add(keypair.Value[i]);
+            }
+            return pieces;
+        }
     }
 }

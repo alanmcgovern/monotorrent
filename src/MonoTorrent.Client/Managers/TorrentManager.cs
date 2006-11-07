@@ -456,15 +456,10 @@ namespace MonoTorrent.Client
                             Debug.WriteLine("ReChoking: " + this.uploadingTo);
                         }
 
-                        if ((DateTime.Now - id.Peer.Connection.LastMessageReceived) > new TimeSpan(0, 2, 0) && id.Peer.Connection.AmRequestingPiecesCount > 0)
-                        {
-                            ClientEngine.ConnectionManager.CleanupSocket(id);
-                            continue;
-                        }
                         while (!id.Peer.Connection.IsChoking && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
                         {
                             if (pieceManager.InEndGameMode)// In endgame we only want to queue 2 pieces
-                                if (id.Peer.Connection.AmRequestingPiecesCount > 2)
+                                if (id.Peer.Connection.AmRequestingPiecesCount > 6)
                                     break;
 
                             msg = this.pieceManager.PickPiece(id, this.connectedPeers);
@@ -473,6 +468,13 @@ namespace MonoTorrent.Client
 
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
+                        }
+
+                        if ((DateTime.Now - id.Peer.Connection.LastMessageReceived) > new TimeSpan(0, 0, 30) && id.Peer.Connection.AmRequestingPiecesCount > 0)
+                        {
+                            this.pieceManager.RemoveRequests(id);
+                            ClientEngine.ConnectionManager.CleanupSocket(id);
+                            continue;
                         }
 
                         if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)

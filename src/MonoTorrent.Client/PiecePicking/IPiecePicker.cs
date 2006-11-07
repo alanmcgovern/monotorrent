@@ -13,6 +13,6 @@ namespace MonoTorrent.Client
         int CurrentRequestCount();
         void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message);
         void RemoveRequests(PeerConnectionID id);
-        void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, int writeIndex, int blockLength, PieceMessage message);
+        void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message);
     }
 }
