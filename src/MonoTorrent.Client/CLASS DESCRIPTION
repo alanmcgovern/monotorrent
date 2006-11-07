@@ -6,6 +6,12 @@ This is used to calculate the pieces that a peer can request while still choked.
 
 
 
+AllowedFastMessage.cs
+---------------------
+The message sent to peers to inform them of the pieces they can request while being choked
+
+
+
 BitField.cs
 -----------
 This represents an array of all the pieces of a torrent. Each element in the array is true if we have the piece with the corresponding number, and false if we don't have that piece. The array is zero based.
@@ -66,6 +72,12 @@ This class is used to record the number of bytes sent or received from a specifi
 
 
 
+EndGamePicker.cs
+----------------
+This is used to pick pieces when we have reached "EndGameMode" i.e. when there is only a few pieces left to download in the torrent
+
+
+
 EngineSettings.cs
 -----------------
 This class contains all the different settings that can be set for the engine.
@@ -114,10 +126,33 @@ This class will be used to represent a HTTP Peer (i.e. standard http link)
 
 
 
-Encryptor.cs
+IEncryptor.cs
 ------------
 This is an interface which all connection encryption methods inherit from.
 
+
+
+Interestedmessage.cs
+--------------------
+The message that is sent between peers to let a peer know that they are interested
+
+
+
+IPeerMessage.cs
+---------------
+The public interface for peer messages so other programmers can perform operations based on what messages are being sent
+
+
+
+IPeerMessageInternal.cs
+-----------------------
+The internal interface for peer messages so that i can access the private methods that the public interface doesnt reveal
+
+
+
+IPiecePicker.cs
+---------------
+The internal interface for both the StandardPiecePicker and EndGamePiecePicker classes
 
 
 
@@ -127,6 +162,27 @@ This message is sent to keep a connection alive if no other messages have been p
 
 
 
+Peer.cs
+-------
+The class which represents a peer.
+
+
+
+PeerConnectionBase.cs
+---------------------
+The base class which all PeerConnections derive from. It contains the common logic for each peer connection type
+
+
+
+PeerConnectionID.cs
+-------------------
+This is used to link a peer with the TorrentManager they belong too.
+
+
+
+PeerWireEncoder.cs
+------------------
+The class used to decode all PeerMessages.
 
 
 
@@ -136,10 +192,95 @@ A torrent is split up into "pieces" of length somewhere between 64kB and 2MB. Th
 
 
 
+PieceManager.cs
+---------------
+Contains the necessary logic to decide when to enter endgame mode, what piece to pick next (rarest first with optional bias) and how to handle the receiving of a piecemessage.
+
+
+
+PieceMessage.cs
+---------------
+The class representing the message that contains a piece of the file to be downloaded
+
+
+
+PortMessage.cs
+--------------
+The class representing the message which contains the port that peers are contactable on for DHT
+
+
 RateLimiter.cs
 -------------
 This struct holds a few variables which are used to save information needed for rate limiting and one method which is used for calculating how many chunks of information we can download per second.
 
 
 
-Tracker.
+RC4FullEncryption.cs
+--------------------
+The highest level of encrpytion available. Encrypts both headers and payload data
+
+
+
+RC4HeaderEncryption.cs
+----------------------
+The recommended level of encryption to use (if you must use it). It only encrpyts headers as opposed to payload which means its a lot faster than FullEncryption but still provides a great level of obfustication.
+
+
+
+RejectRequestMessage.cs
+-----------------------
+This message is part of the Fast Peers Extensions. It means our request message will not be fulfilled.
+
+
+
+RequestMessage.cs
+-----------------
+The message that is sent to another peer in order to request a block of data
+
+
+
+StandardPicker.cs
+-----------------
+This class is used to decide what piece should be chosen to download next. It is a rarest first algorithm with emphesis on performance rather than picking the absolute rarest piece. It also supports priortising certain files.
+
+
+
+SuggestPieceMessage.cs
+----------------------
+This message is used to recommend a piece for another peer to download.
+
+
+
+TCPConnection.cs
+----------------
+This is the standard peer connection, and is currently the only one supported.
+
+
+
+TorrentManager.cs
+-----------------
+This is where all the logic to start/stop/pause/update trackers/connect to peers is located. it is the brain behind downloading a specific torrent.
+
+
+
+TorrentSettings.cs
+------------------
+This class stores all the configurable settings for torrents
+
+
+
+Tracker.cs
+----------
+This class represents a tracker that can be contacted to obtain peers or swarm statistics
+
+
+
+TrackerManager.cs
+-----------------
+This class has the logic to decide which tracker should be contacted and how to handle responses from trackers.
+
+
+
+UnchokeMessage.cs
+-----------------
+This message is sent to a peer to let them know they can download pieces now
