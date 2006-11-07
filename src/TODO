@@ -16,6 +16,9 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     19) FileSystemWatcher: AutoDownload .torrents in this directory
     24) Update the rest of the Events to make sure they're all ok [ LOW - needs docs to explain safe usage too ]
     25) Implement End Game Mode. This is a priority [LOW]
+    26) Internally count every time i try to connect to a peer. If it gets high, dump the peer. There are cases where i just keep connecting and then they dump the connection... hundreds of times in a row
+    27) Why are some peers disconnecting me after i send request messages? It's happening too frequently to be coincidence. Mark what client is doing this.
+    28) Investigate why i appear to be being banned/dropped by certain peers and with others i can happily request 100's of pieces without a problem
 
 -- FEATURES TO BE IMPROVED --
     01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
