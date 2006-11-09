@@ -39,6 +39,12 @@ namespace MonoTorrent.Client
             Interlocked.Add(ref this.UploadChunks, increaseAmount);
             if (this.UploadChunks > increaseAmount * 3)
                 Interlocked.Exchange(ref this.UploadChunks, (increaseAmount * 3));
+
+            if (this.UploadChunks < (maxUploadSpeed / ConnectionManager.ChunkLength) / 2)
+                Interlocked.Exchange(ref this.UploadChunks, (maxUploadSpeed / ConnectionManager.ChunkLength / 2));
+
+            if (this.DownloadChunks < (maxDownloadSpeed / ConnectionManager.ChunkLength / 2))
+                Interlocked.Exchange(ref this.DownloadChunks, (maxDownloadSpeed / ConnectionManager.ChunkLength / 2));
         }
         #endregion
     }
