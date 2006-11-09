@@ -18,12 +18,15 @@ EventArgs/PeersAddedEventArgs.cs \
 EventArgs/PieceEventArgs.cs \
 EventArgs/PieceHashedEventArgs.cs \
 EventArgs/TorrentStateChangedEventArgs.cs \
-EventArgs/TrackerEventArgs.cs \
+EventArgs/TrackerStateChangedEventArgs.cs \
 Peers/Peer.cs \
 Peers/Peers.cs \
 PeerConnections/PeerConnectionId.cs \
 PeerConnections/PeerConnectionBase.cs \
 PeerConnections/TCPConnection.cs \
+PiecePicking/EndGamePicker.cs \
+PiecePicking/IPiecePicker.cs \
+PiecePicking/StandardPicker.cs \
 Managers/BufferManager.cs \
 Managers/ConnectionManager.cs \
 Managers/ConnectionMonitor.cs \
