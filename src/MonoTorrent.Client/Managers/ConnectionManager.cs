@@ -165,7 +165,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -338,7 +338,7 @@ namespace MonoTorrent.Client
             IPeerMessageInternal msg;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -435,7 +435,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close(); result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            result.AsyncWaitHandle.Close(); 
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -502,7 +502,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -592,7 +592,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -691,7 +691,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             result.AsyncWaitHandle.Close();
-            result.AsyncWaitHandle.SafeWaitHandle.Dispose();
+            
             try
             {
                 lock (id.TorrentManager.listLock)
