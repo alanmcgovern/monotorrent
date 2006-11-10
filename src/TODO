@@ -37,6 +37,9 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     26) There are cases where closing the library returns a null WaitHandle causing a crash. Find out why.
     27) Fix Start/Stop/Pause again
     28) Remove BEncode.Decode() and PeerWireEncoder.Decode() and change to static methods IBEncodedValue.Decode() and IPeerMessage.Decode() which makes more sense
+    29) Implement the new mechanism for catching bad peers and resuming pieces where the inital peer stops sending pieces. Just like i talked about in the utorrent forum
+    30) Put peers that i can connect to but drop the connection in a seperate "busy" list instead of dropping them completely.
+    31) After receiving X number of pieces from a peer, reduce their FailedConnectionAttempts value as they are "good"
 
 If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
 
