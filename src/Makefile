@@ -1,4 +1,4 @@
-all: common client tracker trackerapp testclient
+all: common client tracker trackerapp testclient interface
 
 
 common:
@@ -15,3 +15,6 @@ trackerapp:
 
 testclient:
 	cd TestClient && $(MAKE)
+
+interface:
+	cd MonoTorrent.Interface/src && $(MAKE)
