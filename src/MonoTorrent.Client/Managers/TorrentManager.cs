@@ -484,8 +484,14 @@ namespace MonoTorrent.Client
 
                 if (counter % 100 == 0)
                 {
-                    if(this.Progress == 100.0)
+                    if (this.Progress == 100.0 && this.state != TorrentState.Seeding)
+                    {
+                        //this.Stop();
+                        //this.Start();
+                        //this.hashChecked = false;
+                        //this.fileManager.InitialHashRequired = true;
                         UpdateState(TorrentState.Seeding);
+                    }
                     // If the last connection succeeded, then update at the regular interval
                     if (this.trackerManager.UpdateSucceeded)
                     {
@@ -670,14 +676,16 @@ namespace MonoTorrent.Client
         /// <param name="downloading"></param>
         internal void ResumePeers()
         {
-            while (this.downloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                if (ClientEngine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
+            lock (this.listLock)
+            {
+                while (this.downloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
+                    if (ClientEngine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
+                        Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
-            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0)|| this.settings.MaxUploadSpeed == 0))
-                if (ClientEngine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
-            //Console.WriteLine("Upload: " + this.rateLimiter.UploadChunks);
+                while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+                    if (ClientEngine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
+                        Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
+            }
         }
         #endregion
 
