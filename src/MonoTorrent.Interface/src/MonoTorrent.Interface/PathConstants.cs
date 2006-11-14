@@ -28,9 +28,8 @@ namespace MonoTorrent.Interface
 {
     public static class PathConstants
     {
-        public static readonly string CONFIG_DIR = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-                ".monotorrent");
+        public static readonly string CONFIG_DIR = Environment.CurrentDirectory;
+
 
         public static readonly string CONFIG_PATH = Path.Combine(
                 CONFIG_DIR, "config.xml");
