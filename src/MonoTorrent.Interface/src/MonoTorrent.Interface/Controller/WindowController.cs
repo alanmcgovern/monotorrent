@@ -89,7 +89,10 @@ namespace MonoTorrent.Interface.Controller
             config.WindowHeight = window.Allocation.Height;
             config.SplitterPosition = window.SplitterPosition;
             WaitHandle[] handles = clientEngine.RemoveAll();
-            WaitHandle.WaitAll(handles);
+            foreach (WaitHandle handle in handles)
+                if (handle != null)
+                    handle.WaitOne();
+
             Application.Quit();
         }
 
