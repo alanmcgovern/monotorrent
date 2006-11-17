@@ -30,7 +30,7 @@ namespace MonoTorrent.Interface.Helpers
         public static string FormatSize(double size)
         {
             if (size < 1 << 10) {
-                return string.Format("{0} B", size);
+                return string.Format("{0:N} B", size);
             }
             if (size < 1 << 20) {
                 return string.Format("{0:N} KB", size / (1 << 10));
