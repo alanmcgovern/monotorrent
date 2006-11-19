@@ -141,9 +141,9 @@ namespace MonoTorrent.Client
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             Tracker tracker = this.ChooseTracker();
-            WaitHandle handle = tracker.Announce(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
-
+            
             UpdateState(tracker, TrackerState.Announcing);
+            WaitHandle handle = tracker.Announce(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
             return handle;
         }
 
@@ -305,12 +305,11 @@ namespace MonoTorrent.Client
             if (tracker.State == newState)
                 return;
 
-            tracker.State = newState;
-            if (this.OnTrackerStateChange == null)
-                return;
-
             TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(tracker, tracker.State, newState);
-            this.OnTrackerStateChange(this.manager, e);
+            tracker.State = newState;
+
+            if (this.OnTrackerStateChange != null)
+                this.OnTrackerStateChange(this.manager, e);
         }
 
 
