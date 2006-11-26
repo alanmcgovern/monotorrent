@@ -102,14 +102,9 @@ namespace MonoTorrent.Common
 
     public enum PieceEvent
     {
-        BlockSent,
-        BlockReceived,
+        BlockNotRequested,
         BlockWrittenToDisk,
-        PieceSent,
-        PieceReceived,
-        PieceHashFailed,
-        PieceHashSucceeded,
-        PieceBuffered,          // These two
-        PieceWrittenToDisk      // aren't used yet
+        HashPassed,
+        HashFailed
     }
 }

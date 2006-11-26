@@ -52,6 +52,17 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Returns the number of times the peer has sent us a piece which failed a hashcheck
+        /// </summary>
+        public int HashFails
+        {
+            get { return this.hashFails; }
+            internal set { this.hashFails = value; }
+        }
+        private int hashFails;
+
+
+        /// <summary>
         /// The ID of the peer
         /// </summary>
         public string PeerId

@@ -123,10 +123,10 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, int writeIndex, int blockLength, PieceMessage message)
+        internal PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, int writeIndex, int blockLength, PieceMessage message)
         {
             lock (this.piecePicker)
-                this.piecePicker.ReceivedPieceMessage(id, buffer, dataOffset, writeIndex, blockLength, message);
+                return this.piecePicker.ReceivedPieceMessage(id, buffer, dataOffset, writeIndex, blockLength, message);
         }
         #endregion
     }

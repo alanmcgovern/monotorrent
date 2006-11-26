@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -13,6 +14,6 @@ namespace MonoTorrent.Client
         int CurrentRequestCount();
         void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message);
         void RemoveRequests(PeerConnectionID id);
-        void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message);
+        PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message);
     }
 }

@@ -250,12 +250,12 @@ namespace MonoTorrent.Client
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
 
-        public void ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, long writeIndex, int p, PieceMessage message)
+        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, long writeIndex, int p, PieceMessage message)
         {
             lock (this.requests)
             {
                 if (!this.requests.ContainsKey(id))
-                    return;
+                    return PieceEvent.BlockNotRequested;
 #warning I should close the connection, but at the moment i'm in a bug fixing mood
 
                 Piece piece = null;
@@ -272,7 +272,7 @@ namespace MonoTorrent.Client
 
                 if (piece == null)
                 {
-                    return;
+                    return PieceEvent.BlockNotRequested;
 #warning Handle this properly. Does this mean that i should close off the peers connection because they sent me a piece i didn't request?
                 }
 
@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
 
 
                 if (!piece.AllBlocksReceived)
-                    return;
+                    return PieceEvent.BlockWrittenToDisk;
 
                 bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
                 this.myBitfield[message.PieceIndex] = result;
@@ -312,6 +312,8 @@ namespace MonoTorrent.Client
 
                 if (pieces.Count == 0)
                     this.requests.Remove(id);
+
+                return result ? PieceEvent.HashPassed : PieceEvent.HashFailed;
             }
         }
 

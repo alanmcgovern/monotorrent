@@ -641,6 +641,8 @@ namespace MonoTorrent.Client
                         {   // The '-4' is because of the messagelength int which has already been counted in a different method
                             id.TorrentManager.DataBytesDownloaded -= (message.ByteLength - 4);
                             id.TorrentManager.ProtocolBytesDownloaded += (message.ByteLength - 4);
+                            if (id.Peer.HashFails == 3)
+                                cleanUp = true;
                         }
 
                         id.Peer.Connection.LastMessageReceived = DateTime.Now;

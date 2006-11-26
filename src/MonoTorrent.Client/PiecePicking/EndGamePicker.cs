@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public void ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message)
+        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -108,25 +108,25 @@ namespace MonoTorrent.Client
                         p = this.pieces[i];
 
                 if (p == null)
-                    return;
+                    return PieceEvent.BlockNotRequested;
 
                 for (int i = 0; i < p.Blocks.Length; i++)
                     if (p[i].StartOffset == message.StartOffset)
                         b = p[i];
 
                 if (b == null)
-                    return;
+                    return PieceEvent.BlockNotRequested;
 
                 if (message.BlockLength != b.RequestLength)
                     throw new Exception("Request length should match block length");
 
-                if(!b.Received)
+                if (!b.Received)
                     id.TorrentManager.FileManager.Write(buffer, dataOffset, writeIndex, blockLength);
                 b.Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                
+
                 if (!p.AllBlocksReceived)
-                    return;
+                    return PieceEvent.BlockWrittenToDisk;
 
                 bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[p.Index], id.TorrentManager.FileManager.GetHash(p.Index));
                 this.myBitfield[message.PieceIndex] = result;
@@ -150,6 +150,8 @@ namespace MonoTorrent.Client
                         p.Blocks[i].Received = false;
                     }
                 }
+
+                return result ? PieceEvent.HashPassed : PieceEvent.HashFailed;
             }
         }
         #endregion
