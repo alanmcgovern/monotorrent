@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
             lock (this.requestsLocker)
             {
                 for(int i=0; i<this.pieces.Count;i++)
-                    if (!id.Peer.Connection.BitField[pieces[i].Index])
+                    if (id.Peer.Connection.BitField[pieces[i].Index])
                         return true;
 
                 return false;
