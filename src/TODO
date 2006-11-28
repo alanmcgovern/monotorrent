@@ -34,6 +34,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     31) After receiving X number of pieces from a peer, reduce their FailedConnectionAttempts value as they are "good"
     32) Make the queuing up of new request messages less dependant on the timer. Possibly queue up messages as a result of receibing an UnChoke message, and every time i receive a PieceMessage i should check if i need to enqueue a new Request message.
     33) Make message sending less dependant on the timer. Whenever i queue up a message i should check if i can send it right then. Like for ratelimiting
+    34) Change behaviour of "PieceManager.IsInteresting" to only fire when i receieve or send a Have message.
 If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
 
 [ Tracker DLL ]
