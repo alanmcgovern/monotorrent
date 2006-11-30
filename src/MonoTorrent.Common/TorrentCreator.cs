@@ -534,10 +534,6 @@ namespace MonoTorrent.Common
         public CatStreamReader(List<string> files)
         {
             _files = files;
-
-            _files.Sort();
-            _files.Reverse();
-
             _currentStream = new FileStream(files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
