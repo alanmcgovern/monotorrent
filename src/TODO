@@ -12,10 +12,11 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     14) Support SOCKS proxies
     15) Automagic updates of the client - similar to azureus ideally
     17) Put in more NUnit tests... i got lazy when it came to tests :p
-    19) FileSystemWatcher: AutoDownload .torrents in this directory
+    19) FileSystemWatcher: AutoDownload .torrents in this directory. - This is being worked on along with an RSS feed reader. Automagic torrent loading will be here soon.
     24) Update the rest of the Events to make sure they're all ok [ LOW - needs docs to explain safe usage too ]
     27) Why are some peers disconnecting me after i send request messages? It's happening too frequently to be coincidence. Mark what client is doing this.
     28) Investigate why i appear to be being banned/dropped by certain peers and with others i can happily request 100's of pieces without a problem
+    29) Algorithm to allow for automatic scheduling of torrents based on rules is being implemented. Should allow for people to select "seed for 30 mins after completion or a ratio of 1.4 us reached and total bandwidth is below 150kB/sec" etc.
 
 -- FEATURES TO BE IMPROVED --
     01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
