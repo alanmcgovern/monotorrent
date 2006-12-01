@@ -137,5 +137,7 @@ namespace MonoTorrent.Client
             return this.location;
         }
         #endregion
+
+        //public StringBuilder MessageHistory = new StringBuilder(1024);
     }
 }

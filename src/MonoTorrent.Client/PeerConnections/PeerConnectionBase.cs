@@ -28,12 +28,13 @@
 
 
 
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Net;
-using MonoTorrent.Client.PeerMessages;
 using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Collections.Generic;
+using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {
@@ -140,6 +141,17 @@ namespace MonoTorrent.Client
             set { this.bytesToSend = value; }
         }
         private int bytesToSend;
+
+
+        /// <summary>
+        /// Contains the version and name of the application this client is using.
+        /// </summary>
+        public PeerID ClientApp
+        {
+            get { return this.clientApp; }
+            internal set { this.clientApp = value; }
+        }
+        private PeerID clientApp;
 
 
         /// <summary>

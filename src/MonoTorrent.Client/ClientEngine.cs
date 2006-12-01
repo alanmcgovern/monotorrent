@@ -549,6 +549,7 @@ namespace MonoTorrent.Client
                     id.TorrentManager = man;
                     ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
                     id.Peer.Connection.recieveBuffer = null;
+                    id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
 
                     handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
                     BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);

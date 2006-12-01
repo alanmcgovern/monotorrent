@@ -142,6 +142,7 @@ namespace MonoTorrent.Client.PeerMessages
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
             message.Decode(buffer, offset + 1, count);
+            //Console.WriteLine("RECV " + message.ToString());
             return message;
         }
     }
