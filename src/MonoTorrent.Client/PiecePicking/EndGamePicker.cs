@@ -135,12 +135,11 @@ namespace MonoTorrent.Client
 
                 if (result)
                 {
-                    id.Peer.Connection.IsInterestingToMe = this.IsInteresting(id);
-                    id.TorrentManager.PieceCompleted(p.Index);
                     for (int i = 0; i < p.Blocks.Length; i++)
                         this.blocks.Remove(p[i]);
-
                     this.pieces.Remove(p);
+
+                    id.TorrentManager.PieceCompleted(p.Index);
                 }
                 else
                 {
