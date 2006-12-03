@@ -152,11 +152,11 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
+#warning I'm using far more parameters than i need. Stop this!
             int writeIndex = this.StartOffset + this.PieceIndex * this.fileManager.PieceLength;
             PieceEvent pevent = id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this.dataOffset, writeIndex, this.blockLength, this);
             if (pevent == PieceEvent.HashFailed)
                 id.Peer.HashFails++;
-            //id.TorrentManager.PieceManager.ReceivedPiece(id, this);
         }
 
 
