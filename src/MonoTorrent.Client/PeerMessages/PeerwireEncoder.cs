@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.PeerMessages
                 case SuggestPieceMessage.MessageId:
                     if (!ClientEngine.SupportsFastPeer)
                         throw new ProtocolException("Message not supported");
-                    message = new RequestMessage();
+                    message = new SuggestPieceMessage();
                     break;
 
                 case UnchokeMessage.MessageId:      // 1
