@@ -303,11 +303,8 @@ namespace MonoTorrent.Client
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
                 if (result)
-                {
-                    id.Peer.Connection.IsInterestingToMe = this.IsInteresting(id);
                     id.TorrentManager.PieceCompleted(piece.Index);
-                }
-
+#warning To some tricks if we fail to reduce the amount we have to redownload
                 pieces.Remove(piece);
 
                 if (pieces.Count == 0)
