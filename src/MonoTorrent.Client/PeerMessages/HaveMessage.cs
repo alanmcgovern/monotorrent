@@ -111,8 +111,8 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
-            if (id.Peer.Connection.BitField != null)
-                id.Peer.Connection.BitField[this.pieceIndex] = true;
+            id.Peer.Connection.BitField[this.pieceIndex] = true;
+            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
 
             for (int i = 0; i < id.Peer.Connection.BitField.Array.Length - 1; i++)
                 if (id.Peer.Connection.BitField.Array[0] != ~0)
@@ -132,7 +132,6 @@ namespace MonoTorrent.Client.PeerMessages
             }
 #warning This code is duplicated in the PieceMessage i think
             id.Peer.IsSeeder = true;
-            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
         }
 
 
