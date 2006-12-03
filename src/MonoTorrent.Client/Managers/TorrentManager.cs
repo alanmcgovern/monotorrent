@@ -413,8 +413,8 @@ namespace MonoTorrent.Client
                         if (counter % 40 == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
-                       // if (counter % 500 == 0)
-                       //     DumpStats(id, counter);
+                        if (counter % 500 == 0)
+                            DumpStats(id, counter);
 
                         if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
                         {
@@ -471,10 +471,11 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }
+                        if((DateTime.Now - id.Peer.Connection.LastMessageSent > new TimeSpan(0,0,90)))
+                            id.Peer.Connection.EnQueue(new KeepAliveMessage());
 
-                        if ((DateTime.Now - id.Peer.Connection.LastMessageReceived) > new TimeSpan(0, 0, 30) && id.Peer.Connection.AmRequestingPiecesCount > 0)
+                        if ((DateTime.Now - id.Peer.Connection.LastMessageReceived > new TimeSpan(0, 0, 120)))
                         {
-                            this.pieceManager.RemoveRequests(id);
                             ClientEngine.ConnectionManager.CleanupSocket(id);
                             continue;
                         }
@@ -515,15 +516,14 @@ namespace MonoTorrent.Client
                                                           (int)(this.UploadSpeed()));
             }
         }
-#warning Figure out how [Conditional("DEBUG")] works
-        /* private void DumpStats(PeerConnectionID id, int counter)
+        private void DumpStats(PeerConnectionID id, int counter)
         {
             string path = Path.Combine(@"C:\Docs\" + counter.ToString(), id.Peer.Location.GetHashCode() + ".txt");
             if(!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
             using (FileStream stream = File.Create(path))
                 stream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(id.Peer.MessageHistory.ToString()),0, System.Text.UTF8Encoding.UTF8.GetByteCount(id.Peer.MessageHistory.ToString()));
-        }*/
+        }
 
 
         /// <summary>
@@ -843,8 +843,11 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < this.connectedPeers.Count; i++)
                     lock (this.connectedPeers[i])
                         if (this.connectedPeers[i].Peer.Connection != null)
+                        {
+                            this.connectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.connectedPeers[i]);
                             if (!this.connectedPeers[i].Peer.Connection.BitField[p])
                                 this.connectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(p));
+                        }
         }
 
 

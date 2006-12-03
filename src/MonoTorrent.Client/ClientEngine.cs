@@ -478,12 +478,11 @@ namespace MonoTorrent.Client
                 peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
                 id = new PeerConnectionID(peer);
 
-                id.Peer.Connection.recieveBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.SmallMessageBuffer);
+                ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
                 id.Peer.Connection.BytesReceived = 0;
                 id.Peer.Connection.BytesToRecieve = 68;
 
                 id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
-                this.listener.BeginAccept();
             }
             catch (SocketException)
             {
@@ -492,6 +491,11 @@ namespace MonoTorrent.Client
             }
             catch (ObjectDisposedException)
             {
+            }
+            finally
+            {
+                if (!this.listener.Disposed)
+                    this.listener.BeginAccept();
             }
         }
 
@@ -547,14 +551,14 @@ namespace MonoTorrent.Client
                     id.Peer.PeerId = handshake.PeerId;
                     id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
                     id.TorrentManager = man;
-                    ClientEngine.BufferManager.FreeBuffer(id.Peer.Connection.recieveBuffer);
-                    id.Peer.Connection.recieveBuffer = null;
+
+                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
                     id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
 
                     handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
                     BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
 
-                    id.Peer.Connection.sendBuffer = ClientEngine.BufferManager.GetBuffer(BufferType.LargeMessageBuffer);
+                    ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
                     id.Peer.Connection.BytesSent = 0;
                     id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
                     id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
@@ -571,7 +575,7 @@ namespace MonoTorrent.Client
             }
             catch (NullReferenceException)
             {
-#warning Why is this happening?
+                CleanupSocket(id);
             }
         }
 
@@ -582,8 +586,15 @@ namespace MonoTorrent.Client
         /// <param name="id"></param>
         private void CleanupSocket(PeerConnectionID id)
         {
-            lock(id)
-            id.Peer.Connection.Dispose();
+            lock (id)
+            {
+                if (id.Peer.Connection != null)
+                {
+                    BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+                    BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                    id.Peer.Connection.Dispose();
+                }
+            }
         }
 
 
