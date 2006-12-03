@@ -285,9 +285,15 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// The byte array used to buffer data while it's being received
+        /// </summary>
+        internal byte[] recieveBuffer = BufferManager.EmptyBuffer;
+
+
+        /// <summary>
         /// The byte array used to buffer data before it's sent
         /// </summary>
-        internal byte[] sendBuffer;
+        internal byte[] sendBuffer = BufferManager.EmptyBuffer;
 
 
         /// <summary>
@@ -316,12 +322,6 @@ namespace MonoTorrent.Client
             get { return this.suggestedPieces; }
         }
         private List<int> suggestedPieces;
-
-
-        /// <summary>
-        /// The byte array used to buffer data while it's being received
-        /// </summary>
-        internal byte[] recieveBuffer;
         #endregion
 
 
@@ -339,7 +339,7 @@ namespace MonoTorrent.Client
             this.allowedFastPieces = new List<int>();
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
-            this.sendQueue = new Queue<IPeerMessageInternal>(4);
+            this.sendQueue = new Queue<IPeerMessageInternal>(12);
         }
         #endregion
 
