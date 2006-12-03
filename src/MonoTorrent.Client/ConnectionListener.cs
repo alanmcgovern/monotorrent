@@ -161,14 +161,19 @@ namespace MonoTorrent.Client
         /// <param name="disposing"></param>
         public void Dispose(bool disposing)
         {
-            try
-            {
-                this.socket.Close();
-            }
-            catch
-            {
-            }
+            if (disposed)
+                throw new ObjectDisposedException(this.ToString());
+
+            this.socket.Close();
+            this.disposed = true;
         }
+
+
+        internal bool Disposed
+        {
+            get { return this.disposed; }
+        }
+        private bool disposed;
         #endregion
     }
 }
