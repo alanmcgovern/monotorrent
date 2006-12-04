@@ -71,10 +71,6 @@ namespace MonoTorrent.Common.Test
             torrentInfo.Add("private", new BEncodedString("1"));
             torrent = new Torrent();
             torrent.LoadTorrent(torrentInfo);
-            FileStream stream = new FileStream(@"D:\MyTest.torrent", FileMode.Create);
-            stream.Write(torrentInfo.Encode(), 0, torrentInfo.LengthInBytes());
-            stream.Flush();
-            stream.Close();
         }
         private BEncodedDictionary CreateInfoDict()
         {
