@@ -57,6 +57,10 @@ namespace MonoTorrent.Client
         {
             this.largeMessageBuffers = new Queue<byte[]>();
             this.smallMessageBuffers = new Queue<byte[]>();
+
+            // Preallocate 35 of each buffer to help avoid heap fragmentation due to pinning
+            this.AllocateBuffers(35, BufferType.SmallMessageBuffer);
+            this.AllocateBuffers(35, BufferType.LargeMessageBuffer);
         }
 
 
@@ -76,19 +80,21 @@ namespace MonoTorrent.Client
             // Otherwise return one from the pool.
             if (type == BufferType.SmallMessageBuffer)
                 lock (this.smallMessageBuffers)
+                {
                     if (this.smallMessageBuffers.Count == 0)
-                        buffer = new byte[SmallMessageBufferSize];
-                    else
-                        buffer = this.smallMessageBuffers.Dequeue();
+                        this.AllocateBuffers(8, BufferType.SmallMessageBuffer);
+                    buffer = this.smallMessageBuffers.Dequeue();
+                }
 
             // If we're getting a large buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
             else if (type == BufferType.LargeMessageBuffer)
                 lock (this.largeMessageBuffers)
+                {
                     if (this.largeMessageBuffers.Count == 0)
-                        buffer = new byte[LargeMessageBufferSize];
-                    else
-                        buffer = this.largeMessageBuffers.Dequeue();
+                        this.AllocateBuffers(8, BufferType.LargeMessageBuffer);
+                    buffer = this.largeMessageBuffers.Dequeue();
+                }
 
             else
                 throw new ArgumentException("Couldn't allocate the required buffer", "type");
@@ -122,6 +128,20 @@ namespace MonoTorrent.Client
                 throw new Exception("That buffer wasn't created by this manager");
 
             buffer = EmptyBuffer; // After recovering the buffer, we send the "EmptyBuffer" back as a placeholder
+        }
+
+
+        private void AllocateBuffers(int number, BufferType type)
+        {
+            while (number-- > 0)
+                if (type == BufferType.LargeMessageBuffer)
+                    this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
+
+                else if (type == BufferType.SmallMessageBuffer)
+                    this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
+
+                else
+                    throw new ArgumentException("Unsupported BufferType detected");
         }
     }
 }
