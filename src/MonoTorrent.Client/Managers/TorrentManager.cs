@@ -471,8 +471,11 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }
-                        if((DateTime.Now - id.Peer.Connection.LastMessageSent > new TimeSpan(0,0,90)))
+                        if ((DateTime.Now - id.Peer.Connection.LastMessageSent > new TimeSpan(0, 0, 90)))
+                        {
+                            id.Peer.Connection.LastMessageSent = DateTime.Now;
                             id.Peer.Connection.EnQueue(new KeepAliveMessage());
+                        }
 
                         if ((DateTime.Now - id.Peer.Connection.LastMessageReceived > new TimeSpan(0, 0, 120)))
                         {
