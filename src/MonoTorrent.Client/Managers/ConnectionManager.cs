@@ -469,11 +469,11 @@ namespace MonoTorrent.Client
                         //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "BitfieldMessage");
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
+                        id.Peer.Connection.ProcessingQueue = false;
 
                         id.Peer.Connection.BytesReceived = 0;
                         id.Peer.Connection.BytesToRecieve = 4;
                         id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerMessageLengthReceived, id, out id.ErrorCode);
-                        id.Peer.Connection.ProcessingQueue = false;
                     }
             }
             catch (SocketException ex)
