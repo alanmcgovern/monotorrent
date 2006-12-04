@@ -104,34 +104,20 @@ namespace MonoTorrent.Client.PeerMessages
             this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
         }
 
-#warning The below is duplicate code
+
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
+            // We can do a fast check to see if the peer is interesting or not when we receive a Have Message.
+            // If the peer just received a piece we don't have, he's interesting. Otherwise his state is unchanged
+            if (!id.TorrentManager.PieceManager.MyBitField[this.pieceIndex])
+                id.Peer.Connection.IsInterestingToMe = true;
+
             id.Peer.Connection.BitField[this.pieceIndex] = true;
-            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
-
-            for (int i = 0; i < id.Peer.Connection.BitField.Array.Length - 1; i++)
-                if (id.Peer.Connection.BitField.Array[0] != ~0)
-                {
-                    id.Peer.IsSeeder = false;
-                    return;
-                }
-
-
-            for (int i = 32 * (id.Peer.Connection.BitField.Length - 1); i < id.Peer.Connection.BitField.Length; i++)
-            {
-                if (!id.Peer.Connection.BitField[i])
-                {
-                    id.Peer.IsSeeder = false;
-                    return;
-                }
-            }
-#warning This code is duplicated in the PieceMessage i think
-            id.Peer.IsSeeder = true;
+            id.Peer.IsSeeder = (id.Peer.Connection.BitField.TrueCount == id.Peer.Connection.BitField.Length);
         }
 
 

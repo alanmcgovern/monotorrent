@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
         internal void Decode(byte[] buffer, int offset, int length)
         {
-            bitField.FromArray(buffer, offset, length);
+            this.bitField.FromArray(buffer, offset, length);
         }
 
 #warning Copy this straight into the Peers Bitfield. Slightly more memory efficient :p
@@ -113,25 +113,7 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerConnectionID id)
         {
             id.Peer.Connection.BitField = this.bitField;
-            for (int i = 0; i < id.Peer.Connection.BitField.Array.Length - 1; i++)
-                if (id.Peer.Connection.BitField.Array[0] != ~0)        // Check every section except the last section
-                {
-                    id.Peer.IsSeeder = false;
-                    return;
-                }
-
-
-            // Manually check each of the remaining positions in the last section
-            for (int i = sizeof(int) * 8 * (id.Peer.Connection.BitField.Length - 1); i < id.Peer.Connection.BitField.Length; i++)
-            {
-                if (!id.Peer.Connection.BitField[i])
-                {
-                    id.Peer.IsSeeder = false;
-                    return;
-                }
-            }
-
-            id.Peer.IsSeeder = true;
+            id.Peer.IsSeeder = (id.Peer.Connection.BitField.TrueCount == id.Peer.Connection.BitField.Length);
 
             id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
         }

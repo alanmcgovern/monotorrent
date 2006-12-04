@@ -65,6 +65,11 @@ namespace MonoTorrent.Client
         #region Methods
         internal bool IsInteresting(PeerConnectionID id)
         {
+            // If the peer is a seeder and i don't have all the pieces, he's interesting
+            if (id.Peer.IsSeeder && (this.MyBitField.TrueCount != this.MyBitField.Length))
+                return true;
+
+            // Otherwise we need to do a full check
             lock (this.piecePicker)
                 return this.piecePicker.IsInteresting(id);
         }
