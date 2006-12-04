@@ -17,6 +17,8 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     27) Why are some peers disconnecting me after i send request messages? It's happening too frequently to be coincidence. Mark what client is doing this.
     28) Investigate why i appear to be being banned/dropped by certain peers and with others i can happily request 100's of pieces without a problem
     29) Algorithm to allow for automatic scheduling of torrents based on rules is being implemented. Should allow for people to select "seed for 30 mins after completion or a ratio of 1.4 us reached and total bandwidth is below 150kB/sec" etc.
+    30) Add logging code so i can log different aspects of the library
+    31) When seeding, disconnect from other seeds as i don't need to talk to them anymore. Only leechers are useful
 
 -- FEATURES TO BE IMPROVED --
     01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
