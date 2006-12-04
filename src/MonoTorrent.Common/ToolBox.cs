@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// ToolBox.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

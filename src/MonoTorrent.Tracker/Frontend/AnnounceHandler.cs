@@ -1,10 +1,10 @@
 //
-// AnnounceHanlder.cs
+// AnnounceHandler.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Gregor Burger gregor.burger@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2006 Gregor Burger
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the

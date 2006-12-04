@@ -1,5 +1,5 @@
 //
-// BitField.cs
+// BitFieldTest.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

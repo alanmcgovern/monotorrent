@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// BEncodedNumber.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com

@@ -1,5 +1,5 @@
 //
-// BitField.cs
+// CatStreamReaderTest.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com

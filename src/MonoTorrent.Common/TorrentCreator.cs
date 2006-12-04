@@ -1,5 +1,5 @@
 //
-// System.String.cs
+// TorrentCreator.cs
 //
 // Authors:
 //   Gregor Burger burger.gregor@gmail.com
