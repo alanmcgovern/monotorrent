@@ -15,7 +15,6 @@ SOURCES=BEncode/BEncode.cs \
 	Torrent.cs \
 	TorrentFile.cs \
 	TorrentException.cs \
-	TorrentReader.cs \
 	VersionInfo.cs \
 #	Test/BEncodingTest.cs \
 #	Test/CatStreamReaderTest.cs \
