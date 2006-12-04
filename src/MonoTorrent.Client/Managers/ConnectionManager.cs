@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             manager.ConnectingTo.Add(id);
             lock (id)
             {
-                id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting****");
+                //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting****");
                 id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Length, new NoEncryption());
                 id.Peer.Connection.ProcessingQueue = true;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
@@ -178,7 +178,7 @@ namespace MonoTorrent.Client
                             return;
 
                         id.Peer.Connection.EndConnect(result);
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connected****");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connected****");
                         id.TorrentManager.ConnectingTo.Remove(id);
                         id.TorrentManager.ConnectedPeers.Add(id);
 
@@ -212,7 +212,7 @@ namespace MonoTorrent.Client
                     lock (id)
                     {
                         id.Peer.FailedConnectionAttempts++;
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting Failed****");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting Failed****");
 
                         if (id.Peer.Connection != null)
                         {
@@ -236,7 +236,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting Failed****");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting Failed****");
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         id.Peer.FailedConnectionAttempts++;
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent, SocketFlags.None, peerHandshakeSent, id, out id.ErrorCode);
                             return;
                         }
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "Handshake");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "Handshake");
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
@@ -369,7 +369,7 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\tHandshake");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\tHandshake");
                         msg = new HandshakeMessage();
                         msg.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
                         HandshakeMessage handshake = msg as HandshakeMessage;
@@ -466,7 +466,7 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent, SocketFlags.None, peerBitfieldSent, id, out id.ErrorCode);
                             return;
                         }
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "BitfieldMessage");
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "BitfieldMessage");
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
 
@@ -635,7 +635,7 @@ namespace MonoTorrent.Client
                         if (this.OnPeerMessages != null)
                             this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
                         message.Handle(id);
-                        id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\t" + message.ToString());
+                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\t" + message.ToString());
                         if (!(message is PieceMessage))
                         {   // The '-4' is because of the messagelength int which has already been counted in a different method
                             id.TorrentManager.DataBytesDownloaded -= (message.ByteLength - 4);
@@ -778,7 +778,7 @@ namespace MonoTorrent.Client
             if (msg is PieceMessage)
                 id.Peer.Connection.PiecesSent++;
 
-            id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " " + msg.ToString());
+            //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " " + msg.ToString());
 
             id.Peer.Connection.ProcessingQueue = true;
             try
@@ -939,7 +939,7 @@ namespace MonoTorrent.Client
                 {
                     System.Threading.Interlocked.Decrement(ref openConnections);
                     id.TorrentManager.PieceManager.RemoveRequests(id);
-                    id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Cleaning Up****");
+                    //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Cleaning Up****");
 
                     if (id.Peer.Connection != null)
                     {
