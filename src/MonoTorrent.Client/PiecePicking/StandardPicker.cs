@@ -125,10 +125,16 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < otherPeers.Count; i++)
                 {
-                    Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                    this.bufferBitfield.And(otherPeers[i].Peer.Connection.BitField);
-                    if (this.bufferBitfield.AllFalse() || highestPriorityFound != HighestPriorityForAvailablePieces(this.bufferBitfield))
-                        break;
+                    lock (otherPeers[i])
+                    {
+                        if (otherPeers[i].Peer.Connection == null)
+                            continue;
+
+                        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                        this.bufferBitfield.And(otherPeers[i].Peer.Connection.BitField);
+                        if (this.bufferBitfield.AllFalse() || highestPriorityFound != HighestPriorityForAvailablePieces(this.bufferBitfield))
+                            break;
+                    }
                 }
 
                 // Once we have a bitfield containing just the pieces we need, we request one.
