@@ -36,6 +36,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     35) Fix bug counting 1/2 opens and fully opens.
     36) Review naming schemes for events and methods.
     37) Change all reading/writing to the file to be done in a more Async way. That should fix the NaN upload/download speeds
+    38) Rewrite EndGameMode to support cancel messages and enter endgame as soon as the StandardPiecePicker has no available pieces.
 If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
 
 [ Tracker DLL ]
