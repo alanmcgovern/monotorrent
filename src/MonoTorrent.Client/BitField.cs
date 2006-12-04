@@ -243,19 +243,23 @@ namespace MonoTorrent.Client
         internal void SetAll(bool value)
         {
             if (value)
+            {
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
+                this.trueCount = this.length;
+            }
 
             else
+            {
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = 0;
+                this.trueCount = 0;
+            }
 
             // clear out the remaining space
             int end = ((int)((this.length + 31) / 32)) * 32;
             for (int i = this.length; i < end; ++i)
                 this.array[i >> 5] &= ~(1 << (i & 31));
-
-            this.trueCount = this.length;
         }
         
 
