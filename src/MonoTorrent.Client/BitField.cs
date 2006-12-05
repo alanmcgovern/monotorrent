@@ -124,6 +124,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
+            SetLastBitsFalse();
             return this;
         }
 
@@ -138,9 +139,13 @@ namespace MonoTorrent.Client
             if (value == null)
                 throw new ArgumentNullException("value");
 
+            if (this.length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
+
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
 
+            SetLastBitsFalse();
             return this;
         }
 
@@ -155,9 +160,13 @@ namespace MonoTorrent.Client
             if (value == null)
                 throw new ArgumentNullException("value");
 
+            if (this.length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
+
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= ~value.array[i];
 
+            SetLastBitsFalse();
             return this;
         }
 
@@ -172,9 +181,13 @@ namespace MonoTorrent.Client
             if (value == null)
                 throw new ArgumentNullException("value");
 
+            if (this.length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
+
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] |= value.array[i];
 
+            SetLastBitsFalse();
             return this;
         }
 
@@ -189,9 +202,13 @@ namespace MonoTorrent.Client
             if (value == null)
                 throw new ArgumentNullException("value");
 
+            if (this.length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
+
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] ^= value.array[i];
 
+            SetLastBitsFalse();
             return this;
         }
 
@@ -247,6 +264,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
                 this.trueCount = this.length;
+                SetLastBitsFalse();
             }
 
             else
@@ -255,7 +273,10 @@ namespace MonoTorrent.Client
                     this.array[i] = 0;
                 this.trueCount = 0;
             }
+        }
 
+        private void SetLastBitsFalse()
+        {
             // clear out the remaining space
             int end = ((int)((this.length + 31) / 32)) * 32;
             for (int i = this.length; i < end; ++i)
@@ -381,20 +402,17 @@ namespace MonoTorrent.Client
 #warning Check the remaining bits in the last byte to make sure they're 0. use the length parameter
         internal void FromArray(byte[] buffer, int offset, int length)
         {
-            bool temp;
+            byte p = 128;
+            bool temp = false;
+            this.trueCount = 0;
+
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
-
-            this.trueCount = 0;
-            byte p = 128;
 
             for (int i = 0; i < this.length; i++)
             {
                 temp = ((buffer[offset] & p) != 0);
-                if (temp)
-                    this.trueCount++;
-
-                this[i] = temp;
+                this.Set(i, temp);
                 p >>= 1;
 
                 if (p != 0)
