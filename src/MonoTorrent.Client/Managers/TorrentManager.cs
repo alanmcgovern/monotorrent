@@ -396,6 +396,10 @@ namespace MonoTorrent.Client
                 if (this.downloadQueue.Count > 0 || this.uploadQueue.Count > 0)
                     this.ResumePeers();
 
+            DateTime nowTime = DateTime.Now;
+            DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
+            DateTime onhundredAndTwentySecondsAgo = nowTime.AddSeconds(-120);
+
             lock (this.listLock)
             {
                 // If we havn't reached our max connected peers, connect to another one.
@@ -471,13 +475,13 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.EnQueue(msg);
                             id.Peer.Connection.AmRequestingPiecesCount++;
                         }
-                        if ((DateTime.Now - id.Peer.Connection.LastMessageSent > new TimeSpan(0, 0, 90)))
+                        if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
                             id.Peer.Connection.LastMessageSent = DateTime.Now;
                             id.Peer.Connection.EnQueue(new KeepAliveMessage());
                         }
 
-                        if ((DateTime.Now - id.Peer.Connection.LastMessageReceived > new TimeSpan(0, 0, 120)))
+                        if (onhundredAndTwentySecondsAgo > id.Peer.Connection.LastMessageReceived)
                         {
                             ClientEngine.ConnectionManager.CleanupSocket(id);
                             continue;
@@ -519,14 +523,14 @@ namespace MonoTorrent.Client
                                                           (int)(this.UploadSpeed()));
             }
         }
-        /*private void DumpStats(PeerConnectionID id, int counter)
+        private void DumpStats(PeerConnectionID id, int counter)
         {
-            string path = Path.Combine(@"C:\Docs\" + counter.ToString(), id.Peer.Location.GetHashCode() + ".txt");
-            if(!Directory.Exists(Path.GetDirectoryName(path)))
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (FileStream stream = File.Create(path))
-                stream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(id.Peer.MessageHistory.ToString()),0, System.Text.UTF8Encoding.UTF8.GetByteCount(id.Peer.MessageHistory.ToString()));
-        }*/
+            //string path = Path.Combine(@"C:\Docs\" + counter.ToString(), id.Peer.Location.GetHashCode() + ".txt");
+            //if(!Directory.Exists(Path.GetDirectoryName(path)))
+            //    Directory.CreateDirectory(Path.GetDirectoryName(path));
+            //using (FileStream stream = File.Create(path))
+            //    stream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(id.Peer.MessageHistory.ToString()),0, System.Text.UTF8Encoding.UTF8.GetByteCount(id.Peer.MessageHistory.ToString()));
+        }
 
 
         /// <summary>

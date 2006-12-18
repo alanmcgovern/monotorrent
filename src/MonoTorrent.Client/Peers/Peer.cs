@@ -138,6 +138,6 @@ namespace MonoTorrent.Client
         }
         #endregion
 
-        //private StringBuilder MessageHistory = new StringBuilder(1024);
+        //public StringBuilder MessageHistory = new StringBuilder(1024);
     }
 }
