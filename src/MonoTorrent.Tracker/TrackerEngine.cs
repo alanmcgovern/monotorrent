@@ -143,6 +143,12 @@ namespace MonoTorrent.Tracker
                     //internal_http.Start();
                 }
                 Tracker.ClearTorrents();            
+                
+                if (torrentWatchers != null)
+                {
+                    TorrentWatchers.StartWatching();
+                    TorrentWatchers.ForceScan();
+                }
             }
         }
         
@@ -173,7 +179,59 @@ namespace MonoTorrent.Tracker
             if (running) {
                 Tracker.ClearTorrents();
             }
-        }       
+        }
+        
+        
+        private TorrentWatchers torrentWatchers;
+
+        ///<summary></summary>
+        public TorrentWatchers TorrentWatchers
+        {
+            get
+            {
+                if (this.torrentWatchers == null)
+                {
+                    this.torrentWatchers = new TorrentWatchers();
+                    this.torrentWatchers.OnTorrentFound += new EventHandler<TorrentWatcherEventArgs>(OnTorrentCreated);
+                    this.torrentWatchers.OnTorrentLost += new EventHandler<TorrentWatcherEventArgs>(OnTorrentRemoved);
+                }
+
+                return this.torrentWatchers;
+            }
+        }
+
+        void OnTorrentCreated(object sender, TorrentWatcherEventArgs e)
+        {
+            try
+            {
+                Torrent t = new Torrent();
+                t.LoadTorrent(e.TorrentPath);
+                this.Tracker.AddTorrent(t);
+            }
+            catch (BEncodingException ex)
+            {
+                Console.Error.WriteLine("Reason: " + ex.ToString());
+            }
+            catch (TorrentException exc)
+            {
+                //Console.Error.WriteLine("Failed to load Torrent " + e.Torrent.TorrentPath);
+                Console.Error.WriteLine("Reason: " + exc.Message);
+            }
+        }
+
+        void OnTorrentRemoved(object sender, TorrentWatcherEventArgs e)
+        {
+            try
+            {
+                this.Tracker.RemoveTorrent(e.TorrentPath);
+            }
+            catch (TorrentException exc)
+            {
+                //Console.Error.WriteLine("Failed to remove Torrent " + e.Torrent.TorrentPath);
+                Console.Error.WriteLine("Reason: " + exc.Message);
+            }
+        }
     }
     
 }
+

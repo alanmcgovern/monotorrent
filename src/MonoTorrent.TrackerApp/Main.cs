@@ -42,20 +42,20 @@ namespace MonoTorrent.TrackerApp
     class MySimpleTracker
     {
         const string TORRENT_DIR = "Torrents";
-        ///<summary>Add all Torrents in the TORRENT_DIR Directory.
-        ///Done once at startup. 
-        ///</summary>
-        public void AddTorrents()
-        {                       
-            //MonoTorrent.Tracker.Tracker tracker = MonoTorrent.Tracker.Tracker.Instance;
-            if (!Directory.Exists(TORRENT_DIR)) {
-                Directory.CreateDirectory(TORRENT_DIR);
-            }
-            Console.WriteLine("loading torrents from " + TORRENT_DIR);
-            foreach (string path in Directory.GetFiles(TORRENT_DIR, "*.torrent")) {
-                AddTorrent(path);
-            }
-        }
+        /////<summary>Add all Torrents in the TORRENT_DIR Directory.
+        /////Done once at startup. 
+        /////</summary>
+        //public void AddTorrents()
+        //{                       
+        //    //MonoTorrent.Tracker.Tracker tracker = MonoTorrent.Tracker.Tracker.Instance;
+        //    if (!Directory.Exists(TORRENT_DIR)) {
+        //        Directory.CreateDirectory(TORRENT_DIR);
+        //    }
+        //    Console.WriteLine("loading torrents from " + TORRENT_DIR);
+        //    foreach (string path in Directory.GetFiles(TORRENT_DIR, "*.torrent")) {
+        //        AddTorrent(path);
+        //    }
+        //}
         
         
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
@@ -66,40 +66,41 @@ namespace MonoTorrent.TrackerApp
             engine.Address = "127.0.0.1";
             engine.Port = 10000;
             engine.Frontend = TrackerFrontend.InternalHttp;
+            engine.TorrentWatchers.Add(new TorrentFolderWatcher(Path.Combine(Environment.CurrentDirectory, TORRENT_DIR), "*.torrent"));
             engine.Start();
-            AddTorrents();
-            StartWatching();
+            //AddTorrents();
+            //StartWatching();
             Console.WriteLine("started");
         }
         
-        ///<summary>Start the FileSystemWatcher on TORRENT_DIR</summary>
-        public void StartWatching()
-        {
-            FileSystemWatcher watcher = new FileSystemWatcher(TORRENT_DIR, "*.torrent");
-            watcher.Created += new FileSystemEventHandler(OnCreated);
-            watcher.EnableRaisingEvents = true;
-        }
+        /////<summary>Start the FileSystemWatcher on TORRENT_DIR</summary>
+        //public void StartWatching()
+        //{
+        //    FileSystemWatcher watcher = new FileSystemWatcher(TORRENT_DIR, "*.torrent");
+        //    watcher.Created += new FileSystemEventHandler(OnCreated);
+        //    watcher.EnableRaisingEvents = true;
+        //}
         
-        ///<summary>Gets called when a File with .torrent extension was added to the TORRENT_DIR</summary>
-        public void OnCreated(object sender, FileSystemEventArgs e) 
-        {
-            AddTorrent(e.FullPath);
-        }
+        /////<summary>Gets called when a File with .torrent extension was added to the TORRENT_DIR</summary>
+        //public void OnCreated(object sender, FileSystemEventArgs e) 
+        //{
+        //    AddTorrent(e.FullPath);
+        //}
         
-        ///<summary>Add the Torrent to the Tracker</summary>
-        ///<param name=path>Path to the Torrent which should be added</param>
-        public void AddTorrent(string path) 
-        {
-            try {
-                Torrent t = new Torrent();
-                t.LoadTorrent(path);
-                TrackerEngine.Instance.Tracker.AddTorrent(t);         
-            } catch (TorrentException exc) {
+        /////<summary>Add the Torrent to the Tracker</summary>
+        /////<param name=path>Path to the Torrent which should be added</param>
+        //public void AddTorrent(string path) 
+        //{
+        //    try {
+        //        Torrent t = new Torrent();
+        //        t.LoadTorrent(path);
+        //        TrackerEngine.Instance.Tracker.AddTorrent(t);         
+        //    } catch (TorrentException exc) {
                 
-                Console.Error.WriteLine("Failed to load Torrent " + path);
-                Console.Error.WriteLine("Reason: " + exc.Message);
-            }
-        }
+        //        Console.Error.WriteLine("Failed to load Torrent " + path);
+        //        Console.Error.WriteLine("Reason: " + exc.Message);
+        //    }
+        //}
         
         public void OnProcessExit(object sender, EventArgs e)
         {

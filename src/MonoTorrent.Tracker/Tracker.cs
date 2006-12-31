@@ -115,10 +115,23 @@ namespace MonoTorrent.Tracker
         ///<param>The Torrent to be removed from the Tracker</param>
         public void RemoveTorrent(Torrent torrent)
         {
+            Console.WriteLine("removing torrent " + ToolBox.GetHex(torrent.InfoHash) + " from the tracker");
             if (torrents.ContainsKey(ToolBox.GetHex(torrent.InfoHash)))
                 torrents.Remove(ToolBox.GetHex(torrent.InfoHash));
         }
-        
+
+        public void RemoveTorrent(string path)
+        {
+            foreach (KeyValuePair<string, ITorrentManager> keypair in this.torrents)
+            {
+                if (keypair.Value.Torrent.TorrentPath != path)
+                    continue;
+
+                RemoveTorrent(keypair.Value.Torrent);
+                return;
+            }
+        }
+
         ///<summary>This Method is called by the Frontend if a Peer called the announc URL
         ///</summary>
         public void Announce(AnnounceParameters par, Stream stream)

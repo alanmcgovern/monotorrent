@@ -50,7 +50,7 @@ namespace MonoTorrent.Interface
             Catalog.Init("monotorrent", basedir);
             CreateDirs();
             Application.Init();
-            GLib.Thread.Init();
+            //GLib.Thread.Init();
         }
 
         private static void CreateDirs()
