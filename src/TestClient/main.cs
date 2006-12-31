@@ -123,6 +123,7 @@ namespace TestClient
                         Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Console.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
                         Console.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
+                        Console.WriteLine("Hashfails:        " + manager.HashFails.ToString());
                         Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
                         Console.WriteLine("Scrape incomplete:" + manager.TrackerManager.CurrentTracker.Incomplete);
