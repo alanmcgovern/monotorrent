@@ -195,6 +195,16 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// The number of times we recieved a piece that failed the hashcheck
+        /// </summary>
+        public int HashFails
+        {
+            get { return this.hashFails; }
+        }
+        private int hashFails;
+
+
+        /// <summary>
         /// The number of bytes which have been downloaded for the BitTorrent protocol
         /// </summary>
         public long ProtocolBytesDownloaded
@@ -663,6 +673,9 @@ namespace MonoTorrent.Client
         /// <param name="pieceHashedEventArgs">The event args for the event</param>
         internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
         {
+            if (!pieceHashedEventArgs.HashPassed)
+                Interlocked.Increment(ref this.hashFails);
+
             if (this.OnPieceHashed != null)
                 this.OnPieceHashed(this, pieceHashedEventArgs);
         }
