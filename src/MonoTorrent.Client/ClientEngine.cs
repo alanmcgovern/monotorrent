@@ -129,12 +129,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
-        public Dictionary<string, TorrentManager> Torrents
+        public List<TorrentManager> Torrents
         {
             get { return this.torrents; }
             set { this.torrents = value; }
         }
-        private Dictionary<string, TorrentManager> torrents;
+        private List<TorrentManager> torrents;
         #endregion
 
 
@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
 #warning I don't like this timer, but is there any other better way to do it?
             this.timer = new System.Timers.Timer(25);
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
-            this.torrents = new Dictionary<string, TorrentManager>();
+            this.torrents = new List<TorrentManager>();
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
         }
         #endregion
@@ -165,8 +165,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                Start(keypair.Value);
+            for (int i = 0; i < this.torrents.Count; i++)
+                Start(this.torrents[i]);
         }
 
 
@@ -176,14 +176,14 @@ namespace MonoTorrent.Client
         /// <param name="manager">The torrent to start</param>
         public void Start(TorrentManager manager)
         {
-            if (manager.State == TorrentState.Stopped || manager.State == TorrentState.Paused)
-                manager.Start();
+            if (!this.listener.IsListening)
+                this.listener.Start();      // Start Listening for connections
 
             if (!timer.Enabled)
                 timer.Enabled = true;       // Start logic ticking
 
-            if (!this.listener.IsListening)
-                this.listener.Start();      // Start Listening for connections
+            if (manager.State == TorrentState.Stopped || manager.State == TorrentState.Paused)
+                manager.Start();
         }
 
 
@@ -193,17 +193,10 @@ namespace MonoTorrent.Client
         public WaitHandle[] Stop()
         {
             List<WaitHandle> waitHandles = new List<WaitHandle>(this.torrents.Count);
-            List<TorrentManager> managers = new List<TorrentManager>(this.torrents.Count);
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                if (keypair.Value.State != TorrentState.Stopped)
-                    managers.Add(keypair.Value);
 
-            for (int i = 0; i < managers.Count; i++)
-            {
-                WaitHandle h = managers[i].Stop();
-                if (h != null)
-                    waitHandles.Add(h);
-            }
+            for (int i = 0; i < this.torrents.Count; i++)
+                if (this.torrents[i].State != TorrentState.Stopped)
+                    waitHandles.Add(this.Stop(this.torrents[i]));
 
             return waitHandles.ToArray();
         }
@@ -218,13 +211,14 @@ namespace MonoTorrent.Client
             if (manager.State == TorrentState.Stopped)
                 throw new TorrentException("This torrent is already stopped");
 
-            WaitHandle handle = manager.Stop(); ;
+            WaitHandle handle = manager.Stop();
 
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                if (keypair.Value.State != TorrentState.Paused && keypair.Value.State != TorrentState.Stopped)
+            for (int i = 0; i < this.torrents.Count; i++ )
+                if (this.torrents[i].State != TorrentState.Paused && this.torrents[i].State != TorrentState.Stopped)
                     return handle;              // There's still a torrent running, so just return the handle
 
             timer.Enabled = false;              // All the torrents are stopped, so stop ticking
+
             if (this.listener.IsListening)      // Also stop listening for incoming connections
                 this.listener.Stop();
 
@@ -237,8 +231,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                Pause(keypair.Value);
+            for (int i = 0; i < this.torrents.Count; i++)
+                Pause(this.torrents[i]);
         }
 
 
@@ -250,11 +244,12 @@ namespace MonoTorrent.Client
         {
             manager.Pause();
 
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                if (keypair.Value.State != TorrentState.Paused && keypair.Value.State != TorrentState.Stopped)
+            for (int i = 0; i < this.torrents.Count; i++)
+                if (this.torrents[i].State != TorrentState.Paused && this.torrents[i].State != TorrentState.Stopped)
                     return;
 
             timer.Enabled = false;      // All the torrents are stopped, so stop ticking
+
             if (this.listener.IsListening)
                 this.listener.Stop();
         }
@@ -297,17 +292,26 @@ namespace MonoTorrent.Client
             Torrent torrent = new Torrent();
             torrent.LoadTorrent(path);
 
-            if (this.torrents.ContainsKey(BitConverter.ToString(torrent.InfoHash)))
+            if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
                 throw new TorrentException("The torrent is already in the engine");
 
             TorrentManager manager = new TorrentManager(torrent, savePath, settings);
-            this.torrents.Add(BitConverter.ToString(torrent.InfoHash), manager);
+            this.torrents.Add(manager);
 
             if (File.Exists(torrent.TorrentPath + ".fresume"))
                 if (LoadFastResume(manager))
                     manager.HashChecked = true;
 
             return (manager);
+        }
+
+        private bool ContainsTorrent(string p)
+        {
+            for (int i = 0; i < this.torrents.Count; i++)
+                if (BitConverter.ToString(this.torrents[i].Torrent.InfoHash) == p)
+                    return true;
+
+            return false;
         }
 
 
@@ -384,7 +388,7 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 handle = this.Stop(manager);
 
-            this.torrents.Remove(BitConverter.ToString(manager.Torrent.InfoHash));
+            this.torrents.Remove(manager);
             manager.Dispose();
             return handle;
         }
@@ -396,14 +400,13 @@ namespace MonoTorrent.Client
         public WaitHandle[] RemoveAll()
         {
             WaitHandle[] handles = new WaitHandle[this.torrents.Count];
-            List<TorrentManager> mans = new List<TorrentManager>(this.torrents.Count);
+            List<TorrentManager> managers = new List<TorrentManager>();
 
-            foreach (TorrentManager manager in this.torrents.Values)
-                mans.Add(manager);
+            for (int i = 0; i < torrents.Count; i++)
+                managers.Add(this.torrents[i]);
 
-            this.torrents.Clear();
-            for (int i = 0; i < mans.Count; i++)
-                handles[i] = Remove(mans[i]);
+            for (int i = 0; i < managers.Count; i++)
+                handles[i] = Remove(managers[i]);
 
             return handles;
         }
@@ -438,20 +441,20 @@ namespace MonoTorrent.Client
             tickCount++;
             //if (tickCount % 250 == 0)
             //    GC.Collect();
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+            for(int i =0; i <this.torrents.Count; i++)
             {
-                switch (keypair.Value.State)
+                switch (this.torrents[i].State)
                 {
                     case (TorrentState.Downloading):
-                        keypair.Value.DownloadLogic(tickCount);
+                        this.torrents[i].DownloadLogic(tickCount);
                         break;
 
                     case (TorrentState.Seeding):
-                        keypair.Value.SeedingLogic(tickCount);
+                        this.torrents[i].SeedingLogic(tickCount);
                         break;
 
                     case (TorrentState.SuperSeeding):
-                        keypair.Value.SuperSeedingLogic(tickCount);
+                        this.torrents[i].SuperSeedingLogic(tickCount);
                         break;
 
                     default:
@@ -538,9 +541,9 @@ namespace MonoTorrent.Client
                         return;
                     }
 
-                    foreach (TorrentManager manager in this.torrents.Values)
-                        if (ToolBox.ByteMatch(handshake.infoHash, manager.Torrent.InfoHash))
-                            man = manager;
+                    for (int i = 0; i < this.torrents.Count; i++)
+                        if (ToolBox.ByteMatch(handshake.infoHash, this.torrents[i].Torrent.InfoHash))
+                            man = this.torrents[i];
 
                     if (man == null)        // We're not hosting that torrent
                     {
@@ -621,7 +624,9 @@ namespace MonoTorrent.Client
             //foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
             //    keypair.Value.Dispose();
 
-            this.listener.Dispose();
+            if(!this.listener.Disposed)
+                this.listener.Dispose();
+
             this.timer.Dispose();
         }
 
@@ -629,8 +634,8 @@ namespace MonoTorrent.Client
         public double TotalDownloadSpeed()
         {
             double total = 0;
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                total += keypair.Value.DownloadSpeed();
+            for(int i=0; i <this.torrents.Count; i++)
+                total += this.torrents[i].DownloadSpeed();
 
             return total;
         }
@@ -639,8 +644,8 @@ namespace MonoTorrent.Client
         public double TotalUploadSpeed()
         {
             double total = 0;
-            foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-                total += keypair.Value.UploadSpeed();
+            for (int i = 0; i < this.torrents.Count; i++)
+                total += this.torrents[i].UploadSpeed();
 
             return total;
         }

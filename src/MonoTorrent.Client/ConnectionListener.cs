@@ -134,9 +134,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Stop()
         {
-            this.socket.Close();
-            this.socket = null;
+            this.disposed = true;
             this.isListening = false;
+            this.socket.Close();
         }
 
 

@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class TorrentManager : IDisposable
+    public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
         #region Events
         /// <summary>
@@ -889,5 +889,17 @@ namespace MonoTorrent.Client
             this.fileManager.Dispose();
         }
         #endregion
+
+        public override bool Equals(object obj)
+        {
+            TorrentManager m = obj as TorrentManager;
+            return (m == null) ? false : this.Equals(m);
+        }
+
+        public bool Equals(TorrentManager other)
+        {
+            return (other == null) ? false : BitConverter.ToString(this.torrent.InfoHash) == BitConverter.ToString(other.torrent.InfoHash);
+        }
+
     }
 }
