@@ -219,12 +219,12 @@ namespace MonoTorrent.Common
 
         public int CompareTo(BEncodedString other)
         {
-            return this.Text.CompareTo(other.Text);
+            return string.CompareOrdinal(this.Text, other.Text);
         }
 
         public int CompareTo(string other)
         {
-            return this.Text.CompareTo(other);
+            return string.CompareOrdinal(this.Text, other);
         }
         #endregion
 

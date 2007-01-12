@@ -136,13 +136,12 @@ namespace MonoTorrent.Common
                 while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
                 {
                     key = (BEncodedString)BEncode.Decode(reader); ;     // keys have to be BEncoded strings
-                    if (oldkey != null)
-                        if (string.CompareOrdinal(oldkey.Text, key.Text) > 0) 
-                            throw new BEncodingException("Illegal BEncodedDictionary. The attributes are not ordered correctly");
-                    oldkey = key;
+                    if (oldkey != null && string.CompareOrdinal(oldkey.Text, key.Text) > 0) 
+                        throw new BEncodingException("Illegal BEncodedDictionary. The attributes are not ordered correctly");
                     
+                    oldkey = key;
                     value = BEncode.Decode(reader);                     // the value is a BEncoded value
-                    dictionary.Add(key.Text, value);
+                    dictionary.Add(key, value);
                 }
 
                 if (reader.ReadByte() != 'e')                                    // remove the trailing 'e'
