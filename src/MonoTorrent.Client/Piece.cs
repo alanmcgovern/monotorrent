@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         /// <param name="torrent">The ITorrent the piece is coming from</param>
         private void LastPiece(int pieceIndex, Torrent torrent)
         {
-            int bytesRemaining = Convert.ToInt32(torrent.Size - (torrent.Pieces.Length - 1) * torrent.PieceLength);
+            int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Length - 1) * torrent.PieceLength);
             int numberOfBlocks = bytesRemaining / blockSize;
             if (bytesRemaining % blockSize != 0)
                 numberOfBlocks++;

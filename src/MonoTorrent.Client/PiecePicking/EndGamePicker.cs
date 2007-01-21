@@ -132,23 +132,31 @@ namespace MonoTorrent.Client
             {
                 Piece p = null;
                 Block b = null;
+
+                // First get the piece from the list
                 for (int i = 0; i < this.pieces.Count; i++)
                     if (this.pieces[i].Index == message.PieceIndex)
                         p = this.pieces[i];
 
+                // If we dont find the piece in our list of requests, we got an unsolicted piece, so we dump it
                 if (p == null)
                     return PieceEvent.BlockNotRequested;
 
+
+                // We then find the corresponding block from that piece
                 for (int i = 0; i < p.Blocks.Length; i++)
                     if (p[i].StartOffset == message.StartOffset)
                         b = p[i];
 
+
+                // If the block doesn't exist, we dump the recieved data
                 if (b == null)
                     return PieceEvent.BlockNotRequested;
 
                 if (message.BlockLength != b.RequestLength)
                     throw new Exception("Request length should match block length");
 
+                // Only write to disk once
                 if (!b.Received)
                     id.TorrentManager.FileManager.Write(buffer, dataOffset, writeIndex, blockLength);
                 b.Received = true;

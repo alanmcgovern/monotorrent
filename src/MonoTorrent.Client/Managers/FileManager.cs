@@ -29,6 +29,7 @@
 
 
 using MonoTorrent.Common;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Collections.Generic;
@@ -49,6 +50,9 @@ namespace MonoTorrent.Client
             get { return this.pieceLength; }
         }
         private readonly int pieceLength;
+
+
+        private long fileSize;
 
 
         private SHA1Managed hasher;
@@ -139,6 +143,8 @@ namespace MonoTorrent.Client
                 // but there's no benefits to doing that.
                 if (fileStreams[i].Length != files[i].Length && fileAccess == FileAccess.ReadWrite)
                     fileStreams[i].SetLength(files[i].Length);
+
+                this.fileSize += files[i].Length;
             }
         }
         #endregion
@@ -177,6 +183,12 @@ namespace MonoTorrent.Client
         /// <returns>The number of bytes successfully read</returns>
         internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
         {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            if (offset < 0 || offset + count > this.fileSize)
+                throw new ArgumentOutOfRangeException("offset");
+
             int i = 0;
             int bytesRead = 0;
             int totalRead = 0;
@@ -218,6 +230,12 @@ namespace MonoTorrent.Client
         /// <param name="count">The number of bytes to read</param>
         internal void Write(byte[] buffer, int bufferOffset, long offset, int count)
         {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            if (offset < 0 || offset + count > this.fileSize)
+                throw new ArgumentOutOfRangeException("offset");
+
             int i = 0;
             long bytesWritten = 0;
             long totalWritten = 0;
@@ -275,7 +293,7 @@ namespace MonoTorrent.Client
             lock (this.hashBuffer)
             {
                 long pieceStartIndex = (long)this.pieceLength * pieceIndex;
-                int bytesRead = this.Read(this.hashBuffer, 0, pieceStartIndex, this.pieceLength);
+                int bytesRead = this.Read(this.hashBuffer, 0, pieceStartIndex, (int)(this.fileSize - pieceStartIndex > this.pieceLength ? this.pieceLength : this.fileSize - pieceStartIndex));
                 return hasher.ComputeHash(this.hashBuffer, 0, bytesRead);
             }
         }

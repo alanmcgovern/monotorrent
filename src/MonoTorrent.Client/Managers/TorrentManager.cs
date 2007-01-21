@@ -117,7 +117,6 @@ namespace MonoTorrent.Client
         public PieceManager PieceManager
         {
             get { return this.pieceManager; }
-            //set { this.pieceManager = (PieceManager) value; }
         }
         private PieceManager pieceManager;
 

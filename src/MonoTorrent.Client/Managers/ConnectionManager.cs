@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -274,7 +274,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -336,7 +336,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             IPeerMessageInternal msg;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -431,7 +431,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -492,7 +492,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -581,7 +581,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
@@ -646,7 +646,7 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
 #warning should be unneccessary
                 cleanUp = true;
@@ -677,7 +677,7 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            result.AsyncWaitHandle.Close();
+            
 
             try
             {
