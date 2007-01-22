@@ -41,14 +41,14 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Holds the data for a connection to another peer
     /// </summary>
-    internal abstract class PeerConnectionBase : IDisposable
+    public abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
 #warning Use these to request pieces
         /// <summary>
         /// Contains the indexs of all the pieces we can request even if choked
         /// </summary>
-        public List<int> AllowedFastPieces
+        internal List<int> AllowedFastPieces
         {
             get { return this.allowedFastPieces; }
         }
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The peers bitfield
         /// </summary>
-        public BitField BitField
+        internal BitField BitField
         {
             get { return this.bitField; }
             set { this.bitField = value; }
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The total number of bytes Received into the current recieve buffer
         /// </summary>
-        public int BytesReceived
+        internal int BytesReceived
         {
             get { return this.bytesReceived; }
             set { this.bytesReceived = value; }
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The total number of bytes sent from the current send buffer
         /// </summary>
-        public int BytesSent
+        internal int BytesSent
         {
             get { return this.bytesSent; }
             set { this.bytesSent = value; }
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The total number of bytes to receive
         /// </summary>
-        public int BytesToRecieve
+        internal int BytesToRecieve
         {
             get { return this.bytesToRecieve; }
             set { this.bytesToRecieve = value; }
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The total bytes to send from the buffer
         /// </summary>
-        public int BytesToSend
+        internal int BytesToSend
         {
             get { return this.bytesToSend; }
             set { this.bytesToSend = value; }
@@ -168,10 +168,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The current encryption method being used to encrypt connections
         /// </summary>
-        public IEncryptor Encryptor
+        internal IEncryptor Encryptor
         {
             get { return this.encryptor; }
-            internal set { this.encryptor = value; }
+            set { this.encryptor = value; }
         }
         private IEncryptor encryptor;
 
@@ -222,10 +222,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The time at which the last message was received at
         /// </summary>
-        public DateTime LastMessageReceived
+        internal DateTime LastMessageReceived
         {
             get { return this.lastMessageReceived; }
-            internal set { this.lastMessageReceived = value; }
+            set { this.lastMessageReceived = value; }
         }
         private DateTime lastMessageReceived;
 
@@ -233,10 +233,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The time at which the last message was sent at
         /// </summary>
-        public DateTime LastMessageSent
+        internal DateTime LastMessageSent
         {
             get { return this.lastMessageSent; }
-            internal set { this.lastMessageSent = value; }
+            set { this.lastMessageSent = value; }
         }
         private DateTime lastMessageSent;
 
@@ -265,10 +265,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The port the peer is listening on for DHT
         /// </summary>
-        public ushort Port
+        internal ushort Port
         {
             get { return this.port; }
-            internal set { this.port = value; }
+            set { this.port = value; }
         }
         private ushort port;
 
@@ -276,7 +276,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if we are currently processing the peers message queue
         /// </summary>
-        public bool ProcessingQueue
+        internal bool ProcessingQueue
         {
             get { return this.processingQueue; }
             set { this.processingQueue = value; }
@@ -317,7 +317,7 @@ namespace MonoTorrent.Client
         /// A list of pieces that this peer has suggested we download. These should be downloaded
         /// with higher priority than standard pieces.
         /// </summary>
-        public List<int> SuggestedPieces
+        internal List<int> SuggestedPieces
         {
             get { return this.suggestedPieces; }
         }
@@ -349,7 +349,7 @@ namespace MonoTorrent.Client
         /// Queues a PeerMessage up to be sent to the remote host
         /// </summary>
         /// <param name="msg"></param>
-        public void EnQueue(IPeerMessageInternal msg)
+        internal void EnQueue(IPeerMessageInternal msg)
         {
             sendQueue.Enqueue(msg);
         }
@@ -359,7 +359,7 @@ namespace MonoTorrent.Client
         /// Returns the PeerMessage at the head of the queue
         /// </summary>
         /// <returns></returns>
-        public IPeerMessageInternal DeQueue()
+        internal IPeerMessageInternal DeQueue()
         {
             return sendQueue.Dequeue();
         }
@@ -368,7 +368,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The length of the Message queue
         /// </summary>
-        public int QueueLength
+        internal int QueueLength
         {
             get { return this.sendQueue.Count; }
         }

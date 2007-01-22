@@ -36,22 +36,26 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class is used to track upload/download speed and bytes uploaded/downloaded for each connection
     /// </summary>
-    internal class ConnectionMonitor
+    public class ConnectionMonitor
     {
         private const int ArraySize = 8;
 
 
         #region Member Variables
-        private int tempSentCount;
-        private int tempRecvCount;
-        private int lastUpdateTime;
-
-        private int uploadSpeedIndex;
-        private double[] uploadSpeeds;
-
+        private long bytesDownloaded;
+        private long bytesUploaded;
+        private double downloadSpeed;
         private int downloadSpeedIndex;
         private double[] downloadSpeeds;
+        private int lastUpdateTime;
+        private int tempSentCount;
+        private int tempRecvCount;
+        private double uploadSpeed;
+        private int uploadSpeedIndex;
+        private double[] uploadSpeeds;
+        #endregion Member Variables
 
+        #region Public Properties
         /// <summary>
         /// Returns the total bytes downloaded from this peer
         /// </summary>
@@ -59,7 +63,6 @@ namespace MonoTorrent.Client
         {
             get { return this.bytesDownloaded; }
         }
-        private long bytesDownloaded;
 
 
         /// <summary>
@@ -69,7 +72,6 @@ namespace MonoTorrent.Client
         {
             get { return this.bytesUploaded; }
         }
-        private long bytesUploaded;
 
 
         /// <summary>
@@ -80,7 +82,6 @@ namespace MonoTorrent.Client
         {
             get { return this.downloadSpeed; }
         }
-        private double downloadSpeed;
 
 
         /// <summary>
@@ -91,15 +92,14 @@ namespace MonoTorrent.Client
         {
             get { return this.uploadSpeed; }
         }
-        private double uploadSpeed;
-        #endregion
+        #endregion Public Properties
 
 
         #region Constructors
         /// <summary>
         /// Creates a new ConnectionMonitor
         /// </summary>
-        public ConnectionMonitor()
+        internal ConnectionMonitor()
         {
             this.lastUpdateTime = Environment.TickCount;
             this.uploadSpeeds = new double[ArraySize];
@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Update the ConnectionManager with bytes uploaded
         /// </summary>

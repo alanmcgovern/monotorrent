@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal interface IEncryptor
+    public interface IEncryptor
     {
         void Encrypt(byte[] buffer, int offset, int count);
 

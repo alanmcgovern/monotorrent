@@ -409,10 +409,27 @@ namespace MonoTorrent.Client
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
+            // Decode the bitfield from the buffer
             for (int i = 0; i < this.length; i++)
             {
                 temp = ((buffer[offset] & p) != 0);
                 this.Set(i, temp);
+                p >>= 1;
+
+                if (p != 0)
+                    continue;
+
+                p = 128;
+                offset++;
+            }
+
+            // Make sure all extra bits are set to zero
+            for (int i = this.length; i < this.length + this.length % 8; i++)
+            {
+                temp = ((buffer[offset] & p) != 0);
+                if (temp)
+                    throw new ArgumentException("The bitfield supplied is invalid");
+
                 p >>= 1;
 
                 if (p != 0)

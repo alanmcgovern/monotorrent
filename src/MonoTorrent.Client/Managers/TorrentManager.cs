@@ -371,7 +371,6 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Pause()
         {
-            TorrentStateChangedEventArgs args;
             lock (this.listLock)
             {
                 UpdateState(TorrentState.Paused);

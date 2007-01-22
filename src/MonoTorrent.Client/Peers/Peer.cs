@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The connection associated with this peer
         /// </summary>
-        internal PeerConnectionBase Connection
+        public PeerConnectionBase Connection
         {
             get { return this.connection; }
             set { this.connection = value; }
