@@ -380,7 +380,7 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
                         id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
 
-                        if (((HandshakeMessage)msg).SupportsFastPeer)
+                        if (((HandshakeMessage)msg).SupportsFastPeer && ClientEngine.SupportsFastPeer)
                         {
                             id.Peer.Connection.SupportsFastPeer = true;
                             if (id.TorrentManager.PieceManager.MyBitField.AllFalse())
