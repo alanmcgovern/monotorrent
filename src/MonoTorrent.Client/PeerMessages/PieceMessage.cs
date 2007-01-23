@@ -121,7 +121,7 @@ namespace MonoTorrent.Client.PeerMessages
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
 
-            long pieceOffset = this.startOffset + this.PieceIndex * this.fileManager.PieceLength;
+            long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
             int bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
 
             return (messageLength + bytesRead + 4);
