@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionMonitor
     {
-        private const int ArraySize = 8;
+        private const int ArraySize = 12;
 
 
         #region Member Variables
@@ -54,6 +54,7 @@ namespace MonoTorrent.Client
         private int uploadSpeedIndex;
         private double[] uploadSpeeds;
         #endregion Member Variables
+
 
         #region Public Properties
         /// <summary>
@@ -149,15 +150,23 @@ namespace MonoTorrent.Client
                     int count = 0;
                     double total = 0;
                     int currentTime = Environment.TickCount;
+
+                    // Find how many miliseconds have passed since the last update and the current tick count
                     int difference = currentTime - this.lastUpdateTime;
 
+                    // If we have a negative value, we'll just assume 1 second (1000ms). We may get a negative value
+                    // when Env.TickCount rolls over.
                     if (difference < 0)
-                        difference = currentTime;   // Accounts for the rollover of Env.TickCount
+                        difference = 1000;
 
-
+                    // Take the amount of bytes sent since the last tick and divide it by the number of seconds
+                    // since the last tick. This gives the calculated bytes/second transfer rate.
+                    // difference is in miliseconds, so divide by 1000 to get it in seconds
                     this.downloadSpeeds[this.downloadSpeedIndex++] = tempRecvCount / (difference / 1000.0);
                     this.uploadSpeeds[this.uploadSpeedIndex++] = tempSentCount / (difference / 1000.0);
 
+                    // If we've gone over the array bounds, reset to the first index
+                    // to start overwriting the old values
                     if (this.downloadSpeedIndex == ArraySize)
                         this.downloadSpeedIndex = 0;
 
@@ -165,7 +174,10 @@ namespace MonoTorrent.Client
                         this.uploadSpeedIndex = 0;
 
 
-
+                    // What we do here is add up all the bytes/second readings held in each array
+                    // and divide that by the number of non-zero entries. The number of non-zero entries
+                    // is given by ArraySize - count. This is to avoid the problem where a connection which
+                    // is just starting would have a lot of zero entries making the speed estimate inaccurate.
                     for (int i = 0; i < this.downloadSpeeds.Length; i++)
                     {
                         if (this.downloadSpeeds[i] == 0)
