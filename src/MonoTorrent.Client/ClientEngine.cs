@@ -52,6 +52,13 @@ namespace MonoTorrent.Client
         internal static readonly bool SupportsFastPeer = false;
         #endregion
 
+        #region Private Member Variables
+        /// <summary>
+        /// A logic tick will be performed every TickLength miliseconds
+        /// </summary>
+        internal const int TickLength = 25;
+        #endregion
+
 
         #region Member Variables
         /// <summary>
@@ -151,7 +158,7 @@ namespace MonoTorrent.Client
             this.defaultTorrentSettings = defaultTorrentSettings;
             this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(this.IncomingConnectionReceived));
 #warning I don't like this timer, but is there any other better way to do it?
-            this.timer = new System.Timers.Timer(25);
+            this.timer = new System.Timers.Timer(TickLength);
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
             this.torrents = new List<TorrentManager>();
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
@@ -439,8 +446,7 @@ namespace MonoTorrent.Client
         private void LogicTick(object sender, ElapsedEventArgs e)
         {
             tickCount++;
-            //if (tickCount % 250 == 0)
-            //    GC.Collect();
+
             for(int i =0; i <this.torrents.Count; i++)
             {
                 switch (this.torrents[i].State)

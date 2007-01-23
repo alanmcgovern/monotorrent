@@ -422,7 +422,7 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection == null)
                             continue;
 
-                        if (counter % 40 == 0)     // Call it every second... ish
+                        if (counter % 1000/ClientEngine.TickLength == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
                         //if (counter % 500 == 0)
