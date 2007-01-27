@@ -54,7 +54,6 @@ namespace MonoTorrent.Client.Tests
                 if (i % 5 == 0 || i % 13 == 0)
                     bf[i] = true;
 
-#warning Test BitField Messages too
             //msg = new BitfieldMessage(bf);
             //msg.Encode(buffer, 0);
             //result = PeerwireEncoder.Decode(buffer, 4, msg.ByteLength, manager);
@@ -73,7 +72,6 @@ namespace MonoTorrent.Client.Tests
             Assert.AreEqual(msg, result, msg.ToString() + " decoding failed. 3");
 
 
-            #warning Update this test when HandshakeMessage is an IPeerMessage
             //msg = new HandshakeMessage();
             //msg.Encode(buffer, 0);
             //result = PeerwireEncoder.Decode(buffer, 4, msg.ByteLength, manager);
@@ -106,7 +104,6 @@ namespace MonoTorrent.Client.Tests
             Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
 
 
-#warning Update this test
             //msg = new PieceMessage();
             //msg.Encode(buffer, 0);
             //result = PeerwireEncoder.Decode(buffer, 4, msg.ByteLength, manager);
