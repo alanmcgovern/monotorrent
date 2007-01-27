@@ -50,8 +50,6 @@ namespace MonoTorrent.Client.PeerMessages
             switch (buffer[offset])
             {
                 case AllowedFastMessage.MessageId:
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new AllowedFastMessage();
                     break;
 
@@ -72,8 +70,6 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case HaveAllMessage.MessageId:
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new HaveAllMessage();
                     break;
 
@@ -82,8 +78,6 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case HaveNoneMessage.MessageId:
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new HaveNoneMessage();
                     break;
 
@@ -104,8 +98,6 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case RejectRequestMessage.MessageId:
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new RejectRequestMessage();
                     break;
 
@@ -114,8 +106,6 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case SuggestPieceMessage.MessageId:
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     message = new SuggestPieceMessage();
                     break;
 
@@ -125,8 +115,6 @@ namespace MonoTorrent.Client.PeerMessages
 
 
                 case 21:                            // An "extended" message
-                    if (!ClientEngine.SupportsFastPeer)
-                        throw new ProtocolException("Message not supported");
                     switch (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, ++offset)))
                     {
                         default:
@@ -136,7 +124,6 @@ namespace MonoTorrent.Client.PeerMessages
                 default:
                     message = new UnknownMessage();
                     break;
-#warning This should also be handled. Does the spec call for closing or ignoring? Closing iirc.
             }
 
             // The message length is given in the second byte and the message body follows directly after that
