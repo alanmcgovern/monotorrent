@@ -55,10 +55,12 @@
     <Compile Include="BitField.cs" />
     <Compile Include="Block.cs" />
     <Compile Include="ClientEngine.cs" />
-    <Compile Include="ConnectionManagerException.cs" />
+    <Compile Include="Exceptions\ConnectionException.cs" />
     <Compile Include="Encryption\NoEncryption.cs" />
     <Compile Include="Encryption\IEncryptor.cs" />
-    <Compile Include="ListenerException.cs" />
+    <Compile Include="Exceptions\ListenerException.cs" />
+    <Compile Include="Exceptions\MessageException.cs" />
+    <Compile Include="Exceptions\MonoTorrentException.cs" />
     <Compile Include="Managers\BufferManager.cs" />
     <Compile Include="PeerConnections\HTTPConnection.cs" />
     <Compile Include="PeerConnections\TCPConnection.cs" />
@@ -75,7 +77,7 @@
     <Compile Include="PiecePicking\EndGamePicker.cs" />
     <Compile Include="PiecePicking\IPiecePicker.cs" />
     <Compile Include="PiecePicking\StandardPicker.cs" />
-    <Compile Include="ProtocolException.cs" />
+    <Compile Include="Exceptions\ProtocolException.cs" />
     <Compile Include="RateLimiter.cs" />
     <Compile Include="Tests\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Tracker.cs" />

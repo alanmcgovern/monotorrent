@@ -41,7 +41,30 @@ namespace MonoTorrent.Client.PeerMessages
         private const int messageLength = 3;
         public const int MessageId = 9;
 
-        #region Member Variables
+        #region Private Fields
+        private ushort port;
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        public int ByteLength
+        {
+            get { return (messageLength + 4); }
+        }
+
+
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        int IPeerMessageInternal.ByteLength
+        {
+            get { return this.ByteLength; }
+        }
+
+
         /// <summary>
         /// The port
         /// </summary>
@@ -49,7 +72,7 @@ namespace MonoTorrent.Client.PeerMessages
         {
             get { return this.port; }
         }
-        private ushort port;
+
         #endregion
 
 
@@ -73,7 +96,35 @@ namespace MonoTorrent.Client.PeerMessages
         #endregion
 
 
+
+
         #region Methods
+        /// <summary>
+        /// Decodes a Portessage from the supplied buffer
+        /// </summary>
+        /// <param name="buffer">The buffer to decode the message from</param>
+        /// <param name="offset">The offset thats the message starts at</param>
+        /// <param name="length">The maximum number of bytes to read from the buffer</param>
+        internal void Decode(byte[] buffer, int offset, int length)
+        {
+            this.port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToUInt16(buffer, offset));
+            if (port == 0)
+                throw new MessageException("Invalid port sent");
+        }
+
+
+        /// <summary>
+        /// Decodes a Portessage from the supplied buffer
+        /// </summary>
+        /// <param name="buffer">The buffer to decode the message from</param>
+        /// <param name="offset">The offset thats the message starts at</param>
+        /// <param name="length">The maximum number of bytes to read from the buffer</param>
+        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        {
+            this.Decode(buffer, offset, length);
+        }
+
+
         /// <summary>
         /// Encodes the PortMessage into the supplied buffer
         /// </summary>
@@ -91,15 +142,36 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         /// <summary>
-        /// Decodes a Portessage from the supplied buffer
+        /// Encodes the PortMessage into the supplied buffer
         /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
-        /// <param name="buffer">The buffer to decode the message from</param>
-        /// <param name="offset">The offset thats the message starts at</param>
-        /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        internal void Decode(byte[] buffer, int offset, int length)
+        /// <param name="buffer">The buffer to encode the message to</param>
+        /// <param name="offset">The offset at which to start encoding the data to</param>
+        /// <returns>The number of bytes encoded into the buffer</returns>
+        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
         {
-            this.port = (ushort)IPAddress.NetworkToHostOrder(BitConverter.ToUInt16(buffer, offset));
+            return this.Encode(buffer, offset);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            PortMessage msg = obj as PortMessage;
+            return (msg == null) ? false : (this.port == msg.port);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            return this.port.GetHashCode();
         }
 
 
@@ -114,16 +186,15 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         /// <summary>
-        /// Returns the length of the message in bytes
+        /// Performs any necessary actions required to process the message
         /// </summary>
-        public int ByteLength
+        /// <param name="id">The Peer who's message will be handled</param>
+        void IPeerMessageInternal.Handle(PeerConnectionID id)
         {
-            get { return (messageLength + 4); }
+            this.Handle(id);
         }
-        #endregion
 
 
-        #region Overridden methods
         /// <summary>
         /// 
         /// </summary>
@@ -132,45 +203,6 @@ namespace MonoTorrent.Client.PeerMessages
         {
             return "PortMessage";
         }
-
-        public override bool Equals(object obj)
-        {
-            PortMessage msg = obj as PortMessage;
-            if (msg == null)
-                return false;
-
-            return (this.port == msg.port);
-        }
-
-        public override int GetHashCode()
-        {
-            return this.port.GetHashCode();
-        }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerConnectionID id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

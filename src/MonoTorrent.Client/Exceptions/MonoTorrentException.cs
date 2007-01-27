@@ -1,5 +1,5 @@
 //
-// IPiecePicker.cs
+// MonoTorrentException.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -30,19 +30,32 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.PeerMessages;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    interface IPiecePicker
+    public class MonoTorrentException : Exception
     {
-        bool IsInteresting(PeerConnectionID id);
-        RequestMessage PickPiece(PeerConnectionID id, Peers otherPeers);
-        BitField MyBitField { get; }
-        int CurrentRequestCount();
-        void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message);
-        void RemoveRequests(PeerConnectionID id);
-        PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message);
+        public MonoTorrentException()
+            : base()
+        {
+        }
+
+
+        public MonoTorrentException(string message)
+            : base(message)
+        {
+        }
+
+
+        public MonoTorrentException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+
+        public MonoTorrentException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+            : base(info, context)
+        {
+        }
     }
 }

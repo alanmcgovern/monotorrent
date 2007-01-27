@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
     public abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
-#warning Use these to request pieces
+        // FIXME Use these to request pieces
         /// <summary>
         /// Contains the indexs of all the pieces we can request even if choked
         /// </summary>

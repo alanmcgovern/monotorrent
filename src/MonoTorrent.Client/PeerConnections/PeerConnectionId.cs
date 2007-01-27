@@ -76,7 +76,6 @@ namespace MonoTorrent.Client
             this.peer = peer;
             this.torrentManager = null;
             this.peer.Connection.BitField = null;
-#warning Is this right?
         }
 
 

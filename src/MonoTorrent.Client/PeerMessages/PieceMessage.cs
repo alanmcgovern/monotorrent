@@ -42,12 +42,32 @@ namespace MonoTorrent.Client.PeerMessages
         public const int MessageId = 7;
         private const int messageLength = 9;
 
-        #region Member Variables
-        /// <summary>
-        /// The filemanager for this Piece
-        /// </summary>
-        private FileManager fileManager;
+        #region Private Fields
         private int dataOffset;
+        private FileManager fileManager;
+        private int pieceIndex;
+        private int startOffset;
+        private int blockLength;
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Returns the length of the message in bytes
+        /// </summary>
+        public int ByteLength
+        {
+            get { return (messageLength + this.blockLength + 4); }
+        }
+
+
+        /// <summary>
+        /// The offset in the buffer at which the piece starts
+        /// </summary>
+        internal int DataOffset
+        {
+            get { return this.dataOffset; }
+        }
 
 
         /// <summary>
@@ -57,7 +77,15 @@ namespace MonoTorrent.Client.PeerMessages
         {
             get { return this.pieceIndex; }
         }
-        private int pieceIndex;
+
+
+        /// <summary>
+        /// The length of the piece in bytes
+        /// </summary>
+        public int PieceLength
+        {
+            get { return this.fileManager.PieceLength; }
+        }
 
 
         /// <summary>
@@ -67,7 +95,6 @@ namespace MonoTorrent.Client.PeerMessages
         {
             get { return this.startOffset; }
         }
-        private int startOffset;
 
 
         /// <summary>
@@ -77,11 +104,17 @@ namespace MonoTorrent.Client.PeerMessages
         {
             get { return this.blockLength; }
         }
-        private int blockLength;
+
+        int IPeerMessageInternal.ByteLength
+        {
+            get { return this.ByteLength; }
+        }
+
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new piece message
         /// </summary>
@@ -104,30 +137,10 @@ namespace MonoTorrent.Client.PeerMessages
             this.startOffset = startOffset;
             this.blockLength = blockLength;
         }
+
         #endregion
 
-
         #region Methods
-        /// <summary>
-        /// Encodes the PieceMessage into the supplied buffer
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the message to</param>
-        /// <param name="offset">The offset at which to start encoding the data to</param>
-        /// <returns>The number of bytes encoded into the buffer</returns>
-        internal int Encode(byte[] buffer, int offset)
-        {
-            buffer[offset + 4] = (byte)MessageId;
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + blockLength)), 0, buffer, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
-
-            long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
-            int bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
-
-            return (messageLength + bytesRead + 4);
-        }
-
-
         /// <summary>
         /// Decodes a PieceMessage from the supplied buffer
         /// </summary>
@@ -147,53 +160,72 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         /// <summary>
-        /// Performs any necessary actions required to process the message
+        /// Decodes a PieceMessage from the supplied buffer
         /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
-        internal void Handle(PeerConnectionID id)
+        /// <param name="buffer">The buffer to decode the message from</param>
+        /// <param name="offset">The offset thats the message starts at</param>
+        /// <param name="length">The maximum number of bytes to read from the buffer</param>
+        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
         {
-#warning I'm using far more parameters than i need. Stop this!
-            long writeIndex = (long)this.PieceIndex * this.fileManager.PieceLength + this.StartOffset;
-            PieceEvent pevent = id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this.dataOffset, writeIndex, this.blockLength, this);
-            if (pevent == PieceEvent.HashFailed)
-                id.Peer.HashFails++;
+            this.Decode(buffer, offset, length);
         }
 
 
         /// <summary>
-        /// Returns the length of the message in bytes
+        /// Encodes the PieceMessage into the supplied buffer
         /// </summary>
-        public int ByteLength
+        /// <param name="buffer">The buffer to encode the message to</param>
+        /// <param name="offset">The offset at which to start encoding the data to</param>
+        /// <returns>The number of bytes encoded into the buffer</returns>
+        internal int Encode(byte[] buffer, int offset)
         {
-            get { return (messageLength + this.blockLength + 4); }
+            buffer[offset + 4] = (byte)MessageId;
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + blockLength)), 0, buffer, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
+
+            long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
+            int bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
+
+            if (bytesRead != this.BlockLength)
+                throw new MessageException("Could not read required data");
+
+            return (messageLength + bytesRead + 4);
         }
-        #endregion
 
 
-        #region Overridden methods
+        /// <summary>
+        /// Encodes the PieceMessage into the supplied buffer
+        /// </summary>
+        /// <param name="buffer">The buffer to encode the message to</param>
+        /// <param name="offset">The offset at which to start encoding the data to</param>
+        /// <returns>The number of bytes encoded into the buffer</returns>
+        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        {
+            return this.Encode(buffer, offset);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            PieceMessage msg = obj as PieceMessage;
+            return (msg == null) ? false : (this.pieceIndex == msg.pieceIndex
+                                            && this.startOffset == msg.startOffset
+                                            && this.blockLength == msg.blockLength
+                                            && this.dataOffset == msg.dataOffset
+                                            && this.fileManager == msg.fileManager);
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
-        {
-            return "PieceMessage";
-        }
-
-        public override bool Equals(object obj)
-        {
-            PieceMessage msg = obj as PieceMessage;
-
-            if (msg == null)
-                return false;
-
-            return (this.pieceIndex == msg.pieceIndex
-                    && this.startOffset == msg.startOffset
-                    && this.blockLength == msg.blockLength
-                    && this.dataOffset == msg.dataOffset
-                    && this.fileManager == msg.fileManager);
-        }
-
         public override int GetHashCode()
         {
             return (this.blockLength.GetHashCode()
@@ -202,31 +234,38 @@ namespace MonoTorrent.Client.PeerMessages
                 ^ this.startOffset.GetHashCode()
                 ^ this.fileManager.GetHashCode());
         }
-        #endregion
 
 
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        /// <summary>
+        /// Performs any necessary actions required to process the message
+        /// </summary>
+        /// <param name="id">The Peer who's message will be handled</param>
+        internal void Handle(PeerConnectionID id)
         {
-            return this.Encode(buffer, offset);
+            PieceEvent pevent = id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this);
+            if (pevent == PieceEvent.HashFailed)
+                id.Peer.HashFails++;
         }
 
-        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
 
+        /// <summary>
+        /// Performs any necessary actions required to process the message
+        /// </summary>
+        /// <param name="id">The Peer who's message will be handled</param>
         void IPeerMessageInternal.Handle(PeerConnectionID id)
         {
             this.Handle(id);
         }
 
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return "PieceMessage";
+        }
         #endregion
     }
 }

@@ -195,7 +195,6 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        //FIXME: Can this be optimised more? How many allocations is this responsible for?
                         HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.PeerId, VersionInfo.ProtocolStringV100);
 
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.SmallMessageBuffer);
@@ -582,7 +581,6 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             
-
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -617,10 +615,27 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        IPeerMessageInternal message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
+                        IPeerMessageInternal message;
+                        try
+                        {
+                            message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
+                        }
+                        catch (ProtocolException ex)
+                        {
+                            Trace.WriteLine(ex.Message);
+                            cleanUp = true;
+                            return;
+                        }
+
                         if (this.OnPeerMessages != null)
                             this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
-                        message.Handle(id);
+                        try
+                        {
+                            message.Handle(id);
+                        }
+                        catch (ConnectionException ex)
+                        {
+                        }
                         //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\t" + message.ToString());
                         if (!(message is PieceMessage))
                         {   // The '-4' is because of the messagelength int which has already been counted in a different method

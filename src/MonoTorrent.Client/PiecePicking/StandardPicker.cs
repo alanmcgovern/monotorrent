@@ -307,17 +307,18 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, long writeIndex, int p, PieceMessage message)
+        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message)
         {
             lock (this.requests)
             {
                 if (!this.requests.ContainsKey(id))
-                    return PieceEvent.BlockNotRequested;
-#warning I should close the connection, but at the moment i'm in a bug fixing mood
+                    throw new MessageException("Received piece from invalid peer");
 
                 Piece piece = null;
+                Block block = null;
                 List<Piece> pieces = this.requests[id];
 
+                // For all the pieces we're requesting off this peer, pick out the one that this block belongs too
                 for (int i = 0; i < pieces.Count; i++)
                 {
                     if (pieces[i].Index != message.PieceIndex)
@@ -327,29 +328,31 @@ namespace MonoTorrent.Client
                     break;
                 }
 
+                // If we are *not* requesting the piece that this block came from, we kill the connection
                 if (piece == null)
-                {
-                    return PieceEvent.BlockNotRequested;
-#warning Handle this properly. Does this mean that i should close off the peers connection because they sent me a piece i didn't request?
-                }
+                    throw new MessageException("Received block we didn't request");
 
-                foreach (Block block in piece)
+                // For all the blocks in that piece, pick out the block that this piece message belongs to
+                for (int i = 0; i < piece.Blocks.Length; i++)
                 {
-                    if (block.StartOffset != message.StartOffset)
+                    if (piece[i].StartOffset != message.StartOffset)
                         continue;
 
-                    if (message.BlockLength != block.RequestLength)
-                        throw new Exception("Request length should match block length");
-
-                    block.Received = true;
-
-
-                    id.Peer.Connection.AmRequestingPiecesCount--;
+                    block = piece[i];
                     break;
                 }
 
-                id.TorrentManager.FileManager.Write(recieveBuffer, offset, writeIndex, p);
+                if (block.RequestLength != message.BlockLength)
+                    throw new MessageException("Request length should match block length");
 
+                if (block.Received)
+                    throw new MessageException("Block already received");
+
+                id.Peer.Connection.AmRequestingPiecesCount--;
+
+                long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
+                id.TorrentManager.FileManager.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+                block.Received = true;
 
                 if (!piece.AllBlocksReceived)
                     return PieceEvent.BlockWrittenToDisk;
@@ -360,8 +363,8 @@ namespace MonoTorrent.Client
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
                 if (result)
-                    id.TorrentManager.PieceCompleted(piece.Index);
-#warning To some tricks if we fail to reduce the amount we have to redownload
+                    id.TorrentManager.SendHaveMessageToAll(piece.Index);
+                // FIXME To some tricks if we fail to reduce the amount we have to redownload
                 pieces.Remove(piece);
 
                 if (pieces.Count == 0)

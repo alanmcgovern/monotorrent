@@ -105,7 +105,6 @@ namespace MonoTorrent.Client.PeerMessages
             this.bitField.FromArray(buffer, offset, length);
         }
 
-#warning Copy this straight into the Peers Bitfield. Slightly more memory efficient :p
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>

@@ -1,5 +1,5 @@
 //
-// ListenerException.cs
+// ProtocolException.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -33,47 +33,27 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class ListenerException : Exception
+    public class ProtocolException : MonoTorrentException
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public ListenerException()
-            : base()
+        public ProtocolException()
+            :base()
         {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        public ListenerException(string message)
+        public ProtocolException(string message)
             : base(message)
         {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="innerException"></param>
-        public ListenerException(string message, Exception innerException)
+        public ProtocolException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="info"></param>
-        /// <param name="context"></param>
-        public ListenerException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        public ProtocolException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

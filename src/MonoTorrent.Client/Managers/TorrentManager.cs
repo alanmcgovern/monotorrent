@@ -422,7 +422,7 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection == null)
                             continue;
 
-                        if (counter % 1000/ClientEngine.TickLength == 0)     // Call it every second... ish
+                        if (counter % (1000/ClientEngine.TickLength) == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
                         //if (counter % 500 == 0)
@@ -852,7 +852,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="p"></param>
-        internal void PieceCompleted(int p)
+        internal void SendHaveMessageToAll(int p)
         {
             // Only send a "have" message if the peer needs the piece.
             // This is "Have Suppression" as defined in the spec.
@@ -899,5 +899,9 @@ namespace MonoTorrent.Client
             return (other == null) ? false : BitConverter.ToString(this.torrent.InfoHash) == BitConverter.ToString(other.torrent.InfoHash);
         }
 
+        public override int GetHashCode()
+        {
+            return BitConverter.ToString(this.torrent.InfoHash).GetHashCode();
+        }
     }
 }

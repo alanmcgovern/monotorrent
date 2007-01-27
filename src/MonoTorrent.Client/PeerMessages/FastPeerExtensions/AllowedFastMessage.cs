@@ -65,6 +65,9 @@ namespace MonoTorrent.Client.PeerMessages
         #region Methods
         internal int Encode(byte[] buffer, int offset)
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new ProtocolException("Message encoding not supported");
+
             buffer[offset + 4] = MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset+5, 4);
@@ -74,6 +77,9 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Decode(byte[] buffer, int offset, int length)
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new ProtocolException("Message decoding not supported");
+
             this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
         }
 

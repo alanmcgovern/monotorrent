@@ -1,5 +1,5 @@
 //
-// ConnectionManagerException.cs
+// ConnectionException.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -36,12 +36,12 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class ConnectionManagerException : Exception
+    public class ConnectionException : MonoTorrentException
     {
         /// <summary>
         /// 
         /// </summary>
-        public ConnectionManagerException()
+        public ConnectionException()
             : base()
         {
         }
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="message"></param>
-        public ConnectionManagerException(string message)
+        public ConnectionException(string message)
             : base(message)
         {
         }
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message"></param>
         /// <param name="innerException"></param>
-        public ConnectionManagerException(string message, Exception innerException)
+        public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="info"></param>
         /// <param name="context"></param>
-        public ConnectionManagerException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        public ConnectionException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

@@ -41,7 +41,6 @@ namespace MonoTorrent.Client
         private object requestsLocker = new object();
         private List<Piece> pieces;
         private List<Block> blocks;
-        private List<PeerConnectionID> requesters;
         #endregion
 
 
@@ -126,7 +125,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, int dataOffset, long writeIndex, int blockLength, PieceMessage message)
+        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -158,7 +157,10 @@ namespace MonoTorrent.Client
 
                 // Only write to disk once
                 if (!b.Received)
-                    id.TorrentManager.FileManager.Write(buffer, dataOffset, writeIndex, blockLength);
+                {
+                    long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
+                    id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
+                }
                 b.Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
 
@@ -176,7 +178,7 @@ namespace MonoTorrent.Client
                         this.blocks.Remove(p[i]);
                     this.pieces.Remove(p);
 
-                    id.TorrentManager.PieceCompleted(p.Index);
+                    id.TorrentManager.SendHaveMessageToAll(p.Index);
                 }
                 else
                 {
