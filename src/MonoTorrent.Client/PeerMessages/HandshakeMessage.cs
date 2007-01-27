@@ -216,7 +216,6 @@ namespace MonoTorrent.Client.PeerMessages
 
         public int ByteLength
         {
-#warning Update this
             get { return 68; }
         }
         #endregion
