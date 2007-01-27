@@ -427,7 +427,7 @@ namespace MonoTorrent.Client
             {
                 temp = ((buffer[offset] & p) != 0);
                 if (temp)
-                    throw new ArgumentException("The bitfield supplied is invalid");
+                    throw new MessageException("Invalid bitfield received");
 
                 p >>= 1;
 
