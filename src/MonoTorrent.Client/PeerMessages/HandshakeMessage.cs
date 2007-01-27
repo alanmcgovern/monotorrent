@@ -210,7 +210,8 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Handle(PeerConnectionID id)
         {
-            throw new NotImplementedException();
+            // No handling needed
+            //throw new NotImplementedException();
         }
 
 
