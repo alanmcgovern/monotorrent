@@ -45,6 +45,7 @@ namespace MonoTorrent.Client.PeerMessages
         private ushort port;
         #endregion
 
+
         #region Public Properties
 
         /// <summary>
@@ -94,8 +95,6 @@ namespace MonoTorrent.Client.PeerMessages
             this.port = port;
         }
         #endregion
-
-
 
 
         #region Methods
