@@ -399,7 +399,6 @@ namespace MonoTorrent.Client
         /// <param name="buffer">The buffer containing the BitField</param>
         /// <param name="offset">The offset at which to start decoding the BitField at</param>
         /// <param name="length">The maximum number of bytes to read while decoding the BitField</param>
-#warning Check the remaining bits in the last byte to make sure they're 0. use the length parameter
         internal void FromArray(byte[] buffer, int offset, int length)
         {
             byte p = 128;
