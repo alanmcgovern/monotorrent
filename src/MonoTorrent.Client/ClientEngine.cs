@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         #region Global Supports
-        internal static readonly bool SupportsFastPeer = false;
+        internal static readonly bool SupportsFastPeer = true;
         #endregion
 
         #region Private Member Variables
@@ -486,6 +486,9 @@ namespace MonoTorrent.Client
                 Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
                 peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
                 id = new PeerConnectionID(peer);
+                id.Peer.Connection.ProcessingQueue = true;
+                id.Peer.Connection.LastMessageSent = DateTime.Now;
+                id.Peer.Connection.LastMessageReceived = DateTime.Now;
 
                 ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
                 id.Peer.Connection.BytesReceived = 0;
@@ -540,6 +543,7 @@ namespace MonoTorrent.Client
                     try
                     {
                         handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                        handshake.Handle(id);
                     }
                     catch
                     {
