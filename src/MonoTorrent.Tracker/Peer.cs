@@ -137,7 +137,7 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentException("sport");
                             
             byte[] port = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)sport));
-            byte[] addr = BitConverter.GetBytes((int)IPAddress.Parse(address).Address);
+            byte[] addr = IPAddress.Parse(address).GetAddressBytes();
             byte[] entry = new byte[addr.Length + port.Length];
             Debug.Assert(entry.Length == 6, "This should be 6 bytes");
             
