@@ -170,7 +170,6 @@ namespace TestClient
 
         private static void shutdown()
         {
-#warning Maybe return a wait handle and wait for the response.
             WaitHandle[] handles = engine.Stop();
             for (int i = 0; i < handles.Length; i++)
                 if (handles[i] != null)
