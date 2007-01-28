@@ -113,38 +113,28 @@ namespace MonoTorrent.Client
         public RequestMessage PickPiece(PeerConnectionID id, Peers otherPeers)
         {
             int requestIndex = 0;
+            RequestMessage message = null;
             Priority highestPriorityFound = Priority.DoNotDownload;
 
             lock (this.myBitfield)
             {
                 // If there is already a request there, request the next block.
-                if (this.requests.ContainsKey(id))
-                {
-                    List<Piece> reqs = this.requests[id];
-                    for (int i = 0; i < reqs.Count; i++)
-                        for (int j = 0; j < reqs[i].Blocks.Length; j++)
-                            if (!reqs[i][j].Requested)
-                            {
-                                reqs[i][j].Requested = true;
-                                return reqs[i][j].CreateRequest();
-                            }
-                }
+                if ((message = ContinueExistingRequest(id)) != null)
+                    return message;
 
-                // We get here if there were no free blocks to request.
+                // Then we check if there are any allowed "Fast" pieces to download
+                if ((message = GetFastPiece(id)) != null)
+                    return message;
+
+
+                // If there were no fast pieces, we can't get a "regular" piece unless
+                // the peer is not choking us
+                if (id.Peer.Connection.IsChoking)
+                    return null;
+
                 // We see if the peer has suggested any pieces we should request
-                while (id.Peer.Connection.SuggestedPieces.Count > 0)
-                {
-                    // If we already have that piece, then remove it from the suggested pieces
-                    if (AlreadyHaveOrRequested(id.Peer.Connection.SuggestedPieces[0]))
-                    {
-                        id.Peer.Connection.SuggestedPieces.RemoveAt(0);
-                        continue;
-                    }
-
-                    requestIndex = id.Peer.Connection.SuggestedPieces[0];
-                    id.Peer.Connection.SuggestedPieces.RemoveAt(0);
-                    return this.GenerateRequest(id, requestIndex);
-                }
+                if ((message = GetSuggestedPiece(id)) != null)
+                    return message;
 
                 // Now we see what pieces the peer has that we don't have and try and request one
                 Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
@@ -157,7 +147,8 @@ namespace MonoTorrent.Client
                 highestPriorityFound = HighestPriorityForAvailablePieces(this.bufferBitfield);
 
                 if (highestPriorityFound == Priority.DoNotDownload)
-                    return null;    // Nothing to download here.
+                    return null;    // Nothing to download. This peer is NotInteresting or we have requested 
+                                    // (but not received) all the pieces this peer has to offer off other peers
 
                 for (int i = 0; i < otherPeers.Count; i++)
                 {
@@ -195,6 +186,84 @@ namespace MonoTorrent.Client
 
                 return this.GenerateRequest(id, requestIndex);
             }
+        }
+
+        private RequestMessage GetFastPiece(PeerConnectionID id)
+        {
+            int requestIndex; 
+
+            if (!id.Peer.Connection.SupportsFastPeer)
+                return null;
+
+            while (id.Peer.Connection.IsAllowedFastPieces.Count > 0)
+            {
+                // If we already have that piece, then remove it from the suggested pieces
+                if (AlreadyHaveOrRequested((int)id.Peer.Connection.IsAllowedFastPieces[0]))
+                {
+                    id.Peer.Connection.IsAllowedFastPieces.RemoveAt(0);
+                    continue;
+                }
+
+                // If we have no suggested pieces left, break out
+                if (id.Peer.Connection.IsAllowedFastPieces.Count == 0)
+                    return null;
+
+                requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[0];
+                id.Peer.Connection.IsAllowedFastPieces.RemoveAt(0);
+                return this.GenerateRequest(id, requestIndex);
+            }
+
+            return null;
+        }
+
+        private RequestMessage GetSuggestedPiece(PeerConnectionID id)
+        {
+            int requestIndex;
+            while (id.Peer.Connection.SuggestedPieces.Count > 0)
+            {
+                // If we already have that piece, then remove it from the suggested pieces
+                if (AlreadyHaveOrRequested(id.Peer.Connection.SuggestedPieces[0]))
+                {
+                    id.Peer.Connection.SuggestedPieces.RemoveAt(0);
+                    continue;
+                }
+
+                // If we have no suggested pieces left, break out
+                if (id.Peer.Connection.SuggestedPieces.Count == 0)
+                    return null;
+
+                requestIndex = id.Peer.Connection.SuggestedPieces[0];
+                id.Peer.Connection.SuggestedPieces.RemoveAt(0);
+                return this.GenerateRequest(id, requestIndex);
+            }
+
+            return null;
+        }
+
+
+        private RequestMessage ContinueExistingRequest(PeerConnectionID id)
+        {
+            // Return null if we aren't already tracking pieces for this peer
+            if (!this.requests.ContainsKey(id))
+                return null;
+
+            // Get the list of all the pieces we're requesting off the peer and check to see if there
+            // are any blocks not requested yet. If there are, request them
+            List<Piece> reqs = this.requests[id];
+            for (int i = 0; i < reqs.Count; i++)
+            {
+                for (int j = 0; j < reqs[i].Blocks.Length; j++)
+                {
+                    if (!reqs[i][j].Requested)
+                    {
+                        reqs[i][j].Requested = true;
+                        return reqs[i][j].CreateRequest();
+                    }
+                }
+            }
+
+            // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
+            return null;
         }
 
 
@@ -385,31 +454,37 @@ namespace MonoTorrent.Client
             lock (this.requests)
             {
                 if (!this.requests.ContainsKey(id))
-                    return;
+                    throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                Piece p = null;
+                Piece piece = null;
+                Block block = null;
+                List<Piece> pieces = this.requests[id];
 
-                foreach (Piece piece in this.requests[id])
+                for (int i = 0; i < pieces.Count; i++)
                 {
-                    if (piece.Index != rejectRequestMessage.PieceIndex)
-                        continue;
-                    p = piece;
-                }
-
-                if (p == null)
-                {
-                    return;
-#warning Does this need to close the peers connection too?
-                }
-
-                foreach (Block block in p)
-                {
-                    if (block.StartOffset != rejectRequestMessage.StartOffset)
+                    if (pieces[i].Index != rejectRequestMessage.PieceIndex)
                         continue;
 
-                    block.Requested = false;
+                    piece = pieces[i];
                     break;
                 }
+
+                if (piece == null)
+                    throw new MessageException("Received reject request for a piece i'm not requesting");
+
+                for (int i = 0; i < piece.Blocks.Length; i++)
+                {
+                    if (piece[i].StartOffset != rejectRequestMessage.StartOffset)
+                        continue;
+
+                    block = piece[i];
+                    break;
+                }
+
+                if (block == null)
+                    throw new MessageException("Received reject request for a piece i'm not requesting");
+
+                block.Requested = false;
             }
         }
 
