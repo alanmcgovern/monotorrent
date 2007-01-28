@@ -35,7 +35,7 @@ namespace MonoTorrent.Common
     /// <summary>
     /// Main controller class for ITorrentWatcher
     /// </summary>
-    public class TorrentWatchers : List<ITorrentWatcher>
+    public class TorrentWatchers : IList<ITorrentWatcher>
     {
         #region Events
         /// <summary>
@@ -204,6 +204,63 @@ namespace MonoTorrent.Common
 
             if (this.OnTorrentLost != null)
                 this.OnTorrentLost(this, eventArgs);
+        }
+
+        #endregion
+
+        #region IList<ITorrentWatcher> Members
+
+        public int IndexOf(ITorrentWatcher item)
+        {
+            return this.watcherList.IndexOf(item);
+        }
+
+        public void Insert(int index, ITorrentWatcher item)
+        {
+            this.watcherList.Insert(index, item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            this.watcherList.RemoveAt(index);
+        }
+
+        #endregion
+
+        #region ICollection<ITorrentWatcher> Members
+
+
+        public void Clear()
+        {
+            this.watcherList.Clear();
+        }
+
+        public void CopyTo(ITorrentWatcher[] array, int arrayIndex)
+        {
+            this.watcherList.CopyTo(array, arrayIndex);
+        }
+
+        public bool IsReadOnly
+        {
+            get { return false; }
+        }
+
+        #endregion
+
+        #region IEnumerable<ITorrentWatcher> Members
+
+        IEnumerator<ITorrentWatcher> IEnumerable<ITorrentWatcher>.GetEnumerator()
+        {
+            return this.watcherList.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.watcherList.GetEnumerator();
         }
 
         #endregion
