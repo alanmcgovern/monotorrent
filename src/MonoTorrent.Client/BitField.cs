@@ -264,7 +264,6 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
                 this.trueCount = this.length;
-                SetLastBitsFalse();
             }
 
             else
@@ -274,6 +273,7 @@ namespace MonoTorrent.Client
                 this.trueCount = 0;
             }
         }
+
 
         private void SetLastBitsFalse()
         {
@@ -370,6 +370,8 @@ namespace MonoTorrent.Client
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
+
+            SetLastBitsFalse();
 
             int byteindex = offset;
             byte temp = 0;
