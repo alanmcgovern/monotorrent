@@ -126,5 +126,10 @@ namespace MonoTorrent.Client.Encryption
             this.peerSocket.Close();
         }
         #endregion
+
+        public override byte[] AddressBytes
+        {
+            get { return this.peerEndPoint.Address.GetAddressBytes(); }
+        }
     }
 }
