@@ -144,15 +144,36 @@ namespace MonoTorrent.Client
             if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
                 return;
 
-            PeerConnectionID id;
-            System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
+            int i;
+            PeerConnectionID id = null;
+            int length = manager.Available.Count;
 
-            id = manager.Available[0];
-            manager.Available.Remove(0);
-            manager.ConnectingTo.Add(id);
+            for (i = 0; i < length; i++)
+            {
+                id = manager.Available[0];
+                manager.Available.Remove(0);
+
+                // If the peer is a known seeder and i'm a seeder, don't bother trying to connect
+                if (manager.State == TorrentState.Seeding && id.Peer.IsSeeder)
+                {
+                    manager.Available.Add(id);
+                    id = null;
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (id == null)
+                return;
+
             lock (id)
             {
                 //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting****");
+                manager.ConnectingTo.Add(id);
+                System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
                 id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Length, new NoEncryption());
                 id.Peer.Connection.ProcessingQueue = true;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
@@ -362,26 +383,32 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\tHandshake");
                         msg = new HandshakeMessage();
                         msg.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
                         HandshakeMessage handshake = msg as HandshakeMessage;
+
+                        // If we got the peer as a "compact" peer, then the peerid will be empty
+                        if (string.IsNullOrEmpty(id.Peer.PeerId))
+                            id.Peer.PeerId = handshake.PeerId;
+
+                        // If the infohash doesn't match, dump the connection
                         if (!ToolBox.ByteMatch(handshake.infoHash, id.TorrentManager.Torrent.InfoHash))
                         {
                             cleanUp = true;
                             return;
                         }
 
-                        if (string.IsNullOrEmpty(id.Peer.PeerId))
-                            id.Peer.PeerId = handshake.PeerId;
-                        //id.Peer.MessageHistory.AppendLine("Their ID: " + id.Peer.PeerId);
-
-                        id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
-                        id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
-
-                        if (((HandshakeMessage)msg).SupportsFastPeer && ClientEngine.SupportsFastPeer)
+                        // If the peer id's don't match, dump the connection
+                        if (id.Peer.PeerId != handshake.PeerId)
                         {
-                            id.Peer.Connection.SupportsFastPeer = true;
+                            cleanUp = true;
+                            return;
+                        }
+
+                        handshake.Handle(id);
+
+                        if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
+                        {
                             if (id.TorrentManager.PieceManager.MyBitField.AllFalse())
                                 msg = new HaveNoneMessage();
 
@@ -456,10 +483,15 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent, SocketFlags.None, this.bitfieldSentCallback, id, out id.ErrorCode);
                             return;
                         }
-                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "BitfieldMessage");
+                        
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
                         id.Peer.Connection.ProcessingQueue = false;
+
+                        // Now we will enqueue a FastPiece message for each piece we will allow the peer to download
+                        if(ClientEngine.SupportsFastPeer && id.Peer.Connection.SupportsFastPeer)
+                            for (int i = 0; i < id.Peer.Connection.AmAllowedFastPieces.Count; i++)
+                                id.Peer.Connection.EnQueue(new AllowedFastMessage(id.Peer.Connection.AmAllowedFastPieces[i]));
 
                         id.Peer.Connection.BytesReceived = 0;
                         id.Peer.Connection.BytesToRecieve = 4;
