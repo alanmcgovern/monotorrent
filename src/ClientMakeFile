@@ -1,4 +1,0 @@
-EXCEPTION: System.NullReferenceException: Object reference not set to an instance of an object.
-   at SlnToMake.ProjectInfo..ctor(String name, String guid, String csprojpath)
-   at SlnToMake.Maker.ParseSolution(String fname)
-   at SlnToMake.Maker.Main(String[] args)
