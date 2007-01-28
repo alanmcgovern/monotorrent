@@ -76,5 +76,10 @@ namespace MonoTorrent.Client.PeerConnections
         {
             throw new NotImplementedException();
         }
+
+        public override byte[] AddressBytes
+        {
+            get { return null; }
+        }
     }
 }

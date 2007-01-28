@@ -46,13 +46,27 @@ namespace MonoTorrent.Client
         #region Member Variables
         // FIXME Use these to request pieces
         /// <summary>
-        /// Contains the indexs of all the pieces we can request even if choked
+        /// Contains the indexs of all the pieces we will let the peer download even if they are choked
         /// </summary>
-        internal List<int> AllowedFastPieces
+        internal List<UInt32> AmAllowedFastPieces
         {
-            get { return this.allowedFastPieces; }
+            get { return this.amAllowedFastPieces; }
+            set { this.amAllowedFastPieces = value; }
         }
-        private List<int> allowedFastPieces;
+        private List<UInt32> amAllowedFastPieces;
+
+
+        /// <summary>
+        /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
+        /// </summary>
+        internal List<UInt32> IsAllowedFastPieces
+        {
+            get { return this.isAllowedFastPieces; }
+            set { this.isAllowedFastPieces = value; }
+        }
+        private List<UInt32> isAllowedFastPieces;
+
+        public abstract byte[] AddressBytes { get; }
 
 
         /// <summary>
@@ -336,10 +350,11 @@ namespace MonoTorrent.Client
             this.encryptor = encryptor;
             this.amChoking = true;
             this.isChoking = true;
-            this.allowedFastPieces = new List<int>();
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessageInternal>(12);
+            this.isAllowedFastPieces = new List<uint>();
+            this.amAllowedFastPieces = new List<uint>();
         }
         #endregion
 
