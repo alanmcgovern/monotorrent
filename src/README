@@ -1,9 +1,11 @@
 Readme for MonoTorrent:
 
 NOTE: You must use Mono 1.1.16.1 or higher to use the engine. 1.1.13.8 is *not* compatible.
-NOTE: Hashing performance under mono is (at the time of writing) slow,
-      so hashing torrents will take longer than on windows under MS.NET.
-      After the initial loading period, this shouldn't have much of an effect on performance.
+
+
+Build:
+To build the project, go into the "BuildScripts" directory and execute the required script for the type
+build file you want to create (VisualStudio/SharpDevelop/MonoDevelop or Autotools for makefiles).
 
 [The Tracker]
 ============
