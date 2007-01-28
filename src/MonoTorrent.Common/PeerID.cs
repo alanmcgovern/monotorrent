@@ -43,7 +43,10 @@ namespace MonoTorrent.Common
         BitBuddy,
         BitComet,
         Bitflu,
+        BitLord,
+        BitsOnWheels,
         BitTornado,
+        BitTorrent,
         BTSlave,
         BittorrentX,
         EnhancedCTorrent,
@@ -54,11 +57,14 @@ namespace MonoTorrent.Common
         Lphant,
         libtorrent,
         LibTorrent,
+        MLDonkey,
         MooPolice,
         MoonlightTorrent,
         MonoTorrent,
+        Opera,
         OspreyPermaseed,
         qBittorrent,
+        QueenBee,
         Qt4Torrent,
         Retriever,
         ShadowsClient,
@@ -74,6 +80,7 @@ namespace MonoTorrent.Common
         uTorrent,
         UPnPNatBitTorrent,
         XanTorrent,
+        XBTClient,
         ZipTorrent
     }
 
@@ -91,7 +98,7 @@ namespace MonoTorrent.Common
         }
         private string shortId;
 
-#warning I only wrote support for Standard peerid's and Shadows style peer id's because i'm lazy.
+
         public PeerID(string peerId)
         {
             Match m;
@@ -174,7 +181,7 @@ namespace MonoTorrent.Common
                         this.client = Common.Client.MooPolice;
                         break;
 
-                    case ("MN"):
+                    case ("MO"):
                         this.client = Common.Client.MonoTorrent;
                         break;
 
@@ -245,13 +252,13 @@ namespace MonoTorrent.Common
 
             #region Shadows Style
             r = new Regex(@"(([A-Za-z]{1})\d{3})----*");
-            if(r.IsMatch(peerId))
+            if (r.IsMatch(peerId))
             {
                 m = r.Match(peerId);
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
-                    case("A"):
+                    case ("A"):
                         this.client = Client.ABC;
                         break;
 
@@ -282,11 +289,90 @@ namespace MonoTorrent.Common
                 }
                 return;
             }
+            #endregion
+
+            #region Brams Client
+            r = new Regex("M/d-/d-/d--");
+            if (r.IsMatch(peerId))
+            {
+                this.shortId = "M";
+                this.client = Client.BitTorrent;
+                return;
+            }
+            #endregion
+
+            #region BitLord
+            r = new Regex("exbc..LORD");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.BitLord;
+                this.shortId = "lord";
+                return;
+            }
+            #endregion
+
+            #region BitComet
+            r = new Regex("exbc");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.BitComet;
+                this.shortId = "BC";
+                return;
+            }
+            #endregion
+
+            #region XBT
+            r = new Regex("XBT/d/{3}");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.XBTClient;
+                this.shortId = "XBT";
+                return;
+            }
+            #endregion
+
+            #region Opera
+            r = new Regex("OP/d{4}");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.Opera;
+                this.shortId = "OP";
+            }
+            #endregion
+
+            #region MLDonkey
+            r = new Regex("-ML/d\\./d\\./d");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.MLDonkey;
+                this.shortId = "ML";
+                return;
+            }
+            #endregion
+
+            #region Bits on wheels
+            r = new Regex("-BOWA");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.BitsOnWheels;
+                this.shortId = "BOW";
+                return;
+            }
+            #endregion
+
+            #region Queen Bee
+            r = new Regex("Q/d-/d-/d--");
+            if (r.IsMatch(peerId))
+            {
+                this.client = Client.QueenBee;
+                this.shortId = "Q";
+                return;
+            }
+            #endregion
 
             this.client = Client.Unknown;
             this.shortId = peerId;
             System.Diagnostics.Trace.WriteLine("Unsupported clientid style: " + peerId);
-#endregion
         }
     }
 }
