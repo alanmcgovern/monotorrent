@@ -39,14 +39,23 @@ namespace MonoTorrent.Client
     public class PeerConnectionEventArgs : EventArgs
     {
         #region Member Variables
+
+        public PeerConnectionID PeerID
+        {
+            get { return this.peerConnectionId; }
+        }
+        private PeerConnectionID peerConnectionId;
+
+
         /// <summary>
         /// The peer event that just happened
         /// </summary>
-        public PeerConnectionEvent PeerEvent
+        public Direction ConnectionDirection
         {
-            get { return this.peerEvent; }
+            get { return this.connectionDirection; }
         }
-        private PeerConnectionEvent peerEvent;
+        private Direction connectionDirection;
+
         #endregion
 
 
@@ -55,9 +64,10 @@ namespace MonoTorrent.Client
         /// Creates a new PeerConnectionEventArgs
         /// </summary>
         /// <param name="peerEvent">The peer event that just happened</param>
-        public PeerConnectionEventArgs(PeerConnectionEvent peerEvent)
+        public PeerConnectionEventArgs(PeerConnectionID id, Direction connectionDirection)
         {
-            this.peerEvent = peerEvent;
+            this.peerConnectionId = id;
+            this.connectionDirection = connectionDirection;
         }
         #endregion
     }

@@ -89,8 +89,8 @@ namespace TestClient
             foreach (TorrentManager manager in torrents)
             {
                 engine.Start(manager);
-                manager.OnPieceHashed += new EventHandler<PieceHashedEventArgs>(main_OnPieceHashed);
-                manager.OnTorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
+                manager.PieceHashed += new EventHandler<PieceHashedEventArgs>(main_OnPieceHashed);
+                manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
             }
 
 

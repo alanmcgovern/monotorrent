@@ -50,19 +50,19 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Event that's fired every time new peers are added from a tracker update
         /// </summary>
-        public event EventHandler<PeersAddedEventArgs> OnPeersAdded;
+        public event EventHandler<PeersAddedEventArgs> PeersFound;
 
 
         /// <summary>
         /// Event that's fired every time a piece is hashed
         /// </summary>
-        public event EventHandler<PieceHashedEventArgs> OnPieceHashed;
+        public event EventHandler<PieceHashedEventArgs> PieceHashed;
 
 
         /// <summary>
         /// Event that's fired every time the TorrentManagers state changes
         /// </summary>
-        public event EventHandler<TorrentStateChangedEventArgs> OnTorrentStateChanged;
+        public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
         #endregion
 
 
@@ -592,8 +592,8 @@ namespace MonoTorrent.Client
                 }
             }
 
-            if (this.OnPeersAdded != null)
-                this.OnPeersAdded(this, new PeersAddedEventArgs(added));
+            if (this.PeersFound != null)
+                this.PeersFound(this, new PeersAddedEventArgs(added));
             return added;
         }
 
@@ -636,8 +636,8 @@ namespace MonoTorrent.Client
                 added += this.AddPeers(id);
             }
 
-            if (this.OnPeersAdded != null)
-                this.OnPeersAdded(this, new PeersAddedEventArgs(added));
+            if (this.PeersFound != null)
+                this.PeersFound(this, new PeersAddedEventArgs(added));
             return added;
         }
 
@@ -654,8 +654,8 @@ namespace MonoTorrent.Client
             if (!pieceHashedEventArgs.HashPassed)
                 Interlocked.Increment(ref this.hashFails);
 
-            if (this.OnPieceHashed != null)
-                this.OnPieceHashed(this, pieceHashedEventArgs);
+            if (this.PieceHashed != null)
+                this.PieceHashed(this, pieceHashedEventArgs);
         }
 
 
@@ -667,8 +667,8 @@ namespace MonoTorrent.Client
             TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this.state, newState);
             this.state = newState;
 
-            if (this.OnTorrentStateChanged != null)
-                this.OnTorrentStateChanged(this, e);
+            if (this.TorrentStateChanged != null)
+                this.TorrentStateChanged(this, e);
         }
 
         #endregion
@@ -807,8 +807,8 @@ namespace MonoTorrent.Client
                 lock (manager.pieceManager.MyBitField)
                     manager.pieceManager.MyBitField[i] = result;
 
-                if (manager.OnPieceHashed != null)
-                    manager.OnPieceHashed(this, new PieceHashedEventArgs(i, result));
+                if (manager.PieceHashed != null)
+                    manager.PieceHashed(this, new PieceHashedEventArgs(i, result));
             }
 
             manager.hashChecked = true;

@@ -44,16 +44,17 @@ namespace MonoTorrent.Client
     public class ConnectionManager
     {
         #region Events
-        /// <summary>
-        /// Event that's fired every time a Peer connects or disconnects
-        /// </summary>
-        public event EventHandler<PeerConnectionEventArgs> OnPeerConnectionChanged;
 
+        public event EventHandler<PeerConnectionEventArgs> PeerConnected;
+
+
+        public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
 
         /// <summary>
         /// Event that's fired every time a message is sent or Received from a Peer
         /// </summary>
-        public event EventHandler<PeerMessageEventArgs> OnPeerMessages;
+        public event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
+
         #endregion
 
 
@@ -207,8 +208,8 @@ namespace MonoTorrent.Client
                         id.TorrentManager.ConnectingTo.Remove(id);
                         id.TorrentManager.ConnectedPeers.Add(id);
 
-                        if (this.OnPeerConnectionChanged != null)
-                            this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.OutgoingConnectionCreated));
+                        if (this.PeerConnected != null)
+                            this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
 
                         if (this.openConnections > this.MaxOpenConnections)
                         {
@@ -659,8 +660,8 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        if (this.OnPeerMessages != null)
-                            this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
+                        if (this.PeerMessageTransferred != null)
+                            this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
                         try
                         {
                             message.Handle(id);
@@ -762,8 +763,8 @@ namespace MonoTorrent.Client
                             }
                             return;
                         }
-                        if (this.OnPeerMessages != null)
-                            this.OnPeerMessages(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
+                        if (this.PeerMessageTransferred != null)
+                            this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         //Console.WriteLine("SENT " + id.Peer.Connection.CurrentlySendingMessage.ToString());
@@ -935,11 +936,12 @@ namespace MonoTorrent.Client
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
 
+                        if (this.PeerConnected != null)
+                            this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Incoming));
+
                         id.Peer.Connection.BytesReceived = 0;
                         id.Peer.Connection.BytesToRecieve = 4;
                         id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.messageLengthReceivedCallback, id, out id.ErrorCode);
-                        if (this.OnPeerConnectionChanged != null)
-                            this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.IncomingConnectionReceived));
                     }
                 }
             }
@@ -972,8 +974,8 @@ namespace MonoTorrent.Client
 
                     if (id.Peer.Connection != null)
                     {
-                        if (this.OnPeerConnectionChanged != null)
-                            this.OnPeerConnectionChanged(id, new PeerConnectionEventArgs(PeerConnectionEvent.Disconnected));
+                        if (this.PeerDisconnected != null)
+                            this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
