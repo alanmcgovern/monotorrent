@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.PeerMessages
             int i = 0;
             protocolStringLength = (int)buffer[i++];                  // First byte is length
             protocolString = System.Text.Encoding.ASCII.GetString(buffer, i, protocolStringLength);
-            i += protocolStringLength;                               // Next bytes are protocol string
+            i += protocolStringLength;                                // Next bytes are protocol string
             i += 8;                                                   // 8 reserved bytes
             this.infoHash = new byte[20];
 
@@ -180,6 +180,7 @@ namespace MonoTorrent.Client.PeerMessages
 
             peerId = System.Text.Encoding.ASCII.GetString(buffer, i, 20);
             i += 20;                                                // 20 byte peerid
+
             CheckForSupports(buffer, offset + protocolStringLength + 1);
         }
 
@@ -210,8 +211,14 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Handle(PeerConnectionID id)
         {
-            // No handling needed
-            //throw new NotImplementedException();
+
+            id.Peer.Connection.ClientApp = new PeerID(this.peerId);
+            id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
+
+            // If they support fast peers, create their list of allowed pieces that they can request off me
+            if (this.supportsFastPeer)
+                id.Peer.Connection.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.Peer.Connection.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Length);
+
         }
 
 
