@@ -216,7 +216,7 @@ namespace MonoTorrent.Client.PeerMessages
             id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
-            if (this.supportsFastPeer)
+            if (this.supportsFastPeer && id.TorrentManager != null)
                 id.Peer.Connection.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.Peer.Connection.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Length);
 
         }
