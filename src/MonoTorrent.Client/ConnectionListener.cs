@@ -105,6 +105,7 @@ namespace MonoTorrent.Client
             listenEndPoint = endPoint;
             this.newConnectionCallback = newConnectionCallback;
             this.isListening = false;
+            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
         #endregion
 
