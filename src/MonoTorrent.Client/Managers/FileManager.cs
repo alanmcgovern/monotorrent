@@ -122,8 +122,12 @@ namespace MonoTorrent.Client
         /// <param name="fileAccess">The access level for the files</param>
         public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
+            if (files.Length == 1)
+                baseDirectory = string.Empty;
+            else
+                this.baseDirectory = baseDirectory;
+
             this.files = files;
-            this.baseDirectory = baseDirectory;
             this.savePath = savePath;
             this.initialHashRequired = false;
             this.pieceLength = pieceLength;
