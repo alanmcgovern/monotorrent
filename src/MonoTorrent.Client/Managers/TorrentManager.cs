@@ -307,7 +307,9 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Start()
         {
-            this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
+            if(!this.fileManager.StreamsOpen)
+                this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
+
             if (this.fileManager.InitialHashRequired)
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
@@ -431,37 +433,30 @@ namespace MonoTorrent.Client
 
                         // If the peer is interesting to me and i havent sent an Interested message
                         if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
-                            MakePeerInteresting(id);
+                            SetAmInterestedStatus(id, true);
 
                         // If the peer is NOT interesting to me and i haven't sent a NotInterested message
                         else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
-                            MakePeerUnInteresting(id);
+                            SetAmInterestedStatus(id, false);
 
                         // If he is not interested and i am not choking him
                         if (!id.Peer.Connection.IsInterested && !id.Peer.Connection.AmChoking)
-                            ChokePeer(id);
+                            SetChokeStatus(id, true);
 
                         // If i am choking the peer, and he is interested in downloading from us, and i haven't reached my maximum upload slots
                         if (id.Peer.Connection.AmChoking && id.Peer.Connection.IsInterested && this.uploadingTo < this.settings.UploadSlots)
-                            UnchokePeer(id);
+                            SetChokeStatus(id, false);
 
                         // If i have sent 50 pieces to the peer, choke him to let someone else download
                         if (id.Peer.Connection.PiecesSent > 50)
-                            ChokePeer(id);
+                            SetChokeStatus(id, true);
 
                         while ((!id.Peer.Connection.IsChoking || id.Peer.Connection.IsAllowedFastPieces.Count > 0)
                                 && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
                         {
-                            if (pieceManager.InEndGameMode)// In endgame we only want to queue 2 pieces
-                                if (id.Peer.Connection.AmRequestingPiecesCount > 2)
-                                    break;
-
-                            msg = this.pieceManager.PickPiece(id, this.connectedPeers);
-                            if (msg == null)
+                            // If there are no more pieces to add, AddPieceRequest will return null
+                            if (!AddPieceRequest(id))
                                 break;
-
-                            id.Peer.Connection.EnQueue(msg);
-                            id.Peer.Connection.AmRequestingPiecesCount++;
                         }
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
@@ -886,40 +881,65 @@ namespace MonoTorrent.Client
         }
 
 
-        private void ChokePeer(PeerConnectionID id)
+        private void SetChokeStatus(PeerConnectionID id, bool amChoking)
         {
-            Interlocked.Decrement(ref this.uploadingTo);
-            id.Peer.Connection.AmChoking = true;
-            id.Peer.Connection.EnQueue(new ChokeMessage());
             id.Peer.Connection.PiecesSent = 0;
+            id.Peer.Connection.AmChoking = amChoking;
 
-            RejectPendingRequests(id);
-            Debug.WriteLine("Choking: " + this.uploadingTo);
+            if (amChoking)
+            {
+                Interlocked.Decrement(ref this.uploadingTo);
+                id.Peer.Connection.EnQueue(new ChokeMessage());
+                RejectPendingRequests(id);
+                Debug.WriteLine("Choking: " + this.uploadingTo);
+            }
+            else
+            {
+                Interlocked.Increment(ref this.uploadingTo);
+                id.Peer.Connection.EnQueue(new UnchokeMessage());
+                Debug.WriteLine("UnChoking: " + this.uploadingTo);
+            }
         }
 
-        private void UnchokePeer(PeerConnectionID id)
+
+        internal bool AddPieceRequest(PeerConnectionID id)
         {
-            Interlocked.Increment(ref this.uploadingTo);
-            id.Peer.Connection.AmChoking = false;
-            id.Peer.Connection.EnQueue(new UnchokeMessage());
+            IPeerMessageInternal msg;
 
-            Debug.WriteLine("UnChoking: " + this.uploadingTo);
+            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
+                return false;
+
+            if (pieceManager.InEndGameMode)// In endgame we only want to queue 2 pieces
+                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+                    return false;
+
+            msg = this.pieceManager.PickPiece(id, this.connectedPeers);
+            if (msg == null)
+                return false;
+
+            id.Peer.Connection.EnQueue(msg);
+            id.Peer.Connection.AmRequestingPiecesCount++;
+            return true;
         }
 
-        private void MakePeerUnInteresting(PeerConnectionID id)
-        {
-            // If we used to be interested but now we're not, send a message
-            // We only become uninterested once we've Received all our requested bits.
-            id.Peer.Connection.AmInterested = false;
-            id.Peer.Connection.EnQueue(new NotInterestedMessage());
-        }
 
-        private void MakePeerInteresting(PeerConnectionID id)
+        /// <summary>
+        /// Changes the peers "Interesting" status to the new value
+        /// </summary>
+        /// <param name="id">The peer to change the status of</param>
+        /// <param name="amInterested">True if we are interested in the peer, false otherwise</param>
+        private void SetAmInterestedStatus(PeerConnectionID id, bool amInterested)
         {
             // If we used to be not interested but now we are, send a message.
-            id.Peer.Connection.AmInterested = true;
-            id.Peer.Connection.EnQueue(new InterestedMessage());
+            // If we used to be interested but now we're not, send a message
+            id.Peer.Connection.AmInterested = amInterested;
+
+            if (amInterested)
+                id.Peer.Connection.EnQueue(new InterestedMessage());
+            else
+                id.Peer.Connection.EnQueue(new NotInterestedMessage());
         }
+
 
         /// <summary>
         /// Checks the sendbuffer of the peer to see if there are any outstanding pieces which they requested

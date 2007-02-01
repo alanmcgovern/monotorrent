@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
         
         #endregion
 
-        #region Member Variables
+        #region Properties
 
         /// <summary>
         /// True if we need to hash the files (i.e. some were preexisting)
@@ -71,6 +71,11 @@ namespace MonoTorrent.Client
         public int PieceLength
         {
             get { return this.pieceLength; }
+        }
+
+        public bool StreamsOpen
+        {
+            get { return this.fileStreams != null; }
         }
 
         #endregion
@@ -123,7 +128,7 @@ namespace MonoTorrent.Client
         public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
             if (files.Length == 1)
-                baseDirectory = string.Empty;
+                this.baseDirectory = string.Empty;
             else
                 this.baseDirectory = baseDirectory;
 
@@ -133,7 +138,6 @@ namespace MonoTorrent.Client
             this.pieceLength = pieceLength;
             this.hasher = new SHA1Managed();
             this.hashBuffer = new byte[pieceLength];
-            this.fileStreams = new FileStream[files.Length];
 
             if (files.Length == 1)
                 baseDirectory = string.Empty;
@@ -144,21 +148,22 @@ namespace MonoTorrent.Client
         internal void OpenFileStreams(FileAccess fileAccess)
         {
             string filePath = null;
+            this.fileStreams = new FileStream[files.Length];
 
-            for (int i = 0; i < fileStreams.Length; i++)
+            for (int i = 0; i < this.fileStreams.Length; i++)
             {
-                filePath = GenerateFilePath(files[i], baseDirectory, savePath);
+                filePath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
 
                 if (File.Exists(filePath))
                     this.initialHashRequired = true;
 
-                fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read, 65536);
+                this.fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read, 65536);
 
                 // This hashing algorithm is written on the basis that the files are
                 // preallocated. Might change to not have to preallocate files in future,
                 // but there's no benefits to doing that.
-                if (fileStreams[i].Length != files[i].Length && fileAccess == FileAccess.ReadWrite)
-                    fileStreams[i].SetLength(files[i].Length);
+                if (this.fileStreams[i].Length != this.files[i].Length && fileAccess == FileAccess.ReadWrite)
+                    this.fileStreams[i].SetLength(files[i].Length);
 
                 this.fileSize += files[i].Length;
             }
@@ -168,6 +173,8 @@ namespace MonoTorrent.Client
         {
             for (int i = 0; i < this.fileStreams.Length; i++)
                 this.fileStreams[i].Dispose();
+
+            this.fileStreams = null;
         }
 
         #region Methods

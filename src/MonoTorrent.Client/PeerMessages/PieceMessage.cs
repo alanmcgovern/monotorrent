@@ -245,6 +245,8 @@ namespace MonoTorrent.Client.PeerMessages
             PieceEvent pevent = id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this);
             if (pevent == PieceEvent.HashFailed)
                 id.Peer.HashFails++;
+
+            while (id.TorrentManager.AddPieceRequest(id)) { }
         }
 
 

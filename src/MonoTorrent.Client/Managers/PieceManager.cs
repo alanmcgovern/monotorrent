@@ -41,6 +41,14 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
+        #region Public Constants
+
+        public const int MaxRequests = 6;
+        public const int MaxEndGameRequests = 2;
+
+        #endregion
+
+
         #region Events
         /// <summary>
         /// Event that's fired every time a Piece changes
