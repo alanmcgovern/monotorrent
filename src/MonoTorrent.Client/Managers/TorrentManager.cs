@@ -307,6 +307,7 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Start()
         {
+            this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
             if (this.fileManager.InitialHashRequired)
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
@@ -344,7 +345,6 @@ namespace MonoTorrent.Client
 
             UpdateState(TorrentState.Stopped);
 
-            this.fileManager.FlushAll();
             handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
@@ -357,6 +357,7 @@ namespace MonoTorrent.Client
                         ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[0]);
             }
 
+            this.FileManager.CloseFileStreams();
             this.SaveFastResume();
             this.connectedPeers = new Peers();
             this.available = new Peers();

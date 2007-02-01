@@ -297,7 +297,14 @@ namespace MonoTorrent.Client
         public TorrentManager LoadTorrent(string path, string savePath, TorrentSettings settings)
         {
             Torrent torrent = new Torrent();
-            torrent.LoadTorrent(path);
+            try
+            {
+                torrent.LoadTorrent(path);
+            }
+            catch (Exception ex)
+            {
+                throw new TorrentLoadException("Could not load the torrent", ex);
+            }
 
             if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
                 throw new TorrentException("The torrent is already in the engine");
@@ -358,7 +365,14 @@ namespace MonoTorrent.Client
         public TorrentManager LoadTorrent(Uri url, string location, string savePath, TorrentSettings settings)
         {
             WebClient client = new WebClient();
-            client.DownloadFile(url, location);
+            try
+            {
+                client.DownloadFile(url, location);
+            }
+            catch
+            {
+                throw new TorrentException("Could not download .torrent file from source");
+            }
             return this.LoadTorrent(location, savePath, settings);
         }
 

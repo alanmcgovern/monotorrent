@@ -41,25 +41,20 @@ namespace MonoTorrent.Client
     /// </summary>
     internal class FileManager : System.IDisposable
     {
-        #region Member Variables
-        /// <summary>
-        /// The length of a piece in bytes
-        /// </summary>
-        public int PieceLength
-        {
-            get { return this.pieceLength; }
-        }
+        #region Private Members
+        
+        TorrentFile[] files; 
+        string baseDirectory; 
+        string savePath;
         private readonly int pieceLength;
-
-
         private long fileSize;
-
-
         private SHA1Managed hasher;
-
-
         private FileStream[] fileStreams;
+        private bool initialHashRequired;
+        
+        #endregion
 
+        #region Member Variables
 
         /// <summary>
         /// True if we need to hash the files (i.e. some were preexisting)
@@ -69,7 +64,15 @@ namespace MonoTorrent.Client
             get { return this.initialHashRequired; }
             set { this.initialHashRequired = value; }
         }
-        private bool initialHashRequired;
+
+        /// <summary>
+        /// The length of a piece in bytes
+        /// </summary>
+        public int PieceLength
+        {
+            get { return this.pieceLength; }
+        }
+
         #endregion
 
 
@@ -119,7 +122,9 @@ namespace MonoTorrent.Client
         /// <param name="fileAccess">The access level for the files</param>
         public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
-            string filePath = null;
+            this.files = files;
+            this.baseDirectory = baseDirectory;
+            this.savePath = savePath;
             this.initialHashRequired = false;
             this.pieceLength = pieceLength;
             this.hasher = new SHA1Managed();
@@ -128,6 +133,13 @@ namespace MonoTorrent.Client
 
             if (files.Length == 1)
                 baseDirectory = string.Empty;
+        }
+        #endregion
+
+
+        internal void OpenFileStreams(FileAccess fileAccess)
+        {
+            string filePath = null;
 
             for (int i = 0; i < fileStreams.Length; i++)
             {
@@ -147,10 +159,14 @@ namespace MonoTorrent.Client
                 this.fileSize += files[i].Length;
             }
         }
-        #endregion
 
+        internal void CloseFileStreams()
+        {
+            for (int i = 0; i < this.fileStreams.Length; i++)
+                this.fileStreams[i].Dispose();
+        }
 
-        #region Helper Methods
+        #region Methods
         /// <summary>
         /// Generates the full path to the supplied TorrentFile
         /// </summary>
