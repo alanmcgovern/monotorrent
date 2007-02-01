@@ -557,7 +557,6 @@ namespace MonoTorrent.Client
                     try
                     {
                         handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
-                        handshake.Handle(id);
                     }
                     catch
                     {
@@ -576,8 +575,9 @@ namespace MonoTorrent.Client
                     }
 
                     id.Peer.PeerId = handshake.PeerId;
-                    id.Peer.Connection.SupportsFastPeer = handshake.SupportsFastPeer;
                     id.TorrentManager = man;
+                    handshake.Handle(id);
+                    
 
                     ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
                     id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
