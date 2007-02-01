@@ -140,9 +140,6 @@ namespace MonoTorrent.Client.PeerMessages
             this.startOffset = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
             offset += 4;
             this.requestLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
-
-            if (this.requestLength > (MaxSize) || this.requestLength < MinSize)
-                throw new MessageException("Request length invalid");
         }
 
 
@@ -166,9 +163,6 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         internal int Encode(byte[] buffer, int offset)
         {
-            if (this.requestLength > (MaxSize) || this.requestLength < MinSize)
-                throw new MessageException("Request length invalid");
-
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
             buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
@@ -221,6 +215,12 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
+            // If we are not on the last piece and the user requested a stupidly big/small amount of data
+            // we will close the connection
+            if (id.TorrentManager.Torrent.Pieces.Length != (this.pieceIndex + 1))
+                if (this.requestLength > (MaxSize) || this.requestLength < MinSize)
+                    throw new MessageException("Request length invalid");
+
             PieceMessage m = new PieceMessage(id.TorrentManager.FileManager, this.PieceIndex, this.startOffset, this.requestLength);
 
             // If we're not choking the peer, enqueue the message right away
