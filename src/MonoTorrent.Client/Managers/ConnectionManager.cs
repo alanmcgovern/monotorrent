@@ -990,7 +990,7 @@ namespace MonoTorrent.Client
                     id.TorrentManager.ConnectedPeers.Remove(id);
                     id.TorrentManager.ConnectingTo.Remove(id);
                     if (id.Peer.PeerId != ClientEngine.PeerId)
-                        if (!id.TorrentManager.available.Contains(id))
+                        if (!id.TorrentManager.Available.Contains(id))
                             id.TorrentManager.Available.Add(id);
                 }
             }
