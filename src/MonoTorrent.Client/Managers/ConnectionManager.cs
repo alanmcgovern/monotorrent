@@ -223,8 +223,8 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.BytesToSend = 0;
                         id.Peer.Connection.BytesToSend += handshake.Encode(id.Peer.Connection.sendBuffer, 0);
 
-                        id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, this.handshakeSentCallback, id, out id.ErrorCode);
                         System.Threading.Interlocked.Increment(ref this.openConnections);
+                        id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, this.handshakeSentCallback, id, out id.ErrorCode);
                     }
                 }
             }
@@ -919,7 +919,7 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.PeerId == ClientEngine.PeerId) // The tracker gave us our own IP/Port combination
                         {
-                            CleanupSocket(id);
+                            cleanUp = true;
                             return;
                         }
 
@@ -990,7 +990,8 @@ namespace MonoTorrent.Client
                     id.TorrentManager.ConnectedPeers.Remove(id);
                     id.TorrentManager.ConnectingTo.Remove(id);
                     if (id.Peer.PeerId != ClientEngine.PeerId)
-                        id.TorrentManager.Available.Add(id);
+                        if (!id.TorrentManager.available.Contains(id))
+                            id.TorrentManager.Available.Add(id);
                 }
             }
         }
