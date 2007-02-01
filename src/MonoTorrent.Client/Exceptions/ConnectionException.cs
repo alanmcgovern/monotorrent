@@ -30,13 +30,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// 
     /// </summary>
-    public class ConnectionException : MonoTorrentException
+    public class ConnectionException : TorrentException
     {
         /// <summary>
         /// 

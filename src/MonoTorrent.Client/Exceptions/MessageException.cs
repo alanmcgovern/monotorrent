@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class MessageException : MonoTorrentException
+    public class MessageException : TorrentException
     {
         public MessageException()
             : base()
