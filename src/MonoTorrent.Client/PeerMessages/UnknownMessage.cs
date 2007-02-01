@@ -51,12 +51,12 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Decode(byte[] buffer, int offset, int length)
         {
-            throw new MessageException("Unknown message received");
+            throw new ProtocolException("Unknown message received");
         }
 
         internal void Handle(PeerConnectionID id)
         {
-            throw new MessageException("Unknown message");
+            throw new ProtocolException("Unknown message");
         }
 
         public int ByteLength
