@@ -30,12 +30,13 @@
 
 
 using System.Net.Sockets;
+using System;
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// 
     /// </summary>
-    public class PeerConnectionID
+    public class PeerConnectionID : IComparable<PeerConnectionID>
     {
         #region Member Variables
         /// <summary>
@@ -124,6 +125,16 @@ namespace MonoTorrent.Client
         {
             return this.peer.Location;
         }
+        #endregion
+
+
+        #region IComparable<PeerConnectionID> Members
+
+        public int CompareTo(PeerConnectionID other)
+        {
+            return this.peer.Location.CompareTo(other.peer.Location);
+        }
+
         #endregion
     }
 }
