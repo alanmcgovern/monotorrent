@@ -23,37 +23,6 @@
         <SuppressWarnings></SuppressWarnings>
       </Options>
     </Configuration>
-    <Project name="MonoTorrent.Client" path="MonoTorrent.Client" language="C#" type="Library" assemblyName="MonoTorrent.Client" rootNamespace="MonoTorrent.Client">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="System.Data" />
-      <Reference name="System.Web" />
-      <Reference name="System.XML" />
-      <Reference name="nunit.framework" />
-      <Reference name="Mono.Security" localCopy="true" path="."/>
-	<Reference name="MonoTorrent.Common" localCopy="true" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
     <Project name="MonoTorrent.Common" path="MonoTorrent.Common" language="C#" type="Library" assemblyName="MonoTorrent.Common" rootNamespace="MonoTorrent.Common">
       <Configuration name="Debug">
         <Options>
@@ -79,6 +48,37 @@
       <Reference name="System.Data" />
       <Reference name="System.Xml" />
       <Reference name="nunit.framework" />
+      <Files>
+        <Match path="." pattern="*.cs" recurse="true"/>
+      </Files>
+    </Project>
+    <Project name="MonoTorrent.Client" path="MonoTorrent.Client" language="C#" type="Library" assemblyName="MonoTorrent.Client" rootNamespace="MonoTorrent.Client">
+      <Configuration name="Debug">
+        <Options>
+          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
+          <OptimizeCode>false</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Debug</OutputPath>
+          <DebugInformation>true</DebugInformation>
+        </Options>
+      </Configuration>
+      <Configuration name="Release">
+        <Options>
+          <CompilerDefines>TRACE</CompilerDefines>
+          <OptimizeCode>true</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Release</OutputPath>
+          <DebugInformation>false</DebugInformation>
+          <WarningLevel>4</WarningLevel>
+        </Options>
+      </Configuration>
+      <Reference name="System" />
+      <Reference name="System.Data" />
+      <Reference name="System.Web" />
+      <Reference name="System.Xml" />
+      <Reference name="nunit.framework" />
+      <Reference name="Mono.Security" localCopy="true" path="."/>
+	<Reference name="MonoTorrent.Common" localCopy="true" />
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
