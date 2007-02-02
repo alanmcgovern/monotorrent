@@ -370,6 +370,17 @@ namespace MonoTorrent.Common
             }
             #endregion
 
+            #region BitTornado special style
+            r = new Regex(@"(([A-Za-z]{1})\d{2}[A-Za-z]{1})----*");
+            if(r.IsMatch(peerId))
+            {
+                m = r.Match(peerId);
+                this.shortId = m.Groups[1].Value;
+                this.client = Client.BitTornado;
+                return;
+            }
+            #endregion
+
             this.client = Client.Unknown;
             this.shortId = peerId;
             System.Diagnostics.Trace.WriteLine("Unsupported clientid style: " + peerId);
