@@ -341,10 +341,12 @@ namespace MonoTorrent.Client
         public void Dispose(bool disposing)
         {
             hasher.Clear();
+            if (this.StreamsOpen)
+                foreach (FileStream stream in this.fileStreams)
+                    lock (stream)
+                        stream.Close();
 
-            foreach (FileStream stream in this.fileStreams)
-                lock (stream)
-                    stream.Close();
+            this.fileStreams = null;
         }
         #endregion
     }
