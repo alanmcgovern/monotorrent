@@ -81,3 +81,53 @@ Firstly, the public interface isn't really finished as of yet. There's a lot pub
 5) This returns an ITorrentManager instance (i.e. ITorrentManager myTorrentManager = eng.LoadTorrent("t.torrent");).
 6) To start downloading the torrent use eng.Start(myTorrentManager);
 7) Wait for it to finish. You can poll the torrent for information at fixed intervals, or update when events are fired. Its up to you.
+
+
+Developer Notes:
+There are a few important things developers should note before creating a gui/service using the library. Firstly
+do *not* put any logic inside the event handlers that might block execution. Also bear in mind that there is
+no guarantee what thread the events will be on, so if you're doing GUI updates, you will need to make sure that
+you perform your actual GUI update on the GUI thread.
+
+Secondly, when dealing with the PeerConnectionId classes which are passed to you when a peer connects or disconnects,
+there are two important things to note. 
+
+1) These are the classes that the engine uses internally. It should be hard
+to break the engine while using them correctly, but there is a chance you will break the engine.
+
+2) In order to safely access the member variables and call methods on the class you *must* take a lock on the object.
+After taking the lock, you need to check if the id.Peer.Connection is null, if it is, the peer has been disposed and
+should be considered garbage. Don't process it any further. If the Connection is not null, then the peer is still valid
+and you can safely do whatever you want with it. Do *not* hold the lock for longer than you need. If you hold the lock
+for 100ms while you perform a GUI update, you will stop the engine from downloading for up to 100ms! This is not good.
+
+Example of safe and non-blocking usage:
+
+static void ConnectionManager_PeerConnected(object sender, PeerConnectionEventArgs e)
+{
+    bool amChoking = 0;
+    bool isChoking = 0;
+    double downSpeed = 0;
+    double upSpeed = 0;
+
+    lock (e.PeerID)
+    {
+        if (e.PeerID.Peer.Connection == null)
+        {
+            // The peer has been disposed internally, so you cannot use it.
+            return;
+        }
+        else
+        {
+            // The peer is still active and can now be safely accessed while the lock is held
+            PeerConnectionBase conn = e.PeerID.Peer.Connection;
+            amChoking = conn.AmChoking;
+            isChoking = conn.IsChoking;
+            downSpeed = conn.Monitor.DownloadSpeed;
+            upSpeed = conn.Monitor.UploadSpeed;
+        }
+    }
+
+    // We release the lock and perform our complex and time consuming GUI update
+    UpdateGuiWithNewPeerStatus(amChoking, isChoking, downSpeed, upSpeed);
+}
