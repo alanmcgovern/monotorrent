@@ -88,6 +88,17 @@ namespace MonoTorrent.Client
             set { this.received = value; }
         }
         private bool received;
+
+
+        /// <summary>
+        /// True if the block has been written to disk
+        /// </summary>
+        public bool Written
+        {
+            get { return this.written; }
+            set { this.written = value; }
+        }
+        private bool written;
 #endregion
 
 
