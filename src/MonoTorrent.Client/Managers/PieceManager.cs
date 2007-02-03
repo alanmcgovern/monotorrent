@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
     {
         #region Public Constants
 
-        public const int MaxRequests = 6;
+        public const int MaxRequests = 12;
         public const int MaxEndGameRequests = 2;
 
         #endregion
