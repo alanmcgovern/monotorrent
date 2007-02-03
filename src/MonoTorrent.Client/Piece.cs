@@ -140,8 +140,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                foreach (Block block in this.blocks)
-                    if (!block.Requested)
+                for(int i=0;i<this.blocks.Length; i++)
+                    if (!this.blocks[i].Requested)
                         return false;
 
                 return true;
@@ -156,8 +156,20 @@ namespace MonoTorrent.Client
         {
             get
             {
-                foreach (Block block in this.blocks)
-                    if (!block.Received)
+                for (int i = 0; i < this.blocks.Length; i++)
+                    if (!this.blocks[i].Received)
+                        return false;
+
+                return true;
+            }
+        }
+
+        public bool AllBlocksWritten
+        {
+            get
+            {
+                for (int i = 0; i < this.blocks.Length; i++)
+                    if (!this.blocks[i].Written)
                         return false;
 
                 return true;
