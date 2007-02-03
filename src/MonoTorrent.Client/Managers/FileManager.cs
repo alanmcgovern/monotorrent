@@ -394,19 +394,29 @@ namespace MonoTorrent.Client
 
         private void RunIO()
         {
+            BufferedFileWrite write;
+            BufferedFileWrite read;
             while (ioActive)
             {
+                write = null;
+                read = null;
                 lock (this.bufferedIoLock)
                 {
-                    while (this.bufferedWrites.Count > 0)
-                        PerformWrite(this.bufferedWrites.Dequeue());
+                    if (this.bufferedWrites.Count > 0)
+                        write = this.bufferedWrites.Dequeue();
 
+                    if (this.bufferedReads.Count > 0)
+                        read = this.bufferedReads.Dequeue();
 
-                    while (this.bufferedReads.Count > 0)
-                        PerformRead(this.bufferedReads.Dequeue());
-
-                    SetHandleState(false);
+                    if (this.bufferedReads.Count == 0 && this.bufferedWrites.Count == 0)
+                        SetHandleState(false);
                 }
+
+                if (write != null)
+                    PerformWrite(write);
+
+                if (read != null)
+                    PerformRead(read);
 
                 this.threadWait.WaitOne();
             }
@@ -421,9 +431,18 @@ namespace MonoTorrent.Client
 
             long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
             this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+            for (int i = 0; i < piece.Blocks.Length; i++)
+            {
+                if (piece[i].StartOffset != message.StartOffset)
+                    continue;
+
+                piece[i].Written = true;
+                Console.WriteLine("Write completed");
+                break;
+            }
             ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
 
-            if (!piece.AllBlocksReceived)
+            if (!piece.AllBlocksWritten)
                 return;
 
             bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
