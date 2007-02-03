@@ -161,7 +161,7 @@ namespace MonoTorrent.Client
 
                     // Horrible hack to fix NaN
                     if (difference < 500)
-                        return-1;
+                        return;
 
                     // Take the amount of bytes sent since the last tick and divide it by the number of seconds
                     // since the last tick. This gives the calculated bytes/second transfer rate.
