@@ -46,6 +46,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
+        internal Queue<int> finishedPieces = new Queue<int>();
         #region Events
         /// <summary>
         /// Event that's fired every time new peers are added from a tracker update
@@ -67,6 +68,19 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
+        internal ConnectionMonitor Monitor
+        {
+            get { return this.monitor; }
+        }
+        private ConnectionMonitor monitor;
+
+        internal BitField Bitfield
+        {
+            get { return this.bitfield; }
+        }
+        private BitField bitfield;
+
+
         //internal Queue<PeerConnectionID> downloadQueue;
         //internal Queue<PeerConnectionID> uploadQueue;
 
@@ -296,7 +310,10 @@ namespace MonoTorrent.Client
                 throw new TorrentException("Torrent savepath cannot be null");
 
             this.fileManager = new FileManager(this.torrent.Files, this.torrent.Name, this.savePath, this.torrent.PieceLength, System.IO.FileAccess.ReadWrite);
-            this.pieceManager = new PieceManager(new BitField(this.torrent.Pieces.Length), (TorrentFile[])this.torrent.Files);
+
+            this.bitfield = new BitField(this.torrent.Pieces.Length);
+            this.pieceManager = new PieceManager(this.bitfield, (TorrentFile[])this.torrent.Files);
+            this.monitor = new ConnectionMonitor();
         }
         #endregion
 
@@ -359,7 +376,8 @@ namespace MonoTorrent.Client
                         ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[0]);
             }
 
-            this.FileManager.CloseFileStreams();
+            if(this.fileManager.StreamsOpen)
+                this.FileManager.CloseFileStreams();
             this.SaveFastResume();
             this.connectedPeers = new Peers();
             this.available = new Peers();
@@ -400,7 +418,6 @@ namespace MonoTorrent.Client
         /// <param name="counter"></param>
         internal void DownloadLogic(int counter)
         {
-            IPeerMessageInternal msg;
             PeerConnectionID id;
 
             lock (this.listLock)
@@ -413,6 +430,12 @@ namespace MonoTorrent.Client
 
             lock (this.listLock)
             {
+                if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
+                    this.monitor.TimePeriodPassed();
+
+                while (this.finishedPieces.Count > 0)
+                    this.SendHaveMessageToAll(this.finishedPieces.Dequeue());
+
                 // If we havn't reached our max connected peers, connect to another one.
                 if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
                     ClientEngine.ConnectionManager.ConnectToPeer(this);
@@ -432,12 +455,8 @@ namespace MonoTorrent.Client
                         //    DumpStats(id, counter);
 
                         // If the peer is interesting to me and i havent sent an Interested message
-                        if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
-                            SetAmInterestedStatus(id, true);
+                        SetAmInterestedStatus(id);
 
-                        // If the peer is NOT interesting to me and i haven't sent a NotInterested message
-                        else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
-                            SetAmInterestedStatus(id, false);
 
                         // If he is not interested and i am not choking him
                         if (!id.Peer.Connection.IsInterested && !id.Peer.Connection.AmChoking)
@@ -505,6 +524,15 @@ namespace MonoTorrent.Client
                                                           (int)(this.DownloadSpeed()),
                                                           (int)(this.UploadSpeed()));
             }
+        }
+
+        internal void SetAmInterestedStatus(PeerConnectionID id)
+        {
+            if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
+                SetAmInterestedStatus(id, true);
+
+            else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
+                SetAmInterestedStatus(id, false);
         }
 
         private void DumpStats(PeerConnectionID id, int counter)
@@ -744,14 +772,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public double DownloadSpeed()
         {
-            double total = 0;
-            lock (this.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        if (this.connectedPeers[i].Peer.Connection != null)
-                            total += this.connectedPeers[i].Peer.Connection.Monitor.DownloadSpeed;
-
-            return total;
+            return this.monitor.DownloadSpeed;
         }
 
 
@@ -828,7 +849,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="p"></param>
-        internal void SendHaveMessageToAll(int p)
+        private void SendHaveMessageToAll(int pieceIndex)
         {
             // Only send a "have" message if the peer needs the piece.
             // This is "Have Suppression" as defined in the spec.
@@ -838,9 +859,16 @@ namespace MonoTorrent.Client
                     lock (this.connectedPeers[i])
                         if (this.connectedPeers[i].Peer.Connection != null)
                         {
-                            this.connectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.connectedPeers[i]);
-                            if (!this.connectedPeers[i].Peer.Connection.BitField[p])
-                                this.connectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(p));
+                            // If the peer has the piece already, we need to recalculate his "interesting" status.
+                            if (this.connectedPeers[i].Peer.Connection.BitField[pieceIndex])
+                            {
+                                this.connectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.connectedPeers[i]);
+                                SetAmInterestedStatus(this.connectedPeers[i]);
+                            }
+
+                            // If the peer does not have the piece, then we send them a have message so they can request it off me
+                            else
+                                this.connectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(pieceIndex));
                         }
         }
 
@@ -930,6 +958,7 @@ namespace MonoTorrent.Client
         /// <param name="amInterested">True if we are interested in the peer, false otherwise</param>
         private void SetAmInterestedStatus(PeerConnectionID id, bool amInterested)
         {
+            Console.WriteLine(id.ToString() + ": " + amInterested.ToString());
             // If we used to be not interested but now we are, send a message.
             // If we used to be interested but now we're not, send a message
             id.Peer.Connection.AmInterested = amInterested;

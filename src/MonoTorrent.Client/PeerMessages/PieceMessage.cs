@@ -246,6 +246,7 @@ namespace MonoTorrent.Client.PeerMessages
             if (pevent == PieceEvent.HashFailed)
                 id.Peer.HashFails++;
 
+            // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (id.TorrentManager.AddPieceRequest(id)) { }
         }
 

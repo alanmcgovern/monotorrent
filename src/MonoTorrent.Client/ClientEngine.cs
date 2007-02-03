@@ -583,7 +583,7 @@ namespace MonoTorrent.Client
                     id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
 
                     handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
-                    BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
+                    BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
 
                     ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
                     id.Peer.Connection.BytesSent = 0;

@@ -33,6 +33,8 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using MonoTorrent.Client.PeerMessages;
+using System.Threading;
 
 namespace MonoTorrent.Client
 {
@@ -51,8 +53,12 @@ namespace MonoTorrent.Client
         private SHA1Managed hasher;
         private FileStream[] fileStreams;
         private bool initialHashRequired;
+        private Thread ioThread;
+        private bool ioActive;
+        private ManualResetEvent threadWait;
         
         #endregion
+
 
         #region Properties
 
@@ -141,6 +147,10 @@ namespace MonoTorrent.Client
 
             if (files.Length == 1)
                 baseDirectory = string.Empty;
+
+            this.ioActive = true;
+            this.ioThread = new Thread(new ThreadStart(RunIO));
+            this.threadWait = new ManualResetEvent(false);
         }
         #endregion
 
@@ -167,6 +177,10 @@ namespace MonoTorrent.Client
 
                 this.fileSize += files[i].Length;
             }
+
+            SetHandleState(true);
+            this.ioActive = true;
+            this.ioThread.Start();
         }
 
         internal void CloseFileStreams()
@@ -175,6 +189,12 @@ namespace MonoTorrent.Client
                 this.fileStreams[i].Dispose();
 
             this.fileStreams = null;
+
+            // Setting this boolean true allows the IO thread to terminate gracefully
+            this.ioActive = false;
+
+            // Allow the IO thread to run.
+            SetHandleState(true);
         }
 
         #region Methods
@@ -342,12 +362,93 @@ namespace MonoTorrent.Client
         {
             hasher.Clear();
             if (this.StreamsOpen)
-                foreach (FileStream stream in this.fileStreams)
-                    lock (stream)
-                        stream.Close();
-
-            this.fileStreams = null;
+                CloseFileStreams();
         }
         #endregion
+
+        private object bufferedIoLock = new object();
+        private Queue<BufferedFileWrite> bufferedWrites = new Queue<BufferedFileWrite>();
+        private Queue<BufferedFileWrite> bufferedReads = new Queue<BufferedFileWrite>();
+
+        internal void QueueWrite(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message, Piece piece)
+        {
+            lock (this.bufferedIoLock)
+            {
+                byte[] buffer = BufferManager.EmptyBuffer;
+                ClientEngine.BufferManager.GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
+                Buffer.BlockCopy(recieveBuffer, 0, buffer, 0, recieveBuffer.Length);
+
+                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield));
+                SetHandleState(true);
+            }
+        }
+
+        internal void QueueRead(PeerConnectionID id, byte[] recieveBuffer, RequestMessage message, Piece piece)
+        {
+            lock (this.bufferedIoLock)
+            {
+                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield));
+                SetHandleState(true);
+            }
+        }
+
+        private void RunIO()
+        {
+            while (ioActive)
+            {
+                lock (this.bufferedIoLock)
+                {
+                    while (this.bufferedWrites.Count > 0)
+                        PerformWrite(this.bufferedWrites.Dequeue());
+
+
+                    while (this.bufferedReads.Count > 0)
+                        PerformRead(this.bufferedReads.Dequeue());
+
+                    SetHandleState(false);
+                }
+
+                this.threadWait.WaitOne();
+            }
+        }
+
+        private void PerformWrite(BufferedFileWrite bufferedFileIO)
+        {
+            PeerConnectionID id = bufferedFileIO.Id;
+            byte[] recieveBuffer = bufferedFileIO.Buffer;
+            PieceMessage message = (PieceMessage)bufferedFileIO.Message;
+            Piece piece = bufferedFileIO.Piece;
+
+            long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
+            this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+            ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
+
+            if (!piece.AllBlocksReceived)
+                return;
+
+            bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
+            bufferedFileIO.BitField[message.PieceIndex] = result;
+
+            id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
+
+            if (result)
+                lock (id.TorrentManager.finishedPieces)
+                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
+            else
+                id.Peer.HashFails++;
+        }
+
+        private void PerformRead(BufferedFileWrite bufferedFileIO)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
+        private void SetHandleState(bool set)
+        {
+            if (set)
+                this.threadWait.Set();
+            else
+                this.threadWait.Reset();
+        }
     }
 }

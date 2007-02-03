@@ -178,7 +178,7 @@ namespace MonoTorrent.Client
                         this.blocks.Remove(p[i]);
                     this.pieces.Remove(p);
 
-                    id.TorrentManager.SendHaveMessageToAll(p.Index);
+                    id.TorrentManager.finishedPieces.Enqueue(p.Index);
                 }
                 else
                 {

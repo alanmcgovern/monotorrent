@@ -417,29 +417,19 @@ namespace MonoTorrent.Client
                 if (block.Received)
                     throw new MessageException("Block already received");
 
-                id.Peer.Connection.AmRequestingPiecesCount--;
-
-                long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                id.TorrentManager.FileManager.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
                 block.Received = true;
+                id.Peer.Connection.AmRequestingPiecesCount--;
+                id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
-                if (!piece.AllBlocksReceived)
-                    return PieceEvent.BlockWrittenToDisk;
+                if (piece.AllBlocksReceived)
+                {
+                    pieces.Remove(piece);
 
-                bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
-                this.myBitfield[message.PieceIndex] = result;
+                    if (pieces.Count == 0)
+                        this.requests.Remove(id);
+                }
 
-                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
-
-                if (result)
-                    id.TorrentManager.SendHaveMessageToAll(piece.Index);
-                // FIXME To some tricks if we fail to reduce the amount we have to redownload
-                pieces.Remove(piece);
-
-                if (pieces.Count == 0)
-                    this.requests.Remove(id);
-
-                return result ? PieceEvent.HashPassed : PieceEvent.HashFailed;
+                return PieceEvent.BlockWriteQueued;
             }
         }
 

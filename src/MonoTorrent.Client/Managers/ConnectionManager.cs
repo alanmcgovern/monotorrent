@@ -336,10 +336,10 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException)
-            {
-                cleanUp = true;
-            }
+            //catch (ArgumentException)
+            //{
+            //    cleanUp = true;
+            //}
             finally
             {
                 if (cleanUp)
@@ -410,18 +410,18 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                         {
-                            if (id.TorrentManager.PieceManager.MyBitField.AllFalse())
+                            if (id.TorrentManager.Bitfield.AllFalse())
                                 msg = new HaveNoneMessage();
 
                             else if (id.TorrentManager.Progress == 100.0)
                                 msg = new HaveAllMessage();
 
                             else
-                                msg = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
+                                msg = new BitfieldMessage(id.TorrentManager.Bitfield);
                         }
                         else
                         {
-                            msg = new BitfieldMessage(id.TorrentManager.PieceManager.MyBitField);
+                            msg = new BitfieldMessage(id.TorrentManager.Bitfield);
                         }
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
@@ -438,10 +438,10 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException)
-            {
-                cleanUp = true;
-            }
+            //catch (ArgumentException)
+            //{
+            //    cleanUp = true;
+            //}
             finally
             {
                 if (cleanUp)
@@ -504,10 +504,10 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.ToString());
                 cleanUp = true;
             }
-            catch (ArgumentException)
-            {
-                cleanUp = true;
-            }
+            //catch (ArgumentException)
+            //{
+            //    cleanUp = true;
+            //}
             finally
             {
                 if (cleanUp)
@@ -593,10 +593,10 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException)
-            {
-                cleanUp = true;
-            }
+            //catch (ArgumentException)
+            //{
+            //    cleanUp = true;
+            //}
             finally
             {
                 if (cleanUp)
@@ -666,17 +666,21 @@ namespace MonoTorrent.Client
                         {
                             message.Handle(id);
                         }
-                        catch (ConnectionException ex)
+                        catch (TorrentException ex)
                         {
+                            cleanUp = true;
+                            return;
                         }
                         //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + "\t" + message.ToString());
                         if (!(message is PieceMessage))
                         {   // The '-4' is because of the messagelength int which has already been counted in a different method
                             id.TorrentManager.DataBytesDownloaded -= (message.ByteLength - 4);
                             id.TorrentManager.ProtocolBytesDownloaded += (message.ByteLength - 4);
-                            if (id.Peer.HashFails == 3)
-                                cleanUp = true;
                         }
+
+                        id.TorrentManager.Monitor.BytesReceived(message.ByteLength);
+                        if (id.Peer.HashFails == 3)
+                            cleanUp = true;
 
                         id.Peer.Connection.LastMessageReceived = DateTime.Now;
 
@@ -694,21 +698,21 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
-            {
-#warning should be unneccessary
-                cleanUp = true;
-            }
-            catch (NullReferenceException)
-            {
-#warning should be unneccessary
-                cleanUp = true;
-            }
-            catch (Exception)
-            {
-#warning remove this.
-                cleanUp = true;
-            }
+//            catch (ArgumentException ex)
+//            {
+//#warning should be unneccessary
+//                cleanUp = true;
+//            }
+//            catch (NullReferenceException)
+//            {
+//#warning should be unneccessary
+//                cleanUp = true;
+//            }
+//            catch (Exception)
+//            {
+//#warning remove this.
+//                cleanUp = true;
+//            }
             finally
             {
                 if (cleanUp)
@@ -777,10 +781,10 @@ namespace MonoTorrent.Client
                 Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            catch (ArgumentException)
-            {
-                cleanUp = true;
-            }
+            //catch (ArgumentException)
+            //{
+            //    cleanUp = true;
+            //}
             finally
             {
                 if (cleanUp)
