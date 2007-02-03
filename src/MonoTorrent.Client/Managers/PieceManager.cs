@@ -78,68 +78,52 @@ namespace MonoTorrent.Client
                 return true;
 
             // Otherwise we need to do a full check
-            lock (this.piecePicker)
-                return this.piecePicker.IsInteresting(id);
+            return this.piecePicker.IsInteresting(id);
         }
 
 
         public bool InEndGameMode
         {
-            get
-            {
-                lock (this.piecePicker)
-                    return this.piecePicker is EndGamePicker;
-            }
+            get { return this.piecePicker is EndGamePicker; }
         }
 
 
         internal BitField MyBitField
         {
-            get
-            {
-                lock (this.piecePicker)
-                    return this.piecePicker.MyBitField;
-            }
+            get { return this.piecePicker.MyBitField; }
         }
 
 
         internal int CurrentRequestCount()
         {
-            lock (this.piecePicker)
-                return this.piecePicker.CurrentRequestCount();
+            return this.piecePicker.CurrentRequestCount();
         }
 
 
         internal IPeerMessageInternal PickPiece(PeerConnectionID id, Peers otherPeers)
         {
-            lock (this.piecePicker)
-            {
-                if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
-                    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent);
+            if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
+                this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent);
 
-                return this.piecePicker.PickPiece(id, otherPeers);
-            }
+            return this.piecePicker.PickPiece(id, otherPeers);
         }
 
 
         internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage msg)
         {
-            lock (this.piecePicker) 
-                this.piecePicker.ReceivedRejectRequest(id, msg);
+            this.piecePicker.ReceivedRejectRequest(id, msg);
         }
 
 
         internal void RemoveRequests(PeerConnectionID id)
         {
-            lock (this.piecePicker)
-                this.piecePicker.RemoveRequests(id);
+            this.piecePicker.RemoveRequests(id);
         }
 
 
         internal PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
         {
-            lock (this.piecePicker)
-                return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
+            return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
         }
         #endregion
     }
