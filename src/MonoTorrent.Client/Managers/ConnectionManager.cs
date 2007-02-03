@@ -147,17 +147,17 @@ namespace MonoTorrent.Client
 
             int i;
             PeerConnectionID id = null;
-            int length = manager.Available.Count;
+            int length = manager.Peers.AvailablePeers.Count;
 
             for (i = 0; i < length; i++)
             {
-                id = manager.Available[0];
-                manager.Available.Remove(0);
+                id = manager.Peers.AvailablePeers[0];
+                manager.Peers.RemovePeer(id, PeerList.PeerType.Available);
 
                 // If the peer is a known seeder and i'm a seeder, don't bother trying to connect
                 if (manager.State == TorrentState.Seeding && id.Peer.IsSeeder)
                 {
-                    manager.Available.Add(id);
+                    manager.Peers.AddPeer(id, PeerList.PeerType.Available);
                     id = null;
                     continue;
                 }
@@ -173,7 +173,7 @@ namespace MonoTorrent.Client
             lock (id)
             {
                 //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connecting****");
-                manager.ConnectingTo.Add(id);
+                manager.Peers.AddPeer(id, PeerList.PeerType.Connecting);
                 System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
                 id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Length, new NoEncryption());
                 id.Peer.Connection.ProcessingQueue = true;
@@ -205,8 +205,8 @@ namespace MonoTorrent.Client
 
                         id.Peer.Connection.EndConnect(result);
                         //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connected****");
-                        id.TorrentManager.ConnectingTo.Remove(id);
-                        id.TorrentManager.ConnectedPeers.Add(id);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Connecting);
+                        id.TorrentManager.Peers.AddPeer(id, PeerList.PeerType.Connected);
 
                         if (this.PeerConnected != null)
                             this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
@@ -248,10 +248,10 @@ namespace MonoTorrent.Client
                         }
                         id.Peer.Connection = null;
 
-                        id.TorrentManager.ConnectingTo.Remove(id);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Connecting);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
-                            id.TorrentManager.Available.Add(id);
+                            id.TorrentManager.Peers.AddPeer(id, PeerList.PeerType.Available);
                     }
                 }
             }
@@ -270,10 +270,10 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.Dispose();
                         id.Peer.Connection = null;
 
-                        id.TorrentManager.ConnectingTo.Remove(id);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Connecting);
 
-                        if (id.Peer.FailedConnectionAttempts < 10)   // We couldn't connect this time, so re-add to available
-                            id.TorrentManager.Available.Add(id);
+                        if (id.Peer.FailedConnectionAttempts < 4)   // We couldn't connect this time, so re-add to available
+                            id.TorrentManager.Peers.AddPeer(id, PeerList.PeerType.Available);
 
                     }
                 }
@@ -927,14 +927,14 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        if (id.TorrentManager.ConnectedPeers.Contains(id) || id.TorrentManager.ConnectingTo.Contains(id))
+                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id) || id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
                         {
                             id.Peer.Connection.Dispose();
                             return;
                         }
 
-                        id.TorrentManager.Available.Remove(id);
-                        id.TorrentManager.ConnectedPeers.Add(id);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Available);
+                        id.TorrentManager.Peers.AddPeer(id, PeerList.PeerType.Connected);
 
                         //id.Peer.MessageHistory.AppendLine("Their ID: " + id.Peer.PeerId);
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
@@ -974,6 +974,7 @@ namespace MonoTorrent.Client
                 {
                     System.Threading.Interlocked.Decrement(ref this.openConnections);
                     id.TorrentManager.PieceManager.RemoveRequests(id);
+                    id.Peer.CleanedUpCount++;
                     //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Cleaning Up****");
 
                     if (id.Peer.Connection != null)
@@ -990,12 +991,28 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.Dispose();
                         id.Peer.Connection = null;
                     }
+                    int found = 0;
+                    if(id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                        found++;
+                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                        found++;
+                    if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
+                        found++;
 
-                    id.TorrentManager.ConnectedPeers.Remove(id);
-                    id.TorrentManager.ConnectingTo.Remove(id);
+                    if (found > 1)
+                    {
+                        Console.WriteLine("Found: " + found.ToString());
+                    }
+
+                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Connected);
+
+                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                        id.TorrentManager.Peers.RemovePeer(id, PeerList.PeerType.Connecting);
+
                     if (id.Peer.PeerId != ClientEngine.PeerId)
-                        if (!id.TorrentManager.Available.Contains(id))
-                            id.TorrentManager.Available.Add(id);
+                        if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
+                            id.TorrentManager.Peers.AddPeer(id, PeerList.PeerType.Available);
                 }
             }
         }

@@ -51,6 +51,14 @@ namespace MonoTorrent.Client
         private PeerConnectionBase connection;
 
 
+        public int CleanedUpCount
+        {
+            get { return this.cleanedUpCount; }
+            set { this.cleanedUpCount = value; }
+        }
+        private int cleanedUpCount;
+
+
         /// <summary>
         /// Returns the number of times the peer has sent us a piece which failed a hashcheck
         /// </summary>

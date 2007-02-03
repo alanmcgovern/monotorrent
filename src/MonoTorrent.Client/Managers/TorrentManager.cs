@@ -157,34 +157,11 @@ namespace MonoTorrent.Client
         internal object listLock = new object();
 
 
-        /// <summary>
-        /// The list of peers that are available to be connected to
-        /// </summary>
-        internal Peers Available
+        public PeerList Peers
         {
-            get { return this.available; }
+            get { return this.peers; }
         }
-        private Peers available;
-
-
-        /// <summary>
-        /// The list of peers that we are currently connected to
-        /// </summary>
-        internal Peers ConnectedPeers
-        {
-            get { return this.connectedPeers; }
-        }
-        private Peers connectedPeers;
-
-
-        /// <summary>
-        /// The list of peers that we are currently trying to connect to
-        /// </summary>
-        internal Peers ConnectingTo
-        {
-            get { return this.connectingTo; }
-        }
-        private Peers connectingTo;
+        private PeerList peers;
 
 
         /// <summary>
@@ -192,7 +169,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int OpenConnections
         {
-            get { return this.connectedPeers.Count; }
+            get { return this.peers.ConnectedPeers.Count; }
         }
 
 
@@ -298,11 +275,12 @@ namespace MonoTorrent.Client
 
             this.trackerManager = new TrackerManager(this);
 
-            this.connectedPeers = new Peers(16);
-            this.available = new Peers(16);
+            this.peers = new PeerList();
+            this.peers.ConnectedPeers = new Peers(16);
+            this.peers.AvailablePeers = new Peers(16);
             this.uploadQueue = new Queue<PeerConnectionID>(16);
             this.downloadQueue = new Queue<PeerConnectionID>(16);
-            this.connectingTo = new Peers(ClientEngine.ConnectionManager.MaxHalfOpenConnections);
+            this.peers.ConnectingToPeers = new Peers(ClientEngine.ConnectionManager.MaxHalfOpenConnections);
 
             this.savePath = savePath;
 
@@ -367,21 +345,21 @@ namespace MonoTorrent.Client
             handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
-                while (this.connectingTo.Count > 0)
-                    lock (this.connectingTo[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[0]);
+                while (this.peers.ConnectingToPeers.Count > 0)
+                    lock (this.peers.ConnectingToPeers[0])
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0]);
 
-                while (this.connectedPeers.Count > 0)
-                    lock (this.connectedPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[0]);
+                while (this.peers.ConnectedPeers.Count > 0)
+                    lock (this.peers.ConnectedPeers[0])
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0]);
             }
 
             if(this.fileManager.StreamsOpen)
                 this.FileManager.CloseFileStreams();
             this.SaveFastResume();
-            this.connectedPeers = new Peers();
-            this.available = new Peers();
-            this.connectingTo = new Peers();
+            this.peers.ConnectedPeers = new Peers();
+            this.peers.AvailablePeers = new Peers();
+            this.peers.ConnectingToPeers = new Peers();
 
             return handle;
         }
@@ -396,13 +374,13 @@ namespace MonoTorrent.Client
             {
                 UpdateState(TorrentState.Paused);
 
-                for (int i = 0; i < this.connectingTo.Count; i++)
-                    lock (this.connectingTo[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.connectingTo[i]);
+                for (int i = 0; i < this.peers.ConnectingToPeers.Count; i++)
+                    lock (this.peers.ConnectingToPeers[i])
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[i]);
 
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.connectedPeers[i]);
+                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                    lock (this.peers.ConnectedPeers[i])
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[i]);
 
                 this.SaveFastResume();
             }
@@ -437,12 +415,12 @@ namespace MonoTorrent.Client
                     this.SendHaveMessageToAll(this.finishedPieces.Dequeue());
 
                 // If we havn't reached our max connected peers, connect to another one.
-                if ((this.available.Count > 0) && (this.connectedPeers.Count < this.settings.MaxConnections))
+                if ((this.peers.AvailablePeers.Count > 0) && (this.peers.ConnectedPeers.Count < this.settings.MaxConnections))
                     ClientEngine.ConnectionManager.ConnectToPeer(this);
 
-                for (int i = 0; i < this.connectedPeers.Count; i++)
+                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
                 {
-                    id = this.connectedPeers[i];
+                    id = this.peers.ConnectedPeers[i];
                     lock (id)
                     {
                         if (id.Peer.Connection == null)
@@ -576,10 +554,10 @@ namespace MonoTorrent.Client
         {
             lock (this.listLock)
             {
-                if (this.available.Contains(peer) || this.connectedPeers.Contains(peer) || this.connectingTo.Contains(peer))
+                if (this.peers.AvailablePeers.Contains(peer) || this.peers.ConnectedPeers.Contains(peer) || this.peers.ConnectingToPeers.Contains(peer))
                     return 0;
 
-                this.available.Add(peer);
+                this.peers.AvailablePeers.Add(peer);
                 return 1;
             }
         }
@@ -732,7 +710,7 @@ namespace MonoTorrent.Client
         {
             int seeds = 0;
             lock (this.listLock)
-                foreach (PeerConnectionID id in this.connectedPeers)
+                foreach (PeerConnectionID id in this.peers.ConnectedPeers)
                     lock (id)
                         if (id.Peer.IsSeeder)
                             seeds++;
@@ -748,7 +726,7 @@ namespace MonoTorrent.Client
         {
             int leechs = 0;
             lock (this.listLock)
-                foreach (PeerConnectionID id in this.connectedPeers)
+                foreach (PeerConnectionID id in this.peers.ConnectedPeers)
                     lock (id)
                         if (!id.Peer.IsSeeder)
                             leechs++;
@@ -762,7 +740,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int AvailablePeers
         {
-            get { return this.available.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+            get { return this.peers.AvailablePeers.Count + this.peers.ConnectedPeers.Count + this.peers.ConnectingToPeers.Count; }
         }
 
 
@@ -785,10 +763,10 @@ namespace MonoTorrent.Client
             double total = 0;
 
             lock (this.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        if (this.connectedPeers[i].Peer.Connection != null)
-                            total += this.connectedPeers[i].Peer.Connection.Monitor.UploadSpeed;
+                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                    lock (this.peers.ConnectedPeers[i])
+                        if (this.peers.ConnectedPeers[i].Peer.Connection != null)
+                            total += this.peers.ConnectedPeers[i].Peer.Connection.Monitor.UploadSpeed;
 
             return total;
         }
@@ -851,24 +829,24 @@ namespace MonoTorrent.Client
         /// <param name="p"></param>
         private void SendHaveMessageToAll(int pieceIndex)
         {
-            // Only send a "have" message if the peer needs the piece.
             // This is "Have Suppression" as defined in the spec.
 
             lock (this.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        if (this.connectedPeers[i].Peer.Connection != null)
+                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                    lock (this.peers.ConnectedPeers[i])
+                        if (this.peers.ConnectedPeers[i].Peer.Connection != null)
                         {
                             // If the peer has the piece already, we need to recalculate his "interesting" status.
-                            if (this.connectedPeers[i].Peer.Connection.BitField[pieceIndex])
+                            if (this.peers.ConnectedPeers[i].Peer.Connection.BitField[pieceIndex])
                             {
-                                this.connectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.connectedPeers[i]);
-                                SetAmInterestedStatus(this.connectedPeers[i]);
+                                this.peers.ConnectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.peers.ConnectedPeers[i]);
+                                SetAmInterestedStatus(this.peers.ConnectedPeers[i]);
                             }
 
+                            // Have supression is disabled
                             // If the peer does not have the piece, then we send them a have message so they can request it off me
-                            else
-                                this.connectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(pieceIndex));
+                            //else
+                                this.peers.ConnectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(pieceIndex));
                         }
         }
 
@@ -941,7 +919,7 @@ namespace MonoTorrent.Client
                 if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
 
-            msg = this.pieceManager.PickPiece(id, this.connectedPeers);
+            msg = this.pieceManager.PickPiece(id, this.peers.ConnectedPeers);
             if (msg == null)
                 return false;
 
