@@ -242,10 +242,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
-            PieceEvent pevent = id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this);
-            if (pevent == PieceEvent.HashFailed)
-                id.Peer.HashFails++;
-
+            id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this);
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (id.TorrentManager.AddPieceRequest(id)) { }
         }
