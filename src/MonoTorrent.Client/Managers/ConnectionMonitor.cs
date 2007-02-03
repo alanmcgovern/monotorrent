@@ -156,8 +156,12 @@ namespace MonoTorrent.Client
 
                     // If we have a negative value, we'll just assume 1 second (1000ms). We may get a negative value
                     // when Env.TickCount rolls over.
-                    if (difference < 0)
+                    if (difference <= 0)
                         difference = 1000;
+
+                    // Horrible hack to fix NaN
+                    if (difference < 500)
+                        return-1;
 
                     // Take the amount of bytes sent since the last tick and divide it by the number of seconds
                     // since the last tick. This gives the calculated bytes/second transfer rate.
