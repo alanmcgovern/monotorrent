@@ -77,7 +77,6 @@ namespace MonoTorrent.Client
 
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result
-            int j = 0;
             while (true)
             {
                 lock (hasher)
