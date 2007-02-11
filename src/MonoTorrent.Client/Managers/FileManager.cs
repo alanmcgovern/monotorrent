@@ -149,7 +149,6 @@ namespace MonoTorrent.Client
                 baseDirectory = string.Empty;
 
             this.ioActive = true;
-            this.ioThread = new Thread(new ThreadStart(RunIO));
             this.threadWait = new ManualResetEvent(false);
         }
         #endregion
@@ -180,6 +179,7 @@ namespace MonoTorrent.Client
 
             SetHandleState(true);
             this.ioActive = true;
+            this.ioThread = new Thread(new ThreadStart(this.RunIO));
             this.ioThread.Start();
         }
 
@@ -437,7 +437,6 @@ namespace MonoTorrent.Client
                     continue;
 
                 piece[i].Written = true;
-                Console.WriteLine("Write completed");
                 break;
             }
             ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
