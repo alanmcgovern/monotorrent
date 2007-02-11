@@ -507,7 +507,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
                 id.Peer.Connection.BytesReceived = 0;
                 id.Peer.Connection.BytesToRecieve = 68;
-
+                Logger.Log(id, "CE Peer incoming connection accepted");
                 id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
             }
             catch (SocketException)
@@ -542,6 +542,7 @@ namespace MonoTorrent.Client
                     int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                     if (bytesReceived == 0)
                     {
+                        Logger.Log(id, "CE Recieved 0 for handshake");
                         CleanupSocket(id);
                         return;
                     }
@@ -552,6 +553,7 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
                         return;
                     }
+                    Logger.Log(id, "CE Recieved handshake");
 
                     HandshakeMessage handshake = new HandshakeMessage();
                     try
@@ -560,6 +562,7 @@ namespace MonoTorrent.Client
                     }
                     catch
                     {
+                        Logger.Log(id, "CE Invalid handshake");
                         CleanupSocket(id);
                         return;
                     }
@@ -570,6 +573,7 @@ namespace MonoTorrent.Client
 
                     if (man == null)        // We're not hosting that torrent
                     {
+                        Logger.Log(id, "CE Not tracking torrent");
                         CleanupSocket(id);
                         return;
                     }
@@ -577,7 +581,7 @@ namespace MonoTorrent.Client
                     id.Peer.PeerId = handshake.PeerId;
                     id.TorrentManager = man;
                     handshake.Handle(id);
-                    
+                    Logger.Log(id, "CE Handshake successful");
 
                     ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
                     id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
@@ -590,6 +594,7 @@ namespace MonoTorrent.Client
                     id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
                     id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
+                    Logger.Log(id, "CE Sending to torrent manager");
                     id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
                     id.Peer.Connection.ProcessingQueue = false;
                     return;
@@ -598,6 +603,7 @@ namespace MonoTorrent.Client
 
             catch (SocketException)
             {
+                Logger.Log(id, "CE Exception with handshake");
                 CleanupSocket(id);
             }
             catch (NullReferenceException)
@@ -615,11 +621,16 @@ namespace MonoTorrent.Client
         {
             lock (id)
             {
+                Logger.Log(id, "***********CE Cleaning up*************");
                 if (id.Peer.Connection != null)
                 {
                     BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
                     BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                     id.Peer.Connection.Dispose();
+                }
+                else
+                {
+                    Logger.Log(id, "!!!!!!!!!!CE Already null!!!!!!!!");
                 }
             }
         }

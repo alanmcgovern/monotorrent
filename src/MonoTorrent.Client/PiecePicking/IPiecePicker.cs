@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     interface IPiecePicker
     {
         bool IsInteresting(PeerConnectionID id);
-        RequestMessage PickPiece(PeerConnectionID id, Peers otherPeers);
+        RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers);
         BitField MyBitField { get; }
         int CurrentRequestCount();
         void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message);

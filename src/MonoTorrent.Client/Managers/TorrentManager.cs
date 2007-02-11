@@ -157,7 +157,7 @@ namespace MonoTorrent.Client
         internal object listLock = new object();
 
 
-        public PeerList Peers
+        internal PeerList Peers
         {
             get { return this.peers; }
         }
@@ -276,11 +276,6 @@ namespace MonoTorrent.Client
             this.trackerManager = new TrackerManager(this);
 
             this.peers = new PeerList();
-            this.peers.ConnectedPeers = new Peers(16);
-            this.peers.AvailablePeers = new Peers(16);
-            this.uploadQueue = new Queue<PeerConnectionID>(16);
-            this.downloadQueue = new Queue<PeerConnectionID>(16);
-            this.peers.ConnectingToPeers = new Peers(ClientEngine.ConnectionManager.MaxHalfOpenConnections);
 
             this.savePath = savePath;
 
@@ -357,9 +352,7 @@ namespace MonoTorrent.Client
             if(this.fileManager.StreamsOpen)
                 this.FileManager.CloseFileStreams();
             this.SaveFastResume();
-            this.peers.ConnectedPeers = new Peers();
-            this.peers.AvailablePeers = new Peers();
-            this.peers.ConnectingToPeers = new Peers();
+            this.peers.ClearAll();
 
             return handle;
         }
@@ -399,7 +392,7 @@ namespace MonoTorrent.Client
             PeerConnectionID id;
 
             lock (this.listLock)
-                if (this.downloadQueue.Count > 0 || this.uploadQueue.Count > 0)
+                if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
                     this.ResumePeers();
 
             DateTime nowTime = DateTime.Now;
@@ -677,9 +670,6 @@ namespace MonoTorrent.Client
 
 
         #region Rate limiting
-        internal Queue<PeerConnectionID> downloadQueue;
-        internal Queue<PeerConnectionID> uploadQueue;
-
 
         /// <summary>
         /// Restarts peers which have been suspended from downloading/uploading due to rate limiting
@@ -689,12 +679,12 @@ namespace MonoTorrent.Client
         {
             lock (this.listLock)
             {
-                while (this.downloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                    if (ClientEngine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
+                while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
+                    if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
                         Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
-                while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
-                    if (ClientEngine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
+                while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+                    if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
                         Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
             }
         }

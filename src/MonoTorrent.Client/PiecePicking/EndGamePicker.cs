@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public RequestMessage PickPiece(PeerConnectionID id, Peers otherPeers)
+        public RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
         {
             lock (this.requestsLocker)
             {
