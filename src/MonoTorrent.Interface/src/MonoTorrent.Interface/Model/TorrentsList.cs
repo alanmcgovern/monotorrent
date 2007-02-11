@@ -39,16 +39,20 @@ namespace MonoTorrent.Interface.Model
 
         private Dictionary<TreeIter, TorrentManager> rowsToTorrents;
 
-        public TorrentsList() :  base(
-                typeof(string), typeof(string), typeof(string), 
+        public TorrentsList()
+            : base(
+                typeof(string), typeof(string), typeof(string),
                 typeof(string), typeof(string), typeof(string),
                 typeof(string), typeof(string), typeof(string),
                 typeof(string), typeof(string))
         {
             this.rowsToTorrents = new Dictionary<TreeIter, TorrentManager>();
-            ClientEngine.ConnectionManager.OnPeerConnectionChanged
+            ClientEngine.ConnectionManager.PeerConnected
                     += OnPeerChange;
-            //ClientEngine.connectionManager.OnPeerMessages += OnPeerChange;
+            ClientEngine.ConnectionManager.PeerDisconnected
+                    += OnPeerChange;
+            ClientEngine.ConnectionManager.PeerMessageTransferred
+                    += OnPeerChange;
         }
 
         public TreeIter AddTorrent(TorrentManager torrent)
@@ -56,9 +60,9 @@ namespace MonoTorrent.Interface.Model
             TreeIter row = Append();
             UpdateRow(row, torrent);
             rowsToTorrents.Add(row, torrent);
-            torrent.OnPieceHashed += OnTorrentChange;
-            torrent.OnPeersAdded += OnTorrentChange;
-            torrent.OnTorrentStateChanged += OnTorrentStateChange;
+            torrent.PieceHashed += OnTorrentChange;
+            torrent.PeersFound += OnTorrentChange;
+            torrent.TorrentStateChanged += OnTorrentStateChange;
             //torrent.PieceManager.OnPieceChanged += OnTorrentChange;
             return row;
         }
@@ -66,8 +70,8 @@ namespace MonoTorrent.Interface.Model
         public bool RemoveTorrent(ref TreeIter row)
         {
             //rowsToTorrents[row].PieceManager.OnPieceChanged -= OnTorrentChange;
-            rowsToTorrents[row].OnPeersAdded -= OnTorrentChange;
-            rowsToTorrents[row].OnPieceHashed -= OnTorrentChange;
+            rowsToTorrents[row].PeersFound -= OnTorrentChange;
+            rowsToTorrents[row].PieceHashed -= OnTorrentChange;
             rowsToTorrents.Remove(row);
             return Remove(ref row);
         }
@@ -113,9 +117,21 @@ namespace MonoTorrent.Interface.Model
 
         private void OnPeerChangeSync(object sender, EventArgs args)
         {
-            PeerConnectionID connection = (PeerConnectionID) sender;
-            TorrentManager torrent = connection.TorrentManager;
+            TorrentManager torrent=null;
+            if(args is PeerConnectionEventArgs)
+            {
+                PeerConnectionEventArgs e = args as PeerConnectionEventArgs;
+                torrent = e.PeerID.TorrentManager;
+
+            }
+            else if (args is PeerMessageEventArgs)
+            {
+                return;
+                //PeerConnectionID id = sender as PeerConnectionID;
+                //torrent = id.TorrentManager;
+            }
             UpdateStats(FindRow(torrent), torrent);
+
         }
 
         private TreeIter FindRow(TorrentManager torrent)

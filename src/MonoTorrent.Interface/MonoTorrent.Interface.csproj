@@ -83,11 +83,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Client\MonoTorrent.Client.csproj">
-      <Project>{BA61F399-BE56-445D-9C61-3A617F4BABEA}</Project>
+      <Project>{43EFAA6E-4602-4DA2-8DE7-A6C33030C2DB}</Project>
       <Name>MonoTorrent.Client</Name>
     </ProjectReference>
     <ProjectReference Include="..\MonoTorrent.Common\MonoTorrent.Common.csproj">
-      <Project>{B49212EE-36F4-42DA-BA8C-6589DCA535D9}</Project>
+      <Project>{80852421-60A9-42CD-AC7C-47A4CFC973BC}</Project>
       <Name>MonoTorrent.Common</Name>
     </ProjectReference>
   </ItemGroup>
