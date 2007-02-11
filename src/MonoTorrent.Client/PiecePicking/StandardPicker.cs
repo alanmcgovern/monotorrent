@@ -204,13 +204,18 @@ namespace MonoTorrent.Client
                     continue;
                 }
 
-                // If we have no suggested pieces left, break out
-                if (id.Peer.Connection.IsAllowedFastPieces.Count == 0)
-                    return null;
-
-                requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[0];
-                id.Peer.Connection.IsAllowedFastPieces.RemoveAt(0);
-                return this.GenerateRequest(id, requestIndex);
+                // For all the remaining fast pieces
+                for (int i = 0; i < id.Peer.Connection.IsAllowedFastPieces.Count; i++)
+                {
+                    // If the peer has this piece
+                    if (id.Peer.Connection.BitField[(int)id.Peer.Connection.IsAllowedFastPieces[i]])
+                    {
+                        // We request that piece and remove it from the list
+                        requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[i];
+                        id.Peer.Connection.IsAllowedFastPieces.RemoveAt(i);
+                        return this.GenerateRequest(id, requestIndex);
+                    }
+                }
             }
 
             return null;
