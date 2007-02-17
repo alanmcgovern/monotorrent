@@ -38,7 +38,22 @@ namespace MonoTorrent.Client
     /// </summary>
     public class EngineSettings
     {
-        #region Member Variables
+
+        #region Private Fields
+
+        private int listenPort;                         // The port to listen to incoming connections on
+        private int globalMaxConnections;               // The maximum number of connections that can be opened
+        private int globalMaxHalfOpenConnections;       // The maximum number of simultaenous 1/2 open connections
+        private int globalMaxDownloadSpeed;             // The maximum combined download speed
+        private int globalMaxUploadSpeed;               // The maximum combined upload speed
+        private string savePath;                        // The path that torrents will be downloaded to by default
+        private bool useuPnP;                           // True if uPnP should be used to map ports when available
+
+        #endregion Private Fields
+
+
+        #region Properties
+
         /// <summary>
         /// This is the default directory that torrents will be downloaded to
         /// </summary>
@@ -47,7 +62,6 @@ namespace MonoTorrent.Client
             get { return this.savePath; }
             set { this.savePath = value; }
         }
-        private string savePath;
 
 
         /// <summary>
@@ -58,7 +72,6 @@ namespace MonoTorrent.Client
             get { return this.globalMaxConnections; }
             set { this.globalMaxConnections = value; }
         }
-        private int globalMaxConnections;
 
 
         /// <summary>
@@ -69,7 +82,6 @@ namespace MonoTorrent.Client
             get { return this.globalMaxHalfOpenConnections; }
             set { this.globalMaxHalfOpenConnections = value; }
         }
-        private int globalMaxHalfOpenConnections;
 
 
         /// <summary>
@@ -80,7 +92,6 @@ namespace MonoTorrent.Client
             get { return this.globalMaxDownloadSpeed; }
             set { this.globalMaxDownloadSpeed = value; }
         }
-        private int globalMaxDownloadSpeed;
 
 
         /// <summary>
@@ -91,7 +102,6 @@ namespace MonoTorrent.Client
             get { return this.globalMaxUploadSpeed; }
             set { this.globalMaxUploadSpeed = value; }
         }
-        private int globalMaxUploadSpeed;
 
 
         /// <summary>
@@ -102,23 +112,43 @@ namespace MonoTorrent.Client
             get { return this.listenPort; }
             set { this.listenPort = value; }
         }
-        private int listenPort;
-        #endregion
+
+
+        /// <summary>
+        /// True if the engine should use uPnP to map ports if it is available
+        /// </summary>
+        public bool UsePnP
+        {
+            get { return this.useuPnP; }
+            set { this.useuPnP = value; }
+        }
+
+        #endregion Properties
 
 
         #region Defaults
+
         private const string DefaultSavePath = "";
         private const int DefaultMaxConnections = 150;
         private const int DefaultMaxDownloadSpeed = 0;
         private const int DefaultMaxUploadSpeed = 0;
         private const int DefaultMaxHalfOpenConnections = 5;
         private const int DefaultListenPort = 52138;
+        private const bool DefaultUseuPnP = true;
+
         #endregion
 
 
         #region Constructors
+
         private EngineSettings()
         {
+        }
+
+        public EngineSettings(string defaultSavePath, bool useuPnP)
+            : this(defaultSavePath, useuPnP, DefaultMaxConnections, DefaultMaxHalfOpenConnections, DefaultListenPort, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed)
+        {
+
         }
 
         /// <summary>
@@ -128,8 +158,8 @@ namespace MonoTorrent.Client
         /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
-        public EngineSettings(int globalMaxConnections, int globalHalfOpenConnections, string defaultSavePath, int listenPort)
-            : this(globalMaxConnections, globalHalfOpenConnections, defaultSavePath, listenPort, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed)
+        public EngineSettings(string defaultSavePath, bool useuPnP, int globalMaxConnections, int globalHalfOpenConnections)
+            : this(defaultSavePath, useuPnP, globalMaxConnections, globalHalfOpenConnections, DefaultListenPort, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed)
         {
         }
 
@@ -142,7 +172,7 @@ namespace MonoTorrent.Client
         /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
-        public EngineSettings(int globalMaxConnections, int globalHalfOpenConnections, string defaultSavePath, int listenPort, int globalMaxDownloadSpeed, int globalMaxUploadSpeed)
+        public EngineSettings(string defaultSavePath, bool useuPnP, int globalMaxConnections, int globalHalfOpenConnections, int listenPort, int globalMaxDownloadSpeed, int globalMaxUploadSpeed)
         {
             this.globalMaxConnections = globalMaxConnections;
             this.globalMaxDownloadSpeed = globalMaxDownloadSpeed;
@@ -150,7 +180,9 @@ namespace MonoTorrent.Client
             this.globalMaxHalfOpenConnections = globalHalfOpenConnections;
             this.savePath = defaultSavePath;
             this.listenPort = listenPort;
+            this.useuPnP = useuPnP;
         }
+        
         #endregion
 
 
@@ -160,12 +192,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public static EngineSettings DefaultSettings()
         {
-            return new EngineSettings(DefaultMaxConnections,
-                DefaultMaxHalfOpenConnections,
-                DefaultSavePath,
-                DefaultListenPort,
-                DefaultMaxDownloadSpeed,
-                DefaultMaxUploadSpeed);
+            return new EngineSettings(DefaultSavePath,
+                                     DefaultUseuPnP,
+                                     DefaultMaxConnections,
+                                     DefaultMaxHalfOpenConnections,
+                                     DefaultListenPort,
+                                     DefaultMaxDownloadSpeed,
+                                     DefaultMaxUploadSpeed);
         }
         #endregion
     }
