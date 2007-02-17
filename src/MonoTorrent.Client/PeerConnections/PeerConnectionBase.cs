@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// 
+        /// Returns the number of pieces currently being requested
         /// </summary>
         public int AmRequestingPiecesCount
         {
@@ -212,8 +212,10 @@ namespace MonoTorrent.Client
         private bool isInterested;
 
 
-        // True if the peer has pieces that i might like to request. If he is interesting to me
-        // i need to send an InterestedMessage.
+        /// <summary>
+        /// True if the peer has pieces that i might like to request. If he is interesting to me
+        /// i need to send an InterestedMessage.
+        /// </summary>
         internal bool IsInterestingToMe
         {
             get { return this.isinterestingtoMe; }
@@ -223,7 +225,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// 
+        /// The number of pieces the peer has requested off me
         /// </summary>
         public int IsRequestingPiecesCount
         {
@@ -360,6 +362,19 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        internal void SentBytes(int bytesSent, TransferType type)
+        {
+            this.bytesSent += bytesSent;
+            this.monitor.BytesSent(bytesSent, type);
+        }
+
+        internal void ReceivedBytes(int bytesRecieved, TransferType type)
+        {
+            this.bytesReceived += bytesRecieved;
+            this.monitor.BytesReceived(bytesRecieved, type);
+        }
+
         /// <summary>
         /// Queues a PeerMessage up to be sent to the remote host
         /// </summary>

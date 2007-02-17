@@ -142,34 +142,29 @@ namespace MonoTorrent.Client
         /// <param name="manager"></param>
         internal void ConnectToPeer(TorrentManager manager)
         {
+            // If we have already reached our max connections, don't try to connect to a new peer
             if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
                 return;
 
             int i;
-            PeerConnectionID id = null;
-            int length = manager.Peers.AvailablePeers.Count;
+            PeerConnectionID id;
 
-            for (i = 0; i < length; i++)
-            {
-                id = manager.Peers.AvailablePeers[0];
-                manager.Peers.RemovePeer(id, PeerType.Available);
-
-                // If the peer is a known seeder and i'm a seeder, don't bother trying to connect
-                if (manager.State == TorrentState.Seeding && id.Peer.IsSeeder)
-                {
-                    manager.Peers.AddPeer(id, PeerType.Available);
-                    id = null;
-                    continue;
-                }
-                else
-                {
+            // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
+            // if they are not a seeder.
+            for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
+                if (!(manager.State == TorrentState.Seeding && manager.Peers.AvailablePeers[i].Peer.IsSeeder)
+                    || manager.State != TorrentState.Seeding)
                     break;
-                }
-            }
 
-            if (id == null)
+            // If this is true, there were no peers in the available list to connect to.
+            if (i == manager.Peers.AvailablePeers.Count)
                 return;
 
+            // Remove the peer from the lists so we can start connecting to him
+            id = manager.Peers.AvailablePeers[i];
+            manager.Peers.AvailablePeers.RemoveAt(i);
+
+            // Connect to the peer.
             lock (id)
             {
                 Logger.Log(id, "Connecting");
@@ -199,6 +194,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        // If the peer has been cleaned up, then don't continue processing the peer
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null");
@@ -207,13 +203,17 @@ namespace MonoTorrent.Client
 
                         id.Peer.Connection.EndConnect(result);
                         Logger.Log(id, "Connected");
-                        //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Connected****");
+
+                        // Remove the peer from the "connecting" list and put them in the "connected" list
+                        // because we have now successfully connected to them
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
                         id.TorrentManager.Peers.AddPeer(id, PeerType.Connected);
 
+                        // Fire the event to say that we connected to a remote peer
                         if (this.PeerConnected != null)
                             this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
 
+                        // If we have too many open connections, close the connection
                         if (this.openConnections > this.MaxOpenConnections)
                         {
                             Logger.Log(id, "Too many connections");
@@ -221,13 +221,16 @@ namespace MonoTorrent.Client
                             return;
                         }
 
+                        // Increase the count of the "open" connections
+                        System.Threading.Interlocked.Increment(ref this.openConnections);
+
+                        // Create a handshake message to send to the peer
                         HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.PeerId, VersionInfo.ProtocolStringV100);
 
+                        // Get a buffer to encode the handshake into, encode the message and send it
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.SmallMessageBuffer);
-                        id.Peer.Connection.BytesToSend = 0;
+                        id.Peer.Connection.BytesSent = 0;
                         id.Peer.Connection.BytesToSend += handshake.Encode(id.Peer.Connection.sendBuffer, 0);
-
-                        System.Threading.Interlocked.Increment(ref this.openConnections);
                         id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, this.handshakeSentCallback, id, out id.ErrorCode);
                     }
                 }
@@ -245,11 +248,10 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection != null)
                         {
                             ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                            id.Peer.Connection.ProcessingQueue = false;
                             id.Peer.Connection.Dispose();
                         }
-                        id.Peer.Connection = null;
 
+                        id.Peer.Connection = null;
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
@@ -257,30 +259,9 @@ namespace MonoTorrent.Client
                     }
                 }
             }
-            //catch (ArgumentException)
-            //{
-            //    lock (id.TorrentManager.listLock)
-            //    {
-            //        lock (id)
-            //        {
-            //            Logger.Log(id, "Failed to connect, argument exception");
-            //            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-            //            id.Peer.FailedConnectionAttempts++;
-            //            id.Peer.Connection.ProcessingQueue = false;
-            //            if (id.Peer.Connection != null)
-            //                id.Peer.Connection.Dispose();
-            //            id.Peer.Connection = null;
-
-            //            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
-
-            //            if (id.Peer.FailedConnectionAttempts < 4)   // We couldn't connect this time, so re-add to available
-            //                id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
-
-            //        }
-            //    }
-            //}
             finally
             {
+                // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 if (cleanUp)
                     CleanupSocket(id);
@@ -296,16 +277,18 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            
+
 
             try
             {
                 lock (id.TorrentManager.listLock)
                     lock (id)
                     {
+                        // If the connection is null, the peer has been cleaned up already
                         if (id.Peer.Connection == null)
                             return;
 
+                        // If we have sent zero bytes, that is a sign the connection has been closed
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || bytesSent == 0)
                         {
@@ -314,15 +297,16 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesSent += bytesSent;
-                        id.Peer.Connection.Monitor.BytesSent(bytesSent);
-                        id.TorrentManager.ProtocolBytesUploaded += bytesSent;
+                        // Log the data sent in both the peers and torrentmangers connection monitors
+                        id.Peer.Connection.SentBytes(bytesSent, TransferType.Protocol);
+                        id.TorrentManager.Monitor.BytesSent(bytesSent, TransferType.Protocol);
 
                         if (id.Peer.Connection.BytesSent != id.Peer.Connection.BytesToSend)     // If we havn't sent everything
                         {
                             id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent, SocketFlags.None, handshakeSentCallback, id, out id.ErrorCode);
                             return;
                         }
+
                         Logger.Log(id, "Sent Handshake");
                         Logger.Log(id, "Recieving handshake");
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
@@ -336,13 +320,8 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
                 Logger.Log(id, "Exception sending handshake");
-                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            //catch (ArgumentException)
-            //{
-            //    cleanUp = true;
-            //}
             finally
             {
                 if (cleanUp)
@@ -360,13 +339,13 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             IPeerMessageInternal msg;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            
 
             try
             {
                 lock (id.TorrentManager.listLock)
                     lock (id)
                     {
+                        // If the connection is null, just return
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null");
@@ -381,9 +360,8 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesReceived += bytesReceived;
-                        id.Peer.Connection.Monitor.BytesReceived(bytesReceived);
-                        id.TorrentManager.ProtocolBytesDownloaded += bytesReceived;
+                        id.Peer.Connection.ReceivedBytes(bytesReceived, TransferType.Protocol);
+                        id.TorrentManager.Monitor.BytesReceived(bytesReceived, TransferType.Protocol);
 
                         if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)
                         {
@@ -415,6 +393,7 @@ namespace MonoTorrent.Client
                             return;
                         }
 
+                        // Handle the handshake
                         handshake.Handle(id);
 
                         if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
@@ -445,13 +424,8 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
                 Logger.Log(id, "Exception recieving handshake");
-                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            //catch (ArgumentException)
-            //{
-            //    cleanUp = true;
-            //}
             finally
             {
                 if (cleanUp)
@@ -475,12 +449,14 @@ namespace MonoTorrent.Client
                 lock (id.TorrentManager.listLock)
                     lock (id)
                     {
+                        // If the connection is null, just return
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null for sending bitfield");
                             return;
                         }
 
+                        // If we receive zero bytes, the connection has been closed
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || (bytesSent == 0))
                         {
@@ -489,9 +465,9 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesSent += bytesSent;
-                        id.Peer.Connection.Monitor.BytesSent(bytesSent);
-                        id.TorrentManager.ProtocolBytesUploaded += bytesSent;
+                        // Add the data to both the peers and torrentmanagers connection monitor
+                        id.Peer.Connection.SentBytes(bytesSent, TransferType.Protocol);
+                        id.TorrentManager.Monitor.BytesSent(bytesSent, TransferType.Protocol);
 
                         if (id.Peer.Connection.BytesSent != id.Peer.Connection.BytesToSend)
                         {
@@ -499,14 +475,18 @@ namespace MonoTorrent.Client
                             return;
                         }
                         
+                        // Free the old buffer and get a new one to recieve the length of the next message
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
-                        id.Peer.Connection.ProcessingQueue = false;
 
                         // Now we will enqueue a FastPiece message for each piece we will allow the peer to download
+                        // even if they are choked
                         if(ClientEngine.SupportsFastPeer && id.Peer.Connection.SupportsFastPeer)
                             for (int i = 0; i < id.Peer.Connection.AmAllowedFastPieces.Count; i++)
                                 id.Peer.Connection.EnQueue(new AllowedFastMessage(id.Peer.Connection.AmAllowedFastPieces[i]));
+
+                        // Allow the auto processing of the send queue to commence
+                        id.Peer.Connection.ProcessingQueue = false;
 
                         Logger.Log(id, "Queuing");
                         id.Peer.Connection.BytesReceived = 0;
@@ -514,15 +494,11 @@ namespace MonoTorrent.Client
                         id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.messageLengthReceivedCallback, id, out id.ErrorCode);
                     }
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 Logger.Log(id, "Exception sending bitfield");
                 cleanUp = true;
             }
-            //catch (ArgumentException)
-            //{
-            //    cleanUp = true;
-            //}
             finally
             {
                 if (cleanUp)
@@ -539,18 +515,21 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            
+
 
             try
             {
                 lock (id.TorrentManager.listLock)
                     lock (id)
                     {
+                        // If the connection is null, we just return
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null for message length");
                             return;
                         }
+
+                        // If we received zero bytes, the socket has been closed
                         int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
                         {
@@ -559,20 +538,29 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesReceived += bytesReceived;
-                        id.Peer.Connection.Monitor.BytesReceived(bytesReceived);
-                        id.TorrentManager.ProtocolBytesDownloaded += bytesReceived;
+                        // Add the fresh data to both the peers and torrentmanagers connection monitor
+                        id.Peer.Connection.ReceivedBytes(bytesReceived, TransferType.Protocol);
+                        id.TorrentManager.Monitor.BytesReceived(bytesReceived, TransferType.Protocol);
 
+                        // If we haven't recieved all of the message, then try to recieve the rest
                         if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)
                         {
                             id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived, SocketFlags.None, this.messageLengthReceivedCallback, id, out id.ErrorCode);
                             return;
                         }
-                        Logger.Log(id, "Recieved message length");
-                        int networkOrderLength = BitConverter.ToInt32(id.Peer.Connection.recieveBuffer, 0);
-                        id.Peer.Connection.BytesReceived = 0;
-                        id.Peer.Connection.BytesToRecieve = System.Net.IPAddress.NetworkToHostOrder(networkOrderLength);
 
+                        Logger.Log(id, "Recieved message length");
+
+                        // Decode the message length from the buffer. It is a big endian integer, so make sure
+                        // it is converted to host endianness.
+                        int networkOrderLength = BitConverter.ToInt32(id.Peer.Connection.recieveBuffer, 0);
+                        networkOrderLength = System.Net.IPAddress.NetworkToHostOrder(networkOrderLength);
+
+                        id.Peer.Connection.BytesReceived = 0;
+                        id.Peer.Connection.BytesToRecieve = networkOrderLength;
+
+                        // Free the existing receive buffer and then get a new one which can
+                        // contain the amount of bytes we need to receive.
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
 
                         if (id.Peer.Connection.BytesToRecieve > BufferManager.SmallMessageBufferSize)
@@ -580,38 +568,31 @@ namespace MonoTorrent.Client
                         else
                             ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
 
-                        if (id.Peer.Connection.BytesToRecieve == 0)     // We Received a KeepAlive
+
+                        // If bytes to receive is zero, it means we received a keep alive message
+                        // so we just start receiving a new message length again
+                        if (id.Peer.Connection.BytesToRecieve == 0)
                         {
                             id.Peer.Connection.LastMessageReceived = DateTime.Now;
                             id.Peer.Connection.BytesToRecieve = 4;
                             id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.messageLengthReceivedCallback, id, out id.ErrorCode);
                         }
+
+                        // Otherwise queue the peer in the Receive buffer and try to resume downloading off him
                         else
                         {
                             Logger.Log(id, "Recieving message");
-                            if (id.TorrentManager.Settings.MaxDownloadSpeed == 0)   // No rate limiting needed
-                            {
-                                id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.messageReceivedCallback, id, out id.ErrorCode);
-                                return;
-                            }
-                            else    // Apply rate limiting
-                            {
-                                id.TorrentManager.Peers.Enqueue(id, PeerType.DownloadQueue);
-                                id.TorrentManager.ResumePeers();
-                            }
+
+                            id.TorrentManager.Peers.Enqueue(id, PeerType.DownloadQueue);
+                            id.TorrentManager.ResumePeers();
                         }
                     }
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 Logger.Log(id, "Exception recieving message length");
-                Debug.WriteLine(ex.NativeErrorCode + ": " + ex.Message);
                 cleanUp = true;
             }
-            //catch (ArgumentException)
-            //{
-            //    cleanUp = true;
-            //}
             finally
             {
                 if (cleanUp)
@@ -627,6 +608,7 @@ namespace MonoTorrent.Client
         private void onPeerMessageReceived(IAsyncResult result)
         {
             bool cleanUp = false;
+            IPeerMessageInternal message;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
             
             try
@@ -635,12 +617,14 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        // If the connection is null, we just return
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null recieving message");
                             return;
                         }
 
+                        // If we receive zero bytes, we should close the connection
                         int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || (bytesReceived == 0))
                         {
@@ -649,27 +633,23 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesReceived += bytesReceived;
-                        id.TorrentManager.DataBytesDownloaded += bytesReceived;
-                        id.Peer.Connection.Monitor.BytesReceived(bytesReceived);
+                        // If the first byte is '7' then this is a piece message, so we add it as "data", not protocol.
+                        TransferType type = (id.Peer.Connection.recieveBuffer[0] == 7) ? TransferType.Data : TransferType.Protocol;
+                        id.Peer.Connection.ReceivedBytes(bytesReceived, type);
+                        id.TorrentManager.Monitor.BytesReceived(bytesReceived, type);
 
+                        // If we haven't recieved the entire message, we enqueue the peer in the DownloadQueue
+                        // and then try to resume downloading from him.
                         if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)
                         {
-                            if (id.TorrentManager.Settings.MaxDownloadSpeed == 0)
-                            {
-                                id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived, SocketFlags.None, this.messageReceivedCallback, id, out id.ErrorCode);
-                            }
-                            else
-                            {
-                                id.TorrentManager.Peers.Enqueue(id, PeerType.DownloadQueue);
-                                id.TorrentManager.ResumePeers();
-                            }
+                            id.TorrentManager.Peers.Enqueue(id, PeerType.DownloadQueue);
+                            id.TorrentManager.ResumePeers();
                             return;
                         }
 
-                        IPeerMessageInternal message;
                         try
                         {
+                            // Attempt to decode the message from the buffer.
                             message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
                         }
                         catch (ProtocolException ex)
@@ -680,10 +660,15 @@ namespace MonoTorrent.Client
                             return;
                         }
 
+                        // Fire the event to say we recieved a new message
                         if (this.PeerMessageTransferred != null)
                             this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
+
                         try
                         {
+                            Logger.Log(id, "Recieved message: " + message.GetType().Name);
+
+                            // Try to handle the message
                             message.Handle(id);
                         }
                         catch (TorrentException ex)
@@ -692,14 +677,9 @@ namespace MonoTorrent.Client
                             cleanUp = true;
                             return;
                         }
-                        Logger.Log(id, "Recieved message: " +message.GetType().Name);
-                        if (!(message is PieceMessage))
-                        {   // The '-4' is because of the messagelength int which has already been counted in a different method
-                            id.TorrentManager.DataBytesDownloaded -= (message.ByteLength - 4);
-                            id.TorrentManager.ProtocolBytesDownloaded += (message.ByteLength - 4);
-                        }
 
-                        id.TorrentManager.Monitor.BytesReceived(message.ByteLength);
+
+                        // if the peer has sent us three bad pieces, we close the connection.
                         if (id.Peer.HashFails == 3)
                         {
                             Logger.Log(id, "3 hashfails");
@@ -709,6 +689,7 @@ namespace MonoTorrent.Client
 
                         id.Peer.Connection.LastMessageReceived = DateTime.Now;
 
+                        // Free the large buffer used to recieve the piece message and get a small buffer
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
 
@@ -739,19 +720,20 @@ namespace MonoTorrent.Client
         {
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
-            
 
             try
             {
                 lock (id.TorrentManager.listLock)
                     lock (id)
                     {
+                        // If the peer has been cleaned up, just return.
                         if (id.Peer.Connection == null)
                         {
                             Logger.Log(id, "Connection null sending message");
                             return;
                         }
 
+                        // If we sent zero bytes, we should close the connection
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || (bytesSent == 0))
                         {
@@ -760,46 +742,35 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        id.Peer.Connection.BytesSent += bytesSent;
-                        if (id.Peer.Connection.CurrentlySendingMessage is PieceMessage)
-                            id.TorrentManager.DataBytesUploaded += bytesSent;
-                        else
-                            id.TorrentManager.ProtocolBytesUploaded += bytesSent;
+                        // If we are sending a piece message, then we add as "Data", otherwise we add as "protocol"
+                        TransferType type = (id.Peer.Connection.CurrentlySendingMessage is PieceMessage) ? TransferType.Data : TransferType.Protocol;
+                        id.Peer.Connection.SentBytes(bytesSent, type);
+                        id.TorrentManager.Monitor.BytesSent(bytesSent, type);
 
-                        id.Peer.Connection.Monitor.BytesSent(bytesSent);
-
+                        // If we haven't uploaded the entire message, then enqueue the peer in the upload queue
+                        // and attempt to resume uploading
                         if (id.Peer.Connection.BytesSent != id.Peer.Connection.BytesToSend)
                         {
-                            if (id.TorrentManager.Settings.MaxUploadSpeed == 0)
-                            {
-                                id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent, SocketFlags.None, this.messageSentCallback, id, out id.ErrorCode);
-                            }
-                            else
-                            {
-                                id.TorrentManager.Peers.Enqueue(id, PeerType.UploadQueue);
-                                id.TorrentManager.ResumePeers();
-                            }
+                            id.TorrentManager.Peers.Enqueue(id, PeerType.UploadQueue);
+                            id.TorrentManager.ResumePeers();
                             return;
                         }
 
+                        // Fire the event to let the user know a message was sent
                         if (this.PeerMessageTransferred != null)
                             this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                        Logger.Log(id, "Sent message: " +id.Peer.Connection.CurrentlySendingMessage.GetType().Name);
+                        Logger.Log(id, "Sent message: " + id.Peer.Connection.CurrentlySendingMessage.GetType().Name);
                         id.Peer.Connection.LastMessageSent = DateTime.Now;
                         this.ProcessQueue(id);
                     }
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 Logger.Log(id, "Exception sending message");
                 cleanUp = true;
             }
-            //catch (ArgumentException)
-            //{
-            //    cleanUp = true;
-            //}
             finally
             {
                 if (cleanUp)

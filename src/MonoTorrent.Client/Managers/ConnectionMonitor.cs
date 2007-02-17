@@ -42,36 +42,41 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
-        private long bytesDownloaded;
-        private long bytesUploaded;
+
+        private long dataBytesDownloaded;
+        private long dataBytesUploaded;
         private double downloadSpeed;
         private int downloadSpeedIndex;
         private double[] downloadSpeeds;
         private int lastUpdateTime;
+        private long protocolBytesDownloaded;
+        private long protocolBytesUploaded;
         private int tempSentCount;
         private int tempRecvCount;
         private double uploadSpeed;
         private int uploadSpeedIndex;
         private double[] uploadSpeeds;
+
         #endregion Member Variables
 
 
         #region Public Properties
+
         /// <summary>
         /// Returns the total bytes downloaded from this peer
         /// </summary>
-        public long BytesDownloaded
+        public long DataBytesDownloaded
         {
-            get { return this.bytesDownloaded; }
+            get { return this.dataBytesDownloaded; }
         }
 
 
         /// <summary>
         /// Returns the total bytes uploaded to this peer
         /// </summary>
-        public long BytesUploaded
+        public long DataBytesUploaded
         {
-            get { return this.bytesUploaded; }
+            get { return this.dataBytesUploaded; }
         }
 
 
@@ -86,6 +91,24 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Returns the total bytes downloaded from this peer
+        /// </summary>
+        public long ProtocolBytesDownloaded
+        {
+            get { return this.protocolBytesDownloaded; }
+        }
+
+
+        /// <summary>
+        /// Returns the total bytes uploaded to this peer
+        /// </summary>
+        public long ProtocolBytesUploaded
+        {
+            get { return this.protocolBytesUploaded; }
+        }
+
+
+        /// <summary>
         /// The current average upload speed in byte/second
         /// </summary>
         /// <returns></returns>
@@ -93,6 +116,7 @@ namespace MonoTorrent.Client
         {
             get { return this.uploadSpeed; }
         }
+
         #endregion Public Properties
 
 
@@ -110,15 +134,29 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
         /// <summary>
         /// Update the ConnectionManager with bytes uploaded
         /// </summary>
         /// <param name="bytesUploaded">Bytes uploaded in the last time period</param>
-        internal void BytesSent(int bytesUploaded)
+        internal void BytesSent(int bytesUploaded, TransferType type)
         {
             lock (this.uploadSpeeds)
             {
-                this.bytesUploaded += bytesUploaded;
+                switch (type)
+                {
+                    case TransferType.Data:
+                        this.dataBytesUploaded += bytesUploaded;
+                        break;
+
+                    case TransferType.Protocol:
+                        this.protocolBytesUploaded += bytesUploaded;
+                        break;
+
+                    default:
+                        throw new NotSupportedException();
+                }
+
                 this.tempSentCount += bytesUploaded;
             }
         }
@@ -128,11 +166,24 @@ namespace MonoTorrent.Client
         /// Update the ConnectionManager with bytes downloaded
         /// </summary>
         /// <param name="bytesDownloaded">Bytes downloaded in the last time period</param>
-        internal void BytesReceived(int bytesDownloaded)
+        internal void BytesReceived(int bytesDownloaded, TransferType type)
         {
             lock (this.downloadSpeeds)
             {
-                this.bytesDownloaded += bytesDownloaded;
+                switch (type)
+                {
+                    case TransferType.Data:
+                        this.dataBytesDownloaded += bytesDownloaded;
+                        break;
+
+                    case TransferType.Protocol:
+                        this.protocolBytesDownloaded += bytesDownloaded;
+                        break;
+
+                    default:
+                        throw new NotSupportedException();
+                }
+
                 this.tempRecvCount += bytesDownloaded;
             }
         }
@@ -215,6 +266,7 @@ namespace MonoTorrent.Client
                 }
             }
         }
+
         #endregion
     }
 }

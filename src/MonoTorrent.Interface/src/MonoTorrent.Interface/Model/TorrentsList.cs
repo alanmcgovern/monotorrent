@@ -155,8 +155,8 @@ namespace MonoTorrent.Interface.Model
         private void UpdateStats(TreeIter row, TorrentManager torrent)
         {
             SetValue(row, 3, Formatter.FormatPercent(torrent.Progress));
-            SetValue(row, 4, Formatter.FormatSize(torrent.DataBytesDownloaded));
-            SetValue(row, 5, Formatter.FormatSize(torrent.DataBytesUploaded));
+            SetValue(row, 4, Formatter.FormatSize(torrent.Monitor.DataBytesDownloaded));
+            SetValue(row, 5, Formatter.FormatSize(torrent.Monitor.DataBytesUploaded));
             SetValue(row, 6, Formatter.FormatSpeed(torrent.DownloadSpeed()));
             SetValue(row, 7, Formatter.FormatSpeed(torrent.UploadSpeed()));
             SetValue(row, 9, torrent.Leechs().ToString());

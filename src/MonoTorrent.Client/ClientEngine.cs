@@ -40,6 +40,7 @@ using System.Threading;
 using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
+using Nat;
 
 namespace MonoTorrent.Client
 {
@@ -52,11 +53,14 @@ namespace MonoTorrent.Client
         internal static readonly bool SupportsFastPeer = true;
         #endregion
 
+
         #region Private Member Variables
         /// <summary>
         /// A logic tick will be performed every TickLength miliseconds
         /// </summary>
         internal const int TickLength = 25;
+
+        private PortMapper portMapper;
         #endregion
 
 
@@ -146,6 +150,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new ClientEngine
         /// </summary>
@@ -162,7 +167,21 @@ namespace MonoTorrent.Client
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
             this.torrents = new List<TorrentManager>();
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
+
+            // If uPnP support has been enabled
+            if (this.settings.UsePnP)
+            {
+                this.portMapper = new PortMapper();
+                this.portMapper.RouterFound += new EventHandler(portMapper_RouterFound);
+                this.portMapper.Start();
+            }
         }
+
+        void portMapper_RouterFound(object sender, EventArgs e)
+        {
+            this.portMapper.MapPort(this.settings.ListenPort);
+        }
+
         #endregion
 
 
@@ -663,6 +682,7 @@ namespace MonoTorrent.Client
                 this.listener.Dispose();
 
             this.timer.Dispose();
+            this.portMapper.Dispose();
         }
 
 

@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
-        internal ConnectionMonitor Monitor
+        public ConnectionMonitor Monitor
         {
             get { return this.monitor; }
         }
@@ -79,10 +79,6 @@ namespace MonoTorrent.Client
             get { return this.bitfield; }
         }
         private BitField bitfield;
-
-
-        //internal Queue<PeerConnectionID> downloadQueue;
-        //internal Queue<PeerConnectionID> uploadQueue;
 
 
         /// <summary>
@@ -195,50 +191,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The number of bytes which have been downloaded for the BitTorrent protocol
-        /// </summary>
-        public long ProtocolBytesDownloaded
-        {
-            get { return this.protocolBytesDownloaded; }
-            internal set { this.protocolBytesDownloaded = value; }
-        }
-        private long protocolBytesDownloaded;
-
-
-        /// <summary>
-        /// The number of bytes which have been uploaded for the BitTorrent protocol
-        /// </summary>
-        public long ProtocolBytesUploaded
-        {
-            get { return this.protocolBytesUploaded; }
-            internal set { this.protocolBytesUploaded = value; }
-        }
-        private long protocolBytesUploaded;
-
-
-        /// <summary>
-        /// The number of bytes which have been downloaded for the files
-        /// </summary>
-        public long DataBytesDownloaded
-        {
-            get { return this.dataBytesDownloaded; }
-            internal set { this.dataBytesDownloaded = value; }
-        }
-        private long dataBytesDownloaded;
-
-
-        /// <summary>
-        /// The number of bytes which have been uploaded for the files
-        /// </summary>
-        public long DataBytesUploaded
-        {
-            get { return this.dataBytesUploaded; }
-            internal set { this.dataBytesUploaded = value; }
-        }
-        private long dataBytesUploaded;
-
-
-        /// <summary>
         /// The directory to download the files to
         /// </summary>
         public string SavePath
@@ -337,7 +289,7 @@ namespace MonoTorrent.Client
 
             UpdateState(TorrentState.Stopped);
 
-            handle = this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
@@ -480,13 +432,13 @@ namespace MonoTorrent.Client
                     {
                         if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
                         {
-                            this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
                     else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
                     {
-                        this.trackerManager.Announce(this.dataBytesDownloaded, this.dataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
                     }
                 }
                 if (counter % 40 == 0)
@@ -679,9 +631,12 @@ namespace MonoTorrent.Client
         {
             lock (this.listLock)
             {
+                // While there are peers queued in the list and i haven't used my download allowance, resume downloading
+                // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
                 while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                    if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
-                        Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
+                    if (this.fileManager.QueuedWrites < 20)
+                        if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
+                            Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
                 while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
                     if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
@@ -691,7 +646,6 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Misc
         /// <summary>
         /// Returns the number of Seeds we are currently connected to
         /// </summary>
@@ -858,7 +812,6 @@ namespace MonoTorrent.Client
         {
             this.fileManager.Dispose();
         }
-        #endregion
 
         public override bool Equals(object obj)
         {
@@ -875,7 +828,6 @@ namespace MonoTorrent.Client
         {
             return BitConverter.ToString(this.torrent.InfoHash).GetHashCode();
         }
-
 
         private void SetChokeStatus(PeerConnectionID id, bool amChoking)
         {
@@ -897,7 +849,11 @@ namespace MonoTorrent.Client
             }
         }
 
-
+        /// <summary>
+        /// Tries to add a piece request to the peers message queue.
+        /// </summary>
+        /// <param name="id">The peer to add the request too</param>
+        /// <returns>True if the request was added</returns>
         internal bool AddPieceRequest(PeerConnectionID id)
         {
             IPeerMessageInternal msg;
@@ -918,7 +874,6 @@ namespace MonoTorrent.Client
             return true;
         }
 
-
         /// <summary>
         /// Changes the peers "Interesting" status to the new value
         /// </summary>
@@ -936,7 +891,6 @@ namespace MonoTorrent.Client
             else
                 id.Peer.Connection.EnQueue(new NotInterestedMessage());
         }
-
 
         /// <summary>
         /// Checks the sendbuffer of the peer to see if there are any outstanding pieces which they requested

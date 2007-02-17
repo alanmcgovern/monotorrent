@@ -47,7 +47,6 @@ namespace TestClient
         }
         static void Main(string[] args)
         {
-
             basePath = Environment.CurrentDirectory;
 
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
@@ -64,8 +63,16 @@ namespace TestClient
 
         static private void TestEngine()
         {
-            engine = new ClientEngine(EngineSettings.DefaultSettings(), TorrentSettings.DefaultSettings());
-            engine.Settings.SavePath = Path.Combine(basePath, "Downloads");
+            int port;
+            Console.Write(Environment.NewLine + "Choose a listen port: ");
+            while (!Int32.TryParse(Console.ReadLine(), out port)) { }
+
+            EngineSettings settings = EngineSettings.DefaultSettings();
+                        settings.SavePath = Path.Combine(basePath, "Downloads");
+
+            settings.ListenPort = port;
+            engine = new ClientEngine(settings, TorrentSettings.DefaultSettings());
+
 
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
@@ -88,9 +95,13 @@ namespace TestClient
             Debug.WriteLine("Torrent State:    " + ((TorrentManager)torrents[0]).State.ToString());
             foreach (TorrentManager manager in torrents)
             {
-                engine.Start(manager);
                 manager.PieceHashed += new EventHandler<PieceHashedEventArgs>(main_OnPieceHashed);
                 manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
+                ClientEngine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
+                ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
+                ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
+                
+                engine.Start(manager);
             }
 
 
@@ -118,11 +129,11 @@ namespace TestClient
                         Console.WriteLine("Number of seeds:  " + manager.Seeds());
                         Console.WriteLine("Number of leechs: " + manager.Leechs());
                         Console.WriteLine("Total available:  " + manager.AvailablePeers);
-                        Console.WriteLine("Downloaded:       " + manager.DataBytesDownloaded / 1024.0);
-                        Console.WriteLine("Uploaded:         " + manager.DataBytesUploaded / 1024.0);
+                        Console.WriteLine("Downloaded:       " + manager.Monitor.DataBytesDownloaded / 1024.0);
+                        Console.WriteLine("Uploaded:         " + manager.Monitor.DataBytesUploaded / 1024.0);
                         Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        Console.WriteLine("Protocol Download:" + manager.ProtocolBytesDownloaded / 1024.0);
-                        Console.WriteLine("Protocol Upload:  " + manager.ProtocolBytesUploaded / 1024.0);
+                        Console.WriteLine("Protocol Download:" + manager.Monitor.ProtocolBytesDownloaded / 1024.0);
+                        Console.WriteLine("Protocol Upload:  " + manager.Monitor.ProtocolBytesUploaded / 1024.0);
                         Console.WriteLine("Hashfails:        " + manager.HashFails.ToString());
                         Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
                         Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
@@ -144,6 +155,21 @@ namespace TestClient
             engine.Dispose();
         }
 
+        static void ConnectionManager_PeerDisconnected(object sender, PeerConnectionEventArgs e)
+        {
+            Console.WriteLine("Disconnected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
+        }
+
+        static void ConnectionManager_PeerConnected(object sender, PeerConnectionEventArgs e)
+        {
+            Console.WriteLine("Connected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
+        }
+
+        static void ConnectionManager_PeerMessageTransferred(object sender, PeerMessageEventArgs e)
+        {
+            //Console.WriteLine(e.Direction.ToString() + ":\t" + e.Message.GetType());
+        }
+
         #region Shutdown methods
         static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
@@ -152,10 +178,7 @@ namespace TestClient
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Console.WriteLine("Unhandled exception");
-            WaitHandle[] handles = engine.Stop();
-            WaitHandle.WaitAll(handles);
-            Console.WriteLine(e.ExceptionObject.ToString());
+            shutdown();
         }
 
         static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -170,10 +193,12 @@ namespace TestClient
 
         private static void shutdown()
         {
+            Logger.FlushToDisk();
             WaitHandle[] handles = engine.Stop();
             for (int i = 0; i < handles.Length; i++)
                 if (handles[i] != null)
                     handles[i].WaitOne();
+
             foreach (TraceListener lst in Debug.Listeners)
             {
                 lst.Flush();
@@ -181,7 +206,25 @@ namespace TestClient
             }
         }
         #endregion
-        
+
+
+        #region events i've hooked into
+        static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
+        {
+            Debug.WriteLine("State: " + e.NewState.ToString());
+        }
+
+        static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
+        {
+            TorrentManager manager = (TorrentManager)sender;
+            if (!e.HashPassed)
+                //Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+           // else
+                Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+        }
+        #endregion
+
+
         /*
         public void Main()
         {
@@ -273,20 +316,5 @@ namespace TestClient
         }
 
         */
-        #region events i've hooked into
-        static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
-        {
-            Debug.WriteLine("State: " + e.NewState.ToString());
-        }
-
-        static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
-        {
-            TorrentManager manager = (TorrentManager)sender;
-            if (e.HashPassed)
-                Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
-            else
-                Debug.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
-        }
-        #endregion
     }
 }
