@@ -72,6 +72,14 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
+        /// Returns the number of pieces which are currently queued in the write buffer
+        /// </summary>
+        internal int QueuedWrites
+        {
+            get { return this.bufferedWrites.Count; }
+        }
+
+        /// <summary>
         /// The length of a piece in bytes
         /// </summary>
         public int PieceLength
@@ -79,6 +87,9 @@ namespace MonoTorrent.Client
             get { return this.pieceLength; }
         }
 
+        /// <summary>
+        /// Returns true if the write streams are open.
+        /// </summary>
         public bool StreamsOpen
         {
             get { return this.fileStreams != null; }
