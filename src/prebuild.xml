@@ -78,7 +78,8 @@
       <Reference name="System.Xml" />
       <Reference name="nunit.framework" />
       <Reference name="Mono.Security" localCopy="true" path="."/>
-	<Reference name="MonoTorrent.Common" localCopy="true" />
+      <Reference name="MonoTorrent.Common" localCopy="true" />
+      <Reference name="Upnp.dll" localCopy="true" path="../Libs"/>
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
