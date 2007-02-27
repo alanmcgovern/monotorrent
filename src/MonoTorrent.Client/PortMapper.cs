@@ -33,7 +33,14 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            this.controller.StartSearching();
+            try
+            {
+                this.controller.StartSearching();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine("UPnP searching failed: " + ex.ToString());
+            }
         }
 
         internal void MapPort(int port)
@@ -54,7 +61,6 @@ namespace MonoTorrent.Client
                 Debug.WriteLine("Couldn't map the port: " + this.port);
             }
         }
-
 
         public void Dispose()
         {
