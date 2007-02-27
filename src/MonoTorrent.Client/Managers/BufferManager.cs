@@ -34,20 +34,24 @@ using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
-    internal enum BufferType
+    public enum BufferType
     {
         SmallMessageBuffer,
+        MediumMessageBuffer,
         LargeMessageBuffer
     }
 
-    internal class BufferManager
+    public class BufferManager
     {
-        public const int SmallMessageBufferSize = 256;
-        public const int LargeMessageBufferSize = ((1 << 14) + 32);
+        public const int SmallMessageBufferSize = 1 << 8;               // 256 bytes
+        public const int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
+        public const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
         public static readonly byte[] EmptyBuffer = new byte[0];
-        private Queue<byte[]> smallMessageBuffers;
         private Queue<byte[]> largeMessageBuffers;
+        private Queue<byte[]> mediumMessageBuffers;
+        private Queue<byte[]> smallMessageBuffers;
+
 
 
         /// <summary>
@@ -56,11 +60,13 @@ namespace MonoTorrent.Client
         public BufferManager()
         {
             this.largeMessageBuffers = new Queue<byte[]>();
+            this.mediumMessageBuffers = new Queue<byte[]>();
             this.smallMessageBuffers = new Queue<byte[]>();
 
             // Preallocate 35 of each buffer to help avoid heap fragmentation due to pinning
-            this.AllocateBuffers(35, BufferType.SmallMessageBuffer);
             this.AllocateBuffers(35, BufferType.LargeMessageBuffer);
+            this.AllocateBuffers(35, BufferType.MediumMessageBuffer);
+            this.AllocateBuffers(35, BufferType.SmallMessageBuffer);
         }
 
 
@@ -86,6 +92,14 @@ namespace MonoTorrent.Client
                     buffer = this.smallMessageBuffers.Dequeue();
                 }
 
+            else if (type == BufferType.MediumMessageBuffer)
+                lock (this.mediumMessageBuffers)
+                {
+                    if (this.mediumMessageBuffers.Count == 0)
+                        this.AllocateBuffers(8, BufferType.MediumMessageBuffer);
+                    buffer = this.smallMessageBuffers.Dequeue();
+                }
+           
             // If we're getting a large buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
             else if (type == BufferType.LargeMessageBuffer)
@@ -117,6 +131,10 @@ namespace MonoTorrent.Client
                 lock (this.smallMessageBuffers)
                     this.smallMessageBuffers.Enqueue(buffer);
 
+            else if (buffer.Length == MediumMessageBufferSize)
+                lock (this.mediumMessageBuffers)
+                    this.mediumMessageBuffers.Enqueue(buffer);
+
             // If the buffer is a large buffer, add it into the largebuffer queue
             else if (buffer.Length == LargeMessageBufferSize)
                 lock (this.largeMessageBuffers)
@@ -136,6 +154,9 @@ namespace MonoTorrent.Client
             while (number-- > 0)
                 if (type == BufferType.LargeMessageBuffer)
                     this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
+
+                else if (type == BufferType.MediumMessageBuffer)
+                    this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
 
                 else if (type == BufferType.SmallMessageBuffer)
                     this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
