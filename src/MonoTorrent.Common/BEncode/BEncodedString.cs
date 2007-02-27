@@ -241,7 +241,11 @@ namespace MonoTorrent.Common
 
         public override int GetHashCode()
         {
-            return this.textBytes.GetHashCode();
+            int hash = 0;
+            for (int i = 0; i < this.textBytes.Length; i++)
+                hash += this.textBytes[i];
+
+            return hash;
         }
 
         public override string ToString()
