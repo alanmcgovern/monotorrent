@@ -120,7 +120,6 @@ namespace MonoTorrent.Client
         public bool UsePnP
         {
             get { return this.useuPnP; }
-            set { this.useuPnP = value; }
         }
 
         #endregion Properties
@@ -134,7 +133,7 @@ namespace MonoTorrent.Client
         private const int DefaultMaxUploadSpeed = 0;
         private const int DefaultMaxHalfOpenConnections = 5;
         private const int DefaultListenPort = 52138;
-        private const bool DefaultUseuPnP = true;
+        private const bool DefaultUseuPnP = false;              // UPnP crashes on vista's .NET framework, so we won't enable by default
 
         #endregion
 
