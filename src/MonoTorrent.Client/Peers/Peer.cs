@@ -146,6 +146,16 @@ namespace MonoTorrent.Client
         }
         #endregion
 
-        //public StringBuilder MessageHistory = new StringBuilder(1024);
+
+        public byte[] CompactPeer()
+        {
+            byte[] data = new byte[6];
+
+            string[] peer = this.location.Split(':');
+            Buffer.BlockCopy(IPAddress.Parse(peer[0]).GetAddressBytes(), 0, data, 0, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, 4, 2);
+
+            return data;
+        }
     }
 }
