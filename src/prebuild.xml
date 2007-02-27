@@ -79,7 +79,7 @@
       <Reference name="nunit.framework" />
       <Reference name="Mono.Security" localCopy="true" path="."/>
       <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="Upnp.dll" localCopy="true" path="../Libs"/>
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
@@ -163,6 +163,44 @@
       <Reference name="MonoTorrent.Common" localCopy="true" />
       <Reference name="MonoTorrent.Client" localCopy="true"  />
       <Files>
+        <Match path="." pattern="*.cs" recurse="true"/>
+      </Files>
+    </Project>
+
+    <Project name="MonoTorrent.Interface" path="MonoTorrent.Interface" language="C#" type="Library" assemblyName="MonoTorrent.Interface" rootNamespace="MonoTorrent.Interface">
+      <Configuration name="Debug">
+        <Options>
+          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
+          <OptimizeCode>false</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Debug</OutputPath>
+          <DebugInformation>true</DebugInformation>
+          <WarningLevel>4</WarningLevel>
+        </Options>
+      </Configuration>
+      <Configuration name="Release">
+        <Options>
+          <CompilerDefines>TRACE</CompilerDefines>
+          <OptimizeCode>true</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Release</OutputPath>
+          <DebugInformation>false</DebugInformation>
+          <WarningLevel>4</WarningLevel>
+        </Options>
+      </Configuration>
+      <Reference name="atk-sharp" version="2.8.0.0" />
+      <Reference name="gconf-sharp"  version="2.8.0.0" />
+      <Reference name="gdk-sharp"   version="2.8.0.0" />
+      <Reference name="gtk-sharp"   version="2.8.0.0" />
+      <Reference name="glib-sharp"   version="2.8.0.0" />
+      <Reference name="Mono.Posix" />
+      <Reference name="MonoTorrent.Client" />
+      <Reference name="MonoTorrent.Common" />
+      <Reference name="System" />
+      <Reference name="System.Data" />
+      <Reference name="System.Xml" />
+      <Files>
+        <File buildAction="EmbeddedResource">res/ui.xml</File>
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
     </Project>
