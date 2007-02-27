@@ -36,7 +36,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-
+using MonoTorrent.BEncoding;
 
 
 namespace MonoTorrent.Common
@@ -525,7 +525,7 @@ namespace MonoTorrent.Common
     ///<summary>
     ///this class is used to concatenate all the files provided as parameter from the constructor.
     ///<summary>
-    internal class CatStreamReader : IDisposable
+    public class CatStreamReader : IDisposable
     {
         private List<string> _files;
         private int _currentFile = 0;

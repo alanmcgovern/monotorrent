@@ -37,6 +37,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using MonoTorrent.Common;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {   

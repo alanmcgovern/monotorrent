@@ -9,6 +9,7 @@ using System.Net;
 using System.Diagnostics;
 using System.Threading;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.BEncoding;
 
 namespace TestClient
 {

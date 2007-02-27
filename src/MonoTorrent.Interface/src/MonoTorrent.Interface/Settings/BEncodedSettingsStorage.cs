@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using System.IO;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Interface.Settings
 {

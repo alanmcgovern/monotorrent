@@ -37,6 +37,7 @@ using System.Threading;
 using System.Web;
 using System.Diagnostics;
 using System.Collections.Generic;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {

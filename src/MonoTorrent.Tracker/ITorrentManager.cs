@@ -28,6 +28,7 @@
 
 using System;
 using MonoTorrent.Common;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {
