@@ -38,11 +38,11 @@ namespace MonoTorrent.Client
     internal class Piece
     {
         /// <summary>
-        /// The official client rejects any request about 16kb, so even thought it adds more overhead
+        /// The official client rejects any request above 16kb, so even thought it adds more overhead
         /// I use the same size requests. All other clients accept up to 128kB requests (afaik).
         /// In the future the Piece picker could adaptively choose blocksize.
         /// </summary>
-        private const int blockSize = (1 << 14);	// 16kB
+        public const int BlockSize = (1 << 14);	// 16kB
 
         #region Member Variables
         /// <summary>
@@ -92,14 +92,14 @@ namespace MonoTorrent.Client
 
             else
             {
-                int numberOfPieces = (int)Math.Ceiling(((double)torrent.PieceLength / blockSize));
+                int numberOfPieces = (int)Math.Ceiling(((double)torrent.PieceLength / BlockSize));
 
                 blocks = new Block[numberOfPieces];
 
                 for (int i = 0; i < numberOfPieces; i++)
-                    blocks[i] = new Block(pieceIndex, i * blockSize, blockSize);
+                    blocks[i] = new Block(pieceIndex, i * BlockSize, BlockSize);
 
-                if ((torrent.PieceLength % blockSize) != 0)     // I don't think this would ever happen. But just in case
+                if ((torrent.PieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
                     blocks[blocks.Length - 1] = new Block(pieceIndex, blocks[blocks.Length - 1].StartOffset, (int)(torrent.PieceLength - blocks[blocks.Length - 1].StartOffset));
             }
         }
@@ -113,21 +113,21 @@ namespace MonoTorrent.Client
         private void LastPiece(int pieceIndex, Torrent torrent)
         {
             int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Length - 1) * torrent.PieceLength);
-            int numberOfBlocks = bytesRemaining / blockSize;
-            if (bytesRemaining % blockSize != 0)
+            int numberOfBlocks = bytesRemaining / BlockSize;
+            if (bytesRemaining % BlockSize != 0)
                 numberOfBlocks++;
 
             blocks = new Block[numberOfBlocks];
 
             int i = 0;
-            while (bytesRemaining - blockSize > 0)
+            while (bytesRemaining - BlockSize > 0)
             {
-                blocks[i] = new Block(pieceIndex, i * blockSize, blockSize);
-                bytesRemaining -= blockSize;
+                blocks[i] = new Block(pieceIndex, i * BlockSize, BlockSize);
+                bytesRemaining -= BlockSize;
                 i++;
             }
 
-            blocks[i] = new Block(pieceIndex, i * blockSize, bytesRemaining);
+            blocks[i] = new Block(pieceIndex, i * BlockSize, bytesRemaining);
         }
         #endregion
 
