@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
                 {
                     if (this.mediumMessageBuffers.Count == 0)
                         this.AllocateBuffers(8, BufferType.MediumMessageBuffer);
-                    buffer = this.smallMessageBuffers.Dequeue();
+                    buffer = this.mediumMessageBuffers.Dequeue();
                 }
            
             // If we're getting a large buffer and there are none in the pool, just return a new one.
