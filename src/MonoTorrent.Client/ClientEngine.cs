@@ -682,7 +682,8 @@ namespace MonoTorrent.Client
                 this.listener.Dispose();
 
             this.timer.Dispose();
-            this.portMapper.Dispose();
+            if (this.settings.UsePnP)
+                this.portMapper.Dispose();
         }
 
 
