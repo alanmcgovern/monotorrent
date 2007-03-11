@@ -278,6 +278,7 @@ namespace MonoTorrent.Client
                 UpdateState(TorrentState.Downloading);
 
             this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
+            ClientEngine.ConnectionManager.RegisterManager(this);
         }
 
 
@@ -306,6 +307,7 @@ namespace MonoTorrent.Client
                 this.FileManager.CloseFileStreams();
             this.SaveFastResume();
             this.peers.ClearAll();
+            ClientEngine.ConnectionManager.UnregisterManager(this);
 
             return handle;
         }
@@ -344,6 +346,7 @@ namespace MonoTorrent.Client
         {
             PeerConnectionID id;
 
+            // First attempt to resume downloading (just in case we've stalled for whatever reason)
             lock (this.listLock)
                 if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
                     this.ResumePeers();
@@ -359,10 +362,6 @@ namespace MonoTorrent.Client
 
                 while (this.finishedPieces.Count > 0)
                     this.SendHaveMessageToAll(this.finishedPieces.Dequeue());
-
-                // If we havn't reached our max connected peers, connect to another one.
-                if ((this.peers.AvailablePeers.Count > 0) && (this.peers.ConnectedPeers.Count < this.settings.MaxConnections))
-                    ClientEngine.ConnectionManager.ConnectToPeer(this);
 
                 for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
                 {
@@ -450,24 +449,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void SetAmInterestedStatus(PeerConnectionID id)
-        {
-            if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
-                SetAmInterestedStatus(id, true);
-
-            else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
-                SetAmInterestedStatus(id, false);
-        }
-
-        private void DumpStats(PeerConnectionID id, int counter)
-        {
-            //string path = Path.Combine(@"C:\Docs\" + counter.ToString(), id.Peer.Location.GetHashCode() + ".txt");
-            //if(!Directory.Exists(Path.GetDirectoryName(path)))
-            //    Directory.CreateDirectory(Path.GetDirectoryName(path));
-            //using (FileStream stream = File.Create(path))
-            //    stream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(id.Peer.MessageHistory.ToString()),0, System.Text.UTF8Encoding.UTF8.GetByteCount(id.Peer.MessageHistory.ToString()));
-        }
-
 
         /// <summary>
         /// 
@@ -504,6 +485,9 @@ namespace MonoTorrent.Client
                     return 0;
 
                 this.peers.AvailablePeers.Add(peer);
+
+                // When we successfully add a peer we try to connect to the next available peer
+                ClientEngine.ConnectionManager.TryConnect();
                 return 1;
             }
         }
@@ -645,6 +629,26 @@ namespace MonoTorrent.Client
             }
         }
         #endregion
+
+
+
+        internal void SetAmInterestedStatus(PeerConnectionID id)
+        {
+            if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
+                SetAmInterestedStatus(id, true);
+
+            else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
+                SetAmInterestedStatus(id, false);
+        }
+
+        private void DumpStats(PeerConnectionID id, int counter)
+        {
+            //string path = Path.Combine(@"C:\Docs\" + counter.ToString(), id.Peer.Location.GetHashCode() + ".txt");
+            //if(!Directory.Exists(Path.GetDirectoryName(path)))
+            //    Directory.CreateDirectory(Path.GetDirectoryName(path));
+            //using (FileStream stream = File.Create(path))
+            //    stream.Write(System.Text.UTF8Encoding.UTF8.GetBytes(id.Peer.MessageHistory.ToString()),0, System.Text.UTF8Encoding.UTF8.GetByteCount(id.Peer.MessageHistory.ToString()));
+        }
 
 
         /// <summary>
