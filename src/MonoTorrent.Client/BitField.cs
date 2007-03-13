@@ -314,11 +314,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal bool AllFalse()
         {
-            for (int i = 0; i < this.array.Length; i++)
-                if (array[i] != 0)
-                    return false;
-
-            return true;
+            return this.trueCount == 0;
         }
 
         /// <summary>
