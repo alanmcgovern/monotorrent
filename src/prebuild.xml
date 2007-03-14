@@ -73,7 +73,6 @@
       <Reference name="System" />
       <Reference name="System.Data" />
       <Reference name="System.Xml" />
-      <Reference name="nunit.framework" />
       <Reference name="MonoTorrent.BEncoding" />
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
@@ -103,7 +102,6 @@
       <Reference name="System.Data" />
       <Reference name="System.Web" />
       <Reference name="System.Xml" />
-      <Reference name="nunit.framework" />
       <Reference name="Mono.Security" localCopy="true" path="."/>
       <Reference name="MonoTorrent.Common" localCopy="true" />
       <Reference name="MonoTorrent.BEncoding" />
@@ -134,6 +132,7 @@
       <Reference name="System" />
       <Reference name="System.Web" />
       <Reference name="MonoTorrent.Common" localCopy="true" />
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Reference name="MonoTorrent.BEncoding" />
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
@@ -161,9 +160,10 @@
       <Reference name="System" />
       <Reference name="System.Data" />
       <Reference name="System.Xml" />
-      <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="MonoTorrent.Tracker" localCopy="true"  />
       <Reference name="MonoTorrent.BEncoding" />
+      <Reference name="MonoTorrent.Common" localCopy="true" />
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
+      <Reference name="MonoTorrent.Tracker" localCopy="true"  />
       <Files>
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
@@ -190,6 +190,7 @@
       <Reference name="System" />
       <Reference name="System.Data" />
       <Reference name="System.Xml" />
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Reference name="MonoTorrent.Common" localCopy="true" />
       <Reference name="MonoTorrent.Client" localCopy="true"  />
       <Reference name="MonoTorrent.BEncoding" />
@@ -226,6 +227,7 @@
       <Reference name="glib-sharp"   version="2.8.0.0" />
       <Reference name="Mono.Posix" />
       <Reference name="MonoTorrent.Client" />
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Reference name="MonoTorrent.Common" />
       <Reference name="System" />
       <Reference name="System.Data" />
@@ -261,6 +263,7 @@
       <Reference name="System" />
       <Reference name="nunit.framework" />
       <Reference name="MonoTorrent.Common" />
+      <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Reference name="MonoTorrent.Client" />
       <Reference name="MonoTorrent.BEncoding" />
       <Files>
