@@ -41,6 +41,8 @@ namespace MonoTorrent.Client
 
         #region Private Fields
 
+        private bool allowLegacyConnections;            // True if you want to allowing non-encrypted incoming connections. Returns true if encrytion is off
+        private EncryptionType minEncryptionLevel;      // The minimum encryption level to use. "None" corresponds to no encryption.
         private int listenPort;                         // The port to listen to incoming connections on
         private int globalMaxConnections;               // The maximum number of connections that can be opened
         private int globalMaxHalfOpenConnections;       // The maximum number of simultaenous 1/2 open connections
@@ -53,6 +55,27 @@ namespace MonoTorrent.Client
 
 
         #region Properties
+
+        /// <summary>
+        /// This specifies whether non-encrypted incoming connections should be accepted or denied. This setting returns
+        /// true if MinEncryption level is set to "None"
+        /// </summary>
+        public bool AllowLegacyConnections
+        {
+            get { return (this.allowLegacyConnections) || (this.minEncryptionLevel == EncryptionType.None); }
+            set { this.allowLegacyConnections = value; }
+        }
+
+
+        /// <summary>
+        /// Specifies the minimum encryption level to use for outgoing connections.
+        /// </summary>
+        public EncryptionType MinEncryptionLevel
+        {
+            get { return this.minEncryptionLevel; }
+            set { this.minEncryptionLevel = value; }
+        }
+
 
         /// <summary>
         /// This is the default directory that torrents will be downloaded to
