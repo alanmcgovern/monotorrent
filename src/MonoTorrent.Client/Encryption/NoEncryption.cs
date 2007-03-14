@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Encryption
 
         public void Start(Socket socket)
         {
-            onEncryptorReady.Invoke(id);
+            onEncryptorReady(id);
             return;
         }
 

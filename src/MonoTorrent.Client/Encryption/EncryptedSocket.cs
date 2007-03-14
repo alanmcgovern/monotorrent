@@ -420,7 +420,7 @@ namespace MonoTorrent.Client.Encryption
 
             if (matchStart == 0) // the match started in the beginning of the window, so it must be a full match
             {
-                doneSynchronizeCallback.Invoke(result);
+                doneSynchronizeCallback(result);
             }
             else
             {
@@ -482,7 +482,7 @@ namespace MonoTorrent.Client.Encryption
 
                     if (toCopy == length)
                     {
-                        callback.Invoke(null);
+                        callback(null);
                     }
                     else
                     {
@@ -512,7 +512,7 @@ namespace MonoTorrent.Client.Encryption
             }
             else
             {
-                callback.Invoke(null);
+                callback(null);
             }
         }
 
@@ -552,7 +552,7 @@ namespace MonoTorrent.Client.Encryption
             }
             else
             {
-                callback.Invoke(result);
+                callback(result);
             }
         }
 
@@ -606,12 +606,12 @@ namespace MonoTorrent.Client.Encryption
 
         protected void IOError()
         {
-            onEncryptorIOError.Invoke(id);
+            onEncryptorIOError(id);
         }
 
         protected void EncryptionError()
         {
-            onEncryptorEncryptionError.Invoke(id);
+            onEncryptorEncryptionError(id);
         }
         #endregion
 
@@ -842,7 +842,7 @@ namespace MonoTorrent.Client.Encryption
 
             isReady = true;
 
-            onEncryptorReady.Invoke(id);
+            onEncryptorReady(id);
         }
         #endregion
     }
