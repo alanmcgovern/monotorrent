@@ -211,6 +211,23 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Handle(PeerConnectionID id)
         {
+            // If we got the peer as a "compact" peer, then the peerid will be empty
+            if (string.IsNullOrEmpty(id.Peer.PeerId))
+                id.Peer.PeerId = this.peerId;
+
+            // If the infohash doesn't match, dump the connection
+            if (!ToolBox.ByteMatch(this.infoHash, id.TorrentManager.Torrent.InfoHash))
+            {
+                Logger.Log(id, "Invalid infohash");
+                throw new TorrentException("Invalid infohash. Not tracking this torrent");
+            }
+
+            // If the peer id's don't match, dump the connection
+            if (id.Peer.PeerId != this.peerId)
+            {
+                Logger.Log(id, "Invalid peerid");
+                throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");
+            }
 
             id.Peer.Connection.ClientApp = new PeerID(this.peerId);
             id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
