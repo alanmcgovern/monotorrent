@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Diagnostics;
 
 namespace MonoTorrent.Client
 {
@@ -16,7 +17,9 @@ namespace MonoTorrent.Client
 
         public static void Log(PeerConnectionID id, string message)
         {
+            Trace.WriteLine(id.ToString() + ": " + message);
             return;
+
             if (!log.ContainsKey(id))
                 log.Add(id, new StringBuilder(512));
 
