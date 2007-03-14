@@ -31,12 +31,18 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Net;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Encryption
 {
     internal class NoEncryption : IEncryptor
     {
+        PeerConnectionID id;
+
+        public event EncryptorReadyHandler onEncryptorReady;
+        public event EncryptorIOErrorHandler onEncryptorIOError;
+        public event EncryptorEncryptionErrorHandler onEncryptorEncryptionError;
+
         public NoEncryption()
         {
         }
@@ -50,6 +56,45 @@ namespace MonoTorrent.Client.Encryption
 
         public void Decrypt(byte[] buffer, int offset, int count)
         {
+            return;
+        }
+
+
+        public void AddInitialData(byte[] buffer, int offset, int count)
+        {
+            return;
+        }
+
+        public void Start(Socket socket)
+        {
+            onEncryptorReady.Invoke(id);
+            return;
+        }
+
+        public void Start(Socket socket, byte[] initialBuffer, int offset, int count)
+        {
+            Start(socket);
+            return;
+        }
+
+        public bool IsReady()
+        {
+            return true;
+        }
+
+        public bool IsInitialDataAvailable()
+        {
+            return false;
+        }
+
+        public int GetInitialData(byte[] buffer, int offset, int count)
+        {
+            return 0;
+        }
+
+        public void SetPeerConnectionID(PeerConnectionID id)
+        {
+            this.id = id;
             return;
         }
     }

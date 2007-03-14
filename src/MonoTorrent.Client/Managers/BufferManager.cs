@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -80,7 +81,7 @@ namespace MonoTorrent.Client
             // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
             // a buffer leak somewhere and the buffers aren't being freed properly.
             if (buffer != EmptyBuffer)
-                throw new ArgumentException("The oldBuffer should have been recovered before getting a new buffer");
+                throw new ArgumentException("The old Buffer should have been recovered before getting a new buffer");
 
             // If we're getting a small buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
@@ -112,6 +113,27 @@ namespace MonoTorrent.Client
 
             else
                 throw new ArgumentException("Couldn't allocate the required buffer", "type");
+        }
+
+
+        /// <summary>
+        /// Allocates an existing buffer from the pool
+        /// </summary>
+        /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
+        /// <param name="type">The type of buffer that is needed</param>
+        public void GetBuffer(ref byte[] buffer, int minCapacity)
+        {
+            if (minCapacity < SmallMessageBufferSize)
+                GetBuffer(ref buffer, BufferType.SmallMessageBuffer);
+
+            else if (minCapacity < MediumMessageBufferSize)
+                GetBuffer(ref buffer, BufferType.MediumMessageBuffer);
+
+            else if (minCapacity < LargeMessageBufferSize)
+                GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
+
+            else
+                throw new TorrentException("Cannot allocate a big enough buffer");
         }
 
 

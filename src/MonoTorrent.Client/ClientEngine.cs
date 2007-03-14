@@ -51,6 +51,7 @@ namespace MonoTorrent.Client
     {
         #region Global Supports
         internal static readonly bool SupportsFastPeer = true;
+        internal static readonly bool SupportCrypto = true;
         #endregion
 
 
@@ -108,6 +109,9 @@ namespace MonoTorrent.Client
         /// </summary>
         private AsyncCallback peerHandshakeReceived;
 
+        private EncryptorReadyHandler onEncryptorReadyHandler;
+        private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
+        private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
 
         /// <summary>
         /// Returns the engines PeerID
@@ -167,6 +171,10 @@ namespace MonoTorrent.Client
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
             this.torrents = new List<TorrentManager>();
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
+
+            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
+            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
+            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
 
             // If uPnP support has been enabled
             if (this.settings.UsePnP)
@@ -239,7 +247,7 @@ namespace MonoTorrent.Client
 
             WaitHandle handle = manager.Stop();
 
-            for (int i = 0; i < this.torrents.Count; i++ )
+            for (int i = 0; i < this.torrents.Count; i++)
                 if (this.torrents[i].State != TorrentState.Paused && this.torrents[i].State != TorrentState.Stopped)
                     return handle;              // There's still a torrent running, so just return the handle
 
@@ -313,7 +321,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to download the files to</param>
         /// <param name="torrentSettings">The TorrentSettings to initialise the torrent with</param>
         /// <returns>A TorrentManager used to control the torrent</returns>
-        public TorrentManager LoadTorrent(string path, string savePath, TorrentSettings settings)
+        public TorrentManager LoadTorrent(string path, string savePath, TorrentSettings torrentSettings)
         {
             Torrent torrent = new Torrent();
             try
@@ -328,7 +336,7 @@ namespace MonoTorrent.Client
             if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
                 throw new TorrentException("The torrent is already in the engine");
 
-            TorrentManager manager = new TorrentManager(torrent, savePath, settings);
+            TorrentManager manager = new TorrentManager(torrent, savePath, torrentSettings, this.settings);
             this.torrents.Add(manager);
 
             if (File.Exists(torrent.TorrentPath + ".fresume"))
@@ -480,7 +488,7 @@ namespace MonoTorrent.Client
         {
             tickCount++;
 
-            for(int i =0; i <this.torrents.Count; i++)
+            for (int i = 0; i < this.torrents.Count; i++)
             {
                 switch (this.torrents[i].State)
                 {
@@ -544,14 +552,12 @@ namespace MonoTorrent.Client
             }
         }
 
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(IAsyncResult result)
         {
-            TorrentManager man = null;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
 
             try
@@ -574,49 +580,7 @@ namespace MonoTorrent.Client
                     }
                     Logger.Log(id, "CE Recieved handshake");
 
-                    HandshakeMessage handshake = new HandshakeMessage();
-                    try
-                    {
-                        handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
-                    }
-                    catch
-                    {
-                        Logger.Log(id, "CE Invalid handshake");
-                        CleanupSocket(id);
-                        return;
-                    }
-
-                    for (int i = 0; i < this.torrents.Count; i++)
-                        if (ToolBox.ByteMatch(handshake.infoHash, this.torrents[i].Torrent.InfoHash))
-                            man = this.torrents[i];
-
-                    if (man == null)        // We're not hosting that torrent
-                    {
-                        Logger.Log(id, "CE Not tracking torrent");
-                        CleanupSocket(id);
-                        return;
-                    }
-
-                    id.Peer.PeerId = handshake.PeerId;
-                    id.TorrentManager = man;
-                    handshake.Handle(id);
-                    Logger.Log(id, "CE Handshake successful");
-
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
-                    id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
-
-                    handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
-                    BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
-
-                    ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
-                    id.Peer.Connection.BytesSent = 0;
-                    id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
-                    id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
-
-                    Logger.Log(id, "CE Sending to torrent manager");
-                    id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
-                    id.Peer.Connection.ProcessingQueue = false;
-                    return;
+                    handleHandshake(id);
                 }
             }
 
@@ -631,6 +595,118 @@ namespace MonoTorrent.Client
             }
         }
 
+        private void handleHandshake(PeerConnectionID id)
+        {
+            TorrentManager man = null;
+
+            HandshakeMessage handshake = new HandshakeMessage();
+            try
+            {
+                handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+            }
+            catch
+            {
+                if (id.Peer.Connection.Encryptor is NoEncryption && SupportCrypto)
+                {
+                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.
+                    id.Peer.Connection.Encryptor = new PeerBEncryption(Torrents, this.settings.MinEncryptionLevel);
+                    id.Peer.Connection.Encryptor.onEncryptorReady += onEncryptorReadyHandler;
+                    id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
+                    id.Peer.Connection.Encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
+                    id.Peer.Connection.StartEncryption(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                }
+                else
+                {
+                    Logger.Log(id, "CE Invalid handshake");
+                    CleanupSocket(id);
+                }
+                return;
+            }
+
+            for (int i = 0; i < this.torrents.Count; i++)
+                if (ToolBox.ByteMatch(handshake.infoHash, this.torrents[i].Torrent.InfoHash))
+                    man = this.torrents[i];
+
+            if (man == null)        // We're not hosting that torrent
+            {
+                Logger.Log(id, "CE Not tracking torrent");
+                CleanupSocket(id);
+                return;
+            }
+
+            id.Peer.PeerId = handshake.PeerId;
+            id.TorrentManager = man;
+
+            // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
+            if (id.Peer.Connection.Encryptor is NoEncryption && this.settings.MinEncryptionLevel != EncryptionType.None)
+            {
+                Logger.Log(id, "CE Require crypto");
+                CleanupSocket(id);
+                return;
+            }
+
+            handshake.Handle(id);
+            Logger.Log(id, "CE Handshake successful");
+
+            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+            id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
+
+            handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
+            BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
+
+            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
+            id.Peer.Connection.BytesSent = 0;
+            id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
+            id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
+
+            Logger.Log(id, "CE Sending to torrent manager");
+            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
+            id.Peer.Connection.ProcessingQueue = false;
+        }
+
+
+        private void onEncryptorReady(PeerConnectionID id)
+        {
+            try
+            {
+                id.Peer.Connection.BytesReceived = 0;
+                id.Peer.Connection.BytesToRecieve = 68;
+                Logger.Log(id, "CE Peer encryption handshake complete");
+                int bytesReceived = 0;
+
+                // Handshake was probably delivered as initial payload. Retrieve it if its' vailable
+                if (id.Peer.Connection.Encryptor.IsInitialDataAvailable())
+                    id.Peer.Connection.Encryptor.GetInitialData(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+
+                id.Peer.Connection.BytesReceived += bytesReceived;
+                if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)
+                {
+                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
+                    return;
+                }
+
+                // The complete handshake was in the initial payload
+                Logger.Log(id, "CE Recieved Encrypted handshake");
+
+                handleHandshake(id);
+            }
+
+            catch (SocketException)
+            {
+                Logger.Log(id, "CE Exception with handshake");
+                CleanupSocket(id);
+            }
+            catch (NullReferenceException)
+            {
+                CleanupSocket(id);
+            }
+        }
+
+        private void onEncryptorError(PeerConnectionID id)
+        {
+            CleanupSocket(id);
+        }
+
 
         /// <summary>
         /// 
@@ -638,6 +714,9 @@ namespace MonoTorrent.Client
         /// <param name="id"></param>
         private void CleanupSocket(PeerConnectionID id)
         {
+            if (id == null) // Sometimes onEncryptionError fires with a null id
+                return;
+
             lock (id)
             {
                 Logger.Log(id, "***********CE Cleaning up*************");
@@ -678,7 +757,7 @@ namespace MonoTorrent.Client
             //foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
             //    keypair.Value.Dispose();
 
-            if(!this.listener.Disposed)
+            if (!this.listener.Disposed)
                 this.listener.Dispose();
 
             this.timer.Dispose();
@@ -690,7 +769,7 @@ namespace MonoTorrent.Client
         public double TotalDownloadSpeed()
         {
             double total = 0;
-            for(int i=0; i <this.torrents.Count; i++)
+            for (int i = 0; i < this.torrents.Count; i++)
                 total += this.torrents[i].DownloadSpeed();
 
             return total;

@@ -31,14 +31,36 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Encryption
 {
+    public delegate void EncryptorReadyHandler(PeerConnectionID id);
+    public delegate void EncryptorIOErrorHandler(PeerConnectionID id);
+    public delegate void EncryptorEncryptionErrorHandler(PeerConnectionID id);
+
     public interface IEncryptor
     {
+        event EncryptorReadyHandler onEncryptorReady;
+        event EncryptorIOErrorHandler onEncryptorIOError;
+        event EncryptorEncryptionErrorHandler onEncryptorEncryptionError;
+
         void Encrypt(byte[] buffer, int offset, int count);
 
-        
         void Decrypt(byte[] buffer, int offset, int count);
+
+        void AddInitialData(byte[] buffer, int offset, int count);
+
+        void Start(Socket socket);
+
+        void Start(Socket socket, byte[] initialBuffer, int offset, int count);
+
+        bool IsReady();
+
+        bool IsInitialDataAvailable();
+
+        int GetInitialData(byte[] buffer, int offset, int count);
+
+        void SetPeerConnectionID(PeerConnectionID id);
     }
 }

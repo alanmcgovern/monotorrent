@@ -221,12 +221,12 @@ namespace MonoTorrent.Client
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
-        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, EngineSettings engineSettings)
         {
             this.torrent = torrent;
             this.settings = settings;
 
-            this.trackerManager = new TrackerManager(this);
+            this.trackerManager = new TrackerManager(this, engineSettings);
 
             this.peers = new PeerList();
 

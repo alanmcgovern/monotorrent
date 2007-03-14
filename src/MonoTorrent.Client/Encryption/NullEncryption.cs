@@ -1,10 +1,10 @@
 //
-// RC4FullEncryption.cs
+// NullEncryption.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Yiduo Wang planetbeing@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2007 Yiduo Wang
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,37 +26,27 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Net;
-using System.Security.Cryptography;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal class RC4FullEncryption : IEncryptor
+    /// <summary>
+    /// Plaintext "encryption"
+    /// </summary>
+    class NullEncryption : IEncryption
     {
-        private ICryptoTransform encryptor;
-        private ICryptoTransform decryptor;
-        private Mono.Security.Cryptography.RC4 rc4;
+        public static NullEncryption NullEncryptor = new NullEncryption();
 
-        public RC4FullEncryption()
+        public byte[] DoCrypt(byte[] buffer)
         {
-            this.rc4 = Mono.Security.Cryptography.RC4.Create();
-            this.encryptor = rc4.CreateEncryptor();
-            this.decryptor = rc4.CreateDecryptor();
+            return buffer;
         }
 
-        public void Encrypt(byte[] buffer, int offset, int count)
+        public void InPlaceCrypt(byte[] buffer, int offset, int length)
         {
-            throw new NotImplementedException();
-        }
-
-        public void Decrypt(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
+            return;
         }
     }
 }

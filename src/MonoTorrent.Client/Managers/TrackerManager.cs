@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager)
+        public TrackerManager(TorrentManager manager, EngineSettings engineSettings)
         {
             this.manager = manager;
             this.currentTrackerIndex = 0;
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
             // Check if this tracker supports scraping
             this.trackers = new Tracker[manager.Torrent.AnnounceUrls.Length];
             for (int i = 0; i < manager.Torrent.AnnounceUrls.Length; i++)
-                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived);
+                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived, engineSettings);
         }
         #endregion
 

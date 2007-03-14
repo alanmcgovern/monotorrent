@@ -79,6 +79,16 @@ namespace MonoTorrent.Client.Encryption
 
 
         #region Async Methods
+        internal override void StartEncryption()
+        {
+            Encryptor.Start(peerSocket);
+        }
+
+        internal override void StartEncryption(byte[] initialBuffer, int offset, int count)
+        {
+            Encryptor.Start(peerSocket, initialBuffer, offset, count);
+        }
+
         internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerConnectionID id)
         {
             this.peerSocket.BeginConnect(this.peerEndPoint, peerEndCreateConnection, id);
@@ -96,6 +106,10 @@ namespace MonoTorrent.Client.Encryption
         {
 #warning Until mono supports the 'out errorcode' overload, we continue as before
             errorCode = SocketError.Success;
+            
+            if( offset == 0 )
+                Encryptor.Encrypt(buffer, offset, count);
+
             this.peerSocket.BeginSend(buffer, offset, count, socketFlags, asyncCallback, id);
             //this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
@@ -116,8 +130,11 @@ namespace MonoTorrent.Client.Encryption
         internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
 #warning Until mono supports the 'out errorcode' overload, we continue as before
+
+            int received = this.peerSocket.EndReceive(result);
+            Encryptor.Decrypt(((PeerConnectionID)result.AsyncState).Peer.Connection.recieveBuffer, ((PeerConnectionID)result.AsyncState).Peer.Connection.BytesReceived, received);
             errorCode = SocketError.Success;
-            return this.peerSocket.EndReceive(result);
+            return received;
             //return this.peerSocket.EndReceive(result, out errorCode);
         }
 

@@ -45,6 +45,7 @@ namespace MonoTorrent.Client
         #region Member Variables
         private AsyncCallback announceCallback;
         private AsyncCallback scrapeCallback;
+        private EngineSettings engineSettings;
 
 
         /// <summary>
@@ -211,7 +212,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        public Tracker(string announceUrl, AsyncCallback announceCallback, AsyncCallback scrapeCallback)
+        public Tracker(string announceUrl, AsyncCallback announceCallback, AsyncCallback scrapeCallback, EngineSettings engineSettings)
         {
             this.state = TrackerState.Unknown;
             this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
@@ -228,6 +229,7 @@ namespace MonoTorrent.Client
                 Regex r = new Regex("announce");
                 this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, indexOfAnnounce);
             }
+            this.engineSettings = engineSettings;
         }
         #endregion
 
@@ -268,6 +270,10 @@ namespace MonoTorrent.Client
             sb.Append(ClientEngine.PeerId);
             sb.Append("&port=");
             sb.Append(ConnectionListener.ListenEndPoint.Port);
+            sb.Append("&supportcrypto=");
+            sb.Append(ClientEngine.SupportCrypto ? 1 : 0);
+            sb.Append("&requirecrypto=");
+            sb.Append(this.engineSettings.MinEncryptionLevel != EncryptionType.None ? 1 : 0);
             sb.Append("&uploaded=");
             sb.Append(bytesUploaded);
             sb.Append("&downloaded=");

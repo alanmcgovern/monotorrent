@@ -156,6 +156,20 @@ namespace MonoTorrent.Client
         }
         private int bytesToSend;
 
+        internal MessagingCallback MessageSentCallback
+        {
+            get { return this.messageSentCallback; }
+            set { this.messageSentCallback = value; }
+        }
+        private MessagingCallback messageSentCallback;
+
+
+        internal MessagingCallback MessageReceivedCallback
+        {
+            get { return this.messageReceivedCallback; }
+            set { this.messageReceivedCallback = value; }
+        }
+        private MessagingCallback messageReceivedCallback;
 
         /// <summary>
         /// Contains the version and name of the application this client is using.
@@ -402,15 +416,23 @@ namespace MonoTorrent.Client
         {
             get { return this.sendQueue.Count; }
         }
+
+        internal virtual void StartEncryption()
+        {
+        }
+
+        internal virtual void StartEncryption(byte[] initialBuffer, int offset, int count)
+        {
+        }
         #endregion
 
 
         #region Async Methods
         internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerConnectionID id);
 
-        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
+        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
 
-        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, System.AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
+        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
 
         internal abstract void EndConnect(System.IAsyncResult result);
 
