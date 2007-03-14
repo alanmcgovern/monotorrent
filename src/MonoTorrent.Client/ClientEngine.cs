@@ -598,18 +598,28 @@ namespace MonoTorrent.Client
         private void handleHandshake(PeerConnectionID id)
         {
             TorrentManager man = null;
+            bool handshakeFailed = false;
 
             HandshakeMessage handshake = new HandshakeMessage();
             try
             {
                 handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+#warning call handshake.Handle to do this properly
+                if (handshake.ProtocolString != "BitTorrent protocol")
+                    handshakeFailed = true;
             }
             catch
+            {
+                handshakeFailed = true;
+            }
+
+            if (handshakeFailed)
             {
                 if (id.Peer.Connection.Encryptor is NoEncryption && SupportCrypto)
                 {
                     // Maybe this was a Message Stream Encryption handshake. Parse it as such.
                     id.Peer.Connection.Encryptor = new PeerBEncryption(Torrents, this.settings.MinEncryptionLevel);
+                    id.Peer.Connection.Encryptor.SetPeerConnectionID(id);
                     id.Peer.Connection.Encryptor.onEncryptorReady += onEncryptorReadyHandler;
                     id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
                     id.Peer.Connection.Encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
@@ -676,7 +686,7 @@ namespace MonoTorrent.Client
 
                 // Handshake was probably delivered as initial payload. Retrieve it if its' vailable
                 if (id.Peer.Connection.Encryptor.IsInitialDataAvailable())
-                    id.Peer.Connection.Encryptor.GetInitialData(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                    bytesReceived = id.Peer.Connection.Encryptor.GetInitialData(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
 
                 id.Peer.Connection.BytesReceived += bytesReceived;
                 if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)

@@ -142,7 +142,7 @@ namespace MonoTorrent.Client.Encryption
         {
             DoDecrypt(PadD, 0, PadD.Length); // padD
 
-            ready();
+            Ready();
         }
     }
 }

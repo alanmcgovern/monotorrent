@@ -40,7 +40,6 @@ namespace MonoTorrent.Client.Encryption
     public class PeerBEncryption : EncryptedSocket
     {
         private byte[][] possibleSKEYs = null;
-        private List<TorrentManager> torrents = null;
         private byte[] VerifyBytes;
 
         private AsyncCallback gotVerificationCallback;
@@ -50,7 +49,12 @@ namespace MonoTorrent.Client.Encryption
         public PeerBEncryption(List<TorrentManager> torrents, EncryptionType minCryptoAllowed)
             : base(minCryptoAllowed)
         {
-            this.torrents = torrents;
+            possibleSKEYs = new byte[torrents.Count][];
+
+            for (int i = 0; i < torrents.Count; i++)
+            {
+                possibleSKEYs[i] = torrents[i].Torrent.InfoHash;
+            }
 
             gotVerificationCallback = new AsyncCallback(gotVerification);
             gotPadCCallback = new AsyncCallback(gotPadC);
@@ -69,7 +73,7 @@ namespace MonoTorrent.Client.Encryption
 
         public override void Start(Socket socket)
         {
-            Logger.Log(id, " B: Start " + socket.Available);
+            Logger.Log(id, "B: Start " + socket.Available);
             base.Start(socket);
         }
 
@@ -77,7 +81,7 @@ namespace MonoTorrent.Client.Encryption
         {
             base.doneReceiveY(result); // 1 A->B: Diffie Hellman Ya, PadA
 
-            Logger.Log(id, " B: Step two");
+            Logger.Log(id, "B: Step two");
 
             byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
             Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
@@ -165,8 +169,8 @@ namespace MonoTorrent.Client.Encryption
             SendMessage(DoEncrypt(Len(padD)));
             SendMessage(DoEncrypt(padD));
 
-            ready();
-            Logger.Log(id, " B: Ready");
+            Ready();
+            Logger.Log(id, "B: Ready");
         }
 
 
@@ -179,64 +183,28 @@ namespace MonoTorrent.Client.Encryption
         {
             bool match = false;
 
-            if (torrents == null)
+            for(int i = 0; i < possibleSKEYs.Length; i++)
             {
-                foreach (byte[] possibleSKEY in possibleSKEYs)
+                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i]);
+                byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+
+                for (int j = 0; j < req2.Length; j++)
                 {
-                    Logger.Log(id, " B: Verification: " + ModuloCalculator.GetString(possibleSKEY) + " " + torrentHash);
-
-                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEY);
-                    byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
-
-                    for (int i = 0; i < req2.Length; i++)
+                    if (torrentHash[j] != (req2[j] ^ req3[j]))
                     {
-                        if (torrentHash[i] != (req2[i] ^ req3[i]))
-                        {
-                            match = false;
-                            break;
-                        }
-                        else
-                        {
-                            match = true;
-                        }
+                        match = false;
+                        break;
                     }
-
-                    if (match)
+                    else
                     {
-                        SKEY = possibleSKEY;
-                        return true;
+                        match = true;
                     }
                 }
-            }
-            else
-            {
-                foreach (TorrentManager torrent in torrents)
+
+                if (match)
                 {
-                    byte[] possibleSKEY = torrent.Torrent.InfoHash;
-
-                    Logger.Log(id, " B: Verification: " + ModuloCalculator.GetString(possibleSKEY) + " " + torrentHash);
-
-                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEY);
-                    byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
-
-                    for (int i = 0; i < req2.Length; i++)
-                    {
-                        if (torrentHash[i] != (req2[i] ^ req3[i]))
-                        {
-                            match = false;
-                            break;
-                        }
-                        else
-                        {
-                            match = true;
-                        }
-                    }
-
-                    if (match)
-                    {
-                        SKEY = possibleSKEY;
-                        return true;
-                    }
+                    SKEY = possibleSKEYs[i];
+                    return true;
                 }
             }
             return false;

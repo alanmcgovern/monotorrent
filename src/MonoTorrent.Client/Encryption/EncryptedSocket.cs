@@ -157,20 +157,7 @@ namespace MonoTorrent.Client.Encryption
             initialBufferOffset = 0;
             initialBufferCount = 0;
 
-            this.minCryptoAllowed = minCryptoAllowed;
-
-            // EncryptionType is basically a bit position starting from the right.
-            // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
-            if ((int)minCryptoAllowed > 0)
-            {
-                int mByte = CryptoProvide.Length - 1 - ((int)minCryptoAllowed - 1) / 8;
-                int mBit = ((int)minCryptoAllowed - 1) % 8;
-
-                for (int i = (CryptoProvide.Length - 1); i > mByte; i--)
-                    CryptoProvide[i] = 0;
-
-                CryptoProvide[mByte] &= (byte)(0xff << mBit);
-            }
+            SetMinCryptoAllowed(minCryptoAllowed);
         }
 
         #region Interface implementation
@@ -548,7 +535,9 @@ namespace MonoTorrent.Client.Encryption
 
             if (received < length)
             {
-                socket.BeginReceive(buffer, start + received, length - received, SocketFlags.None, doneReceiveCallback, new object[] { callback, buffer, start + received, length - received });
+                receiveData[2] = start + received;
+                receiveData[3] = length - received;
+                socket.BeginReceive(buffer, start + received, length - received, SocketFlags.None, doneReceiveCallback, receiveData);
             }
             else
             {
@@ -600,7 +589,9 @@ namespace MonoTorrent.Client.Encryption
 
             if (sent < length)
             {
-                socket.BeginSend(toSend, start + sent, length - sent, SocketFlags.None, doneSendCallback, new object[] { toSend, start + sent, length - sent });
+                sendData[1] = start + sent;
+                sendData[2] = length - sent;
+                socket.BeginSend(toSend, start + sent, length - sent, SocketFlags.None, doneSendCallback, sendData);
             }
         }
 
@@ -623,12 +614,10 @@ namespace MonoTorrent.Client.Encryption
         {
             X = new byte[96];
 
+            random.GetNonZeroBytes(X);
+
             for (int i = 0; i < 76; i++)
                 X[i] = 0;
-
-            byte[] Xkey = new byte[20];
-            random.GetNonZeroBytes(Xkey);
-            Xkey.CopyTo(X, 76);
         }
 
         /// <summary>
@@ -694,11 +683,11 @@ namespace MonoTorrent.Client.Encryption
             {
                 switch ((EncryptionType)selected)
                 {
-                    case (EncryptionType.RC4Header):
+                    case EncryptionType.RC4Header:
                         streamEncryptor = NullEncryption.NullEncryptor;
                         streamDecryptor = NullEncryption.NullEncryptor;
                         break;
-                    case (EncryptionType.RC4Full):
+                    case EncryptionType.RC4Full:
                         streamEncryptor = encryptor;
                         streamDecryptor = decryptor;
                         break;
@@ -834,7 +823,7 @@ namespace MonoTorrent.Client.Encryption
         /// <summary>
         /// Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
         /// </summary>
-        protected void ready()
+        protected void Ready()
         {
             // Send any remaining initial payload data that we hadn't gotten a chance to send
             Encrypt(InitialPayload, 0, InitialPayload.Length);
@@ -843,6 +832,24 @@ namespace MonoTorrent.Client.Encryption
             isReady = true;
 
             onEncryptorReady(id);
+        }
+
+        protected void SetMinCryptoAllowed(EncryptionType minCryptoAllowed)
+        {
+            this.minCryptoAllowed = minCryptoAllowed;
+
+            // EncryptionType is basically a bit position starting from the right.
+            // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
+            if ((int)minCryptoAllowed > 0)
+            {
+                int mByte = CryptoProvide.Length - 1 - ((int)minCryptoAllowed - 1) / 8;
+                int mBit = ((int)minCryptoAllowed - 1) % 8;
+
+                for (int i = (CryptoProvide.Length - 1); i > mByte; i--)
+                    CryptoProvide[i] = 0;
+
+                CryptoProvide[mByte] &= (byte)(0xff << mBit);
+            }
         }
         #endregion
     }
