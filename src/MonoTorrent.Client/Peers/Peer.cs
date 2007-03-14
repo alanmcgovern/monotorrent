@@ -111,6 +111,16 @@ namespace MonoTorrent.Client
             get { return this.location; }
         }
         private string location;
+
+        /// <summary>
+        /// The highest level of encryption that should be attempted with this peer
+        /// </summary>
+        public EncryptionMethods EncryptionSupported
+        {
+            get { return this.encryptionSupported; }
+            internal set { this.encryptionSupported = value; }
+        }
+        private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
         #endregion
 
 
