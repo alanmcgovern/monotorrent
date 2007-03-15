@@ -605,7 +605,7 @@ namespace MonoTorrent.Client
             {
                 handshake.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
 #warning call handshake.Handle to do this properly
-                if (handshake.ProtocolString !=VersionInfo.ProtocolStringV100)
+                if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                     handshakeFailed = true;
             }
             catch
@@ -624,6 +624,7 @@ namespace MonoTorrent.Client
                     id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
                     id.Peer.Connection.Encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
                     id.Peer.Connection.StartEncryption(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                    return;
                 }
                 else
                 {
