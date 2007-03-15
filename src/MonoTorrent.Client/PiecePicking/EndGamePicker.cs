@@ -115,6 +115,7 @@ namespace MonoTorrent.Client
 
         public void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message)
         {
+            id.Peer.Connection.AmRequestingPiecesCount--;
             // FIXME: Remove a request
         }
 
