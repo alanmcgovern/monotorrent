@@ -394,7 +394,7 @@ namespace MonoTorrent.Client
                             SetChokeStatus(id, true);
 
                         while ((!id.Peer.Connection.IsChoking || id.Peer.Connection.IsAllowedFastPieces.Count > 0)
-                                && id.Peer.Connection.AmRequestingPiecesCount < 6 && id.Peer.Connection.AmInterested)
+                                && id.Peer.Connection.AmRequestingPiecesCount < PieceManager.MaxRequests && id.Peer.Connection.AmInterested)
                         {
                             // If there are no more pieces to add, AddPieceRequest will return null
                             if (!AddPieceRequest(id))
@@ -526,7 +526,7 @@ namespace MonoTorrent.Client
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.WriteLine(ex.ToString());
+                    Logger.Log(null, ex.ToString());
                 }
             }
 
@@ -848,15 +848,15 @@ namespace MonoTorrent.Client
             if (amChoking)
             {
                 Interlocked.Decrement(ref this.uploadingTo);
-                id.Peer.Connection.EnQueue(new ChokeMessage());
                 RejectPendingRequests(id);
-                Debug.WriteLine("Choking: " + this.uploadingTo);
+                id.Peer.Connection.EnQueueAt(new ChokeMessage(), 0);
+               Logger.Log("Choking: " + this.uploadingTo);
             }
             else
             {
                 Interlocked.Increment(ref this.uploadingTo);
                 id.Peer.Connection.EnQueue(new UnchokeMessage());
-                Debug.WriteLine("UnChoking: " + this.uploadingTo);
+              Logger.Log("UnChoking: " + this.uploadingTo);
             }
         }
 
