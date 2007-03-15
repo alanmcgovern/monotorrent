@@ -447,13 +447,17 @@ namespace MonoTorrent.Client
         internal void EnQueueAt(IPeerMessageInternal message, int index)
         {
             int length = this.sendQueue.Count;
-            for (int i = 0; i < length; i++)
-            {
-                if (i == index)
-                    this.sendQueue.Enqueue(message);
 
-                this.sendQueue.Enqueue(this.sendQueue.Dequeue());
-            }
+            if (length == 0)
+                this.sendQueue.Enqueue(message);
+            else
+                for (int i = 0; i < length; i++)
+                {
+                    if (i == index)
+                        this.sendQueue.Enqueue(message);
+
+                    this.sendQueue.Enqueue(this.sendQueue.Dequeue());
+                }
         }
     }
 }
