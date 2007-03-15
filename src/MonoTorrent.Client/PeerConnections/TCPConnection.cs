@@ -106,9 +106,10 @@ namespace MonoTorrent.Client.Encryption
         {
 #warning Until mono supports the 'out errorcode' overload, we continue as before
             errorCode = SocketError.Success;
-            
-            if( offset == 0 )
-                Encryptor.Encrypt(buffer, offset, count);
+
+            // Encrypt the *entire* message exactly once.
+            if (offset == 0)
+                Encryptor.Encrypt(buffer, 0, id.Peer.Connection.BytesToSend);
 
             this.peerSocket.BeginSend(buffer, offset, count, socketFlags, asyncCallback, id);
             //this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
