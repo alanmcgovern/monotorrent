@@ -86,20 +86,7 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerConnectionID id)
         {
             id.Peer.Connection.IsChoking = true;
-
-            // If he supports fast peer, messages are only rejected with a RejectRequest message
-            if (!id.Peer.Connection.SupportsFastPeer)
-                id.TorrentManager.PieceManager.RemoveRequests(id);
-
-            // Remove any pending request messages from the send queue as there's no point in sending them
-            IPeerMessageInternal message;
-            int length = id.Peer.Connection.QueueLength;
-
-            for (int i = 0; i < length; i++)
-                if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
-                    id.Peer.Connection.AmRequestingPiecesCount--;
-                else
-                    id.Peer.Connection.EnQueue(message);
+            id.TorrentManager.PieceManager.ReceivedChokeMessage(id);
         }
 
 

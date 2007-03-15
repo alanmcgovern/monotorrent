@@ -472,6 +472,16 @@ namespace MonoTorrent.Client
 
                         // Attempt to decode the message from the buffer.
                         message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
+
+                        if (message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        {
+                            Logger.Log("Received message: " + message.ToString());
+                            Logger.Log("Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log("Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log("PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log("");
+                        }
+
                         message.Handle(id);
 
                         Logger.Log(id, "Recieved message: " + message.GetType().Name);
@@ -585,7 +595,17 @@ namespace MonoTorrent.Client
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, message.ByteLength);
                         id.Peer.Connection.MessageSentCallback = callback;
                         id.Peer.Connection.CurrentlySendingMessage = message;
-                        Logger.Log(id, "Sending message: " + message.ToString());
+                        if (message is PieceMessage)
+                            id.Peer.Connection.IsRequestingPiecesCount--;
+
+                        if (message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        {
+                            Logger.Log("Sending message: " + message.ToString());
+                            // Logger.Log("Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log("Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log("PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log("");
+                        }
 
                         id.Peer.Connection.BytesSent = 0;
                         id.Peer.Connection.BytesToSend = message.Encode(id.Peer.Connection.sendBuffer, 0);
@@ -596,6 +616,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
+                Logger.Log("SocketException in SendMessage");
                 cleanup = true;
             }
             finally
@@ -708,6 +729,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
+                Logger.Log("Socket exception sending message");
                 cleanup = true;
             }
             finally
@@ -737,7 +759,7 @@ namespace MonoTorrent.Client
             {
                 foreach (TorrentManager manager in this.torrents)
                 {
-                    // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
+                    // If we have reached the max peers allo5wed for this torrent, don't connect to a new peer for this torrent
                     if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
                         continue;
 
@@ -847,6 +869,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
+                Logger.Log("SocketException resuming");
                 cleanUp = true;
             }
             finally
@@ -937,63 +960,70 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerConnectionID id)
         {
-            if (id == null) // Sometimes onEncryptoError will fire with a null id
-                return;
-
-            lock (id.TorrentManager.listLock)
+            try
             {
-                lock (id)
+                if (id == null) // Sometimes onEncryptoError will fire with a null id
+                    return;
+
+                lock (id.TorrentManager.listLock)
                 {
-                    Logger.Log(id, "*******Cleaning up*******");
-                    System.Threading.Interlocked.Decrement(ref this.openConnections);
-                    id.TorrentManager.PieceManager.RemoveRequests(id);
-                    id.Peer.CleanedUpCount++;
-
-                    if (id.Peer.Connection != null)
+                    lock (id)
                     {
-                        if (this.PeerDisconnected != null)
-                            this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+                        Logger.Log(id, "*******Cleaning up*******");
+                        System.Threading.Interlocked.Decrement(ref this.openConnections);
+                        id.TorrentManager.PieceManager.RemoveRequests(id);
+                        id.Peer.CleanedUpCount++;
 
-                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+                        if (id.Peer.Connection != null)
+                        {
+                            if (this.PeerDisconnected != null)
+                                this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
 
-                        if (!id.Peer.Connection.AmChoking)
-                            id.TorrentManager.UploadingTo--;
+                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
 
-                        id.Peer.Connection.Dispose();
-                        id.Peer.Connection = null;
+                            if (!id.Peer.Connection.AmChoking)
+                                id.TorrentManager.UploadingTo--;
+
+                            id.Peer.Connection.Dispose();
+                            id.Peer.Connection = null;
+                        }
+                        else
+                        {
+                            Logger.Log(id, "!!!!Connection already null!!!!");
+                        }
+
+                        int found = 0;
+                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                            found++;
+                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                            found++;
+                        if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
+                            found++;
+
+                        if (found > 1)
+                        {
+                            Logger.Log("Found: " + found.ToString());
+                        }
+
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
+
+                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
+
+                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
+
+                        if (id.Peer.PeerId != ClientEngine.PeerId)
+                            if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
+                                id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                     }
-                    else
-                    {
-                        Logger.Log(id, "!!!!Connection already null!!!!");
-                    }
-
-                    int found = 0;
-                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                        found++;
-                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                        found++;
-                    if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
-                        found++;
-
-                    if (found > 1)
-                    {
-                      Logger.Log("Found: " + found.ToString());
-                    }
-
-                    id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
-                    id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
-
-                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
-
-                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
-
-                    if (id.Peer.PeerId != ClientEngine.PeerId)
-                        if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
-                            id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                 }
+            }
+            finally
+            {
+                TryConnect();
             }
         }
 

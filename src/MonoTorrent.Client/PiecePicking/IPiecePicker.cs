@@ -44,5 +44,6 @@ namespace MonoTorrent.Client
         void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message);
         void RemoveRequests(PeerConnectionID id);
         PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message);
+        void ReceivedChokeMessage(PeerConnectionID id);
     }
 }

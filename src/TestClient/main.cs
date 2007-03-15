@@ -110,40 +110,40 @@ namespace TestClient
             bool running = true;
             while (running)
             {
-                if ((i++) % 5 == 0)
+                if ((i++) % 50 == 0)
                 {
                     running = false;
-                    Console.Clear();
+                    //Console.Clear();
                     foreach (TorrentManager manager in torrents)
                     {
                         if (manager.State != TorrentState.Stopped)
                             running = true;
 
                         Console.WriteLine("Torrent:          " + manager.Torrent.Name);
-                        Console.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
-                        Console.WriteLine("Half opens:       " + ClientEngine.ConnectionManager.HalfOpenConnections);
-                        Console.WriteLine("Max open:         " + ClientEngine.ConnectionManager.MaxOpenConnections);
-                        Console.WriteLine("Progress:         " + string.Format(manager.Progress.ToString(), ("{0:0.00}")));
+                        //Console.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
+                        //Console.WriteLine("Half opens:       " + ClientEngine.ConnectionManager.HalfOpenConnections);
+                        //Console.WriteLine("Max open:         " + ClientEngine.ConnectionManager.MaxOpenConnections);
+                        Console.WriteLine("Progress:         " + string.Format("{0:0.00}", manager.Progress.ToString()));
                         Console.WriteLine("Download Speed:   " + string.Format("{0:0.00}", manager.DownloadSpeed() / 1024));
                         Console.WriteLine("Upload Speed:     " + string.Format("{0:0.00}", manager.UploadSpeed() / 1024));
-                        Console.WriteLine("Torrent State:    " + manager.State.ToString());
-                        Console.WriteLine("Number of seeds:  " + manager.Seeds());
-                        Console.WriteLine("Number of leechs: " + manager.Leechs());
-                        Console.WriteLine("Total available:  " + manager.AvailablePeers);
-                        Console.WriteLine("Downloaded:       " + manager.Monitor.DataBytesDownloaded / 1024.0);
-                        Console.WriteLine("Uploaded:         " + manager.Monitor.DataBytesUploaded / 1024.0);
-                        Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        Console.WriteLine("Protocol Download:" + manager.Monitor.ProtocolBytesDownloaded / 1024.0);
-                        Console.WriteLine("Protocol Upload:  " + manager.Monitor.ProtocolBytesUploaded / 1024.0);
-                        Console.WriteLine("Hashfails:        " + manager.HashFails.ToString());
-                        Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
-                        Console.WriteLine("Scrape incomplete:" + manager.TrackerManager.CurrentTracker.Incomplete);
-                        Console.WriteLine("Scrape downloaded:" + manager.TrackerManager.CurrentTracker.Downloaded);
-                        Console.WriteLine("Warning Message:  " + manager.TrackerManager.CurrentTracker.WarningMessage);
-                        Console.WriteLine("Failure Message:  " + manager.TrackerManager.CurrentTracker.FailureMessage);
-                        Console.WriteLine("Endgame Mode:     " + manager.PieceManager.InEndGameMode.ToString());
-                        Console.WriteLine("\n");
+                        //Console.WriteLine("Torrent State:    " + manager.State.ToString());
+                        //Console.WriteLine("Number of seeds:  " + manager.Seeds());
+                        //Console.WriteLine("Number of leechs: " + manager.Leechs());
+                        //Console.WriteLine("Total available:  " + manager.AvailablePeers);
+                        //Console.WriteLine("Downloaded:       " + manager.Monitor.DataBytesDownloaded / 1024.0);
+                        //Console.WriteLine("Uploaded:         " + manager.Monitor.DataBytesUploaded / 1024.0);
+                        //Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
+                        //Console.WriteLine("Protocol Download:" + manager.Monitor.ProtocolBytesDownloaded / 1024.0);
+                        //Console.WriteLine("Protocol Upload:  " + manager.Monitor.ProtocolBytesUploaded / 1024.0);
+                        //Console.WriteLine("Hashfails:        " + manager.HashFails.ToString());
+                        //Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
+                        //Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
+                        //Console.WriteLine("Scrape incomplete:" + manager.TrackerManager.CurrentTracker.Incomplete);
+                        //Console.WriteLine("Scrape downloaded:" + manager.TrackerManager.CurrentTracker.Downloaded);
+                        //Console.WriteLine("Warning Message:  " + manager.TrackerManager.CurrentTracker.WarningMessage);
+                        //Console.WriteLine("Failure Message:  " + manager.TrackerManager.CurrentTracker.FailureMessage);
+                        //Console.WriteLine("Endgame Mode:     " + manager.PieceManager.InEndGameMode.ToString());
+                        //Console.WriteLine("\n");
                     }
                 }
                 System.Threading.Thread.Sleep(100);

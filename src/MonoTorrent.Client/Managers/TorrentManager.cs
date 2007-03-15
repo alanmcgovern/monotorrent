@@ -843,8 +843,10 @@ namespace MonoTorrent.Client
         private void SetChokeStatus(PeerConnectionID id, bool amChoking)
         {
             id.Peer.Connection.PiecesSent = 0;
-            id.Peer.Connection.AmChoking = amChoking;
+            if (id.Peer.Connection.AmChoking == amChoking)
+                return;
 
+            id.Peer.Connection.AmChoking = amChoking;
             if (amChoking)
             {
                 Interlocked.Decrement(ref this.uploadingTo);

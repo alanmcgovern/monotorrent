@@ -56,6 +56,10 @@ namespace MonoTorrent.Client
 
         private TorrentFile[] torrentFiles;
         private Dictionary<PeerConnectionID, List<Piece>> requests;
+        internal Dictionary<PeerConnectionID, List<Piece>> Requests
+        {
+            get { return this.requests; }
+        }
 
 
         /// <summary>
@@ -67,7 +71,10 @@ namespace MonoTorrent.Client
             lock (this.requests)
             {
                 foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
-                    result += keypair.Value.Count;
+                    for (int i = 0; i < keypair.Value.Count; i++)
+                        for (int j = 0; j < keypair.Value[i].Blocks.Length; j++)
+                            if (keypair.Value[i][j].Requested && !keypair.Value[i][j].Received)
+                                result += 1;
             }
             return result;
         }
@@ -368,6 +375,10 @@ namespace MonoTorrent.Client
                 if (this.requests.ContainsKey(id))
                 {
                     List<Piece> pieces = this.requests[id];
+                    for (int i = 0; i < pieces.Count; i++)
+                        for (int j = 0; j < pieces[i].Blocks.Length; j++)
+                            if (pieces[i][j].Requested && !pieces[i][j].Received)
+                                id.Peer.Connection.AmRequestingPiecesCount--;
 
                     // Should this be happening?
                     for (int i = 0; i < pieces.Count; i++)
@@ -375,8 +386,6 @@ namespace MonoTorrent.Client
 
                     this.requests.Remove(id);
                 }
-                if (id.Peer.Connection != null)
-                    id.Peer.Connection.AmRequestingPiecesCount = 0;
             }
         }
 
@@ -394,7 +403,11 @@ namespace MonoTorrent.Client
             lock (this.requests)
             {
                 if (!this.requests.ContainsKey(id))
-                    throw new MessageException("Received piece from invalid peer");
+                {
+                    Logger.Log("Received piece from a peer we are requesting 0 pieces off");
+                    return PieceEvent.BlockNotRequested;
+                }
+                //throw new MessageException("Received piece from a peer we are requesting 0 pieces off");
 
                 Piece piece = null;
                 Block block = null;
@@ -412,7 +425,11 @@ namespace MonoTorrent.Client
 
                 // If we are *not* requesting the piece that this block came from, we kill the connection
                 if (piece == null)
-                    throw new MessageException("Received block we didn't request");
+                {
+                    Logger.Log("Received block from a piece we aren't requesting");
+                    return PieceEvent.BlockNotRequested;
+                }
+                //throw new MessageException("Received block from a piece we aren't requesting");
 
                 // For all the blocks in that piece, pick out the block that this piece message belongs to
                 for (int i = 0; i < piece.Blocks.Length; i++)
@@ -425,10 +442,24 @@ namespace MonoTorrent.Client
                 }
 
                 if (block.RequestLength != message.BlockLength)
-                    throw new MessageException("Request length should match block length");
+                {
+                    Logger.Log("Request length should match block length");
+                    return PieceEvent.BlockNotRequested;
+                }//throw new MessageException("Request length should match block length");
 
                 if (block.Received)
-                    throw new MessageException("Block already received");
+                {
+                    Logger.Log("Block already received");
+                    return PieceEvent.BlockNotRequested;
+                }
+                //throw new MessageException("Block already received");
+
+                if (!block.Requested)
+                {
+                    Logger.Log("Block was not requested");
+                    return PieceEvent.BlockNotRequested;
+                }
+                //throw new MessageException("Block was not requested");
 
                 block.Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
@@ -509,5 +540,30 @@ namespace MonoTorrent.Client
             return pieces;
         }
         #endregion
+
+
+        public void ReceivedChokeMessage(PeerConnectionID id)
+        {
+            // If he does not support fast peer, all pending requests are implicitly rejected
+            if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+            {
+                this.RemoveRequests(id);
+
+                // Remove any pending request messages from the send queue as there's no point in sending them
+                IPeerMessageInternal message;
+                int length = id.Peer.Connection.QueueLength;
+                for (int i = 0; i < length; i++)
+                    if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
+                        continue;
+                    else
+                        id.Peer.Connection.EnQueue(message);
+
+                return;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }

@@ -41,23 +41,52 @@ namespace MonoTorrent.Client
         private object requestsLocker = new object();
         private List<Piece> pieces;
         private List<Block> blocks;
+        Dictionary<PeerConnectionID, List<Block>> requests;
         #endregion
 
 
         #region Constructors
-        public EndGamePicker(BitField myBitfield, Torrent torrent)
+
+        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerConnectionID, List<Piece>> existingRequests)
         {
             this.myBitfield = myBitfield;
+            this.requests = new Dictionary<PeerConnectionID, List<Block>>();
             this.pieces = new List<Piece>(this.myBitfield.Length - this.myBitfield.TrueCount);
             for (int i = 0; i < this.myBitfield.Length; i++)
                 if (!this.myBitfield[i])
                     this.pieces.Add(new Piece(i, torrent));
+
+            AddExistingRequests(existingRequests);
 
             this.blocks = new List<Block>(this.pieces.Count * this.pieces[0].Blocks.Length);
             for (int i = 0; i < this.pieces.Count; i++)
                 for (int j = 0; j < this.pieces[i].Blocks.Length; j++)
                     this.blocks.Add(this.pieces[i][j]);
         }
+
+        private void AddExistingRequests(Dictionary<PeerConnectionID, List<Piece>> existingRequests)
+        {
+            foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in existingRequests)
+            {
+                if (!this.requests.ContainsKey(keypair.Key))
+                    this.requests.Add(keypair.Key, new List<Block>());
+
+                List<Block> requests = this.requests[keypair.Key];
+                foreach (Piece p in keypair.Value)
+                {
+                    int index = this.pieces.IndexOf(p);
+                    if (index == -1)
+                        this.pieces.Add(p);
+                    else
+                        this.pieces[index] = p;
+
+                    foreach (Block b in p)
+                        if (b.Requested && !b.Received)
+                            requests.Add(b);
+                }
+            }
+        }
+
         #endregion
 
 
@@ -87,6 +116,13 @@ namespace MonoTorrent.Client
                     this.blocks.RemoveAt(i);
                     this.blocks.Add(b);
                     b.Requested = true;
+
+                    if (!this.requests.ContainsKey(id))
+                        this.requests.Add(id, new List<Block>());
+
+                    List<Block> blocks = this.requests[id];
+                    blocks.Add(b);
+
                     return b.CreateRequest();
                 }
 
@@ -109,7 +145,12 @@ namespace MonoTorrent.Client
 
         public int CurrentRequestCount()
         {
-            return this.pieces.Count;
+            int count = 0;
+            lock (this.requestsLocker)
+                for (int i = 0; i < this.blocks.Count; i++)
+                    if (this.blocks[i].Requested && !this.blocks[i].Received)
+                        count++;
+            return count;
         }
 
 
@@ -196,6 +237,31 @@ namespace MonoTorrent.Client
         #endregion
 
 
+        public void ReceivedChokeMessage(PeerConnectionID id)
+        {
+            lock (this.requestsLocker)
+            {
+                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+                {
+                    if (!this.requests.ContainsKey(id))
+                        return;
+
+                    List<Block> blocks = this.requests[id];
+                    for (int i = 0; i < blocks.Count; i++)
+                        if (!blocks[i].Received && blocks[i].Requested)
+                        {
+                            id.Peer.Connection.AmRequestingPiecesCount--;
+                            blocks[i].Requested = false;
+                        }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+                // Need to sort out who's been requested what and cancel requests off that person
+            }
+            return;
+        }
     }
 }
 
