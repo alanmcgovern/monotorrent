@@ -132,7 +132,8 @@ namespace MonoTorrent.Client.Encryption
 #warning Until mono supports the 'out errorcode' overload, we continue as before
 
             int received = this.peerSocket.EndReceive(result);
-            Encryptor.Decrypt(((PeerConnectionID)result.AsyncState).Peer.Connection.recieveBuffer, ((PeerConnectionID)result.AsyncState).Peer.Connection.BytesReceived, received);
+            PeerConnectionID id = (PeerConnectionID)result.AsyncState;
+            Encryptor.Decrypt(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, received);
             errorCode = SocketError.Success;
             return received;
             //return this.peerSocket.EndReceive(result, out errorCode);
