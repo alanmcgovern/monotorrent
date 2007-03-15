@@ -133,6 +133,7 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -164,6 +165,7 @@ namespace MonoTorrent.Client
             }
         }
 
+
         public bool AllBlocksWritten
         {
             get
@@ -185,6 +187,13 @@ namespace MonoTorrent.Client
         {
             return this.blocks.GetEnumerator();
         }
+
+        public override bool Equals(object obj)
+        {
+            Piece p = obj as Piece;
+            return (p == null) ? false : this.index.Equals(p.index);
+        }
+
         #endregion
     }
 }
