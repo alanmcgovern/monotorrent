@@ -479,16 +479,22 @@ namespace MonoTorrent.Client
         /// <returns>The number of peers added</returns>
         internal int AddPeers(PeerConnectionID peer)
         {
-            lock (this.listLock)
+            try
             {
-                if (this.peers.AvailablePeers.Contains(peer) || this.peers.ConnectedPeers.Contains(peer) || this.peers.ConnectingToPeers.Contains(peer))
-                    return 0;
+                lock (this.listLock)
+                {
+                    if (this.peers.AvailablePeers.Contains(peer) || this.peers.ConnectedPeers.Contains(peer) || this.peers.ConnectingToPeers.Contains(peer))
+                        return 0;
 
-                this.peers.AvailablePeers.Add(peer);
+                    this.peers.AvailablePeers.Add(peer);
 
-                // When we successfully add a peer we try to connect to the next available peer
+                    // When we successfully add a peer we try to connect to the next available peer
+                    return 1;
+                }
+            }
+            finally
+            {
                 ClientEngine.ConnectionManager.TryConnect();
-                return 1;
             }
         }
 
