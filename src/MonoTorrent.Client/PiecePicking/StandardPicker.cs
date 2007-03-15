@@ -216,6 +216,10 @@ namespace MonoTorrent.Client
                         return this.GenerateRequest(id, requestIndex);
                     }
                 }
+
+                // If we get here it means that the peer had none of the fast pieces that we're allowed request
+                // so it means we can request no fast pieces off them
+                break;
             }
 
             return null;
