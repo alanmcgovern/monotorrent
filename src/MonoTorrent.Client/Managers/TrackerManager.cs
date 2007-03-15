@@ -232,7 +232,7 @@ namespace MonoTorrent.Client
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                        Logger.Log("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
                         break;
                 }
             }
@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
                             break;
 
                         default:
-                            System.Diagnostics.Trace.WriteLine("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                            Logger.Log("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
                             break;
                     }
                 }

@@ -26,6 +26,11 @@ namespace MonoTorrent.Client
             log[id].AppendLine(message);
         }
 
+        internal static void Log(string p)
+        {
+            Trace.WriteLine(p);
+        }
+
         public static void FlushToDisk()
         {
             Random r = new Random();

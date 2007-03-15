@@ -364,7 +364,7 @@ namespace MonoTorrent.Client
             }
             catch (TorrentException ex)
             {
-                Trace.WriteLine("Couldn't decode message: " + ex.ToString());
+                Logger.Log(id, "Couldn't decode message: " + ex.ToString());
                 cleanUp = true;
                 return;
             }
@@ -501,8 +501,7 @@ namespace MonoTorrent.Client
             }
             catch (TorrentException ex)
             {
-                Logger.Log(id, "Invalid message recieved");
-                Trace.WriteLine(ex.Message);
+                Logger.Log(id, "Invalid message recieved: " + ex.Message);
                 cleanUp = true;
                 return;
             }
@@ -533,7 +532,7 @@ namespace MonoTorrent.Client
                         this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
 
                     ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                    Logger.Log(id, "Sent message: " + id.Peer.Connection.CurrentlySendingMessage.GetType().Name);
+                    Logger.Log(id, "Sent message: " + id.Peer.Connection.CurrentlySendingMessage.ToString());
                     id.Peer.Connection.LastMessageSent = DateTime.Now;
                     this.ProcessQueue(id);
                 }
@@ -586,6 +585,7 @@ namespace MonoTorrent.Client
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, message.ByteLength);
                         id.Peer.Connection.MessageSentCallback = callback;
                         id.Peer.Connection.CurrentlySendingMessage = message;
+                        Logger.Log(id, "Sending message: " + message.ToString());
 
                         id.Peer.Connection.BytesSent = 0;
                         id.Peer.Connection.BytesToSend = message.Encode(id.Peer.Connection.sendBuffer, 0);
@@ -948,7 +948,6 @@ namespace MonoTorrent.Client
                     System.Threading.Interlocked.Decrement(ref this.openConnections);
                     id.TorrentManager.PieceManager.RemoveRequests(id);
                     id.Peer.CleanedUpCount++;
-                    //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " ****Cleaning Up****");
 
                     if (id.Peer.Connection != null)
                     {
@@ -979,7 +978,7 @@ namespace MonoTorrent.Client
 
                     if (found > 1)
                     {
-                        Console.WriteLine("Found: " + found.ToString());
+                      Logger.Log("Found: " + found.ToString());
                     }
 
                     id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);

@@ -443,5 +443,17 @@ namespace MonoTorrent.Client
         public abstract void Dispose();
         #endregion
 
+
+        internal void EnQueueAt(IPeerMessageInternal message, int index)
+        {
+            int length = this.sendQueue.Count;
+            for (int i = 0; i < length; i++)
+            {
+                if (i == index)
+                    this.sendQueue.Enqueue(message);
+
+                this.sendQueue.Enqueue(this.sendQueue.Dequeue());
+            }
+        }
     }
 }

@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                Trace.WriteLine("UPnP searching failed: " + ex.ToString());
+                Logger.Log("UPnP searching failed: " + ex.ToString());
             }
         }
 
@@ -54,11 +54,11 @@ namespace MonoTorrent.Client
             try
             {
                 this.router.EndCreatePortMap(result);
-                Debug.WriteLine("Port mapped: " + this.port);
+                Logger.Log("Port mapped: " + this.port);
             }
             catch
             {
-                Debug.WriteLine("Couldn't map the port: " + this.port);
+              Logger.Log("Couldn't map the port: " + this.port);
             }
         }
 
