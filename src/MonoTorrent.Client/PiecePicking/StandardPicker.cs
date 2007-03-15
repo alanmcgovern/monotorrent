@@ -261,6 +261,9 @@ namespace MonoTorrent.Client
             List<Piece> reqs = this.requests[id];
             for (int i = 0; i < reqs.Count; i++)
             {
+                if (reqs[i].AllBlocksRequested)
+                    continue;
+
                 for (int j = 0; j < reqs[i].Blocks.Length; j++)
                 {
                     if (!reqs[i][j].Requested)
@@ -366,6 +369,7 @@ namespace MonoTorrent.Client
                 {
                     List<Piece> pieces = this.requests[id];
 
+                    // Should this be happening?
                     for (int i = 0; i < pieces.Count; i++)
                         this.myBitfield[pieces[i].Index] = false;
 
