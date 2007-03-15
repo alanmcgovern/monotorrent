@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
     {
         #region Global Supports
         internal static readonly bool SupportsFastPeer = false;
-        internal static readonly bool SupportCrypto = true;
+        internal static readonly bool SupportsEncryption = false;
         #endregion
 
 
@@ -615,7 +615,7 @@ namespace MonoTorrent.Client
 
             if (handshakeFailed)
             {
-                if (id.Peer.Connection.Encryptor is NoEncryption && SupportCrypto)
+                if (id.Peer.Connection.Encryptor is NoEncryption && SupportsEncryption)
                 {
                     // Maybe this was a Message Stream Encryption handshake. Parse it as such.
                     id.Peer.Connection.Encryptor = new PeerBEncryption(Torrents, this.settings.MinEncryptionLevel);
@@ -649,7 +649,7 @@ namespace MonoTorrent.Client
             id.TorrentManager = man;
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
-            if (id.Peer.Connection.Encryptor is NoEncryption && this.settings.MinEncryptionLevel != EncryptionType.None)
+            if ((id.Peer.Connection.Encryptor is NoEncryption && this.settings.MinEncryptionLevel != EncryptionType.None) && ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id, "CE Require crypto");
                 CleanupSocket(id);

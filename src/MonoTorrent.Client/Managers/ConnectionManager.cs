@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
 
                 IEncryptor encryptor;
 
-                if (id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption || !ClientEngine.SupportCrypto)
+                if (id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption || !ClientEngine.SupportsEncryption)
                     encryptor = new NoEncryption();
                 else
                     encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.settings.MinEncryptionLevel);
@@ -240,7 +240,7 @@ namespace MonoTorrent.Client
                         // Create a handshake message to send to the peer
                         HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.PeerId, VersionInfo.ProtocolStringV100);
 
-                        if (id.Peer.Connection.Encryptor is NoEncryption)
+                        if (id.Peer.Connection.Encryptor is NoEncryption || !ClientEngine.SupportsEncryption)
                         {
                             SendMessage(id, handshake, this.handshakeSentCallback);
                         }

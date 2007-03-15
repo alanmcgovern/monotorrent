@@ -271,9 +271,9 @@ namespace MonoTorrent.Client
             sb.Append("&port=");
             sb.Append(ConnectionListener.ListenEndPoint.Port);
             sb.Append("&supportcrypto=");
-            sb.Append(ClientEngine.SupportCrypto ? 1 : 0);
+            sb.Append(ClientEngine.SupportsEncryption ? 1 : 0);
             sb.Append("&requirecrypto=");
-            sb.Append(this.engineSettings.MinEncryptionLevel != EncryptionType.None ? 1 : 0);
+            sb.Append((this.engineSettings.MinEncryptionLevel != EncryptionType.None) && ClientEngine.SupportsEncryption ? 1 : 0);
             sb.Append("&uploaded=");
             sb.Append(bytesUploaded);
             sb.Append("&downloaded=");
