@@ -145,7 +145,11 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "HaveMessage";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("HaveMessage ");
+            sb.Append(" Index ");
+            sb.Append(this.pieceIndex);
+            return sb.ToString();
         }
 
         public override bool Equals(object obj)

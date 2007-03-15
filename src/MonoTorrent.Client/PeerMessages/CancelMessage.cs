@@ -182,7 +182,15 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "CancelMessage";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("CancelMessage ");
+            sb.Append(" Index ");
+            sb.Append(this.pieceIndex);
+            sb.Append(" Offset ");
+            sb.Append(this.startOffset);
+            sb.Append(" Length ");
+            sb.Append(this.requestLength);
+            return sb.ToString();
         }
 
         public override bool Equals(object obj)

@@ -119,7 +119,11 @@ namespace MonoTorrent.Client.PeerMessages
 
         public override string ToString()
         {
-            return "AllowedFastMessage";
+            StringBuilder sb = new StringBuilder(24);
+            sb.Append("AllowedFast");
+            sb.Append(" Index: ");
+            sb.Append(this.pieceIndex);
+            return sb.ToString();
         }
         #endregion
 

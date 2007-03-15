@@ -200,7 +200,11 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "PortMessage";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("PortMessage ");
+            sb.Append(" Port ");
+            sb.Append(this.port);
+            return sb.ToString();
         }
         #endregion
     }

@@ -229,8 +229,7 @@ namespace MonoTorrent.Client.PeerMessages
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
             // otherwise send back a reject request message
-
-            else if (id.Peer.Connection.SupportsFastPeer)
+            else if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
             {
                 if (id.Peer.Connection.AmAllowedFastPieces.Contains((uint)this.pieceIndex))
                     id.Peer.Connection.EnQueue(m);
@@ -256,7 +255,16 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "RequestMessage";
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("RequestMessage ");
+            sb.Append(" Index ");
+            sb.Append(this.pieceIndex);
+            sb.Append(" Offset ");
+            sb.Append(this.startOffset);
+            sb.Append(" Length ");
+            sb.Append(this.requestLength);
+            return sb.ToString();
         }
         #endregion
     }

@@ -159,7 +159,15 @@ namespace MonoTorrent.Client.PeerMessages
 
         public override string ToString()
         {
-            return "RejectRequestMessage";
+            StringBuilder sb = new StringBuilder(24);
+            sb.Append("Reject Request");
+            sb.Append(" Index: ");
+            sb.Append(this.pieceIndex);
+            sb.Append(" Offset: ");
+            sb.Append(this.startOffset);
+            sb.Append(" Length " );
+            sb.Append(this.requestLength);
+            return sb.ToString();
         }
         #endregion
 

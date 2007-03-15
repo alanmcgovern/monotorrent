@@ -264,7 +264,15 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "PieceMessage";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("PieceMessage ");
+            sb.Append(" Index ");
+            sb.Append(this.pieceIndex);
+            sb.Append(" Offset ");
+            sb.Append(this.startOffset);
+            sb.Append(" Length ");
+            sb.Append(this.blockLength);
+            return sb.ToString();
         }
         #endregion
     }

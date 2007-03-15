@@ -261,7 +261,13 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "HandshakeMessage";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("HandshakeMessage ");
+            sb.Append(" PeerID ");
+            sb.Append(this.peerId);
+            sb.Append(" FastPeer ");
+            sb.Append(this.supportsFastPeer);
+            return sb.ToString();
         }
 
 
