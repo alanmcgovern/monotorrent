@@ -761,14 +761,14 @@ namespace MonoTorrent.Client
                         // Remove the peer from the lists so we can start connecting to him
                         id = this.torrents[0].Peers.AvailablePeers[i];
                         this.torrents[0].Peers.AvailablePeers.RemoveAt(i);
+
+                        // Save the manager we're using so we can place it to the end of the list
+                        m = manager;
+
+                        // Connect to the peer
+                        this.ConnectToPeer(manager, id);
+                        break;
                     }
-
-                    // Save the manager we're using so we can place it to the end of the list
-                    m = manager;
-
-                    // Connect to the peer
-                    this.ConnectToPeer(manager, id);
-                    break;
                 }
 
                 if (m == null)
