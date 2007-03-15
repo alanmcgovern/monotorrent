@@ -909,17 +909,12 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.AddPeer(id, PeerType.Connected);
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                        ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
 
                         if (this.PeerConnected != null)
                             this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Incoming));
 
                         Logger.Log(id, "Recieving message length");
-                        id.Peer.Connection.BytesReceived = 0;
-                        id.Peer.Connection.BytesToRecieve = 4;
-#warning INCOMING CONNECTIONS BROKEN
-                        // FIXME
-                        // id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, id.Peer.Connection.BytesToRecieve, SocketFlags.None, this.messageLengthReceivedCallback, id, out id.ErrorCode);
+                        ClientEngine.ConnectionManager.ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
                     }
                 }
             }
