@@ -480,6 +480,7 @@ namespace MonoTorrent.Client
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
                 block.Requested = false;
+                id.Peer.Connection.AmRequestingPiecesCount--;
             }
         }
 
