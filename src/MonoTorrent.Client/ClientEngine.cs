@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         #region Global Supports
-        internal static readonly bool SupportsFastPeer = true;
+        internal static readonly bool SupportsFastPeer = false;
         internal static readonly bool SupportCrypto = true;
         #endregion
 
