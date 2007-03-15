@@ -88,6 +88,7 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerConnectionID id)
         {
             id.Peer.Connection.IsChoking = false;
+            while (id.TorrentManager.AddPieceRequest(id)) { }
         }
 
 
