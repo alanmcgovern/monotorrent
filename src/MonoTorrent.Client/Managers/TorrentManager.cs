@@ -928,7 +928,7 @@ namespace MonoTorrent.Client
                 pieceMessage = (PieceMessage)message;
                 
                 // If the peer doesn't support fast peer, then we will never requeue the message
-                if (!id.Peer.Connection.SupportsFastPeer)
+                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
                 {
                     id.Peer.Connection.IsRequestingPiecesCount--;
                     continue;
