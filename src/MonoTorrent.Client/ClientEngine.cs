@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
     {
         #region Global Supports
         internal static readonly bool SupportsFastPeer = false;
-        internal static readonly bool SupportsEncryption = false;
+        internal static readonly bool SupportsEncryption = true;
         #endregion
 
 
