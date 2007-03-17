@@ -18,7 +18,6 @@ namespace MonoTorrent.Client
         public static void Log(PeerConnectionID id, string message)
         {
             Trace.WriteLine(id.ToString() + ": " + message);
-            return;
 
             if (!log.ContainsKey(id))
                 log.Add(id, new StringBuilder(512));
@@ -33,13 +32,7 @@ namespace MonoTorrent.Client
 
         public static void FlushToDisk()
         {
-            Random r = new Random();
-            int number = r.Next(0, 10000);
-            if (!Directory.Exists(@"C:\logs\" + number))
-                Directory.CreateDirectory(@"C:\logs\" + number);
 
-            foreach (KeyValuePair<PeerConnectionID, StringBuilder> keypair in log)
-                File.WriteAllText(@"C:\logs\" + number + "\\" + keypair.Key.Peer.Location.GetHashCode(), keypair.Value.ToString());
         }
     }
 }

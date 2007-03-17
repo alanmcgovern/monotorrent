@@ -179,6 +179,19 @@ namespace MonoTorrent.Client
         }
 
 
+        public bool NoBlocksRequested
+        {
+            get
+            {
+                for (int i = 0; i < this.blocks.Length; i++)
+                    if (this.blocks[i].Requested)
+                        return false;
+
+                return true;
+            }
+        }
+
+
         /// <summary>
         /// 
         /// </summary>

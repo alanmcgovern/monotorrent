@@ -473,16 +473,30 @@ namespace MonoTorrent.Client
                         // Attempt to decode the message from the buffer.
                         message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
 
-                        if (message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        int count = 0;
+                        for (int i = 0; i < id.TorrentManager.Peers.ConnectedPeers.Count; i++)
+                            count += id.TorrentManager.Peers.ConnectedPeers[i].Peer.Connection.AmRequestingPiecesCount;
+                        if (count != id.TorrentManager.PieceManager.CurrentRequestCount())
                         {
-                            Logger.Log("Received message: " + message.ToString());
-                            Logger.Log("Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
-                            Logger.Log("Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
-                            Logger.Log("PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
-                            Logger.Log("");
+                            Logger.Log(id, "***************************************************");
+                            Logger.Log(id, "        Received message: " + message.ToString());
+                            Logger.Log(id, "        Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log(id, "        Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log(id, "        PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log(id, "***************************************************");
+                            Logger.FlushToDisk();
                         }
 
                         message.Handle(id);
+
+                        if (message is ChokeMessage || message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        {
+                            Logger.Log(id,"        Received message: " + message.ToString());
+                            Logger.Log(id, "        Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log(id, "        Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log(id, "        PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log(id, "");
+                        }
 
                         Logger.Log(id, "Recieved message: " + message.GetType().Name);
 
@@ -598,13 +612,26 @@ namespace MonoTorrent.Client
                         if (message is PieceMessage)
                             id.Peer.Connection.IsRequestingPiecesCount--;
 
-                        if (message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        int count = 0;
+                        for (int i = 0; i < id.TorrentManager.Peers.ConnectedPeers.Count; i++)
+                            count += id.TorrentManager.Peers.ConnectedPeers[i].Peer.Connection.AmRequestingPiecesCount;
+                        if (count != id.TorrentManager.PieceManager.CurrentRequestCount())
                         {
-                            Logger.Log("Sending message: " + message.ToString());
-                            // Logger.Log("Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
-                            Logger.Log("Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
-                            Logger.Log("PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
-                            Logger.Log("");
+                            Logger.Log("***************************************************");
+                            Logger.Log(id, "        Sending message: " + message.ToString());
+                            Logger.Log(id, "        Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log(id, "        Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log(id, "        PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log("***************************************************");
+                        }
+
+                        if (message is ChokeMessage || message is RejectRequestMessage || message is PieceMessage || message is RequestMessage || true)
+                        {
+                            Logger.Log(id, "        Sending message: " + message.ToString());
+                            Logger.Log(id, "        Outstanding AmRequests: " + id.Peer.Connection.AmRequestingPiecesCount);
+                            Logger.Log(id, "        Outstanding IsRequests: " + id.Peer.Connection.IsRequestingPiecesCount);
+                            Logger.Log(id, "        PieceManager Requests:  " + id.TorrentManager.PieceManager.CurrentRequestCount());
+                            Logger.Log(id, "");
                         }
 
                         id.Peer.Connection.BytesSent = 0;

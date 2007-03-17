@@ -194,7 +194,6 @@ namespace TestClient
 
         private static void shutdown()
         {
-            Logger.FlushToDisk();
             WaitHandle[] handles = engine.Stop();
             for (int i = 0; i < handles.Length; i++)
                 if (handles[i] != null)
