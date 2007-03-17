@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.PeerMessages
             }
 
             // Fastcheck to see if a peer is a seeder or not
-            id.Peer.IsSeeder = (id.Peer.Connection.BitField.TrueCount == id.Peer.Connection.BitField.Length);
+            id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);
         }
 
 

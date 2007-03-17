@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerConnectionID id)
         {
             id.Peer.Connection.BitField = this.bitField;
-            id.Peer.IsSeeder = (id.Peer.Connection.BitField.TrueCount == id.Peer.Connection.BitField.Length);
+            id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);
 
             id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
             id.TorrentManager.SetAmInterestedStatus(id);

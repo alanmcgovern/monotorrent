@@ -343,10 +343,10 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                         {
-                            if (id.TorrentManager.Bitfield.TrueCount == 0)
+                            if (id.TorrentManager.Bitfield.AllFalse)
                                 msg = new HaveNoneMessage();
 
-                            else if (id.TorrentManager.Bitfield.TrueCount == id.TorrentManager.Bitfield.Length)
+                            else if (id.TorrentManager.Bitfield.AllTrue)
                                 msg = new HaveAllMessage();
 
                             else

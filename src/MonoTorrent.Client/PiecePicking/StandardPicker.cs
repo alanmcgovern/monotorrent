@@ -35,19 +35,10 @@ using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {
-    internal class StandardPicker : IPiecePicker
+    internal class StandardPicker : PiecePickerBase
     {
         #region Member Variables
         private int[] priorities;
-
-        /// <summary>
-        /// The bitfield for the torrent
-        /// </summary>
-        public BitField MyBitField
-        {
-            get { return this.myBitfield; }
-        }
-        private BitField myBitfield;
 
         private BitField bufferBitfield;
         private BitField previousBitfield;
@@ -65,7 +56,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Returns the number of outstanding requests
         /// </summary>
-        public int CurrentRequestCount()
+        public override int CurrentRequestCount()
         {
             int result = 0;
             lock (this.requests)
@@ -111,100 +102,96 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
         /// <summary>
-        /// Creates a request message for the first available block that the peer can download
+        /// Helper method that tells us if a specific piece has already been downloaded or is already being requested
         /// </summary>
-        /// <param name="id">The id of the peer to request a piece off of</param>
-        /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
+        /// <param name="index">The index of the piece to check</param>
         /// <returns></returns>
-        public RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
+        private bool AlreadyHaveOrRequested(int index)
         {
-            int requestIndex = 0;
-            RequestMessage message = null;
-            Priority highestPriorityFound = Priority.DoNotDownload;
+            if (this.myBitfield[index])
+                return true;
 
-            lock (this.myBitfield)
-            {
-                // If there is already a request there, request the next block.
-                if ((message = ContinueExistingRequest(id)) != null)
-                    return message;
+            foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
+                for(int i=0; i < keypair.Value.Count; i++)
+                    if (keypair.Value[i].Index == index)
+                        return true;
 
-                // Then we check if there are any allowed "Fast" pieces to download
-                if ((message = GetFastPiece(id)) != null)
-                    return message;
-
-
-                // If there were no fast pieces, we can't get a "regular" piece unless
-                // the peer is not choking us
-                if (id.Peer.Connection.IsChoking)
-                    return null;
-
-                // We see if the peer has suggested any pieces we should request
-                if ((message = GetSuggestedPiece(id)) != null)
-                    return message;
-
-                // Now we see what pieces the peer has that we don't have and try and request one
-                Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                this.bufferBitfield.Not();
-                this.bufferBitfield.And(id.Peer.Connection.BitField);
-
-                // Out of the pieces we have, we look for the highest priority and store it here.
-                // We then keep NANDing the bitfield until we no longer have pieces with that priority.
-                // Thats when we go back 1 step and download a piece with the original "highestPriorityFound"
-                highestPriorityFound = HighestPriorityForAvailablePieces(this.bufferBitfield);
-
-                if (highestPriorityFound == Priority.DoNotDownload)
-                    return null;    // Nothing to download. This peer is NotInteresting or we have requested 
-                                    // (but not received) all the pieces this peer has to offer off other peers
-
-                for (int i = 0; i < otherPeers.Count; i++)
-                {
-                    lock (otherPeers[i])
-                    {
-                        if (otherPeers[i].Peer.Connection == null)
-                            continue;
-
-                        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                        this.bufferBitfield.And(otherPeers[i].Peer.Connection.BitField);
-                        if (this.bufferBitfield.AllFalse() || highestPriorityFound != HighestPriorityForAvailablePieces(this.bufferBitfield))
-                            break;
-                    }
-                }
-
-                // Once we have a bitfield containing just the pieces we need, we request one.
-                // FIXME: we need to make sure we take one from the highest priority available.
-                // At the moment it just takes anything.
-                requestIndex = 0;
-                while (true)
-                {
-                    requestIndex = this.previousBitfield.FirstTrue(requestIndex, id.Peer.Connection.BitField.Length);
-
-                    if (requestIndex == -1)
-                        break;
-
-                    if (AlreadyHaveOrRequested(requestIndex))
-                        requestIndex++;
-                    else
-                        break;
-                }
-
-                if (requestIndex < 0)
-                    return null;
-
-                return this.GenerateRequest(id, requestIndex);
-            }
+            return false;
         }
 
+
+        /// <summary>
+        /// When picking a piece, attempt to request the next free block from an existing request if there is one
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private RequestMessage ContinueExistingRequest(PeerConnectionID id)
+        {
+            // Return null if we aren't already tracking pieces for this peer
+            if (!this.requests.ContainsKey(id))
+                return null;
+
+            // Get the list of all the pieces we're requesting off the peer and check to see if there
+            // are any blocks not requested yet. If there are, request them
+            List<Piece> reqs = this.requests[id];
+            for (int i = 0; i < reqs.Count; i++)
+            {
+                if (reqs[i].AllBlocksRequested)
+                    continue;
+
+                for (int j = 0; j < reqs[i].Blocks.Length; j++)
+                {
+                    if (!reqs[i].Blocks[j].Requested)
+                    {
+                        reqs[i].Blocks[j].Requested = true;
+                        return reqs[i].Blocks[j].CreateRequest();
+                    }
+                }
+            }
+
+            // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
+            return null;
+        }
+
+
+        /// <summary>
+        /// When a piece is first chosen to be downloaded, the request must be generated
+        /// </summary>
+        /// <param name="id">The peer to generate the request for</param>
+        /// <param name="index">The index of the piece to be requested</param>
+        /// <returns></returns>
+        private RequestMessage GenerateRequest(PeerConnectionID id, int index)
+        {
+            if (!requests.ContainsKey(id))
+                requests.Add(id, new List<Piece>(2));
+
+            List<Piece> reqs = requests[id];
+
+            Piece p = new Piece(index, id.TorrentManager.Torrent);
+            reqs.Add(p);
+            p[0].Requested = true;
+            return p[0].CreateRequest();
+        }
+
+
+        /// <summary>
+        /// When picking a piece, attempt to request a fast piece if there is one available
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private RequestMessage GetFastPiece(PeerConnectionID id)
         {
             int requestIndex; 
 
-            if (!id.Peer.Connection.SupportsFastPeer)
+            // If fast peers isn't supported on both sides, then return null
+            if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
                 return null;
 
             while (id.Peer.Connection.IsAllowedFastPieces.Count > 0)
             {
-                // If we already have that piece, then remove it from the suggested pieces
+                // If we already have that piece, then remove it from the list so we don't check it again
                 if (AlreadyHaveOrRequested((int)id.Peer.Connection.IsAllowedFastPieces[0]))
                 {
                     id.Peer.Connection.IsAllowedFastPieces.RemoveAt(0);
@@ -232,6 +219,12 @@ namespace MonoTorrent.Client
             return null;
         }
 
+
+        /// <summary>
+        /// When picking a piece, attempt to request a piece that the peer has recommended that we download
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private RequestMessage GetSuggestedPiece(PeerConnectionID id)
         {
             int requestIndex;
@@ -257,87 +250,22 @@ namespace MonoTorrent.Client
         }
 
 
-        private RequestMessage ContinueExistingRequest(PeerConnectionID id)
-        {
-            // Return null if we aren't already tracking pieces for this peer
-            if (!this.requests.ContainsKey(id))
-                return null;
-
-            // Get the list of all the pieces we're requesting off the peer and check to see if there
-            // are any blocks not requested yet. If there are, request them
-            List<Piece> reqs = this.requests[id];
-            for (int i = 0; i < reqs.Count; i++)
-            {
-                if (reqs[i].AllBlocksRequested)
-                    continue;
-
-                for (int j = 0; j < reqs[i].Blocks.Length; j++)
-                {
-                    if (!reqs[i][j].Requested)
-                    {
-                        reqs[i][j].Requested = true;
-                        return reqs[i][j].CreateRequest();
-                    }
-                }
-            }
-
-            // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
-            return null;
-        }
-
-
-        /// <summary>
-        /// Helper method that tells us if a specific piece has already been downloaded or is already being requested
-        /// </summary>
-        /// <param name="index">The index of the piece to check</param>
-        /// <returns></returns>
-        private bool AlreadyHaveOrRequested(int index)
-        {
-            if (this.myBitfield[index])
-                return true;
-
-            foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
-                foreach (Piece p in keypair.Value)
-                    if (p.Index == index)
-                        return true;
-
-            return false;
-        }
-
-
         /// <summary>
         /// Checks to see which files have available pieces and returns the highest priority found
         /// </summary>
         /// <param name="bitField"></param>
         /// <returns></returns>
-        private Priority HighestPriorityForAvailablePieces(BitField bitField)
+        private Priority HighestPriorityAvailable(BitField bitField)
         {
-            for (int i = 0; i < this.priorities.Length - 1; i++)
-                for (int j = 0; j < this.torrentFiles.Length; j++)
-                    if (this.torrentFiles[j].Priority == (Priority)i)
-                        return (Priority)i;
+            Priority highestFound = Priority.DoNotDownload;
 
-            return Priority.DoNotDownload;
-        }
+            // Find the Highest priority file that is in this torrent
+            for (int i = 0; i < this.torrentFiles.Length; i++)
+                if ((this.torrentFiles[i].Priority > highestFound) &&
+                    (bitField.FirstTrue(this.torrentFiles[i].StartPieceIndex, this.torrentFiles[i].EndPieceIndex) != -1))
+                    highestFound = this.torrentFiles[i].Priority;
 
-
-        /// <summary>
-        /// When a piece is first chosen to be downloaded, the request must be generated
-        /// </summary>
-        /// <param name="id">The peer to generate the request for</param>
-        /// <param name="index">The index of the piece to be requested</param>
-        /// <returns></returns>
-        private RequestMessage GenerateRequest(PeerConnectionID id, int index)
-        {
-            if (!requests.ContainsKey(id))
-                requests.Add(id, new List<Piece>(2));
-
-            List<Piece> reqs = requests[id];
-
-            Piece p = new Piece(index, id.TorrentManager.Torrent);
-            reqs.Add(p);
-            p[0].Requested = true;
-            return p[0].CreateRequest();
+            return highestFound;
         }
 
 
@@ -346,7 +274,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to check to see if he's interesting or not</param>
         /// <returns>True if the peer is interesting, false otherwise</returns>
-        public bool IsInteresting(PeerConnectionID id)
+        public override bool IsInteresting(PeerConnectionID id)
         {
             lock (this.isInterestingBuffer)     // I reuse a BitField as a buffer so i don't have to keep allocating new ones
             {
@@ -355,7 +283,7 @@ namespace MonoTorrent.Client
 
                 isInterestingBuffer.Not();
                 isInterestingBuffer.And(id.Peer.Connection.BitField);
-                if (!isInterestingBuffer.AllFalse())
+                if (isInterestingBuffer.AllTrue)
                     return true;                            // He's interesting if he has a piece we want
 
                 lock (this.requests)
@@ -364,11 +292,98 @@ namespace MonoTorrent.Client
         }
 
 
+
+        /// <summary>
+        /// Creates a request message for the first available block that the peer can download
+        /// </summary>
+        /// <param name="id">The id of the peer to request a piece off of</param>
+        /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
+        /// <returns></returns>
+        public override RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
+        {
+            int requestIndex = 0;
+            RequestMessage message = null;
+            Priority highestPriorityFound = Priority.DoNotDownload;
+
+            lock (this.myBitfield)
+            {
+                // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
+                // requests that could be continued would be existing "Fast" pieces.
+                if ((message = ContinueExistingRequest(id)) != null)
+                    return message;
+
+                // Then we check if there are any allowed "Fast" pieces to download
+                if ((message = GetFastPiece(id)) != null)
+                    return message;
+
+
+                // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
+                if (id.Peer.Connection.IsChoking)
+                    return null;
+
+                // We see if the peer has suggested any pieces we should request
+                if ((message = GetSuggestedPiece(id)) != null)
+                    return message;
+
+                // Now we see what pieces the peer has that we don't have and try and request one
+                Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                this.bufferBitfield.Not();
+                this.bufferBitfield.And(id.Peer.Connection.BitField);
+
+                // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
+                // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
+                // a piece from the "highest priority" available
+                highestPriorityFound = HighestPriorityAvailable(this.bufferBitfield);
+
+                // Nothing to download. This peer may still be interesting, but we may have set files to "DoNotDownload"
+                if (highestPriorityFound == Priority.DoNotDownload)
+                    return null;
+
+                for (int i = 0; i < otherPeers.Count; i++)
+                {
+                    lock (otherPeers[i])
+                    {
+                        if (otherPeers[i].Peer.Connection == null)
+                            continue;
+
+                        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                        this.bufferBitfield.And(otherPeers[i].Peer.Connection.BitField);
+                        if (this.bufferBitfield.AllFalse || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
+                            break;
+                    }
+                }
+
+                // Once we have a bitfield containing just the pieces we need, we request one.
+                // FIXME: we need to make sure we take one from the highest priority available.
+                // At the moment it just takes anything. The odds are high that it will be a piece
+                // from a file with the "highest priority" found though.
+                requestIndex = 0;
+                while (true)
+                {
+                    requestIndex = this.previousBitfield.FirstTrue(requestIndex, id.Peer.Connection.BitField.Length);
+
+                    // If there are no pieces in the buffer that are "true" then that peer has nothing we want
+                    if (requestIndex == -1)
+                        return null;
+
+                    // If the first "true" index is already requested or we have it, then  increment it by one and
+                    // check for the first "true" index after that.
+                    if (AlreadyHaveOrRequested(requestIndex))
+                        requestIndex++;
+
+                    // Request the piece
+                    else
+                        return this.GenerateRequest(id, requestIndex);
+                }
+            }
+        }
+
+
         /// <summary>
         /// Removes any outstanding requests from the supplied peer
         /// </summary>
         /// <param name="id">The peer to remove outstanding requests from</param>
-        public void RemoveRequests(PeerConnectionID id)
+        public override void RemoveRequests(PeerConnectionID id)
         {
             lock (this.requests)
             {
@@ -436,7 +451,7 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message)
         {
             lock (this.requests)
             {
@@ -445,45 +460,24 @@ namespace MonoTorrent.Client
                     Logger.Log("Received piece from a peer we are requesting 0 pieces off");
                     return PieceEvent.BlockNotRequested;
                 }
-                //throw new MessageException("Received piece from a peer we are requesting 0 pieces off");
 
-                Piece piece = null;
-                Block block = null;
                 List<Piece> pieces = this.requests[id];
 
-                // For all the pieces we're requesting off this peer, pick out the one that this block belongs too
-                for (int i = 0; i < pieces.Count; i++)
-                {
-                    if (pieces[i].Index != message.PieceIndex)
-                        continue;
-
-                    piece = pieces[i];
-                    break;
-                }
-
                 // If we are *not* requesting the piece that this block came from, we kill the connection
+                Piece piece = PiecePickerBase.GetPieceFromIndex(pieces, message.PieceIndex);
                 if (piece == null)
                 {
                     Logger.Log("Received block from a piece we aren't requesting");
                     return PieceEvent.BlockNotRequested;
                 }
-                //throw new MessageException("Received block from a piece we aren't requesting");
 
-                // For all the blocks in that piece, pick out the block that this piece message belongs to
-                for (int i = 0; i < piece.Blocks.Length; i++)
+                // Pick out the block that this piece message belongs to
+                Block block = PiecePickerBase.GetBlockFromIndex(piece, message.StartOffset, message.PieceLength);
+                if (block == null)
                 {
-                    if (piece[i].StartOffset != message.StartOffset)
-                        continue;
-
-                    block = piece[i];
-                    break;
-                }
-
-                if (block.RequestLength != message.BlockLength)
-                {
-                    Logger.Log("Request length should match block length");
+                    Logger.Log(id, "Invalid block start offset returned");
                     return PieceEvent.BlockNotRequested;
-                }//throw new MessageException("Request length should match block length");
+                }
 
                 if (block.Received)
                 {
@@ -515,11 +509,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        public void ReceivedChokeMessage(PeerConnectionID id)
+
+        public override void ReceivedChokeMessage(PeerConnectionID id)
         {
-            // If he does not support fast peer, all pending requests are implicitly rejected
+            // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
             if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
             {
+                // Remove all existing requests from this peer
                 this.RemoveRequests(id);
 
                 // Remove any pending request messages from the send queue as there's no point in sending them
@@ -556,38 +552,20 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <param name="rejectRequestMessage"></param>
-        public void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage rejectRequestMessage)
+        public override void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage rejectRequestMessage)
         {
             lock (this.requests)
             {
                 if (!this.requests.ContainsKey(id))
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                Piece piece = null;
-                Block block = null;
                 List<Piece> pieces = this.requests[id];
 
-                for (int i = 0; i < pieces.Count; i++)
-                {
-                    if (pieces[i].Index != rejectRequestMessage.PieceIndex)
-                        continue;
-
-                    piece = pieces[i];
-                    break;
-                }
-
+                Piece piece = PiecePickerBase.GetPieceFromIndex(pieces, rejectRequestMessage.PieceIndex);
                 if (piece == null)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                for (int i = 0; i < piece.Blocks.Length; i++)
-                {
-                    if (piece[i].StartOffset != rejectRequestMessage.StartOffset)
-                        continue;
-
-                    block = piece[i];
-                    break;
-                }
-
+                Block block = PiecePickerBase.GetBlockFromIndex(piece, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
                 if (block == null)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
@@ -599,22 +577,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public List<Piece> CurrentPieces()
-        {
-            List<Piece> pieces = new List<Piece>(this.requests.Count * 2);
-            lock (this.requests)
-            {
-                foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
-                    for (int i = 0; i < keypair.Value.Count; i++)
-                        pieces.Add(keypair.Value[i]);
-            }
-            return pieces;
-        }
         #endregion
     }
 }

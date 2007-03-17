@@ -35,7 +35,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    internal class EndGamePicker : IPiecePicker
+    internal class EndGamePicker : PiecePickerBase
     {
         #region Member Variables
         private object requestsLocker = new object();
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
         {
             this.myBitfield = myBitfield;
             this.requests = new Dictionary<PeerConnectionID, List<Block>>();
-            this.pieces = new List<Piece>(this.myBitfield.Length - this.myBitfield.TrueCount);
+            this.pieces = new List<Piece>();
             for (int i = 0; i < this.myBitfield.Length; i++)
                 if (!this.myBitfield[i])
                     this.pieces.Add(new Piece(i, torrent));
@@ -91,11 +91,29 @@ namespace MonoTorrent.Client
 
 
         #region Methods
-        public bool IsInteresting(PeerConnectionID id)
+
+        public List<Piece> CurrentPieces()
+        {
+            return this.pieces;
+        }
+
+
+        public override int CurrentRequestCount()
+        {
+            int count = 0;
+            lock (this.requestsLocker)
+                for (int i = 0; i < this.blocks.Count; i++)
+                    if (this.blocks[i].Requested && !this.blocks[i].Received)
+                        count++;
+            return count;
+        }
+
+
+        public override bool IsInteresting(PeerConnectionID id)
         {
             lock (this.requestsLocker)
             {
-                for(int i=0; i<this.pieces.Count;i++)
+                for (int i = 0; i < this.pieces.Count; i++)
                     if (id.Peer.Connection.BitField[pieces[i].Index])
                         return true;
 
@@ -103,7 +121,8 @@ namespace MonoTorrent.Client
             }
         }
 
-        public RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
+
+        public override RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
         {
             lock (this.requestsLocker)
             {
@@ -130,44 +149,35 @@ namespace MonoTorrent.Client
             }
         }
 
-        public BitField MyBitField
+
+        public override void ReceivedChokeMessage(PeerConnectionID id)
         {
-            get { return this.myBitfield; }
-        }
-        private BitField myBitfield;
-
-
-        public List<Piece> CurrentPieces()
-        {
-            return this.pieces;
-        }
-
-
-        public int CurrentRequestCount()
-        {
-            int count = 0;
             lock (this.requestsLocker)
-                for (int i = 0; i < this.blocks.Count; i++)
-                    if (this.blocks[i].Requested && !this.blocks[i].Received)
-                        count++;
-            return count;
+            {
+                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+                {
+                    if (!this.requests.ContainsKey(id))
+                        return;
+
+                    List<Block> blocks = this.requests[id];
+                    for (int i = 0; i < blocks.Count; i++)
+                        if (!blocks[i].Received && blocks[i].Requested)
+                        {
+                            id.Peer.Connection.AmRequestingPiecesCount--;
+                            blocks[i].Requested = false;
+                        }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+                // Need to sort out who's been requested what and cancel requests off that person
+            }
+            return;
         }
 
 
-        public void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message)
-        {
-            id.Peer.Connection.AmRequestingPiecesCount--;
-            // FIXME: Remove a request
-        }
-
-
-        public void RemoveRequests(PeerConnectionID id)
-        {
-            // In End Game mode requests aren't tracked... they should be though
-        }
-
-
-        public PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -234,138 +244,20 @@ namespace MonoTorrent.Client
                 return result ? PieceEvent.HashPassed : PieceEvent.HashFailed;
             }
         }
-        #endregion
 
 
-        public void ReceivedChokeMessage(PeerConnectionID id)
+        public override void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage message)
         {
-            lock (this.requestsLocker)
-            {
-                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
-                {
-                    if (!this.requests.ContainsKey(id))
-                        return;
-
-                    List<Block> blocks = this.requests[id];
-                    for (int i = 0; i < blocks.Count; i++)
-                        if (!blocks[i].Received && blocks[i].Requested)
-                        {
-                            id.Peer.Connection.AmRequestingPiecesCount--;
-                            blocks[i].Requested = false;
-                        }
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-                // Need to sort out who's been requested what and cancel requests off that person
-            }
-            return;
+            id.Peer.Connection.AmRequestingPiecesCount--;
+            // FIXME: Remove a request
         }
+
+
+        public override void RemoveRequests(PeerConnectionID id)
+        {
+            // In End Game mode requests aren't tracked... they should be though
+        }
+
+        #endregion
     }
 }
-
-#region crap
-/*
-        List<Piece> endGamePieces;
-        private RequestMessage EndGamePicker(PeerConnectionID id, Peers otherPeers)
-        {
-            lock (this.myBitfield)
-            {
-                if (this.endGamePieces == null)
-                    CalculateEndGamePieces(id);
-
-                for (int i = 0; i < this.endGamePieces.Count; i++)
-                {
-                    if (!id.Peer.Connection.BitField[this.endGamePieces[i].Index])
-                        continue;
-
-                    Piece p = this.endGamePieces[i];
-                    for (int j = 0; j < p.Blocks.Length; j++)
-                    {
-                        if (p[j].Received)
-                            continue;
-
-                        p[j].Requested = true;
-                        return p[j].CreateRequest();
-                    }
-                }
-            }
-
-            return null;    // He has nothing we want
-        }
-
-
-        private void CalculateEndGamePieces(PeerConnectionID id)
-        {
-            this.endGameActive = true;
-            this.endGamePieces = new List<Piece>();
-            for (int i = 0; i < this.myBitfield.Length; i++)
-                if (!this.myBitfield[i])
-                {
-                    this.myBitfield[i] = true;
-                    this.endGamePieces.Add(new Piece(i, id.TorrentManager.Torrent));
-                }
-
-            foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
-                foreach (Piece p in keypair.Value)
-                    this.endGamePieces.Add(p);
-        }
-
-
-        private void ReceivedEndGameMessage(PeerConnectionID id, byte[] recieveBuffer, int offset, int writeIndex, int p, PieceMessage message)
-        {
-            Piece piece = null;
-            Block receivedBlock = null;
-
-            lock (this.requests)
-            {
-                for (int i = 0; i < this.endGamePieces.Count; i++)
-                {
-                    if (this.endGamePieces[i].Index != message.PieceIndex)
-                        continue;
-
-                    piece = this.endGamePieces[i];
-                    for (int j = 0; j < piece.Blocks.Length; j++)
-                        if (piece[j].StartOffset == message.StartOffset)
-                            receivedBlock = piece[j];
-
-                    if (receivedBlock == null)
-                        return;
-
-                    id.Peer.Connection.AmRequestingPiecesCount--;
-                    if (receivedBlock.RequestLength != message.BlockLength)
-                        throw new Exception("Request length should match block length");
-
-                    receivedBlock.Received = true;
-                    id.TorrentManager.FileManager.Write(recieveBuffer, offset, writeIndex, p);
-
-
-                    if (!piece.AllBlocksReceived)
-                        return;
-
-                    bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
-                    this.myBitfield[message.PieceIndex] = result;
-
-                    id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
-
-                    if (result)
-                    {
-                        id.Peer.Connection.IsInterestingToMe = this.IsInteresting(id);
-                        id.TorrentManager.PieceCompleted(piece.Index);
-                        this.endGamePieces.Remove(piece);
-                    }
-                    else
-                    {
-                        for (int k = 0; k < piece.Blocks.Length; k++)
-                        {
-                            piece[k].Requested = false;
-                            piece[k].Received = false;
-                        }
-                    }
-                }
-            }
-        }
-*/
-
-#endregion

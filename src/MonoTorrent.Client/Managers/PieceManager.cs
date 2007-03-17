@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
-        private IPiecePicker piecePicker;
+        private PiecePickerBase piecePicker;
         #endregion
 
 
@@ -73,9 +73,9 @@ namespace MonoTorrent.Client
         #region Methods
         internal bool IsInteresting(PeerConnectionID id)
         {
-            // If the peer is a seeder and i don't have all the pieces, he's interesting
-            if (id.Peer.IsSeeder && (this.MyBitField.TrueCount != this.MyBitField.Length))
-                return true;
+            // If the peer is a seeder, he's only interesting if i have not completed the torrent
+            if (id.Peer.IsSeeder)
+                return !this.MyBitField.AllTrue;
 
             // Otherwise we need to do a full check
             return this.piecePicker.IsInteresting(id);

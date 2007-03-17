@@ -774,7 +774,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public double Progress
         {
-            get { return (this.pieceManager.MyBitField.TrueCount * 100.0) / this.pieceManager.MyBitField.Length; }
+            get { return (this.bitfield.PercentComplete); }
         }
 
 

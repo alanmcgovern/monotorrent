@@ -64,10 +64,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Returns the number of elements in the array which are "true" (i.e. the bit is set to 1)
         /// </summary>
-        public int TrueCount
-        {
-            get { return this.trueCount; }
-        }
+        //public int TrueCount
+       // {
+       //     get { return this.trueCount; }
+       // }
         private int trueCount;
         #endregion
 
@@ -312,9 +312,14 @@ namespace MonoTorrent.Client
         /// Returns True if all the elements in the BitField are false
         /// </summary>
         /// <returns></returns>
-        internal bool AllFalse()
+        internal bool AllFalse
         {
-            return this.trueCount == 0;
+            get { return this.trueCount == 0; }
+        }
+
+        internal bool AllTrue
+        {
+            get { return this.trueCount == this.length; }
         }
 
         /// <summary>
@@ -324,6 +329,11 @@ namespace MonoTorrent.Client
         internal int FirstTrue()
         {
             return this.FirstTrue(0, this.length);
+        }
+
+        internal double PercentComplete
+        {
+            get { return (double)this.trueCount / this.length * 100.0; }
         }
 
         /// <summary>
