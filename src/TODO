@@ -3,7 +3,6 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
 
 -- FEATURES TO BE ADDED --
     01) HTTP Seeding - The ability to use a normal HTTP/FTP download as a "seed". [MEDIUM-HIGH]
-    02) Connection Encryption - The ability to encrypt connections between compliant peers. [MEDIUM]
     04) Implement DHT/Peer Exchange. [MEDIUM-LOW]
     10) Choking and Optimistic Unchoking algorithm needed. [MEDIUM]
     11) Anti-snubbing needs to be implemented [MEDIUM]
@@ -11,7 +10,6 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     15) Automagic updates of the client - similar to azureus ideally
     17) Put in more NUnit tests... i got lazy when it came to tests :p
     29) Algorithm to allow for automatic scheduling of torrents based on rules is being implemented. Should allow for people to select "seed for 30 mins after completion or a ratio of 1.4 us reached and total bandwidth is below 150kB/sec" etc.
-    30) Add logging code so i can log different aspects of the library
 
 -- FEATURES TO BE IMPROVED --
     01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
@@ -25,9 +23,7 @@ There's still loads of work to be done to make this a fully fledged Bittorrent C
     29) Implement the new mechanism for catching bad peers and resuming pieces where the inital peer stops sending pieces. Just like i talked about in the utorrent forum
     30) Put peers that i can connect to but drop the connection in a seperate "busy" list instead of dropping them completely.
     31) After receiving X number of pieces from a peer, reduce their FailedConnectionAttempts value as they are "good"
-    35) Fix bug counting 1/2 opens and fully opens.
     38) Rewrite EndGameMode to support cancel messages and enter endgame as soon as the StandardPiecePicker has no available pieces.
-    40) Sometimes after receiving an unchoke message i don't request pieces, why is this?
 If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
 
 [ Tracker DLL ]
