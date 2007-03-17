@@ -262,6 +262,7 @@
       </Configuration>
       <Reference name="System" />
       <Reference name="nunit.framework" />
+      <Reference name="Mono.Security" localCopy="true" path="../MonoTorrent.Client"/>
       <Reference name="MonoTorrent.Common" />
       <Reference name="Upnp" localCopy="true" path="../Libs"/>
       <Reference name="MonoTorrent.Client" />
