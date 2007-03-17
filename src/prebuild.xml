@@ -168,7 +168,7 @@
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
     </Project>
-    <Project name="TestClient" path="TestClient" language="C#" type="Exe" assemblyName="TestClient" rootNamespace="TestClient" designerFolder="Properties">
+    <Project name="MonoTorrent" path="MonoTorrent" language="C#" type="Exe" assemblyName="MonoTorrent" rootNamespace="MonoTorrent" designerFolder="Properties">
       <Configuration name="Debug">
         <Options>
           <CompilerDefines>DEBUG;TRACE</CompilerDefines>
