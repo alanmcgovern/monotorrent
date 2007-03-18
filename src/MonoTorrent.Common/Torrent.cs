@@ -344,10 +344,12 @@ namespace MonoTorrent.Common
             }
 
             int i = 0;
+            long totalSize = 0;
             foreach (TorrentFile file in this.torrentFiles)
             {
                 file.StartPieceIndex = i;
-                file.EndPieceIndex = file.StartPieceIndex + (int)(file.Length / this.pieceLength + (file.Length % this.pieceLength > 0 ? 1 : 0));
+                totalSize += file.Length;
+                file.EndPieceIndex = (int)(totalSize / this.pieceLength + (totalSize % this.pieceLength > 0 ? 0 : -1));
                 i = file.EndPieceIndex;
             }
         }
