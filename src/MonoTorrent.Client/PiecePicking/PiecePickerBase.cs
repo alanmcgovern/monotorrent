@@ -78,8 +78,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        #endregion Methods
-
         internal static Block GetBlockFromIndex(Piece piece, int blockStartOffset, int blockLength)
         {
             for (int i = 0; i < piece.Blocks.Length; i++)
@@ -88,5 +86,8 @@ namespace MonoTorrent.Client
 
             return null;
         }
+
+        #endregion Methods
+
     }
 }
