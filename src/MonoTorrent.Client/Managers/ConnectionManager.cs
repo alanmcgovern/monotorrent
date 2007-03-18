@@ -382,8 +382,6 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void OnPeerBitfieldSent(PeerConnectionID id)
         {
-            bool cleanUp = false;
-
             lock (id.TorrentManager.listLock)
             {
                 lock (id)
@@ -538,7 +536,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
         /// <summary>
         /// Receives exactly length number of bytes from the specified peer connection and invokes the supplied callback if successful
         /// </summary>
@@ -547,19 +544,29 @@ namespace MonoTorrent.Client
         /// <param name="callback">The callback to invoke when the message has been received</param>
         private void ReceiveMessage(PeerConnectionID id, int length, MessagingCallback callback)
         {
-            lock (id.TorrentManager.listLock)
-                lock (id)
-                {
-                    if (id.Peer.Connection == null)
-                        return;
+            try
+            {
+                lock (id.TorrentManager.listLock)
+                    lock (id)
+                    {
+                        if (id.Peer.Connection == null)
+                            return;
 
-                    ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, length);
+                        ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, length);
 
-                    id.Peer.Connection.BytesReceived = 0;
-                    id.Peer.Connection.BytesToRecieve = length;
-                    id.Peer.Connection.MessageReceivedCallback = callback;
-                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, length, SocketFlags.None, onEndReceiveMessageCallback, id, out id.ErrorCode);
-                }
+                        id.Peer.Connection.BytesReceived = 0;
+                        id.Peer.Connection.BytesToRecieve = length;
+                        id.Peer.Connection.MessageReceivedCallback = callback;
+
+                        id.TorrentManager.Peers.Enqueue(id, PeerType.DownloadQueue);
+                        id.TorrentManager.ResumePeers();
+                    }
+
+            }
+            catch (SocketException)
+            {
+                CleanupSocket(id);
+            }
         }
 
 
@@ -744,142 +751,79 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Helper Methods
-
-        internal void TryConnect()
-        {
-            int i;
-            PeerConnectionID id;
-            TorrentManager m = null;
-
-            // If we have already reached our max connections globally, don't try to connect to a new peer
-            if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
-                return;
-
-            // Check each torrent manager in turn to see if they have any peers we want to connect to
-            lock (this.torrents)
-            {
-                foreach (TorrentManager manager in this.torrents)
-                {
-                    // If we have reached the max peers allo5wed for this torrent, don't connect to a new peer for this torrent
-                    if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
-                        continue;
-
-                    // If the torrent isn't active, don't connect to a peer for it
-                    if (manager.State != TorrentState.Downloading && manager.State != TorrentState.Seeding)
-                        continue;
-
-                    // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
-                    // if they are not a seeder.
-                    lock (manager.listLock)
-                    {
-                        for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
-                            if (this.torrents[0].State != TorrentState.Seeding ||
-                               (this.torrents[0].State == TorrentState.Seeding && !this.torrents[0].Peers.AvailablePeers[i].Peer.IsSeeder))
-                                break;
-
-                        // If this is true, there were no peers in the available list to connect to.
-                        if (i == this.torrents[0].Peers.AvailablePeers.Count)
-                            continue;
-
-                        // Remove the peer from the lists so we can start connecting to him
-                        id = this.torrents[0].Peers.AvailablePeers[i];
-                        this.torrents[0].Peers.AvailablePeers.RemoveAt(i);
-
-                        // Save the manager we're using so we can place it to the end of the list
-                        m = manager;
-
-                        // Connect to the peer
-                        this.ConnectToPeer(manager, id);
-                        break;
-                    }
-                }
-
-                if (m == null)
-                    return;
-
-                // Put the manager at the end of the list so we try the other ones next
-                this.torrents.Remove(m);
-                this.torrents.Add(m);
-            }
-        }
+        #region Methods
 
         /// <summary>
-        /// This method should be called to begin processing messages stored in the SendQueue
+        /// This method is called when a connection needs to be closed and the resources for it released.
         /// </summary>
-        /// <param name="id">The peer whose message queue you want to start processing</param>
-        internal void ProcessQueue(PeerConnectionID id)
+        /// <param name="id">The peer whose connection needs to be closed</param>
+        internal void CleanupSocket(PeerConnectionID id)
         {
-            if (id.Peer.Connection.QueueLength == 0)
-            {
-                id.Peer.Connection.ProcessingQueue = false;
+            if (id == null) // Sometimes onEncryptoError will fire with a null id
                 return;
-            }
-
-            IPeerMessageInternal msg = id.Peer.Connection.DeQueue();
-            if (msg is PieceMessage)
-                id.Peer.Connection.PiecesSent++;
-
-            //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " " + msg.ToString());
-
-            id.Peer.Connection.ProcessingQueue = true;
-            try
-            {
-                SendMessage(id, msg, this.messageSentCallback);
-                Logger.Log(id, "Sending message from queue: " + msg.ToString());
-            }
-            catch (SocketException ex)
-            {
-                Logger.Log(id, "Exception dequeuing message");
-                CleanupSocket(id);
-            }
-        }
-
-
-        /// <summary>
-        /// Makes a peer start downloading/uploading
-        /// </summary>
-        /// <param name="id">The peer to resume</param>
-        /// <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
-        internal int ResumePeer(PeerConnectionID id, bool downloading)
-        {
-            int bytesRemaining;
-            bool cleanUp = false;
 
             try
             {
-                lock (id)
+                lock (id.TorrentManager.listLock)
                 {
-                    if (id.Peer.Connection == null)
+                    lock (id)
                     {
-                        cleanUp = true;
-                        return 0;
-                    }
-                    if (downloading)
-                    {
-                        bytesRemaining = (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived) > ChunkLength ? ChunkLength : (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived);
-                        id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, bytesRemaining, SocketFlags.None, this.onEndReceiveMessageCallback, id, out id.ErrorCode);
-                    }
-                    else
-                    {
-                        bytesRemaining = (id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent);
-                        id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, bytesRemaining, SocketFlags.None, this.onEndSendMessageCallback, id, out id.ErrorCode);
+                        Logger.Log(id, "*******Cleaning up*******");
+                        System.Threading.Interlocked.Decrement(ref this.openConnections);
+                        id.TorrentManager.PieceManager.RemoveRequests(id);
+                        id.Peer.CleanedUpCount++;
+
+                        if (id.Peer.Connection != null)
+                        {
+                            if (this.PeerDisconnected != null)
+                                this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+
+                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+
+                            if (!id.Peer.Connection.AmChoking)
+                                id.TorrentManager.UploadingTo--;
+
+                            id.Peer.Connection.Dispose();
+                            id.Peer.Connection = null;
+                        }
+                        else
+                        {
+                            Logger.Log(id, "!!!!Connection already null!!!!");
+                        }
+
+                        int found = 0;
+                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                            found++;
+                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                            found++;
+                        if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
+                            found++;
+
+                        if (found > 1)
+                        {
+                            Logger.Log("Found: " + found.ToString());
+                        }
+
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
+
+                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
+
+                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
+
+                        if (id.Peer.PeerId != ClientEngine.PeerId)
+                            if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
+                                id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                     }
                 }
-
-                return bytesRemaining;
-            }
-            catch (SocketException)
-            {
-                Logger.Log("SocketException resuming");
-                cleanUp = true;
             }
             finally
             {
-                if (cleanUp)
-                    CleanupSocket(id);
+                TryConnect();
             }
-            return 0;
         }
 
 
@@ -957,68 +901,33 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// This method is called when a connection needs to be closed and the resources for it released.
+        /// This method should be called to begin processing messages stored in the SendQueue
         /// </summary>
-        /// <param name="id">The peer whose connection needs to be closed</param>
-        internal void CleanupSocket(PeerConnectionID id)
+        /// <param name="id">The peer whose message queue you want to start processing</param>
+        internal void ProcessQueue(PeerConnectionID id)
         {
-            if (id == null) // Sometimes onEncryptoError will fire with a null id
-                return;
-
-            lock (id.TorrentManager.listLock)
+            if (id.Peer.Connection.QueueLength == 0)
             {
-                lock (id)
-                {
-                    Logger.Log(id, "*******Cleaning up*******");
-                    System.Threading.Interlocked.Decrement(ref this.openConnections);
-                    id.TorrentManager.PieceManager.RemoveRequests(id);
-                    id.Peer.CleanedUpCount++;
+                id.Peer.Connection.ProcessingQueue = false;
+                return;
+            }
 
-                    if (id.Peer.Connection != null)
-                    {
-                        if (this.PeerDisconnected != null)
-                            this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+            IPeerMessageInternal msg = id.Peer.Connection.DeQueue();
+            if (msg is PieceMessage)
+                id.Peer.Connection.PiecesSent++;
 
-                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+            //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " " + msg.ToString());
 
-                        if (!id.Peer.Connection.AmChoking)
-                            id.TorrentManager.UploadingTo--;
-
-                        id.Peer.Connection.Dispose();
-                        id.Peer.Connection = null;
-                    }
-                    else
-                    {
-                        Logger.Log(id, "!!!!Connection already null!!!!");
-                    }
-
-                    int found = 0;
-                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                        found++;
-                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                        found++;
-                    if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
-                        found++;
-
-                    if (found > 1)
-                    {
-                        Logger.Log("Found: " + found.ToString());
-                    }
-
-                    id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
-                    id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
-
-                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
-
-                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
-
-                    if (id.Peer.PeerId != ClientEngine.PeerId)
-                        if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
-                            id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
-                }
+            id.Peer.Connection.ProcessingQueue = true;
+            try
+            {
+                SendMessage(id, msg, this.messageSentCallback);
+                Logger.Log(id, "Sending message from queue: " + msg.ToString());
+            }
+            catch (SocketException ex)
+            {
+                Logger.Log(id, "Exception dequeuing message");
+                CleanupSocket(id);
             }
         }
 
@@ -1036,6 +945,114 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// Makes a peer start downloading/uploading
+        /// </summary>
+        /// <param name="id">The peer to resume</param>
+        /// <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
+        internal int ResumePeer(PeerConnectionID id, bool downloading)
+        {
+            int bytesRemaining;
+            bool cleanUp = false;
+
+            try
+            {
+                lock (id)
+                {
+                    if (id.Peer.Connection == null)
+                    {
+                        cleanUp = true;
+                        return 0;
+                    }
+                    if (downloading)
+                    {
+                        bytesRemaining = (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived) > ChunkLength ? ChunkLength : (id.Peer.Connection.BytesToRecieve - id.Peer.Connection.BytesReceived);
+                        id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, bytesRemaining, SocketFlags.None, this.onEndReceiveMessageCallback, id, out id.ErrorCode);
+                    }
+                    else
+                    {
+                        bytesRemaining = (id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Peer.Connection.BytesToSend - id.Peer.Connection.BytesSent);
+                        id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesSent, bytesRemaining, SocketFlags.None, this.onEndSendMessageCallback, id, out id.ErrorCode);
+                    }
+                }
+
+                return bytesRemaining;
+            }
+            catch (SocketException)
+            {
+                Logger.Log("SocketException resuming");
+                cleanUp = true;
+            }
+            finally
+            {
+                if (cleanUp)
+                    CleanupSocket(id);
+            }
+            return 0;
+        }
+
+
+        internal void TryConnect()
+        {
+            int i;
+            PeerConnectionID id;
+            TorrentManager m = null;
+
+            // If we have already reached our max connections globally, don't try to connect to a new peer
+            if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
+                return;
+
+            // Check each torrent manager in turn to see if they have any peers we want to connect to
+            lock (this.torrents)
+            {
+                foreach (TorrentManager manager in this.torrents)
+                {
+                    // If we have reached the max peers allo5wed for this torrent, don't connect to a new peer for this torrent
+                    if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
+                        continue;
+
+                    // If the torrent isn't active, don't connect to a peer for it
+                    if (manager.State != TorrentState.Downloading && manager.State != TorrentState.Seeding)
+                        continue;
+
+                    // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
+                    // if they are not a seeder.
+                    lock (manager.listLock)
+                    {
+                        for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
+                            if (manager.State != TorrentState.Seeding ||
+                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].Peer.IsSeeder)
+                                && !manager.Peers.AvailablePeers[i].Peer.ActiveReceive
+                                && !manager.Peers.AvailablePeers[i].Peer.ActiveSend)
+                                break;
+
+                        // If this is true, there were no peers in the available list to connect to.
+                        if (i == manager.Peers.AvailablePeers.Count)
+                            continue;
+
+                        // Remove the peer from the lists so we can start connecting to him
+                        id = manager.Peers.AvailablePeers[i];
+                        manager.Peers.AvailablePeers.RemoveAt(i);
+
+                        // Save the manager we're using so we can place it to the end of the list
+                        m = manager;
+
+                        // Connect to the peer
+                        this.ConnectToPeer(manager, id);
+                        break;
+                    }
+                }
+
+                if (m == null)
+                    return;
+
+                // Put the manager at the end of the list so we try the other ones next
+                this.torrents.Remove(m);
+                this.torrents.Add(m);
+            }
+        }
+
+
         internal void UnregisterManager(TorrentManager torrentManager)
         {
             lock (this.torrents)
@@ -1046,8 +1063,6 @@ namespace MonoTorrent.Client
                 this.torrents.Remove(torrentManager);
             }
         }
-
-        #endregion
 
 
         public void onEncryptorReady(PeerConnectionID id)
@@ -1066,6 +1081,7 @@ namespace MonoTorrent.Client
                 CleanupSocket(id);
             }
         }
+
 
         public void onEncryptorError(PeerConnectionID id)
         {
@@ -1094,5 +1110,8 @@ namespace MonoTorrent.Client
                 CleanupSocket(id);
             }
         }
+
+        #endregion
+
     }
 }

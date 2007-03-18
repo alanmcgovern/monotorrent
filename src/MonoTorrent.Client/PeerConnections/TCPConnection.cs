@@ -94,19 +94,20 @@ namespace MonoTorrent.Client.Encryption
             this.peerSocket.BeginConnect(this.peerEndPoint, peerEndCreateConnection, id);
         }
 
+        // FIXME: Until mono supports the 'out errorcode' overload, we continue as before
         internal override void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
-#warning Until mono supports the 'out errorcode' overload, we continue as before
             errorCode = SocketError.Success;
+            id.Peer.ActiveReceive = true;
             this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, asyncCallback, id);
             //this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
         internal override void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
         {
-#warning Until mono supports the 'out errorcode' overload, we continue as before
             errorCode = SocketError.Success;
 
+            id.Peer.ActiveSend = true;
             // Encrypt the *entire* message exactly once.
             if (offset == 0)
                 Encryptor.Encrypt(buffer, 0, id.Peer.Connection.BytesToSend);
@@ -122,7 +123,7 @@ namespace MonoTorrent.Client.Encryption
 
         internal override int EndSend(IAsyncResult result, out SocketError errorCode)
         {
-#warning Until mono supports the 'out errorcode' overload, we continue as before
+            ((PeerConnectionID)result.AsyncState).Peer.ActiveSend = false;
             errorCode = SocketError.Success;
             return this.peerSocket.EndSend(result);
             //return this.peerSocket.EndSend(result, out errorCode);
@@ -130,10 +131,9 @@ namespace MonoTorrent.Client.Encryption
 
         internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
-#warning Until mono supports the 'out errorcode' overload, we continue as before
-
             int received = this.peerSocket.EndReceive(result);
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
+            id.Peer.ActiveReceive = false;
             Encryptor.Decrypt(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, received);
             errorCode = SocketError.Success;
             return received;
