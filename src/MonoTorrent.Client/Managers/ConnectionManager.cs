@@ -283,6 +283,29 @@ namespace MonoTorrent.Client
                     }
                 }
             }
+            catch (ArgumentException ex)
+            {
+                lock (id.TorrentManager.listLock)
+                {
+                    lock (id)
+                    {
+                        Logger.Log(id, "failed to connect " + ex.Message);
+                        id.Peer.FailedConnectionAttempts++;
+
+                        if (id.Peer.Connection != null)
+                        {
+                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                            id.Peer.Connection.Dispose();
+                        }
+
+                        id.Peer.Connection = null;
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
+
+                        if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
+                            id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
+                    }
+                }
+            }
             finally
             {
                 // Decrement the half open connections
@@ -686,6 +709,11 @@ namespace MonoTorrent.Client
                 Logger.Log(id, "Exception recieving message" + ex.ToString());
                 cleanUp = true;
             }
+            catch (ArgumentException ex)
+            {
+                cleanUp = true;
+                Logger.Log(id, ex.ToString());
+            }
             finally
             {
                 if (cleanUp)
@@ -740,6 +768,11 @@ namespace MonoTorrent.Client
             {
                 Logger.Log("Socket exception sending message");
                 cleanup = true;
+            }
+            catch (ArgumentException ex)
+            {
+                cleanup = true;
+                Logger.Log(id, ex.ToString());
             }
             finally
             {
