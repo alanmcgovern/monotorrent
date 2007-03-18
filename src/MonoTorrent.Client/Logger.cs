@@ -15,6 +15,7 @@ namespace MonoTorrent.Client
             log = new Dictionary<PeerConnectionID, StringBuilder>();
         }
 
+        [Conditional("EnableLogging")]
         public static void Log(PeerConnectionID id, string message)
         {
             Trace.WriteLine(id.ToString() + ": " + message);
@@ -25,11 +26,13 @@ namespace MonoTorrent.Client
             log[id].AppendLine(message);
         }
 
+        [Conditional("EnableLogging")]
         internal static void Log(string p)
         {
             Trace.WriteLine(p);
         }
 
+        [Conditional("EnableLogging")]
         public static void FlushToDisk()
         {
 
