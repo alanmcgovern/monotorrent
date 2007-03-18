@@ -292,7 +292,6 @@ namespace MonoTorrent.Client
         }
 
 
-
         /// <summary>
         /// Creates a request message for the first available block that the peer can download
         /// </summary>
@@ -405,6 +404,11 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="message"></param>
         private void RemoveRequests(PeerConnectionID id, RequestMessage message)
         {
             bool pieceEmpty = true;
@@ -472,7 +476,7 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                Block block = PiecePickerBase.GetBlockFromIndex(piece, message.StartOffset, message.PieceLength);
+                Block block = PiecePickerBase.GetBlockFromIndex(piece, message.StartOffset, message.BlockLength);
                 if (block == null)
                 {
                     Logger.Log(id, "Invalid block start offset returned");
@@ -510,6 +514,10 @@ namespace MonoTorrent.Client
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
         public override void ReceivedChokeMessage(PeerConnectionID id)
         {
             // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
