@@ -962,70 +962,63 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerConnectionID id)
         {
-            try
-            {
-                if (id == null) // Sometimes onEncryptoError will fire with a null id
-                    return;
+            if (id == null) // Sometimes onEncryptoError will fire with a null id
+                return;
 
-                lock (id.TorrentManager.listLock)
+            lock (id.TorrentManager.listLock)
+            {
+                lock (id)
                 {
-                    lock (id)
+                    Logger.Log(id, "*******Cleaning up*******");
+                    System.Threading.Interlocked.Decrement(ref this.openConnections);
+                    id.TorrentManager.PieceManager.RemoveRequests(id);
+                    id.Peer.CleanedUpCount++;
+
+                    if (id.Peer.Connection != null)
                     {
-                        Logger.Log(id, "*******Cleaning up*******");
-                        System.Threading.Interlocked.Decrement(ref this.openConnections);
-                        id.TorrentManager.PieceManager.RemoveRequests(id);
-                        id.Peer.CleanedUpCount++;
+                        if (this.PeerDisconnected != null)
+                            this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
 
-                        if (id.Peer.Connection != null)
-                        {
-                            if (this.PeerDisconnected != null)
-                                this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                        ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
 
-                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                            ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+                        if (!id.Peer.Connection.AmChoking)
+                            id.TorrentManager.UploadingTo--;
 
-                            if (!id.Peer.Connection.AmChoking)
-                                id.TorrentManager.UploadingTo--;
-
-                            id.Peer.Connection.Dispose();
-                            id.Peer.Connection = null;
-                        }
-                        else
-                        {
-                            Logger.Log(id, "!!!!Connection already null!!!!");
-                        }
-
-                        int found = 0;
-                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                            found++;
-                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                            found++;
-                        if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
-                            found++;
-
-                        if (found > 1)
-                        {
-                            Logger.Log("Found: " + found.ToString());
-                        }
-
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
-                        id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
-
-                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
-                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
-
-                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
-                            id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
-
-                        if (id.Peer.PeerId != ClientEngine.PeerId)
-                            if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
-                                id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
+                        id.Peer.Connection.Dispose();
+                        id.Peer.Connection = null;
                     }
+                    else
+                    {
+                        Logger.Log(id, "!!!!Connection already null!!!!");
+                    }
+
+                    int found = 0;
+                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                        found++;
+                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                        found++;
+                    if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
+                        found++;
+
+                    if (found > 1)
+                    {
+                        Logger.Log("Found: " + found.ToString());
+                    }
+
+                    id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
+                    id.TorrentManager.Peers.RemovePeer(id, PeerType.DownloadQueue);
+
+                    if (id.TorrentManager.Peers.ConnectedPeers.Contains(id))
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connected);
+
+                    if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
+                        id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
+
+                    if (id.Peer.PeerId != ClientEngine.PeerId)
+                        if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
+                            id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                 }
-            }
-            finally
-            {
-                TryConnect();
             }
         }
 
