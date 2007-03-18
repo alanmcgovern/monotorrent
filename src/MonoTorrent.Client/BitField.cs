@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
-            SetLastBitsFalse();
+            UpdateTrueCount();
             return this;
         }
 
@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
 
-            SetLastBitsFalse();
+            UpdateTrueCount();
             return this;
         }
 
@@ -166,7 +166,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= ~value.array[i];
 
-            SetLastBitsFalse();
+            UpdateTrueCount();
             return this;
         }
 
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] |= value.array[i];
 
-            SetLastBitsFalse();
+            UpdateTrueCount();
             return this;
         }
 
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] ^= value.array[i];
 
-            SetLastBitsFalse();
+            UpdateTrueCount();
             return this;
         }
 
@@ -308,6 +308,7 @@ namespace MonoTorrent.Client
 
 
         #region BitField specific methods
+
         /// <summary>
         /// Returns True if all the elements in the BitField are false
         /// </summary>
@@ -317,10 +318,15 @@ namespace MonoTorrent.Client
             get { return this.trueCount == 0; }
         }
 
+
+        /// <summary>
+        /// Returns true if all the elements in the bitfield are true
+        /// </summary>
         internal bool AllTrue
         {
             get { return this.trueCount == this.length; }
         }
+
 
         /// <summary>
         /// Returns the first index of the BitField that is true. If no elements are true, returns -1
@@ -331,10 +337,6 @@ namespace MonoTorrent.Client
             return this.FirstTrue(0, this.length);
         }
 
-        internal double PercentComplete
-        {
-            get { return (double)this.trueCount / this.length * 100.0; }
-        }
 
         /// <summary>
         /// Returns the first index of the BitField that is true between the start and end index
@@ -347,7 +349,7 @@ namespace MonoTorrent.Client
             int start;
             int end;
 
-            for (int i = (startIndex/32); i <= (endIndex/32); i++)
+            for (int i = (startIndex / 32); i <= (endIndex / 32); i++)
             {
                 if (this.array[i] == 0)        // This one has no true values
                     continue;
@@ -366,40 +368,6 @@ namespace MonoTorrent.Client
             return -1;              // Nothing is true
         }
 
-
-        /// <summary>
-        /// Encodes the bitfield to a byte array
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the BitField to</param>
-        /// <param name="offset">The index to start encoding at</param>
-        internal void ToByteArray(byte[] buffer, int offset)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            SetLastBitsFalse();
-
-            int byteindex = offset;
-            byte temp = 0;
-            byte position = 128;
-            for (int i = 0; i < this.length; i++)
-            {
-                if (this[i])
-                    temp |= position;
-
-                position >>= 1;
-
-                if (position == 0)              // Current byte is full.
-                {
-                    buffer[byteindex] = temp;     // Add byte into the array
-                    position = 128;             // Reset position to the high bit
-                    temp = 0;                   // reset temp = 0
-                    byteindex++;                // advance position in the array by 1
-                }
-            }
-            if (position != 128)                // We need to add in the last byte
-                buffer[byteindex] = temp;
-        }
 
         /// <summary>
         /// Decodes a BitField from the supplied buffer
@@ -447,14 +415,21 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void FromArray(int[] array)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="array"></param>
+        internal void FromArray(int[] array, int length)
         {
             this.trueCount = 0;
+            this.length = length;
             this.array = array;
             for (int i = 0; i < this.length; i++)
                 if (this.Get(i))
                     trueCount++;
         }
+
 
         /// <summary>
         /// Returns the length of this message in bytes
@@ -463,10 +438,84 @@ namespace MonoTorrent.Client
         {
             get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
         }
+
+
+        /// <summary>
+        /// Returns the percentage of pieces that are true
+        /// </summary>
+        internal double PercentComplete
+        {
+            get { return (double)this.trueCount / this.length * 100.0; }
+        }
+
+
+        /// <summary>
+        /// Encodes the bitfield to a byte array
+        /// </summary>
+        /// <param name="buffer">The buffer to encode the BitField to</param>
+        /// <param name="offset">The index to start encoding at</param>
+        internal void ToByteArray(byte[] buffer, int offset)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            SetLastBitsFalse();
+
+            int byteindex = offset;
+            byte temp = 0;
+            byte position = 128;
+            for (int i = 0; i < this.length; i++)
+            {
+                if (this[i])
+                    temp |= position;
+
+                position >>= 1;
+
+                if (position == 0)              // Current byte is full.
+                {
+                    buffer[byteindex] = temp;     // Add byte into the array
+                    position = 128;             // Reset position to the high bit
+                    temp = 0;                   // reset temp = 0
+                    byteindex++;                // advance position in the array by 1
+                }
+            }
+            if (position != 128)                // We need to add in the last byte
+                buffer[byteindex] = temp;
+        }
+
+        
+        /// <summary>
+        /// Updates the truecount after the bitfield has been altered through And(), Or() etc
+        /// </summary>
+        private void UpdateTrueCount()
+        {
+            int capacity = sizeof(int) * 8;
+
+            for (int i = 0; i < this.array.Length; i++)
+                if (this.array[i] == 0)
+                {
+                    continue;
+                }
+                else if (this.array[i] == ~0)
+                {
+                    this.trueCount += capacity;
+                }
+                else
+                {
+                    int startIndex = i * 32;
+                    int endIndex = (i + 1) * 32;
+                    endIndex = endIndex > this.length ? this.length : endIndex;
+                    for (int j = startIndex; j < endIndex; j++)
+                        if (Get(j))
+                            trueCount++;
+                }
+        }
+
         #endregion
 
 
         #region Overridden methods
+
         public override bool Equals(object obj)
         {
             BitField bf = obj as BitField;
@@ -484,7 +533,11 @@ namespace MonoTorrent.Client
 
         public override int GetHashCode()
         {
-            return this.array.GetHashCode();
+            int count = 0;
+            for (int i = 0; i < this.array.Length; i++)
+                count += this.array[i];
+
+            return count;
         }
 
 
