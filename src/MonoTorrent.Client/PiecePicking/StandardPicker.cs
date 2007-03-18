@@ -411,7 +411,6 @@ namespace MonoTorrent.Client
         /// <param name="message"></param>
         private void RemoveRequests(PeerConnectionID id, RequestMessage message)
         {
-            bool pieceEmpty = true;
             lock (this.requests)
             {
                 if (this.requests.ContainsKey(id))
@@ -438,6 +437,9 @@ namespace MonoTorrent.Client
 
                             if (pieces[i].NoBlocksRequested)
                                 pieces.RemoveAt(i);
+
+                            if (pieces.Count == 0)
+                                this.requests.Remove(id);
 
                             return;
                         }
@@ -476,7 +478,7 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                Block block = PiecePickerBase.GetBlockFromIndex(piece, message.StartOffset, message.BlockLength);
+                Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, message.StartOffset, message.BlockLength);
                 if (block == null)
                 {
                     Logger.Log(id, "Invalid block start offset returned");
@@ -522,26 +524,10 @@ namespace MonoTorrent.Client
         {
             // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
             if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
-            {
-                // Remove all existing requests from this peer
                 this.RemoveRequests(id);
-
-                // Remove any pending request messages from the send queue as there's no point in sending them
-                IPeerMessageInternal message;
-                int length = id.Peer.Connection.QueueLength;
-                for (int i = 0; i < length; i++)
-                    if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
-                        continue;
-                    else
-                        id.Peer.Connection.EnQueue(message);
-
-                return;
-            }
-            // If fast peer is enabled, then we do not implicitly drop all requests. Instead i will just not request
-            // any new pieces
             else
             {
-                // Remove any pending request messages from the send queue as there's no point in sending them
+                // Cleanly remove any pending request messages from the send queue as there's no point in sending them
                 IPeerMessageInternal message;
                 int length = id.Peer.Connection.QueueLength;
                 for (int i = 0; i < length; i++)
@@ -549,8 +535,6 @@ namespace MonoTorrent.Client
                         RemoveRequests(id, (RequestMessage)message);
                     else
                         id.Peer.Connection.EnQueue(message);
-
-                return;
             }
         }
 
@@ -573,7 +557,7 @@ namespace MonoTorrent.Client
                 if (piece == null)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                Block block = PiecePickerBase.GetBlockFromIndex(piece, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
+                Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
                 if (block == null)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 

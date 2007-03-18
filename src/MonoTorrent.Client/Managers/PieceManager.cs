@@ -102,8 +102,8 @@ namespace MonoTorrent.Client
 
         internal IPeerMessageInternal PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
         {
-          //  if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
-          //      this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
+            if ((this.MyBitField.Length - this.MyBitField.TrueCount < 5) && this.piecePicker is StandardPicker)
+                this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
 
             return this.piecePicker.PickPiece(id, otherPeers);
         }
@@ -129,6 +129,19 @@ namespace MonoTorrent.Client
 
         internal void ReceivedChokeMessage(PeerConnectionID id)
         {
+            // If fast peers isnt supported, we remove all pending request messages
+            if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+            {
+                // Remove any pending request messages from the send queue as there's no point in sending them
+                IPeerMessageInternal message;
+                int length = id.Peer.Connection.QueueLength;
+                for (int i = 0; i < length; i++)
+                    if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
+                        continue;
+                    else
+                        id.Peer.Connection.EnQueue(message);
+            }
+
             this.piecePicker.ReceivedChokeMessage(id);
         }
     }

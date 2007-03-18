@@ -78,11 +78,11 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        internal static Block GetBlockFromIndex(Piece piece, int blockStartOffset, int blockLength)
+        internal static Block GetBlockFromIndex(Block[] blocks, int blockStartOffset, int blockLength)
         {
-            for (int i = 0; i < piece.Blocks.Length; i++)
-                if (piece.Blocks[i].StartOffset == blockStartOffset && piece.Blocks[i].RequestLength == blockLength)
-                    return piece.Blocks[i];
+            for (int i = 0; i < blocks.Length; i++)
+                if (blocks[i].StartOffset == blockStartOffset && blocks[i].RequestLength == blockLength)
+                    return blocks[i];
 
             return null;
         }
