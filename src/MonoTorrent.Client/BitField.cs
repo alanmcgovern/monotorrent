@@ -511,6 +511,12 @@ namespace MonoTorrent.Client
                 }
         }
 
+
+
+        public int TrueCount
+        {
+            get { return this.trueCount; }
+        }
         #endregion
 
 
