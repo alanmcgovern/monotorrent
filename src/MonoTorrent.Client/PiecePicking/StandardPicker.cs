@@ -283,7 +283,7 @@ namespace MonoTorrent.Client
 
                 isInterestingBuffer.Not();
                 isInterestingBuffer.And(id.Peer.Connection.BitField);
-                if (isInterestingBuffer.AllTrue)
+                if (!isInterestingBuffer.AllFalse)
                     return true;                            // He's interesting if he has a piece we want
 
                 lock (this.requests)
