@@ -39,7 +39,36 @@ namespace MonoTorrent.Client
 {
     public class Peer
     {
-        #region Member Variables
+        #region Private Fields
+
+        private bool activeReceive;
+        private bool activeSend;
+        private int cleanedUpCount;
+        private PeerConnectionBase connection;
+        private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
+        private int failedConnectionAttempts;
+        private int hashFails;
+        private bool isSeeder;
+        private string location;
+        private string peerId;
+
+        #endregion Private Fields
+
+
+        #region Properties
+
+        internal bool ActiveReceive
+        {
+            get { return this.activeReceive; }
+            set { this.activeReceive = value; }
+        }
+
+        internal bool ActiveSend
+        {
+            get { return this.activeSend; }
+            set { this.activeSend = value; }
+        }
+
         /// <summary>
         /// The connection associated with this peer
         /// </summary>
@@ -48,7 +77,6 @@ namespace MonoTorrent.Client
             get { return this.connection; }
             set { this.connection = value; }
         }
-        private PeerConnectionBase connection;
 
 
         public int CleanedUpCount
@@ -56,7 +84,6 @@ namespace MonoTorrent.Client
             get { return this.cleanedUpCount; }
             set { this.cleanedUpCount = value; }
         }
-        private int cleanedUpCount;
 
 
         /// <summary>
@@ -67,7 +94,6 @@ namespace MonoTorrent.Client
             get { return this.hashFails; }
             internal set { this.hashFails = value; }
         }
-        private int hashFails;
 
 
         /// <summary>
@@ -78,7 +104,6 @@ namespace MonoTorrent.Client
             get { return peerId; }
             internal set { peerId = value; }
         }
-        private string peerId;
 
 
         /// <summary>
@@ -89,7 +114,6 @@ namespace MonoTorrent.Client
             get { return this.isSeeder; }
             internal set { this.isSeeder = value; }
         }
-        private bool isSeeder;
 
 
         /// <summary>
@@ -100,7 +124,6 @@ namespace MonoTorrent.Client
             get { return this.failedConnectionAttempts; }
             internal set { this.failedConnectionAttempts = value; }
         }
-        private int failedConnectionAttempts;
 
 
         /// <summary>
@@ -110,7 +133,7 @@ namespace MonoTorrent.Client
         {
             get { return this.location; }
         }
-        private string location;
+
 
         /// <summary>
         /// The highest level of encryption that should be attempted with this peer
@@ -120,8 +143,8 @@ namespace MonoTorrent.Client
             get { return this.encryptionSupported; }
             internal set { this.encryptionSupported = value; }
         }
-        private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
-        #endregion
+
+        #endregion Properties
 
 
         #region Constructors
