@@ -38,6 +38,18 @@ namespace MonoTorrent.Client
     public class TorrentSettings
     {
         #region Member Variables
+
+        /// <summary>
+        /// Whether the Torrent uses fast resume functionality
+        /// </summary>
+        public bool FastResumeEnabled
+        {
+            get { return this.fastResumeEnabled; }
+            set { this.fastResumeEnabled = value; }
+        }
+        private bool fastResumeEnabled;
+
+
         /// <summary>
         /// The maximum download speed for the torrent in kB/sec
         /// </summary>
@@ -80,14 +92,18 @@ namespace MonoTorrent.Client
             set { this.uploadSlots = value; }
         }
         private int uploadSlots;
+
         #endregion
 
 
         #region Defaults
+
+        private const bool DefaultFastResumeEnabled = true;
+        private const int DefaultDownloadSpeed = 0;
         private const int DefaultMaxConnections = 60;
         private const int DefaultUploadSlots = 4;
-        private const int DefaultDownloadSpeed = 0;
         private const int DefaultUploadSpeed = 0;
+
         #endregion
 
 
@@ -107,6 +123,7 @@ namespace MonoTorrent.Client
             this.maxUploadSpeed = settings.maxUploadSpeed;
             this.maxDownloadSpeed = settings.maxDownloadSpeed;
             this.maxConnections = settings.maxConnections;
+            this.fastResumeEnabled = settings.fastResumeEnabled;
         }
 
 
@@ -116,7 +133,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         public TorrentSettings(int uploadSlots)
-            : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed)
+            : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled)
         {
         }
 
@@ -128,7 +145,7 @@ namespace MonoTorrent.Client
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         /// <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections)
-            : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed)
+            : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled)
         {
         }
 
@@ -141,11 +158,18 @@ namespace MonoTorrent.Client
         /// <param name="maxDownloadSpeed">The maximum download speed for this torrent</param>
         /// <param name="maxUploadSpeed">The maximum upload speed for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed)
+            : this(uploadSlots, maxConnections, maxDownloadSpeed, maxUploadSpeed, DefaultFastResumeEnabled)
         {
-            this.uploadSlots = uploadSlots;
+
+        }
+
+        public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed, bool fastResumeEnabled)
+        {
+            this.fastResumeEnabled = fastResumeEnabled;
+            this.maxConnections = maxConnections;
             this.maxDownloadSpeed = maxDownloadSpeed;
             this.maxUploadSpeed = maxUploadSpeed;
-            this.maxConnections = maxConnections;
+            this.uploadSlots = uploadSlots;
         }
         #endregion
 
@@ -156,7 +180,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public static TorrentSettings DefaultSettings()
         {
-            return new TorrentSettings(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed);
+            return new TorrentSettings(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled);
         }
         #endregion
     }

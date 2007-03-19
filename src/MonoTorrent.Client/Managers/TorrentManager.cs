@@ -732,6 +732,10 @@ namespace MonoTorrent.Client
         /// </summary>
         private void SaveFastResume()
         {
+            // Do not create fast-resume data if we do not support it for this TorrentManager object
+            if (!Settings.FastResumeEnabled)
+                return;
+
             XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
 
             using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))

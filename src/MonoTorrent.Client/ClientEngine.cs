@@ -340,8 +340,7 @@ namespace MonoTorrent.Client
             this.torrents.Add(manager);
 
             if (File.Exists(torrent.TorrentPath + ".fresume"))
-                if (LoadFastResume(manager))
-                    manager.HashChecked = true;
+                manager.HashChecked = LoadFastResume(manager);
 
             return (manager);
         }
@@ -411,6 +410,11 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         private bool LoadFastResume(TorrentManager manager)
         {
+            // If our TorrentManager object does not support fast-resume then we
+            // return false so the hash check will begin.
+            if (!manager.Settings.FastResumeEnabled)
+                return false;
+
             try
             {
                 XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
