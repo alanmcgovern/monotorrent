@@ -199,7 +199,7 @@
       </Files>
     </Project>
 
-    <Project name="MonoTorrent.Interface" path="MonoTorrent.Interface" language="C#" type="Library" assemblyName="MonoTorrent.Interface" rootNamespace="MonoTorrent.Interface">
+    <Project name="MonoTorrent.Interface" path="MonoTorrent.Interface" language="C#" type="WinExe" assemblyName="MonoTorrent.Interface" rootNamespace="MonoTorrent.Interface">
       <Configuration name="Debug">
         <Options>
           <CompilerDefines>DEBUG;TRACE</CompilerDefines>
