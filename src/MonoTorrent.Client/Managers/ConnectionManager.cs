@@ -801,6 +801,10 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        // We can't clean up until the pending sends and receives have all had the corresponding End*** method called
+                        if (id.Peer.ActiveReceive || id.Peer.ActiveSend)
+                            return;
+
                         Logger.Log(id, "*******Cleaning up*******");
                         System.Threading.Interlocked.Decrement(ref this.openConnections);
                         id.TorrentManager.PieceManager.RemoveRequests(id);
@@ -1053,10 +1057,10 @@ namespace MonoTorrent.Client
                     lock (manager.listLock)
                     {
                         for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
-                            if (manager.State != TorrentState.Seeding ||
-                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].Peer.IsSeeder)
-                                && !manager.Peers.AvailablePeers[i].Peer.ActiveReceive
-                                && !manager.Peers.AvailablePeers[i].Peer.ActiveSend)
+                            if ((manager.State != TorrentState.Seeding ||
+                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].Peer.IsSeeder))
+                                && (!manager.Peers.AvailablePeers[i].Peer.ActiveReceive)
+                                && (!manager.Peers.AvailablePeers[i].Peer.ActiveSend))
                                 break;
 
                         // If this is true, there were no peers in the available list to connect to.
@@ -1066,6 +1070,9 @@ namespace MonoTorrent.Client
                         // Remove the peer from the lists so we can start connecting to him
                         id = manager.Peers.AvailablePeers[i];
                         manager.Peers.AvailablePeers.RemoveAt(i);
+
+                        if (id.Peer.Connection != null)
+                            Logger.Log("CRITICAL ERROR: Trying to connect to an already connected peer");
 
                         // Save the manager we're using so we can place it to the end of the list
                         m = manager;
