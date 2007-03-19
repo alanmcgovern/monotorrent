@@ -19,33 +19,6 @@ namespace TestClient
         static ClientEngine engine;
         static List<TorrentManager> torrents = new List<TorrentManager>();
 
-        static void GenerateBencodes()
-        {
-        	UTF8Encoding enc = new UTF8Encoding();
-            TextWriter s = null;/// new FileStream(@"d:\bencodedstrings.txt", FileMode.OpenOrCreate);
-        	IBEncodedValue val = (BEncodedString)"this is a bencoded string";
-        	s.WriteLine(enc.GetString(val.Encode()));
-        	
-        	val = (BEncodedNumber)12345;
-        	s.WriteLine();
-        	s.WriteLine(enc.GetString(val.Encode()));
-        	
-        	BEncodedList list = new BEncodedList();
-        	list.Add((BEncodedString)"mystring");
-        	list.Add(new BEncodedNumber(12321));
-        	list.Add(new BEncodedList());
-        	
-        	s.WriteLine();
-        	s.WriteLine(enc.GetString(val.Encode()));
-        	
-        	BEncodedDictionary dict = new BEncodedDictionary();
-        	dict.Add("entry 1", new BEncodedNumber(6532));
-        	dict.Add("entry 2: a string", new BEncodedString("hola"));
-        	dict.Add("This is a dict", new BEncodedDictionary());
-        	
-        	s.WriteLine();
-        	s.WriteLine(enc.GetString(val.Encode()));
-        }
         static void Main(string[] args)
         {
             basePath = Environment.CurrentDirectory;
@@ -69,7 +42,7 @@ namespace TestClient
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
             EngineSettings settings = EngineSettings.DefaultSettings();
-                        settings.SavePath = Path.Combine(basePath, "Downloads");
+            settings.SavePath = Path.Combine(basePath, "Downloads");
 
             settings.ListenPort = port;
             engine = new ClientEngine(settings, TorrentSettings.DefaultSettings());
@@ -101,49 +74,72 @@ namespace TestClient
                 ClientEngine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
                 ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
                 ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
-                
+
                 engine.Start(manager);
             }
 
 
             int i = 0;
             bool running = true;
+            StringBuilder sb = new StringBuilder(1024);
             while (running)
             {
-                if ((i++) % 50 == 0)
+                if ((i++) % 10 == 0)
                 {
                     running = false;
-                    //Console.Clear();
+                    Console.Clear();
                     foreach (TorrentManager manager in torrents)
                     {
                         if (manager.State != TorrentState.Stopped)
                             running = true;
-
-                        Console.WriteLine("Torrent:          " + manager.Torrent.Name);
-                        //Console.WriteLine("Uploading to:     " + manager.UploadingTo.ToString());
-                        //Console.WriteLine("Half opens:       " + ClientEngine.ConnectionManager.HalfOpenConnections);
-                        //Console.WriteLine("Max open:         " + ClientEngine.ConnectionManager.MaxOpenConnections);
-                        Console.WriteLine("Progress:         " + string.Format("{0:0.00}", manager.Progress.ToString()));
-                        Console.WriteLine("Download Speed:   " + string.Format("{0:0.00}", manager.DownloadSpeed() / 1024));
-                        Console.WriteLine("Upload Speed:     " + string.Format("{0:0.00}", manager.UploadSpeed() / 1024));
-                        //Console.WriteLine("Torrent State:    " + manager.State.ToString());
-                        //Console.WriteLine("Number of seeds:  " + manager.Seeds());
-                        //Console.WriteLine("Number of leechs: " + manager.Leechs());
-                        //Console.WriteLine("Total available:  " + manager.AvailablePeers);
-                        //Console.WriteLine("Downloaded:       " + manager.Monitor.DataBytesDownloaded / 1024.0);
-                        //Console.WriteLine("Uploaded:         " + manager.Monitor.DataBytesUploaded / 1024.0);
-                        //Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        //Console.WriteLine("Protocol Download:" + manager.Monitor.ProtocolBytesDownloaded / 1024.0);
-                        //Console.WriteLine("Protocol Upload:  " + manager.Monitor.ProtocolBytesUploaded / 1024.0);
-                        //Console.WriteLine("Hashfails:        " + manager.HashFails.ToString());
-                        //Console.WriteLine("Tracker Status:   " + manager.TrackerManager.CurrentTracker.State.ToString());
-                        //Console.WriteLine("Scrape complete:  " + manager.TrackerManager.CurrentTracker.Complete);
-                        //Console.WriteLine("Scrape incomplete:" + manager.TrackerManager.CurrentTracker.Incomplete);
-                        //Console.WriteLine("Scrape downloaded:" + manager.TrackerManager.CurrentTracker.Downloaded);
-                        //Console.WriteLine("Warning Message:  " + manager.TrackerManager.CurrentTracker.WarningMessage);
-                        //Console.WriteLine("Failure Message:  " + manager.TrackerManager.CurrentTracker.FailureMessage);
-                        //Console.WriteLine("Endgame Mode:     " + manager.PieceManager.InEndGameMode.ToString());
-                        //Console.WriteLine("\n");
+                        sb.Remove(0, sb.Length);
+                        sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Half opens:       "); sb.Append(ClientEngine.ConnectionManager.HalfOpenConnections);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Max open:         "); sb.Append(ClientEngine.ConnectionManager.MaxOpenConnections);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Progress:         "); sb.AppendFormat("{0:0.00}", manager.Progress);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00}", manager.DownloadSpeed() / 1024);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.UploadSpeed() / 1024);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Torrent State:    "); sb.Append(manager.State);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Number of seeds:  "); sb.Append(manager.Seeds());
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Number of leechs: "); sb.Append(manager.Leechs());
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Total available:  "); sb.Append(manager.AvailablePeers);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / 1024.0);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0,00}", manager.Monitor.DataBytesUploaded / 1024.0);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Protocol Download:"); sb.AppendFormat("0:0.00", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Protocol Upload:  "); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesUploaded / 1024.0);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Hashfails:        "); sb.Append(manager.HashFails.ToString());
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Scrape complete:  "); sb.Append(manager.TrackerManager.CurrentTracker.Complete);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Scrape incomplete:"); sb.Append(manager.TrackerManager.CurrentTracker.Incomplete);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Scrape downloaded:"); sb.Append(manager.TrackerManager.CurrentTracker.Downloaded);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.CurrentTracker.WarningMessage); 
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.CurrentTracker.FailureMessage);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Endgame Mode:     "); sb.Append(manager.PieceManager.InEndGameMode);
+                        sb.Append(Environment.NewLine);
+                        Console.WriteLine(sb.ToString());
                     }
                 }
                 System.Threading.Thread.Sleep(100);
@@ -219,102 +215,10 @@ namespace TestClient
             TorrentManager manager = (TorrentManager)sender;
             if (!e.HashPassed)
                 //Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
-           // else
+                // else
                 Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
         }
         #endregion
 
-
-        /*
-        public void Main()
-        {
-            // An TorrentManager is passed out of the engine when you load a torrent. This is
-            // used for controlling the torrent.
-            TorrentManager torrentManager;
-
-            // These are the default settings for the engine for this session
-            EngineSettings engineSettings = EngineSettings.DefaultSettings;
-
-            // The default location to download files to on your HardDrive, like a downloads folder
-            // All files will be downloaded using this as the base directory. Single file torrents will
-            // go directly into this directory, multifile torrents will create a directory within this
-            // and download there.
-            engineSettings.DefaultSavePath = @"D:\Downloads\Torrents";
-
-            // Maximum upload speed of 30 kB/sec. At upload speeds of less than 5kB/sec, there will
-            // be automatic download speed limiting to 5x the selected upload.
-            engineSettings.GlobalMaxUploadSpeed = 30;
-
-            // Every torrent loaded into the engine for this session will start off with these default settings
-            // unless other settings are specified.
-            TorrentSettings torrentSettings = TorrentSettings.DefaultSettings;
-
-            // Each torrent will be allowed a max of 10kB/sec upload speed
-            torrentSettings.MaxUploadSpeed = 10;
-
-            // Each torrent will have 4 upload slots to allow 2.5kB/sec per slot.
-            torrentSettings.UploadSlots = 4;
-
-            // Instantiate a new engine with the engineSettings and Default Torrent settings.
-            ClientEngine engine = new ClientEngine(engineSettings, torrentSettings);
-
-            // A torrent can be downloaded from the specified url, saved to the specified file and
-            // then loaded into the engine.
-            // torrentManager =engine.LoadTorrent(new Uri("http://example.com/example.torrent"), @"D:\Downloads\example.torrent");
-
-            // Alternatively a .torrent can just be loaded from the disk. This torrent will save
-            // to the DefaultSaveLocation as specified in the EngineSettings and will inherit the
-            // default settings that are set in the Engine.
-            //torrentManager = engine.LoadTorrent(@"D:\Downloads\Torrents\MyTorrentFile.torrent");
-
-            // This torrent would use the supplied settings instead of using the ones that were
-            // supplied when instantiating the engine
-            torrentManager = engine.LoadTorrent(@"D:\Downloads\Torrents\MyTorrentFile.torrent", TorrentSettings.DefaultSettings);
-
-            // If you have loaded multiple torrents into the engine, you can start them all at once with this:
-            // engine.Start();
-
-            // Or you can start one specific torrent by passing in that torrents TorrentManager
-            engine.Start(torrentManager);
-
-            // You can hook into various events in order to display information on screen:
-            // Fired every time a peer is added through DHT, PEX or Tracker Updates
-            torrentManager.OnPeersAdded+=new EventHandler<PeersAddedEventArgs>(PeersAdded);
-
-            // Fired every time a piece is hashed
-            torrentManager.OnPieceHashed+=new EventHandler<PieceHashedEventArgs>(PieceHashed);
-
-            // Fired every time the torrent State changes (i.e. paused/hashing/downloading)
-            torrentManager.OnTorrentStateChanged+= new EventHandler<TorrentStateChangedEventArgs>(torrentStateChanged);
-            
-            // Fired every time a piece changes. i.e. block sent/received/written to disk
-            torrentManager.PieceManager.OnPieceChanged+=new EventHandler<PieceEventArgs>(pieceStateChanged);
-            
-            // Fired every time a connection is either created or destroyed
-            ClientEngine.connectionManager.OnPeerConnectionChanged+=new EventHandler<PeerConnectionEventArgs>(peerConnectionChanged);
-           
-            // Fired every time a peer message is sent
-            ClientEngine.connectionManager.OnPeerMessages+= new EventHandler<PeerMessageEventArgs>(peerMessageSentOrRecieved);
-
-            // Keep running while the torrent isn't stopped or paused.
-            while (torrentManager.State != TorrentState.Stopped || torrentManager.State != TorrentState.Paused)
-            {
-                Console.WriteLine(torrentManager.Progress());
-                System.Threading.Thread.Sleep(1000);
-
-                if (torrentManager.Progress() == 100.0)
-                {
-                    // If we want to stop a torrent, or the engine for whatever reason, we call engine.Stop()
-                    // A tracker update *must* be performed before the engine is shut down, so you must
-                    // wait for the waithandle to become signaled before continuing with the complete
-                    // shutdown of your client. Otherwise stats will not get reported correctly.
-                    WaitHandle[] handles = engine.Stop();
-                    WaitHandle.WaitAll(handles);
-                    return;
-                }
-            }
-        }
-
-        */
     }
 }
