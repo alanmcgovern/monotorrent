@@ -8,22 +8,23 @@ namespace MonoTorrent.Client
 {
     public static class Logger
     {
-        private static Dictionary<PeerConnectionID, StringBuilder> log;
+        private static Dictionary<PeerConnectionID, LinkedList<string>> log;
 
         static Logger()
         {
-            log = new Dictionary<PeerConnectionID, StringBuilder>();
+            log = new Dictionary<PeerConnectionID, LinkedList<string>>();
         }
 
         [Conditional("EnableLogging")]
         public static void Log(PeerConnectionID id, string message)
         {
-            Trace.WriteLine(id.ToString() + ": " + message);
-            return;
             if (!log.ContainsKey(id))
-                log.Add(id, new StringBuilder(512));
+                log.Add(id, new LinkedList<string>());
 
-            log[id].AppendLine(message);
+            if (log[id].Count >= 50)
+                log[id].RemoveFirst();
+
+            log[id].AddLast(DateTime.Now.ToLongTimeString() + ": " + message);
         }
 
         [Conditional("EnableLogging")]
@@ -35,7 +36,33 @@ namespace MonoTorrent.Client
         [Conditional("EnableLogging")]
         public static void FlushToDisk()
         {
+            if (!Directory.Exists(@"C:\Logs\"))
+                Directory.CreateDirectory(@"C:\Logs\");
 
+            foreach (KeyValuePair<PeerConnectionID, LinkedList<string>> keypair in log)
+            {
+                using (FileStream s = new FileStream(@"C:\Logs\" + keypair.Key.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+                using(StreamWriter output = new StreamWriter(s))
+                {
+                    foreach (string str in keypair.Value)
+                        output.WriteLine(str);
+                }
+            }
+        }
+
+        internal static void FlushToDisk(PeerConnectionID id)
+        {
+            if (!Directory.Exists(@"C:\Logs\"))
+                Directory.CreateDirectory(@"C:\Logs\");
+
+            LinkedList<string> data = log[id];
+
+            using (FileStream s = new FileStream(@"C:\Logs\" + id.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+            using (StreamWriter output = new StreamWriter(s))
+            {
+                foreach (string str in data)
+                    output.WriteLine(str);
+            }
         }
     }
 }
