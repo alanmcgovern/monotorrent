@@ -117,11 +117,11 @@ namespace TestClient
                         sb.Append(Environment.NewLine);
                         sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / 1024.0);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0,00}", manager.Monitor.DataBytesUploaded / 1024.0);
+                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / 1024.0);
                         sb.Append(Environment.NewLine);
                         sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Protocol Download:"); sb.AppendFormat("0:0.00", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
+                        sb.Append("Protocol Download:"); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
                         sb.Append(Environment.NewLine);
                         sb.Append("Protocol Upload:  "); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesUploaded / 1024.0);
                         sb.Append(Environment.NewLine);
