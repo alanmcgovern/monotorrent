@@ -173,18 +173,20 @@ namespace MonoTorrent.Client
 
         private void AllocateBuffers(int number, BufferType type)
         {
-            while (number-- > 0)
-                if (type == BufferType.LargeMessageBuffer)
+            if (type == BufferType.LargeMessageBuffer)
+                while (number-- > 0)
                     this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
 
-                else if (type == BufferType.MediumMessageBuffer)
+            else if (type == BufferType.MediumMessageBuffer)
+                while (number-- > 0)
                     this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
 
-                else if (type == BufferType.SmallMessageBuffer)
+            else if (type == BufferType.SmallMessageBuffer)
+                while (number-- > 0)
                     this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
 
-                else
-                    throw new ArgumentException("Unsupported BufferType detected");
+            else
+                 throw new ArgumentException("Unsupported BufferType detected");
         }
     }
 }
