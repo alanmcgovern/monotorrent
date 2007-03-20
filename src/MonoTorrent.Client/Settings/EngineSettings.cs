@@ -30,13 +30,14 @@
 
 using MonoTorrent.Common;
 using System.Reflection;
+using System;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// Represents the Settings which need to be passed to the engine
     /// </summary>
-    public class EngineSettings
+    public class EngineSettings : ICloneable
     {
 
         #region Private Fields
@@ -252,6 +253,53 @@ namespace MonoTorrent.Client
         #endregion
 
 
+
+        #region Methods
+
+        public object Clone()
+        {
+            return new EngineSettings(this.savePath,
+                                      this.listenPort,
+                                      this.useuPnP,
+                                      this.globalMaxConnections,
+                                      this.globalMaxHalfOpenConnections,
+                                      this.globalMaxDownloadSpeed,
+                                      this.globalMaxUploadSpeed,
+                                      this.minEncryptionLevel,
+                                      this.allowLegacyConnections);
+        }
+
+        public override bool Equals(object obj)
+        {
+            EngineSettings settings = obj as EngineSettings;
+            return (settings == null) ? false : this.allowLegacyConnections == settings.allowLegacyConnections &&
+                                                this.globalMaxConnections == settings.globalMaxConnections &&
+                                                this.globalMaxDownloadSpeed == settings.globalMaxDownloadSpeed &&
+                                                this.globalMaxHalfOpenConnections == settings.globalMaxHalfOpenConnections &&
+                                                this.globalMaxUploadSpeed == settings.globalMaxUploadSpeed &&
+                                                this.listenPort == settings.listenPort &&
+                                                this.minEncryptionLevel == settings.minEncryptionLevel &&
+                                                this.savePath == settings.savePath &&
+                                                this.useuPnP == settings.useuPnP;
+        }
+
+
+        public override int GetHashCode()
+        {
+            return this.allowLegacyConnections.GetHashCode() +
+                   this.globalMaxConnections +
+                   this.globalMaxDownloadSpeed +
+                   this.globalMaxHalfOpenConnections +
+                   this.globalMaxUploadSpeed +
+                   this.listenPort.GetHashCode() +
+                   this.minEncryptionLevel.GetHashCode() +
+                   this.savePath.GetHashCode() +
+                   this.useuPnP.GetHashCode();
+            
+        }
+
+        #endregion Methods
+
         #region Default Settings
 
         /// <summary>
@@ -271,5 +319,7 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+
     }
 }

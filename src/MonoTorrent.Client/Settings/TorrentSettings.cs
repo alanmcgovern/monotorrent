@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Class representing the "Settings" for individual torrents
     /// </summary>
-    public class TorrentSettings
+    public class TorrentSettings : ICloneable
     {
         #region Member Variables
 
@@ -114,20 +114,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Creates a new TorrentSettings
-        /// </summary>
-        /// <param name="settings">The settings to clone</param>
-        public TorrentSettings(TorrentSettings settings)
-        {
-            this.uploadSlots = settings.uploadSlots;
-            this.maxUploadSpeed = settings.maxUploadSpeed;
-            this.maxDownloadSpeed = settings.maxDownloadSpeed;
-            this.maxConnections = settings.maxConnections;
-            this.fastResumeEnabled = settings.fastResumeEnabled;
-        }
-
-
-        /// <summary>
         /// Creates a new TorrentSettings with the specified number of upload slots and with
         /// default settings for everything else
         /// </summary>
@@ -175,13 +161,43 @@ namespace MonoTorrent.Client
 
 
         #region Default Settings
+
         /// <summary>
         /// Creates a new instance of the Default settings. 
         /// </summary>
         public static TorrentSettings DefaultSettings()
         {
-            return new TorrentSettings(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled);
+            return new TorrentSettings(DefaultUploadSlots,
+                                       DefaultMaxConnections,
+                                       DefaultDownloadSpeed,
+                                       DefaultUploadSpeed,
+                                       DefaultFastResumeEnabled);
         }
+
         #endregion
+
+        #region Methods
+
+        public object Clone()
+        {
+            return new TorrentSettings(this.uploadSlots, this.maxConnections, this.MaxDownloadSpeed, this.maxUploadSpeed, this.fastResumeEnabled);
+        }
+
+        public override bool Equals(object obj)
+        {
+            TorrentSettings settings = obj as TorrentSettings;
+            return (settings == null) ? false : this.fastResumeEnabled == settings.fastResumeEnabled &&
+                                                this.maxConnections == settings.maxConnections &&
+                                                this.maxDownloadSpeed == settings.maxDownloadSpeed &&
+                                                this.maxUploadSpeed == settings.maxUploadSpeed &&
+                                                this.uploadSlots == settings.uploadSlots;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.fastResumeEnabled.GetHashCode() + this.maxConnections + this.maxDownloadSpeed + this.maxUploadSpeed + this.uploadSlots;
+        }
+
+        #endregion Methods
     }
 }
