@@ -11,27 +11,32 @@ using System.Threading;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
 
-namespace TestClient
+namespace MonoTorrent
 {
     class main
     {
         static string basePath;
+        static string downloadsPath;
+        static string torrentsPath;
         static ClientEngine engine;
         static List<TorrentManager> torrents = new List<TorrentManager>();
+        static Top10Listener listener;
 
         static void Main(string[] args)
         {
             basePath = Environment.CurrentDirectory;
+            torrentsPath = Path.Combine(basePath, "Torrents");
+            downloadsPath = Path.Combine(basePath, "Downloads");
 
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
-
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Thread.GetDomain().UnhandledException += new UnhandledExceptionEventHandler(UnhandledException);
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
             Debug.Listeners.Clear();
-            Debug.Listeners.Add(new System.Diagnostics.TextWriterTraceListener(Console.Out));
-
+            listener = new Top10Listener(25);
+            Debug.Listeners.Add(listener);
             Debug.Flush();
+
             TestEngine();
         }
 
@@ -41,20 +46,17 @@ namespace TestClient
             Console.Write(Environment.NewLine + "Choose a listen port: ");
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
-            EngineSettings settings = EngineSettings.DefaultSettings();
-            settings.SavePath = Path.Combine(basePath, "Downloads");
-
-            settings.ListenPort = port;
-            engine = new ClientEngine(settings, TorrentSettings.DefaultSettings());
-
+            EngineSettings engineSettings = new EngineSettings(downloadsPath, port, false);
+            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 100, 30);
+            engine = new ClientEngine(engineSettings, torrentDefaults);
 
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
 
-            if (!Directory.Exists(Path.Combine(basePath, "Torrents")))
-                Directory.CreateDirectory(Path.Combine(basePath, "Torrents"));
+            if (!Directory.Exists(torrentsPath))
+                Directory.CreateDirectory(torrentsPath);
 
-            foreach (string file in Directory.GetFiles(Path.Combine(basePath, "Torrents")))
+            foreach (string file in Directory.GetFiles(torrentsPath))
             {
                 if (file.EndsWith(".torrent"))
                     torrents.Add(engine.LoadTorrent(file));
@@ -87,7 +89,6 @@ namespace TestClient
                 if ((i++) % 10 == 0)
                 {
                     running = false;
-                    Console.Clear();
                     foreach (TorrentManager manager in torrents)
                     {
                         if (manager.State != TorrentState.Stopped)
@@ -133,15 +134,19 @@ namespace TestClient
                         sb.Append(Environment.NewLine);
                         sb.Append("Scrape downloaded:"); sb.Append(manager.TrackerManager.CurrentTracker.Downloaded);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.CurrentTracker.WarningMessage); 
+                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.CurrentTracker.WarningMessage);
                         sb.Append(Environment.NewLine);
                         sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.CurrentTracker.FailureMessage);
                         sb.Append(Environment.NewLine);
                         sb.Append("Endgame Mode:     "); sb.Append(manager.PieceManager.InEndGameMode);
                         sb.Append(Environment.NewLine);
-                        Console.WriteLine(sb.ToString());
                     }
+
+                    Console.Clear();
+                    Console.WriteLine(sb.ToString());
+                    listener.ExportTo(Console.Out);
                 }
+
                 System.Threading.Thread.Sleep(100);
             }
 
@@ -154,12 +159,12 @@ namespace TestClient
 
         static void ConnectionManager_PeerDisconnected(object sender, PeerConnectionEventArgs e)
         {
-            Console.WriteLine("Disconnected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
+            listener.WriteLine("Disconnected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
         }
 
         static void ConnectionManager_PeerConnected(object sender, PeerConnectionEventArgs e)
         {
-            Console.WriteLine("Connected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
+            listener.WriteLine("Connected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
         }
 
         static void ConnectionManager_PeerMessageTransferred(object sender, PeerMessageEventArgs e)
@@ -207,16 +212,16 @@ namespace TestClient
         #region events i've hooked into
         static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
         {
-            Debug.WriteLine("State: " + e.NewState.ToString());
+            listener.WriteLine("State: " + e.NewState.ToString());
         }
 
         static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
         {
             TorrentManager manager = (TorrentManager)sender;
             if (!e.HashPassed)
-                //Debug.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
-                // else
-                Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+                listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+            else
+                listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
         }
         #endregion
 

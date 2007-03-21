@@ -9,15 +9,27 @@ namespace MonoTorrent.Client
     public static class Logger
     {
         private static Dictionary<PeerConnectionID, LinkedList<string>> log;
+        private static List<TraceListener> listeners;
 
         static Logger()
         {
+            listeners = new List<TraceListener>();
             log = new Dictionary<PeerConnectionID, LinkedList<string>>();
+        }
+
+        static void AddListener(TraceListener listener)
+        {
+            lock (listeners)
+                listeners.Add(listener);
         }
 
         [Conditional("EnableLogging")]
         public static void Log(PeerConnectionID id, string message)
         {
+            lock (listeners)
+                for (int i = 0; i < listeners.Count; i++)
+                    listeners[i].WriteLine(id.GetHashCode().ToString() + ": " + message);
+            /*
             if (!log.ContainsKey(id))
                 log.Add(id, new LinkedList<string>());
 
@@ -25,17 +37,20 @@ namespace MonoTorrent.Client
                 log[id].RemoveFirst();
 
             log[id].AddLast(DateTime.Now.ToLongTimeString() + ": " + message);
+             */
         }
 
         [Conditional("EnableLogging")]
         internal static void Log(string p)
         {
-            Trace.WriteLine(p);
+            lock (listeners)
+                for (int i = 0; i < listeners.Count; i++)
+                    listeners[i].WriteLine(p);
         }
 
         [Conditional("EnableLogging")]
         public static void FlushToDisk()
-        {
+        {/*
             if (!Directory.Exists(@"C:\Logs\"))
                 Directory.CreateDirectory(@"C:\Logs\");
 
@@ -47,11 +62,11 @@ namespace MonoTorrent.Client
                     foreach (string str in keypair.Value)
                         output.WriteLine(str);
                 }
-            }
+            }*/
         }
 
         internal static void FlushToDisk(PeerConnectionID id)
-        {
+        {/*
             if (!Directory.Exists(@"C:\Logs\"))
                 Directory.CreateDirectory(@"C:\Logs\");
 
@@ -63,6 +78,7 @@ namespace MonoTorrent.Client
                 foreach (string str in data)
                     output.WriteLine(str);
             }
+          */
         }
     }
 }
