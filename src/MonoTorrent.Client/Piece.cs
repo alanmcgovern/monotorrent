@@ -45,6 +45,7 @@ namespace MonoTorrent.Client
         public const int BlockSize = (1 << 14);	// 16kB
 
         #region Member Variables
+
         /// <summary>
         /// The blocks that this piece is composed of
         /// </summary>
@@ -64,20 +65,11 @@ namespace MonoTorrent.Client
         }
         private int index;
 
-
-        /// <summary>
-        /// Returns the block at the specified index
-        /// </summary>
-        /// <param name="index">The index of the block</param>
-        /// <returns></returns>
-        public Block this[int index]
-        {
-            get { return this.blocks[index]; }
-        }
         #endregion
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new Piece
         /// </summary>
@@ -129,14 +121,12 @@ namespace MonoTorrent.Client
 
             blocks[i] = new Block(pieceIndex, i * BlockSize, bytesRemaining);
         }
+
         #endregion
 
 
         #region Methods
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool AllBlocksRequested
         {
             get
@@ -150,9 +140,6 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool AllBlocksReceived
         {
             get
@@ -179,6 +166,25 @@ namespace MonoTorrent.Client
         }
 
 
+        public override bool Equals(object obj)
+        {
+            Piece p = obj as Piece;
+            return (p == null) ? false : this.index.Equals(p.index);
+        }
+
+
+        public System.Collections.IEnumerator GetEnumerator()
+        {
+            return this.blocks.GetEnumerator();
+        }
+
+
+        public override int GetHashCode()
+        {
+            return this.index;
+        }
+        
+
         public bool NoBlocksRequested
         {
             get
@@ -189,22 +195,6 @@ namespace MonoTorrent.Client
 
                 return true;
             }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public System.Collections.IEnumerator GetEnumerator()
-        {
-            return this.blocks.GetEnumerator();
-        }
-
-        public override bool Equals(object obj)
-        {
-            Piece p = obj as Piece;
-            return (p == null) ? false : this.index.Equals(p.index);
         }
 
         #endregion

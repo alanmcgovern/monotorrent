@@ -84,10 +84,30 @@ namespace MonoTorrent.Client
                 if (blocks[i].StartOffset == blockStartOffset && blocks[i].RequestLength == blockLength)
                     return blocks[i];
 
-            return null;
+            return Block.Empty;
         }
 
         #endregion Methods
 
+
+        internal static void SetBlock(Block[] blocks, Block block)
+        {
+            for (int i = 0; i < blocks.Length; i++)
+            {
+                if (blocks[i].StartOffset != block.StartOffset
+                    || blocks[i].RequestLength != block.RequestLength
+                    || blocks[i].PieceIndex != block.PieceIndex)
+                {
+                    continue;
+                }
+                else
+                {
+                    blocks[i] = block;
+                    return;
+                }
+            }
+
+            throw new TorrentException("Cannot update the piece status - Invalid block");
+        }
     }
 }

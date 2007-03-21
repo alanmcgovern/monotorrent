@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
                 foreach (KeyValuePair<PeerConnectionID, List<Piece>> keypair in this.requests)
                     for (int i = 0; i < keypair.Value.Count; i++)
                         for (int j = 0; j < keypair.Value[i].Blocks.Length; j++)
-                            if (keypair.Value[i][j].Requested && !keypair.Value[i][j].Received)
+                            if (keypair.Value[i].Blocks[j].Requested && !keypair.Value[i].Blocks[j].Received)
                                 result++;
             }
             return result;
@@ -171,8 +171,8 @@ namespace MonoTorrent.Client
 
             Piece p = new Piece(index, id.TorrentManager.Torrent);
             reqs.Add(p);
-            p[0].Requested = true;
-            return p[0].CreateRequest();
+            p.Blocks[0].Requested = true;
+            return p.Blocks[0].CreateRequest();
         }
 
 
@@ -391,7 +391,7 @@ namespace MonoTorrent.Client
                     List<Piece> pieces = this.requests[id];
                     for (int i = 0; i < pieces.Count; i++)
                         for (int j = 0; j < pieces[i].Blocks.Length; j++)
-                            if (pieces[i][j].Requested && !pieces[i][j].Received)
+                            if (pieces[i].Blocks[j].Requested && !pieces[i].Blocks[j].Received)
                                 id.Peer.Connection.AmRequestingPiecesCount--;
 
                     // Should this be happening?
@@ -423,16 +423,16 @@ namespace MonoTorrent.Client
 
                         for (int j = 0; j < pieces[i].Blocks.Length; j++)
                         {
-                            if (pieces[i][j].StartOffset != message.StartOffset)
+                            if (pieces[i].Blocks[j].StartOffset != message.StartOffset)
                                 continue;
 
-                            if (pieces[i][j].RequestLength != message.RequestLength)
+                            if (pieces[i].Blocks[j].RequestLength != message.RequestLength)
                                 throw new TorrentException("Trying to remove a request that doesn't exist");
 
-                            if (!pieces[i][j].Requested)
+                            if (!pieces[i].Blocks[j].Requested)
                                 throw new TorrentException("The block was not requested");
 
-                            pieces[i][j].Requested = false;
+                            pieces[i].Blocks[j].Requested = false;
                             id.Peer.Connection.AmRequestingPiecesCount--;
 
                             if (pieces[i].NoBlocksRequested)
@@ -479,7 +479,7 @@ namespace MonoTorrent.Client
 
                 // Pick out the block that this piece message belongs to
                 Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, message.StartOffset, message.BlockLength);
-                if (block == null)
+                if (block.Equals(Block.Empty))
                 {
                     Logger.Log(id, "Invalid block start offset returned");
                     return PieceEvent.BlockNotRequested;
@@ -500,6 +500,8 @@ namespace MonoTorrent.Client
                 //throw new MessageException("Block was not requested");
 
                 block.Received = true;
+                PiecePickerBase.SetBlock(piece.Blocks, block);
+
                 id.Peer.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
@@ -558,13 +560,15 @@ namespace MonoTorrent.Client
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
                 Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
-                if (block == null)
+                if (block.Equals(Block.Empty))
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
                 if (!block.Requested || block.Received)
                     throw new MessageException("We didnt request this block or we already received it");
 
                 block.Requested = false;
+                PiecePickerBase.SetBlock(piece.Blocks, block);
+
                 id.Peer.Connection.AmRequestingPiecesCount--;
             }
         }

@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
             this.blocks = new List<Block>(this.pieces.Count * this.pieces[0].Blocks.Length);
             for (int i = 0; i < this.pieces.Count; i++)
                 for (int j = 0; j < this.pieces[i].Blocks.Length; j++)
-                    this.blocks.Add(this.pieces[i][j]);
+                    this.blocks.Add(this.pieces[i].Blocks[j]);
         }
 
 
@@ -145,8 +145,8 @@ namespace MonoTorrent.Client
 
                     Block b = this.blocks[i];
                     this.blocks.RemoveAt(i);
-                    this.blocks.Add(b);
                     b.Requested = true; // "Requested" isn't important for endgame picker. All that matters is if we have the piece or not.
+                    this.blocks.Add(b);
 
                     // Add the block to the list of blocks that we are downloading off this peer
                     if (!this.requests.ContainsKey(id))
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
                     return PieceEvent.BlockNotRequested;
 
                 Block b = PiecePickerBase.GetBlockFromIndex(p.Blocks, message.StartOffset, message.BlockLength);
-                if (b == null)
+                if (b.Equals(Block.Empty))
                     return PieceEvent.BlockNotRequested;
 
                 // Only write to disk once
@@ -219,6 +219,8 @@ namespace MonoTorrent.Client
                     id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
                 }
                 b.Received = true;
+                PiecePickerBase.SetBlock(p.Blocks, b);
+
                 id.Peer.Connection.AmRequestingPiecesCount--;
 
                 if (!p.AllBlocksReceived)
@@ -248,7 +250,7 @@ namespace MonoTorrent.Client
 
                     // Clear the piece and the blocks from the list
                     for (int i = 0; i < p.Blocks.Length; i++)
-                        this.blocks.Remove(p[i]);
+                        this.blocks.Remove(p.Blocks[i]);
                     this.pieces.Remove(p);
                 }
                 else
@@ -303,7 +305,7 @@ namespace MonoTorrent.Client
                         this.blockRequestees.Remove(blocks[i]);
                 }
             }
-            
+
             blocks.Clear();
         }
     }

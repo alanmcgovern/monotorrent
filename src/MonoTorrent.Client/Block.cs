@@ -35,9 +35,29 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    internal class Block
+    internal struct Block
     {
-        #region Member Variables
+        #region Public Fields
+
+        public static readonly Block Empty = new Block(-1, -1, -1);
+
+        #endregion Public Fields
+
+
+        #region Private Fields
+
+        private int pieceIndex;
+        private int startOffset;
+        private int requestLength;
+        private bool requested;
+        private bool received;
+        private bool written;
+
+        #endregion Private Fields
+
+
+        #region Public Properties
+
         /// <summary>
         /// The index of the piece
         /// </summary>
@@ -45,7 +65,6 @@ namespace MonoTorrent.Client
         {
             get { return this.pieceIndex; }
         }
-        private int pieceIndex;
 
 
         /// <summary>
@@ -55,7 +74,6 @@ namespace MonoTorrent.Client
         {
             get { return this.startOffset; }
         }
-        private int startOffset;
 
 
         /// <summary>
@@ -65,7 +83,6 @@ namespace MonoTorrent.Client
         {
             get { return this.requestLength; }
         }
-        private int requestLength;
 
 
         /// <summary>
@@ -76,7 +93,6 @@ namespace MonoTorrent.Client
             get { return this.requested; }
             set { this.requested = value; }
         }
-        private bool requested;
 
 
         /// <summary>
@@ -87,7 +103,6 @@ namespace MonoTorrent.Client
             get { return this.received; }
             set { this.received = value; }
         }
-        private bool received;
 
 
         /// <summary>
@@ -98,11 +113,13 @@ namespace MonoTorrent.Client
             get { return this.written; }
             set { this.written = value; }
         }
-        private bool written;
-#endregion
+
+
+        #endregion Public Properties
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new Block
         /// </summary>
@@ -112,13 +129,18 @@ namespace MonoTorrent.Client
         public Block(int pieceIndex, int startOffset, int requestLength)
         {
             this.pieceIndex = pieceIndex;
-            this.startOffset = startOffset;
+            this.received = false;
+            this.requested = false;
             this.requestLength = requestLength;
+            this.startOffset = startOffset;
+            this.written = false;
         }
+
         #endregion
 
 
         #region Methods
+
         /// <summary>
         /// Creates a RequestMessage for this Block
         /// </summary>
@@ -127,6 +149,23 @@ namespace MonoTorrent.Client
         {
             return new RequestMessage(this.pieceIndex, this.startOffset, this.requestLength);
         }
+
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Block))
+                return false;
+
+            Block other = (Block)obj;
+            return this.pieceIndex == other.pieceIndex && this.startOffset == other.startOffset && this.requestLength == other.requestLength;
+        }
+
+
+        public override int GetHashCode()
+        {
+            return this.pieceIndex ^ this.requestLength ^ this.startOffset;
+        }
+
         #endregion
     }
 }

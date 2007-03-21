@@ -319,6 +319,7 @@ namespace MonoTorrent.Client
             // Find the block that this data belongs to and set it's state to "Written"
             Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, message.StartOffset, message.BlockLength);
             block.Written = true;
+            PiecePickerBase.SetBlock(piece.Blocks, block);
 
             // Release the buffer back into the buffer manager.
             ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
