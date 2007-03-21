@@ -419,7 +419,7 @@ namespace MonoTorrent.Client
             {
                 XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
                 using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
-                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Length);
+                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
 
                 return true;
             }

@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
                 encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
                 encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
 
-                id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Length, encryptor);
+                id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Count, encryptor);
                 id.Peer.Connection.ProcessingQueue = true;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
                 id.Peer.Connection.LastMessageReceived = DateTime.Now;

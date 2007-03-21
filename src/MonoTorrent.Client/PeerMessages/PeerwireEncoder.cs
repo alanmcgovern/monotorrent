@@ -54,7 +54,7 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case BitfieldMessage.MessageId:     // 5
-                    message = new BitfieldMessage(manager.Torrent.Pieces.Length);
+                    message = new BitfieldMessage(manager.Torrent.Pieces.Count);
                     break;
 
                 case CancelMessage.MessageId:       // 8

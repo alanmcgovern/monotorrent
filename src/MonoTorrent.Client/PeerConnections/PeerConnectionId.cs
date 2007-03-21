@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
             set
             {
                 this.torrentManager = value;
-                this.peer.Connection.BitField = new BitField(value.Torrent.Pieces.Length);
+                this.peer.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
         }
         private TorrentManager torrentManager;

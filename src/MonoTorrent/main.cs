@@ -47,7 +47,7 @@ namespace MonoTorrent
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port, false);
-            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 100, 30);
+            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 9100, 31110);
             engine = new ClientEngine(engineSettings, torrentDefaults);
 
             if (!Directory.Exists(engine.Settings.SavePath))
@@ -218,10 +218,10 @@ namespace MonoTorrent
         static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
         {
             TorrentManager manager = (TorrentManager)sender;
-            if (!e.HashPassed)
-                listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+            if (e.HashPassed)
+                listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
             else
-                listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Length);
+                listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
         }
         #endregion
 

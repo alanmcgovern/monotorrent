@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class represents a Piece in the torrent
     /// </summary>
-    internal class Piece
+    public class Piece
     {
         /// <summary>
         /// The official client rejects any request above 16kb, so even thought it adds more overhead
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
         {
             this.index = pieceIndex;
 
-            if (pieceIndex == torrent.Pieces.Length - 1)      // Request last piece. Special logic needed
+            if (pieceIndex == torrent.Pieces.Count - 1)      // Request last piece. Special logic needed
                 LastPiece(pieceIndex, torrent);
 
             else
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
         /// <param name="torrent">The ITorrent the piece is coming from</param>
         private void LastPiece(int pieceIndex, Torrent torrent)
         {
-            int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Length - 1) * torrent.PieceLength);
+            int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Count - 1) * torrent.PieceLength);
             int numberOfBlocks = bytesRemaining / BlockSize;
             if (bytesRemaining % BlockSize != 0)
                 numberOfBlocks++;

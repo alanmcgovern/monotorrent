@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    internal struct Block
+    public struct Block
     {
         #region Public Fields
 

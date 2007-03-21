@@ -329,7 +329,7 @@ namespace MonoTorrent.Client
                 return;
 
             // Hashcheck the piece as we now have all the blocks.
-            bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[piece.Index], id.TorrentManager.FileManager.GetHash(piece.Index));
+            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index), piece.Index);
             id.TorrentManager.Bitfield[message.PieceIndex] = result;
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));

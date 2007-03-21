@@ -217,7 +217,7 @@ namespace MonoTorrent.Client.PeerMessages
         {
             // If we are not on the last piece and the user requested a stupidly big/small amount of data
             // we will close the connection
-            if (id.TorrentManager.Torrent.Pieces.Length != (this.pieceIndex + 1))
+            if (id.TorrentManager.Torrent.Pieces.Count != (this.pieceIndex + 1))
                 if (this.requestLength > (MaxSize) || this.requestLength < MinSize)
                     throw new MessageException("Request length invalid");
 

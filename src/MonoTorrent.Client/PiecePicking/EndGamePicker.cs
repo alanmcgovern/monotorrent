@@ -226,7 +226,7 @@ namespace MonoTorrent.Client
                 if (!p.AllBlocksReceived)
                     return PieceEvent.BlockWrittenToDisk;
 
-                bool result = ToolBox.ByteMatch(id.TorrentManager.Torrent.Pieces[p.Index], id.TorrentManager.FileManager.GetHash(p.Index));
+                bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(p.Index), p.Index);
                 this.myBitfield[message.PieceIndex] = result;
 
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(p.Index, result));

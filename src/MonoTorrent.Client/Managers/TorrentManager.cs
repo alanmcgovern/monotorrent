@@ -237,7 +237,7 @@ namespace MonoTorrent.Client
 
             this.fileManager = new FileManager(this.torrent.Files, this.torrent.Name, this.savePath, this.torrent.PieceLength, System.IO.FileAccess.ReadWrite);
 
-            this.bitfield = new BitField(this.torrent.Pieces.Length);
+            this.bitfield = new BitField(this.torrent.Pieces.Count);
             this.pieceManager = new PieceManager(this.bitfield, (TorrentFile[])this.torrent.Files);
             this.monitor = new ConnectionMonitor();
         }
@@ -755,9 +755,9 @@ namespace MonoTorrent.Client
             if (manager == null)
                 return;
 
-            for (int i = 0; i < manager.torrent.Pieces.Length; i++)
+            for (int i = 0; i < manager.torrent.Pieces.Count; i++)
             {
-                result = ToolBox.ByteMatch(manager.torrent.Pieces[i], manager.fileManager.GetHash(i));
+                result = manager.torrent.Pieces.IsValid(manager.fileManager.GetHash(i), i);
                 lock (manager.pieceManager.MyBitField)
                     manager.pieceManager.MyBitField[i] = result;
 
