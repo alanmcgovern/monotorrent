@@ -513,11 +513,7 @@ namespace MonoTorrent.Common
                 BEncodedDictionary dict = null;
                 try
                 {
-                    Console.WriteLine("A");
-                    Console.ReadLine();
                     dict = (BEncodedDictionary)BEncode.Decode(reader);
-                    Console.WriteLine("B");
-                    Console.ReadLine();
                     LoadTorrent(dict);
                 }
                 catch (BEncodingException ex)
