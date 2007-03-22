@@ -4,8 +4,14 @@ NOTE: You must use Mono 1.1.16.1 or higher to use the engine. 1.1.13.8 is *not* 
 
 
 Build:
+MakeFiles:
+To build using the makefiles, just enter the src directory and run "make". Everything except the interface will be built and stored in a directory called "bin".
+
+To build the interface just execute: "make interface". This requires GTK# to be available.
+
+Project Files:
 To build the project, go into the "BuildScripts" directory and execute the required script for the type
-build file you want to create (VisualStudio/SharpDevelop/MonoDevelop or Autotools for makefiles).
+build file you want to create (VisualStudio/SharpDevelop/MonoDevelop)
 
 [The Tracker]
 ============

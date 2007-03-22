@@ -1,5 +1,5 @@
 CSC=gmcs
-OUT=../../MonoTorrent.Interface.exe
+OUT=../../bin/MonoTorrent.Interface.exe
 SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/PathConstants.cs \
 	MonoTorrent.Interface/Model/TorrentsList.cs \
@@ -28,7 +28,8 @@ SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/Settings/Configuration.cs \
 	AssemblyInfo.cs
 REFERENCES=../../Client.dll \
-	../../Common.dll
+	../../Common.dll \
+	
 RESOURCES=../res/ui.xml \
 	../COPYING
 
@@ -38,4 +39,5 @@ RESOURCE_B=$(addprefix -resource:, $(RESOURCES))
 all: interface
 
 interface: $(SOURCES)
-	$(CSC) $(SOURCES) $(RESOURCE_B) $(REFERENCES_B) -target:winexe -d:DEBUG -out:$(OUT)
+	mkdir -p ../bin
+	$(CSC) $(SOURCES) $(RESOURCE_B) $(REFERENCES_B) -pkg:gtk-sharp -target:winexe -d:DEBUG -out:$(OUT)
