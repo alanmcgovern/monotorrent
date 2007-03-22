@@ -14,7 +14,5 @@ clean:
 	-rm $(OUT)
 
 install: 
-	mkdir $(prefix)/lib/bitsharp
-	mkdir $(prefix)/bin
 	cp $(OUT) $(prefix)/lib/bitsharp
 	

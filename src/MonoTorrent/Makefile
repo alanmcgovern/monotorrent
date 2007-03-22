@@ -1,12 +1,13 @@
-CSC=gmcs 
 OUT=../bin/MonoTorrent.exe
-REFERENCES=../bin/MonoTorrent.Common.dll,../bin/MonoTorrent.Client.dll,../bin/MonoTorrent.BEncoding.dll,../Libs/Upnp.dll
+REFERENCES=\
+	-r:../bin/MonoTorrent.Common.dll	\
+	-r:../bin/MonoTorrent.Client.dll	\
+	-r:../bin/MonoTorrent.BEncoding.dll	\
+	-r:../Libs/Upnp.dll
+
 SOURCES=main.cs \
 	Top10Listener.cs
 
-all: testclient
+all: $(OUT)
 
-testclient: $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) $(SOURCES) -target:exe -d:DEBUG -out:$(OUT) -r:$(REFERENCES)
-	cp ../Libs/Upnp.dll ../bin/Upnp.dll
+include ../rules.make
