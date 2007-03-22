@@ -250,6 +250,13 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Start()
         {
+            if (this.state == TorrentState.Paused)
+            {
+                UpdateState(TorrentState.Downloading);
+                this.ResumePeers();
+                return;
+            }
+
             if(!this.fileManager.StreamsOpen)
                 this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
 
@@ -323,14 +330,15 @@ namespace MonoTorrent.Client
             {
                 UpdateState(TorrentState.Paused);
 
-                for (int i = 0; i < this.peers.ConnectingToPeers.Count; i++)
-                    lock (this.peers.ConnectingToPeers[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[i], true);
+                //for (int i = 0; i < this.peers.ConnectingToPeers.Count; i++)
+                //    lock (this.peers.ConnectingToPeers[i])
+                //        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[i], true);
 
-                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
-                    lock (this.peers.ConnectedPeers[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[i], true);
+                //for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                //    lock (this.peers.ConnectedPeers[i])
+                //        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[i], true);
 
+                //ClientEngine.ConnectionManager.UnregisterManager(this);
                 this.SaveFastResume();
             }
         }
@@ -623,6 +631,9 @@ namespace MonoTorrent.Client
         {
             lock (this.listLock)
             {
+                if (this.state == TorrentState.Paused)
+                    return;
+
                 // While there are peers queued in the list and i haven't used my download allowance, resume downloading
                 // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
                 while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
