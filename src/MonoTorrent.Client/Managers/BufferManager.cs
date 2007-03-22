@@ -65,9 +65,9 @@ namespace MonoTorrent.Client
             this.smallMessageBuffers = new Queue<byte[]>();
 
             // Preallocate 35 of each buffer to help avoid heap fragmentation due to pinning
-            this.AllocateBuffers(35, BufferType.LargeMessageBuffer);
-            this.AllocateBuffers(35, BufferType.MediumMessageBuffer);
-            this.AllocateBuffers(35, BufferType.SmallMessageBuffer);
+            this.AllocateBuffers(20, BufferType.LargeMessageBuffer);
+            this.AllocateBuffers(10, BufferType.MediumMessageBuffer);
+            this.AllocateBuffers(20, BufferType.SmallMessageBuffer);
         }
 
 
