@@ -31,7 +31,6 @@ SOURCES=MonoTorrent.Interface/Program.cs \
 
 REFERENCES=../../bin/MonoTorrent.Client.dll \
 	../../bin/MonoTorrent.Common.dll \
-	Mono.Posix.dll
 
 RESOURCES=../res/ui.xml \
 	../COPYING
