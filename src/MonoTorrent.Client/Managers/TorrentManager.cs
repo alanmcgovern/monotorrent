@@ -898,7 +898,6 @@ namespace MonoTorrent.Client
         /// <param name="amInterested">True if we are interested in the peer, false otherwise</param>
         private void SetAmInterestedStatus(PeerConnectionID id, bool amInterested)
         {
-            Console.WriteLine(id.ToString() + ": " + amInterested.ToString());
             // If we used to be not interested but now we are, send a message.
             // If we used to be interested but now we're not, send a message
             id.Peer.Connection.AmInterested = amInterested;
