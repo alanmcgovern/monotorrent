@@ -7,7 +7,7 @@ all: config.make
 
 clean:
 	for dir in $(SUBDIRS); do \
-		(cd $$dir && make clean)
+		(cd $$dir && make clean) \
 	done
 
 config.make:
