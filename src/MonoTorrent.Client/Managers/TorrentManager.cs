@@ -296,15 +296,16 @@ namespace MonoTorrent.Client
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
                     lock (this.peers.ConnectingToPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0], true);
 
                 while (this.peers.ConnectedPeers.Count > 0)
                     lock (this.peers.ConnectedPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0], true);
             }
 
             if(this.fileManager.StreamsOpen)
                 this.FileManager.CloseFileStreams();
+
             this.SaveFastResume();
             this.peers.ClearAll();
             ClientEngine.ConnectionManager.UnregisterManager(this);
@@ -324,11 +325,11 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < this.peers.ConnectingToPeers.Count; i++)
                     lock (this.peers.ConnectingToPeers[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[i]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[i], true);
 
                 for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
                     lock (this.peers.ConnectedPeers[i])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[i]);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[i], true);
 
                 this.SaveFastResume();
             }

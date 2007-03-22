@@ -792,6 +792,12 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerConnectionID id)
         {
+            CleanupSocket(id, false);
+        }
+
+
+        internal void CleanupSocket(PeerConnectionID id, bool localClose)
+        {
             if (id == null) // Sometimes onEncryptoError will fire with a null id
                 return;
 
@@ -802,13 +808,15 @@ namespace MonoTorrent.Client
                     lock (id)
                     {
                         // We can't clean up until the pending sends and receives have all had the corresponding End*** method called
-                        if (id.Peer.ActiveReceive || id.Peer.ActiveSend)
+                        if (!localClose && (id.Peer.ActiveReceive || id.Peer.ActiveSend))
                             return;
 
                         Logger.Log(id, "*******Cleaning up*******");
                         System.Threading.Interlocked.Decrement(ref this.openConnections);
                         id.TorrentManager.PieceManager.RemoveRequests(id);
                         id.Peer.CleanedUpCount++;
+                        id.Peer.ActiveReceive = false;
+                        id.Peer.ActiveSend = false;
 
                         if (id.Peer.Connection != null)
                         {
@@ -1152,6 +1160,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
     }
 }
