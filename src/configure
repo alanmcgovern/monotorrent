@@ -17,3 +17,5 @@ done
 
 echo "prefix=$prefix" > config.make
 echo "RUNTIME=mono" >> config.make
+
+echo "Bitsharp has been configure to be installed in $prefix"
