@@ -51,7 +51,6 @@ namespace MonoTorrent.Client
         private readonly int pieceLength;                       // The length of a piece in the torrent
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
-        private byte[] hashBuffer;                              // This is used to buffer a piec in memory so it can be hashed
         private FileStream[] fileStreams;                       // The filestreams used to read/write to the files on disk
         private bool initialHashRequired;                       // Used to indicate whether we need to hashcheck the files or not
         private Thread ioThread;                                // The dedicated thread used for reading/writing
@@ -160,7 +159,6 @@ namespace MonoTorrent.Client
             this.bufferedWrites = new Queue<BufferedFileWrite>();
             this.files = files;
             this.hasher = new SHA1Managed();
-            this.hashBuffer = new byte[pieceLength];
             this.initialHashRequired = false;
             this.ioActive = true;
             this.pieceLength = pieceLength;
@@ -250,17 +248,44 @@ namespace MonoTorrent.Client
         /// <returns>The 20 byte SHA1 hash of the supplied piece</returns>
         internal byte[] GetHash(int pieceIndex)
         {
-            lock (this.hashBuffer)
-            {
-                // Calculate the start index of the piece
-                long pieceStartIndex = (long)this.pieceLength * pieceIndex;
+            int bytesRead = 0;
+            int totalRead = 0;
+            int bytesToRead = 0;
+            long pieceStartIndex = (long)this.pieceLength * pieceIndex;
 
-                // Read in the entire piece
-                int bytesRead = this.Read(this.hashBuffer, 0, pieceStartIndex, (int)(this.fileSize - pieceStartIndex > this.pieceLength ? this.pieceLength : this.fileSize - pieceStartIndex));
-                
-                
-                // Compute the hash of the piece
-                return hasher.ComputeHash(this.hashBuffer, 0, bytesRead);
+            byte[] hashBuffer = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, BufferType.LargeMessageBuffer);
+
+            try
+            {
+                lock (this.hasher)
+                {
+                    // Calculate the start index of the piece
+                    hasher.Initialize();
+
+                    // Read in the entire piece
+                    do
+                    {
+                        bytesToRead = (this.pieceLength - totalRead) > hashBuffer.Length ? hashBuffer.Length : (this.pieceLength - totalRead);
+
+                        if ((pieceStartIndex + bytesToRead) > this.fileSize)
+                            bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
+
+                        bytesRead = this.Read(hashBuffer, 0, pieceStartIndex, bytesToRead);
+                        hasher.TransformBlock(hashBuffer, 0, bytesRead, hashBuffer, 0);
+                        totalRead += bytesRead;
+                        pieceStartIndex += bytesToRead;
+                    } while (bytesRead != 0);
+
+
+                    // Compute the hash of the piece
+                    hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                    return hasher.Hash;
+                }
+            }
+            finally
+            {
+                ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
             }
         }
 
@@ -281,7 +306,7 @@ namespace MonoTorrent.Client
                 if (File.Exists(filePath))
                     this.initialHashRequired = true;
 
-                this.fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read, 65536);
+                this.fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read);
 
                 // This hashing algorithm is written on the basis that the files are
                 // preallocated. Might change to not have to preallocate files in future,
