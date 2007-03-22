@@ -23,9 +23,9 @@ SOURCES=Enums.cs \
 
 
 
-all: common
+all: $(OUT)
 
-common: $(SOURCES)
+$(OUT): $(SOURCES)
 	mkdir -p ../bin
 	$(CSC) $(SOURCES) -target:library -d:DEBUG -out:$(OUT) -r:$(REFERENCES)
-	
+

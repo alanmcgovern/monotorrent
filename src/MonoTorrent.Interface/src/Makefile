@@ -27,17 +27,21 @@ SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/Settings/GConfSettingsStorage.cs \
 	MonoTorrent.Interface/Settings/Configuration.cs \
 	AssemblyInfo.cs
-REFERENCES=../../Client.dll \
-	../../Common.dll \
-	
+
+REFERENCES=../../bin/MonoTorrent.Client.dll \
+	../../bin/MonoTorrent.Common.dll
+
 RESOURCES=../res/ui.xml \
 	../COPYING
 
 REFERENCES_B=$(addprefix -reference:, $(REFERENCES))
 RESOURCE_B=$(addprefix -resource:, $(RESOURCES))
 
-all: interface
+all: $(OUT)
 
-interface: $(SOURCES)
+$(OUT): $(SOURCES)
 	mkdir -p ../bin
-	$(CSC) $(SOURCES) $(RESOURCE_B) $(REFERENCES_B) -pkg:gtk-sharp -target:winexe -d:DEBUG -out:$(OUT)
+	$(CSC) $(SOURCES) $(RESOURCE_B) -r:Mono.Posix $(REFERENCES_B) -pkg:gtk-sharp-2.0 -pkg:gconf-sharp-2.0 -target:winexe -d:DEBUG -out:$(OUT)
+
+clean: 
+	rm $(OUT)

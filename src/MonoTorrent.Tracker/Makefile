@@ -20,9 +20,8 @@ SOURCES=Frontend/AnnounceHandler.cs \
 	Tracker.cs \
 	TrackerEngine.cs 
 
+all: $(OUT)
 
-all: tracker
-
-tracker: $(SOURCES)
+$(OUT): $(SOURCES)
 	mkdir -p ../bin
 	$(CSC) $(SOURCES) -target:library -out:$(OUT) -r:$(REFERENCES)

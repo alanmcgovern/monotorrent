@@ -1,22 +1,11 @@
-all: bencoding common client tracker trackerapp testclient
+SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp MonoTorrent MonoTorrent.Interface/src
 
-bencoding:
-	cd MonoTorrent.BEncoding && $(MAKE)
+all: 
+	for dir in $(SUBDIRS); do \
+		(cd $$dir && make) \
+	done
 
-common:
-	cd MonoTorrent.Common && $(MAKE)
-
-client: 
-	cd MonoTorrent.Client && $(MAKE)
-	
-tracker:
-	cd MonoTorrent.Tracker && $(MAKE)
-
-trackerapp:
-	cd MonoTorrent.TrackerApp && $(MAKE)
-
-testclient:
-	cd MonoTorrent && $(MAKE)
-
-interface:
-	cd MonoTorrent.Interface/src && $(MAKE)
+clean:
+	for dir in $(SUBDIRS); do \
+		(cd $$dir && make clean)
+	done
