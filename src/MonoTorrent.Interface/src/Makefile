@@ -26,10 +26,12 @@ SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/Settings/SettingsStorage.cs \
 	MonoTorrent.Interface/Settings/GConfSettingsStorage.cs \
 	MonoTorrent.Interface/Settings/Configuration.cs \
+	MonoTorrent.Interface/Settings/BEncodedSettingsStorage.cs \
 	AssemblyInfo.cs
 
 REFERENCES=../../bin/MonoTorrent.Client.dll \
-	../../bin/MonoTorrent.Common.dll
+	../../bin/MonoTorrent.Common.dll \
+	Mono.Posix.dll
 
 RESOURCES=../res/ui.xml \
 	../COPYING
