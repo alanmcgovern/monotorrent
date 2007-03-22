@@ -1,6 +1,6 @@
 CSC=gmcs 
 OUT=../bin/MonoTorrent.BEncoding.dll
-REFERENCES=System
+REFERENCES=-r:System
 SOURCES=AssemblyInfo.cs \
 	BEncode.cs \
 	BEncodedDictionary.cs \
@@ -10,9 +10,7 @@ SOURCES=AssemblyInfo.cs \
 	BEncodingException.cs \
 	IBEncodedValue.cs
 
+all: $(OUT)
 
-all: bencoding
+include ../rules.make
 
-bencoding: $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) -r:$(REFERENCES) -target:library -d:DEBUG -out:$(OUT) $(SOURCES)

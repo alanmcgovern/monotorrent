@@ -1,10 +1,11 @@
-CSC=gmcs 
 OUT=../TrackerApp.exe
-REFERENCES=../bin/MonoTorrent.Common.dll,../bin/MonoTorrent.Tracker.dll
+TARGET=-target:exe
+REFERENCES=	\
+	-r:../bin/MonoTorrent.Common.dll	\
+	-r:../bin/MonoTorrent.Tracker.dll
+
 SOURCES=Main.cs AssemblyInfo.cs
 
-all: trackerapp
+all: $(OUT)
 
-trackerapp: $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) $(SOURCES) -target:exe -out:$(OUT) -r:$(REFERENCES)
+include ../rules.make

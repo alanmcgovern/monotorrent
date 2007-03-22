@@ -1,6 +1,9 @@
-CSC=gmcs 
 OUT=../bin/MonoTorrent.Tracker.dll
-REFERENCES=../bin/MonoTorrent.Common.dll,System.Web,../bin/MonoTorrent.BEncoding.dll
+REFERENCES=	\
+	-r:../bin/MonoTorrent.Common.dll	\
+	-r:System.Web				\
+	-r:../bin/MonoTorrent.BEncoding.dll
+
 SOURCES=Frontend/AnnounceHandler.cs \
 	Frontend/AnnounceParameterParser.cs \
 	Frontend/AnnounceParameters.cs \
@@ -22,6 +25,4 @@ SOURCES=Frontend/AnnounceHandler.cs \
 
 all: $(OUT)
 
-$(OUT): $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) $(SOURCES) -target:library -out:$(OUT) -r:$(REFERENCES)
+include ../rules.make

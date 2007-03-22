@@ -1,4 +1,5 @@
-CSC=gmcs
+TARGET=-target:winexe
+EXTRADIR=../
 OUT=../../bin/MonoTorrent.Interface.exe
 SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/PathConstants.cs \
@@ -29,20 +30,19 @@ SOURCES=MonoTorrent.Interface/Program.cs \
 	MonoTorrent.Interface/Settings/BEncodedSettingsStorage.cs \
 	AssemblyInfo.cs
 
-REFERENCES=../../bin/MonoTorrent.Client.dll \
-	../../bin/MonoTorrent.Common.dll \
+PKGS=-pkg:gtk-sharp-2.0 -pkg:gconf-sharp-2.0
+
+REFERENCES=\
+	-r:../../bin/MonoTorrent.Client.dll \
+	-r:../../bin/MonoTorrent.Common.dll \
+	-r:../../bin/MonoTorrent.BEncoding.dll \
+	-r:Mono.Posix
 
 RESOURCES=../res/ui.xml \
 	../COPYING
 
-REFERENCES_B=$(addprefix -reference:, $(REFERENCES))
 RESOURCE_B=$(addprefix -resource:, $(RESOURCES))
 
 all: $(OUT)
 
-$(OUT): $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) $(SOURCES) $(RESOURCE_B) -r:Mono.Posix $(REFERENCES_B) -pkg:gtk-sharp-2.0 -pkg:gconf-sharp-2.0 -target:winexe -d:DEBUG -out:$(OUT)
-
-clean: 
-	rm $(OUT)
+include ../../rules.make

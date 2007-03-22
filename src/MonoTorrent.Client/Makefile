@@ -1,8 +1,10 @@
-CSC=gmcs 
-
 OUT=../bin/MonoTorrent.Client.dll
 
-REFERENCES=../bin/MonoTorrent.Common.dll,System.Web,Mono.Security.dll,../bin/MonoTorrent.BEncoding.dll,../Libs/Upnp.dll
+REFERENCES=	\
+	-r:../bin/MonoTorrent.Common.dll	\
+	-r:System.Web,Mono.Security.dll		\
+	-r:../bin/MonoTorrent.BEncoding.dll	\
+	-r:../Libs/Upnp.dll
 
 SOURCES=BitField.cs \
 	Block.cs \
@@ -87,9 +89,4 @@ SOURCES=BitField.cs \
 
 all: $(OUT)
 
-$(OUT): $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) -r:$(REFERENCES) -target:library -d:DEBUG -out:$(OUT) $(SOURCES)
-
-clean:
-	-rm $(OUT)
+include ../rules.make

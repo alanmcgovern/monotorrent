@@ -1,6 +1,5 @@
-CSC=gmcs 
 OUT=../bin/MonoTorrent.Common.dll
-REFERENCES=../bin/MonoTorrent.BEncoding.dll
+REFERENCES=-r:../bin/MonoTorrent.BEncoding.dll
 SOURCES=Enums.cs \
 	Hashes.cs \
 	Peer.cs \
@@ -25,7 +24,4 @@ SOURCES=Enums.cs \
 
 all: $(OUT)
 
-$(OUT): $(SOURCES)
-	mkdir -p ../bin
-	$(CSC) $(SOURCES) -target:library -d:DEBUG -out:$(OUT) -r:$(REFERENCES)
-
+include ../rules.make
