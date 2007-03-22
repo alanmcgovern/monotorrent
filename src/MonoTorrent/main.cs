@@ -32,10 +32,7 @@ namespace MonoTorrent
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Thread.GetDomain().UnhandledException += new UnhandledExceptionEventHandler(UnhandledException);
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
-            Debug.Listeners.Clear();
             listener = new Top10Listener(25);
-            Debug.Listeners.Add(listener);
-            Debug.Flush();
 
             TestEngine();
         }
@@ -86,7 +83,7 @@ namespace MonoTorrent
             StringBuilder sb = new StringBuilder(1024);
             while (running)
             {
-                if ((i++) % 10 == 0)
+                if ((i++) % 50 == 0)
                 {
                     running = false;
                     foreach (TorrentManager manager in torrents)
@@ -169,7 +166,7 @@ namespace MonoTorrent
 
         static void ConnectionManager_PeerMessageTransferred(object sender, PeerMessageEventArgs e)
         {
-            //Console.WriteLine(e.Direction.ToString() + ":\t" + e.Message.GetType());
+            // listener.WriteLine(e.Direction.ToString() + ":\t" + e.Message.GetType());
         }
 
         #region Shutdown methods
