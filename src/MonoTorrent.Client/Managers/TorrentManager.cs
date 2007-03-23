@@ -67,6 +67,7 @@ namespace MonoTorrent.Client
         public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
         #endregion
 
+        internal bool loadedFastResume;
 
         #region Member Variables
         public ConnectionMonitor Monitor
@@ -278,6 +279,15 @@ namespace MonoTorrent.Client
             this.fileManager.InitialHashRequired = false;
             if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                 throw new TorrentException("Torrent is already running");
+
+            if (this.loadedFastResume)
+            {
+                for (int i = 0; i < this.bitfield.Length; i++)
+                    if (PieceHashed != null)
+                        PieceHashed(this, new PieceHashedEventArgs(i, this.bitfield[i]));
+
+                this.loadedFastResume = false;
+            }
 
             if (this.Progress == 100.0)
                 UpdateState(TorrentState.Seeding);

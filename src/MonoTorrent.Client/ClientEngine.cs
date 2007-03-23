@@ -421,6 +421,7 @@ namespace MonoTorrent.Client
                 using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
                     manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
 
+                manager.loadedFastResume = true;
                 return true;
             }
             catch
