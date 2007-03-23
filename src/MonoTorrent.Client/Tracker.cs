@@ -240,12 +240,17 @@ namespace MonoTorrent.Client
             HttpWebRequest request;
 
             if (requestSingle)
-                request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "?infohash=" + infohash);
+            {
+                if (this.scrapeUrl.IndexOf('?') == -1)
+                    request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "?info_hash=" + infohash);
+                else
+                    request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "&info_hash=" + infohash);
+            }
             else
                 request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl);
 
             TrackerConnectionID id = new TrackerConnectionID(request, this);
-            return request.BeginGetResponse(announceCallback, id).AsyncWaitHandle;
+            return request.BeginGetResponse(this.scrapeCallback, id).AsyncWaitHandle;
         }
 
 
