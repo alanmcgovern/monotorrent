@@ -1,4 +1,4 @@
-SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp MonoTorrent MonoTorrent.Interface/src
+SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp MonoTorrent 
 
 all: config.make
 	for dir in $(SUBDIRS); do \
@@ -25,6 +25,8 @@ install-setup:
 	-mkdir $(prefix)/lib/bitsharp
 	-mkdir $(prefix)/bin
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent.x
+	chmod +x monotorrent.x
+	mv monotorrent.x $(prefix)/bin/monotorrent
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.Interface.exe/' < script.in > monotorrent-gtk
-	chmod +x monotorrent-gtk monotorrent.x
-	cp monotorrent.x monotorrent-gtk $(prefix)/bin
+    chmod +x monotorrent-gtk monotorrent.x
+    mv monotorrent-gtk $(prefix)/bin/monotorrent-gtk
