@@ -74,6 +74,8 @@ namespace MonoTorrent
                 ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
                 ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
 
+                manager.TrackerManager.OnTrackerStateChange += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);
+                
                 engine.Start(manager);
             }
 
@@ -152,6 +154,11 @@ namespace MonoTorrent
                 if (a[j] != null)
                     a[j].WaitOne();
             engine.Dispose();
+        }
+
+        static void TrackerManager_OnTrackerStateChange(object sender, TrackerStateChangedEventArgs e)
+        {
+            Console.WriteLine(e.NewState.ToString());
         }
 
         static void ConnectionManager_PeerDisconnected(object sender, PeerConnectionEventArgs e)
