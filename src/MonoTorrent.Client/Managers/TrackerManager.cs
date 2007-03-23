@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
 
             if (dict.ContainsKey("custom error"))
             {
-                id.Tracker.FailureMessage = dict["custom error"];
+                id.Tracker.FailureMessage = dict["custom error"].ToString();
                 UpdateState(id.Tracker, TrackerState.ScrapingFailed);
                 return;
             }
