@@ -1,4 +1,6 @@
+TARGET=-target:exe
 OUT=../bin/MonoTorrent.exe
+
 REFERENCES=\
 	-r:../bin/MonoTorrent.Common.dll	\
 	-r:../bin/MonoTorrent.Client.dll	\
@@ -11,3 +13,4 @@ SOURCES=main.cs \
 all: $(OUT)
 
 include ../rules.make
+TARGET=-target:exe

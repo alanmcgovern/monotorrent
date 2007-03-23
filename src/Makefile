@@ -24,7 +24,7 @@ include config.make
 install-setup: 
 	-mkdir $(prefix)/lib/bitsharp
 	-mkdir $(prefix)/bin
-	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent
+	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent.x
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.Interface.exe/' < script.in > monotorrent-gtk
-	chmod +x monotorrent-gtk monotorrent
-	cp monotorrent monotorrent-gtk $(prefix)/bin
+	chmod +x monotorrent-gtk monotorrent.x
+	cp monotorrent.x monotorrent-gtk $(prefix)/bin
