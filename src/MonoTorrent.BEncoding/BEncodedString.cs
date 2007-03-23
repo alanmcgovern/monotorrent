@@ -193,13 +193,16 @@ namespace MonoTorrent.BEncoding
 
         public int CompareTo(BEncodedString other)
         {
-            return string.CompareOrdinal(this.Text, other.Text);
+            int difference=0;
+            int length = this.textBytes.Length > other.textBytes.Length ? other.textBytes.Length : this.textBytes.Length;
+
+            for (int i = 0; i < length; i++)
+                if ((difference = this.textBytes[i].CompareTo(other.textBytes[i])) != 0)
+                    return difference;
+
+            return this.textBytes.Length > other.textBytes.Length ? 1 : 0;
         }
 
-        public int CompareTo(string other)
-        {
-            return string.CompareOrdinal(this.Text, other);
-        }
         #endregion
 
 
