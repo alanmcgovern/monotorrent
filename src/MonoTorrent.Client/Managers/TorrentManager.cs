@@ -294,6 +294,7 @@ namespace MonoTorrent.Client
             else
                 UpdateState(TorrentState.Downloading);
 
+            this.TrackerManager.Scrape(true);
             this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
             ClientEngine.ConnectionManager.RegisterManager(this);
         }
