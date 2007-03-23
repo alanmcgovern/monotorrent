@@ -478,29 +478,28 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, message.StartOffset, message.BlockLength);
-                if (block.Equals(Block.Empty))
+                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.BlockLength);
+                if (blockIndex == -1)
                 {
                     Logger.Log(id, "Invalid block start offset returned");
                     return PieceEvent.BlockNotRequested;
                 }
 
-                if (block.Received)
+                if (piece.Blocks[blockIndex].Received)
                 {
                     Logger.Log("Block already received");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block already received");
 
-                if (!block.Requested)
+                if (!piece.Blocks[blockIndex].Requested)
                 {
                     Logger.Log("Block was not requested");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block was not requested");
 
-                block.Received = true;
-                PiecePickerBase.SetBlock(piece.Blocks, block);
+                piece.Blocks[blockIndex].Received = true;
 
                 id.Peer.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
@@ -559,15 +558,14 @@ namespace MonoTorrent.Client
                 if (piece == null)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
-                if (block.Equals(Block.Empty))
+                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
+                if (blockIndex == -1)
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                if (!block.Requested || block.Received)
+                if (!piece.Blocks[blockIndex].Requested || piece.Blocks[blockIndex].Received)
                     throw new MessageException("We didnt request this block or we already received it");
 
-                block.Requested = false;
-                PiecePickerBase.SetBlock(piece.Blocks, block);
+                piece.Blocks[blockIndex].Requested = false;
 
                 id.Peer.Connection.AmRequestingPiecesCount--;
             }

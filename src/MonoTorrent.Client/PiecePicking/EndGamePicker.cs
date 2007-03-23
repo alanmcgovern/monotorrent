@@ -193,10 +193,10 @@ namespace MonoTorrent.Client
         private void RemoveRequests(PeerConnectionID id, RequestMessage requestMessage)
         {
             Piece p = PiecePickerBase.GetPieceFromIndex(this.pieces, requestMessage.PieceIndex);
-            Block b = PiecePickerBase.GetBlockFromIndex(p.Blocks, requestMessage.StartOffset, requestMessage.RequestLength);
+            int b = PiecePickerBase.GetBlockIndex(p.Blocks, requestMessage.StartOffset, requestMessage.RequestLength);
 
-            this.requests[id].Remove(b);
-            this.blockRequestees[b].Remove(id);
+            this.requests[id].Remove(p.Blocks[b]);
+            this.blockRequestees[p.Blocks[b]].Remove(id);
         }
 
 
@@ -208,18 +208,17 @@ namespace MonoTorrent.Client
                 if (p == null)
                     return PieceEvent.BlockNotRequested;
 
-                Block b = PiecePickerBase.GetBlockFromIndex(p.Blocks, message.StartOffset, message.BlockLength);
-                if (b.Equals(Block.Empty))
+                int blockIndex = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.BlockLength);
+                if (blockIndex == -1)
                     return PieceEvent.BlockNotRequested;
 
                 // Only write to disk once
-                if (!b.Received)
+                if (!p.Blocks[blockIndex].Received)
                 {
                     long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
                     id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
                 }
-                b.Received = true;
-                PiecePickerBase.SetBlock(p.Blocks, b);
+                p.Blocks[blockIndex].Received = true;
 
                 id.Peer.Connection.AmRequestingPiecesCount--;
 
@@ -232,8 +231,8 @@ namespace MonoTorrent.Client
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(p.Index, result));
 
                 List<Block> activeRequests = this.requests[id];
-                List<PeerConnectionID> activeRequestees = this.blockRequestees[b];
-                activeRequests.Remove(b);
+                List<PeerConnectionID> activeRequestees = this.blockRequestees[p.Blocks[blockIndex]];
+                activeRequests.Remove(p.Blocks[blockIndex]);
                 activeRequestees.Remove(id);
 
                 for (int i = 0; i < activeRequestees.Count; i++)
@@ -242,7 +241,7 @@ namespace MonoTorrent.Client
                             activeRequestees[i].Peer.Connection.EnQueueAt(new CancelMessage(message.PieceIndex, message.StartOffset, message.BlockLength), 0);
 
                 activeRequestees.Clear();
-                this.blockRequestees.Remove(b);
+                this.blockRequestees.Remove(p.Blocks[blockIndex]);
 
                 if (result)
                 {
@@ -274,12 +273,12 @@ namespace MonoTorrent.Client
                 List<Block> pieces = this.requests[id];
 
                 Piece piece = PiecePickerBase.GetPieceFromIndex(this.pieces, message.PieceIndex);
-                Block block = PiecePickerBase.GetBlockFromIndex(piece.Blocks, message.StartOffset, message.RequestLength);
+                int block = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
 
-                if (this.requests[id].Contains(block))
+                if (this.requests[id].Contains(piece.Blocks[block]))
                 {
-                    this.requests[id].Remove(block);
-                    this.blockRequestees[block].Remove(id);
+                    this.requests[id].Remove(piece.Blocks[block]);
+                    this.blockRequestees[piece.Blocks[block]].Remove(id);
 
                     id.Peer.Connection.AmRequestingPiecesCount--;
                 }

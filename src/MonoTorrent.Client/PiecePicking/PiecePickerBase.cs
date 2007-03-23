@@ -69,6 +69,15 @@ namespace MonoTorrent.Client
 
         #region Methods
 
+        internal static int GetBlockIndex(Block[] blocks, int blockStartOffset, int blockLength)
+        {
+            for (int i = 0; i < blocks.Length; i++)
+                if (blocks[i].StartOffset == blockStartOffset && blocks[i].RequestLength == blockLength)
+                    return i;
+
+            return -1;
+        } 
+
         internal static Piece GetPieceFromIndex(List<Piece> pieces, int pieceIndex)
         {
             for (int i = 0; i < pieces.Count; i++)
@@ -78,36 +87,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        internal static Block GetBlockFromIndex(Block[] blocks, int blockStartOffset, int blockLength)
-        {
-            for (int i = 0; i < blocks.Length; i++)
-                if (blocks[i].StartOffset == blockStartOffset && blocks[i].RequestLength == blockLength)
-                    return blocks[i];
-
-            return Block.Empty;
-        }
-
         #endregion Methods
-
-
-        internal static void SetBlock(Block[] blocks, Block block)
-        {
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                if (blocks[i].StartOffset != block.StartOffset
-                    || blocks[i].RequestLength != block.RequestLength
-                    || blocks[i].PieceIndex != block.PieceIndex)
-                {
-                    continue;
-                }
-                else
-                {
-                    blocks[i] = block;
-                    return;
-                }
-            }
-
-            throw new TorrentException("Cannot update the piece status - Invalid block");
-        }
     }
 }
