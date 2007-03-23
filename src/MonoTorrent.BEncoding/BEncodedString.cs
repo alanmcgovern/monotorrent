@@ -200,7 +200,7 @@ namespace MonoTorrent.BEncoding
                 if ((difference = this.textBytes[i].CompareTo(other.textBytes[i])) != 0)
                     return difference;
 
-            return this.textBytes.Length > other.textBytes.Length ? 1 : 0;
+            return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
         }
 
         #endregion
