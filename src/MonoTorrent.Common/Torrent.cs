@@ -586,7 +586,12 @@ namespace MonoTorrent.Common
                         break;
 
                     case ("announce-list"):
-                        break;      //FIXME: Insert support for this when i know what it is...
+                        BEncodedList announces = (BEncodedList)keypair.Value;
+                        this.announceUrls = new string[announces.Count];
+
+                        for (int j = 0; j < announces.Count; j++)
+                            this.announceUrls[j] = ((BEncodedString)announces[j]).Text;
+                        break;
 
                     default:
                         break;
