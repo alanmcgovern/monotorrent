@@ -50,7 +50,10 @@ namespace MonoTorrent.Interface
             Catalog.Init("monotorrent", basedir);
             CreateDirs();
             Application.Init();
-            GLib.Thread.Init();
+
+           // GLib threads need to be initialised before launching the main application
+           if (!GLib.Thread.Supported) {
+               GLib.Thread.Init();
         }
 
         private static void CreateDirs()
