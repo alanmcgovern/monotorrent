@@ -160,7 +160,7 @@ namespace MonoTorrent.Client
 
             if (dict.ContainsKey("custom error"))
             {
-                id.Tracker.SendingStatedEvent = false;
+                id.Tracker.SendingStartedEvent = false;
                 this.updateSucceeded = false;
                 id.Tracker.UpdateSucceeded = false;
                 id.Tracker.FailureMessage = dict["custom error"].ToString();
@@ -168,9 +168,9 @@ namespace MonoTorrent.Client
             }
             else
             {
-                if (id.Tracker.SendingStatedEvent)
+                if (id.Tracker.SendingStartedEvent)
                 {
-                    id.Tracker.SendingStatedEvent = false;
+                    id.Tracker.SendingStartedEvent = false;
                     id.Tracker.StartedEventSentSuccessfully = true;
                 }
                 UpdateState(id.Tracker, TrackerState.AnnounceSuccessful);
@@ -266,7 +266,11 @@ namespace MonoTorrent.Client
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
 
             if (dict.ContainsKey("custom error"))
+            {
+                id.Tracker.FailureMessage = dict["custom error"];
+                UpdateState(id.Tracker, TrackerState.ScrapingFailed);
                 return;
+            }
 
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
             {
@@ -293,6 +297,8 @@ namespace MonoTorrent.Client
                     }
                 }
             }
+
+            UpdateState(id.Tracker, TrackerState.ScrapeSuccessful);
         }
 
 

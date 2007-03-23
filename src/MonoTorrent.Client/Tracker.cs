@@ -139,7 +139,7 @@ namespace MonoTorrent.Client
         private string scrapeUrl;
 
 
-        internal bool SendingStatedEvent
+        internal bool SendingStartedEvent
         {
             get { return this.sendingStartedEvent; }
             set { this.sendingStartedEvent = value; }
