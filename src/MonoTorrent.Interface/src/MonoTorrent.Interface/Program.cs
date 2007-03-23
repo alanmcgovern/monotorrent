@@ -51,9 +51,10 @@ namespace MonoTorrent.Interface
             CreateDirs();
             Application.Init();
 
-           // GLib threads need to be initialised before launching the main application
-           if (!GLib.Thread.Supported) {
-               GLib.Thread.Init();
+            // GLib threads need to be initialised before launching the main application
+            // when we don't run on Mono, we need to initialize glib ourself
+            if (Type.GetType("Mono.Runtime") == null)
+                GLib.Thread.Init();
         }
 
         private static void CreateDirs()
