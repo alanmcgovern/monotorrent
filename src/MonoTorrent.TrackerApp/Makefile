@@ -1,4 +1,4 @@
-OUT=../TrackerApp.exe
+OUT=../bin/TrackerApp.exe
 TARGET=-target:exe
 REFERENCES=	\
 	-r:../bin/MonoTorrent.Common.dll	\
