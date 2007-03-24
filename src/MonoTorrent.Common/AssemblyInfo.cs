@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.IO;
@@ -10,3 +11,4 @@ using System.IO;
 [assembly: AssemblyProduct("MonoTorrent Common Library")]
 [assembly: AssemblyTitle("MonoTorrent Common Library")]
 [assembly: AssemblyVersion("0.1")]
+[assembly: CLSCompliant (true)] 
