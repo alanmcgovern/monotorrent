@@ -41,7 +41,9 @@ namespace MonoTorrent.BEncoding
     public class BEncodedDictionary : IBEncodedValue, IDictionary<BEncodedString, IBEncodedValue>
     {
         #region Member Variables
+
         private SortedDictionary<BEncodedString, IBEncodedValue> dictionary;
+
         #endregion
 
 
