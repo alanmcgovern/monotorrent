@@ -271,8 +271,11 @@ namespace MonoTorrent.Client
                 UpdateState(id.Tracker, TrackerState.ScrapingFailed);
                 return;
             }
+            if (!dict.ContainsKey("files"))
+                return;
 
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
+            BEncodedDictionary files = (BEncodedDictionary)dict["files"];
+            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in files)
             {
                 d = (BEncodedDictionary)keypair.Value;
                 foreach (KeyValuePair<BEncodedString, IBEncodedValue> kp in d)
@@ -280,19 +283,19 @@ namespace MonoTorrent.Client
                     switch (kp.Key.ToString())
                     {
                         case ("complete"):
-                            id.Tracker.Complete = Convert.ToInt32(keypair.Value.ToString());
+                            id.Tracker.Complete = Convert.ToInt32(kp.Value.ToString());
                             break;
 
                         case ("downloaded"):
-                            id.Tracker.Downloaded = Convert.ToInt32(keypair.Value.ToString());
+                            id.Tracker.Downloaded = Convert.ToInt32(kp.Value.ToString());
                             break;
 
                         case ("incomplete"):
-                            id.Tracker.Incomplete = Convert.ToInt32(keypair.Value.ToString());
+                            id.Tracker.Incomplete = Convert.ToInt32(kp.Value.ToString());
                             break;
 
                         default:
-                            Logger.Log("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                            Logger.Log("Key: " + kp.Key.ToString() + " Value: " + kp.Value.ToString());
                             break;
                     }
                 }
