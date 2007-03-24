@@ -200,6 +200,9 @@ namespace MonoTorrent.BEncoding
                 if ((difference = this.textBytes[i].CompareTo(other.textBytes[i])) != 0)
                     return difference;
 
+            if (this.textBytes.Length == other.textBytes.Length)
+                return 0;
+
             return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
         }
 
@@ -211,6 +214,8 @@ namespace MonoTorrent.BEncoding
         public override bool Equals(object obj)
         {
             BEncodedString other = obj as BEncodedString;
+            if (obj is string)
+                other = new BEncodedString((string)obj);
 
             if (other == null)
                 return false;
