@@ -235,19 +235,21 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
         internal WaitHandle Scrape(bool requestSingle, string infohash)
         {
             HttpWebRequest request;
+            string url = this.scrapeUrl;
 
             if (requestSingle)
             {
                 if (this.scrapeUrl.IndexOf('?') == -1)
-                    request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "?info_hash=" + infohash);
+                    url += "?info_hash=" + infohash;
                 else
-                    request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl + "&info_hash=" + infohash);
+                    url += "&info_hash=" + infohash;
             }
-            else
-                request = (HttpWebRequest)HttpWebRequest.Create(this.scrapeUrl);
+
+            request = (HttpWebRequest)HttpWebRequest.Create(url);
 
             TrackerConnectionID id = new TrackerConnectionID(request, this);
             return request.BeginGetResponse(this.scrapeCallback, id).AsyncWaitHandle;
