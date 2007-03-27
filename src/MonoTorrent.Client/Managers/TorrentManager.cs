@@ -314,11 +314,11 @@ namespace MonoTorrent.Client
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
                     lock (this.peers.ConnectingToPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0], true);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
 
                 while (this.peers.ConnectedPeers.Count > 0)
                     lock (this.peers.ConnectedPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0], true);
+                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
             }
 
             if(this.fileManager.StreamsOpen)
@@ -373,7 +373,7 @@ namespace MonoTorrent.Client
 
             DateTime nowTime = DateTime.Now;
             DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
-            DateTime onhundredAndTwentySecondsAgo = nowTime.AddSeconds(-120);
+            DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
 
             lock (this.listLock)
             {
@@ -426,9 +426,9 @@ namespace MonoTorrent.Client
                             id.Peer.Connection.EnQueue(new KeepAliveMessage());
                         }
 
-                        if (onhundredAndTwentySecondsAgo > id.Peer.Connection.LastMessageReceived)
+                        if (onhundredAndEightySecondsAgo > id.Peer.Connection.LastMessageReceived)
                         {
-                            ClientEngine.ConnectionManager.CleanupSocket(id);
+                            ClientEngine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
                             continue;
                         }
 

@@ -199,6 +199,7 @@ namespace MonoTorrent.Client
         private void EndCreateConnection(IAsyncResult result)
         {
             bool cleanUp = false;
+            string reason = null;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
 
             try
@@ -230,6 +231,7 @@ namespace MonoTorrent.Client
                         if (this.openConnections > this.MaxOpenConnections)
                         {
                             Logger.Log(id, "Too many connections");
+                            reason = "Too many connections";
                             cleanUp = true;
                             return;
                         }
@@ -311,7 +313,7 @@ namespace MonoTorrent.Client
                 // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, reason);
 
                 // Try to connect to another peer
                 TryConnect();
@@ -343,6 +345,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(PeerConnectionID id)
         {
+            string reason = null;
             bool cleanUp = false;
             IPeerMessageInternal msg;
 
@@ -387,14 +390,14 @@ namespace MonoTorrent.Client
             }
             catch (TorrentException ex)
             {
-                Logger.Log(id, "Couldn't decode message: " + ex.ToString());
+                reason = "Couldn't decode handshake";
                 cleanUp = true;
                 return;
             }
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, reason);
             }
         }
 
@@ -479,6 +482,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerMessageReceived(PeerConnectionID id)
         {
+            string reason = null;
             bool cleanUp = false;
             IPeerMessageInternal message;
 
@@ -505,6 +509,7 @@ namespace MonoTorrent.Client
                         // if the peer has sent us three bad pieces, we close the connection.
                         if (id.Peer.HashFails == 3)
                         {
+                            reason = "3 hashfails";
                             Logger.Log(id, "3 hashfails");
                             cleanUp = true;
                             return;
@@ -528,7 +533,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, true, reason);
             }
         }
 
@@ -588,7 +593,7 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
-                CleanupSocket(id);
+                CleanupSocket(id, "Couldn't ReceiveMessage");
             }
         }
 
@@ -654,13 +659,14 @@ namespace MonoTorrent.Client
             finally
             {
                 if (cleanup)
-                    CleanupSocket(id);
+                    CleanupSocket(id, "Couldn't SendMessage");
             }
         }
 
 
         private void EndReceiveMessage(IAsyncResult result)
         {
+            string reason = null;
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
 
@@ -677,6 +683,7 @@ namespace MonoTorrent.Client
                         int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
                         {
+                            reason = "Received zero";
                             Logger.Log(id, "Couldn't receive message");
                             cleanUp = true;
                             return;
@@ -707,23 +714,26 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
                 Logger.Log(id, "Exception recieving message" + ex.ToString());
+                reason = "Socket Exception receiving";
                 cleanUp = true;
             }
             catch (ArgumentException ex)
             {
+                reason = "FECKIN ARGUMENT EXCEPTIONS!";
                 cleanUp = true;
                 Logger.Log(id, ex.ToString());
             }
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, reason);
             }
         }
 
 
         private void EndSendMessage(IAsyncResult result)
         {
+            string reason = null;
             bool cleanup = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
 
@@ -740,6 +750,7 @@ namespace MonoTorrent.Client
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
                         if (id.ErrorCode != SocketError.Success || bytesSent == 0)
                         {
+                            reason = "Sent zero";
                             Logger.Log(id, "Couldn't send message");
                             cleanup = true;
                             return;
@@ -766,18 +777,20 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
+                reason = "Exception EndSending";
                 Logger.Log("Socket exception sending message");
                 cleanup = true;
             }
             catch (ArgumentException ex)
             {
+                reason = "FECKIN ARGUMENT EXCEPTIONS ENDSENDING!";
                 cleanup = true;
                 Logger.Log(id, ex.ToString());
             }
             finally
             {
                 if (cleanup)
-                    CleanupSocket(id);
+                    CleanupSocket(id, reason);
             }
         }
 
@@ -790,13 +803,13 @@ namespace MonoTorrent.Client
         /// This method is called when a connection needs to be closed and the resources for it released.
         /// </summary>
         /// <param name="id">The peer whose connection needs to be closed</param>
-        internal void CleanupSocket(PeerConnectionID id)
+        internal void CleanupSocket(PeerConnectionID id, string message)
         {
-            CleanupSocket(id, false);
+            CleanupSocket(id, false, message);
         }
 
 
-        internal void CleanupSocket(PeerConnectionID id, bool localClose)
+        internal void CleanupSocket(PeerConnectionID id, bool localClose, string message)
         {
             if (id == null) // Sometimes onEncryptoError will fire with a null id
                 return;
@@ -807,6 +820,9 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        Logger.Log(id, "Cleanup Reason : " + message);
+                        Logger.FlushToDisk(id);
+
                         // We can't clean up until the pending sends and receives have all had the corresponding End*** method called
                         if (!localClose && (id.Peer.ActiveReceive || id.Peer.ActiveSend))
                             return;
@@ -878,6 +894,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         internal void IncomingConnectionAccepted(IAsyncResult result)
         {
+            string reason = null;
             int bytesSent;
             bool cleanUp = false;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
@@ -893,6 +910,7 @@ namespace MonoTorrent.Client
                         if (bytesSent == 0)
                         {
                             Logger.Log(id, "Sent 0 for incoming connection accepted");
+                            reason = "sent 0 for incoming";
                             cleanUp = true;
                             return;
                         }
@@ -907,6 +925,7 @@ namespace MonoTorrent.Client
                         if (id.Peer.PeerId == ClientEngine.PeerId) // The tracker gave us our own IP/Port combination
                         {
                             Logger.Log(id, "Recieved myself");
+                            reason = "Received myself";
                             cleanUp = true;
                             return;
                         }
@@ -934,13 +953,14 @@ namespace MonoTorrent.Client
             }
             catch (SocketException ex)
             {
+                reason = "Exception for incoming connection";
                 Logger.Log(id, "Exception when accepting peer");
                 cleanUp = true;
             }
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, reason);
             }
         }
 
@@ -972,7 +992,7 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
                 Logger.Log(id, "Exception dequeuing message");
-                CleanupSocket(id);
+                CleanupSocket(id, "Exception calling SendMessage");
             }
         }
 
@@ -1031,7 +1051,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id);
+                    CleanupSocket(id, "Exception resuming");
             }
             return 0;
         }
@@ -1122,11 +1142,11 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
-                CleanupSocket(id);
+                CleanupSocket(id, "Exception on encryptor");
             }
             catch (NullReferenceException)
             {
-                CleanupSocket(id);
+                CleanupSocket(id, "Null Ref for encryptor");
             }
         }
 
@@ -1151,11 +1171,11 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
-                CleanupSocket(id);
+                CleanupSocket(id, "Encryptor error");
             }
             catch (NullReferenceException)
             {
-                CleanupSocket(id);
+                CleanupSocket(id,"Null ref encryptor error");
             }
         }
 
