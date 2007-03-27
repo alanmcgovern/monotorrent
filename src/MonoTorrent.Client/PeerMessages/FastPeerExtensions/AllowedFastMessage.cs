@@ -51,11 +51,11 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         #region Constructors
-        public AllowedFastMessage()
+		internal AllowedFastMessage()
         {
         }
 
-        public AllowedFastMessage(uint pieceIndex)
+        internal AllowedFastMessage(uint pieceIndex)
         {
             this.pieceIndex = (int)pieceIndex;
         }
