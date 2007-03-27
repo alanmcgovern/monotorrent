@@ -55,7 +55,6 @@ namespace MonoTorrent.Common
         ElectricSheep,
         KTorrent,
         Lphant,
-        libtorrent,
         LibTorrent,
         MLDonkey,
         MooPolice,
@@ -169,11 +168,8 @@ namespace MonoTorrent.Common
                         this.client = Common.Client.Lphant;
                         break;
 
+					case ("lt"):
                     case ("LT"):
-                        this.client = Common.Client.libtorrent;
-                        break;
-
-                    case ("lt"):
                         this.client = Common.Client.LibTorrent;
                         break;
 
