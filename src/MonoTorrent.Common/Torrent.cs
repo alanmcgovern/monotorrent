@@ -598,6 +598,7 @@ namespace MonoTorrent.Common
 							for (int k = 0; k < bencodedTier.Count; k++)
 								tier.Add(bencodedTier[k].ToString());
 
+							ToolBox.Randomize<string>(tier);
 							this.announceUrls.Add(tier);
 						}
                         break;

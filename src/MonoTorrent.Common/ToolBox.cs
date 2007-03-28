@@ -36,9 +36,10 @@ namespace MonoTorrent.Common
 {
     public class ToolBox
     {
+		private static Random r = new Random();
+
 		public static void Randomize<T>(List<T> array)
 		{
-			Random r = new Random();
 			List<T> clone = new List<T>(array);
 			array.Clear();
 
