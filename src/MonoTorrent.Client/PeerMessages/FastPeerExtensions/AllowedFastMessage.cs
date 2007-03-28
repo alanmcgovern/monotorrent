@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         #region Constructors
-		internal AllowedFastMessage()
+        internal AllowedFastMessage()
         {
         }
 

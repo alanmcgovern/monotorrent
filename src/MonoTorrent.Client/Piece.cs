@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
         /// I use the same size requests. All other clients accept up to 128kB requests (afaik).
         /// In the future the Piece picker could adaptively choose blocksize.
         /// </summary>
-        public const int BlockSize = (1 << 14);	// 16kB
+        public const int BlockSize = (1 << 14); // 16kB
 
         #region Member Variables
 
