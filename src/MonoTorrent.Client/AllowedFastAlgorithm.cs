@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         /// <param name="infohash">The info hash of the torrent</param>
         /// <param name="numberOfPieces">The number of pieces in the torrent</param>
         /// <returns></returns>
-		internal static List<UInt32> Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
+        internal static List<UInt32> Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
         {
             return Calculate(addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
         }
