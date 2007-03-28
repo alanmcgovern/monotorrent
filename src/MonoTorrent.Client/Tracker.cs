@@ -257,7 +257,8 @@ namespace MonoTorrent.Client
                 ipAddress = null;
 
             sb.Append(this.announceUrl);
-            sb.Append("?info_hash=");
+            sb.Append((this.announceUrl.IndexOf('?') == -1) ? '?' : '&');
+            sb.Append("info_hash=");
             sb.Append(infohash);
             sb.Append("&peer_id=");
             sb.Append(ClientEngine.PeerId);
