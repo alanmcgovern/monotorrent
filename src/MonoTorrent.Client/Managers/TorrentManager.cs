@@ -289,14 +289,15 @@ namespace MonoTorrent.Client
                 this.loadedFastResume = false;
             }
 
+			this.TrackerManager.Scrape();
+			this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+			ClientEngine.ConnectionManager.RegisterManager(this);
+
             if (this.Progress == 100.0)
                 UpdateState(TorrentState.Seeding);
             else
                 UpdateState(TorrentState.Downloading);
 
-            this.TrackerManager.Scrape();
-            this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-            ClientEngine.ConnectionManager.RegisterManager(this);
         }
 
 
