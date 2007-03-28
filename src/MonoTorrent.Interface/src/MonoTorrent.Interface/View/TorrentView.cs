@@ -29,6 +29,7 @@ using MonoTorrent.Common;
 
 using MonoTorrent.Interface.Helpers;
 using MonoTorrent.Interface.Model;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Interface.View
 {
@@ -151,10 +152,13 @@ namespace MonoTorrent.Interface.View
                 nameLabel.Text = model.Name;
                 commentLabel.Text = model.Comment;
                 announceUrlsLabel.Text = string.Empty;
-                foreach (string announceUrl in model.AnnounceUrls) {
-                    announceUrlsLabel.Text += 
-                            string.Format("{0}\n", announceUrl);
-                }
+
+				foreach (List<string> announceUrls in model.AnnounceUrls) {
+					foreach (string announceUrl in announceUrls) {
+						announceUrlsLabel.Text +=
+								string.Format("{0}\n", announceUrl);
+					}
+				}
                 announceUrlsLabel.Text = announceUrlsLabel.Text.Substring(0,
                         announceUrlsLabel.Text.Length - 1);
                 creationDateLabel.Text = model.CreationDate.ToString();

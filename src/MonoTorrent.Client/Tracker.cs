@@ -139,22 +139,6 @@ namespace MonoTorrent.Client
         private string scrapeUrl;
 
 
-        internal bool SendingStartedEvent
-        {
-            get { return this.sendingStartedEvent; }
-            set { this.sendingStartedEvent = value; }
-        }
-        private bool sendingStartedEvent;
-
-
-        internal bool StartedEventSentSuccessfully
-        {
-            get { return this.startedEventSentSuccessfully; }
-            set { this.startedEventSentSuccessfully = value; }
-        }
-        private bool startedEventSentSuccessfully;
-
-
         /// <summary>
         /// The current state of the tracker
         /// </summary>
@@ -223,25 +207,28 @@ namespace MonoTorrent.Client
             this.announceCallback = announceCallback;
             this.scrapeCallback = scrapeCallback;
             int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
-            if (announceUrl.Substring(indexOfAnnounce, 8) == "announce")
+            this.engineSettings = engineSettings;
+
+            if ((indexOfAnnounce + 8) <= announceUrl.Length && announceUrl.Substring(indexOfAnnounce, 8) == "announce")
             {
                 this.canScrape = true;
                 Regex r = new Regex("announce");
                 this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, indexOfAnnounce);
             }
-            this.engineSettings = engineSettings;
         }
         #endregion
 
 
         #region Methods
 
-        internal WaitHandle Scrape(bool requestSingle, string infohash)
+        internal WaitHandle Scrape(string infohash, TrackerConnectionID id)
         {
             HttpWebRequest request;
             string url = this.scrapeUrl;
 
-            if (requestSingle)
+            // If set to false, you could retrieve scrape data for *all* torrents hosted by the tracker. I see no practical use
+            // at the moment, so i've removed the ability to set this to false.
+            if (true)
             {
                 if (this.scrapeUrl.IndexOf('?') == -1)
                     url += "?info_hash=" + infohash;
@@ -250,16 +237,15 @@ namespace MonoTorrent.Client
             }
 
             request = (HttpWebRequest)HttpWebRequest.Create(url);
-
-            TrackerConnectionID id = new TrackerConnectionID(request, this);
+            id.Request = request;
             return request.BeginGetResponse(this.scrapeCallback, id).AsyncWaitHandle;
         }
 
 
-        internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent, string infohash)
+        internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
+                                    TorrentEvent clientEvent, string infohash, TrackerConnectionID id)
         {
             IPAddress ipAddress;
-            TrackerConnectionID id;
             HttpWebRequest request;
             StringBuilder sb = new StringBuilder(256);
 
@@ -296,19 +282,17 @@ namespace MonoTorrent.Client
                 sb.Append(ipAddress.ToString());
             }
 
-            // If we have successfully sent the started event, we just continue as normal
-            if (this.startedEventSentSuccessfully)
-            {
-                if (clientEvent != TorrentEvent.None)
-                {
-                    sb.Append("&event=");
-                    sb.Append(clientEvent.ToString().ToLower());
-                }
-            }
-            else // Otherwise we must override the supplied event and send the started event
+            // If we have not successfully sent the started event to this tier, override the passed in started event
+            // Otherwise append the event if it is not "none"
+            if (!id.TrackerTier.SentStartedEvent)
             {
                 sb.Append("&event=started");
-                this.sendingStartedEvent = true;
+                id.TrackerTier.SendingStartedEvent = true;
+            }
+            else if (clientEvent != TorrentEvent.None)    
+            {
+                sb.Append("&event=");
+                sb.Append(clientEvent.ToString().ToLower());
             }
 
             if ((trackerId != null) && (trackerId.Length > 0))
@@ -316,10 +300,11 @@ namespace MonoTorrent.Client
                 sb.Append("&trackerid=");
                 sb.Append(trackerId);
             }
+
             request = (HttpWebRequest)HttpWebRequest.Create(sb.ToString());
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
 
-            id = new TrackerConnectionID(request, this);
+            id.Request = request;
             IAsyncResult res = request.BeginGetResponse(this.announceCallback, id);
 
             return res.AsyncWaitHandle;

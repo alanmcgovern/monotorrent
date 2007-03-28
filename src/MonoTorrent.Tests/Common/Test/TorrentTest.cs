@@ -167,8 +167,9 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void AnnounceUrl()
         {
-            Assert.IsTrue(torrent.AnnounceUrls.Length == 1);
-            Assert.IsTrue(torrent.AnnounceUrls[0] == "http://myannouceurl/announce");
+            Assert.IsTrue(torrent.AnnounceUrls.Count == 1);
+			Assert.IsTrue(torrent.AnnounceUrls[0].Count == 1);
+            Assert.IsTrue(torrent.AnnounceUrls[0][0] == "http://myannouceurl/announce");
         }
 
         /// <summary>

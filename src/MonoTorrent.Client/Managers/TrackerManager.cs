@@ -89,21 +89,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The trackers available
         /// </summary>
-        public Tracker[] Trackers
+        public TrackerTier[] TrackerTiers
         {
-            get { return this.trackers; }
+            get { return this.trackerTiers; }
         }
-        private Tracker[] trackers;
-        private int currentTrackerIndex;
+        private TrackerTier[] trackerTiers;
+        private int currentTrackerTierIndex;
 
-
-        /// <summary>
-        /// Returns the tracker that is currently being actively used by the engine.
-        /// </summary>
-        public Tracker CurrentTracker
-        {
-            get { return this.trackers[this.currentTrackerIndex]; } 
-        }
         #endregion
 
 
@@ -115,16 +107,16 @@ namespace MonoTorrent.Client
         public TrackerManager(TorrentManager manager, EngineSettings engineSettings)
         {
             this.manager = manager;
-            this.currentTrackerIndex = 0;
+            this.currentTrackerTierIndex = 0;
             this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
 
             this.announceReceived = new AsyncCallback(this.AnnounceReceived);
             this.scrapeReceived = new AsyncCallback(this.ScrapeReceived);
 
             // Check if this tracker supports scraping
-            this.trackers = new Tracker[manager.Torrent.AnnounceUrls.Length];
-            for (int i = 0; i < manager.Torrent.AnnounceUrls.Length; i++)
-                this.trackers[i] = new Tracker(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived, engineSettings);
+            this.trackerTiers = new TrackerTier[manager.Torrent.AnnounceUrls.Count];
+            for (int i = 0; i < manager.Torrent.AnnounceUrls.Count; i++)
+                this.trackerTiers[i] = new TrackerTier(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived, engineSettings);
         }
         #endregion
 
@@ -137,17 +129,29 @@ namespace MonoTorrent.Client
         /// <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
         /// <param name="bytesLeft">The number of bytes left to download</param>
         /// <param name="clientEvent">The Event (if any) that represents this update</param>
-        public WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft, TorrentEvent clientEvent)
+        internal WaitHandle Announce(TorrentEvent clientEvent)
         {
-            this.updateSucceeded = true;
-            this.lastUpdated = DateTime.Now;
-            Tracker tracker = this.ChooseTracker();
-            
-            UpdateState(tracker, TrackerState.Announcing);
-            WaitHandle handle = tracker.Announce(bytesDownloaded, bytesUploaded, bytesLeft, clientEvent, this.infoHash);
-            return handle;
+            return Announce(this.trackerTiers[0], this.trackerTiers[0].Trackers[0], clientEvent, true);
         }
 
+#warning Should i always send TorrentEvent.None?
+        public WaitHandle Announce(TrackerTier tier, Tracker tracker)
+        {
+            return Announce(tier, tracker, TorrentEvent.None, false);
+        }
+
+        private WaitHandle Announce(TrackerTier tier, Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
+        {
+            TrackerConnectionID id = new TrackerConnectionID(tier, tracker, trySubsequent, clientEvent, null);
+            this.updateSucceeded = true;
+            this.lastUpdated = DateTime.Now;
+            UpdateState(tracker, TrackerState.Announcing);
+            WaitHandle handle = tracker.Announce(this.manager.Monitor.DataBytesDownloaded,
+                                                this.manager.Monitor.DataBytesUploaded,
+                                                (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
+                                                clientEvent, this.infoHash, id);
+            return handle;
+        }
 
         /// <summary>
         /// Called as part of the Async SendUpdate reponse
@@ -160,22 +164,68 @@ namespace MonoTorrent.Client
 
             if (dict.ContainsKey("custom error"))
             {
-                id.Tracker.SendingStartedEvent = false;
+                id.TrackerTier.SendingStartedEvent = false;
                 this.updateSucceeded = false;
                 id.Tracker.UpdateSucceeded = false;
                 id.Tracker.FailureMessage = dict["custom error"].ToString();
                 UpdateState(id.Tracker, TrackerState.AnnouncingFailed);
+
+                if (!id.TrySubsequent)
+                    return;
+
+                GetNextTracker(id.Tracker, out id.TrackerTier, out id.Tracker);
+                if (id.TrackerTier == null || id.Tracker == null)
+                    return;
+                
+                Announce(id.TrackerTier, id.Tracker, id.TorrentEvent, true);
             }
             else
             {
-                if (id.Tracker.SendingStartedEvent)
+                ToolBox.Switch<Tracker>(id.TrackerTier.Trackers, 0, id.TrackerTier.IndexOf(id.Tracker));
+                if (id.TrackerTier.SendingStartedEvent)
                 {
-                    id.Tracker.SendingStartedEvent = false;
-                    id.Tracker.StartedEventSentSuccessfully = true;
+                    id.TrackerTier.SendingStartedEvent = false;
+                    id.TrackerTier.SentStartedEvent = true;
                 }
-                UpdateState(id.Tracker, TrackerState.AnnounceSuccessful);
+
                 HandleAnnounce(id, dict);
+                UpdateState(id.Tracker, TrackerState.AnnounceSuccessful);
             }
+        }
+
+
+        private void GetNextTracker(Tracker tracker, out TrackerTier trackerTier, out Tracker trackerReturn)
+        {
+            for (int i = 0; i < this.trackerTiers.Length; i++)
+            {
+                for (int j = 0; j < this.trackerTiers[i].Trackers.Length; j++)
+                {
+                    if (this.trackerTiers[i].Trackers[j] != tracker)
+                        continue;
+
+                    // If we are on the last tracker of this tier, check to see if there are more tiers
+                    if (j == (this.trackerTiers[i].Trackers.Length - 1))
+                    {
+                        if (i == (this.trackerTiers.Length - 1))
+                        {
+                            trackerTier = null;
+                            trackerReturn = null;
+                            return;
+                        }
+
+                        trackerTier = this.trackerTiers[i + 1];
+                        trackerReturn = trackerTier.Trackers[0];
+                        return;
+                    }
+
+                    trackerTier = this.trackerTiers[i];
+                    trackerReturn = trackerTier.Trackers[j + 1];
+                    return;
+                }
+            }
+
+            trackerTier= null;
+            trackerReturn = null;
         }
 
 
@@ -239,17 +289,31 @@ namespace MonoTorrent.Client
         }
 
 
-
         /// <summary>
-        /// Scrapes the tracker for peer information.
+        /// Scrapes the first tracker for peer information.
         /// </summary>
         /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
         /// <returns></returns>
-        public WaitHandle Scrape(bool requestSingle)
+        public WaitHandle Scrape()
         {
-            Tracker tracker = this.ChooseTracker();
-            WaitHandle handle = tracker.Scrape(requestSingle, this.infoHash);
+            return Scrape(this.trackerTiers[0], this.trackerTiers[0].Trackers[0], true);
+        }
 
+
+        /// <summary>
+        /// Scrapes the specified tracker for peer information.
+        /// </summary>
+        /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
+        /// <returns></returns>
+        public WaitHandle Scrape(TrackerTier tier, Tracker tracker)
+        {
+            return Scrape(tier, tracker, false);
+        }
+
+        private WaitHandle Scrape(TrackerTier tier, Tracker tracker, bool trySubsequent)
+        {
+            TrackerConnectionID id = new TrackerConnectionID(tier, tracker, trySubsequent, TorrentEvent.None, null);
+            WaitHandle handle = tracker.Scrape(this.infoHash, id);
             UpdateState(tracker, TrackerState.Scraping);
             return handle;
         }
@@ -269,7 +333,19 @@ namespace MonoTorrent.Client
             {
                 id.Tracker.FailureMessage = dict["custom error"].ToString();
                 UpdateState(id.Tracker, TrackerState.ScrapingFailed);
-                return;
+
+                if (!id.TrySubsequent)
+                    return;
+
+                do
+                {
+                    GetNextTracker(id.Tracker, out id.TrackerTier, out id.Tracker);
+                } while (id.Tracker != null && id.TrackerTier != null && !id.Tracker.CanScrape);
+
+                if (id.TrackerTier == null || id.Tracker == null)
+                    return;
+
+                Scrape(id.TrackerTier, id.Tracker, true);
             }
             if (!dict.ContainsKey("files"))
                 return;
@@ -383,22 +459,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// If a tracker is unreachable, the next tracker is chosen from the list
-        /// </summary>
-        /// <returns></returns>
-        private Tracker ChooseTracker()
-        {
-            if (!this.updateSucceeded)
-            {
-                this.currentTrackerIndex++;
-                if (this.currentTrackerIndex == this.trackers.Length)
-                    this.currentTrackerIndex = 0;
-            }
-
-            return this.trackers[this.currentTrackerIndex];
-        }
         #endregion
     }
 }

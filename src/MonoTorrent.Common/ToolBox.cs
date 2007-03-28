@@ -36,6 +36,27 @@ namespace MonoTorrent.Common
 {
     public class ToolBox
     {
+		public static void Randomize<T>(List<T> array)
+		{
+			Random r = new Random();
+			List<T> clone = new List<T>(array);
+			array.Clear();
+
+			while (clone.Count > 0)
+			{
+				int index = r.Next(0, clone.Count);
+				array.Add(clone[index]);
+				clone.RemoveAt(index);
+			}
+		}
+
+		public static void Switch<T>(T[] array, int first, int second)
+		{
+			T obj = array[first];
+			array[first] = array[second];
+			array[second] = obj;
+		}
+
         public static string GetHex(byte[] infoHash)
         {
             StringBuilder sb = new StringBuilder();

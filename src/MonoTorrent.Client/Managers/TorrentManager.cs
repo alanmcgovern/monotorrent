@@ -294,8 +294,8 @@ namespace MonoTorrent.Client
             else
                 UpdateState(TorrentState.Downloading);
 
-            this.TrackerManager.Scrape(true);
-            this.trackerManager.Announce(0, 0, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Started); // Tell server we're starting
+            this.TrackerManager.Scrape();
+            this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
             ClientEngine.ConnectionManager.RegisterManager(this);
         }
 
@@ -309,7 +309,7 @@ namespace MonoTorrent.Client
 
             UpdateState(TorrentState.Stopped);
 
-            handle = this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.Stopped);
+            handle = this.trackerManager.Announce(TorrentEvent.Stopped);
             lock (this.listLock)
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
@@ -450,15 +450,15 @@ namespace MonoTorrent.Client
                     // If the last connection succeeded, then update at the regular interval
                     if (this.trackerManager.UpdateSucceeded)
                     {
-                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.UpdateInterval)))
+                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].UpdateInterval)))
                         {
-                            this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
+                            this.trackerManager.Announce(TorrentEvent.None);
                         }
                     }
                     // Otherwise update at the min interval
-                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.CurrentTracker.MinUpdateInterval)))
+                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].MinUpdateInterval)))
                     {
-                        this.trackerManager.Announce(this.monitor.DataBytesDownloaded, this.monitor.DataBytesUploaded, (long)((1.0 - this.Progress / 100.0) * this.torrent.Size), TorrentEvent.None);
+                        this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 if (counter % 40 == 0)
