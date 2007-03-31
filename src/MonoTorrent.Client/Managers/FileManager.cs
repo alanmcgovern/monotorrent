@@ -186,6 +186,7 @@ namespace MonoTorrent.Client
 
             // Allow the IO thread to run.
             SetHandleState(true);
+			this.ioThread.Join(150);
         }
 
 
