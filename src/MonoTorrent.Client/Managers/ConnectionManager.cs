@@ -805,7 +805,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerConnectionID id, string message)
         {
-            CleanupSocket(id, false, message);
+            CleanupSocket(id, true, message);
         }
 
 
@@ -946,6 +946,12 @@ namespace MonoTorrent.Client
                         if (this.PeerConnected != null)
                             this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Incoming));
 
+						if ((this.openConnections >= this.MaxOpenConnections))
+						{
+							reason = "Too many peers";
+							cleanUp = true;
+							return;
+						}
                         Logger.Log(id, "Recieving message length");
                         ClientEngine.ConnectionManager.ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
                     }
