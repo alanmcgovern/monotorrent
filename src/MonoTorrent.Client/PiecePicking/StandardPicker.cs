@@ -327,7 +327,7 @@ namespace MonoTorrent.Client
                 // Now we see what pieces the peer has that we don't have and try and request one
                 Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
                 this.bufferBitfield.Not();
-                this.bufferBitfield.And(id.Peer.Connection.BitField);
+                this.bufferBitfield.AndFast(id.Peer.Connection.BitField);
 
                 // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
                 // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
@@ -346,8 +346,8 @@ namespace MonoTorrent.Client
                             continue;
 
                         Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                        this.bufferBitfield.And(otherPeers[i].Peer.Connection.BitField);
-                        if (this.bufferBitfield.AllFalse || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
+                        this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
+                        if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
                             break;
                     }
                 }
