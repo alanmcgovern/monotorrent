@@ -176,17 +176,17 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void CloseFileStreams()
         {
-            for (int i = 0; i < this.fileStreams.Length; i++)
-                this.fileStreams[i].Dispose();
-
-            this.fileStreams = null;
-
             // Setting this boolean true allows the IO thread to terminate gracefully
             this.ioActive = false;
 
             // Allow the IO thread to run.
             SetHandleState(true);
 			this.ioThread.Join(150);
+
+            for (int i = 0; i < this.fileStreams.Length; i++)
+                this.fileStreams[i].Dispose();
+
+            this.fileStreams = null;
         }
 
 
