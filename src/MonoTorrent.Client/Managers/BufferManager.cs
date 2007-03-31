@@ -123,13 +123,13 @@ namespace MonoTorrent.Client
         /// <param name="type">The type of buffer that is needed</param>
         public void GetBuffer(ref byte[] buffer, int minCapacity)
         {
-            if (minCapacity < SmallMessageBufferSize)
+            if (minCapacity <= SmallMessageBufferSize)
                 GetBuffer(ref buffer, BufferType.SmallMessageBuffer);
 
-            else if (minCapacity < MediumMessageBufferSize)
+            else if (minCapacity <= MediumMessageBufferSize)
                 GetBuffer(ref buffer, BufferType.MediumMessageBuffer);
 
-            else if (minCapacity < LargeMessageBufferSize)
+            else if (minCapacity <= LargeMessageBufferSize)
                 GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
 
             else
