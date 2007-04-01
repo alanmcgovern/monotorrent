@@ -327,6 +327,7 @@ namespace MonoTorrent.Client
 
 		internal bool AllFalseSecure()
 		{
+			SetLastBitsFalse();
 			for (int i = 0; i < this.array.Length; i++)
 				if (this.array[i] != 0)
 					return false;
