@@ -48,6 +48,8 @@ namespace MonoTorrent.Client.PeerMessages
         private int pieceIndex;
         private int startOffset;
         private int blockLength;
+
+		private byte[] data;
         #endregion
 
         #region Properties
@@ -156,6 +158,10 @@ namespace MonoTorrent.Client.PeerMessages
             this.blockLength = length - offset;
 
             this.dataOffset = offset;
+
+			this.data = BufferManager.EmptyBuffer;
+			ClientEngine.BufferManager.GetBuffer(ref this.data, buffer.Length);
+			Buffer.BlockCopy(buffer, 0, this.data, 0, buffer.Length);
         }
 
 
@@ -242,9 +248,17 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerConnectionID id)
         {
-            id.TorrentManager.PieceManager.ReceivedPieceMessage(id, id.Peer.Connection.recieveBuffer, this);
-            // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-            while (id.TorrentManager.AddPieceRequest(id)) { }
+			try
+			{
+				id.TorrentManager.PieceManager.ReceivedPieceMessage(id, this.data, this);
+
+				// Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
+				while (id.TorrentManager.AddPieceRequest(id)) { }
+			}
+			finally
+			{
+				ClientEngine.BufferManager.FreeBuffer(ref this.data);
+			}
         }
 
 
