@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// A logic tick will be performed every TickLength miliseconds
         /// </summary>
-        internal const int TickLength = 25;
+        internal const int TickLength = 500;
 
         private PortMapper portMapper;
         #endregion
