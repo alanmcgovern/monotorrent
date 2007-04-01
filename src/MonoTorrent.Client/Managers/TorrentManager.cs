@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
+        internal readonly object resumeLock = new object();
         internal Queue<int> finishedPieces = new Queue<int>();
         #region Events
         /// <summary>
@@ -254,6 +255,7 @@ namespace MonoTorrent.Client
             if (this.state == TorrentState.Paused)
             {
                 UpdateState(TorrentState.Downloading);
+                lock (this.resumeLock)
                 this.ResumePeers();
                 return;
             }
@@ -289,9 +291,9 @@ namespace MonoTorrent.Client
                 this.loadedFastResume = false;
             }
 
-			this.TrackerManager.Scrape();
-			this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-			ClientEngine.ConnectionManager.RegisterManager(this);
+            this.TrackerManager.Scrape();
+            this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+            ClientEngine.ConnectionManager.RegisterManager(this);
 
             if (this.Progress == 100.0)
                 UpdateState(TorrentState.Seeding);
@@ -315,11 +317,11 @@ namespace MonoTorrent.Client
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
                     lock (this.peers.ConnectingToPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
 
                 while (this.peers.ConnectedPeers.Count > 0)
                     lock (this.peers.ConnectedPeers[0])
-                        ClientEngine.ConnectionManager.CleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
             }
 
             if(this.fileManager.StreamsOpen)
@@ -368,13 +370,15 @@ namespace MonoTorrent.Client
             PeerConnectionID id;
 
             // First attempt to resume downloading (just in case we've stalled for whatever reason)
-            lock (this.listLock)
+            lock (this.resumeLock)
                 if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
                     this.ResumePeers();
 
             DateTime nowTime = DateTime.Now;
             DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
             DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
+
+            ClientEngine.ConnectionManager.TryConnect();
 
             lock (this.listLock)
             {
@@ -434,7 +438,10 @@ namespace MonoTorrent.Client
                         }
 
                         if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
-                            ClientEngine.ConnectionManager.ProcessQueue(id);
+                        {
+                            id.Peer.Connection.ProcessingQueue = true;
+                            ClientEngine.ConnectionManager.MessageHandler.EnqueueSend(id);
+                        }
                     }
                 }
 
@@ -462,7 +469,7 @@ namespace MonoTorrent.Client
                         this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
-                if (counter % 40 == 0)
+                if (counter % (1000 / ClientEngine.TickLength) == 0)
                     this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
                                                           (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
                                                           (int)(this.DownloadSpeed()),
@@ -641,22 +648,19 @@ namespace MonoTorrent.Client
         /// <param name="downloading"></param>
         internal void ResumePeers()
         {
-            lock (this.listLock)
-            {
-                if (this.state == TorrentState.Paused)
-                    return;
+            if (this.state == TorrentState.Paused)
+                return;
 
-                // While there are peers queued in the list and i haven't used my download allowance, resume downloading
-                // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
-                while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                    if (this.fileManager.QueuedWrites < 20)
-                        if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
-                            Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
+            // While there are peers queued in the list and i haven't used my download allowance, resume downloading
+            // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
+            while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
+                if (this.fileManager.QueuedWrites < 20)
+                    if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
+                        Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
-                while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
-                    if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
-                        Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
-            }
+            while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+                if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
+                    Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
         }
         #endregion
 

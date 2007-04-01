@@ -93,8 +93,11 @@ namespace MonoTorrent.Client.PeerMessages
             while (id.TorrentManager.AddPieceRequest(id)) { }
 
             // If we're not already processing the send queue, start processing it now
-            if (!id.Peer.Connection.ProcessingQueue)
-                ClientEngine.ConnectionManager.ProcessQueue(id);
+			if (!id.Peer.Connection.ProcessingQueue)
+			{
+				id.Peer.Connection.ProcessingQueue = true;
+				ClientEngine.ConnectionManager.MessageHandler.EnqueueSend(id);
+			}
         }
 
 
