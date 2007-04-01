@@ -73,9 +73,13 @@ namespace MonoTorrent.Client
         #region Methods
         internal bool IsInteresting(PeerConnectionID id)
         {
-            // If the peer is a seeder, he's only interesting if i have not completed the torrent
-            if (id.Peer.IsSeeder)
-                return !this.MyBitField.AllTrue;
+            // If i have completed the torrent, then no-one is interesting
+			if (id.TorrentManager.Bitfield.AllTrue)
+				return false;
+
+			// If the peer is a seeder, then he is definately interesting
+			if (id.Peer.IsSeeder)
+				return true;
 
             // Otherwise we need to do a full check
             return this.piecePicker.IsInteresting(id);
