@@ -282,8 +282,8 @@ namespace MonoTorrent.Client
                     Array.Copy(this.myBitfield.Array, 0, isInterestingBuffer.Array, 0, this.myBitfield.Array.Length);
 
                 isInterestingBuffer.Not();
-                isInterestingBuffer.And(id.Peer.Connection.BitField);
-                if (!isInterestingBuffer.AllFalse)
+                isInterestingBuffer.AndFast(id.Peer.Connection.BitField);
+                if (!isInterestingBuffer.AllFalseSecure())
                     return true;                            // He's interesting if he has a piece we want
 
                 lock (this.requests)
@@ -338,11 +338,11 @@ namespace MonoTorrent.Client
                 if (highestPriorityFound == Priority.DoNotDownload)
                     return null;
 
-                for (int i = 0; i < otherPeers.Count; i++)
+				for (int i = 0; i < otherPeers.Count; i++)
                 {
                     lock (otherPeers[i])
                     {
-                        if (otherPeers[i].Peer.Connection == null)
+                        if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
                             continue;
 
                         Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
