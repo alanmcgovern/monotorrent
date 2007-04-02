@@ -124,6 +124,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
+            this.SetLastBitsFalse();
 			this.trueCount = this.length - this.trueCount;
             return this;
         }
