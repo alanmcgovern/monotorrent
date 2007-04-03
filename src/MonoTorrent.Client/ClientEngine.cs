@@ -55,8 +55,15 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Private Member Variables
-        /// <summary>
+		#region Events
+
+		public event EventHandler StatsUpdate;
+
+		#endregion
+
+
+		#region Private Member Variables
+		/// <summary>
         /// A logic tick will be performed every TickLength miliseconds
         /// </summary>
         internal const int TickLength = 500;
@@ -513,8 +520,15 @@ namespace MonoTorrent.Client
                         break;  // Do nothing.
                 }
             }
+
+			RaiseStatsUpdate();
         }
 
+		internal void RaiseStatsUpdate()
+		{
+			if (StatsUpdate != null)
+				StatsUpdate(null, EventArgs.Empty);
+		}
 
         /// <summary>
         /// 
