@@ -211,7 +211,7 @@ namespace MonoTorrent.Client
                         difference = 1000;
 
                     // Horrible hack to fix NaN
-                    if (difference < 500)
+                    if (difference < 850)
                         return;
 
                     // Take the amount of bytes sent since the last tick and divide it by the number of seconds
