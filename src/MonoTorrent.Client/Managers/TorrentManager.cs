@@ -651,14 +651,15 @@ namespace MonoTorrent.Client
             if (this.state == TorrentState.Paused)
                 return;
 
-            // While there are peers queued in the list and i haven't used my download allowance, resume downloading
-            // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
-            while (this.peers.DownloadQueue.Count > 0 && ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                if (this.fileManager.QueuedWrites < 20)
+        // While there are peers queued in the list and i haven't used my download allowance, resume downloading
+        // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
+        while (this.peers.DownloadQueue.Count > 0 &&
+                this.fileManager.QueuedWrites < 20 &&
+                ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
                     if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
                         Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
-            while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+           while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
                 if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
         }
