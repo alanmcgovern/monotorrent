@@ -33,6 +33,7 @@ SOURCES=BitField.cs \
 	EventArgs/PeersAddedEventArgs.cs \
 	EventArgs/PieceEventArgs.cs \
 	EventArgs/PieceHashedEventArgs.cs \
+	EventArgs/StateUpdateEventArgs.cs \
 	EventArgs/TorrentStateChangedEventArgs.cs \
 	EventArgs/TrackerStateChangedEventArgs.cs \
 	Exceptions/ConnectionException.cs \

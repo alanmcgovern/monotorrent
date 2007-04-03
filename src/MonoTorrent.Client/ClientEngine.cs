@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
 
 		#region Events
 
-		public event EventHandler StatsUpdate;
+		public event EventHandler<StateUpdateEventArgs> StatsUpdate;
 
 		#endregion
 
@@ -521,13 +521,13 @@ namespace MonoTorrent.Client
                 }
             }
 
-			RaiseStatsUpdate();
+			RaiseStatsUpdate(new StateUpdateEventArgs());
         }
 
-		internal void RaiseStatsUpdate()
+		internal void RaiseStatsUpdate(StateUpdateEventArgs args)
 		{
 			if (StatsUpdate != null)
-				StatsUpdate(null, EventArgs.Empty);
+				StatsUpdate(this, args);
 		}
 
         /// <summary>
