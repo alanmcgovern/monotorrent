@@ -16,6 +16,7 @@ SOURCES=BitField.cs \
 	PeerList.cs \
 	PortMapper.cs \
 	RateLimiter.cs \
+	MessageHandler.cs \
 	TransferType.cs \
 	TrackerTier.cs \
 	Encryption/EncryptedSocket.cs \
