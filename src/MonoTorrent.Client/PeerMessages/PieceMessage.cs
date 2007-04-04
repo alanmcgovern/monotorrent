@@ -185,13 +185,15 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The number of bytes encoded into the buffer</returns>
         internal int Encode(byte[] buffer, int offset)
         {
+            int bytesRead = 0;
             buffer[offset + 4] = (byte)MessageId;
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + blockLength)), 0, buffer, offset, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
 
             long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
-            int bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
+            using (new ReaderLock(this.fileManager.streamsLock))
+                bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
 
             if (bytesRead != this.BlockLength)
                 throw new MessageException("Could not read required data");

@@ -216,7 +216,8 @@ namespace MonoTorrent.Client
                 if (!p.Blocks[blockIndex].Received)
                 {
                     long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                    id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
+                    using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
+                        id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
                 }
                 p.Blocks[blockIndex].Received = true;
 

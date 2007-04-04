@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The DiskManager associated with this torrent
         /// </summary>
-        internal FileManager FileManager
+        public FileManager FileManager
         {
             get { return this.fileManager; }
         }

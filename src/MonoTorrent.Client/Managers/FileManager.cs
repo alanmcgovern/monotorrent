@@ -41,13 +41,13 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class manages writing and reading of pieces from the disk
     /// </summary>
-    internal class FileManager : System.IDisposable
+    public class FileManager : IDisposable
     {
         #region Private Members
         
-        TorrentFile[] files;                                    // The files that are in the torrent that we have to downoad
-        string baseDirectory;                                   // The base directory into which all the files will be put
-        string savePath;                                        // The path where the base directory will be put
+		private TorrentFile[] files;                            // The files that are in the torrent that we have to downoad
+		private string baseDirectory;                           // The base directory into which all the files will be put
+		private string savePath;                                // The path where the base directory will be put
         private readonly int pieceLength;                       // The length of a piece in the torrent
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
@@ -57,7 +57,8 @@ namespace MonoTorrent.Client
         private bool ioActive;                                  // Used to signal when the IO thread is running
         private ManualResetEvent threadWait;                    // Used to signal the IO thread when some data is ready for it to work on
 
-        private object bufferedIoLock;                          // Used to synchronise access on the IO thread
+		internal ReaderWriterLock streamsLock;
+        private object queueLock;                               // Used to synchronise access on the IO thread
         private Queue<BufferedFileWrite> bufferedWrites;        // A list of all the writes which are waiting to be performed
         private Queue<BufferedFileWrite> bufferedReads;         // A list of all the reads which are waiting to be performed
         
@@ -110,7 +111,7 @@ namespace MonoTorrent.Client
         /// <param name="file">The TorrentFile to open/create on disk</param>
         /// <param name="savePath">The directory the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        public FileManager(TorrentFile file, string savePath, int pieceLength)
+        internal FileManager(TorrentFile file, string savePath, int pieceLength)
             : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
         {
         }
@@ -122,7 +123,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the file</param>
-        public FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
+		internal FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
             : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
         {
         }
@@ -134,7 +135,7 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
+		internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
             : this(files, baseDirectory, savePath, pieceLength, FileAccess.Read)
         {
         }
@@ -147,14 +148,15 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-        public FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
+		internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
             if (files.Length == 1)
                 this.baseDirectory = string.Empty;
             else
                 this.baseDirectory = baseDirectory;
 
-            this.bufferedIoLock = new object();
+			this.streamsLock = new ReaderWriterLock();
+            this.queueLock = new object();
             this.bufferedReads = new Queue<BufferedFileWrite>();
             this.bufferedWrites = new Queue<BufferedFileWrite>();
             this.files = files;
@@ -193,7 +195,16 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Disposes all necessary objects
         /// </summary>
-        public void Dispose()
+        void IDisposable.Dispose()
+        {
+            Dispose();
+        }
+
+
+        /// <summary>
+        /// Disposes all necessary objects
+        /// </summary>
+        internal void Dispose()
         {
             this.Dispose(true);
         }
@@ -202,7 +213,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Disposes all necessary objects
         /// </summary>
-        public void Dispose(bool disposing)
+        internal void Dispose(bool disposing)
         {
             hasher.Clear();
             if (this.StreamsOpen)
@@ -228,7 +239,7 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the BaseDirectory</param>
         /// <returns>The full path to the TorrentFile</returns>
-        private string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
+        private static string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
         {
             string path = string.Empty;
 
@@ -272,7 +283,8 @@ namespace MonoTorrent.Client
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
 
-                        bytesRead = this.Read(hashBuffer, 0, pieceStartIndex, bytesToRead);
+                        using (new ReaderLock(this.streamsLock))
+                            bytesRead = this.Read(hashBuffer, 0, pieceStartIndex, bytesToRead);
                         hasher.TransformBlock(hashBuffer, 0, bytesRead, hashBuffer, 0);
                         totalRead += bytesRead;
                         pieceStartIndex += bytesToRead;
@@ -340,7 +352,8 @@ namespace MonoTorrent.Client
             long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
 
             // Perform the actual write
-            this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+            using (new ReaderLock(this.streamsLock))
+                this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
 
             // Find the block that this data belongs to and set it's state to "Written"
             int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.BlockLength);
@@ -388,7 +401,7 @@ namespace MonoTorrent.Client
         /// <param name="piece">The piece that the block to be written is part of</param>
         internal void QueueWrite(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message, Piece piece)
         {
-            lock (this.bufferedIoLock)
+            lock (this.queueLock)
             {
                 // Request a new buffer from the buffermanager and copy the data from the receive buffer
                 // into this new buffer. This is needed as the main code will automatically release the receive buffer
@@ -412,7 +425,7 @@ namespace MonoTorrent.Client
         /// <param name="piece"></param>
         internal void QueueRead(PeerConnectionID id, byte[] recieveBuffer, RequestMessage message, Piece piece)
         {
-            lock (this.bufferedIoLock)
+            lock (this.queueLock)
             {
                 this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield));
                 SetHandleState(true);
@@ -432,9 +445,9 @@ namespace MonoTorrent.Client
                 write = null;
                 read = null;
 
-                // Take a lock on the iolock and dequeue any reads/writes that are available. Then lose the lock before
-                // performing the actual read/write
-                lock (this.bufferedIoLock)
+                // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
+                // performing the actual read/write to avoid blocking other threads
+                lock (this.queueLock)
                 {
                     if (this.bufferedWrites.Count > 0)
                         write = this.bufferedWrites.Dequeue();
@@ -573,6 +586,43 @@ namespace MonoTorrent.Client
                 }
             }
         }
+
+
+		/// <summary>
+		/// Moves all files from the current path to the new path. The existing directory structure is maintained
+		/// </summary>
+		/// <param name="path"></param>
+		public void MoveFiles(string path, bool overWriteExisting)
+		{
+			//this.savePath = path;
+
+			using (new WriterLock(this.streamsLock))
+			{
+				if (this.fileStreams != null)
+					this.CloseFileStreams();
+
+				for (int i = 0; i < this.files.Length; i++)
+				{
+					string oldPath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
+					string newPath = GenerateFilePath(this.files[i], this.baseDirectory, path);
+
+					if (!File.Exists(oldPath))
+						continue;
+
+					bool fileExists = File.Exists(newPath);
+					if (!overWriteExisting && fileExists)
+						throw new TorrentException("File already exists and overwriting is disabled");
+
+					if (fileExists)
+						File.Delete(newPath);
+
+					File.Move(oldPath, newPath);
+				}
+
+				this.savePath = path;
+				this.OpenFileStreams(FileAccess.Read);
+			}
+		}
 
         #endregion
     }
