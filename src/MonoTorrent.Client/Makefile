@@ -1,4 +1,4 @@
-OUT=../bin/MonoTorrent.Client.dll
+zOUT=../bin/MonoTorrent.Client.dll
 
 REFERENCES=	\
 	-r:../bin/MonoTorrent.Common.dll	\
@@ -16,9 +16,11 @@ SOURCES=BitField.cs \
 	PeerList.cs \
 	PortMapper.cs \
 	RateLimiter.cs \
+	ReaderLock.cs \
 	MessageHandler.cs \
 	TransferType.cs \
 	TrackerTier.cs \
+	WriterLock.cs \
 	Encryption/EncryptedSocket.cs \
 	Encryption/IEncryption.cs \
 	Encryption/IEncryptor.cs \
