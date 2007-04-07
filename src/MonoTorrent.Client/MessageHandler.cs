@@ -7,7 +7,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
-	internal class MessageHandler
+    internal class MessageHandler : IDisposable
 	{
 		private struct AsyncMessageDetails
 		{
@@ -176,6 +176,19 @@ namespace MonoTorrent.Client
 				this.cleanUpQueue.Enqueue(id);
 				this.waitHandle.Set();
 			}
+		}
+
+		internal void Dispose()
+		{
+			if (this.messageLoopThread == null)
+				return;
+
+			this.Stop();
+		}
+
+		void IDisposable.Dispose()
+		{
+			Dispose();
 		}
 	}
 }

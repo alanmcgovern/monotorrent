@@ -263,6 +263,8 @@ namespace MonoTorrent.Client
             if (this.listener.IsListening)      // Also stop listening for incoming connections
                 this.listener.Stop();
 
+            ClientEngine.ConnectionManager.MessageHandler.Dispose();
+
             return handle;                      // Now return the handle
         }
 
