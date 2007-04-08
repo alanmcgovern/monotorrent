@@ -423,7 +423,7 @@ namespace MonoTorrent.Client
                                 && id.Peer.Connection.AmRequestingPiecesCount < PieceManager.MaxRequests && id.Peer.Connection.AmInterested)
                         {
                             // If there are no more pieces to add, AddPieceRequest will return null
-                            if (!AddPieceRequest(id))
+                            if (!this.pieceManager.AddPieceRequest(id))
                                 break;
                         }
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
@@ -896,30 +896,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        /// <summary>
-        /// Tries to add a piece request to the peers message queue.
-        /// </summary>
-        /// <param name="id">The peer to add the request too</param>
-        /// <returns>True if the request was added</returns>
-        internal bool AddPieceRequest(PeerConnectionID id)
-        {
-            IPeerMessageInternal msg;
 
-            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
-                return false;
-
-            if (pieceManager.InEndGameMode)// In endgame we only want to queue 2 pieces
-                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
-                    return false;
-
-            msg = this.pieceManager.PickPiece(id, this.peers.ConnectedPeers);
-            if (msg == null)
-                return false;
-
-            id.Peer.Connection.EnQueue(msg);
-            id.Peer.Connection.AmRequestingPiecesCount++;
-            return true;
-        }
 
         /// <summary>
         /// Changes the peers "Interesting" status to the new value

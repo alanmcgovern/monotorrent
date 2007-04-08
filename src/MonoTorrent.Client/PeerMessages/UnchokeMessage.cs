@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.PeerMessages
             id.Peer.Connection.IsChoking = false;
 
             // Add requests to the peers message queue
-            while (id.TorrentManager.AddPieceRequest(id)) { }
+            while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
             // If we're not already processing the send queue, start processing it now
 			if (!id.Peer.Connection.ProcessingQueue)

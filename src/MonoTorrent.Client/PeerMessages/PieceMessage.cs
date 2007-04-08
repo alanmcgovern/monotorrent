@@ -255,7 +255,7 @@ namespace MonoTorrent.Client.PeerMessages
 				id.TorrentManager.PieceManager.ReceivedPieceMessage(id, this.data, this);
 
 				// Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-				while (id.TorrentManager.AddPieceRequest(id)) { }
+				while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
 				if (!id.Peer.Connection.ProcessingQueue)
 				{

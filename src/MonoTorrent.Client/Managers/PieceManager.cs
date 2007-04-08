@@ -148,5 +148,31 @@ namespace MonoTorrent.Client
 
             this.piecePicker.ReceivedChokeMessage(id);
         }
+
+
+        /// <summary>
+        /// Tries to add a piece request to the peers message queue.
+        /// </summary>
+        /// <param name="id">The peer to add the request too</param>
+        /// <returns>True if the request was added</returns>
+        internal bool AddPieceRequest(PeerConnectionID id)
+        {
+            IPeerMessageInternal msg;
+
+            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
+                return false;
+
+            if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
+                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+                    return false;
+
+            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
+            if (msg == null)
+                return false;
+
+            id.Peer.Connection.EnQueue(msg);
+            id.Peer.Connection.AmRequestingPiecesCount++;
+            return true;
+        }
     }
 }
