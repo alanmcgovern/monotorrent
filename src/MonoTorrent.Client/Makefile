@@ -1,4 +1,4 @@
-zOUT=../bin/MonoTorrent.Client.dll
+OUT=../bin/MonoTorrent.Client.dll
 
 REFERENCES=	\
 	-r:../bin/MonoTorrent.Common.dll	\
