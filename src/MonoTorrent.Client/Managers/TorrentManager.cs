@@ -730,34 +730,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The current download speed in bytes per second
-        /// </summary>
-        /// <returns></returns>
-        public double DownloadSpeed()
-        {
-            return this.monitor.DownloadSpeed;
-        }
-
-
-        /// <summary>
-        /// The current upload speed in bytes per second
-        /// </summary>
-        /// <returns></returns>
-        public double UploadSpeed()
-        {
-            double total = 0;
-
-            lock (this.listLock)
-                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
-                    lock (this.peers.ConnectedPeers[i])
-                        if (this.peers.ConnectedPeers[i].Peer.Connection != null)
-                            total += this.peers.ConnectedPeers[i].Peer.Connection.Monitor.UploadSpeed;
-
-            return total;
-        }
-
-
-        /// <summary>
         /// Saves data to allow fastresumes to the disk
         /// </summary>
         private void SaveFastResume()
