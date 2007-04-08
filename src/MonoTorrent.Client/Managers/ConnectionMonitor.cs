@@ -189,6 +189,20 @@ namespace MonoTorrent.Client
         }
 
 
+        internal void Reset()
+        {
+            this.dataBytesDownloaded = 0;
+            this.dataBytesUploaded = 0;
+            this.downloadSpeed = 0;
+            this.downloadSpeedIndex = 0;
+            this.protocolBytesDownloaded = 0;
+            this.protocolBytesUploaded = 0;
+            this.tempRecvCount = 0;
+            this.tempSentCount = 0;
+            this.uploadSpeed = 0;
+            this.uploadSpeedIndex = 0;
+        }
+
         /// <summary>
         /// Called every time you want the stats to update. Ideally between every 0.5 and 2 seconds
         /// </summary>

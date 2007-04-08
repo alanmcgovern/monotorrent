@@ -329,6 +329,7 @@ namespace MonoTorrent.Client
 
             this.SaveFastResume();
             this.peers.ClearAll();
+			this.monitor.Reset();
             ClientEngine.ConnectionManager.UnregisterManager(this);
 
             return handle;
