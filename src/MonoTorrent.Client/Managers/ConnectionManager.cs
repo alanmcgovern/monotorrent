@@ -485,7 +485,6 @@ namespace MonoTorrent.Client
         {
             string reason = null;
             bool cleanUp = false;
-            IPeerMessageInternal message;
 
             try
             {
@@ -499,7 +498,6 @@ namespace MonoTorrent.Client
                     //message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
                     //message.Handle(id);
                     this.messageHandler.EnqueueReceived(id, id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
-                    Logger.Log(id, "Recieved message: " + message.GetType().Name);
 
 
                     // if the peer has sent us three bad pieces, we close the connection.
