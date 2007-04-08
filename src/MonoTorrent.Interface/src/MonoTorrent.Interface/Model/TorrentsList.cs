@@ -157,11 +157,11 @@ namespace MonoTorrent.Interface.Model
             SetValue(row, 3, Formatter.FormatPercent(torrent.Progress));
             SetValue(row, 4, Formatter.FormatSize(torrent.Monitor.DataBytesDownloaded));
             SetValue(row, 5, Formatter.FormatSize(torrent.Monitor.DataBytesUploaded));
-            SetValue(row, 6, Formatter.FormatSpeed(torrent.DownloadSpeed()));
-            SetValue(row, 7, Formatter.FormatSpeed(torrent.UploadSpeed()));
-            SetValue(row, 9, torrent.Leechs().ToString());
-            SetValue(row, 8, torrent.Seeds().ToString());
-            SetValue(row, 10, torrent.AvailablePeers.ToString());
+            SetValue(row, 6, Formatter.FormatSpeed(torrent.Monitor.DownloadSpeed));
+            SetValue(row, 7, Formatter.FormatSpeed(torrent.Monitor.UploadSpeed));
+            SetValue(row, 9, torrent.Peers.Leechs().ToString());
+            SetValue(row, 8, torrent.Peers.Seeds().ToString());
+            SetValue(row, 10, torrent.Peers.Available.ToString());
         }
 
         private void UpdateState(TreeIter row, TorrentManager torrent)

@@ -13,10 +13,11 @@ namespace MonoTorrent.Client
         DownloadQueue
     }
 
-    internal class PeerList
+    public class PeerList
     {
         #region Private Member Variables
 
+        private TorrentManager manager;
         private List<PeerConnectionID> availablePeers;
         private List<PeerConnectionID> connectedPeers;
         private List<PeerConnectionID> connectingTo;
@@ -24,6 +25,7 @@ namespace MonoTorrent.Client
         private List<PeerConnectionID> uploadQueue;
 
         #endregion Private Member Variables
+
 
         #region Internal Properties
 
@@ -68,6 +70,68 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+
+        #region Constructors
+
+        internal PeerList(TorrentManager manager)
+        {
+            this.manager = manager;
+            this.availablePeers = new List<PeerConnectionID>();
+            this.connectedPeers = new List<PeerConnectionID>();
+            this.connectingTo = new List<PeerConnectionID>();
+            this.downloadQueue = new List<PeerConnectionID>();
+            this.uploadQueue = new List<PeerConnectionID>();
+        }
+
+        #endregion
+
+
+        #region Public Methods
+
+        /// <summary>
+        /// Returns the total number of peers available (including ones already connected to)
+        /// </summary>
+        public int Available
+        {
+            get { return this.availablePeers.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+        }
+
+
+        /// <summary>
+        /// Returns the number of Leechs we are currently connected to
+        /// </summary>
+        /// <returns></returns>
+        public int Leechs()
+        {
+            int leechs = 0;
+            lock (this.manager.listLock)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        if (!this.connectedPeers[i].Peer.IsSeeder)
+                            leechs++;
+
+            return leechs;
+        }
+
+
+        /// <summary>
+        /// Returns the number of Seeds we are currently connected to
+        /// </summary>
+        /// <returns></returns>
+        public int Seeds()
+        {
+            int seeds = 0;
+            lock (this.manager.listLock)
+                for (int i = 0; i < this.connectedPeers.Count; i++)
+                    lock (this.connectedPeers[i])
+                        if (this.connectedPeers[i].Peer.IsSeeder)
+                            seeds++;
+            return seeds;
+        }
+
+        #endregion
+
 
         #region Internal Methods
 
@@ -189,11 +253,11 @@ namespace MonoTorrent.Client
                     this.availablePeers.Remove(id);
                     break;
 
-                case(PeerType.DownloadQueue):
+                case (PeerType.DownloadQueue):
                     this.downloadQueue.Remove(id);
                     break;
 
-                case(PeerType.UploadQueue):
+                case (PeerType.UploadQueue):
                     this.uploadQueue.Remove(id);
                     break;
 
@@ -203,14 +267,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
-        public PeerList()
-        {
-            this.availablePeers = new List<PeerConnectionID>();
-            this.connectedPeers = new List<PeerConnectionID>();
-            this.connectingTo = new List<PeerConnectionID>();
-            this.downloadQueue = new List<PeerConnectionID>();
-            this.uploadQueue = new List<PeerConnectionID>();
-        }
     }
 }

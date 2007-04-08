@@ -802,7 +802,7 @@ namespace MonoTorrent.Client
         {
             double total = 0;
             for (int i = 0; i < this.torrents.Count; i++)
-                total += this.torrents[i].DownloadSpeed();
+                total += this.torrents[i].Monitor.DownloadSpeed;
 
             return total;
         }
@@ -812,7 +812,7 @@ namespace MonoTorrent.Client
         {
             double total = 0;
             for (int i = 0; i < this.torrents.Count; i++)
-                total += this.torrents[i].UploadSpeed();
+                total += this.torrents[i].Monitor.UploadSpeed;
 
             return total;
         }
