@@ -204,6 +204,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void EndCreateConnection(IAsyncResult result)
         {
+			bool fireConnected = false;
             bool cleanUp = false;
             string reason = null;
             PeerConnectionID id = (PeerConnectionID)result.AsyncState;
@@ -229,9 +230,7 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
                         id.TorrentManager.Peers.AddPeer(id, PeerType.Connected);
 
-                        // Fire the event to say that we connected to a remote peer
-                        if (this.PeerConnected != null)
-                            this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
+						fireConnected = true;
 
                         // If we have too many open connections, close the connection
                         if (this.openConnections > this.MaxOpenConnections)
@@ -316,6 +315,10 @@ namespace MonoTorrent.Client
             }
             finally
             {
+				if(fireConnected)
+					if (this.PeerConnected != null)
+						this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
+
                 // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 if (cleanUp)
@@ -1110,6 +1113,7 @@ namespace MonoTorrent.Client
 
         internal void AsyncCleanupSocket(PeerConnectionID id, bool localClose, string message)
         {
+			bool fireCleanup = false;
             if (id == null) // Sometimes onEncryptoError will fire with a null id
                 return;
 
@@ -1135,9 +1139,7 @@ namespace MonoTorrent.Client
 
                         if (id.Peer.Connection != null)
                         {
-                            if (this.PeerDisconnected != null)
-                                this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
-
+							fireCleanup = true;
                             ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                             ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
 
@@ -1182,6 +1184,10 @@ namespace MonoTorrent.Client
             }
             finally
             {
+				if (fireCleanup)
+					if (this.PeerDisconnected != null)
+						this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+
                 TryConnect();
             }
         }
