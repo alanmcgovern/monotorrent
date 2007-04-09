@@ -126,7 +126,7 @@ namespace MonoTorrent.Common
                 IBEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("piece length"));
                 return val == null ? -1 : ((BEncodedNumber)val).Number;
             }
-            set { Set(this.torrent, "piece length", new BEncodedNumber(value)); }
+            set { Set((BEncodedDictionary)this.torrent["info"], "piece length", new BEncodedNumber(value)); }
 
         }
 
@@ -348,6 +348,7 @@ namespace MonoTorrent.Common
         ///<param name="storagePath">place and name to store the torrent file</param>
         public void Create(string storagePath)
         {
+            Reset();
             CreateDict();
 
             using (FileStream stream = new FileStream(storagePath, FileMode.Create))
@@ -527,12 +528,31 @@ namespace MonoTorrent.Common
         }
 
 
+        private void Reset()
+        {
+
+            BEncodedDictionary oldInfo = (BEncodedDictionary)this.torrent["info"];
+            try
+            {
+                this.torrent.Remove("info");
+                this.torrent.Remove("announce");
+                this.torrent.Remove("announce-list");
+                this.torrent.Remove("creation date");
+            }
+            finally
+            {
+                this.torrent.Add("info", new BEncodedDictionary());
+               ((BEncodedDictionary) this.torrent["info"]).Add("piece length", oldInfo["piece length"]);
+            }
+        }
+
+
         private static void Set(BEncodedDictionary dictionary, BEncodedString key, IBEncodedValue value)
         {
-            if (dictionary.ContainsKey("publisher-url"))
-                dictionary["publisher-url"] = value;
+            if (dictionary.ContainsKey(key))
+                dictionary[key] = value;
             else
-                dictionary.Add("publisher-url", value);
+                dictionary.Add(key, value);
         }
 
         #endregion
