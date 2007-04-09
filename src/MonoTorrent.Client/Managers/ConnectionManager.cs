@@ -316,8 +316,7 @@ namespace MonoTorrent.Client
             finally
             {
 				if(fireConnected)
-					if (this.PeerConnected != null)
-						this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Outgoing));
+                    RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Outgoing));
 
                 // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
@@ -329,6 +328,17 @@ namespace MonoTorrent.Client
             }
         }
 
+        private void RaisePeerConnected(PeerConnectionEventArgs args)
+        {
+            if (this.PeerConnected != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerConnected), args);
+        }
+
+        private void AsyncPeerConnected(object args)
+        {
+            if (this.PeerConnected != null)
+                this.PeerConnected(null, (PeerConnectionEventArgs)args);
+        }
 
         private void onPeerHandshakeSent(PeerConnectionID id)
         {
@@ -546,8 +556,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // Fire the event to let the user know a message was sent
-                if (this.PeerMessageTransferred != null)
-                    this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing));
+                RaisePeerMessageTransferred(new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing, id));
 
                 ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                 Logger.Log(id, "Sent message: " + id.Peer.Connection.CurrentlySendingMessage.ToString());
@@ -555,6 +564,19 @@ namespace MonoTorrent.Client
                 this.ProcessQueue(id);
             }
         }
+
+        internal void RaisePeerMessageTransferred(PeerMessageEventArgs peerMessageEventArgs)
+        {
+            if (this.PeerMessageTransferred != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerMessageTransferred), peerMessageEventArgs);
+        }
+
+        private void AsyncPeerMessageTransferred(object args)
+        {
+            if (this.PeerMessageTransferred != null)
+                this.PeerMessageTransferred(null, (PeerMessageEventArgs)args);
+        }
+
 
         /// <summary>
         /// Receives exactly length number of bytes from the specified peer connection and invokes the supplied callback if successful
@@ -861,8 +883,7 @@ namespace MonoTorrent.Client
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
 
-                        if (this.PeerConnected != null)
-                            this.PeerConnected(null, new PeerConnectionEventArgs(id, Direction.Incoming));
+                        RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Incoming));
 
                         if ((this.openConnections >= this.MaxOpenConnections))
                         {
@@ -1183,11 +1204,22 @@ namespace MonoTorrent.Client
             finally
             {
 				if (fireCleanup)
-					if (this.PeerDisconnected != null)
-						this.PeerDisconnected(null, new PeerConnectionEventArgs(id, Direction.None));
+                    RaisePeerDisconnected(new PeerConnectionEventArgs(id, Direction.None));
 
                 TryConnect();
             }
+        }
+
+        internal void RaisePeerDisconnected(PeerConnectionEventArgs peerConnectionEventArgs)
+        {
+            if (this.PeerDisconnected != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerDisconnected), peerConnectionEventArgs);
+        }
+
+        private void AsyncPeerDisconnected(object args)
+        {
+            if (this.PeerDisconnected != null)
+                PeerDisconnected(null, (PeerConnectionEventArgs)args);
         }
     }
 }

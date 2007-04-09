@@ -42,6 +42,7 @@ namespace MonoTorrent.Client
     public class PeerMessageEventArgs : EventArgs
     {
         #region Member Variables
+
         /// <summary>
         /// The Peer message that was just sent/Received
         /// </summary>
@@ -59,20 +60,30 @@ namespace MonoTorrent.Client
             get { return this.direction; }
         }
         private Direction direction;
+
+        public PeerConnectionID ID
+        {
+            get { return this.id; }
+        }
+        private PeerConnectionID id;
+
         #endregion
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new PeerMessageEventArgs
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        public PeerMessageEventArgs(IPeerMessage message, Direction direction)
+        public PeerMessageEventArgs(IPeerMessage message, Direction direction, PeerConnectionID id)
         {
-            this.message = message;
             this.direction = direction;
+            this.id = id;
+            this.message = message;
         }
+
         #endregion
     }
 }

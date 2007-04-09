@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
             if (string.IsNullOrEmpty(savePath))
                 throw new TorrentException("Torrent savepath cannot be null");
 
-            this.bitfield = new BitField(this.torrent.Pieces.Count);
+            this.bitfield = new BitField(torrent.Pieces.Count);
             this.fileManager = new FileManager(torrent.Files, torrent.Name, savePath, torrent.PieceLength, FileAccess.ReadWrite);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
@@ -237,7 +237,7 @@ namespace MonoTorrent.Client
             this.savePath = savePath;
             this.settings = settings;
             this.peers = new PeerList(this);
-            this.pieceManager = new PieceManager(this.bitfield, this.torrent.Files);
+            this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this, engineSettings);
         }
@@ -370,9 +370,20 @@ namespace MonoTorrent.Client
                 }
             }
 
-            if (this.PeersFound != null)
-                this.PeersFound(this, new PeersAddedEventArgs(added));
+            RaisePeersFound(new PeersAddedEventArgs(added));
             return added;
+        }
+
+        internal void RaisePeersFound(PeersAddedEventArgs peersAddedEventArgs)
+        {
+            if (this.PeersFound != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeersFound), peersAddedEventArgs);
+        }
+
+        private void AsyncPeersFound(object args)
+        {
+            if (this.PeersFound != null)
+                this.PeersFound(this, (PeersAddedEventArgs)args);
         }
 
 
@@ -414,8 +425,7 @@ namespace MonoTorrent.Client
                 added += this.AddPeers(id);
             }
 
-            if (this.PeersFound != null)
-                this.PeersFound(this, new PeersAddedEventArgs(added));
+            RaisePeersFound(new PeersAddedEventArgs(added));
             return added;
         }
 
@@ -546,10 +556,20 @@ namespace MonoTorrent.Client
             if (!pieceHashedEventArgs.HashPassed)
                 Interlocked.Increment(ref this.hashFails);
 
-            if (this.PieceHashed != null)
-                this.PieceHashed(this, pieceHashedEventArgs);
+            RaisePieceHashed(pieceHashedEventArgs);
         }
 
+        internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
+        {
+            if (this.PieceHashed != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPieceHashed), pieceHashedEventArgs);
+        }
+
+        private void AsyncPieceHashed(object args)
+        {
+            if (this.PieceHashed != null)
+                this.PieceHashed(this, (PieceHashedEventArgs)args);
+        }
 
         /// <summary>
         /// Pauses the TorrentManager
@@ -659,8 +679,7 @@ namespace MonoTorrent.Client
             if (this.loadedFastResume)
             {
                 for (int i = 0; i < this.bitfield.Length; i++)
-                    if (PieceHashed != null)
-                        PieceHashed(this, new PieceHashedEventArgs(i, this.bitfield[i]));
+                    RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
 
                 this.loadedFastResume = false;
             }
@@ -742,8 +761,7 @@ namespace MonoTorrent.Client
                 lock (manager.pieceManager.MyBitField)
                     manager.pieceManager.MyBitField[i] = result;
 
-                if (manager.PieceHashed != null)
-                    manager.PieceHashed(this, new PieceHashedEventArgs(i, result));
+                RaisePieceHashed(new PieceHashedEventArgs(i, result));
             }
 
             manager.hashChecked = true;
@@ -898,8 +916,20 @@ namespace MonoTorrent.Client
             TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this.state, newState);
             this.state = newState;
 
+            RaiseTorrentStateChanged(e);
+
+        }
+
+        internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
+        {
             if (this.TorrentStateChanged != null)
-                this.TorrentStateChanged(this, e);
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTorrentStateChanged), e);
+        }
+
+        private void AsyncTorrentStateChanged(object args)
+        {
+            if (this.TorrentStateChanged != null)
+                this.TorrentStateChanged(this, (TorrentStateChangedEventArgs)args);
         }
 
         #endregion Private Methods
