@@ -115,7 +115,8 @@ namespace MonoTorrent.Interface.Controller
                     TorrentCreator creator = new TorrentCreator();
                     creator.Path = dialog.FromPath;
                     creator.Comment = dialog.Comment;
-                    creator.AddAnnounce(dialog.Tracker);
+                    creator.Announces.Add(new System.Collections.Generic.List<string>());
+                    creator.Announces[0].Add(dialog.Tracker);
                     creator.Create(dialog.SaveTo);
                 } catch (Exception exception) {
                     Dialog errorDialog = new MessageDialog(window,

@@ -5,7 +5,7 @@
 //   Gregor Burger burger.gregor@gmail.com
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Gregor Burger
+// Copyright (C) 2006-2007 Gregor Burger and Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -46,46 +46,27 @@ namespace MonoTorrent.Common
     ///</summary>
     public class TorrentCreator
     {
-        private List<string> announces;//list of announce urls
-        private bool doDummy;//used for size calculating
+        #region Private Fields
+
+        private List<List<string>> announces;       // The list of announce urls
+        private bool ignoreHiddenFiles;             // True if you want to ignore hidden files when making the torrent
+        private string path;                        // The path from which the torrent will be created (can be file or directory)
+        private bool storeMd5;                      // True if an MD5 hash of each file should be included
+        private BEncodedDictionary torrent;         // The BencodedDictionary which contains the data to be written to the .torrent file
+
+        #endregion Private Fields
 
 
-        public TorrentCreator()
+        #region Properties
+
+        /// <summary>
+        /// The list of announce urls for this 
+        /// </summary>
+        public List<List<string>> Announces
         {
-            announces = new List<string>();
+            get { return this.announces; }
         }
 
-        ///<summary>the path from which you would like to make a torrent of.
-        ///path can be a file and a directory. 
-        ///</summary>
-        public string Path
-        {
-            get
-            {
-                return path;
-            }
-            set
-            {
-                path = value;
-            }
-        }
-        private string path;
-
-        ///<summary>
-        ///this property sets the length of the pieces. default is 512 kb.
-        ///</summary>
-        public int PieceLength
-        {
-            get
-            {
-                return piece_length;
-            }
-            set
-            {
-                piece_length = value;
-            }
-        }
-        private int piece_length = 2 << 18;
 
         ///<summary>
         ///this property sets the comment entry in the torrent file. default is string.Empty to conserve bandwidth.
@@ -94,14 +75,12 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return comment;
+                IBEncodedValue val = Get(this.torrent, new BEncodedString("comment"));
+                return val == null ? string.Empty : val.ToString();
             }
-            set
-            {
-                comment = value;
-            }
+            set { Set(this.torrent, "comment", new BEncodedString(value)); }
         }
-        private string comment = string.Empty;
+
 
         ///<summary>this property sets the created by entrie in the torrent file
         ///</summary>
@@ -109,124 +88,259 @@ namespace MonoTorrent.Common
         {
             get
             {
-                return created_by;
+                IBEncodedValue val = Get(this.torrent, new BEncodedString("created by"));
+                return val == null ? string.Empty : val.ToString();
             }
-            set
-            {
-                created_by = value;
-            }
+            set { Set(this.torrent, "created by", new BEncodedString(value)); }
         }
-        private string created_by = string.Empty;
 
-        ///<summary>this property sets wheather the optional field creation date should be included
-        ///in the torrent or not. default is false to conserve bandwidth. </summary>
-        public bool StoreCreationDate
+
+        /// <summary>
+        ///  The encoding used to create the torrent
+        /// </summary>
+        public string Encoding
+        {
+            get { return Get(this.torrent, new BEncodedString("encoding")).ToString(); }
+        }
+
+
+        /// <summary>
+        /// The path from which you would like to make a torrent of.
+        ///Path can be a file and a directory. 
+        /// </summary>
+        public string Path
+        {
+            get { return path; }
+            set { path = value; }
+
+        }
+
+
+        ///<summary>
+        ///this property sets the length of the pieces. default is 512 kb.
+        ///</summary>
+        public long PieceLength
         {
             get
             {
-                return store_date;
+                IBEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("piece length"));
+                return val == null ? -1 : ((BEncodedNumber)val).Number;
             }
-            set
-            {
-                store_date = value;
-            }
+            set { Set(this.torrent, "piece length", new BEncodedNumber(value)); }
+
         }
-        private bool store_date = false;
+
+
+        public string Publisher
+        {
+            get
+            {
+                IBEncodedValue val = Get(this.torrent, new BEncodedString("publisher"));
+                return val == null ? string.Empty : val.ToString();
+            }
+            set { Set(this.torrent, "publisher", new BEncodedString(value)); }
+        }
+
+
+        ///<summary>this property sets the Publisher Url entry
+        ///</summary>
+        public string PublisherUrl
+        {
+            get
+            {
+                IBEncodedValue val = Get(this.torrent, new BEncodedString("publisher-url"));
+                return val == null ? string.Empty : val.ToString();
+            }
+            set { Set(this.torrent, "publisher-url", new BEncodedString(value)); }
+        }
+
 
         ///<summary>this property sets wheather the optional field md5sum should be included. 
         ///default is false to conserve bandwidth
         ///</summary>
         public bool StoreMD5
         {
-            get
+            get { return storeMd5; }
+            set { storeMd5 = value; }
+        }
+
+
+        public bool IgnoreHiddenFiles
+        {
+            get { return ignoreHiddenFiles; }
+            set { ignoreHiddenFiles = value; }
+        }
+
+        #endregion Properties
+
+
+        #region Constructors
+
+        public TorrentCreator()
+        {
+            BEncodedDictionary info = new BEncodedDictionary();
+            this.announces = new List<List<string>>();
+            this.ignoreHiddenFiles = true;
+            this.torrent = new BEncodedDictionary();
+            this.torrent.Add("info", info);
+
+            // Add in initial values for some of the torrent attributes
+            info.Add("piece length", new BEncodedNumber(256 * 1024));   // 256kB default piece size
+            torrent.Add("encoding", (BEncodedString)"UTF-8");
+        }
+
+        #endregion Constructors
+
+
+        #region Methods
+
+        ///<summary>
+        ///this method runs recursively through all subdirs under dir and ads information
+        ///from each file to the filesList. 
+        ///<summary>
+        ///<param name="dir">the top directory to start from</param>
+        ///<param name="filesList">the list to store the file information</param>
+        ///<param name="paths">a list of all files found. used for piece hashing later</param>
+        private void AddAllFileInfoDicts(string dir, BEncodedList filesList, List<string> paths)
+        {
+            GetAllFilePaths(dir, paths);
+
+            for(int i=0; i < paths.Count; i++)
+                filesList.Add(GetFileInfoDict(paths[i], dir));
+        }
+
+
+        private void GetAllFilePaths(string directory, List<string> paths)
+        {
+            string[] subs = Directory.GetFileSystemEntries(directory);
+            foreach (string path in subs)
             {
-                return store_md5;
-            }
-            set
-            {
-                store_md5 = value;
+                if (Directory.Exists(path))
+                {
+                    if (ignoreHiddenFiles)
+                    {
+                        DirectoryInfo info = new DirectoryInfo(path);
+                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                            continue;
+                    }
+
+                    GetAllFilePaths(path, paths);
+                }
+                else
+                {
+                    if (ignoreHiddenFiles)
+                    {
+                        FileInfo info = new FileInfo(path);
+                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                            continue;
+                    }
+
+                    paths.Add(path);
+                }
             }
         }
-        private bool store_md5 = false;
 
 
         ///<summary>
-        ///this property instructs the creator to use add utf8 strings
-        ///default value is false to conserve bandwidth.
+        ///this adds stuff common to single and multi file torrents
         ///</summary>
-        public bool StoreUTF8
+        private void AddCommonStuff(BEncodedDictionary torrent)
         {
-            get
-            {
-                return store_utf8;
-            }
-            set
-            {
-                store_utf8 = value;
-            }
-        }
-        private bool store_utf8 = false;
+            Debug.WriteLine(announces[0][0]);
+            torrent.Add("announce", new BEncodedString(announces[0][0]));
 
-        public bool IgnoreDotFiles
-        {
-            get
+            // If there is more than one tier or the first tier has more than 1 tracker
+            if (announces.Count > 1 || announces[0].Count > 0)
             {
-                return ignore_dot_files;
-            }
-            set
-            {
-                ignore_dot_files = value;
-            }
-        }
-        private bool ignore_dot_files = true;
+                BEncodedList announceList = new BEncodedList();
+                for (int i = 0; i < this.announces.Count; i++)
+                {
+                    BEncodedList tier = new BEncodedList();
+                    for (int j = 0; j < this.announces[i].Count; j++)
+                        tier.Add(new BEncodedString(this.announces[i][j]));
 
-        ///<summary>
-        ///returns the size of bytes required by the torrents with the current set properties.        
-        ///</summary>
-        public int GetSize()
-        {
-            doDummy = true; //do not calc sha1 and md5 takes too long
-            int length = CreateDict().Encode().Length;
-            doDummy = false;
-            return length;
+                    announceList.Add(tier);
+                }
+
+                torrent.Add("announce-list", announceList);
+            }
+
+
+            DateTime epocheStart = new DateTime(1970, 1, 1);
+            TimeSpan span = DateTime.Now - epocheStart;
+            Debug.WriteLine("creation date: " + DateTime.Now.ToString() + " - " + epocheStart.ToString() + " = " + span.ToString() + " : " + (long)span.TotalSeconds);
+            torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
         }
 
-        ///<summary>
-        ///this method adds an announce url to the list of announce urls.
-        ///if the list contains more than one entries the announce list is used
-        ///to store the list of announce urls.
-        ///</summary>
-        public void AddAnnounce(string url)
-        {
-            announces.Add(url);
-        }
 
-        ///<summary>
-        ///removes an url from the list
-        ///</summary>
-        public void RemoveAnnounce(string url)
-        {
-            announces.Remove(url);
-        }
-        
         /// <summary>
-        /// This can be used to add Custom Values to the Torrent. This may be used to add" httpseeds" 
-        /// to the Torrent.
+        /// This can be used to add custom values to the main bencoded dictionary
+        /// </summary>        
+        public void AddCustom(BEncodedString key, IBEncodedValue value)
+        {
+            this.torrent.Add(key, value);
+        }
+
+
+        /// <summary>
+        /// This can be used to add custom values to the main bencoded dictionary
         /// </summary>        
         public void AddCustom(KeyValuePair<BEncodedString, IBEncodedValue> customInfo)
         {
-        	custom_info = customInfo;
-        	use_custom = true;
+            this.torrent.Add(customInfo);
         }
-        private KeyValuePair<BEncodedString, IBEncodedValue> custom_info;
-        private bool use_custom = false;
-        
-        /// <summary>This removes the Custom Values from the Torrent.
-        /// </summary>
-        public void RemoveCustom()
+
+
+        ///<summary>calculate md5sum of a file</summary>
+        ///<param name="fileName">the file to sum with md5</param>
+        private void AddMD5(BEncodedDictionary dict, string fileName)
         {
-        	use_custom = false;
+            MD5 hasher = MD5.Create();
+            StringBuilder sb = new StringBuilder();
+
+            using (FileStream stream = new FileStream(fileName, FileMode.Open))
+            {
+                byte[] hash = hasher.ComputeHash(stream);
+
+                foreach (byte b in hash)
+                {
+                    string hex = b.ToString("X");
+                    hex = hex.Length > 1 ? hex : "0" + hex;
+                    sb.Append(hex);
+                }
+                Console.WriteLine("sum for file " + fileName + " = " + sb.ToString());
+            }
+            dict.Add("md5sum", new BEncodedString(sb.ToString()));
         }
+
+
+        ///<summary>
+        ///calculates all hashes over the files which should be included in the torrent
+        ///</summmary>
+        private byte[] CalcPiecesHash(List<string> fullPaths)
+        {
+            SHA1 hasher = SHA1.Create();
+            byte[] piece = new byte[PieceLength];//holds one piece for sha1 calcing
+            int len = 0;        //holds the bytes read by the stream.Read() method
+            byte[] piecesBuffer = new byte[GetPieceCount(fullPaths) * 20]; //holds all the pieces hashes
+            int piecesBufferOffset = 0;
+
+            using (CatStreamReader reader = new CatStreamReader(fullPaths))
+            {
+                //go through each path added earlier by AddAllInfoDicts
+                len = reader.Read(piece, 0, piece.Length);
+                while (len != 0)
+                {
+                    byte[] currentHash = hasher.ComputeHash(piece, 0, len);
+                    Debug.Assert(currentHash.Length == 20);
+                    Array.Copy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
+                    piecesBufferOffset += currentHash.Length;
+                    len = reader.Read(piece, 0, piece.Length);
+                }
+            }
+            return piecesBuffer;
+        }
+
 
         ///<summary>
         ///creates and stores a torrent at storagePath
@@ -234,46 +348,48 @@ namespace MonoTorrent.Common
         ///<param name="storagePath">place and name to store the torrent file</param>
         public void Create(string storagePath)
         {
-            doDummy = false;
-            BEncodedDictionary torrentDict = CreateDict();
+            CreateDict();
 
             using (FileStream stream = new FileStream(storagePath, FileMode.Create))
             {
-                byte[] data = torrentDict.Encode();
+                byte[] data = this.torrent.Encode();
                 stream.Write(data, 0, data.Length);
             }
+
         }
+
 
         ///<summary>
         ///creates an BencodedDictionary.
         ///</summary>
         ///<returns>a BDictionary representing the torrent</returns>
-        private BEncodedDictionary CreateDict()
+        private void CreateDict()
         {
             if (Directory.Exists(Path))
             {
                 Debug.WriteLine("creating multi torrent from " + Path);
-                return CreateMultiFileTorrent();
+                CreateMultiFileTorrent();
+                return;
             }
             if (File.Exists(Path))
             {
                 Debug.WriteLine("creating single torrent from " + Path);
-                return CreateSingleFileTorrent();
+                CreateSingleFileTorrent();
+                return;
             }
-
+            
             throw new ArgumentException("no such file or directory", "storagePath");
         }
+
 
         ///<summary>
         ///used for creating multi file mode torrents.
         ///</summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected BEncodedDictionary CreateMultiFileTorrent()
+        protected void CreateMultiFileTorrent()
         {
-            BEncodedDictionary bencodedDict = new BEncodedDictionary();
-            AddCommonStuff(bencodedDict);
-
-            BEncodedDictionary info = new BEncodedDictionary();
+            AddCommonStuff(this.torrent);
+            BEncodedDictionary info = (BEncodedDictionary)this.torrent["info"];
 
             List<string> fullPaths = new List<string>();//store files to hash over
             BEncodedList files = new BEncodedList();//the dict which hold the file infos
@@ -286,75 +402,39 @@ namespace MonoTorrent.Common
             string name = GetDirName(Path);
 
             Debug.WriteLine("topmost dir: " + name);
-            AddString(info, "name", name);
-
-            info.Add("piece length", new BEncodedNumber(PieceLength));
+            info.Add("name", new BEncodedString(name));
 
             info.Add("pieces", new BEncodedString(CalcPiecesHash(fullPaths)));
-
-            bencodedDict.Add("info", info);
-
-            return bencodedDict;
         }
+
 
         ///<summary>
         ///used for creating a single file torrent file
         ///<summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected BEncodedDictionary CreateSingleFileTorrent()
+        protected void CreateSingleFileTorrent()
         {
-            BEncodedDictionary torrentDict = new BEncodedDictionary();
-            AddCommonStuff(torrentDict);
+            AddCommonStuff(this.torrent);
 
-            BEncodedDictionary infoDict = new BEncodedDictionary();
+            BEncodedDictionary infoDict = (BEncodedDictionary)this.torrent["info"];
 
             infoDict.Add("length", new BEncodedNumber(new FileInfo(Path).Length));
             if (StoreMD5)
-            {
                 AddMD5(infoDict, Path);
-            }
 
-            AddString(infoDict, "name", System.IO.Path.GetFileName(Path));
+            infoDict.Add("name", new BEncodedString(System.IO.Path.GetFileName(Path)));
             Console.WriteLine("name == " + System.IO.Path.GetFileName(Path));
-            infoDict.Add("piece length", new BEncodedNumber(PieceLength));
             List<string> files = new List<string>();
             files.Add(Path);
             infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(files)));
-
-            torrentDict.Add("info", infoDict);
-
-            return torrentDict;
         }
 
 
-        ///<summary>
-        ///this method runs recursively through all subdirs under dir and ads information
-        ///from each file to the filesList. 
-        ///<summary>
-        ///<param name="dir">the top directory to start from</param>
-        ///<param name="filesList">the list to store the file information</param>
-        ///<param name="paths">a list of all files found. used for piece hashing later</param>
-        private void AddAllFileInfoDicts(string dir, BEncodedList filesList, List<string> paths)
+        private static IBEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
         {
-            string[] subs = Directory.GetFileSystemEntries(dir);
-            foreach (string path in subs)
-            {
-                if (Directory.Exists(path))
-                {
-                    if (ignore_dot_files && System.IO.Path.GetDirectoryName(path)[0] == '.')
-                        continue;
-
-                    AddAllFileInfoDicts(path, filesList, paths);
-                    continue;
-                }
-
-                if (ignore_dot_files && System.IO.Path.GetFileName(path)[0] == '.')
-                    continue;
-
-                filesList.Add(GetFileInfoDict(path, dir));
-                paths.Add(path);
-            }
+            return dictionary.ContainsKey(key) ? dictionary[key] : null;
         }
+
 
         ///<summary>
         ///this method is used for multi file mode torrents to return a dictionary with
@@ -369,9 +449,7 @@ namespace MonoTorrent.Common
             fileDict.Add("length", new BEncodedNumber(new FileInfo(file).Length));
 
             if (StoreMD5)
-            {
                 AddMD5(fileDict, file);
-            }
 
             file = file.Remove(0, Path.Length);
             Debug.WriteLine("ohne base[" + basePath + "] " + file);
@@ -389,128 +467,6 @@ namespace MonoTorrent.Common
             return fileDict;
         }
 
-        ///<summary>
-        ///this adds stuff common to single and multi file torrents
-        ///</summary>
-        private void AddCommonStuff(BEncodedDictionary torrent)
-        {
-            Debug.WriteLine(announces[0]);
-            torrent.Add("announce", new BEncodedString(announces[0]));
-
-            if (announces.Count > 1) {
-                BEncodedList announceList = new BEncodedList();
-                foreach (string announce in announces)
-                {
-                    announceList.Add(new BEncodedString(announce));
-                }
-                torrent.Add("announce-list", announceList);
-            }
-
-            if (Comment.Length > 0) {
-                AddString(torrent, "comment", Comment);
-            }
-
-            if (CreatedBy.Length > 0) {
-                AddString(torrent, "created by", CreatedBy);
-            }
-
-            if (StoreCreationDate) {
-                DateTime epocheStart = new DateTime(1970, 1, 1);
-                TimeSpan span = DateTime.Now - epocheStart;
-                Debug.WriteLine("creation date: " + DateTime.Now.ToString() + " - " + epocheStart.ToString() + " = " + span.ToString() + " : " + (long)span.TotalSeconds);
-                torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
-            }			
-
-            torrent.Add("encoding", (BEncodedString)"UTF-8");
-            
-            if (use_custom) {
-            	torrent.Add(custom_info);
-            }
-        }
-
-        ///<summary>calculate md5sum of a file</summary>
-        ///<param name="fileName">the file to sum with md5</param>
-        private void AddMD5(BEncodedDictionary dict, string fileName)
-        {
-            MD5 hasher = MD5.Create();
-            StringBuilder sb = new StringBuilder();
-            if (doDummy)
-            {
-                dict.Add("md5sum", new BEncodedString("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
-                return;
-            }
-            using (FileStream stream = new FileStream(fileName, FileMode.Open))
-            {
-                byte[] hash = hasher.ComputeHash(stream);
-
-                foreach (byte b in hash)
-                {
-                    string hex = b.ToString("X");
-                    hex = hex.Length > 1 ? hex : "0" + hex;
-                    sb.Append(hex);
-                }
-                Console.WriteLine("sum for file " + fileName + " = " + sb.ToString());
-            }
-            dict.Add("md5sum", new BEncodedString(sb.ToString()));
-        }
-
-        ///<summary>
-        ///calculates all hashes over the files which should be included in the torrent
-        ///</summmary>
-        private byte[] CalcPiecesHash(List<string> fullPaths)
-        {
-            SHA1 hasher = SHA1.Create();
-            byte[] piece = new byte[PieceLength];//holds one piece for sha1 calcing
-            int len = 0;        //holds the bytes read by the stream.Read() method
-            byte[] piecesBuffer = new byte[GetPieceCount(fullPaths) * 20]; //holds all the pieces hashes
-            int piecesBufferOffset = 0;
-            if (doDummy)
-            {
-                return piecesBuffer;
-            }
-            using (CatStreamReader reader = new CatStreamReader(fullPaths))
-            {
-                //go through each path added earlier by AddAllInfoDicts
-                len = reader.Read(piece, 0, piece.Length);
-                while (len != 0)
-                {
-                    byte[] currentHash = hasher.ComputeHash(piece, 0, len);
-                    Debug.Assert(currentHash.Length == 20);
-                    Array.Copy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
-                    piecesBufferOffset += currentHash.Length;
-                    len = reader.Read(piece, 0, piece.Length);
-                }
-            }
-            return piecesBuffer;
-        }
-
-        private int GetPieceCount(List<string> fullPaths)
-        {
-            long size = 0;
-            foreach (string file in fullPaths)
-            {
-                size += new FileInfo(file).Length;
-            }
-            //double count = (double)size/PieceLength;
-            Console.WriteLine("piece count: " + Math.Ceiling((double)size / PieceLength));
-            return (int)Math.Ceiling((double)size / PieceLength);
-        }
-
-        ///<summary>
-        ///adds a string to a dictionary and checks to also include key-utf8 if needed
-        ///<summary>
-        ///<param name="dict">the dictionary to add the string to</param>
-        ///<param name="key">the key for the string</param>
-        ///<param name="str">the string</param>
-        private void AddString(BEncodedDictionary dict, string key, string str)
-        {
-            //Console.WriteLine(key + " = " + str );
-            dict.Add(key, new BEncodedString(str));
-            if (StoreUTF8)
-            {
-                dict.Add(key + ".utf-8", new BEncodedString(Encoding.UTF8.GetBytes(str)));
-            }
-        }
 
         private string GetDirName(string path)
         {
@@ -520,6 +476,66 @@ namespace MonoTorrent.Common
                 i--;
             return pathEntries[i];
         }
+
+
+        private long GetPieceCount(List<string> fullPaths)
+        {
+            long size = 0;
+            foreach (string file in fullPaths)
+                size += new FileInfo(file).Length;
+
+            //double count = (double)size/PieceLength;
+            long pieceCount = size / PieceLength + (((size % PieceLength) != 0) ? 1 : 0);
+            Console.WriteLine("piece count: " + pieceCount);
+            return pieceCount;
+        }
+
+
+        ///<summary>
+        /// Returns the approximate size of the resultant .torrent file in bytes
+        ///</summary>
+        public long GetSize()
+        {
+            List<string> paths = new List<string>();
+
+            if (Directory.Exists(this.path))
+                GetAllFilePaths(this.path, paths);
+            else
+                paths.Add(path);
+
+            long size = 0;
+            for (int i = 0; i < paths.Count; i++)
+                size += new FileInfo(paths[i]).Length;
+
+            return size;
+        }
+
+
+        /// <summary>This can be used to remove custom values from the main bencoded dictionary.
+        /// </summary>
+        public void RemoveCustom(BEncodedString key)
+        {
+            this.torrent.Remove(key);
+        }
+
+
+        /// <summary>This can be used to remove custom values from the main bencoded dictionary.
+        /// </summary>
+        public void RemoveCustom(KeyValuePair<BEncodedString, IBEncodedValue> customInfo)
+        {
+            this.torrent.Remove(customInfo);
+        }
+
+
+        private static void Set(BEncodedDictionary dictionary, BEncodedString key, IBEncodedValue value)
+        {
+            if (dictionary.ContainsKey("publisher-url"))
+                dictionary["publisher-url"] = value;
+            else
+                dictionary.Add("publisher-url", value);
+        }
+
+        #endregion
     }
 
     ///<summary>

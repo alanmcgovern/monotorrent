@@ -47,7 +47,7 @@ namespace MonoTorrent.Common.Test
         private const string TEST_FILE = "reallybigfile.dat";
         
         Torrent fromTorrentCreator = new Torrent();
-        private int sizeReported; //lame hack
+        private long sizeReported; //lame hack
         
         public string TestTorrentPath {        
             get {
@@ -75,14 +75,14 @@ namespace MonoTorrent.Common.Test
             Console.WriteLine("opened");
             
             TorrentCreator creator = new TorrentCreator();
-            creator.AddAnnounce(ANNOUNCE_URL);
+            creator.Announces.Add(new System.Collections.Generic.List<string>());
+            creator.Announces[0].Add(ANNOUNCE_URL);
             creator.Comment = COMMENT;
             creator.CreatedBy = CREATED_BY;
             creator.PieceLength = PIECE_LENGTH;
             creator.Path = TestTorrentPath;
 //            creator.StoreUTF8 = true;
 //            creator.StoreMD5 = true;
-            creator.StoreCreationDate = true;            
             creator.Create(TORRENT_PATH);
             sizeReported = creator.GetSize();
             
