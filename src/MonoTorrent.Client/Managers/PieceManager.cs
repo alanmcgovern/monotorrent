@@ -71,6 +71,33 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        /// <summary>
+        /// Tries to add a piece request to the peers message queue.
+        /// </summary>
+        /// <param name="id">The peer to add the request too</param>
+        /// <returns>True if the request was added</returns>
+        internal bool AddPieceRequest(PeerConnectionID id)
+        {
+            IPeerMessageInternal msg;
+
+            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
+                return false;
+
+            if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
+                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+                    return false;
+
+            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
+            if (msg == null)
+                return false;
+
+            id.Peer.Connection.EnQueue(msg);
+            id.Peer.Connection.AmRequestingPiecesCount++;
+            return true;
+        }
+
+
         internal bool IsInteresting(PeerConnectionID id)
         {
             // If i have completed the torrent, then no-one is interesting
@@ -113,24 +140,6 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage msg)
-        {
-            this.piecePicker.ReceivedRejectRequest(id, msg);
-        }
-
-
-        internal void RemoveRequests(PeerConnectionID id)
-        {
-            this.piecePicker.RemoveRequests(id);
-        }
-
-
-        internal PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
-        {
-            return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
-        }
-        #endregion
-
         internal void ReceivedChokeMessage(PeerConnectionID id)
         {
             // If fast peers isnt supported, we remove all pending request messages
@@ -150,29 +159,27 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// Tries to add a piece request to the peers message queue.
-        /// </summary>
-        /// <param name="id">The peer to add the request too</param>
-        /// <returns>True if the request was added</returns>
-        internal bool AddPieceRequest(PeerConnectionID id)
+        internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage msg)
         {
-            IPeerMessageInternal msg;
-
-            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
-                return false;
-
-            if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
-                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
-                    return false;
-
-            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
-            if (msg == null)
-                return false;
-
-            id.Peer.Connection.EnQueue(msg);
-            id.Peer.Connection.AmRequestingPiecesCount++;
-            return true;
+            this.piecePicker.ReceivedRejectRequest(id, msg);
         }
+
+
+        internal void RemoveRequests(PeerConnectionID id)
+        {
+            this.piecePicker.RemoveRequests(id);
+        }
+
+
+        internal PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
+        {
+            return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
+        }
+
+        #endregion
+
+
+
+
     }
 }
