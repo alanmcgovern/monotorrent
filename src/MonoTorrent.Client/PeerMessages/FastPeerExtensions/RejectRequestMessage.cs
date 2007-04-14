@@ -77,7 +77,7 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         public RejectRequestMessage(PieceMessage message)
-            :this(message.PieceIndex, message.StartOffset, message.BlockLength)
+            :this(message.PieceIndex, message.StartOffset, message.RequestLength)
         {
         }
 

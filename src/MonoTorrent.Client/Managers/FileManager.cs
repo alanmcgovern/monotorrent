@@ -361,12 +361,12 @@ namespace MonoTorrent.Client
             // Perform the actual write
             using (new ReaderLock(this.streamsLock))
             {
-                this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+                this.Write(recieveBuffer, message.DataOffset, writeIndex, message.RequestLength);
                 RaiseBlockWritten(new BlockEventArgs(message, id));
             }
 
             // Find the block that this data belongs to and set it's state to "Written"
-            int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.BlockLength);
+            int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
             piece.Blocks[index].Written = true;
 
             // Release the buffer back into the buffer manager.

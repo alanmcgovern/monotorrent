@@ -486,7 +486,7 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.BlockLength);
+                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
                 if (blockIndex == -1)
                 {
                     Logger.Log(id, "Invalid block start offset returned");

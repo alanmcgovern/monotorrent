@@ -209,7 +209,7 @@ namespace MonoTorrent.Client
                 if (p == null)
                     return PieceEvent.BlockNotRequested;
 
-                int blockIndex = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.BlockLength);
+                int blockIndex = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
                 if (blockIndex == -1)
                     return PieceEvent.BlockNotRequested;
 
@@ -218,7 +218,7 @@ namespace MonoTorrent.Client
                 {
                     long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
                     using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
-                        id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
+                        id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.RequestLength);
                 }
 
                 p.Blocks[blockIndex].Received = true;
@@ -241,7 +241,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < activeRequestees.Count; i++)
                     lock (activeRequestees[i])
                         if (activeRequestees[i].Peer.Connection != null)
-                            activeRequestees[i].Peer.Connection.EnQueueAt(new CancelMessage(message.PieceIndex, message.StartOffset, message.BlockLength), 0);
+                            activeRequestees[i].Peer.Connection.EnQueueAt(new CancelMessage(message.PieceIndex, message.StartOffset, message.RequestLength), 0);
 
                 activeRequestees.Clear();
                 this.blockRequestees.Remove(p.Blocks[blockIndex]);

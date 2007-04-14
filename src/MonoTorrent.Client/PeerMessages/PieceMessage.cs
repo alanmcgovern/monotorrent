@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.PeerMessages
         private FileManager fileManager;
         private int pieceIndex;
         private int startOffset;
-        private int blockLength;
+        private int requestLength;
 
 		private byte[] data;
         #endregion
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// </summary>
         public int ByteLength
         {
-            get { return (messageLength + this.blockLength + 4); }
+            get { return (messageLength + this.requestLength + 4); }
         }
 
 
@@ -102,9 +102,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// The length of the data
         /// </summary>
-        public int BlockLength
+        public int RequestLength
         {
-            get { return this.blockLength; }
+            get { return this.requestLength; }
         }
 
         int IPeerMessageInternal.ByteLength
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.fileManager = manager;
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
-            this.blockLength = blockLength;
+            this.requestLength = blockLength;
         }
 
         #endregion
@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.PeerMessages
             offset += 4;
             this.startOffset = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
             offset += 4;
-            this.blockLength = length - offset;
+            this.requestLength = length - offset;
 
             this.dataOffset = offset;
 
@@ -187,15 +187,15 @@ namespace MonoTorrent.Client.PeerMessages
         {
             int bytesRead = 0;
             buffer[offset + 4] = (byte)MessageId;
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + blockLength)), 0, buffer, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength + requestLength)), 0, buffer, offset, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
 
             long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
             using (new ReaderLock(this.fileManager.streamsLock))
-                bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.BlockLength);
+                bytesRead = this.fileManager.Read(buffer, offset + 13, pieceOffset, this.RequestLength);
 
-            if (bytesRead != this.BlockLength)
+            if (bytesRead != this.RequestLength)
                 throw new MessageException("Could not read required data");
 
             return (messageLength + bytesRead + 4);
@@ -224,7 +224,7 @@ namespace MonoTorrent.Client.PeerMessages
             PieceMessage msg = obj as PieceMessage;
             return (msg == null) ? false : (this.pieceIndex == msg.pieceIndex
                                             && this.startOffset == msg.startOffset
-                                            && this.blockLength == msg.blockLength
+                                            && this.requestLength == msg.requestLength
                                             && this.dataOffset == msg.dataOffset
                                             && this.fileManager == msg.fileManager);
         }
@@ -236,7 +236,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return (this.blockLength.GetHashCode()
+            return (this.requestLength.GetHashCode()
                 ^ this.dataOffset.GetHashCode()
                 ^ this.pieceIndex.GetHashCode()
                 ^ this.startOffset.GetHashCode()
@@ -293,7 +293,7 @@ namespace MonoTorrent.Client.PeerMessages
             sb.Append(" Offset ");
             sb.Append(this.startOffset);
             sb.Append(" Length ");
-            sb.Append(this.blockLength);
+            sb.Append(this.requestLength);
             return sb.ToString();
         }
         #endregion

@@ -155,7 +155,7 @@ namespace MonoTorrent.Client.PeerMessages
                 }
 
                 PieceMessage piece = msg as PieceMessage;
-                if (!(piece.PieceIndex == this.pieceIndex && piece.StartOffset == this.startOffset && piece.BlockLength == this.requestLength))
+                if (!(piece.PieceIndex == this.pieceIndex && piece.StartOffset == this.startOffset && piece.RequestLength == this.requestLength))
                 {
                     id.Peer.Connection.EnQueue(msg);
                 }
