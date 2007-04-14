@@ -197,6 +197,7 @@ namespace MonoTorrent.Client
 
             this.requests[id].Remove(p.Blocks[b]);
             this.blockRequestees[p.Blocks[b]].Remove(id);
+            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[b], id));
         }
 
 
@@ -219,9 +220,10 @@ namespace MonoTorrent.Client
                     using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
                         id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.BlockLength);
                 }
-                p.Blocks[blockIndex].Received = true;
 
+                p.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(p.Blocks[blockIndex], id));
 
                 if (!p.AllBlocksReceived)
                     return PieceEvent.BlockWrittenToDisk;
@@ -280,8 +282,8 @@ namespace MonoTorrent.Client
                 {
                     this.requests[id].Remove(piece.Blocks[block]);
                     this.blockRequestees[piece.Blocks[block]].Remove(id);
-
                     id.Peer.Connection.AmRequestingPiecesCount--;
+                    id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[block], id));
                 }
             }
         }
@@ -297,6 +299,8 @@ namespace MonoTorrent.Client
             for (int i = 0; i < blocks.Count; i++)
             {
                 id.Peer.Connection.AmRequestingPiecesCount--;
+                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(blocks[i], id));
+
                 if (this.blockRequestees.ContainsKey(blocks[i]))
                 {
                     List<PeerConnectionID> requestees = this.blockRequestees[blocks[i]];

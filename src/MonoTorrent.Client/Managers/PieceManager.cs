@@ -33,6 +33,7 @@ using System.Collections.Generic;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
+using System.Threading;
 
 namespace MonoTorrent.Client
 {
@@ -41,19 +42,20 @@ namespace MonoTorrent.Client
     /// </summary>
     public class PieceManager
     {
-        #region Public Constants
+        #region Internal Constants
 
-        public const int MaxRequests = 12;
-        public const int MaxEndGameRequests = 2;
+        internal const int MaxRequests = 12;
+        internal const int MaxEndGameRequests = 2;
 
         #endregion
 
 
         #region Events
-        /// <summary>
-        /// Event that's fired every time a Piece changes
-        /// </summary>
-        internal event EventHandler<PieceEventArgs> OnPieceChanged;
+
+        public event EventHandler<BlockEventArgs> BlockReceived;
+        public event EventHandler<BlockEventArgs> BlockRequested;
+        public event EventHandler<BlockEventArgs> BlockRequestCancelled;
+
         #endregion
 
 
@@ -63,7 +65,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        public PieceManager(BitField bitfield, TorrentFile[] files)
+        internal PieceManager(BitField bitfield, TorrentFile[] files)
         {
             this.piecePicker = new StandardPicker(bitfield, files);
         }
@@ -79,7 +81,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the request was added</returns>
         internal bool AddPieceRequest(PeerConnectionID id)
         {
-            IPeerMessageInternal msg;
+            RequestMessage msg;
 
             if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
                 return false;
@@ -94,6 +96,7 @@ namespace MonoTorrent.Client
 
             id.Peer.Connection.EnQueue(msg);
             id.Peer.Connection.AmRequestingPiecesCount++;
+            RaiseBlockRequested(new BlockEventArgs(msg, id));
             return true;
         }
 
@@ -101,12 +104,12 @@ namespace MonoTorrent.Client
         internal bool IsInteresting(PeerConnectionID id)
         {
             // If i have completed the torrent, then no-one is interesting
-			if (id.TorrentManager.Bitfield.AllTrue)
-				return false;
+            if (id.TorrentManager.Bitfield.AllTrue)
+                return false;
 
-			// If the peer is a seeder, then he is definately interesting
-			if (id.Peer.IsSeeder)
-				return true;
+            // If the peer is a seeder, then he is definately interesting
+            if (id.Peer.IsSeeder)
+                return true;
 
             // Otherwise we need to do a full check
             return this.piecePicker.IsInteresting(id);
@@ -131,7 +134,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal IPeerMessageInternal PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
+        internal RequestMessage PickPiece(PeerConnectionID id, List<PeerConnectionID> otherPeers)
         {
             if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
                 this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
@@ -150,7 +153,7 @@ namespace MonoTorrent.Client
                 int length = id.Peer.Connection.QueueLength;
                 for (int i = 0; i < length; i++)
                     if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
-                        continue;
+                        RaiseBlockRequestCancelled(new BlockEventArgs( (RequestMessage)message, id));
                     else
                         id.Peer.Connection.EnQueue(message);
             }
@@ -179,7 +182,53 @@ namespace MonoTorrent.Client
         #endregion
 
 
+        #region Event Firing Code
 
+        private void AsyncBlockReceived(object args)
+        {
+            if (this.BlockReceived == null)
+                return;
 
+            BlockEventArgs e = (BlockEventArgs)args;
+            this.BlockReceived(e.ID, e);
+        }
+
+        private void AsyncBlockRequested(object args)
+        {
+            if (this.BlockRequested == null)
+                return;
+
+            BlockEventArgs e = (BlockEventArgs)args;
+            this.BlockRequested(e.ID, e);
+        }
+
+        private void AsyncBlockRequestCancelled(object args)
+        {
+            if (this.BlockRequestCancelled == null)
+                return;
+
+            BlockEventArgs e = (BlockEventArgs)args;
+            this.BlockRequestCancelled(e.ID, e);
+        }
+
+        internal void RaiseBlockReceived(BlockEventArgs args)
+        {
+            if (this.BlockReceived != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockReceived), args);
+        }
+
+        internal void RaiseBlockRequested(BlockEventArgs args)
+        {
+            if (this.BlockRequested != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockRequested), args);
+        }
+
+        internal void RaiseBlockRequestCancelled(BlockEventArgs args)
+        {
+            if (this.BlockRequestCancelled != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockRequestCancelled), args);
+        }
+
+        #endregion Event Firing Code
     }
 }

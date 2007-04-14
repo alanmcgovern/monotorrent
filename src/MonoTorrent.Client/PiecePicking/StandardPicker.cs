@@ -396,7 +396,10 @@ namespace MonoTorrent.Client
                     for (int i = 0; i < pieces.Count; i++)
                         for (int j = 0; j < pieces[i].Blocks.Length; j++)
                             if (pieces[i].Blocks[j].Requested && !pieces[i].Blocks[j].Received)
+                            {
                                 id.Peer.Connection.AmRequestingPiecesCount--;
+                                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], id));
+                            }
 
                     // Should this be happening?
                     for (int i = 0; i < pieces.Count; i++)
@@ -417,36 +420,37 @@ namespace MonoTorrent.Client
         {
             lock (this.requests)
             {
-                if (this.requests.ContainsKey(id))
+                if (!this.requests.ContainsKey(id))
+                    return;
+
+                List<Piece> pieces = this.requests[id];
+                for (int i = 0; i < pieces.Count; i++)
                 {
-                    List<Piece> pieces = this.requests[id];
-                    for (int i = 0; i < pieces.Count; i++)
+                    if (message.PieceIndex != pieces[i].Index)
+                        continue;
+
+                    for (int j = 0; j < pieces[i].Blocks.Length; j++)
                     {
-                        if (message.PieceIndex != pieces[i].Index)
+                        if (pieces[i].Blocks[j].StartOffset != message.StartOffset)
                             continue;
 
-                        for (int j = 0; j < pieces[i].Blocks.Length; j++)
-                        {
-                            if (pieces[i].Blocks[j].StartOffset != message.StartOffset)
-                                continue;
+                        if (pieces[i].Blocks[j].RequestLength != message.RequestLength)
+                            throw new TorrentException("Trying to remove a request that doesn't exist");
 
-                            if (pieces[i].Blocks[j].RequestLength != message.RequestLength)
-                                throw new TorrentException("Trying to remove a request that doesn't exist");
+                        if (!pieces[i].Blocks[j].Requested)
+                            throw new TorrentException("The block was not requested");
 
-                            if (!pieces[i].Blocks[j].Requested)
-                                throw new TorrentException("The block was not requested");
+                        pieces[i].Blocks[j].Requested = false;
+                        id.Peer.Connection.AmRequestingPiecesCount--;
+                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], id));
 
-                            pieces[i].Blocks[j].Requested = false;
-                            id.Peer.Connection.AmRequestingPiecesCount--;
+                        if (pieces[i].NoBlocksRequested)
+                            pieces.RemoveAt(i);
 
-                            if (pieces[i].NoBlocksRequested)
-                                pieces.RemoveAt(i);
+                        if (pieces.Count == 0)
+                            this.requests.Remove(id);
 
-                            if (pieces.Count == 0)
-                                this.requests.Remove(id);
-
-                            return;
-                        }
+                        return;
                     }
                 }
             }
@@ -504,8 +508,8 @@ namespace MonoTorrent.Client
                 //throw new MessageException("Block was not requested");
 
                 piece.Blocks[blockIndex].Received = true;
-
                 id.Peer.Connection.AmRequestingPiecesCount--;
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], id));
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
                 if (piece.AllBlocksReceived)
@@ -570,8 +574,8 @@ namespace MonoTorrent.Client
                     throw new MessageException("We didnt request this block or we already received it");
 
                 piece.Blocks[blockIndex].Requested = false;
-
                 id.Peer.Connection.AmRequestingPiecesCount--;
+                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[blockIndex], id));
             }
         }
 

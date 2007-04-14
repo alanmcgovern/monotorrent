@@ -43,9 +43,16 @@ namespace MonoTorrent.Client
     /// </summary>
     public class FileManager : IDisposable
     {
+        #region Public Events
+
+        public event EventHandler<BlockEventArgs> BlockWritten;
+
+        #endregion Public Events
+
+
         #region Private Members
-        
-		private TorrentFile[] files;                            // The files that are in the torrent that we have to downoad
+
+        private TorrentFile[] files;                            // The files that are in the torrent that we have to downoad
 		private string baseDirectory;                           // The base directory into which all the files will be put
 		private string savePath;                                // The path where the base directory will be put
         private readonly int pieceLength;                       // The length of a piece in the torrent
@@ -353,7 +360,10 @@ namespace MonoTorrent.Client
 
             // Perform the actual write
             using (new ReaderLock(this.streamsLock))
+            {
                 this.Write(recieveBuffer, message.DataOffset, writeIndex, message.BlockLength);
+                RaiseBlockWritten(new BlockEventArgs(message, id));
+            }
 
             // Find the block that this data belongs to and set it's state to "Written"
             int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.BlockLength);
@@ -381,6 +391,20 @@ namespace MonoTorrent.Client
                 id.Peer.HashFails++;
         }
 
+        internal void RaiseBlockWritten(BlockEventArgs args)
+        {
+            if (this.BlockWritten != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockWritten), args);
+        }
+
+        private void AsyncBlockWritten(object args)
+        {
+            if (this.BlockWritten == null)
+                return;
+
+            BlockEventArgs e = (BlockEventArgs)args;
+            this.BlockWritten(e.ID, e);
+        }
 
         /// <summary>
         /// Performs the buffered read
