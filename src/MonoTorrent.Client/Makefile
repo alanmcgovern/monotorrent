@@ -30,6 +30,7 @@ SOURCES=BitField.cs \
 	Encryption/PeerAEncryption.cs \
 	Encryption/PeerBEncryption.cs \
 	Encryption/RC4.cs \
+	EventArgs/BlockEventArgs.cs \
 	EventArgs/MessageEventArgs.cs \
 	EventArgs/PeerConnectionEventArgs.cs \
 	EventArgs/PeersAddedEventArgs.cs \
