@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-	internal struct ReaderLock : IDisposable
+    public struct ReaderLock : IDisposable
 	{
 		public ReaderWriterLock Locker;
 

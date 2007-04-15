@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-	internal struct WriterLock : IDisposable
+	public struct WriterLock : IDisposable
 	{
 		private bool upgraded;
 		private LockCookie cookie;
