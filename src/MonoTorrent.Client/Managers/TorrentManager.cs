@@ -85,6 +85,7 @@ namespace MonoTorrent.Client
         internal readonly object resumeLock;    // Used to control access to the upload and download queues 
         private string savePath;                // The path which the files in the torrent should be saved to
         private TorrentSettings settings;       // The settings for this torrent
+        private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
         private Torrent torrent;                // All the information from the physical torrent that was loaded
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
@@ -131,6 +132,15 @@ namespace MonoTorrent.Client
         public TorrentState State
         {
             get { return this.state; }
+        }
+
+
+        /// <summary>
+        /// The time the torrent manager was started at
+        /// </summary>
+        public DateTime StartTime
+        {
+            get { return this.startTime; }
         }
 
 
@@ -686,13 +696,13 @@ namespace MonoTorrent.Client
 
             this.TrackerManager.Scrape();
             this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+            this.startTime = DateTime.Now;
             ClientEngine.ConnectionManager.RegisterManager(this);
 
             if (this.Progress == 100.0)
                 UpdateState(TorrentState.Seeding);
             else
                 UpdateState(TorrentState.Downloading);
-
         }
 
 
