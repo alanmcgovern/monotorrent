@@ -376,7 +376,19 @@ namespace MonoTorrent.Client
 
                     // Request the piece
                     else
-                        return this.GenerateRequest(id, requestIndex);
+                    {
+                        RequestMessage returnMessage = this.GenerateRequest(id, requestIndex);
+                        List<Piece> reqs = requests[id];
+                        for (int i = 0; i < reqs.Count; i++)
+                        {
+                            if (reqs[i].Index != requestIndex)
+                                continue;
+
+                            id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
+                        }
+
+                        return returnMessage;
+                    }
                 }
             }
         }
@@ -398,7 +410,7 @@ namespace MonoTorrent.Client
                             if (pieces[i].Blocks[j].Requested && !pieces[i].Blocks[j].Received)
                             {
                                 id.Peer.Connection.AmRequestingPiecesCount--;
-                                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], id));
+                                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], pieces[i], id));
                             }
 
                     // Should this be happening?
@@ -442,7 +454,7 @@ namespace MonoTorrent.Client
 
                         pieces[i].Blocks[j].Requested = false;
                         id.Peer.Connection.AmRequestingPiecesCount--;
-                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], id));
+                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(pieces[i].Blocks[j], pieces[i], id));
 
                         if (pieces[i].NoBlocksRequested)
                             pieces.RemoveAt(i);
@@ -509,7 +521,7 @@ namespace MonoTorrent.Client
 
                 piece.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], id));
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], piece, id));
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
                 if (piece.AllBlocksReceived)
@@ -533,7 +545,9 @@ namespace MonoTorrent.Client
         {
             // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
             if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+            {
                 this.RemoveRequests(id);
+            }
             else
             {
                 // Cleanly remove any pending request messages from the send queue as there's no point in sending them
@@ -575,7 +589,7 @@ namespace MonoTorrent.Client
 
                 piece.Blocks[blockIndex].Requested = false;
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[blockIndex], id));
+                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[blockIndex], piece, id));
             }
         }
 

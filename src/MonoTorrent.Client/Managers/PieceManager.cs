@@ -96,7 +96,6 @@ namespace MonoTorrent.Client
 
             id.Peer.Connection.EnQueue(msg);
             id.Peer.Connection.AmRequestingPiecesCount++;
-            RaiseBlockRequested(new BlockEventArgs(msg, id));
             return true;
         }
 
@@ -145,19 +144,6 @@ namespace MonoTorrent.Client
 
         internal void ReceivedChokeMessage(PeerConnectionID id)
         {
-            // If fast peers isnt supported, we remove all pending request messages
-            if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
-            {
-                // Remove any pending request messages from the send queue as there's no point in sending them
-                IPeerMessageInternal message;
-                int length = id.Peer.Connection.QueueLength;
-                for (int i = 0; i < length; i++)
-                    if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
-                        RaiseBlockRequestCancelled(new BlockEventArgs( (RequestMessage)message, id));
-                    else
-                        id.Peer.Connection.EnQueue(message);
-            }
-
             this.piecePicker.ReceivedChokeMessage(id);
         }
 

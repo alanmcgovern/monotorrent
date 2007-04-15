@@ -161,6 +161,7 @@ namespace MonoTorrent.Client
                     this.blockRequestees[b].Add(id);
 
                     // Return the request for the block
+                    id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(b, GetPieceFromIndex(this.pieces, b.PieceIndex), id));
                     return b.CreateRequest();
                 }
 
@@ -197,7 +198,7 @@ namespace MonoTorrent.Client
 
             this.requests[id].Remove(p.Blocks[b]);
             this.blockRequestees[p.Blocks[b]].Remove(id);
-            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[b], id));
+            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[b], p, id));
         }
 
 
@@ -223,7 +224,7 @@ namespace MonoTorrent.Client
 
                 p.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(p.Blocks[blockIndex], id));
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(p.Blocks[blockIndex], p, id));
 
                 if (!p.AllBlocksReceived)
                     return PieceEvent.BlockWrittenToDisk;
@@ -283,7 +284,7 @@ namespace MonoTorrent.Client
                     this.requests[id].Remove(piece.Blocks[block]);
                     this.blockRequestees[piece.Blocks[block]].Remove(id);
                     id.Peer.Connection.AmRequestingPiecesCount--;
-                    id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[block], id));
+                    id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[block], piece, id));
                 }
             }
         }
@@ -299,7 +300,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < blocks.Count; i++)
             {
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(blocks[i], id));
+                id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(blocks[i], GetPieceFromIndex(this.pieces, blocks[i].PieceIndex), id));
 
                 if (this.blockRequestees.ContainsKey(blocks[i]))
                 {

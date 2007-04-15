@@ -37,13 +37,6 @@ namespace MonoTorrent.Client
     /// </summary>
     public struct Block
     {
-        #region Public Fields
-
-        public static readonly Block Empty = new Block(-1, -1, -1);
-
-        #endregion Public Fields
-
-
         #region Private Fields
 
         private int pieceIndex;
@@ -126,7 +119,7 @@ namespace MonoTorrent.Client
         /// <param name="pieceIndex">The index of the piece this block is from</param>
         /// <param name="startOffset">The offset in bytes that this block starts at</param>
         /// <param name="requestLength">The length in bytes of the block</param>
-        public Block(int pieceIndex, int startOffset, int requestLength)
+        internal Block(int pieceIndex, int startOffset, int requestLength)
         {
             this.pieceIndex = pieceIndex;
             this.received = false;
@@ -145,7 +138,7 @@ namespace MonoTorrent.Client
         /// Creates a RequestMessage for this Block
         /// </summary>
         /// <returns></returns>
-        public RequestMessage CreateRequest()
+        internal RequestMessage CreateRequest()
         {
             return new RequestMessage(this.pieceIndex, this.startOffset, this.requestLength);
         }

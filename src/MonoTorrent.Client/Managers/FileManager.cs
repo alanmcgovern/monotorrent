@@ -355,19 +355,19 @@ namespace MonoTorrent.Client
             PieceMessage message = (PieceMessage)bufferedFileIO.Message;
             Piece piece = bufferedFileIO.Piece;
 
-            // Calculate the index where we will start to write the data
-            long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
+            // Find the block that this data belongs to and set it's state to "Written"
+            int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
 
             // Perform the actual write
             using (new ReaderLock(this.streamsLock))
             {
+                // Calculate the index where we will start to write the data
+                long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
                 this.Write(recieveBuffer, message.DataOffset, writeIndex, message.RequestLength);
-                RaiseBlockWritten(new BlockEventArgs(message, id));
             }
 
-            // Find the block that this data belongs to and set it's state to "Written"
-            int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
             piece.Blocks[index].Written = true;
+            RaiseBlockWritten(new BlockEventArgs(piece.Blocks[index], piece, id));
 
             // Release the buffer back into the buffer manager.
             ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);

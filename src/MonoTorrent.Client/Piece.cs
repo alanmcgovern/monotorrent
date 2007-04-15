@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The blocks that this piece is composed of
         /// </summary>
-        public Block[] Blocks
+        internal Block[] Blocks
         {
             get { return this.blocks; }
         }
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The index of the piece</param>
         /// <param name="torrent">The Torrent the piece is from</param>
-        public Piece(int pieceIndex, Torrent torrent)
+        internal Piece(int pieceIndex, Torrent torrent)
         {
             this.index = pieceIndex;
 
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                for(int i=0;i<this.blocks.Length; i++)
+                for (int i = 0; i < this.blocks.Length; i++)
                     if (!this.blocks[i].Requested)
                         return false;
 
@@ -183,7 +183,7 @@ namespace MonoTorrent.Client
         {
             return this.index;
         }
-        
+
 
         public bool NoBlocksRequested
         {
@@ -195,6 +195,15 @@ namespace MonoTorrent.Client
 
                 return true;
             }
+        }
+
+        public int BlockCount
+        {
+            get { return this.blocks.Length; }
+        }
+        public Block this[int index]
+        {
+            get { return this.blocks[index]; }
         }
 
         #endregion
