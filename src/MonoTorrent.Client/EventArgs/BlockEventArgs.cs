@@ -27,7 +27,7 @@ namespace MonoTorrent.Client
             get { return this.block; }
         }
 
-        
+
         /// <summary>
         /// The piece that the block belongs too
         /// </summary>
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
         {
             get { return this.piece; }
         }
-        
+
 
         /// <summary>
         /// The peer who the block has been requested off
@@ -63,5 +63,23 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+
+        #region Methods
+
+        public override bool Equals(object obj)
+        {
+            BlockEventArgs args = obj as BlockEventArgs;
+            return (args == null) ? false : this.piece.Equals(args.piece)
+                                         && this.id.Equals(args.id)
+                                         && this.block.Equals(args.block);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.block.GetHashCode();
+        }
+
+        #endregion Methods
     }
 }
