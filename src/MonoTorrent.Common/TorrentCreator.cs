@@ -197,7 +197,7 @@ namespace MonoTorrent.Common
             this.torrent.Add("info", info);
 
             // Add in initial values for some of the torrent attributes
-            info.Add("piece length", new BEncodedNumber(256 * 1024));   // 256kB default piece size
+            PieceLength =  256 * 1024;   // 256kB default piece size
             torrent.Add("encoding", (BEncodedString)"UTF-8");
         }
 
