@@ -127,7 +127,19 @@ namespace MonoTorrent.Common
                 return val == null ? -1 : ((BEncodedNumber)val).Number;
             }
             set { Set((BEncodedDictionary)this.torrent["info"], "piece length", new BEncodedNumber(value)); }
+        }
 
+        ///<summary>
+        ///This property sets whether this is a private torrent or not
+        ///</summary>
+        public bool Private
+        {
+            get
+            {
+                IBEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("private"));
+                return val == null ? false : ((BEncodedNumber)val).Number == 1;
+            }
+            set { Set((BEncodedDictionary)this.torrent["info"], "private", new BEncodedNumber(value ? 1 : 0)); }
         }
 
 
