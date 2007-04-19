@@ -273,6 +273,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        fireConnected = false;
                         Logger.Log(id, "failed to connect " + ex.Message);
                         id.Peer.FailedConnectionAttempts++;
 
@@ -296,6 +297,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        fireConnected = false;
                         Logger.Log(id, "failed to connect " + ex.Message);
                         id.Peer.FailedConnectionAttempts++;
 
@@ -1104,7 +1106,11 @@ namespace MonoTorrent.Client
         {
             try
             {
+#warning Terrible logic actually. I need to fix this.
                 id.Peer.EncryptionSupported = EncryptionMethods.NoEncryption;
+                CleanupSocket(id, "Encryptor error... somewhere");
+                return;
+
 
                 if (id.Peer.Connection != null)
                 {
@@ -1112,8 +1118,8 @@ namespace MonoTorrent.Client
                     id.Peer.Connection.Dispose();
                 }
 
-                id.Peer.Connection = null;
-                id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
+                //id.Peer.Connection = null;
+                //id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                 if (this.settings.MinEncryptionLevel == EncryptionType.None)
                     id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
