@@ -331,8 +331,6 @@ namespace MonoTorrent.Client
                 // This hashing algorithm is written on the basis that the files are
                 // preallocated. Might change to not have to preallocate files in future,
                 // but there's no benefits to doing that.
-                if (this.fileStreams[i].Length != this.files[i].Length && fileAccess == FileAccess.ReadWrite)
-                    this.fileStreams[i].SetLength(files[i].Length);
 
                 this.fileSize += files[i].Length;
             }
@@ -579,10 +577,10 @@ namespace MonoTorrent.Client
 
             for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
             {                                                   // files until we find the file which contains
-                if (offset < this.fileStreams[i].Length)        // the start of the data we want to write
+                if (offset < this.files[i].Length)        // the start of the data we want to write
                     break;
 
-                offset -= this.fileStreams[i].Length;           // Offset now contains the index of the data we want
+                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
             }                                                   // to write to fileStream[i].
 
             while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
@@ -592,11 +590,14 @@ namespace MonoTorrent.Client
 
                 lock (this.fileStreams[i])
                 {
+                    if (fileStreams[i].Length < offset)
+                        fileStreams[i].SetLength(offset);
+
                     fileStreams[i].Seek(offset, SeekOrigin.Begin);
                     offset = 0; // Any further files need to be written from the beginning of the file
 
                     // Find the maximum number of bytes we can write before we reach the end of the file
-                    bytesWeCanWrite = this.fileStreams[i].Length - this.fileStreams[i].Position;
+                    bytesWeCanWrite = this.files[i].Length - this.fileStreams[i].Position;
 
                     // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
                     // amount and let the rest of the data be written with the next filestream
