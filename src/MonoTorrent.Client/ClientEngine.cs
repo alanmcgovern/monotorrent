@@ -239,6 +239,9 @@ namespace MonoTorrent.Client
                 if (this.torrents[i].State != TorrentState.Stopped)
                     waitHandles.Add(this.Stop(this.torrents[i]));
 
+            if (waitHandles.Count == 0)
+                waitHandles.Add(new ManualResetEvent(true));
+
             return waitHandles.ToArray();
         }
 
