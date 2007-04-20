@@ -12,15 +12,18 @@ namespace MonoTorrent.Client
         public IPeerMessageInternal Message;
         public Piece Piece;
         public BitField BitField;
+        public List<int> UnhashedPieces;
 
 
-        public BufferedFileWrite(PeerConnectionID id, byte[] buffer, IPeerMessageInternal message, Piece piece, BitField bitfield)
+        public BufferedFileWrite(PeerConnectionID id, byte[] buffer, IPeerMessageInternal message, Piece piece, BitField bitfield,
+            List<int> unhashedPieces)
         {
             this.Id = id;
             this.Buffer = buffer;
             this.Message = message;
             this.Piece = piece;
             this.BitField = bitfield;
+            this.UnhashedPieces = unhashedPieces;
         }
     }
 }

@@ -377,6 +377,8 @@ namespace MonoTorrent.Client
             // Hashcheck the piece as we now have all the blocks.
             bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index), piece.Index);
             id.TorrentManager.Bitfield[message.PieceIndex] = result;
+            lock (bufferedFileIO.UnhashedPieces)
+                bufferedFileIO.UnhashedPieces.Remove(piece.Index);
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
@@ -421,7 +423,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message, Piece piece)
+        internal void QueueWrite(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message, Piece piece, List<int> unhashedPieces)
         {
             lock (this.queueLock)
             {
@@ -432,7 +434,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
                 Buffer.BlockCopy(recieveBuffer, 0, buffer, 0, recieveBuffer.Length);
 
-                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield));
+                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield, unhashedPieces));
                 SetHandleState(true);
             }
         }
@@ -449,7 +451,7 @@ namespace MonoTorrent.Client
         {
             lock (this.queueLock)
             {
-                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield));
+                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield, null));
                 SetHandleState(true);
             }
         }
