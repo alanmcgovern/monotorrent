@@ -208,6 +208,8 @@ namespace MonoTorrent.Client
             this.scrapeCallback = scrapeCallback;
             int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
             this.engineSettings = engineSettings;
+            this.warningMessage = string.Empty;
+            this.failureMessage = string.Empty;
 
             if ((indexOfAnnounce + 8) <= announceUrl.Length && announceUrl.Substring(indexOfAnnounce, 8) == "announce")
             {
