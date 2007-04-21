@@ -420,7 +420,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The manager to load fastresume data for</param>
         /// <returns></returns>
-        private bool LoadFastResume(TorrentManager manager)
+        internal static bool LoadFastResume(TorrentManager manager)
         {
             // If our TorrentManager object does not support fast-resume then we
             // return false so the hash check will begin.
