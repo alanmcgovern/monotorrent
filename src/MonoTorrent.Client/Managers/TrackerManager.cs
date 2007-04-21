@@ -61,6 +61,15 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Returns the tracker that is current in use by the engine
+        /// </summary>
+        public Tracker CurrentTracker
+        {
+            get { return this.trackerTiers[0].Trackers[0]; }
+        }
+
+
+        /// <summary>
         /// The infohash for the torrent
         /// </summary>
         private string infoHash;
