@@ -310,6 +310,20 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
+        /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
+        /// </summary>
+        /// <param name="forceFullScan"></param>
+        public void HashCheck(bool forceFullScan)
+        {
+            if (this.state != TorrentState.Stopped)
+                throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
+
+            UpdateState(TorrentState.Hashing);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), forceFullScan);
+        }
+
+        /// <summary>
         /// The current progress of the torrent in percent
         /// </summary>
         public double Progress
@@ -669,8 +683,7 @@ namespace MonoTorrent.Client
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
                 {
-                    UpdateState(TorrentState.Hashing);
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(HashCheck), this);
+                    HashCheck(false);
                     return;
                 }
 
@@ -757,28 +770,32 @@ namespace MonoTorrent.Client
         /// Hash checks the supplied torrent
         /// </summary>
         /// <param name="state">The TorrentManager to hashcheck</param>
-        private void HashCheck(object state)
+        private void PerformHashCheck(object state)
         {
-            bool result;
-            TorrentManager manager = state as TorrentManager;
+            bool streamsOpen = this.fileManager.StreamsOpen;
+            bool forceCheck = (bool)state;
 
-            if (manager == null)
-                return;
+            // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
+            // perform a full scan.
+            
+            if(!streamsOpen)
+                this.fileManager.OpenFileStreams(FileAccess.Read);
 
-            for (int i = 0; i < manager.torrent.Pieces.Count; i++)
-            {
-                result = manager.torrent.Pieces.IsValid(manager.fileManager.GetHash(i), i);
-                lock (manager.pieceManager.MyBitField)
-                    manager.pieceManager.MyBitField[i] = result;
+            if (forceCheck || (!forceCheck && !ClientEngine.LoadFastResume(this)))
+                for (int i = 0; i < this.torrent.Pieces.Count; i++)
+                    this.pieceManager.MyBitField[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
 
-                RaisePieceHashed(new PieceHashedEventArgs(i, result));
-            }
+            if (!streamsOpen)
+                this.fileManager.CloseFileStreams();
 
-            manager.hashChecked = true;
+            for (int i = 0; i < this.torrent.Pieces.Count; i++)
+                RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
 
+            this.hashChecked = true;
+            UpdateState(TorrentState.Stopped);
 #warning Don't *always* start the torrent in the future.
-            if (manager.state == TorrentState.Stopped || (manager.state == TorrentState.Paused) || manager.state == TorrentState.Hashing)
-                manager.Start();
+            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
+                this.Start();
         }
 
 
