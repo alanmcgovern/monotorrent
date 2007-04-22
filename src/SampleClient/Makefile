@@ -2,9 +2,7 @@ TARGET=-target:exe
 OUT=../bin/MonoTorrent.exe
 
 REFERENCES=\
-	-r:../bin/MonoTorrent.Common.dll	\
-	-r:../bin/MonoTorrent.Client.dll	\
-	-r:../bin/MonoTorrent.BEncoding.dll	\
+	-r:../bin/MonoTorrent.dll	\
 	-r:../Libs/Upnp.dll
 
 SOURCES=main.cs \

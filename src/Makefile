@@ -1,4 +1,4 @@
-SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp SampleClient
+SUBDIRS = MonoTorrent MonoTorrent.TrackerApp SampleClient
 
 all: config.make
 	for dir in $(SUBDIRS); do \
@@ -6,7 +6,7 @@ all: config.make
 	done
 
 clean:
-	for dir in $(SUBDIRS); do \
+	-for dir in $(SUBDIRS); do \
 		(cd $$dir && make clean) \
 	done
 

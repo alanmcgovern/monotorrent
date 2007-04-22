@@ -1,8 +1,7 @@
 OUT=../bin/TrackerApp.exe
 TARGET=-target:exe
 REFERENCES=	\
-	-r:../bin/MonoTorrent.Common.dll	\
-	-r:../bin/MonoTorrent.Tracker.dll
+	-r:../bin/MonoTorrent.dll
 
 SOURCES=Main.cs AssemblyInfo.cs
 
