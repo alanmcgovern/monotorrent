@@ -1,0 +1,131 @@
+OUT=../bin/MonoTorrent.dll
+
+REFERENCES=	\
+	-r:System.Web,Mono.Security.dll		\
+	-r:../Libs/Upnp.dll
+
+SOURCES=	\
+	Common/Enums.cs \
+	Common/Hashes.cs \
+	Common/Peer.cs \
+	Common/PeerID.cs \
+	Common/ToolBox.cs \
+	Common/TorrentCreator.cs \
+	Common/Torrent.cs \
+	Common/TorrentFile.cs \
+	Common/TorrentException.cs \
+	Common/VersionInfo.cs \
+	Common/TorrentWatchers/ITorrentWatcher.cs \
+	Common/TorrentWatchers/TorrentFolderWatcher.cs \
+	Common/TorrentWatchers/TorrentWatcherEventArgs.cs \
+	Common/TorrentWatchers/TorrentWatchers.cs \
+	Client/BitField.cs \
+	Client/Block.cs \
+	Client/BufferedFileRead.cs \
+	Client/BufferedFileWrite.cs \
+	Client/ClientEngine.cs \
+	Client/ConnectionListener.cs \
+	Client/Logger.cs \
+	Client/PeerList.cs \
+	Client/PortMapper.cs \
+	Client/RateLimiter.cs \
+	Client/ReaderLock.cs \
+	Client/MessageHandler.cs \
+	Client/TransferType.cs \
+	Client/TrackerTier.cs \
+	Client/WriterLock.cs \
+	Client/Encryption/EncryptedSocket.cs \
+	Client/Encryption/IEncryption.cs \
+	Client/Encryption/IEncryptor.cs \
+	Client/Encryption/ModuloCalculator.cs \
+	Client/Encryption/NoEncryption.cs \
+	Client/Encryption/NullEncryption.cs \
+	Client/Encryption/PeerAEncryption.cs \
+	Client/Encryption/PeerBEncryption.cs \
+	Client/Encryption/RC4.cs \
+	Client/EventArgs/BlockEventArgs.cs \
+	Client/EventArgs/MessageEventArgs.cs \
+	Client/EventArgs/PeerConnectionEventArgs.cs \
+	Client/EventArgs/PeersAddedEventArgs.cs \
+	Client/EventArgs/PieceEventArgs.cs \
+	Client/EventArgs/PieceHashedEventArgs.cs \
+	Client/EventArgs/StateUpdateEventArgs.cs \
+	Client/EventArgs/TorrentStateChangedEventArgs.cs \
+	Client/EventArgs/TrackerStateChangedEventArgs.cs \
+	Client/Exceptions/ConnectionException.cs \
+	Client/Exceptions/MessageException.cs \
+	Client/Exceptions/ListenerException.cs \
+	Client/Exceptions/ProtocolException.cs \
+	Client/Exceptions/TorrentLoadException.cs \
+	Client/Peers/Peer.cs \
+	Client/PeerConnections/PeerConnectionId.cs \
+	Client/PeerConnections/PeerConnectionBase.cs \
+	Client/PeerConnections/TCPConnection.cs \
+	Client/PiecePicking/EndGamePicker.cs \
+	Client/PiecePicking/PiecePickerBase.cs \
+	Client/PiecePicking/StandardPicker.cs \
+	Client/Managers/BufferManager.cs \
+	Client/Managers/ConnectionManager.cs \
+	Client/Managers/ConnectionMonitor.cs \
+	Client/Managers/FileManager.cs \
+	Client/Managers/PieceManager.cs \
+	Client/Managers/TorrentManager.cs \
+	Client/Managers/TrackerManager.cs \
+	Client/PeerMessages/BitfieldMessage.cs \
+	Client/PeerMessages/CancelMessage.cs \
+	Client/PeerMessages/ChokeMessage.cs \
+	Client/PeerMessages/HandshakeMessage.cs \
+	Client/PeerMessages/HaveMessage.cs \
+	Client/PeerMessages/InterestedMessage.cs \
+	Client/PeerMessages/IPeerMessage.cs \
+	Client/PeerMessages/IPeerMessageInternal.cs \
+	Client/PeerMessages/KeepAliveMessage.cs \
+	Client/PeerMessages/NotInterestedMessage.cs \
+	Client/PeerMessages/PeerwireEncoder.cs \
+	Client/PeerMessages/PieceMessage.cs \
+	Client/PeerMessages/PortMessage.cs \
+	Client/PeerMessages/RequestMessage.cs \
+	Client/PeerMessages/UnchokeMessage.cs \
+	Client/PeerMessages/UnknownMessage.cs \
+	Client/PeerMessages/ExtendedMessages/ExtendedListMessage.cs \
+	Client/PeerMessages/FastPeerExtensions/AllowedFastMessage.cs \
+	Client/PeerMessages/FastPeerExtensions/HaveAllMessage.cs \
+	Client/PeerMessages/FastPeerExtensions/HaveNoneMessage.cs \
+	Client/PeerMessages/FastPeerExtensions/RejectRequestMessage.cs \
+	Client/PeerMessages/FastPeerExtensions/SuggestPieceMessage.cs \
+	Client/Settings/EngineSettings.cs \
+	Client/Settings/TorrentSettings.cs \
+	Client/Piece.cs \
+	Client/TrackerConnectionId.cs \
+	Client/AllowedFastAlgorithm.cs \
+	Client/Tracker.cs	\
+	BEncoding/BEncode.cs \
+	BEncoding/BEncodedDictionary.cs \
+	BEncoding/BEncodedList.cs \
+	BEncoding/BEncodedNumber.cs \
+	BEncoding/BEncodedString.cs \
+	BEncoding/BEncodingException.cs \
+	BEncoding/IBEncodedValue.cs	\
+	Tracker/Frontend/AnnounceHandler.cs \
+	Tracker/Frontend/AnnounceParameterParser.cs \
+	Tracker/Frontend/AnnounceParameters.cs \
+	Tracker/Frontend/global.asax.cs \
+	Tracker/Frontend/InternalHttpServer.cs \
+	Tracker/Frontend/ParameterParser.cs \
+	Tracker/Frontend/ScrapeHandler.cs \
+	Tracker/Frontend/ScrapeParameterParser.cs \
+	Tracker/Frontend/ScrapeParameters.cs \
+	Tracker/Frontend/TestHandler.cs \
+	Tracker/IIntervalAlgorithm.cs \
+	Tracker/ITorrentManager.cs \
+	Tracker/Peer.cs \
+	Tracker/PeerManager.cs \
+	Tracker/SimpleTorrentManager.cs \
+	Tracker/StaticIntervalAlgorithm.cs \
+	Tracker/Tracker.cs \
+	Tracker/TrackerEngine.cs 
+
+
+all: $(OUT)
+
+include ../rules.make
