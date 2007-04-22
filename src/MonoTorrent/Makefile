@@ -126,10 +126,9 @@ SOURCES=	\
 	Tracker/TrackerEngine.cs \
 	AssemblyInfo.cs
 
+all: $(OUT)
+
 AssemblyInfo.cs: AssemblyInfo.cs.in ../config.make
 	sed "s/@VERSION@/$(VERSION)/" < AssemblyInfo.cs.in > AssemblyInfo.cs
-
-
-all: $(OUT)
 
 include ../rules.make
