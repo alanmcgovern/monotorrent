@@ -123,7 +123,11 @@ SOURCES=	\
 	Tracker/SimpleTorrentManager.cs \
 	Tracker/StaticIntervalAlgorithm.cs \
 	Tracker/Tracker.cs \
-	Tracker/TrackerEngine.cs 
+	Tracker/TrackerEngine.cs \
+	AssemblyInfo.cs
+
+AssemblyInfo.cs: AssemblyInfo.cs.in ../config.make
+	sed "s/@VERSION@/$(VERSION)/" < AssemblyInfo.cs.in > AssemblyInfo.cs
 
 
 all: $(OUT)
