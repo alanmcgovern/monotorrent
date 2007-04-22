@@ -1,4 +1,4 @@
-SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp MonoTorrent 
+SUBDIRS = MonoTorrent.BEncoding  MonoTorrent.Common MonoTorrent.Client MonoTorrent.Tracker  MonoTorrent.TrackerApp SampleClient
 
 all: config.make
 	for dir in $(SUBDIRS); do \
