@@ -15,4 +15,7 @@ clean:
 
 install: 
 	cp $(OUT) $(prefix)/lib/bitsharp
-	
+
+distlocal:
+	cp Makefile $(EXTRA_DIST) $(DESTDIR)
+	for f in $(SOURCES); do d=`dirname $$f`; mkdir -p $(DESTDIR)/$$d || true; cp $$f $(DESTDIR)/$$d; done

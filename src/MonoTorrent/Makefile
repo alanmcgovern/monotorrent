@@ -4,6 +4,8 @@ REFERENCES=	\
 	-r:System.Web,Mono.Security.dll		\
 	-r:../Libs/Upnp.dll
 
+EXTRA_DIST = AssemblyInfo.cs.in
+
 SOURCES=	\
 	Common/Enums.cs \
 	Common/Hashes.cs \
