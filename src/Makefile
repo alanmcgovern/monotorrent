@@ -26,7 +26,7 @@ install-setup:
 	-mkdir -p $(prefix)/bin
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent.x
 	chmod +x monotorrent.x
-	mv monotorrent.x $(prefix)/bin/monotorrent
+	mv monotorrent.x $(prefix)/bin/monotorrent.x
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.Interface.exe/' < script.in > monotorrent-gtk
 	chmod +x monotorrent-gtk
 	mv monotorrent-gtk $(prefix)/bin/monotorrent-gtk
