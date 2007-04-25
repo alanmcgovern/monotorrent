@@ -1,6 +1,6 @@
 SUBDIRS = MonoTorrent TrackerApp SampleClient
 
-all: config.make
+all: config.make monotorrent.pc
 	for dir in $(SUBDIRS); do \
 		(cd $$dir && make) \
 	done
@@ -21,7 +21,10 @@ install: install-setup
 
 include config.make
 
-install-setup: 
+monotorrent.pc: monotorrent.pc.in Makefile
+	sed -e "s,@PREFIX@,$(prefix)," -e "s/@VERSION@/$(VERSION)/" < monotorrent.pc.in > monotorrent.pc
+
+install-setup: monotorrent.pc
 	-mkdir -p $(prefix)/lib/bitsharp
 	-mkdir -p $(prefix)/bin
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent.x
@@ -31,6 +34,7 @@ install-setup:
 	chmod +x monotorrent-gtk
 	mv monotorrent-gtk $(prefix)/bin/monotorrent-gtk
 	cp Libs/Upnp.dll $(prefix)/lib/bitsharp/
+	cp monotorrent.pc $(prefix)/lib/pkgconfig
 
 dist:
 	rm -rf monotorrent-$(VERSION)
@@ -44,10 +48,10 @@ dist:
 	rm -rf monotorrent-$(VERSION)
 	echo monotorrent-$(VERSION) has been packaged
 
-distlocal:
+distlocal: 
 	mkdir $(DESTDIR)/Libs
 	cp Libs/Upnp.dll Libs/Upnp.xml $(DESTDIR)/Libs
-	cp README rules.make TODO script.in Makefile configure $(DESTDIR)/
+	cp README rules.make TODO script.in Makefile configure monotorrent.pc.in $(DESTDIR)/
 
 distcheck: dist
 	(mkdir test; cd test;  \
