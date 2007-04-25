@@ -131,6 +131,6 @@ SOURCES=	\
 all: $(OUT)
 
 AssemblyInfo.cs: AssemblyInfo.cs.in ../config.make
-	sed "s/@VERSION@/$(VERSION)/" < AssemblyInfo.cs.in > AssemblyInfo.cs
+	sed "s/@VERSION@/$(ASSEMBLY_VERSION)/" < AssemblyInfo.cs.in > AssemblyInfo.cs
 
 include ../rules.make

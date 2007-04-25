@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=0.1
+VERSION=0.2
 prefix=/usr/local
 while test x$1 != x; do
         case $1 in
@@ -17,6 +17,7 @@ done
 
 echo "prefix=$prefix" > config.make
 echo "RUNTIME=mono" >> config.make
-echo "VERSION=1.0.0.0" >> config.make
+echo "ASSEMBLY_VERSION=$VERSION.0.0" >> config.make
+echo "VERSION=$VERSION" >> config.make
 
 echo "Bitsharp has been configure to be installed in $prefix"
