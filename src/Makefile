@@ -34,7 +34,8 @@ install-setup: monotorrent.pc
 	chmod +x monotorrent-gtk
 	mv monotorrent-gtk $(prefix)/bin/monotorrent-gtk
 	cp Libs/Upnp.dll $(prefix)/lib/bitsharp/
-	cp monotorrent.pc $(prefix)/lib/pkgconfig
+	-mkdir $(prefix)/lib/pkgconfig
+	cp monotorrent.pc $(prefix)/lib/pkgconfig/
 
 dist:
 	rm -rf monotorrent-$(VERSION)
