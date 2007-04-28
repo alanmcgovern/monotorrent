@@ -511,13 +511,10 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection.PiecesSent > 50)
                             SetChokeStatus(id, true);
 
-                        while ((!id.Peer.Connection.IsChoking || id.Peer.Connection.IsAllowedFastPieces.Count > 0)
-                                && id.Peer.Connection.AmRequestingPiecesCount < PieceManager.MaxRequests && id.Peer.Connection.AmInterested)
-                        {
-                            // If there are no more pieces to add, AddPieceRequest will return null
-                            if (!this.pieceManager.AddPieceRequest(id))
-                                break;
-                        }
+						// If the peer is interesting, try to queue up some piece requests off him
+						if(id.Peer.Connection.IsInterestingToMe)
+							while (this.pieceManager.AddPieceRequest(id)) { }
+
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
                             id.Peer.Connection.LastMessageSent = DateTime.Now;
