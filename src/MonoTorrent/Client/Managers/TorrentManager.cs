@@ -790,9 +790,9 @@ namespace MonoTorrent.Client
 
             this.hashChecked = true;
             UpdateState(TorrentState.Stopped);
-#warning Don't *always* start the torrent in the future.
-            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
-                this.Start();
+//#warning Don't *always* start the torrent in the future.
+//            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
+//                this.Start();
         }
 
 
