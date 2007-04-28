@@ -23,7 +23,7 @@
         <SuppressWarnings></SuppressWarnings>
       </Options>
     </Configuration>
-    <Project name="MonoTorrent.BEncoding" path="MonoTorrent.BEncoding" language="C#" type="Library" assemblyName="MonoTorrent.BEncoding" rootNamespace="MonoTorrent.BEncoding">
+    <Project name="MonoTorrent" path="MonoTorrent" language="C#" type="Library" assemblyName="MonoTorrent" rootNamespace="MonoTorrent">
       <Configuration name="Debug">
         <Options>
           <CompilerDefines>DEBUG;TRACE</CompilerDefines>
@@ -42,233 +42,18 @@
           <OutputPath>bin/Release</OutputPath>
           <DebugInformation>false</DebugInformation>
           <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-    <Project name="MonoTorrent.Common" path="MonoTorrent.Common" language="C#" type="Library" assemblyName="MonoTorrent.Common" rootNamespace="MonoTorrent.Common">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="System.Data" />
-      <Reference name="System.Xml" />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-    <Project name="MonoTorrent.Client" path="MonoTorrent.Client" language="C#" type="Library" assemblyName="MonoTorrent.Client" rootNamespace="MonoTorrent.Client">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="System.Data" />
-      <Reference name="System.Web" />
-      <Reference name="System.Xml" />
-      <Reference name="Mono.Security" localCopy="true" path="."/>
-      <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-    <Project name="MonoTorrent.Tracker" path="MonoTorrent.Tracker" language="C#" type="Library" assemblyName="MonoTorrent.Tracker" rootNamespace="MonoTorrent.Tracker">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
         </Options>
       </Configuration>
       <Reference name="System" />
       <Reference name="System.Web" />
-      <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Reference name="MonoTorrent.BEncoding" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-    <Project name="MonoTorrent.TrackerApp" path="MonoTorrent.TrackerApp" language="C#" type="Exe" assemblyName="MonoTorrent.TrackerApp" rootNamespace="MonoTorrent.TrackerApp">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="System.Data" />
       <Reference name="System.Xml" />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Reference name="MonoTorrent.Tracker" localCopy="true"  />
+	<Reference name="Upnp" localCopy="true" path="../Libs"/>
+	<Reference name="Mono.Security" localCopy="true" path="../Libs"/>
       <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-    <Project name="MonoTorrent" path="MonoTorrent" language="C#" type="Exe" assemblyName="MonoTorrent" rootNamespace="MonoTorrent" designerFolder="Properties">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="System.Data" />
-      <Reference name="System.Xml" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Reference name="MonoTorrent.Common" localCopy="true" />
-      <Reference name="MonoTorrent.Client" localCopy="true"  />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-
-    <Project name="MonoTorrent.Interface" path="MonoTorrent.Interface" language="C#" type="WinExe" assemblyName="MonoTorrent.Interface" rootNamespace="MonoTorrent.Interface">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="atk-sharp" version="2.8.0.0" />
-      <Reference name="gconf-sharp"  version="2.8.0.0" />
-      <Reference name="gdk-sharp"   version="2.8.0.0" />
-      <Reference name="gtk-sharp"   version="2.8.0.0" />
-      <Reference name="glib-sharp"   version="2.8.0.0" />
-      <Reference name="Mono.Posix" />
-      <Reference name="MonoTorrent.Client" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Reference name="MonoTorrent.Common" />
-      <Reference name="System" />
-      <Reference name="System.Data" />
-      <Reference name="System.Xml" />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Files>
-        <File buildAction="EmbeddedResource">res/ui.xml</File>
-        <Match path="." pattern="*.cs" recurse="true"/>
-      </Files>
-    </Project>
-
-    <Project name="MonoTorrent.Tests" path="MonoTorrent.Tests" language="C#" type="Library" assemblyName="MonoTorrent.Tests" rootNamespace="MonoTorrent.Tests">
-      <Configuration name="Debug">
-        <Options>
-          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
-          <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Debug</OutputPath>
-          <DebugInformation>true</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Configuration name="Release">
-        <Options>
-          <CompilerDefines>TRACE</CompilerDefines>
-          <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
-          <OutputPath>bin/Release</OutputPath>
-          <DebugInformation>false</DebugInformation>
-          <WarningLevel>4</WarningLevel>
-        </Options>
-      </Configuration>
-      <Reference name="System" />
-      <Reference name="nunit.framework" />
-      <Reference name="Mono.Security" localCopy="true" path="../MonoTorrent.Client"/>
-      <Reference name="MonoTorrent.Common" />
-      <Reference name="Upnp" localCopy="true" path="../Libs"/>
-      <Reference name="MonoTorrent.Client" />
-      <Reference name="MonoTorrent.BEncoding" />
-      <Files>
-        <Match path="." pattern="*.cs" recurse="true"/>
+        <Match path="BEncoding" pattern="*.cs" recurse="true"/>
+        <Match path="Client" pattern="*.cs" recurse="true"/>
+        <Match path="Common" pattern="*.cs" recurse="true"/>
+        <Match path="Tracker" pattern="*.cs" recurse="true"/>
       </Files>
     </Project>
   </Solution>
