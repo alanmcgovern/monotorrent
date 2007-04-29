@@ -531,10 +531,10 @@ namespace MonoTorrent.Client
 
             for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
             {                                                   // files until we find the file which contains
-                if (offset < this.fileStreams[i].Length)        // the start of the data we want to read
+                if (offset < this.files[i].Length)        // the start of the data we want to read
                     break;
 
-                offset -= this.fileStreams[i].Length;           // Offset now contains the index of the data we want
+				offset -= this.files[i].Length;           // Offset now contains the index of the data we want
             }                                                   // to read from fileStream[i].
 
             while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
