@@ -527,7 +527,7 @@ namespace MonoTorrent.Client
                             continue;
                         }
 
-                        if (!(id.Peer.Connection.ProcessingQueue) && id.Peer.Connection.QueueLength > 0)
+                        if (!id.Peer.Connection.ProcessingQueue && id.Peer.Connection.QueueLength > 0)
                         {
                             id.Peer.Connection.ProcessingQueue = true;
                             ClientEngine.ConnectionManager.MessageHandler.EnqueueSend(id);
@@ -790,6 +790,7 @@ namespace MonoTorrent.Client
 
             this.hashChecked = true;
             UpdateState(TorrentState.Stopped);
+			SaveFastResume();
 //#warning Don't *always* start the torrent in the future.
 //            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
 //                this.Start();
