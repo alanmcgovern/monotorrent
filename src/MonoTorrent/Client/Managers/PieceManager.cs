@@ -83,7 +83,11 @@ namespace MonoTorrent.Client
         {
             RequestMessage msg;
 
-            if (id.Peer.Connection.AmRequestingPiecesCount >= PieceManager.MaxRequests)
+			// If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
+			int maxRequests = PieceManager.MaxRequests + (int)(id.Peer.Connection.Monitor.UploadSpeed / 10);
+			maxRequests = maxRequests > 100 ? 100 : maxRequests;
+
+			if (id.Peer.Connection.AmRequestingPiecesCount >= maxRequests)
                 return false;
 
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
