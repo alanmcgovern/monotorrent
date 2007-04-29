@@ -53,6 +53,7 @@ namespace MonoTorrent.Client
             get { return this.requests; }
         }
 
+        private Random random = new Random();
 
         /// <summary>
         /// Returns the number of outstanding requests
@@ -305,7 +306,7 @@ namespace MonoTorrent.Client
         {
             RequestMessage message = null;
 
-            int requestIndex = 0;
+            int checkIndex = 0;
             Priority highestPriorityFound = Priority.DoNotDownload;
 
             lock (this.myBitfield)
@@ -318,7 +319,6 @@ namespace MonoTorrent.Client
                 // Then we check if there are any allowed "Fast" pieces to download
                 if ((message = GetFastPiece(id)) != null)
                     return message;
-
 
                 // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
                 if (id.Peer.Connection.IsChoking)
@@ -360,39 +360,50 @@ namespace MonoTorrent.Client
                     }
                 }
 
-                // Once we have a bitfield containing just the pieces we need, we request one.
-                // FIXME: we need to make sure we take one from the highest priority available.
-                // At the moment it just takes anything. The odds are high that it will be a piece
-                // from a file with the "highest priority" found though.
-                requestIndex = 0;
-                while (true)
-                {
-                    requestIndex = this.previousBitfield.FirstTrue(requestIndex, id.Peer.Connection.BitField.Length);
+                // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
 
-                    // If there are no pieces in the buffer that are "true" then that peer has nothing we want
-                    if (requestIndex == -1)
-                        return null;
+                // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
+                // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
+                // uninteresting.
+                int midPoint = random.Next(0, this.previousBitfield.Length);
+                int endIndex = this.previousBitfield.Length;
+                checkIndex = midPoint;
 
-                    // If the first "true" index is already requested or we have it, then  increment it by one and
-                    // check for the first "true" index after that.
-                    if (AlreadyHaveOrRequested(requestIndex))
-                        requestIndex++;
-
-                    // Request the piece
+                // First we check all the places from midpoint -> end
+                // Then if we dont find anything we check from 0 -> midpoint
+                while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, endIndex)) != -1)
+                    if (AlreadyHaveOrRequested(checkIndex))
+                        checkIndex++;
                     else
+                        break;
+
+                if (checkIndex == -1)
+                {
+                    checkIndex = 0;
+                    while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, midPoint)) != -1)
+                        if (AlreadyHaveOrRequested(checkIndex))
+                            checkIndex++;
+                        else
+                            break;
+                }
+
+                if (checkIndex == -1)
+                    return null;
+
+                // Request the piece
+                else
+                {
+                    message = this.GenerateRequest(id, checkIndex);
+                    List<Piece> reqs = requests[id];
+                    for (int i = 0; i < reqs.Count; i++)
                     {
-                        message = this.GenerateRequest(id, requestIndex);
-                        List<Piece> reqs = requests[id];
-                        for (int i = 0; i < reqs.Count; i++)
-                        {
-                            if (reqs[i].Index != requestIndex)
-                                continue;
+                        if (reqs[i].Index != checkIndex)
+                            continue;
 
-                            id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
-                        }
-
-                        return message;
+                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
                     }
+
+                    return message;
                 }
             }
         }
