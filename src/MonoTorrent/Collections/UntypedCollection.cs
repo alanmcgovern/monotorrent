@@ -1,4 +1,5 @@
 /*
+
 using System;
 using System.Text;
 using System.Collections;
@@ -25,12 +26,20 @@ namespace MonoTorrent
 
 		public @TYPE@Collection()
 		{
+#if NET_2_0
+			list = new List<@TYPE@>();
+#else
 			list = new ArrayList();
+#endif
 		}
 
 		public @TYPE@Collection(int capacity)
 		{
+#if NET_2_0
+			list = new List<@TYPE@>(capacity);
+#else
 			list = new ArrayList(capacity);
+#endif
 		}
 
 		#endregion
@@ -44,9 +53,14 @@ namespace MonoTorrent
 			set { list[index] = value; }
 		}
 
-		public void Add(@TYPE@ value)
+		public int Add(@TYPE@ value)
 		{
-			this.list.Add(value);
+#if NET_2_0
+			list.Add(value);
+			return 0;
+#else
+			return this.list.Add(value);
+#endif
 		}
 
 		public void Clear()
@@ -61,7 +75,7 @@ namespace MonoTorrent
 
 		public void CopyTo(Array array, int index)
 		{
-			list.CopyTo(array, index);
+			((IList)list).CopyTo(array, index);
 		}
 
 		public int Count
@@ -76,7 +90,7 @@ namespace MonoTorrent
 
 		public int IndexOf(@TYPE@ value)
 		{
-			list.IndexOf(value);
+			return list.IndexOf(value);
 		}
 
 		public void Insert(int index, @TYPE@ value)
@@ -86,7 +100,7 @@ namespace MonoTorrent
 
 		public bool IsSynchronized
 		{
-			get { list.IsSynchronized; }
+			get { return ((IList)list).IsSynchronized; }
 		}
 
 		public void Remove(@TYPE@ value)
@@ -101,7 +115,7 @@ namespace MonoTorrent
 
 		public object SyncRoot
 		{
-			get { return list.SyncRoot; }
+			get { return ((IList)list).SyncRoot; }
 		}
 
 		#endregion Methods
@@ -111,44 +125,44 @@ namespace MonoTorrent
 
 		int IList.Add(object value)
 		{
-			Add((int)value);
+			return Add((@TYPE@)value);
 		}
 
 		int IList.IndexOf(object value)
 		{
-			IndexOf((int)value);
+			return IndexOf((@TYPE@)value);
 		}
 
 		bool IList.Contains(object value)
 		{
-			Contains((int)value);
+			return Contains((@TYPE@)value);
 		}
 
 		void IList.Insert(int index, object value)
 		{
-			Insert(index, (int)value);
+			Insert(index, (@TYPE@)value);
 		}
 
 		bool IList.IsFixedSize
 		{
-			get { return list.IsFixedSize; }
+			get { return ((IList)list).IsFixedSize; }
 		}
 
 		bool IList.IsReadOnly
 		{
-			get { return list.IsReadOnly; }
+			get { return ((IList)list).IsReadOnly; }
 
 		}
 
 		void IList.Remove(object value)
 		{
-			Remove((int)value);
+			Remove((@TYPE@)value);
 		}
 
 		object IList.this[int index]
 		{
 			get { return this[index]; }
-			set { this[index] = value; }
+			set { this[index] = (@TYPE@)value; }
 		}
 
 		#endregion

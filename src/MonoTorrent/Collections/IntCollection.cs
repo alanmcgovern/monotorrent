@@ -1,3 +1,4 @@
+
 using System;
 using System.Text;
 using System.Collections;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class intCollection : IList
+	public class IntCollection : IList
 	{
 		#region Private Fields
 
@@ -22,14 +23,22 @@ namespace MonoTorrent
 
 		#region Constructors
 
-		public intCollection()
+		public IntCollection()
 		{
+#if NET_2_0
+			list = new List<int>();
+#else
 			list = new ArrayList();
+#endif
 		}
 
-		public intCollection(int capacity)
+		public IntCollection(int capacity)
 		{
+#if NET_2_0
+			list = new List<int>(capacity);
+#else
 			list = new ArrayList(capacity);
+#endif
 		}
 
 		#endregion
@@ -43,9 +52,14 @@ namespace MonoTorrent
 			set { list[index] = value; }
 		}
 
-		public void Add(int value)
+		public int Add(int value)
 		{
-			this.list.Add(value);
+#if NET_2_0
+			list.Add(value);
+			return 0;
+#else
+			return this.list.Add(value);
+#endif
 		}
 
 		public void Clear()
@@ -60,7 +74,7 @@ namespace MonoTorrent
 
 		public void CopyTo(Array array, int index)
 		{
-			list.CopyTo(array, index);
+			((IList)list).CopyTo(array, index);
 		}
 
 		public int Count
@@ -75,7 +89,7 @@ namespace MonoTorrent
 
 		public int IndexOf(int value)
 		{
-			list.IndexOf(value);
+			return list.IndexOf(value);
 		}
 
 		public void Insert(int index, int value)
@@ -85,7 +99,7 @@ namespace MonoTorrent
 
 		public bool IsSynchronized
 		{
-			get { list.IsSynchronized; }
+			get { return ((IList)list).IsSynchronized; }
 		}
 
 		public void Remove(int value)
@@ -100,7 +114,7 @@ namespace MonoTorrent
 
 		public object SyncRoot
 		{
-			get { return list.SyncRoot; }
+			get { return ((IList)list).SyncRoot; }
 		}
 
 		#endregion Methods
@@ -110,17 +124,17 @@ namespace MonoTorrent
 
 		int IList.Add(object value)
 		{
-			Add((int)value);
+			return Add((int)value);
 		}
 
 		int IList.IndexOf(object value)
 		{
-			IndexOf((int)value);
+			return IndexOf((int)value);
 		}
 
 		bool IList.Contains(object value)
 		{
-			Contains((int)value);
+			return Contains((int)value);
 		}
 
 		void IList.Insert(int index, object value)
@@ -130,12 +144,12 @@ namespace MonoTorrent
 
 		bool IList.IsFixedSize
 		{
-			get { return list.IsFixedSize; }
+			get { return ((IList)list).IsFixedSize; }
 		}
 
 		bool IList.IsReadOnly
 		{
-			get { return list.IsReadOnly; }
+			get { return ((IList)list).IsReadOnly; }
 
 		}
 
@@ -147,7 +161,7 @@ namespace MonoTorrent
 		object IList.this[int index]
 		{
 			get { return this[index]; }
-			set { this[index] = value; }
+			set { this[index] = (int)value; }
 		}
 
 		#endregion
