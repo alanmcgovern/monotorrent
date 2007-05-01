@@ -146,13 +146,13 @@ namespace MonoTorrent.BEncoding
 
         public int CompareTo(object other)
         {
-            if(object is BEncodedNumber)
+            if(other is BEncodedNumber)
                 return CompareTo((BEncodedNumber)other);
 
-            if(obj is int)
+            if (other is int)
                 return CompareTo((int)other);
 
-            if(obj is long)
+            if (other is long)
                 return CompareTo((long)other);
 
             return -1;
