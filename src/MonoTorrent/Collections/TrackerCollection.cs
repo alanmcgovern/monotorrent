@@ -164,6 +164,15 @@ namespace MonoTorrent
 		}
 
 		#endregion
+
+		internal TrackerCollection Clone()
+		{
+			TrackerCollection clone = new TrackerCollection(list.Count);
+			for (int i = 0; i < list.Count; i++)
+				clone.Add(this[i]);
+
+			return clone;
+		}
 	}
 }
 

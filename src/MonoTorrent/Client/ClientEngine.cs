@@ -151,12 +151,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
-        public List<TorrentManager> Torrents
+        public TorrentManagerCollection Torrents
         {
             get { return this.torrents; }
             set { this.torrents = value; }
         }
-        private List<TorrentManager> torrents;
+        private TorrentManagerCollection torrents;
         #endregion
 
 
@@ -176,7 +176,7 @@ namespace MonoTorrent.Client
 #warning I don't like this timer, but is there any other better way to do it?
             this.timer = new System.Timers.Timer(TickLength);
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
-            this.torrents = new List<TorrentManager>();
+            this.torrents = new TorrentManagerCollection();
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
 
             this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
@@ -233,7 +233,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle[] Stop()
         {
-            List<WaitHandle> waitHandles = new List<WaitHandle>(this.torrents.Count);
+            WaitHandleCollection waitHandles = new WaitHandleCollection(this.torrents.Count);
 
             for (int i = 0; i < this.torrents.Count; i++)
                 if (this.torrents[i].State != TorrentState.Stopped)
@@ -465,7 +465,7 @@ namespace MonoTorrent.Client
         public WaitHandle[] RemoveAll()
         {
             WaitHandle[] handles = new WaitHandle[this.torrents.Count];
-            List<TorrentManager> managers = new List<TorrentManager>();
+            TorrentManagerCollection managers = new TorrentManagerCollection();
 
             for (int i = 0; i < torrents.Count; i++)
                 managers.Add(this.torrents[i]);

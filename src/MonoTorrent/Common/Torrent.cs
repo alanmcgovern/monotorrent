@@ -46,7 +46,7 @@ namespace MonoTorrent.Common
         #region Private Fields
 
         private IBEncodedValue azureusProperties;
-        private List<List<string>> announceUrls;
+        private List<stringCollection> announceUrls;
         private string comment;
         private string createdBy;
         private DateTime creationDate;
@@ -74,7 +74,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The announce URLs contained within the .torrent file
         /// </summary>
-        public List<List<string>> AnnounceUrls
+        public List<stringCollection> AnnounceUrls
         {
             get { return this.announceUrls; }
         }
@@ -262,7 +262,7 @@ namespace MonoTorrent.Common
 
         public Torrent()
         {
-			this.announceUrls = new List<List<string>>();
+            this.announceUrls = new List<stringCollection>();
             this.comment = string.Empty;
             this.createdBy = string.Empty;
             this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -535,7 +535,7 @@ namespace MonoTorrent.Common
                 switch (keypair.Key.Text)
                 {
                     case ("announce"):
-                        this.announceUrls.Add(new List<string>(1));
+                        this.announceUrls.Add(new stringCollection(1));
 						this.announceUrls[0].Add(keypair.Value.ToString());
                         break;
 
@@ -588,17 +588,17 @@ namespace MonoTorrent.Common
 
                     case ("announce-list"):
                         BEncodedList announces = (BEncodedList)keypair.Value;
-						this.announceUrls = new List<List<string>>(announces.Count);
+                        this.announceUrls = new List<stringCollection>(announces.Count);
 
 						for (int j = 0; j < announces.Count; j++)
 						{
 							BEncodedList bencodedTier = (BEncodedList)announces[j];
-							List<string> tier = new List<string>(bencodedTier.Count);
+                            stringCollection tier = new stringCollection(bencodedTier.Count);
 
 							for (int k = 0; k < bencodedTier.Count; k++)
 								tier.Add(bencodedTier[k].ToString());
 
-							ToolBox.Randomize<string>(tier);
+							ToolBox.RandomizeStringCollection(tier);
 							this.announceUrls.Add(tier);
 						}
                         break;

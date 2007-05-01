@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace MonoTorrent.Client
@@ -18,11 +17,11 @@ namespace MonoTorrent.Client
         #region Private Member Variables
 
         private TorrentManager manager;
-        private List<PeerConnectionID> availablePeers;
-        private List<PeerConnectionID> connectedPeers;
-        private List<PeerConnectionID> connectingTo;
-        private List<PeerConnectionID> downloadQueue;
-        private List<PeerConnectionID> uploadQueue;
+        private PeerConnectionIDCollection availablePeers;
+        private PeerConnectionIDCollection connectedPeers;
+        private PeerConnectionIDCollection connectingTo;
+        private PeerConnectionIDCollection downloadQueue;
+        private PeerConnectionIDCollection uploadQueue;
 
         #endregion Private Member Variables
 
@@ -32,7 +31,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that are available to be connected to
         /// </summary>
-        internal List<PeerConnectionID> AvailablePeers
+        internal PeerConnectionIDCollection AvailablePeers
         {
             get { return this.availablePeers; }
         }
@@ -40,7 +39,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that we are currently connected to
         /// </summary>
-        internal List<PeerConnectionID> ConnectedPeers
+        internal PeerConnectionIDCollection ConnectedPeers
         {
             get { return this.connectedPeers; }
         }
@@ -48,7 +47,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that we are currently trying to connect to
         /// </summary>
-        internal List<PeerConnectionID> ConnectingToPeers
+        internal PeerConnectionIDCollection ConnectingToPeers
         {
             get { return this.connectingTo; }
         }
@@ -56,7 +55,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers which have data queued up to send
         /// </summary>
-        internal List<PeerConnectionID> UploadQueue
+        internal PeerConnectionIDCollection UploadQueue
         {
             get { return this.uploadQueue; }
         }
@@ -64,7 +63,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers which have data queued up to download
         /// </summary>
-        internal List<PeerConnectionID> DownloadQueue
+        internal PeerConnectionIDCollection DownloadQueue
         {
             get { return this.downloadQueue; }
         }
@@ -77,11 +76,11 @@ namespace MonoTorrent.Client
         internal PeerList(TorrentManager manager)
         {
             this.manager = manager;
-            this.availablePeers = new List<PeerConnectionID>();
-            this.connectedPeers = new List<PeerConnectionID>();
-            this.connectingTo = new List<PeerConnectionID>();
-            this.downloadQueue = new List<PeerConnectionID>();
-            this.uploadQueue = new List<PeerConnectionID>();
+            this.availablePeers = new PeerConnectionIDCollection();
+            this.connectedPeers = new PeerConnectionIDCollection();
+            this.connectingTo = new PeerConnectionIDCollection();
+            this.downloadQueue = new PeerConnectionIDCollection();
+            this.uploadQueue = new PeerConnectionIDCollection();
         }
 
         #endregion

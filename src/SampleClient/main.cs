@@ -44,7 +44,7 @@ namespace MonoTorrent
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port, false);
-            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 9100, 31110);
+            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 0, 0);
             engine = new ClientEngine(engineSettings, torrentDefaults);
 
             if (!Directory.Exists(engine.Settings.SavePath))

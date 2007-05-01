@@ -37,12 +37,12 @@ namespace MonoTorrent.Tracker
     ///</summary>
     public class PeerManager 
     {
-        List<Peer> peer_list;//same as _peers but no indexed. used for index based peer retrieval for randomization
+        PeerCollection peer_list;//same as _peers but no indexed. used for index based peer retrieval for randomization
         Dictionary<string, Peer> peer_dict;//hold the list of peers attatched to this torrent
         
         public PeerManager()
         {
-            peer_list = new List<Peer>();
+            peer_list = new PeerCollection();
             peer_dict = new Dictionary<string, Peer>();
         }
         
@@ -58,7 +58,8 @@ namespace MonoTorrent.Tracker
         {            
             lock (this) {
                 peer_dict.Add(peer.Key, peer);
-                peer_list.Add(peer);
+#warning FIX THIS
+                //peer_list.Add(peer);
             }
         }
         
@@ -75,7 +76,7 @@ namespace MonoTorrent.Tracker
                 Peer p = peer_dict[key];
                 p.Stop();
                 peer_dict.Remove(key);
-                peer_list.Remove(p);
+#warning FIX THIS//               peer_list.Remove(p);
             }                
         }        
         
@@ -96,9 +97,9 @@ namespace MonoTorrent.Tracker
         ///</summary>
         ///<param name=exclude>do not include this peer in the resulting list.</parm>
         ///<param name=count>return at most count peers</param>
-        public IList<Peer> GetRandomPeers(int count, Peer exclude)
+        public PeerCollection GetRandomPeers(int count, Peer exclude)
         {
-            List<Peer> randomPeers = new List<Peer>(count);
+            PeerCollection randomPeers = new PeerCollection(count);
             if (peer_list.Count == 0) {
                 return randomPeers;                
             }
@@ -109,9 +110,10 @@ namespace MonoTorrent.Tracker
             
             for (int i = 0; i < count;) {
                 Peer random = GetRandom();
-                if (exclude != null && !exclude.Equals(random)) {
-                    randomPeers.Add(random);
-                    i++;
+                if (exclude != null && !exclude.Equals(random))
+				{
+#warning FIX THIS// randomPeers.Add(random);
+					i++;
                 }
             }
             
@@ -123,17 +125,19 @@ namespace MonoTorrent.Tracker
         {
             Random rand = new Random();
             int next = rand.Next(peer_list.Count);
-            return peer_list[next];
-        }
+#warning FIX THIS// return peer_list[next];
+			return null;
+		}
         
         ///<summary>returns all peers from this Manager but not exlcude</summary>
-        private IList<Peer> GetAllPeers(Peer exclude)
+        private PeerCollection GetAllPeers(Peer exclude)
         {
-            List<Peer> randomPeers = new List<Peer>(peer_list.Count);
+            PeerCollection randomPeers = new PeerCollection(peer_list.Count);
             foreach(Peer p in peer_list) {
-                if (exclude != null && !exclude.Equals(p)) {
-                    randomPeers.Add(p);
-                }
+                if (exclude != null && !exclude.Equals(p))
+				{
+#warning FIX THIS//  randomPeers.Add(p);
+				}
             }
             return randomPeers;
         }

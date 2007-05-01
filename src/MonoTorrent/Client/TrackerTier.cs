@@ -10,7 +10,7 @@ namespace MonoTorrent.Client
 
         private bool sendingStartedEvent;
         private bool sentStartedEvent;
-        private Tracker[] trackers;
+        private TrackerCollection trackers;
 
         #endregion Private Fields
 
@@ -29,7 +29,7 @@ namespace MonoTorrent.Client
             set { this.sentStartedEvent = value; }
         }
 
-        public Tracker[] Trackers
+        public TrackerCollection Trackers
         {
             get { return this.trackers; }
         }
@@ -39,10 +39,10 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public TrackerTier(List<string> trackerUrls, AsyncCallback announceCallback,
+        public TrackerTier(stringCollection trackerUrls, AsyncCallback announceCallback,
                         AsyncCallback scrapeCallback, EngineSettings engineSettings)
         {
-            this.trackers = new Tracker[trackerUrls.Count];
+            this.trackers = new TrackerCollection(trackerUrls.Count);
             for (int i = 0; i < trackerUrls.Count; i++)
                 this.trackers[i] = new Tracker(trackerUrls[i], announceCallback, scrapeCallback, engineSettings);
         }
@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
 
         internal int IndexOf(Tracker tracker)
         {
-            for (int i = 0; i < this.trackers.Length; i++)
+            for (int i = 0; i < this.trackers.Count; i++)
                 if (this.trackers[i].Equals(tracker))
                     return i;
 

@@ -9,11 +9,11 @@ namespace MonoTorrent.Client
     public static class Logger
     {
         private static Dictionary<PeerConnectionID, LinkedList<string>> log;
-        private static List<TraceListener> listeners;
+        private static TraceListenerCollection listeners;
 
         static Logger()
         {
-            listeners = new List<TraceListener>();
+            listeners = new TraceListenerCollection();
             log = new Dictionary<PeerConnectionID, LinkedList<string>>();
         }
 

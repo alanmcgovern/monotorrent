@@ -7,6 +7,21 @@ REFERENCES=	\
 EXTRA_DIST = AssemblyInfo.cs.in
 
 SOURCES=	\
+	Collections/BEncodedKeyValuePair.cs \
+	Collections/BlockCollection.cs \
+	Collections/IBEncodedValueCollection.cs \
+	Collections/IntCollection.cs \
+	Collections/ITorrentWatcherCollection.cs \
+	Collections/PeerCollection.cs \
+	Collections/PeerConnectionIDCollection.cs \
+	Collections/PieceCollection.cs \
+	Collections/StringCollection.cs \
+	Collections/TorrentManagerCollection.cs \
+	Collections/TraceListenerCollection.cs \
+	Collections/TrackerCollection.cs \
+	Collections/UInt32Collection.cs \
+	Collections/UntypedCollection.cs \
+	Collections/WaitHandleCollection.cs \
 	Common/Enums.cs \
 	Common/Hashes.cs \
 	Common/Peer.cs \

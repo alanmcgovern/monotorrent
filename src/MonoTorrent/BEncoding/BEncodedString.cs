@@ -30,7 +30,7 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 
 namespace MonoTorrent.BEncoding
@@ -38,7 +38,7 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded string
     /// </summary>
-    public class BEncodedString : IBEncodedValue, IComparable<BEncodedString>
+    public class BEncodedString : IBEncodedValue, IComparable
     {
         #region Member Variables
 
@@ -204,6 +204,20 @@ namespace MonoTorrent.BEncoding
                 return 0;
 
             return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
+        }
+
+        public int CompareTo(object obj)
+        {
+            BEncodedString other = obj as BEncodedString;
+            if(other == null)
+            {
+                string otherString = obj as string;
+                if(otherString == null)
+                    return -1;
+				return CompareTo(otherString);
+	        }
+
+            return CompareTo(other);
         }
 
         #endregion

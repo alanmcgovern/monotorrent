@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
         private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
         private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
 
-        private List<TorrentManager> torrents;
+        private TorrentManagerCollection torrents;
 
         internal MessageHandler MessageHandler
         {
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
             this.messageLengthReceivedCallback = new MessagingCallback(this.onPeerMessageLengthReceived);
             this.messageReceivedCallback = new MessagingCallback(this.onPeerMessageReceived);
             this.messageSentCallback = new MessagingCallback(this.onPeerMessageSent);
-            this.torrents = new List<TorrentManager>();
+            this.torrents = new TorrentManagerCollection();
             this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
             this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
             this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
