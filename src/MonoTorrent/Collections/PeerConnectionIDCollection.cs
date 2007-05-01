@@ -9,7 +9,7 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent
 {
-	public class PeerConnectionIDCollection : IList
+	public class PeerIdCollection : IList
 	{
 		#region Private Fields
 
@@ -24,7 +24,7 @@ namespace MonoTorrent
 
 		#region Constructors
 
-		public PeerConnectionIDCollection()
+		public PeerIdCollection()
 		{
 #if NET_2_0
 			list = new List<PeerId>();
@@ -33,7 +33,7 @@ namespace MonoTorrent
 #endif
 		}
 
-		public PeerConnectionIDCollection(int capacity)
+		public PeerIdCollection(int capacity)
 		{
 #if NET_2_0
 			list = new List<PeerId>(capacity);

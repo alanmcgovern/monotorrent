@@ -302,7 +302,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The id of the peer to request a piece off of</param>
         /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
         /// <returns></returns>
-        public override RequestMessage PickPiece(PeerId id, PeerConnectionIDCollection otherPeers)
+        public override RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers)
         {
             RequestMessage message = null;
 

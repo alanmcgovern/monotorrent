@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Encryption
             return 0;
         }
 
-        public void SetPeerConnectionID(PeerId id)
+        public void SetPeerId(PeerId id)
         {
             this.id = id;
             return;

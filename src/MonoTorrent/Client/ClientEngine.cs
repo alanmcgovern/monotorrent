@@ -649,7 +649,7 @@ namespace MonoTorrent.Client
                 {
                     // Maybe this was a Message Stream Encryption handshake. Parse it as such.
                     id.Peer.Connection.Encryptor = new PeerBEncryption(Torrents, this.settings.MinEncryptionLevel);
-                    id.Peer.Connection.Encryptor.SetPeerConnectionID(id);
+                    id.Peer.Connection.Encryptor.SetPeerId(id);
                     id.Peer.Connection.Encryptor.onEncryptorReady += onEncryptorReadyHandler;
                     id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
                     id.Peer.Connection.Encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;

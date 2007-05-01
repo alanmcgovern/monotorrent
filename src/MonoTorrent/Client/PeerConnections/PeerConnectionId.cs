@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region IComparable<PeerConnectionID> Members
+        #region IComparable<PeerId> Members
 
         public int CompareTo(PeerId other)
         {

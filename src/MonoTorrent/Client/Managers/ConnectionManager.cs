@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
                 else
                     encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.settings.MinEncryptionLevel);
 
-                encryptor.SetPeerConnectionID(id);
+                encryptor.SetPeerId(id);
                 encryptor.onEncryptorReady += onEncryptorReadyHandler;
                 encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
                 encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;

@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
 
             foreach (KeyValuePair<PeerConnectionID, LinkedList<string>> keypair in log)
             {
-                using (FileStream s = new FileStream(@"C:\Logs\" + keypair.Key.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+                using (FileStream s = new FileStream(@"Logs\" + keypair.Key.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
                 using(StreamWriter output = new StreamWriter(s))
                 {
                     foreach (string str in keypair.Value)
