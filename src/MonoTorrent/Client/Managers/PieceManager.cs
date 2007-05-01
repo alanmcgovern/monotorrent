@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to add the request too</param>
         /// <returns>True if the request was added</returns>
-        internal bool AddPieceRequest(PeerConnectionID id)
+        internal bool AddPieceRequest(PeerId id)
         {
             RequestMessage msg;
 
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal bool IsInteresting(PeerConnectionID id)
+        internal bool IsInteresting(PeerId id)
         {
             // If i have completed the torrent, then no-one is interesting
             if (id.TorrentManager.Bitfield.AllTrue)
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal RequestMessage PickPiece(PeerConnectionID id, PeerConnectionIDCollection otherPeers)
+        internal RequestMessage PickPiece(PeerId id, PeerConnectionIDCollection otherPeers)
         {
 			//if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
 			//    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
@@ -146,25 +146,25 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void ReceivedChokeMessage(PeerConnectionID id)
+        internal void ReceivedChokeMessage(PeerId id)
         {
             this.piecePicker.ReceivedChokeMessage(id);
         }
 
 
-        internal void ReceivedRejectRequest(PeerConnectionID id, RejectRequestMessage msg)
+        internal void ReceivedRejectRequest(PeerId id, RejectRequestMessage msg)
         {
             this.piecePicker.ReceivedRejectRequest(id, msg);
         }
 
 
-        internal void RemoveRequests(PeerConnectionID id)
+        internal void RemoveRequests(PeerId id)
         {
             this.piecePicker.RemoveRequests(id);
         }
 
 
-        internal PieceEvent ReceivedPieceMessage(PeerConnectionID id, byte[] buffer, PieceMessage message)
+        internal PieceEvent ReceivedPieceMessage(PeerId id, byte[] buffer, PieceMessage message)
         {
             return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
         }

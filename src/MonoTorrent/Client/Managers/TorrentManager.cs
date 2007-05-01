@@ -341,7 +341,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer">The peer to add</param>
         /// <returns>The number of peers added</returns>
-        internal int AddPeers(PeerConnectionID peer)
+        internal int AddPeers(PeerId peer)
         {
             try
             {
@@ -370,7 +370,7 @@ namespace MonoTorrent.Client
         /// <returns>The number of peers added</returns>
         internal int AddPeers(BEncodedList list)
         {
-            PeerConnectionID id;
+            PeerId id;
             int added = 0;
             foreach (BEncodedDictionary dict in list)
             {
@@ -385,7 +385,7 @@ namespace MonoTorrent.Client
                     else
                         peerId = string.Empty;
 
-                    id = new PeerConnectionID(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()), this);
+                    id = new PeerId(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()), this);
                     added += this.AddPeers(id);
                 }
                 catch (Exception ex)
@@ -425,7 +425,7 @@ namespace MonoTorrent.Client
             int i = 0;
             int added = 0;
             UInt16 port;
-            PeerConnectionID id;
+            PeerId id;
             StringBuilder sb = new StringBuilder(16);
 
             while (i < byteOrderedData.Length)
@@ -444,7 +444,7 @@ namespace MonoTorrent.Client
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);
-                id = new PeerConnectionID(new Peer(null, sb.ToString()), this);
+                id = new PeerId(new Peer(null, sb.ToString()), this);
 
                 added += this.AddPeers(id);
             }
@@ -460,7 +460,7 @@ namespace MonoTorrent.Client
         /// <param name="counter"></param>
         internal void DownloadLogic(int counter)
         {
-            PeerConnectionID id;
+            PeerId id;
 
             // First attempt to resume downloading (just in case we've stalled for whatever reason)
             lock (this.resumeLock)
@@ -645,7 +645,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="id"></param>
-        internal void SetAmInterestedStatus(PeerConnectionID id)
+        internal void SetAmInterestedStatus(PeerId id)
         {
             if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
                 SetAmInterestedStatus(id, true);
@@ -802,7 +802,7 @@ namespace MonoTorrent.Client
         /// and rejects them as necessary
         /// </summary>
         /// <param name="id"></param>
-        private void RejectPendingRequests(PeerConnectionID id)
+        private void RejectPendingRequests(PeerId id)
         {
             IPeerMessageInternal message;
             PieceMessage pieceMessage;
@@ -888,7 +888,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to change the status of</param>
         /// <param name="amInterested">True if we are interested in the peer, false otherwise</param>
-        private void SetAmInterestedStatus(PeerConnectionID id, bool amInterested)
+        private void SetAmInterestedStatus(PeerId id, bool amInterested)
         {
             // If we used to be not interested but now we are, send a message.
             // If we used to be interested but now we're not, send a message
@@ -906,7 +906,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to update the choke status for</param>
         /// <param name="amChoking">The new status for "AmChoking"</param>
-        private void SetChokeStatus(PeerConnectionID id, bool amChoking)
+        private void SetChokeStatus(PeerId id, bool amChoking)
         {
             if (id.Peer.Connection.AmChoking == amChoking)
                 return;

@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class PeerConnectionID : IComparable<PeerConnectionID>
+    public class PeerId : IComparable<PeerId>
     {
         #region Member Variables
         /// <summary>
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client
         /// Creates a new PeerConnectionID
         /// </summary>
         /// <param name="peer"></param>
-        public PeerConnectionID(Peer peer)
+        public PeerId(Peer peer)
         {
             this.peer = peer;
             this.torrentManager = null;
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="manager"></param>
-        public PeerConnectionID(Peer peer, TorrentManager manager)
+        public PeerId(Peer peer, TorrentManager manager)
         {
             this.peer = peer;
             this.torrentManager = manager;
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            PeerConnectionID id2 = obj as PeerConnectionID;
+            PeerId id2 = obj as PeerId;
             if (id2 == null)
                 return false;
 
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
 
         #region IComparable<PeerConnectionID> Members
 
-        public int CompareTo(PeerConnectionID other)
+        public int CompareTo(PeerId other)
         {
             return this.peer.Location.CompareTo(other.peer.Location);
         }

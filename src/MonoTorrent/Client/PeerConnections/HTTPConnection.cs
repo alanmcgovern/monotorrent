@@ -42,17 +42,17 @@ namespace MonoTorrent.Client.PeerConnections
         {
             throw new NotImplementedException();
         }
-        internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerConnectionID id)
+        internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerId id)
         {
             throw new NotImplementedException();
         }
 
-        internal override void BeginReceive(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
+        internal override void BeginReceive(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }
 
-        internal override void BeginSend(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
+        internal override void BeginSend(byte[] buffer, int offset, int count, System.Net.Sockets.SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode)
         {
             throw new NotImplementedException();
         }

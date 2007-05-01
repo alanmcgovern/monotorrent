@@ -134,7 +134,7 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        internal void AddPeer(PeerConnectionID id, PeerType type)
+        internal void AddPeer(PeerId id, PeerType type)
         {
             switch (type)
             {
@@ -172,9 +172,9 @@ namespace MonoTorrent.Client
             this.uploadQueue.Clear();
         }
 
-        internal PeerConnectionID Dequeue(PeerType type)
+        internal PeerId Dequeue(PeerType type)
         {
-            PeerConnectionID id;
+            PeerId id;
             switch (type)
             {
                 case (PeerType.Connected):
@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void Enqueue(PeerConnectionID id, PeerType type)
+        internal void Enqueue(PeerId id, PeerType type)
         {
             switch (type)
             {
@@ -236,7 +236,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void RemovePeer(PeerConnectionID id, PeerType type)
+        internal void RemovePeer(PeerId id, PeerType type)
         {
             switch (type)
             {

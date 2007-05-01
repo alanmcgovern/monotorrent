@@ -83,7 +83,7 @@ namespace MonoTorrent.Common
         ZipTorrent
     }
 
-    public struct PeerID
+    public struct TorrentSoftware
     {
         public Client Client
         {
@@ -98,7 +98,7 @@ namespace MonoTorrent.Common
         private string shortId;
 
 
-        public PeerID(string peerId)
+        public TorrentSoftware(string peerId)
         {
             Match m;
             Regex r;

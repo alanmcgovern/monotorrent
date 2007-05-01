@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Encryption
 {
     internal class NoEncryption : IEncryptor
     {
-        PeerConnectionID id;
+        PeerId id;
 
         public event EncryptorReadyHandler onEncryptorReady;
         public event EncryptorIOErrorHandler onEncryptorIOError;
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Encryption
             return 0;
         }
 
-        public void SetPeerConnectionID(PeerConnectionID id)
+        public void SetPeerConnectionID(PeerId id)
         {
             this.id = id;
             return;

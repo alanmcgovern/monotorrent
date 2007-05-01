@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] CryptoSelect;
 
-        protected PeerConnectionID id;
+        protected PeerId id;
         #endregion
 
         public EncryptedSocket(EncryptionType minCryptoAllowed)
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client.Encryption
         /// Sets the PeerConnectionID associated with this connection
         /// </summary>
         /// <param name="id">The PeerConnectionID associated with this connection</param>
-        public void SetPeerConnectionID(PeerConnectionID id)
+        public void SetPeerConnectionID(PeerId id)
         {
             this.id = id;
         }

@@ -40,11 +40,11 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        public PeerConnectionID PeerID
+        public PeerId PeerID
         {
             get { return this.peerConnectionId; }
         }
-        private PeerConnectionID peerConnectionId;
+        private PeerId peerConnectionId;
 
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
         /// Creates a new PeerConnectionEventArgs
         /// </summary>
         /// <param name="peerEvent">The peer event that just happened</param>
-        public PeerConnectionEventArgs(PeerConnectionID id, Direction connectionDirection)
+        public PeerConnectionEventArgs(PeerId id, Direction connectionDirection)
         {
             this.peerConnectionId = id;
             this.connectionDirection = connectionDirection;

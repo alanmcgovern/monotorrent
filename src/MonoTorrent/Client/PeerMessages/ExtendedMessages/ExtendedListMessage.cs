@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.dictionary = (BEncodedDictionary)BEncode.Decode(buffer, offset, length);
         }
 
-        internal void Handle(PeerConnectionID id)
+        internal void Handle(PeerId id)
         {
             throw new Exception("The method or operation is not implemented.");
         }
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerConnectionID id)
+        void IPeerMessageInternal.Handle(PeerId id)
         {
             this.Handle(id);
         }

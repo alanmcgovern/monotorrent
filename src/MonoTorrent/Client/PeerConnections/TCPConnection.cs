@@ -89,13 +89,13 @@ namespace MonoTorrent.Client.Encryption
             Encryptor.Start(peerSocket, initialBuffer, offset, count);
         }
 
-        internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerConnectionID id)
+        internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerId id)
         {
             this.peerSocket.BeginConnect(this.peerEndPoint, peerEndCreateConnection, id);
         }
 
         // FIXME: Until mono supports the 'out errorcode' overload, we continue as before
-        internal override void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
+        internal override void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode)
         {
             errorCode = SocketError.Success;
             try
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client.Encryption
             //this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
-        internal override void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode)
+        internal override void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode)
         {
             errorCode = SocketError.Success;
 
@@ -139,7 +139,7 @@ namespace MonoTorrent.Client.Encryption
 
         internal override int EndSend(IAsyncResult result, out SocketError errorCode )
         {
-            PeerConnectionID id = (PeerConnectionID)result.AsyncState;
+            PeerId id = (PeerId)result.AsyncState;
             errorCode = SocketError.Success;
             id.Peer.ActiveSend = false;
             return this.peerSocket.EndSend(result);
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Encryption
 
         internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
-            PeerConnectionID id = (PeerConnectionID)result.AsyncState;
+            PeerId id = (PeerId)result.AsyncState;
             id.Peer.ActiveReceive = false;
             int received = this.peerSocket.EndReceive(result);
             Encryptor.Decrypt(id.Peer.Connection.recieveBuffer, id.Peer.Connection.BytesReceived, received);

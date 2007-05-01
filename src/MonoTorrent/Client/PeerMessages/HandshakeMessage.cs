@@ -209,7 +209,7 @@ namespace MonoTorrent.Client.PeerMessages
         }
 
 
-        internal void Handle(PeerConnectionID id)
+        internal void Handle(PeerId id)
         {
             if (!this.protocolString.Equals(VersionInfo.ProtocolStringV100))
             {
@@ -237,7 +237,7 @@ namespace MonoTorrent.Client.PeerMessages
             }
 
             // Attempt to parse the application that the peer is using
-            id.Peer.Connection.ClientApp = new PeerID(this.peerId);
+            id.Peer.Connection.ClientApp = new TorrentSoftware(this.peerId);
             id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
@@ -305,7 +305,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerConnectionID id)
+        void IPeerMessageInternal.Handle(PeerId id)
         {
             this.Handle(id);
         }

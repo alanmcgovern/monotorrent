@@ -61,11 +61,11 @@ namespace MonoTorrent.Client
         }
         private Direction direction;
 
-        public PeerConnectionID ID
+        public PeerId ID
         {
             get { return this.id; }
         }
-        private PeerConnectionID id;
+        private PeerId id;
 
         #endregion
 
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        public PeerMessageEventArgs(IPeerMessage message, Direction direction, PeerConnectionID id)
+        public PeerMessageEventArgs(IPeerMessage message, Direction direction, PeerId id)
         {
             this.direction = direction;
             this.id = id;

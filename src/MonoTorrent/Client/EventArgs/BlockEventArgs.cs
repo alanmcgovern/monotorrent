@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
         #region Private Fields
 
         private Block block;
-        private PeerConnectionID id;
+        private PeerId id;
         private Piece piece;
 
         #endregion
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The peer who the block has been requested off
         /// </summary>
-        public PeerConnectionID ID
+        public PeerId ID
         {
             get { return this.id; }
         }
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        internal BlockEventArgs(Block block, Piece piece, PeerConnectionID id)
+        internal BlockEventArgs(Block block, Piece piece, PeerId id)
         {
             this.block = block;
             this.id = id;

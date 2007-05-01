@@ -174,12 +174,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the version and name of the application this client is using.
         /// </summary>
-        public PeerID ClientApp
+        public TorrentSoftware ClientApp
         {
             get { return this.clientApp; }
             internal set { this.clientApp = value; }
         }
-        private PeerID clientApp;
+        private TorrentSoftware clientApp;
 
 
         /// <summary>
@@ -428,11 +428,11 @@ namespace MonoTorrent.Client
 
 
         #region Async Methods
-        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerConnectionID id);
+        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerId id);
 
-        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
+        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
 
-        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerConnectionID id, out SocketError errorCode);
+        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
 
         internal abstract void EndConnect(System.IAsyncResult result);
 

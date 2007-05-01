@@ -547,7 +547,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void IncomingConnectionReceived(IAsyncResult result)
         {
-            PeerConnectionID id = null;
+            PeerId id = null;
             try
             {
                 Socket peerSocket = ((Socket)result.AsyncState).EndAccept(result);
@@ -556,7 +556,7 @@ namespace MonoTorrent.Client
 
                 Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
                 peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
-                id = new PeerConnectionID(peer);
+                id = new PeerId(peer);
                 id.Peer.Connection.ProcessingQueue = true;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
                 id.Peer.Connection.LastMessageReceived = DateTime.Now;
@@ -588,7 +588,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(IAsyncResult result)
         {
-            PeerConnectionID id = (PeerConnectionID)result.AsyncState;
+            PeerId id = (PeerId)result.AsyncState;
 
             try
             {
@@ -625,7 +625,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void handleHandshake(PeerConnectionID id)
+        private void handleHandshake(PeerId id)
         {
             TorrentManager man = null;
             bool handshakeFailed = false;
@@ -690,7 +690,7 @@ namespace MonoTorrent.Client
             Logger.Log(id, "CE Handshake successful");
 
             ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
-            id.Peer.Connection.ClientApp = new PeerID(handshake.PeerId);
+            id.Peer.Connection.ClientApp = new TorrentSoftware(handshake.PeerId);
 
             handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
             BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
@@ -706,7 +706,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void onEncryptorReady(PeerConnectionID id)
+        private void onEncryptorReady(PeerId id)
         {
             try
             {
@@ -743,7 +743,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void onEncryptorError(PeerConnectionID id)
+        private void onEncryptorError(PeerId id)
         {
             CleanupSocket(id);
         }
@@ -753,7 +753,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="id"></param>
-        private void CleanupSocket(PeerConnectionID id)
+        private void CleanupSocket(PeerId id)
         {
             if (id == null) // Sometimes onEncryptionError fires with a null id
                 return;

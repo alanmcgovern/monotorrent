@@ -348,7 +348,7 @@ namespace MonoTorrent.Client
         /// <param name="bufferedFileIO"></param>
         private void PerformWrite(BufferedFileWrite bufferedFileIO)
         {
-            PeerConnectionID id = bufferedFileIO.Id;
+            PeerId id = bufferedFileIO.Id;
             byte[] recieveBuffer = bufferedFileIO.Buffer;
             PieceMessage message = (PieceMessage)bufferedFileIO.Message;
             Piece piece = bufferedFileIO.Piece;
@@ -423,7 +423,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(PeerConnectionID id, byte[] recieveBuffer, PieceMessage message, Piece piece, IntCollection unhashedPieces)
+        internal void QueueWrite(PeerId id, byte[] recieveBuffer, PieceMessage message, Piece piece, IntCollection unhashedPieces)
         {
             lock (this.queueLock)
             {
@@ -447,7 +447,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The buffer to read the data into</param>
         /// <param name="message">The RequestMessage</param>
         /// <param name="piece"></param>
-        internal void QueueRead(PeerConnectionID id, byte[] recieveBuffer, RequestMessage message, Piece piece)
+        internal void QueueRead(PeerId id, byte[] recieveBuffer, RequestMessage message, Piece piece)
         {
             lock (this.queueLock)
             {
