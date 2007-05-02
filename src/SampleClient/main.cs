@@ -18,68 +18,119 @@ namespace MonoTorrent
         static string basePath;
         static string downloadsPath;
         static string torrentsPath;
-        static ClientEngine engine;
-        static List<TorrentManager> torrents = new List<TorrentManager>();
-        static Top10Listener listener;
+        static ClientEngine engine;				// The engine used for downloading
+        static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
+        static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
         static void Main(string[] args)
         {
-            basePath = Environment.CurrentDirectory;
-            torrentsPath = Path.Combine(basePath, "Torrents");
-            downloadsPath = Path.Combine(basePath, "Downloads");
+			/* Generate the paths to the folder we will save .torrent files to and where we download files to */
+            basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
+            torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
+            downloadsPath = Path.Combine(basePath, "Downloads");			// This is the directory we will save downloads to
+			torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
 
+			// We need to cleanup correctly when the user closes the window by using ctrl-c.
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Console_CancelKeyPress);
+			AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
+
+
+			// If an unhandled exception occurs, we want to be able to clean up correctly, then allow the code to crash
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Thread.GetDomain().UnhandledException += new UnhandledExceptionEventHandler(UnhandledException);
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
             listener = new Top10Listener(25);
 
-            TestEngine();
+            StartEngine();
         }
 
-        static private void TestEngine()
+		private static void StartEngine()
         {
             int port;
+			// Ask the user what port they want to use for incoming connections
             Console.Write(Environment.NewLine + "Choose a listen port: ");
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
+
+
+			// Create the settings which the engine will use
+			// downloadsPath - this is the path where we will save all the files to
+			// port - this is the port we listen for connections on
+			// false - we don't want to use uPnP to map the port.
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port, false);
-            TorrentSettings torrentDefaults = new TorrentSettings(5, 50, 0, 0);
+
+
+
+			// Create the default settings which a torrent will have.
+			// 4 Upload slots - a good ratio is one slot per 5kB of upload speed
+			// 50 open connections - should never really need to be changed
+			// Unlimited download speed - valid range from 0 -> int.Max
+			// Unlimited upload speed - valid range from 0 -> int.Max
+            TorrentSettings torrentDefaults = new TorrentSettings(4, 50, 0, 0);
+
+			// Create an instance of the engine.
             engine = new ClientEngine(engineSettings, torrentDefaults);
 
+			// If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
 
+			// If the torrentsPath does not exist, we want to create it
             if (!Directory.Exists(torrentsPath))
                 Directory.CreateDirectory(torrentsPath);
 
+
+			// For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach (string file in Directory.GetFiles(torrentsPath))
             {
-                if (file.EndsWith(".torrent"))
-                    torrents.Add(engine.LoadTorrent(file));
+				if (file.EndsWith(".torrent"))
+				{
+					// Loading a .torrent into the engine gives you a TorrentManager
+					TorrentManager manager = engine.LoadTorrent(file);
+
+					// Store the torrent manager in our list so we can access it later
+					torrents.Add(manager);
+				}
             }
 
+			// If we loaded no torrents, just exist. The user can put files in the torrents directory and start
+			// the client again
             if (torrents.Count == 0)
             {
                 Console.WriteLine("No torrents found in the Torrents directory");
                 Console.WriteLine("Exiting...");
                 return;
             }
-            Debug.WriteLine("Torrent State:    " + ((TorrentManager)torrents[0]).State.ToString());
+
+			// For each torrent manager we loaded and stored in our list, hook into the events
+			// in the torrent manager and start the engine.
             foreach (TorrentManager manager in torrents)
             {
+				// Every time a piece is hashed, this is fired.
                 manager.PieceHashed += new EventHandler<PieceHashedEventArgs>(main_OnPieceHashed);
-                manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
-                ClientEngine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
-                ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
-                ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
 
+				// Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+                manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
+
+				// Every time a message is transferred from us to a peer, or from a peer to us, this is fired
+                ClientEngine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
+                
+				// Every time a peer connects, this is fired
+				ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
+                
+				// Every time a peer disconnects, this is fired.
+				ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
+
+				// Every time the tracker's state changes, this is fired
                 manager.TrackerManager.OnTrackerStateChange += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);
                 
+
+				// Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 engine.Start(manager);
             }
 
 
+			// While the torrents are still running, print out some stats to the screen.
+			// Details for all the loaded torrent managers are shown.
             int i = 0;
             bool running = true;
             StringBuilder sb = new StringBuilder(1024);
@@ -95,17 +146,17 @@ namespace MonoTorrent
                         sb.Remove(0, sb.Length);
                         sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Half opens:       "); sb.Append(ClientEngine.ConnectionManager.HalfOpenConnections);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Max open:         "); sb.Append(ClientEngine.ConnectionManager.MaxOpenConnections);
-                        sb.Append(Environment.NewLine);
+						//sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Half opens:       "); sb.Append(ClientEngine.ConnectionManager.HalfOpenConnections);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Max open:         "); sb.Append(ClientEngine.ConnectionManager.MaxOpenConnections);
+						//sb.Append(Environment.NewLine);
                         sb.Append("Progress:         "); sb.AppendFormat("{0:0.00}", manager.Progress);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00}", manager.Monitor.DownloadSpeed / 1024);
+                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00} kB/sec", manager.Monitor.DownloadSpeed / 1024.0);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed / 1024);
+						sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00} kB/sec", manager.Monitor.UploadSpeed / 1024.0);
                         sb.Append(Environment.NewLine);
                         sb.Append("Torrent State:    "); sb.Append(manager.State);
                         sb.Append(Environment.NewLine);
@@ -115,30 +166,33 @@ namespace MonoTorrent
                         sb.Append(Environment.NewLine);
                         sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / 1024.0);
+						sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         sb.Append(Environment.NewLine);
-                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / 1024.0);
+						sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
                         sb.Append(Environment.NewLine);
-                        sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].State);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Protocol Download:"); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Protocol Upload:  "); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesUploaded / 1024.0);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Hashfails:        "); sb.Append(manager.HashFails.ToString());
-                        sb.Append(Environment.NewLine);
-						sb.Append("Scrape complete:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Complete);
-                        sb.Append(Environment.NewLine);
-						sb.Append("Scrape incomplete:"); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Incomplete);
-                        sb.Append(Environment.NewLine);
-						sb.Append("Scrape downloaded:"); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Downloaded);
+                        sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
                         sb.Append(Environment.NewLine);
 						sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
                         sb.Append(Environment.NewLine);
 						sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Endgame Mode:     "); sb.Append(manager.PieceManager.InEndGameMode);
-                        sb.Append(Environment.NewLine);
+
+						// These are some of the other statistics which can be displayed. There are loads more available ;)
+
+						//sb.Append("Protocol Download:"); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Protocol Upload:  "); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesUploaded / 1024.0);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Hashfails:        "); sb.Append(manager.HashFails.ToString());
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Scrape complete:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Complete);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Scrape incomplete:"); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Incomplete);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Scrape downloaded:"); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].Downloaded);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Endgame Mode:     "); sb.Append(manager.PieceManager.InEndGameMode);
+						//sb.Append(Environment.NewLine);
                     }
 
                     Console.Clear();
@@ -154,11 +208,14 @@ namespace MonoTorrent
                 if (a[j] != null)
                     a[j].WaitOne();
             engine.Dispose();
-        }
+		}
 
-        static void TrackerManager_OnTrackerStateChange(object sender, TrackerStateChangedEventArgs e)
+
+		#region Handlers for the torrentmanager events
+
+		static void TrackerManager_OnTrackerStateChange(object sender, TrackerStateChangedEventArgs e)
         {
-            Console.WriteLine(e.NewState.ToString());
+            listener.WriteLine(e.NewState.ToString());
         }
 
         static void ConnectionManager_PeerDisconnected(object sender, PeerConnectionEventArgs e)
@@ -176,58 +233,59 @@ namespace MonoTorrent
             // listener.WriteLine(e.Direction.ToString() + ":\t" + e.Message.GetType());
         }
 
-        #region Shutdown methods
-        static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            shutdown();
-        }
+		static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
+		{
+			listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
+		}
 
-        static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            shutdown();
-        }
+		static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
+		{
+			TorrentManager manager = (TorrentManager)sender;
+			if (e.HashPassed)
+				listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+			else
+				listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+		}
 
-        static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            shutdown();
-        }
-
-        static void CurrentDomain_ProcessExit(object sender, EventArgs e)
-        {
-            shutdown();
-        }
-
-        private static void shutdown()
-        {
-            WaitHandle[] handles = engine.Stop();
-            for (int i = 0; i < handles.Length; i++)
-                if (handles[i] != null)
-                    handles[i].WaitOne();
-
-            foreach (TraceListener lst in Debug.Listeners)
-            {
-                lst.Flush();
-                lst.Close();
-            }
-        }
-        #endregion
+		#endregion Handlers for the torrentmanager events
 
 
-        #region events i've hooked into
-        static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
-        {
-            listener.WriteLine("State: " + e.NewState.ToString());
-        }
+		#region Misc methods to ensure safe shutdown of the engine
 
-        static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
-        {
-            TorrentManager manager = (TorrentManager)sender;
-            if (e.HashPassed)
-                listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
-            else
-                listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
-        }
-        #endregion
+		private static void shutdown()
+		{
+			WaitHandle[] handles = engine.Stop();
+			for (int i = 0; i < handles.Length; i++)
+				if (handles[i] != null)
+					handles[i].WaitOne();
 
-    }
+			foreach (TraceListener lst in Debug.Listeners)
+			{
+				lst.Flush();
+				lst.Close();
+			}
+		}
+
+		static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+		{
+			shutdown();
+		}
+
+		static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+		{
+			shutdown();
+		}
+
+		static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
+		{
+			shutdown();
+		}
+
+		static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+		{
+			shutdown();
+		}
+
+		#endregion
+	}
 }
