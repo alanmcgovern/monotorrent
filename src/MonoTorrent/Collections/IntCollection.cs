@@ -1,4 +1,3 @@
-
 using System;
 using System.Text;
 using System.Collections;
@@ -8,7 +7,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class IntCollection : IList
+	public class IntCollection : MonoTorrentCollectionBase
 	{
 		#region Private Fields
 
@@ -56,7 +55,7 @@ namespace MonoTorrent
 		{
 #if NET_2_0
 			list.Add(value);
-			return 0;
+			return list.Count;
 #else
 			return this.list.Add(value);
 #endif
@@ -65,6 +64,14 @@ namespace MonoTorrent
 		public void Clear()
 		{
 			this.list.Clear();
+		}
+
+		public MonoTorrentCollectionBase Clone()
+		{
+			IntCollection clone = new IntCollection(list.Count);
+			for (int i = 0; i < list.Count; i++)
+				clone.Add(this[i]);
+			return clone;
 		}
 
 		public bool Contains(int value)
@@ -109,7 +116,7 @@ namespace MonoTorrent
 
 		public void RemoveAt(int index)
 		{
-			RemoveAt(index);
+			list.RemoveAt(index);
 		}
 
 		public object SyncRoot

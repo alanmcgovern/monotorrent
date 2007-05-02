@@ -1,15 +1,16 @@
+
+
 using System;
 using System.Text;
 using System.Collections;
+using MonoTorrent.Client;
 #if NET_2_0
 using System.Collections.Generic;
 #endif
 
-using MonoTorrent.Client;
-
 namespace MonoTorrent
 {
-	public class PieceCollection : IList
+	public class PieceCollection : MonoTorrentCollectionBase
 	{
 		#region Private Fields
 
@@ -57,7 +58,7 @@ namespace MonoTorrent
 		{
 #if NET_2_0
 			list.Add(value);
-			return 0;
+			return list.Count;
 #else
 			return this.list.Add(value);
 #endif
@@ -66,6 +67,14 @@ namespace MonoTorrent
 		public void Clear()
 		{
 			this.list.Clear();
+		}
+
+		public MonoTorrentCollectionBase Clone()
+		{
+			PieceCollection clone = new PieceCollection(list.Count);
+			for (int i = 0; i < list.Count; i++)
+				clone.Add(this[i]);
+			return clone;
 		}
 
 		public bool Contains(Piece value)
@@ -110,7 +119,7 @@ namespace MonoTorrent
 
 		public void RemoveAt(int index)
 		{
-			RemoveAt(index);
+			list.RemoveAt(index);
 		}
 
 		public object SyncRoot

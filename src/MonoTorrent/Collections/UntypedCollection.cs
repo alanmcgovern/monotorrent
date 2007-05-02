@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class @TYPE@Collection : IList
+	public class @TYPE@Collection : MonoTorrentCollectionBase
 	{
 		#region Private Fields
 
@@ -57,7 +57,7 @@ namespace MonoTorrent
 		{
 #if NET_2_0
 			list.Add(value);
-			return 0;
+			return list.Count;
 #else
 			return this.list.Add(value);
 #endif
@@ -66,6 +66,14 @@ namespace MonoTorrent
 		public void Clear()
 		{
 			this.list.Clear();
+		}
+
+		public MonoTorrentCollectionBase Clone()
+		{
+			@TYPE@Collection clone = new @TYPE@Collection(list.Count);
+			for (int i = 0; i < list.Count; i++)
+				clone.Add(this[i]);
+			return clone;
 		}
 
 		public bool Contains(@TYPE@ value)
@@ -110,7 +118,7 @@ namespace MonoTorrent
 
 		public void RemoveAt(int index)
 		{
-			RemoveAt(index);
+			list.RemoveAt(index);
 		}
 
 		public object SyncRoot
@@ -168,5 +176,4 @@ namespace MonoTorrent
 		#endregion
 	}
 }
-
 */

@@ -43,8 +43,8 @@ namespace MonoTorrent.Client
                         AsyncCallback scrapeCallback, EngineSettings engineSettings)
         {
             this.trackers = new TrackerCollection(trackerUrls.Count);
-            for (int i = 0; i < trackerUrls.Count; i++)
-                this.trackers[i] = new Tracker(trackerUrls[i], announceCallback, scrapeCallback, engineSettings);
+            foreach (string trackerUrl in trackerUrls)
+                this.trackers.Add(new Tracker(trackerUrl, announceCallback, scrapeCallback, engineSettings));
         }
 
         #endregion Constructors

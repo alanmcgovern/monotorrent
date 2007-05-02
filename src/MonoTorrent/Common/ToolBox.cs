@@ -29,8 +29,10 @@
 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
 
 namespace MonoTorrent.Common
 {
@@ -38,38 +40,24 @@ namespace MonoTorrent.Common
     {
 		private static Random r = new Random();
 
-#warning This is broken. it won't work. The strings collection is being cleared, it needs to be cloned first
-        public static void RandomizeStringCollection(stringCollection strings)
-        {
-            stringCollection clone = new stringCollection(strings.Count);
-            strings.Clear();
-
-            while (clone.Count > 0)
-            {
-                int index = r.Next(0, clone.Count);
-                strings.Add(clone[index]);
-                clone.RemoveAt(index);
-            }
-        }
-
-		public static void Randomize(TrackerCollection array)
+		public static void Randomize(MonoTorrentCollectionBase collection)
 		{
-			TrackerCollection clone = array.Clone();
-			array.Clear();
+			MonoTorrentCollectionBase clone = collection.Clone();
+			collection.Clear();
 
 			while (clone.Count > 0)
 			{
 				int index = r.Next(0, clone.Count);
-				array.Add(clone[index]);
+				collection.Add(clone[index]);
 				clone.RemoveAt(index);
 			}
 		}
 
-		public static void Switch(TrackerCollection array, int first, int second)
+		public static void Switch(MonoTorrentCollectionBase collection, int first, int second)
 		{
-			MonoTorrent.Client.Tracker obj = array[first];
-			array[first] = array[second];
-			array[second] = obj;
+			object obj = collection[first];
+			collection[first] = collection[second];
+			collection[second] = obj;
 		}
 
         public static string GetHex(byte[] infoHash)

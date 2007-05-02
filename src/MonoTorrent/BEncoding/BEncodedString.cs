@@ -206,6 +206,7 @@ namespace MonoTorrent.BEncoding
             return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
         }
 
+#warning Throw an invalid cast exception?
         public int CompareTo(object obj)
         {
             BEncodedString other = obj as BEncodedString;
