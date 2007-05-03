@@ -190,7 +190,7 @@ namespace MonoTorrent.Client
             }
             else
             {
-                ToolBox.Switch(id.TrackerTier.Trackers, 0, id.TrackerTier.IndexOf(id.Tracker));
+                ToolBox.Switch<Tracker>(id.TrackerTier.Trackers, 0, id.TrackerTier.IndexOf(id.Tracker));
                 if (id.TrackerTier.SendingStartedEvent)
                 {
                     id.TrackerTier.SendingStartedEvent = false;
@@ -207,13 +207,13 @@ namespace MonoTorrent.Client
         {
             for (int i = 0; i < this.trackerTiers.Length; i++)
             {
-                for (int j = 0; j < this.trackerTiers[i].Trackers.Count; j++)
+                for (int j = 0; j < this.trackerTiers[i].Trackers.Length; j++)
                 {
                     if (this.trackerTiers[i].Trackers[j] != tracker)
                         continue;
 
                     // If we are on the last tracker of this tier, check to see if there are more tiers
-                    if (j == (this.trackerTiers[i].Trackers.Count - 1))
+                    if (j == (this.trackerTiers[i].Trackers.Length - 1))
                     {
                         if (i == (this.trackerTiers.Length - 1))
                         {

@@ -146,18 +146,14 @@ namespace MonoTorrent
                         sb.Remove(0, sb.Length);
                         sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
                         sb.Append(Environment.NewLine);
-						//sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
-						//sb.Append(Environment.NewLine);
-						//sb.Append("Half opens:       "); sb.Append(ClientEngine.ConnectionManager.HalfOpenConnections);
-						//sb.Append(Environment.NewLine);
-						//sb.Append("Max open:         "); sb.Append(ClientEngine.ConnectionManager.MaxOpenConnections);
-						//sb.Append(Environment.NewLine);
                         sb.Append("Progress:         "); sb.AppendFormat("{0:0.00}", manager.Progress);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00} kB/sec", manager.Monitor.DownloadSpeed / 1024.0);
+                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00}", manager.Monitor.DownloadSpeed / 1024.0);
+						sb.Append(" kB/s");
                         sb.Append(Environment.NewLine);
-						sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00} kB/sec", manager.Monitor.UploadSpeed / 1024.0);
-                        sb.Append(Environment.NewLine);
+						sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed / 1024.0);
+						sb.Append(" kB/s");
+						sb.Append(Environment.NewLine);
                         sb.Append("Torrent State:    "); sb.Append(manager.State);
                         sb.Append(Environment.NewLine);
                         sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds());
@@ -166,9 +162,11 @@ namespace MonoTorrent
                         sb.Append(Environment.NewLine);
                         sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
                         sb.Append(Environment.NewLine);
-						sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+						sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+						sb.Append(" MB");
                         sb.Append(Environment.NewLine);
-						sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+						sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+						sb.Append(" MB");
                         sb.Append(Environment.NewLine);
                         sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
                         sb.Append(Environment.NewLine);
@@ -179,6 +177,12 @@ namespace MonoTorrent
 
 						// These are some of the other statistics which can be displayed. There are loads more available ;)
 
+						//sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Half opens:       "); sb.Append(ClientEngine.ConnectionManager.HalfOpenConnections);
+						//sb.Append(Environment.NewLine);
+						//sb.Append("Max open:         "); sb.Append(ClientEngine.ConnectionManager.MaxOpenConnections);
+						//sb.Append(Environment.NewLine);
 						//sb.Append("Protocol Download:"); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesDownloaded / 1024.0);
 						//sb.Append(Environment.NewLine);
 						//sb.Append("Protocol Upload:  "); sb.AppendFormat("{0:0.00}", manager.Monitor.ProtocolBytesUploaded / 1024.0);

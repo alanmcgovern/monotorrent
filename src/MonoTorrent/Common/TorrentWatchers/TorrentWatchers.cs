@@ -28,31 +28,32 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
     /// Main controller class for ITorrentWatcher
     /// </summary>
-    public class TorrentWatchers : ITorrentWatcherCollection
+    public class TorrentWatchers : IList<ITorrentWatcher>
     {
         #region Events
         /// <summary>
         /// Event that's fired every time a new Torrent is detected
         /// </summary>
-        public event TorrentWatcherEventHandler OnTorrentFound;
+        public event EventHandler<TorrentWatcherEventArgs> OnTorrentFound;
 
 
         /// <summary>
         /// Event that's fired every time a Torrent is removed
         /// </summary>
-        public event TorrentWatcherEventHandler OnTorrentLost;
+        public event EventHandler<TorrentWatcherEventArgs> OnTorrentLost;
         #endregion
 
 
         #region Member Variables
 
-        private ITorrentWatcherCollection watcherList;
+        private List<ITorrentWatcher> watcherList;
 
         public delegate void TorrentFound(string torrentPath);
         public delegate void TorrentLost(string torrentPath);
@@ -67,12 +68,36 @@ namespace MonoTorrent.Common
         /// <param name="settings"></param>
         public TorrentWatchers()
         {
-            this.watcherList = new ITorrentWatcherCollection();
+            this.watcherList = new List<ITorrentWatcher>();
         }
         #endregion
 
 
         #region Methods
+        /// <summary>
+        /// Returns the ITorrentWatcher at the specified index
+        /// </summary>
+        /// <param name="index">The index of the ITorrentWatcher to return</param>
+        /// <returns></returns>
+        public ITorrentWatcher this[int index]
+        {
+            get { return this.watcherList[index]; }
+            set { this.watcherList[index] = value; }
+        }
+
+
+        /// <summary>
+        /// Adds a ITorrentWatcher to the TorrentWatchers
+        /// </summary>
+        /// <param name="torrentWatcher">The ITorrentWatcher to add</param>
+        public void Add(ITorrentWatcher torrentWatcher)
+        {
+            torrentWatcher.Register(RaiseTorrentFound, RaiseTorrentLost);
+
+            this.watcherList.Add(torrentWatcher);
+        }
+
+
         /// <summary>
         /// Removes the ITorrentWatcher at the specified index
         /// </summary>
@@ -81,6 +106,48 @@ namespace MonoTorrent.Common
         {
             ITorrentWatcher torrentWatcher = this[index];
             this.Remove(torrentWatcher);
+        }
+
+
+        /// <summary>
+        /// Removes the supplied ITorrentWatcher from the list
+        /// </summary>
+        /// <param name="torrentWatcher">The ITorrentWatcher to remove</param>
+        /// <returns>True if the ITorrentWatcher was removed</returns>
+        public bool Remove(ITorrentWatcher torrentWatcher)
+        {
+            torrentWatcher.StopWatching();
+            return this.watcherList.Remove(torrentWatcher);
+        }
+
+
+        /// <summary>
+        /// Returns the number of ITorrentWatcher in the list
+        /// </summary>
+        public int Count
+        {
+            get { return this.watcherList.Count; }
+        }
+
+
+        /// <summary>
+        /// Checks if the specified ITorrentWatcher is in the list
+        /// </summary>
+        /// <param name="torrentWatcher">The ITorrentWatcher to check</param>
+        /// <returns>True if the ITorrentWatcher was found, false otherwise</returns>
+        public bool Contains(ITorrentWatcher torrentWatcher)
+        {
+            return (this.watcherList.Contains(torrentWatcher));
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public List<ITorrentWatcher>.Enumerator GetEnumerator()
+        {
+            return this.watcherList.GetEnumerator();
         }
 
 
@@ -137,6 +204,63 @@ namespace MonoTorrent.Common
 
             if (this.OnTorrentLost != null)
                 this.OnTorrentLost(this, eventArgs);
+        }
+
+        #endregion
+
+        #region IList<ITorrentWatcher> Members
+
+        public int IndexOf(ITorrentWatcher item)
+        {
+            return this.watcherList.IndexOf(item);
+        }
+
+        public void Insert(int index, ITorrentWatcher item)
+        {
+            this.watcherList.Insert(index, item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            this.watcherList.RemoveAt(index);
+        }
+
+        #endregion
+
+        #region ICollection<ITorrentWatcher> Members
+
+
+        public void Clear()
+        {
+            this.watcherList.Clear();
+        }
+
+        public void CopyTo(ITorrentWatcher[] array, int arrayIndex)
+        {
+            this.watcherList.CopyTo(array, arrayIndex);
+        }
+
+        public bool IsReadOnly
+        {
+            get { return false; }
+        }
+
+        #endregion
+
+        #region IEnumerable<ITorrentWatcher> Members
+
+        IEnumerator<ITorrentWatcher> IEnumerable<ITorrentWatcher>.GetEnumerator()
+        {
+            return this.watcherList.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.watcherList.GetEnumerator();
         }
 
         #endregion

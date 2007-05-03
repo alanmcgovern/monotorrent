@@ -31,7 +31,6 @@ using System;
 
 namespace MonoTorrent.Common
 {
-    public delegate void TorrentWatcherEventHandler(object o, TorrentWatcherEventArgs e);
     /// <summary>
     /// Provides the data needed to handle a TorrentWatcher event
     /// </summary>

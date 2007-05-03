@@ -29,10 +29,8 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.Reflection;
 
 namespace MonoTorrent.Common
 {
@@ -40,24 +38,24 @@ namespace MonoTorrent.Common
     {
 		private static Random r = new Random();
 
-		public static void Randomize(MonoTorrentCollectionBase collection)
+		public static void Randomize<T>(List<T> array)
 		{
-			MonoTorrentCollectionBase clone = collection.Clone();
-			collection.Clear();
+			List<T> clone = new List<T>(array);
+			array.Clear();
 
 			while (clone.Count > 0)
 			{
 				int index = r.Next(0, clone.Count);
-				collection.Add(clone[index]);
+				array.Add(clone[index]);
 				clone.RemoveAt(index);
 			}
 		}
 
-		public static void Switch(MonoTorrentCollectionBase collection, int first, int second)
+		public static void Switch<T>(T[] array, int first, int second)
 		{
-			object obj = collection[first];
-			collection[first] = collection[second];
-			collection[second] = obj;
+			T obj = array[first];
+			array[first] = array[second];
+			array[second] = obj;
 		}
 
         public static string GetHex(byte[] infoHash)

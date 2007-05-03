@@ -39,20 +39,20 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
         private object requestsLocker = new object();                   // Used to synchronise access to the lists
-        private PieceCollection pieces;                                     // A list of all the remaining pieces to download
-        private BlockCollection blocks;                                     // A list of all the blocks in the remaining pieces to download
-        Dictionary<PeerId, BlockCollection> requests;             // Used to remember which blocks each peer is downloading
-        Dictionary<Block, PeerIdCollection> blockRequestees;      // Used to remember which peers are getting each block so i can issue cancel messages
+        private List<Piece> pieces;                                     // A list of all the remaining pieces to download
+        private List<Block> blocks;                                     // A list of all the blocks in the remaining pieces to download
+        Dictionary<PeerId, List<Block>> requests;             // Used to remember which blocks each peer is downloading
+        Dictionary<Block, List<PeerId>> blockRequestees;      // Used to remember which peers are getting each block so i can issue cancel messages
         #endregion
 
         #region Constructors
 
-        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerId, PieceCollection> existingRequests)
+        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerId, List<Piece>> existingRequests)
         {
             this.myBitfield = myBitfield;
-            this.requests = new Dictionary<PeerId, BlockCollection>();
-            this.blockRequestees = new Dictionary<Block, PeerIdCollection>();
-            this.pieces = new PieceCollection();
+            this.requests = new Dictionary<PeerId, List<Block>>();
+            this.blockRequestees = new Dictionary<Block, List<PeerId>>();
+            this.pieces = new List<Piece>();
 
             // For all the pieces that we have *not* requested yet, add them into our list of pieces
             for (int i = 0; i < this.myBitfield.Length; i++)
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
             // Then take the dictionary of existing requests and put them into the list of pieces (overwriting as necessary)
             AddExistingRequests(existingRequests);
 
-            this.blocks = new BlockCollection(this.pieces.Count * this.pieces[0].Blocks.Length);
+            this.blocks = new List<Block>(this.pieces.Count * this.pieces[0].Blocks.Length);
             for (int i = 0; i < this.pieces.Count; i++)
                 for (int j = 0; j < this.pieces[i].Blocks.Length; j++)
                     this.blocks.Add(this.pieces[i].Blocks[j]);
@@ -74,14 +74,14 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private void AddExistingRequests(Dictionary<PeerId, PieceCollection> existingRequests)
+        private void AddExistingRequests(Dictionary<PeerId, List<Piece>> existingRequests)
         {
-            foreach (KeyValuePair<PeerId, PieceCollection> keypair in existingRequests)
+            foreach (KeyValuePair<PeerId, List<Piece>> keypair in existingRequests)
             {
                 if (!this.requests.ContainsKey(keypair.Key))
-                    this.requests.Add(keypair.Key, new BlockCollection());
+                    this.requests.Add(keypair.Key, new List<Block>());
 
-                BlockCollection activeRequests = this.requests[keypair.Key];
+                List<Block> activeRequests = this.requests[keypair.Key];
                 foreach (Piece p in keypair.Value)
                 {
                     // If the piece has already been put into the list of pieces, we want to overwrite that
@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
                         {
                             activeRequests.Add(b);
                             if (!this.blockRequestees.ContainsKey(b))
-                                this.blockRequestees.Add(b, new PeerIdCollection());
+                                this.blockRequestees.Add(b, new List<PeerId>());
 
                             this.blockRequestees[b].Add(keypair.Key);
                         }
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers)
+        public override RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             lock (this.requestsLocker)
             {
@@ -150,13 +150,13 @@ namespace MonoTorrent.Client
 
                     // Add the block to the list of blocks that we are downloading off this peer
                     if (!this.requests.ContainsKey(id))
-                        this.requests.Add(id, new BlockCollection());
+                        this.requests.Add(id, new List<Block>());
 
                     this.requests[id].Add(b);
 
                     // Add the peer to the list of people who are downloading this block
                     if (!this.blockRequestees.ContainsKey(b))
-                        this.blockRequestees.Add(b, new PeerIdCollection());
+                        this.blockRequestees.Add(b, new List<PeerId>());
 
                     this.blockRequestees[b].Add(id);
 
@@ -234,8 +234,8 @@ namespace MonoTorrent.Client
 
                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(p.Index, result));
 
-                BlockCollection activeRequests = this.requests[id];
-                PeerIdCollection activeRequestees = this.blockRequestees[p.Blocks[blockIndex]];
+                List<Block> activeRequests = this.requests[id];
+                List<PeerId> activeRequestees = this.blockRequestees[p.Blocks[blockIndex]];
                 activeRequests.Remove(p.Blocks[blockIndex]);
                 activeRequestees.Remove(id);
 
@@ -274,7 +274,7 @@ namespace MonoTorrent.Client
                 if (!this.requests.ContainsKey(id))
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                BlockCollection pieces = this.requests[id];
+                List<Block> pieces = this.requests[id];
 
                 Piece piece = PiecePickerBase.GetPieceFromIndex(this.pieces, message.PieceIndex);
                 int block = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
@@ -296,7 +296,7 @@ namespace MonoTorrent.Client
             if (!this.requests.ContainsKey(id))
                 return;
 
-            BlockCollection blocks = this.requests[id];
+            List<Block> blocks = this.requests[id];
             for (int i = 0; i < blocks.Count; i++)
             {
                 id.Peer.Connection.AmRequestingPiecesCount--;
@@ -304,7 +304,7 @@ namespace MonoTorrent.Client
 
                 if (this.blockRequestees.ContainsKey(blocks[i]))
                 {
-                    PeerIdCollection requestees = this.blockRequestees[blocks[i]];
+                    List<PeerId> requestees = this.blockRequestees[blocks[i]];
                     requestees.Remove(id);
                     if (requestees.Count == 0)
                         this.blockRequestees.Remove(blocks[i]);

@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Encryption
         private AsyncCallback gotPadCCallback;
         private AsyncCallback gotInitialPayloadCallback;
 
-        public PeerBEncryption(TorrentManagerCollection torrents, EncryptionType minCryptoAllowed)
+        public PeerBEncryption(List<TorrentManager> torrents, EncryptionType minCryptoAllowed)
             : base(minCryptoAllowed)
         {
             possibleSKEYs = new byte[torrents.Count][];

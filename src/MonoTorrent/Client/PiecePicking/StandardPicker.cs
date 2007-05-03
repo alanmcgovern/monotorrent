@@ -46,9 +46,9 @@ namespace MonoTorrent.Client
 
 
         private TorrentFile[] torrentFiles;
-        private IntCollection unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
-        private Dictionary<PeerId, PieceCollection> requests;
-        internal Dictionary<PeerId, PieceCollection> Requests
+        private List<int> unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
+        private Dictionary<PeerId, List<Piece>> requests;
+        internal Dictionary<PeerId, List<Piece>> Requests
         {
             get { return this.requests; }
         }
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
             int result = 0;
             lock (this.requests)
             {
-                foreach (KeyValuePair<PeerId, PieceCollection> keypair in this.requests)
+                foreach (KeyValuePair<PeerId, List<Piece>> keypair in this.requests)
                     for (int i = 0; i < keypair.Value.Count; i++)
                         for (int j = 0; j < keypair.Value[i].Blocks.Length; j++)
                             if (keypair.Value[i].Blocks[j].Requested && !keypair.Value[i].Blocks[j].Received)
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
         internal StandardPicker(BitField bitField, TorrentFile[] torrentFiles)
         {
             this.torrentFiles = torrentFiles;
-            this.requests = new Dictionary<PeerId, PieceCollection>(32);
+            this.requests = new Dictionary<PeerId, List<Piece>>(32);
             this.isInterestingBuffer = new BitField(bitField.Length);
             this.priorities = (int[])Enum.GetValues(typeof(Priority));
             Array.Sort<int>(this.priorities);
@@ -93,8 +93,8 @@ namespace MonoTorrent.Client
             this.bufferBitfield = new BitField(myBitfield.Length);
             this.previousBitfield = new BitField(myBitfield.Length);
             this.torrentFiles = torrentFiles;
-            this.unhashedPieces = new IntCollection(8);
-            this.requests = new Dictionary<PeerId, PieceCollection>();
+            this.unhashedPieces = new List<int>(8);
+            this.requests = new Dictionary<PeerId, List<Piece>>();
 
             // Order the priorities in decending order of priority. i.e. Immediate is first, and DoNotDownload is last
             this.priorities = (int[])Enum.GetValues(typeof(Priority));
@@ -116,7 +116,7 @@ namespace MonoTorrent.Client
             if (this.myBitfield[index])
                 return true;
 
-            foreach (KeyValuePair<PeerId, PieceCollection> keypair in this.requests)
+            foreach (KeyValuePair<PeerId, List<Piece>> keypair in this.requests)
                 for(int i=0; i < keypair.Value.Count; i++)
                     if (keypair.Value[i].Index == index)
                         return true;
@@ -139,7 +139,7 @@ namespace MonoTorrent.Client
 
             // Get the list of all the pieces we're requesting off the peer and check to see if there
             // are any blocks not requested yet. If there are, request them
-            PieceCollection reqs = this.requests[id];
+            List<Piece> reqs = this.requests[id];
             for (int i = 0; i < reqs.Count; i++)
             {
                 for (int j = 0; j < reqs[i].Blocks.Length; j++)
@@ -166,9 +166,9 @@ namespace MonoTorrent.Client
         private RequestMessage GenerateRequest(PeerId id, int index)
         {
             if (!requests.ContainsKey(id))
-                requests.Add(id, new PieceCollection(2));
+                requests.Add(id, new List<Piece>(2));
 
-            PieceCollection reqs = requests[id];
+            List<Piece> reqs = requests[id];
 
             Piece p = new Piece(index, id.TorrentManager.Torrent);
             reqs.Add(p);
@@ -302,7 +302,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The id of the peer to request a piece off of</param>
         /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
         /// <returns></returns>
-        public override RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers)
+        public override RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             RequestMessage message = null;
 
@@ -394,7 +394,7 @@ namespace MonoTorrent.Client
                 else
                 {
                     message = this.GenerateRequest(id, checkIndex);
-                    PieceCollection reqs = requests[id];
+                    List<Piece> reqs = requests[id];
                     for (int i = 0; i < reqs.Count; i++)
                     {
                         if (reqs[i].Index != checkIndex)
@@ -419,7 +419,7 @@ namespace MonoTorrent.Client
             {
                 if (this.requests.ContainsKey(id))
                 {
-                    PieceCollection pieces = this.requests[id];
+                    List<Piece> pieces = this.requests[id];
                     for (int i = 0; i < pieces.Count; i++)
                         for (int j = 0; j < pieces[i].Blocks.Length; j++)
                             if (pieces[i].Blocks[j].Requested && !pieces[i].Blocks[j].Received)
@@ -450,7 +450,7 @@ namespace MonoTorrent.Client
                 if (!this.requests.ContainsKey(id))
                     return;
 
-                PieceCollection pieces = this.requests[id];
+                List<Piece> pieces = this.requests[id];
                 for (int i = 0; i < pieces.Count; i++)
                 {
                     if (message.PieceIndex != pieces[i].Index)
@@ -502,7 +502,7 @@ namespace MonoTorrent.Client
                     return PieceEvent.BlockNotRequested;
                 }
 
-                PieceCollection pieces = this.requests[id];
+                List<Piece> pieces = this.requests[id];
 
                 // If we are *not* requesting the piece that this block came from, we kill the connection
                 Piece piece = PiecePickerBase.GetPieceFromIndex(pieces, message.PieceIndex);
@@ -591,7 +591,7 @@ namespace MonoTorrent.Client
                 if (!this.requests.ContainsKey(id))
                     throw new MessageException("Received reject request for a piece i'm not requesting");
 
-                PieceCollection pieces = this.requests[id];
+                List<Piece> pieces = this.requests[id];
 
                 Piece piece = PiecePickerBase.GetPieceFromIndex(pieces, rejectRequestMessage.PieceIndex);
                 if (piece == null)

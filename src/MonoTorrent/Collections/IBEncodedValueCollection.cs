@@ -13,9 +13,9 @@ namespace MonoTorrent
 		#region Private Fields
 
 #if NET_2_0
-		private List<IBEncodedValue> list;
+		protected List<IBEncodedValue> list;
 #else
-		private ArrayList list;
+		protected ArrayList list;
 #endif
 
 		#endregion Private Fields
@@ -58,7 +58,7 @@ namespace MonoTorrent
 			list.Add(value);
 			return list.Count;
 #else
-			return this.list.Add(value);
+			return list.Add(value);
 #endif
 		}
 

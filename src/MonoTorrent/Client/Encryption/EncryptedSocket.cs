@@ -229,7 +229,7 @@ namespace MonoTorrent.Client.Encryption
         /// Sets the PeerConnectionID associated with this connection
         /// </summary>
         /// <param name="id">The PeerConnectionID associated with this connection</param>
-        public void SetPeerId(PeerId id)
+        public void SetPeerConnectionID(PeerId id)
         {
             this.id = id;
         }

@@ -193,8 +193,8 @@ namespace MonoTorrent.Tracker
                 if (this.torrentWatchers == null)
                 {
                     this.torrentWatchers = new TorrentWatchers();
-                    this.torrentWatchers.OnTorrentFound += new TorrentWatcherEventHandler(OnTorrentCreated);
-                    this.torrentWatchers.OnTorrentLost += new TorrentWatcherEventHandler(OnTorrentRemoved);
+                    this.torrentWatchers.OnTorrentFound += new EventHandler<TorrentWatcherEventArgs>(OnTorrentCreated);
+                    this.torrentWatchers.OnTorrentLost += new EventHandler<TorrentWatcherEventArgs>(OnTorrentRemoved);
                 }
 
                 return this.torrentWatchers;

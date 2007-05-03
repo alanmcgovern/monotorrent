@@ -6,7 +6,7 @@ include $(rootdir)/config.make
 
 $(OUT): $(SOURCES)
 	mkdir -p $(bindir)
-	$(CSC) $(REFERENCES) $(RESOURCES_B) $(TARGET) $(PKGS) -d:DEBUG -d:NET_2_0 -out:$(OUT) $(SOURCES)
+	$(CSC) $(REFERENCES) $(RESOURCES_B) $(TARGET) $(PKGS) -d:DEBUG -out:$(OUT) $(SOURCES)
 
 all: $(OUT) 
 

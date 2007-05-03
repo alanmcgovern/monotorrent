@@ -61,6 +61,6 @@ namespace MonoTorrent.Client.Encryption
 
         int GetInitialData(byte[] buffer, int offset, int count);
 
-        void SetPeerId(PeerId id);
+        void SetPeerConnectionID(PeerId id);
     }
 }

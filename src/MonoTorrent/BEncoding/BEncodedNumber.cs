@@ -31,14 +31,14 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace MonoTorrent.BEncoding
 {
     /// <summary>
     /// Class representing a BEncoded number
     /// </summary>
-    public class BEncodedNumber : IBEncodedValue, IComparable
+    public class BEncodedNumber : IBEncodedValue, IComparable<BEncodedNumber>
     {
         #region Member Variables
         /// <summary>
@@ -144,19 +144,6 @@ namespace MonoTorrent.BEncoding
             return System.Text.Encoding.UTF8.GetByteCount('i' + this.number.ToString() + 'e');
         }
 
-        public int CompareTo(object other)
-        {
-            if(other is BEncodedNumber)
-                return CompareTo((BEncodedNumber)other);
-
-            if (other is int)
-                return CompareTo((int)other);
-
-            if (other is long)
-                return CompareTo((long)other);
-
-            return -1;
-        }
 
         public int CompareTo(BEncodedNumber other)
         {

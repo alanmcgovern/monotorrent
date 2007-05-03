@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
@@ -37,10 +38,10 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded list
     /// </summary>
-    public class BEncodedList : IBEncodedValueCollection, IBEncodedValue
+    public class BEncodedList : IBEncodedValue, IList<IBEncodedValue>
     {
         #region Member Variables
-        private IBEncodedValueCollection list;
+        private List<IBEncodedValue> list;
         #endregion
 
 
@@ -49,7 +50,7 @@ namespace MonoTorrent.BEncoding
         /// Create a new BEncoded List with default capacity
         /// </summary>
         public BEncodedList()
-            : this(new IBEncodedValueCollection())
+            : this(new List<IBEncodedValue>())
         {
         }
 
@@ -58,7 +59,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="capacity">The initial capacity</param>
         public BEncodedList(int capacity)
-            : this(new IBEncodedValueCollection(capacity))
+            : this(new List<IBEncodedValue>(capacity))
         {
 
         }
@@ -67,7 +68,7 @@ namespace MonoTorrent.BEncoding
         /// Creates a new BEncoded list from the supplied List
         /// </summary>
         /// <param name="value">The list to use to create the BEncodedList</param>
-        public BEncodedList(IBEncodedValueCollection value)
+        public BEncodedList(List<IBEncodedValue> value)
         {
             this.list = value;
         }
@@ -187,5 +188,73 @@ namespace MonoTorrent.BEncoding
         }
         #endregion
 
-   }
+
+        #region IList methods
+        public void Add(IBEncodedValue item)
+        {
+            this.list.Add(item);
+        }
+
+        public void Clear()
+        {
+            this.list.Clear();
+        }
+
+        public bool Contains(IBEncodedValue item)
+        {
+            return this.list.Contains(item);
+        }
+
+        public void CopyTo(IBEncodedValue[] array, int arrayIndex)
+        {
+            this.list.CopyTo(array, arrayIndex);
+        }
+
+        public int Count
+        {
+            get { return this.list.Count; }
+        }
+
+        public int IndexOf(IBEncodedValue item)
+        {
+            return this.list.IndexOf(item);
+        }
+
+        public void Insert(int index, IBEncodedValue item)
+        {
+            this.list.Insert(index, item);
+        }
+
+        public bool IsReadOnly
+        {
+            get { return false; }
+        }
+
+        public bool Remove(IBEncodedValue item)
+        {
+            return this.list.Remove(item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            this.list.RemoveAt(index);
+        }
+
+        public IBEncodedValue this[int index]
+        {
+            get { return this.list[index]; }
+            set { this.list[index] = value; }
+        }
+
+        public IEnumerator<IBEncodedValue> GetEnumerator()
+        {
+            return this.list.GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+        #endregion
+    }
 }

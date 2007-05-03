@@ -9,11 +9,11 @@ namespace MonoTorrent.Client
     public static class Logger
     {
         private static Dictionary<PeerId, LinkedList<string>> log;
-        private static TraceListenerCollection listeners;
+        private static List<TraceListener> listeners;
 
         static Logger()
         {
-            listeners = new TraceListenerCollection();
+            listeners = new List<TraceListener>();
             log = new Dictionary<PeerId, LinkedList<string>>();
         }
 
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
 
             foreach (KeyValuePair<PeerConnectionID, LinkedList<string>> keypair in log)
             {
-                using (FileStream s = new FileStream(@"Logs\" + keypair.Key.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+                using (FileStream s = new FileStream(@"C:\Logs\" + keypair.Key.GetHashCode() + ".txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
                 using(StreamWriter output = new StreamWriter(s))
                 {
                     foreach (string str in keypair.Value)

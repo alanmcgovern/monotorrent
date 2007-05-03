@@ -48,23 +48,23 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the indexs of all the pieces we will let the peer download even if they are choked
         /// </summary>
-        internal UInt32Collection AmAllowedFastPieces
+        internal List<UInt32> AmAllowedFastPieces
         {
             get { return this.amAllowedFastPieces; }
             set { this.amAllowedFastPieces = value; }
         }
-        private UInt32Collection amAllowedFastPieces;
+        private List<UInt32> amAllowedFastPieces;
 
 
         /// <summary>
         /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
         /// </summary>
-        internal UInt32Collection IsAllowedFastPieces
+        internal List<UInt32> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
             set { this.isAllowedFastPieces = value; }
         }
-        private UInt32Collection isAllowedFastPieces;
+        private List<UInt32> isAllowedFastPieces;
 
         public abstract byte[] AddressBytes { get; }
 
@@ -174,12 +174,12 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the version and name of the application this client is using.
         /// </summary>
-        public TorrentSoftware ClientApp
+        public Software ClientApp
         {
             get { return this.clientApp; }
             internal set { this.clientApp = value; }
         }
-        private TorrentSoftware clientApp;
+        private Software clientApp;
 
 
         /// <summary>
@@ -347,11 +347,11 @@ namespace MonoTorrent.Client
         /// A list of pieces that this peer has suggested we download. These should be downloaded
         /// with higher priority than standard pieces.
         /// </summary>
-        internal IntCollection SuggestedPieces
+        internal List<int> SuggestedPieces
         {
             get { return this.suggestedPieces; }
         }
-        private IntCollection suggestedPieces;
+        private List<int> suggestedPieces;
         #endregion
 
 
@@ -362,15 +362,15 @@ namespace MonoTorrent.Client
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
         protected PeerConnectionBase(int bitfieldLength, IEncryptor encryptor)
         {
-            this.suggestedPieces = new IntCollection();
+            this.suggestedPieces = new List<int>();
             this.encryptor = encryptor;
             this.amChoking = true;
             this.isChoking = true;
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessageInternal>(12);
-            this.isAllowedFastPieces = new UInt32Collection();
-            this.amAllowedFastPieces = new UInt32Collection();
+            this.isAllowedFastPieces = new List<uint>();
+            this.amAllowedFastPieces = new List<uint>();
         }
         #endregion
 

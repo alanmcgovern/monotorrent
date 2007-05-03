@@ -237,7 +237,7 @@ namespace MonoTorrent.Client.PeerMessages
             }
 
             // Attempt to parse the application that the peer is using
-            id.Peer.Connection.ClientApp = new TorrentSoftware(this.peerId);
+            id.Peer.Connection.ClientApp = new Software(this.peerId);
             id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
