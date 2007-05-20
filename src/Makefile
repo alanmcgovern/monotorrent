@@ -4,6 +4,7 @@ all: config.make monotorrent.pc
 	for dir in $(SUBDIRS); do \
 		(cd $$dir && make) \
 	done
+	cp Libs/Upnp.dll bin/Upnp.dll
 
 clean:
 	-for dir in $(SUBDIRS); do \
