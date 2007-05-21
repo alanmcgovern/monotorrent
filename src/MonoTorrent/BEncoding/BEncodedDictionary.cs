@@ -244,9 +244,9 @@ namespace MonoTorrent.BEncoding
             this.dictionary.Add(key, value);
         }
 
-        public void Add(KeyValuePair<BEncodedString, IBEncodedValue> keypair)
+        public void Add(KeyValuePair<BEncodedString, IBEncodedValue> item)
         {
-            this.dictionary.Add(keypair.Key, keypair.Value);
+            this.dictionary.Add(item.Key, item.Value);
         }
         public void Clear()
         {

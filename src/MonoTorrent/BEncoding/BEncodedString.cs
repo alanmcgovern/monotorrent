@@ -153,6 +153,9 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader">The StreamReader containing the BEncodedString</param>
         public void Decode(BinaryReader reader)
         {
+            if (reader == null)
+                throw new ArgumentNullException("reader");
+
             int letterCount;
             StringBuilder sb = new StringBuilder(20);
 
@@ -193,6 +196,9 @@ namespace MonoTorrent.BEncoding
 
         public int CompareTo(BEncodedString other)
         {
+            if (other == null)
+                return 1;
+
             int difference=0;
             int length = this.textBytes.Length > other.textBytes.Length ? other.textBytes.Length : this.textBytes.Length;
 

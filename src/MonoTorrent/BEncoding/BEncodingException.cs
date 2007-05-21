@@ -35,6 +35,7 @@ using System.Runtime.Serialization;
 
 namespace MonoTorrent.BEncoding
 {
+	[Serializable]
     public class BEncodingException : Exception
     {
         public BEncodingException()
@@ -52,7 +53,7 @@ namespace MonoTorrent.BEncoding
         {
         }
 
-        public BEncodingException(SerializationInfo info, StreamingContext context)
+        protected BEncodingException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }

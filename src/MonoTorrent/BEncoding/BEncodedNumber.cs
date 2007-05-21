@@ -107,12 +107,15 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader">BinaryReader containing a BEncoded Number</param>
         public void Decode(BinaryReader reader)
         {
+            if (reader == null)
+                throw new ArgumentNullException("reader");
+
             StringBuilder sb;
             try
             {
                 sb = new StringBuilder(8);
                 if (reader.ReadByte() != 'i')              // remove the leading 'i'
-                    throw new Exception("Invalid data found. Aborting.");
+                    throw new BEncodingException("Invalid data found. Aborting.");
 
                 while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
                     sb.Append((char)reader.ReadByte());
@@ -147,6 +150,9 @@ namespace MonoTorrent.BEncoding
 
         public int CompareTo(BEncodedNumber other)
         {
+            if (other == null)
+                throw new ArgumentNullException("other");
+
             return this.number.CompareTo(other.number);
         }
 

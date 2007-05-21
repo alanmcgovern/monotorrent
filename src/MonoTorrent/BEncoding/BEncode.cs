@@ -49,6 +49,9 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static IBEncodedValue Decode(byte[] data)
         {
+            if (data == null)
+                throw new ArgumentNullException("data");
+
             using (MemoryStream stream = new MemoryStream(data))
                 return (BEncode.Decode(stream));
         }
@@ -63,6 +66,12 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
         public static IBEncodedValue Decode(byte[] buffer, int offset, int length)
         {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            if (offset > buffer.Length - length)
+                throw new ArgumentOutOfRangeException("length");
+
             using (MemoryStream stream = new MemoryStream(buffer, offset, length))
             using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
                 return Decode(reader);
@@ -76,6 +85,9 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static IBEncodedValue Decode(Stream stream)
         {
+			if (stream == null)
+				throw new ArgumentNullException("stream");
+
             using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
                 return Decode(reader);
         }
@@ -88,6 +100,9 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static IBEncodedValue Decode(BinaryReader reader)
         {
+            if (reader == null)
+                throw new ArgumentNullException("reader");
+
             IBEncodedValue data;
             switch ((char)reader.PeekChar())
             {
