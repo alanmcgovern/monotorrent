@@ -55,8 +55,7 @@ namespace MonoTorrent
 			// Create the settings which the engine will use
 			// downloadsPath - this is the path where we will save all the files to
 			// port - this is the port we listen for connections on
-			// false - we don't want to use uPnP to map the port.
-            EngineSettings engineSettings = new EngineSettings(downloadsPath, port, false);
+            EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
 
 
 

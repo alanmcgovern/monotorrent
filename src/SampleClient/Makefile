@@ -2,8 +2,7 @@ TARGET=-target:exe
 OUT=../bin/MonoTorrent.exe
 
 REFERENCES=\
-	-r:../bin/MonoTorrent.dll	\
-	-r:../Libs/Upnp.dll
+	-r:../bin/MonoTorrent.dll
 
 SOURCES=main.cs \
 	Top10Listener.cs

@@ -68,7 +68,6 @@ namespace MonoTorrent.Client
         /// </summary>
         internal const int TickLength = 500;
 
-        private PortMapper portMapper;
         #endregion
 
 
@@ -182,19 +181,6 @@ namespace MonoTorrent.Client
             this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
             this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
             this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
-
-            // If uPnP support has been enabled
-            if (this.settings.UsePnP)
-            {
-                this.portMapper = new PortMapper();
-                this.portMapper.RouterFound += new EventHandler(portMapper_RouterFound);
-                this.portMapper.Start();
-            }
-        }
-
-        void portMapper_RouterFound(object sender, EventArgs e)
-        {
-            this.portMapper.MapPort(this.settings.ListenPort);
         }
 
         #endregion
@@ -805,8 +791,6 @@ namespace MonoTorrent.Client
                 this.listener.Dispose();
 
             this.timer.Dispose();
-            if (this.settings.UsePnP)
-                this.portMapper.Dispose();
         }
 
 

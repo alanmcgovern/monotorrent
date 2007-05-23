@@ -50,7 +50,6 @@ namespace MonoTorrent.Client
         private int globalMaxDownloadSpeed;             // The maximum combined download speed
         private int globalMaxUploadSpeed;               // The maximum combined upload speed
         private string savePath;                        // The path that torrents will be downloaded to by default
-        private bool useuPnP;                           // True if uPnP should be used to map ports when available
 
         #endregion Private Fields
 
@@ -137,15 +136,6 @@ namespace MonoTorrent.Client
             set { this.listenPort = value; }
         }
 
-
-        /// <summary>
-        /// True if the engine should use uPnP to map ports if it is available
-        /// </summary>
-        public bool UsePnP
-        {
-            get { return this.useuPnP; }
-        }
-
         #endregion Properties
 
 
@@ -159,7 +149,6 @@ namespace MonoTorrent.Client
         private const int DefaultMaxHalfOpenConnections = 5;
         private const EncryptionType DefaultMinLevel = EncryptionType.None;
         private const int DefaultListenPort = 52138;
-        private const bool DefaultUseuPnP = false;              // UPnP crashes on vista's .NET framework, so we won't enable by default
 
         #endregion
 
@@ -177,20 +166,7 @@ namespace MonoTorrent.Client
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
         public EngineSettings(string defaultSavePath, int listenPort)
-            : this(defaultSavePath, listenPort, DefaultUseuPnP, DefaultMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
-        {
-
-        }
-
-
-        /// <summary>
-        /// Initialises a new engine settings with the supplied values
-        /// </summary>
-        /// <param name="defaultSavePath">The default path to save downloaded material to</param>
-        /// <param name="listenPort">The port to listen for incoming connections on</param>
-        /// <param name="useuPnP">True if uPnP should be used to map the listen port</param>
-        public EngineSettings(string defaultSavePath, int listenPort, bool useuPnP)
-            : this(defaultSavePath, listenPort, useuPnP, DefaultMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
+            : this(defaultSavePath, listenPort, DefaultMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
         {
 
         }
@@ -202,9 +178,8 @@ namespace MonoTorrent.Client
         /// <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
-        /// <param name="useuPnP">True if uPnP should be used to map the listen port</param>
-        public EngineSettings(string defaultSavePath, int listenPort, bool useuPnP, int globalMaxConnections)
-            : this(defaultSavePath, listenPort, useuPnP, globalMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
+        public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections)
+            : this(defaultSavePath, listenPort, globalMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
         {
 
         }
@@ -217,9 +192,8 @@ namespace MonoTorrent.Client
         /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
-        /// <param name="useuPnP">True if uPnP should be used to map the listen port</param>
-        public EngineSettings(string defaultSavePath, int listenPort, bool useuPnP, int globalMaxConnections, int globalHalfOpenConnections)
-            : this(defaultSavePath, listenPort, useuPnP, globalMaxConnections, globalHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
+        public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections)
+            : this(defaultSavePath, listenPort, globalMaxConnections, globalHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
         {
 
         }
@@ -234,10 +208,9 @@ namespace MonoTorrent.Client
         /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
         /// <param name="defaultSavePath">The default path to save downloaded material to</param>
         /// <param name="listenPort">The port to listen for incoming connections on</param>
-        /// <param name="useuPnP">True if uPnP should be used to map the listen port</param>
         /// <param name="allowLegacyConnections">True if incoming connections without encryption should be accepted when encryption is enabled</param>
         /// <param name="minEncryption">The minimum level of encryption to use for outgoing connections</param>
-        public EngineSettings(string defaultSavePath, int listenPort, bool useuPnP, int globalMaxConnections, int globalHalfOpenConnections, int globalMaxDownloadSpeed, int globalMaxUploadSpeed, EncryptionType minEncryption, bool allowLegacyConnections)
+        public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections, int globalMaxDownloadSpeed, int globalMaxUploadSpeed, EncryptionType minEncryption, bool allowLegacyConnections)
         {
             this.allowLegacyConnections = allowLegacyConnections;
             this.globalMaxConnections = globalMaxConnections;
@@ -247,11 +220,9 @@ namespace MonoTorrent.Client
             this.listenPort = listenPort;
             this.minEncryptionLevel = minEncryption;
             this.savePath = defaultSavePath;
-            this.useuPnP = useuPnP;
         }
  
         #endregion
-
 
 
         #region Methods
@@ -260,7 +231,6 @@ namespace MonoTorrent.Client
         {
             return new EngineSettings(this.savePath,
                                       this.listenPort,
-                                      this.useuPnP,
                                       this.globalMaxConnections,
                                       this.globalMaxHalfOpenConnections,
                                       this.globalMaxDownloadSpeed,
@@ -279,10 +249,8 @@ namespace MonoTorrent.Client
                                                 this.globalMaxUploadSpeed == settings.globalMaxUploadSpeed &&
                                                 this.listenPort == settings.listenPort &&
                                                 this.minEncryptionLevel == settings.minEncryptionLevel &&
-                                                this.savePath == settings.savePath &&
-                                                this.useuPnP == settings.useuPnP;
+                                                this.savePath == settings.savePath;
         }
-
 
         public override int GetHashCode()
         {
@@ -293,12 +261,12 @@ namespace MonoTorrent.Client
                    this.globalMaxUploadSpeed +
                    this.listenPort.GetHashCode() +
                    this.minEncryptionLevel.GetHashCode() +
-                   this.savePath.GetHashCode() +
-                   this.useuPnP.GetHashCode();
+                   this.savePath.GetHashCode();
             
         }
 
         #endregion Methods
+
 
         #region Default Settings
 
@@ -309,7 +277,6 @@ namespace MonoTorrent.Client
         {
             return new EngineSettings(DefaultSavePath,
                                      DefaultListenPort,
-                                     DefaultUseuPnP,
                                      DefaultMaxConnections,
                                      DefaultMaxHalfOpenConnections,
                                      DefaultMaxDownloadSpeed,
@@ -319,7 +286,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
-
     }
 }

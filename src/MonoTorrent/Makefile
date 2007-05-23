@@ -1,8 +1,7 @@
 OUT=../bin/MonoTorrent.dll
 
 REFERENCES=	\
-	-r:System.Web,Mono.Security.dll		\
-	-r:../Libs/Upnp.dll
+	-r:System.Web,Mono.Security.dll
 
 EXTRA_DIST = AssemblyInfo.cs.in
 

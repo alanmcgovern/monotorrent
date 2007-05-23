@@ -3,8 +3,7 @@ OUT=../bin/MonoTorrent.Client.dll
 REFERENCES=	\
 	-r:../bin/MonoTorrent.Common.dll	\
 	-r:System.Web,Mono.Security.dll		\
-	-r:../bin/MonoTorrent.BEncoding.dll	\
-	-r:../Libs/Upnp.dll
+	-r:../bin/MonoTorrent.BEncoding.dll
 
 SOURCES=BitField.cs \
 	Block.cs \

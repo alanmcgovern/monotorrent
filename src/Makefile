@@ -4,7 +4,6 @@ all: config.make monotorrent.pc
 	for dir in $(SUBDIRS); do \
 		(cd $$dir && make) \
 	done
-	cp Libs/Upnp.dll bin/Upnp.dll
 
 clean:
 	-for dir in $(SUBDIRS); do \
@@ -34,7 +33,6 @@ install-setup: monotorrent.pc
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.Interface.exe/' < script.in > monotorrent-gtk
 	chmod +x monotorrent-gtk
 	mv monotorrent-gtk $(prefix)/bin/monotorrent-gtk
-	cp Libs/Upnp.dll $(prefix)/lib/bitsharp/
 	-mkdir $(prefix)/lib/pkgconfig
 	cp monotorrent.pc $(prefix)/lib/pkgconfig/
 
@@ -52,7 +50,6 @@ dist:
 
 distlocal: 
 	mkdir $(DESTDIR)/Libs
-	cp Libs/Upnp.dll Libs/Upnp.xml $(DESTDIR)/Libs
 	cp README rules.make TODO script.in Makefile configure monotorrent.pc.in $(DESTDIR)/
 
 distcheck: dist
