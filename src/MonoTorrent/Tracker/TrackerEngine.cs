@@ -205,8 +205,7 @@ namespace MonoTorrent.Tracker
         {
             try
             {
-                Torrent t = new Torrent();
-                t.LoadTorrent(e.TorrentPath);
+                Torrent t = Torrent.Load(e.TorrentPath);
                 this.Tracker.AddTorrent(t);
             }
             catch (BEncodingException ex)

@@ -53,8 +53,7 @@ namespace MonoTorrent.Tracker
                 Debug.WriteLine("after engine.Start");
                 Application.Add("engine", engine);
                 Application.Add("tracker", Tracker.Instance);
-                Torrent test = new Torrent();
-                test.LoadTorrent("bin/torrentcreator.torrent");
+                Torrent test = Torrent.Load("bin/torrentcreator.torrent");
                 Tracker.Instance.AddTorrent(test);
             } catch (Exception e) {
                 Console.WriteLine(e);

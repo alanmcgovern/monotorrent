@@ -335,27 +335,30 @@ namespace MonoTorrent.Client
         /// <returns>A TorrentManager used to control the torrent</returns>
         public TorrentManager LoadTorrent(string path, string savePath, TorrentSettings torrentSettings)
         {
-            Torrent torrent = new Torrent();
             try
             {
-                torrent.LoadTorrent(path);
+                Torrent torrent = Torrent.Load(path);
+                return LoadTorrent(torrent, savePath, torrentSettings);
             }
             catch (Exception ex)
             {
                 throw new TorrentLoadException("Could not load the torrent", ex);
             }
-
-            if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
-                throw new TorrentException("The torrent is already in the engine");
-
-            TorrentManager manager = new TorrentManager(torrent, savePath, torrentSettings, this.settings);
-            this.torrents.Add(manager);
-
-            if (File.Exists(torrent.TorrentPath + ".fresume"))
-                manager.HashChecked = LoadFastResume(manager);
-
-            return (manager);
         }
+
+		public TorrentManager LoadTorrent(Torrent torrent, string savePath, TorrentSettings torrentSettings)
+		{
+			if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
+				throw new TorrentException("The torrent is already in the engine");
+
+			TorrentManager manager = new TorrentManager(torrent, savePath, torrentSettings, this.settings);
+			this.torrents.Add(manager);
+
+			if (File.Exists(torrent.TorrentPath + ".fresume"))
+				manager.HashChecked = LoadFastResume(manager);
+
+			return (manager);
+		}
 
         private bool ContainsTorrent(string p)
         {

@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
+using System.Collections;
 
 namespace MonoTorrent.Common
 {
@@ -260,7 +261,7 @@ namespace MonoTorrent.Common
 
         #region Constructors
 
-        public Torrent()
+        private Torrent()
         {
 			this.announceUrls = new List<List<string>>();
             this.comment = string.Empty;
@@ -480,11 +481,7 @@ namespace MonoTorrent.Common
             if (torrent == null)
                 return false;
 
-            for (int i = 0; i < this.infoHash.Length; i++)
-                if (this.infoHash[i] != torrent.infoHash[i])
-                    return false;
-
-            return true;
+            return ToolBox.ByteMatch(this.infoHash, torrent.infoHash);
         }
 
 
@@ -494,7 +491,11 @@ namespace MonoTorrent.Common
         /// <returns>int</returns>
         public override int GetHashCode()
         {
-            return this.infoHash.GetHashCode();
+            int result = 0;
+            for (int i = 0; i < infoHash.Length; i++)
+                result ^= infoHash[i];
+
+            return result;
         }
 
 
@@ -502,19 +503,18 @@ namespace MonoTorrent.Common
         /// This method loads a .torrent file from the specified path.
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
-        public void LoadTorrent(string path)
+        public static Torrent Load(string path)
         {
             if (String.IsNullOrEmpty(path))
                 throw new ArgumentNullException("path");
 
             using (BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), System.Text.Encoding.UTF8))
             {
-                this.torrentPath = path;
-                BEncodedDictionary dict = null;
                 try
                 {
-                    dict = (BEncodedDictionary)BEncode.Decode(reader);
-                    LoadTorrent(dict);
+                    Torrent t = Torrent.Load((BEncodedDictionary)BEncode.Decode(reader));
+                    t.torrentPath = path;
+                    return t;
                 }
                 catch (BEncodingException ex)
                 {
@@ -528,59 +528,60 @@ namespace MonoTorrent.Common
         /// This method loads the torrent information from a BEncoded dictionary
         /// </summary>
         /// <param name="torrentInformation">The dictionary from a decoded .torrent file</param>
-        public void LoadTorrent(BEncodedDictionary torrentInformation)
+        public static Torrent Load(BEncodedDictionary torrentInformation)
         {
+            Torrent t = new Torrent();
             foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in torrentInformation)
             {
                 switch (keypair.Key.Text)
                 {
                     case ("announce"):
-                        this.announceUrls.Add(new List<string>(1));
-						this.announceUrls[0].Add(keypair.Value.ToString());
+                        t.announceUrls.Add(new List<string>(1));
+                        t.announceUrls[0].Add(keypair.Value.ToString());
                         break;
 
                     case ("creation date"):
-                        this.creationDate = this.creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
+                        t.creationDate = t.creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
                         break;
 
                     case ("nodes"):
-                        this.nodes = (BEncodedList)keypair.Value;
+                        t.nodes = (BEncodedList)keypair.Value;
                         break;
 
                     case ("comment.utf-8"):
                         if (keypair.Value.ToString().Length != 0)
-                            this.comment = keypair.Value.ToString();        // Always take the UTF-8 version
+                            t.comment = keypair.Value.ToString();        // Always take the UTF-8 version
                         break;                                              // even if there's an existing value
 
                     case ("comment"):
-                        if (String.IsNullOrEmpty(this.comment))
-                            this.comment = keypair.Value.ToString();
+                        if (String.IsNullOrEmpty(t.comment))
+                            t.comment = keypair.Value.ToString();
                         break;
 
                     case ("publisher-url.utf-8"):                           // Always take the UTF-8 version
-                        this.publisherUrl = keypair.Value.ToString();       // even if there's an existing value
+                        t.publisherUrl = keypair.Value.ToString();       // even if there's an existing value
                         break;
 
                     case ("publisher-url"):
-                        if (String.IsNullOrEmpty(this.publisherUrl))
-                            this.publisherUrl = keypair.Value.ToString();
+                        if (String.IsNullOrEmpty(t.publisherUrl))
+                            t.publisherUrl = keypair.Value.ToString();
                         break;
 
                     case ("azureus_properties"):
-                        this.azureusProperties = keypair.Value;
+                        t.azureusProperties = keypair.Value;
                         break;
 
                     case ("created by"):
-                        this.createdBy = keypair.Value.ToString();
+                        t.createdBy = keypair.Value.ToString();
                         break;
 
                     case ("encoding"):
-                        this.encoding = keypair.Value.ToString();
+                        t.encoding = keypair.Value.ToString();
                         break;
 
                     case ("info"):
-                        this.infoHash = new SHA1Managed().ComputeHash(keypair.Value.Encode());
-                        this.ProcessInfo(((BEncodedDictionary)keypair.Value));
+                        t.infoHash = new SHA1Managed().ComputeHash(keypair.Value.Encode());
+                        t.ProcessInfo(((BEncodedDictionary)keypair.Value));
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -588,7 +589,7 @@ namespace MonoTorrent.Common
 
                     case ("announce-list"):
                         BEncodedList announces = (BEncodedList)keypair.Value;
-						this.announceUrls = new List<List<string>>(announces.Count);
+                        t.announceUrls = new List<List<string>>(announces.Count);
 
 						for (int j = 0; j < announces.Count; j++)
 						{
@@ -599,7 +600,7 @@ namespace MonoTorrent.Common
 								tier.Add(bencodedTier[k].ToString());
 
 							ToolBox.Randomize<string>(tier);
-							this.announceUrls.Add(tier);
+                            t.announceUrls.Add(tier);
 						}
                         break;
 
@@ -610,28 +611,15 @@ namespace MonoTorrent.Common
 
             int i = 0;
             long totalSize = 0;
-            foreach (TorrentFile file in this.torrentFiles)
+            foreach (TorrentFile file in t.torrentFiles)
             {
                 file.StartPieceIndex = i;
                 totalSize += file.Length;
-                file.EndPieceIndex = (int)(totalSize / this.pieceLength + (totalSize % this.pieceLength > 0 ? 0 : -1));
+                file.EndPieceIndex = (int)(totalSize / t.pieceLength + (totalSize % t.pieceLength > 0 ? 0 : -1));
                 i = file.EndPieceIndex;
             }
-        }
 
-
-        /// <summary>
-        /// This method saves this .torrent file to the specified location
-        /// </summary>
-        /// <param name="path">The location to save the .torrent file to</param>
-        /// <param name="overwrite">If true, any existing file will be overwritten</param>
-        public void SaveTorrent(string path, bool overwrite)
-        {
-            if (!path.ToLower().EndsWith(".torrent"))      // make sure it ends with .torrent
-                path += ".torrent";
-
-            throw new NotImplementedException();
-            // This method should be used to save this torrent to the disk
+            return t;
         }
 
 
@@ -640,7 +628,7 @@ namespace MonoTorrent.Common
         /// contained within this Torrent
         /// </summary>
         /// <returns></returns>
-        public System.Collections.IEnumerator GetEnumerator()
+        public IEnumerator GetEnumerator()
         {
             return this.torrentFiles.GetEnumerator();
         }
