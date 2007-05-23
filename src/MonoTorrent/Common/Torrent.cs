@@ -46,7 +46,7 @@ namespace MonoTorrent.Common
     {
         #region Private Fields
 
-        private IBEncodedValue azureusProperties;
+        private BEncodedValue azureusProperties;
         private List<List<string>> announceUrls;
         private string comment;
         private string createdBy;
@@ -84,7 +84,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// FIXME: No idea what this is.
         /// </summary>
-        public IBEncodedValue AzureusProperties
+        public BEncodedValue AzureusProperties
         {
             get { return this.azureusProperties; }
         }
@@ -318,7 +318,7 @@ namespace MonoTorrent.Common
                 ed2k = null;
                 sha1 = null;
 
-                foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
                 {
                     switch (keypair.Key.Text)
                     {
@@ -381,7 +381,7 @@ namespace MonoTorrent.Common
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dictionary)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
             {
                 switch (keypair.Key.Text)
                 {
@@ -512,7 +512,7 @@ namespace MonoTorrent.Common
             {
                 try
                 {
-                    Torrent t = Torrent.Load((BEncodedDictionary)BEncode.Decode(reader));
+                    Torrent t = Torrent.Load((BEncodedDictionary)BEncodedValue.Decode(reader));
                     t.torrentPath = path;
                     return t;
                 }
@@ -531,7 +531,7 @@ namespace MonoTorrent.Common
         public static Torrent Load(BEncodedDictionary torrentInformation)
         {
             Torrent t = new Torrent();
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in torrentInformation)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
             {
                 switch (keypair.Key.Text)
                 {

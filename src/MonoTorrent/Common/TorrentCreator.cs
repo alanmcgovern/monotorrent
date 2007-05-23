@@ -75,7 +75,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get(this.torrent, new BEncodedString("comment"));
+                BEncodedValue val = Get(this.torrent, new BEncodedString("comment"));
                 return val == null ? string.Empty : val.ToString();
             }
             set { Set(this.torrent, "comment", new BEncodedString(value)); }
@@ -88,7 +88,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get(this.torrent, new BEncodedString("created by"));
+                BEncodedValue val = Get(this.torrent, new BEncodedString("created by"));
                 return val == null ? string.Empty : val.ToString();
             }
             set { Set(this.torrent, "created by", new BEncodedString(value)); }
@@ -123,7 +123,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("piece length"));
+                BEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("piece length"));
                 return val == null ? -1 : ((BEncodedNumber)val).Number;
             }
             set { Set((BEncodedDictionary)this.torrent["info"], "piece length", new BEncodedNumber(value)); }
@@ -136,7 +136,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("private"));
+                BEncodedValue val = Get((BEncodedDictionary)this.torrent["info"], new BEncodedString("private"));
                 return val == null ? false : ((BEncodedNumber)val).Number == 1;
             }
             set { Set((BEncodedDictionary)this.torrent["info"], "private", new BEncodedNumber(value ? 1 : 0)); }
@@ -147,7 +147,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get(this.torrent, new BEncodedString("publisher"));
+                BEncodedValue val = Get(this.torrent, new BEncodedString("publisher"));
                 return val == null ? string.Empty : val.ToString();
             }
             set { Set(this.torrent, "publisher", new BEncodedString(value)); }
@@ -160,7 +160,7 @@ namespace MonoTorrent.Common
         {
             get
             {
-                IBEncodedValue val = Get(this.torrent, new BEncodedString("publisher-url"));
+                BEncodedValue val = Get(this.torrent, new BEncodedString("publisher-url"));
                 return val == null ? string.Empty : val.ToString();
             }
             set { Set(this.torrent, "publisher-url", new BEncodedString(value)); }
@@ -288,7 +288,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// This can be used to add custom values to the main bencoded dictionary
         /// </summary>        
-        public void AddCustom(BEncodedString key, IBEncodedValue value)
+        public void AddCustom(BEncodedString key, BEncodedValue value)
         {
             this.torrent.Add(key, value);
         }
@@ -297,7 +297,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// This can be used to add custom values to the main bencoded dictionary
         /// </summary>        
-        public void AddCustom(KeyValuePair<BEncodedString, IBEncodedValue> customInfo)
+        public void AddCustom(KeyValuePair<BEncodedString, BEncodedValue> customInfo)
         {
             this.torrent.Add(customInfo);
         }
@@ -443,7 +443,7 @@ namespace MonoTorrent.Common
         }
 
 
-        private static IBEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
+        private static BEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
         {
             return dictionary.ContainsKey(key) ? dictionary[key] : null;
         }
@@ -534,7 +534,7 @@ namespace MonoTorrent.Common
 
         /// <summary>This can be used to remove custom values from the main bencoded dictionary.
         /// </summary>
-        public void RemoveCustom(KeyValuePair<BEncodedString, IBEncodedValue> customInfo)
+        public void RemoveCustom(KeyValuePair<BEncodedString, BEncodedValue> customInfo)
         {
             this.torrent.Remove(customInfo);
         }
@@ -559,7 +559,7 @@ namespace MonoTorrent.Common
         }
 
 
-        private static void Set(BEncodedDictionary dictionary, BEncodedString key, IBEncodedValue value)
+        private static void Set(BEncodedDictionary dictionary, BEncodedString key, BEncodedValue value)
         {
             if (dictionary.ContainsKey(key))
                 dictionary[key] = value;

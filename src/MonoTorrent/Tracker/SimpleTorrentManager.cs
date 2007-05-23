@@ -140,7 +140,7 @@ namespace MonoTorrent.Tracker
             peer.Update(par);
         }
         
-        public IBEncodedValue GetPeersList(AnnounceParameters par)
+        public BEncodedValue GetPeersList(AnnounceParameters par)
         {
             if (par.compact) {
                 return GetCompactList(par);
@@ -150,7 +150,7 @@ namespace MonoTorrent.Tracker
         }
         
         //TODO refactor - done not debuged
-        private IBEncodedValue GetCompactList(AnnounceParameters par)
+        private BEncodedValue GetCompactList(AnnounceParameters par)
         {            
             Peer exclude = null;
             if (peers.Contains(Peer.GetKey(par))) {
@@ -172,11 +172,11 @@ namespace MonoTorrent.Tracker
         }
         
         //TODO refactor: done - not debuged
-        private IBEncodedValue GetNonCompactList(AnnounceParameters par)
+        private BEncodedValue GetNonCompactList(AnnounceParameters par)
         {
             Peer exclude = peers.Get(Peer.GetKey(par));            
             IList<Peer> randomPeers = peers.GetRandomPeers(par.numberWanted, exclude);            
-            List<IBEncodedValue> announceList = new List<IBEncodedValue>(randomPeers.Count);
+            List<BEncodedValue> announceList = new List<BEncodedValue>(randomPeers.Count);
             
             foreach (Peer each in randomPeers) {
                 announceList.Add(each.PeersEntry);

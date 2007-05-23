@@ -246,7 +246,7 @@ namespace MonoTorrent.Client
         private void HandleAnnounce(TrackerConnectionID id, BEncodedDictionary dict)
         {
             int peersAdded = 0;
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dict)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
             {
                 switch (keypair.Key.Text)
                 {
@@ -360,10 +360,10 @@ namespace MonoTorrent.Client
                 return;
 
             BEncodedDictionary files = (BEncodedDictionary)dict["files"];
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in files)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in files)
             {
                 d = (BEncodedDictionary)keypair.Value;
-                foreach (KeyValuePair<BEncodedString, IBEncodedValue> kp in d)
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
                 {
                     switch (kp.Key.ToString())
                     {
@@ -450,7 +450,7 @@ namespace MonoTorrent.Client
                     }
                     response.Close();
                     dataStream.Seek(0, SeekOrigin.Begin);
-                    return (BEncodedDictionary)BEncode.Decode(dataStream);
+                    return (BEncodedDictionary)BEncodedValue.Decode(dataStream);
                 }
             }
             catch (WebException)

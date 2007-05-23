@@ -40,7 +40,6 @@ using System.Threading;
 using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
-using Nat;
 
 namespace MonoTorrent.Client
 {

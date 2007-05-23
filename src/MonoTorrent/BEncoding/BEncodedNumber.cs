@@ -38,7 +38,7 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded number
     /// </summary>
-    public class BEncodedNumber : IBEncodedValue, IComparable<BEncodedNumber>
+    public class BEncodedNumber : BEncodedValue, IComparable<BEncodedNumber>
     {
         #region Member Variables
         /// <summary>
@@ -76,14 +76,6 @@ namespace MonoTorrent.BEncoding
 
 
         #region Encode/Decode Methods
-        public byte[] Encode()
-        {
-            byte[] data = new byte[this.LengthInBytes()];
-            this.Encode(data, 0);
-            return data;
-        }
-
-
 
         /// <summary>
         /// Encodes this number to the supplied byte[] starting at the supplied offset
@@ -91,12 +83,14 @@ namespace MonoTorrent.BEncoding
         /// <param name="buffer">The buffer to write the data to</param>
         /// <param name="offset">The offset to start writing the data at</param>
         /// <returns></returns>
-        public int Encode(byte[] buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
             int written = 0;
-            written += System.Text.Encoding.UTF8.GetBytes("i", 0, 1, buffer, offset);
+            buffer[offset + written] = (byte)'i';
+            written++;
             written += System.Text.Encoding.UTF8.GetBytes(this.number.ToString(), 0, this.number.ToString().Length, buffer, offset + written);
-            written += System.Text.Encoding.UTF8.GetBytes("e", 0, 1, buffer, offset + written);
+            buffer[offset + written] = (byte)'e';
+            written++;
             return written;
         }
 
@@ -105,7 +99,7 @@ namespace MonoTorrent.BEncoding
         /// Decodes a BEncoded number from the supplied BinaryReader
         /// </summary>
         /// <param name="reader">BinaryReader containing a BEncoded Number</param>
-        public void Decode(BinaryReader reader)
+        internal override void DecodeInternal(BinaryReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException("reader");
@@ -142,7 +136,7 @@ namespace MonoTorrent.BEncoding
         /// Returns the length of the encoded string in bytes
         /// </summary>
         /// <returns></returns>
-        public int LengthInBytes()
+        public override int LengthInBytes()
         {
             return System.Text.Encoding.UTF8.GetByteCount('i' + this.number.ToString() + 'e');
         }

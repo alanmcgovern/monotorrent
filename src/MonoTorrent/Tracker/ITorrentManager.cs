@@ -66,7 +66,7 @@ namespace MonoTorrent.Tracker
         ///</summary>
         ///<returns>if par.compact is true then the value is a BEncodedString otherwise it's a BEncodedDictionary
         ///</returns>
-        IBEncodedValue GetPeersList(AnnounceParameters par);     
+        BEncodedValue GetPeersList(AnnounceParameters par);     
         
         
         ///<summary>this method returns the scrape entry for this torrent</summary>

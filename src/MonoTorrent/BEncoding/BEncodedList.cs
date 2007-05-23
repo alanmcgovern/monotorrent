@@ -38,10 +38,10 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded list
     /// </summary>
-    public class BEncodedList : IBEncodedValue, IList<IBEncodedValue>
+    public class BEncodedList : BEncodedValue, IList<BEncodedValue>
     {
         #region Member Variables
-        private List<IBEncodedValue> list;
+        private List<BEncodedValue> list;
         #endregion
 
 
@@ -50,7 +50,7 @@ namespace MonoTorrent.BEncoding
         /// Create a new BEncoded List with default capacity
         /// </summary>
         public BEncodedList()
-            : this(new List<IBEncodedValue>())
+            : this(new List<BEncodedValue>())
         {
         }
 
@@ -59,7 +59,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="capacity">The initial capacity</param>
         public BEncodedList(int capacity)
-            : this(new List<IBEncodedValue>(capacity))
+            : this(new List<BEncodedValue>(capacity))
         {
 
         }
@@ -68,7 +68,7 @@ namespace MonoTorrent.BEncoding
         /// Creates a new BEncoded list from the supplied List
         /// </summary>
         /// <param name="value">The list to use to create the BEncodedList</param>
-        public BEncodedList(List<IBEncodedValue> value)
+        public BEncodedList(List<BEncodedValue> value)
         {
             this.list = value;
         }
@@ -76,33 +76,23 @@ namespace MonoTorrent.BEncoding
 
 
         #region Encode/Decode Methods
-        /// <summary>
-        /// Encodes the list to a byte[] using the supplied Encoding
-        /// </summary>
-        /// <returns></returns>
-        public byte[] Encode()
-        {
-            byte[] buffer = new byte[this.LengthInBytes()];
-            this.Encode(buffer, 0);
-            return buffer;
-        }
 
 
         /// <summary>
-        /// Encodes the list to a byte[] using the supplied encoding
+        /// Encodes the list to a byte[]
         /// </summary>
         /// <param name="buffer">The buffer to encode the list to</param>
         /// <param name="offset">The offset to start writing the data at</param>
         /// <returns></returns>
-        public int Encode(byte[] buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
             int written = 0;
-            written += System.Text.Encoding.UTF8.GetBytes("l", 0, 1, buffer, offset);
-
-            foreach (IBEncodedValue value in this.list)
+            buffer[offset] = (byte)'l';
+            written++;
+            foreach (BEncodedValue value in this.list)
                 written += value.Encode(buffer, offset + written);
-
-            written += System.Text.Encoding.UTF8.GetBytes("e", 0, 1, buffer, offset + written);
+            buffer[offset + written] = (byte)'e';
+            written++;
             return written;
         }
 
@@ -110,7 +100,7 @@ namespace MonoTorrent.BEncoding
         /// Decodes a BEncodedList from the given StreamReader
         /// </summary>
         /// <param name="reader"></param>
-        public void Decode(BinaryReader reader)
+        internal override void DecodeInternal(BinaryReader reader)
         {
             try
             {
@@ -118,7 +108,7 @@ namespace MonoTorrent.BEncoding
                     throw new BEncodingException("Invalid data found. Aborting");
 
                 while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
-                    list.Add(BEncode.Decode(reader));
+                    list.Add(BEncodedValue.Decode(reader));
 
                 if (reader.ReadByte() != 'e')                            // Remove the trailing 'e'
                     throw new BEncodingException("Invalid data found. Aborting");
@@ -137,19 +127,18 @@ namespace MonoTorrent.BEncoding
 
         #region Helper Methods
         /// <summary>
-        /// Returns the size of the list in bytes using the supplied encoding
+        /// Returns the size of the list in bytes
         /// </summary>
-        /// <param name="e">The encoding to use</param>
         /// <returns></returns>
-        public int LengthInBytes()
+        public override int LengthInBytes()
         {
             int length = 0;
 
-            length += System.Text.Encoding.UTF8.GetByteCount("l");   // Lists start with 'l'
-            foreach (IBEncodedValue item in this.list)
+            length += 1;   // Lists start with 'l'
+            foreach (BEncodedValue item in this.list)
                 length += item.LengthInBytes();
 
-            length += System.Text.Encoding.UTF8.GetByteCount("e");   // Lists end with 'e'
+            length += 1;   // Lists end with 'e'
             return length;
         }
         #endregion
@@ -181,7 +170,7 @@ namespace MonoTorrent.BEncoding
         {
             StringBuilder sb = new StringBuilder(32);
 
-            foreach (IBEncodedValue value in this.list)
+            foreach (BEncodedValue value in this.list)
                 sb.Append(value.ToString());
 
             return sb.ToString();
@@ -190,7 +179,7 @@ namespace MonoTorrent.BEncoding
 
 
         #region IList methods
-        public void Add(IBEncodedValue item)
+        public void Add(BEncodedValue item)
         {
             this.list.Add(item);
         }
@@ -200,12 +189,12 @@ namespace MonoTorrent.BEncoding
             this.list.Clear();
         }
 
-        public bool Contains(IBEncodedValue item)
+        public bool Contains(BEncodedValue item)
         {
             return this.list.Contains(item);
         }
 
-        public void CopyTo(IBEncodedValue[] array, int arrayIndex)
+        public void CopyTo(BEncodedValue[] array, int arrayIndex)
         {
             this.list.CopyTo(array, arrayIndex);
         }
@@ -215,12 +204,12 @@ namespace MonoTorrent.BEncoding
             get { return this.list.Count; }
         }
 
-        public int IndexOf(IBEncodedValue item)
+        public int IndexOf(BEncodedValue item)
         {
             return this.list.IndexOf(item);
         }
 
-        public void Insert(int index, IBEncodedValue item)
+        public void Insert(int index, BEncodedValue item)
         {
             this.list.Insert(index, item);
         }
@@ -230,7 +219,7 @@ namespace MonoTorrent.BEncoding
             get { return false; }
         }
 
-        public bool Remove(IBEncodedValue item)
+        public bool Remove(BEncodedValue item)
         {
             return this.list.Remove(item);
         }
@@ -240,13 +229,13 @@ namespace MonoTorrent.BEncoding
             this.list.RemoveAt(index);
         }
 
-        public IBEncodedValue this[int index]
+        public BEncodedValue this[int index]
         {
             get { return this.list[index]; }
             set { this.list[index] = value; }
         }
 
-        public IEnumerator<IBEncodedValue> GetEnumerator()
+        public IEnumerator<BEncodedValue> GetEnumerator()
         {
             return this.list.GetEnumerator();
         }

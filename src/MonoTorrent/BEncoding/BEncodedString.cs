@@ -38,7 +38,7 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded string
     /// </summary>
-    public class BEncodedString : IBEncodedValue, IComparable<BEncodedString>
+    public class BEncodedString : BEncodedValue, IComparable<BEncodedString>
     {
         #region Member Variables
 
@@ -119,16 +119,6 @@ namespace MonoTorrent.BEncoding
 
 
         #region Encode/Decode Methods
-        /// <summary>
-        /// Creates a BEncoded string representation of this string
-        /// </summary>
-        /// <returns></returns>
-        public byte[] Encode()
-        {
-            byte[] buffer = new byte[this.LengthInBytes()];
-            this.Encode(buffer, 0);
-            return buffer;
-        }
 
 
         /// <summary>
@@ -138,7 +128,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="offset">The offset at which to save the data to</param>
         /// <param name="e">The encoding to use</param>
         /// <returns>The number of bytes encoded</returns>
-        public int Encode(byte[] buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
             string output = this.textBytes.Length + ":";
             int written = System.Text.Encoding.UTF8.GetBytes(output, 0, output.Length, buffer, offset);
@@ -151,7 +141,7 @@ namespace MonoTorrent.BEncoding
         /// Decodes a BEncodedString from the supplied StreamReader
         /// </summary>
         /// <param name="reader">The StreamReader containing the BEncodedString</param>
-        public void Decode(BinaryReader reader)
+        internal override void DecodeInternal(BinaryReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException("reader");
@@ -188,7 +178,7 @@ namespace MonoTorrent.BEncoding
 
 
         #region Helper Methods
-        public int LengthInBytes()
+        public override int LengthInBytes()
         {
             string output = this.textBytes.Length.ToString() + ":";
             return (output.Length + this.textBytes.Length);

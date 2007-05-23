@@ -38,85 +38,53 @@ namespace MonoTorrent.BEncoding
     /// <summary>
     /// Class representing a BEncoded Dictionary
     /// </summary>
-    public class BEncodedDictionary : IBEncodedValue, IDictionary<BEncodedString, IBEncodedValue>
+    public class BEncodedDictionary : BEncodedValue, IDictionary<BEncodedString, BEncodedValue>
     {
         #region Member Variables
 
-        private SortedDictionary<BEncodedString, IBEncodedValue> dictionary;
+        private SortedDictionary<BEncodedString, BEncodedValue> dictionary;
 
         #endregion
 
 
         #region Constructors
+
         /// <summary>
         /// Create a new BEncodedDictionary
         /// </summary>
         public BEncodedDictionary()
-            : this(new SortedDictionary<BEncodedString, IBEncodedValue>())
         {
+            this.dictionary = new SortedDictionary<BEncodedString, BEncodedValue>();
         }
 
-        public BEncodedDictionary(SortedDictionary<BEncodedString, IBEncodedValue> dictionary)
-        {
-            this.dictionary = dictionary;
-        }
         #endregion
 
 
         #region Encode/Decode Methods
-        /// <summary>
-        /// Encodes the list to a byte[] using UTF8 Encoding
-        /// </summary>
-        /// <returns></returns>
-        public byte[] Encode()
-        {
-            return this.Encode(new UTF8Encoding(false, false));
-        }
 
         /// <summary>
-        /// Encodes the list to a byte[] using the supplied encoding
-        /// </summary>
-        /// <returns></returns>
-        public byte[] Encode(Encoding e)
-        {
-            byte[] buffer = new byte[this.LengthInBytes(e)];
-            this.Encode(buffer, 0, e);
-            return buffer;
-        }
-
-        /// <summary>
-        /// Encodes the list to a byte[] using UTF8 Encoding
+        /// Encodes the dictionary to a byte[]
         /// </summary>
         /// <param name="buffer">The buffer to encode the data to</param>
         /// <param name="offset">The offset to start writing the data to</param>
         /// <returns></returns>
-        public int Encode(byte[] buffer, int offset)
-        {
-            return this.Encode(buffer, offset, new UTF8Encoding(false, false));
-        }
-
-        /// <summary>
-        /// Encodes the dictionary to a byte[] using the supplied encoding
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the data to</param>
-        /// <param name="offset">The offset to start writing the data to</param>
-        /// <param name="e">The encoding to use</param>
-        /// <returns></returns>
-        public int Encode(byte[] buffer, int offset, Encoding e)
+        public override int Encode(byte[] buffer, int offset)
         {
             int written = 0;
 
             //Dictionaries start with 'd'
-            written += e.GetBytes("d", 0, 1, buffer, offset);
+            buffer[offset] = (byte)'d';
+            written++;
 
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this)
             {
                 written += keypair.Key.Encode(buffer, offset + written);
                 written += keypair.Value.Encode(buffer, offset + written);
             }
 
             // Dictionaries end with 'e'
-            written += e.GetBytes("e", 0, 1, buffer, offset + written);                 
+            buffer[offset + written] = (byte)'e';
+            written++;
             return written;
         }
 
@@ -124,10 +92,10 @@ namespace MonoTorrent.BEncoding
         /// Decodes a BEncodedDictionary from the supplied StreamReader
         /// </summary>
         /// <param name="reader"></param>
-        public void Decode(BinaryReader reader)
+        internal override void DecodeInternal(BinaryReader reader)
         {
             BEncodedString key = null;
-            IBEncodedValue value = null;
+            BEncodedValue value = null;
             BEncodedString oldkey = null;
 
             try
@@ -137,12 +105,12 @@ namespace MonoTorrent.BEncoding
 
                 while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
                 {
-                    key = (BEncodedString)BEncode.Decode(reader); ;     // keys have to be BEncoded strings
+                    key = (BEncodedString)BEncodedValue.Decode(reader); ;     // keys have to be BEncoded strings
                     if (oldkey != null && oldkey.CompareTo(key) > 0) 
                         throw new BEncodingException("Illegal BEncodedDictionary. The attributes are not ordered correctly");
                     
                     oldkey = key;
-                    value = BEncode.Decode(reader);                     // the value is a BEncoded value
+                    value = BEncodedValue.Decode(reader);                     // the value is a BEncoded value
                     dictionary.Add(key, value);
                 }
 
@@ -158,44 +126,37 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException("Couldn't decode dictionary", ex);
             }
         }
+
         #endregion
 
 
         #region Helper Methods
+
         /// <summary>
         /// Returns the size of the dictionary in bytes using UTF8 encoding
         /// </summary>
         /// <returns></returns>
-        public int LengthInBytes()
-        {
-            return this.LengthInBytes(new UTF8Encoding(false, false));
-        }
-
-        /// <summary>
-        /// Returns the size of the list in bytes using the supplied encoding
-        /// </summary>
-        /// <param name="e">The encoding to use</param>
-        /// <returns></returns>
-        public int LengthInBytes(Encoding e)
+        public override int LengthInBytes()
         {
             int length = 0;
-            length += e.GetByteCount("d");   // Dictionaries start with 'd'
+            length += 1;   // Dictionaries start with 'd'
 
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this.dictionary)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary)
             {
                 length += keypair.Key.LengthInBytes();
                 length += keypair.Value.LengthInBytes();
             }
-            length += e.GetByteCount("e");   // Dictionaries end with 'e'
+            length += 1;   // Dictionaries end with 'e'
             return length;
         }
+
         #endregion
 
 
         #region Overridden Methods
         public override bool Equals(object obj)
         {
-            IBEncodedValue val;
+            BEncodedValue val;
             BEncodedDictionary dict = obj as BEncodedDictionary;
             if (dict == null)
                 return false;
@@ -203,7 +164,7 @@ namespace MonoTorrent.BEncoding
             if (this.dictionary.Count != dict.dictionary.Count)
                 return false;
 
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in this.dictionary)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary)
             {
                 if (!dict.TryGetValue(keypair.Key, out val))
                     return false;
@@ -227,7 +188,7 @@ namespace MonoTorrent.BEncoding
         {
             StringBuilder sb = new StringBuilder(32);
 
-            foreach (KeyValuePair<BEncodedString, IBEncodedValue> keypair in dictionary)
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
             {
                 sb.Append(keypair.Key.ToString());
                 sb.Append(keypair.Value.ToString());
@@ -239,12 +200,12 @@ namespace MonoTorrent.BEncoding
 
 
         #region IDictionary and IList methods
-        public void Add(BEncodedString key, IBEncodedValue value)
+        public void Add(BEncodedString key, BEncodedValue value)
         {
             this.dictionary.Add(key, value);
         }
 
-        public void Add(KeyValuePair<BEncodedString, IBEncodedValue> item)
+        public void Add(KeyValuePair<BEncodedString, BEncodedValue> item)
         {
             this.dictionary.Add(item.Key, item.Value);
         }
@@ -253,7 +214,7 @@ namespace MonoTorrent.BEncoding
             this.dictionary.Clear();
         }
 
-        public bool Contains(KeyValuePair<BEncodedString, IBEncodedValue> item)
+        public bool Contains(KeyValuePair<BEncodedString, BEncodedValue> item)
         {
             if (!this.dictionary.ContainsKey(item.Key))
                 return false;
@@ -266,7 +227,7 @@ namespace MonoTorrent.BEncoding
             return this.dictionary.ContainsKey(key);
         }
 
-        public void CopyTo(KeyValuePair<BEncodedString, IBEncodedValue>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<BEncodedString, BEncodedValue>[] array, int arrayIndex)
         {
             this.dictionary.CopyTo(array, arrayIndex);
         }
@@ -296,7 +257,7 @@ namespace MonoTorrent.BEncoding
             return this.dictionary.Remove(key);
         }
 
-        public bool Remove(KeyValuePair<BEncodedString, IBEncodedValue> item)
+        public bool Remove(KeyValuePair<BEncodedString, BEncodedValue> item)
         {
             return this.dictionary.Remove(item.Key);
         }
@@ -306,12 +267,12 @@ namespace MonoTorrent.BEncoding
         //    this.dictionary.RemoveAt(index);
         //}
 
-        public bool TryGetValue(BEncodedString key, out IBEncodedValue value)
+        public bool TryGetValue(BEncodedString key, out BEncodedValue value)
         {
             return this.dictionary.TryGetValue(key, out value);
         }
 
-        public IBEncodedValue this[BEncodedString key]
+        public BEncodedValue this[BEncodedString key]
         {
             get { return this.dictionary[key]; }
             set { this.dictionary[key] = value; }
@@ -328,12 +289,12 @@ namespace MonoTorrent.BEncoding
             get { return this.dictionary.Keys; }
         }
 
-        public ICollection<IBEncodedValue> Values
+        public ICollection<BEncodedValue> Values
         {
             get { return this.dictionary.Values; }
         }
 
-        public IEnumerator<KeyValuePair<BEncodedString, IBEncodedValue>> GetEnumerator()
+        public IEnumerator<KeyValuePair<BEncodedString, BEncodedValue>> GetEnumerator()
         {
             return this.dictionary.GetEnumerator();
         }

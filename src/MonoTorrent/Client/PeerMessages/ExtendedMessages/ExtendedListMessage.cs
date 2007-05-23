@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Decode(byte[] buffer, int offset, int length)
         {
-            this.dictionary = (BEncodedDictionary)BEncode.Decode(buffer, offset, length);
+            this.dictionary = (BEncodedDictionary)BEncodedValue.Decode(buffer, offset, length);
         }
 
         internal void Handle(PeerId id)
