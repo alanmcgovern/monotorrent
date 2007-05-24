@@ -93,7 +93,7 @@ namespace MonoTorrent.Tracker
                     return par.key;
             }
             
-            return MonoTorrent.Common.ToolBox.GetHex(GenerateCompactPeersEntry(par.ip, par.port));
+            return MonoTorrent.Common.Toolbox.GetHex(GenerateCompactPeersEntry(par.ip, par.port));
         }
         
         ///<summary>

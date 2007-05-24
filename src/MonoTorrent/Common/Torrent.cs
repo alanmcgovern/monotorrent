@@ -271,7 +271,6 @@ namespace MonoTorrent.Common
             this.name = string.Empty;
             this.publisher = string.Empty;
             this.publisherUrl = string.Empty;
-            this.size = 0;
             this.source = string.Empty;
         }
 
@@ -481,7 +480,7 @@ namespace MonoTorrent.Common
             if (torrent == null)
                 return false;
 
-            return ToolBox.ByteMatch(this.infoHash, torrent.infoHash);
+            return Toolbox.ByteMatch(this.infoHash, torrent.infoHash);
         }
 
 
@@ -599,7 +598,7 @@ namespace MonoTorrent.Common
 							for (int k = 0; k < bencodedTier.Count; k++)
 								tier.Add(bencodedTier[k].ToString());
 
-							ToolBox.Randomize<string>(tier);
+							Toolbox.Randomize<string>(tier);
                             t.announceUrls.Add(tier);
 						}
                         break;

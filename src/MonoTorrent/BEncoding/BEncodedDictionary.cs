@@ -157,31 +157,35 @@ namespace MonoTorrent.BEncoding
         public override bool Equals(object obj)
         {
             BEncodedValue val;
-            BEncodedDictionary dict = obj as BEncodedDictionary;
-            if (dict == null)
+            BEncodedDictionary other = obj as BEncodedDictionary;
+            if (other == null)
                 return false;
 
-            if (this.dictionary.Count != dict.dictionary.Count)
+            if (this.dictionary.Count != other.dictionary.Count)
                 return false;
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary)
             {
-                if (!dict.TryGetValue(keypair.Key, out val))
+                if (!other.TryGetValue(keypair.Key, out val))
                     return false;
 
-                if (keypair.Value != val)
+                if (!keypair.Value.Equals(val))
                     return false;
             }
-            //for (int i = 0; i < this.dictionary.Count; i++)
-            //    if (this.dictionary[i].Key != dict.dictionary[i].Key || this.dictionary[i].Value != dict.dictionary[i].Value)
-            //        return false;
 
             return true;
         }
 
         public override int GetHashCode()
         {
-            return this.dictionary.GetHashCode();
+            int result = 0;
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
+            {
+                result ^= keypair.Key.GetHashCode();
+                result ^= keypair.Value.GetHashCode();
+            }
+
+            return result;
         }
 
         public override string ToString()

@@ -212,7 +212,7 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 return false;
 
-            return ToolBox.ByteMatch(this.textBytes, other.textBytes);
+            return Toolbox.ByteMatch(this.textBytes, other.textBytes);
         }
 
         public override int GetHashCode()

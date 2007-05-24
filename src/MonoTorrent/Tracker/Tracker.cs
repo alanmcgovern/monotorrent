@@ -101,13 +101,13 @@ namespace MonoTorrent.Tracker
         public void AddTorrent(Torrent torrent)
         {                       
             //Console.WriteLine("adding torrent " + HttpUtility.UrlEncode(torrent.InfoHash) + " to the tracker"); 
-            Console.WriteLine("adding torrent " + ToolBox.GetHex(torrent.InfoHash) + " to the tracker");
+            Console.WriteLine("adding torrent " + Toolbox.GetHex(torrent.InfoHash) + " to the tracker");
             
-            if (torrents.ContainsKey(ToolBox.GetHex(torrent.InfoHash))) {
+            if (torrents.ContainsKey(Toolbox.GetHex(torrent.InfoHash))) {
                 Console.WriteLine("torrent already added");//TODO remove
                 return;
             }            
-            torrents.Add(ToolBox.GetHex(torrent.InfoHash), new SimpleTorrentManager(torrent));
+            torrents.Add(Toolbox.GetHex(torrent.InfoHash), new SimpleTorrentManager(torrent));
             
         }
         
@@ -116,9 +116,9 @@ namespace MonoTorrent.Tracker
         ///<param>The Torrent to be removed from the Tracker</param>
         public void RemoveTorrent(Torrent torrent)
         {
-            Console.WriteLine("removing torrent " + ToolBox.GetHex(torrent.InfoHash) + " from the tracker");
-            if (torrents.ContainsKey(ToolBox.GetHex(torrent.InfoHash)))
-                torrents.Remove(ToolBox.GetHex(torrent.InfoHash));
+            Console.WriteLine("removing torrent " + Toolbox.GetHex(torrent.InfoHash) + " from the tracker");
+            if (torrents.ContainsKey(Toolbox.GetHex(torrent.InfoHash)))
+                torrents.Remove(Toolbox.GetHex(torrent.InfoHash));
         }
 
         public void RemoveTorrent(string path)
@@ -138,7 +138,7 @@ namespace MonoTorrent.Tracker
         public void Announce(AnnounceParameters par, Stream stream)
         {
             //some pre checks
-            if (!torrents.ContainsKey(ToolBox.GetHex(par.infoHash))) {
+            if (!torrents.ContainsKey(Toolbox.GetHex(par.infoHash))) {
                 throw new TrackerException("Torrent not Registered at this Tracker");                
             }
             
@@ -146,7 +146,7 @@ namespace MonoTorrent.Tracker
                 throw new TrackerException("Tracker does not allow Non Compact Format");
             }        
             
-            ITorrentManager torrent = torrents[ToolBox.GetHex(par.infoHash)];                      
+            ITorrentManager torrent = torrents[Toolbox.GetHex(par.infoHash)];                      
             
             switch (par.@event)
             {
@@ -225,7 +225,7 @@ namespace MonoTorrent.Tracker
         
         private BEncodedDictionary GetAnnounceResponse(AnnounceParameters par)  
         {
-            ITorrentManager torrentManager = torrents[ToolBox.GetHex(par.infoHash)];
+            ITorrentManager torrentManager = torrents[Toolbox.GetHex(par.infoHash)];
             BEncodedDictionary dict = new BEncodedDictionary();
             
             Debug.WriteLine(torrentManager.Count);
@@ -253,7 +253,7 @@ namespace MonoTorrent.Tracker
             
             if (par.Count == 1) {                
                 //uniscrape
-                ITorrentManager torrent = torrents[ToolBox.GetHex(par.InfoHash)];
+                ITorrentManager torrent = torrents[Toolbox.GetHex(par.InfoHash)];
                 //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
                 filesDict.Add(torrent.Torrent.InfoHash, torrent.GetScrapeEntry());
             } 
@@ -269,7 +269,7 @@ namespace MonoTorrent.Tracker
             if (par.Count > 1) {
                 //multiscrape
                 foreach (byte[] infoHash in par) {
-                    ITorrentManager torrent = torrents[ToolBox.GetHex(infoHash)];
+                    ITorrentManager torrent = torrents[Toolbox.GetHex(infoHash)];
                     //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
                     filesDict.Add(new BEncodedString(torrent.Torrent.InfoHash), torrent.GetScrapeEntry());
                 }

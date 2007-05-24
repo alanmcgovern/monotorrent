@@ -35,8 +35,8 @@ namespace MonoTorrent.Common
     public class TorrentFolderWatcher : ITorrentWatcher
     {
         #region Member Variables
-        public TorrentWatchers.TorrentFound torrentFound;
-        public TorrentWatchers.TorrentLost torrentLost;
+        private TorrentWatchers.TorrentFound torrentFound;
+        private TorrentWatchers.TorrentLost torrentLost;
 
         private FileSystemWatcher watcher;
         private string torrentDirectory;

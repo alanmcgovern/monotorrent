@@ -190,7 +190,7 @@ namespace MonoTorrent.Client
             }
             else
             {
-                ToolBox.Switch<Tracker>(id.TrackerTier.Trackers, 0, id.TrackerTier.IndexOf(id.Tracker));
+                Toolbox.Switch<Tracker>(id.TrackerTier.Trackers, 0, id.TrackerTier.IndexOf(id.Tracker));
                 if (id.TrackerTier.SendingStartedEvent)
                 {
                     id.TrackerTier.SendingStartedEvent = false;

@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent.Common
 {
-    public class ToolBox
+    public class Toolbox
     {
         private static Random r = new Random();
 

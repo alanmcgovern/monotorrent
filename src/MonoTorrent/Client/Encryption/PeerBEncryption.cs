@@ -122,7 +122,7 @@ namespace MonoTorrent.Client.Encryption
             DoDecrypt(VerifyBytes, 20, 14); // ENCRYPT(VC, ...
 
             Array.Copy(VerifyBytes, 20, myVC, 0, myVC.Length);
-            if (!ToolBox.ByteMatch(myVC, VerificationConstant))
+            if (!Toolbox.ByteMatch(myVC, VerificationConstant))
             {
                 EncryptionError();
                 return;

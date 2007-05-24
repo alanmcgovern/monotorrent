@@ -613,7 +613,6 @@ namespace MonoTorrent.Common
 
         public void Dispose()
         {
-            _currentStream.Close();
             _currentStream.Dispose();
         }
     }

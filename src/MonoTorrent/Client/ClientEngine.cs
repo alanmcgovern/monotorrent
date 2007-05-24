@@ -653,7 +653,7 @@ namespace MonoTorrent.Client
             }
 
             for (int i = 0; i < this.torrents.Count; i++)
-                if (ToolBox.ByteMatch(handshake.infoHash, this.torrents[i].Torrent.InfoHash))
+                if (Toolbox.ByteMatch(handshake.infoHash, this.torrents[i].Torrent.InfoHash))
                     man = this.torrents[i];
 
             if (man == null)        // We're not hosting that torrent
