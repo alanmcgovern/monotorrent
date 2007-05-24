@@ -8,7 +8,7 @@ namespace MonoTorrent
     public class BEncodedKeyValuePair
     {
         private BEncodedString key;
-        private IBEncodedValue _value;
+        private BEncodedValue _value;
 
         public BEncodedString Key
         {
@@ -16,7 +16,7 @@ namespace MonoTorrent
             set { key = value; }
         }
 
-        public IBEncodedValue Value
+        public BEncodedValue Value
         {
             get { return _value; }
             set { _value = value; }

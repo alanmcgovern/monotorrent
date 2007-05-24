@@ -13,7 +13,7 @@ namespace MonoTorrent
 		#region Private Fields
 
 #if NET_2_0
-		protected List<IBEncodedValue> list;
+		protected List<BEncodedValue> list;
 #else
 		protected ArrayList list;
 #endif
@@ -26,7 +26,7 @@ namespace MonoTorrent
 		public IBEncodedValueCollection()
 		{
 #if NET_2_0
-			list = new List<IBEncodedValue>();
+			list = new List<BEncodedValue>();
 #else
 			list = new ArrayList();
 #endif
@@ -35,7 +35,7 @@ namespace MonoTorrent
 		public IBEncodedValueCollection(int capacity)
 		{
 #if NET_2_0
-			list = new List<IBEncodedValue>(capacity);
+			list = new List<BEncodedValue>(capacity);
 #else
 			list = new ArrayList(capacity);
 #endif
@@ -46,13 +46,13 @@ namespace MonoTorrent
 
 		#region Methods
 
-		public IBEncodedValue this[int index]
+        public BEncodedValue this[int index]
 		{
-			get { return (IBEncodedValue)list[index]; }
+			get { return (BEncodedValue)list[index]; }
 			set { list[index] = value; }
 		}
 
-		public int Add(IBEncodedValue value)
+        public int Add(BEncodedValue value)
 		{
 #if NET_2_0
 			list.Add(value);
@@ -75,7 +75,7 @@ namespace MonoTorrent
 			return clone;
 		}
 
-		public bool Contains(IBEncodedValue value)
+        public bool Contains(BEncodedValue value)
 		{
 			return list.Contains(value);
 		}
@@ -95,12 +95,12 @@ namespace MonoTorrent
 			return list.GetEnumerator();
 		}
 
-		public int IndexOf(IBEncodedValue value)
+        public int IndexOf(BEncodedValue value)
 		{
 			return list.IndexOf(value);
 		}
 
-		public void Insert(int index, IBEncodedValue value)
+        public void Insert(int index, BEncodedValue value)
 		{
 			list.Insert(index, value);
 		}
@@ -110,7 +110,7 @@ namespace MonoTorrent
 			get { return ((IList)list).IsSynchronized; }
 		}
 
-		public void Remove(IBEncodedValue value)
+        public void Remove(BEncodedValue value)
 		{
 			list.Remove(value);
 		}
@@ -132,22 +132,22 @@ namespace MonoTorrent
 
 		int IList.Add(object value)
 		{
-			return Add((IBEncodedValue)value);
+            return Add((BEncodedValue)value);
 		}
 
 		int IList.IndexOf(object value)
 		{
-			return IndexOf((IBEncodedValue)value);
+            return IndexOf((BEncodedValue)value);
 		}
 
 		bool IList.Contains(object value)
 		{
-			return Contains((IBEncodedValue)value);
+            return Contains((BEncodedValue)value);
 		}
 
 		void IList.Insert(int index, object value)
 		{
-			Insert(index, (IBEncodedValue)value);
+            Insert(index, (BEncodedValue)value);
 		}
 
 		bool IList.IsFixedSize
@@ -163,13 +163,13 @@ namespace MonoTorrent
 
 		void IList.Remove(object value)
 		{
-			Remove((IBEncodedValue)value);
+            Remove((BEncodedValue)value);
 		}
 
 		object IList.this[int index]
 		{
 			get { return this[index]; }
-			set { this[index] = (IBEncodedValue)value; }
+            set { this[index] = (BEncodedValue)value; }
 		}
 
 		#endregion
