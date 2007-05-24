@@ -3,4 +3,4 @@ Windows:
 Open the MonoTorrent.sln file in SharpDevelop  or Visual Studio. You may need to get the NUnit dlls to compile if you don't have them already. Make sure that either MonoTorrent.Interface or TestClient is set to be the startup client
 
 Linux:
-Go into the monotorrent folder and just run make.
+Go into the src folder and just run make.
