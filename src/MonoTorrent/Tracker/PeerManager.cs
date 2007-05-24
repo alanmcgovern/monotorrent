@@ -37,12 +37,12 @@ namespace MonoTorrent.Tracker
     ///</summary>
     public class PeerManager 
     {
-        PeerCollection peer_list;//same as _peers but no indexed. used for index based peer retrieval for randomization
+        List<MonoTorrent.Tracker.Peer> peer_list;//same as _peers but no indexed. used for index based peer retrieval for randomization
         Dictionary<string, Peer> peer_dict;//hold the list of peers attatched to this torrent
         
         public PeerManager()
         {
-            peer_list = new PeerCollection();
+            peer_list = new List<MonoTorrent.Tracker.Peer>();
             peer_dict = new Dictionary<string, Peer>();
         }
         
@@ -54,7 +54,7 @@ namespace MonoTorrent.Tracker
         }
         
         ///</summary>Adds p to this Manager.</summary>
-        public void Add(Peer peer)
+        public void Add(MonoTorrent.Tracker.Peer peer)
         {            
             lock (this) {
                 peer_dict.Add(peer.Key, peer);
@@ -96,9 +96,9 @@ namespace MonoTorrent.Tracker
         ///</summary>
         ///<param name=exclude>do not include this peer in the resulting list.</parm>
         ///<param name=count>return at most count peers</param>
-        public PeerCollection GetRandomPeers(int count, Peer exclude)
+        public List<Peer> GetRandomPeers(int count, Peer exclude)
         {
-            PeerCollection randomPeers = new PeerCollection(count);
+            List<Peer> randomPeers = new List<Peer>(count);
             if (peer_list.Count == 0) {
                 return randomPeers;                
             }
@@ -127,9 +127,9 @@ namespace MonoTorrent.Tracker
         }
         
         ///<summary>returns all peers from this Manager but not exlcude</summary>
-        private PeerCollection GetAllPeers(Peer exclude)
+        private List<Peer> GetAllPeers(Peer exclude)
         {
-            PeerCollection randomPeers = new PeerCollection(peer_list.Count);
+            List<Peer> randomPeers = new List<Peer>(peer_list.Count);
             foreach(Peer p in peer_list) {
                 if (exclude != null && !exclude.Equals(p)) {
                     randomPeers.Add(p);

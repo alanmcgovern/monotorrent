@@ -6,6 +6,21 @@ REFERENCES=	\
 EXTRA_DIST = AssemblyInfo.cs.in
 
 SOURCES=	\
+	Collections/BlockCollection.cs \
+	Collections/BEncodedKeyValuePair.cs \
+	Collections/IBEncodedValueCollection.cs \
+	Collections/IntCollection.cs \
+	Collections/ITorrentWatcherCollection.cs \
+	Collections/MonoTorrentCollectionBase.cs \
+	Collections/PeerCollection.cs \
+	Collections/PeerConnectionIDCollection.cs \
+	Collections/PieceCollection.cs \
+	Collections/StringCollection.cs \
+	Collections/TorrentManagerCollection.cs \
+	Collections/TraceListenerCollection.cs \
+	Collections/TrackerCollection.cs \
+	Collections/UInt32Collection.cs \
+	Collections/WaitHandleCollection.cs \
 	Common/Enums.cs \
 	Common/Hashes.cs \
 	Common/Peer.cs \
@@ -28,7 +43,6 @@ SOURCES=	\
 	Client/ConnectionListener.cs \
 	Client/Logger.cs \
 	Client/PeerList.cs \
-	Client/PortMapper.cs \
 	Client/RateLimiter.cs \
 	Client/ReaderLock.cs \
 	Client/MessageHandler.cs \
@@ -100,7 +114,6 @@ SOURCES=	\
 	Client/TrackerConnectionId.cs \
 	Client/AllowedFastAlgorithm.cs \
 	Client/Tracker.cs	\
-	BEncoding/BEncode.cs \
 	BEncoding/BEncodedDictionary.cs \
 	BEncoding/BEncodedList.cs \
 	BEncoding/BEncodedNumber.cs \
