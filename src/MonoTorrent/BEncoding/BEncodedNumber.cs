@@ -142,6 +142,38 @@ namespace MonoTorrent.BEncoding
         }
 
 
+        public int CompareTo(object other)
+        {
+            if (other is BEncodedNumber || other is long || other is int)
+                return CompareTo((BEncodedNumber)other);
+
+            return -1;
+            /*
+            //Not sure about this, looks like it's not being called anyway
+            Type[] compareToArgs = { other.GetType() };
+            System.Reflection.MethodInfo compareToMethod = typeof(BEncodedNumber).GetMethod("CompareTo",compareToArgs);
+
+            if (compareToMethod != null)
+            {
+                return (int)compareToMethod.Invoke(this, new object[] { other });
+            }
+
+            return -1;/*
+
+            /*
+            if (t == typeof(BEncodedNumber))
+            {
+                return this.number.CompareTo((BEncodedNumber)other);
+            }
+
+            if (t == typeof(long))
+            {
+                return this.number.CompareTo((long)other);
+            }
+
+            return -1;*/
+        }
+
         public int CompareTo(BEncodedNumber other)
         {
             if (other == null)

@@ -50,15 +50,15 @@ namespace MonoTorrent.Client
         /// <param name="infohash">The info hash of the torrent</param>
         /// <param name="numberOfPieces">The number of pieces in the torrent</param>
         /// <returns></returns>
-        internal static List<UInt32> Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
+        internal static UInt32Collection Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
         {
             return Calculate(addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
         }
 
-        internal static List<UInt32> Calculate(byte[] addressBytes, byte[] infohash, int count, UInt32 numberOfPieces)
+        internal static UInt32Collection Calculate(byte[] addressBytes, byte[] infohash, int count, UInt32 numberOfPieces)
         {
             byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
-            List<UInt32> results = new List<UInt32>(count);  // The results array which will be returned
+            UInt32Collection results = new UInt32Collection(count);  // The results array which will be returned
 
             // 1) Convert the bytes into an int32 and make them Network order
             int ip = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(addressBytes, 0));

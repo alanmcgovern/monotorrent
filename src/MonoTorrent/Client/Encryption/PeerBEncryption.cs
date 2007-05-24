@@ -27,7 +27,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using MonoTorrent.Common;
@@ -46,7 +45,7 @@ namespace MonoTorrent.Client.Encryption
         private AsyncCallback gotPadCCallback;
         private AsyncCallback gotInitialPayloadCallback;
 
-        public PeerBEncryption(List<TorrentManager> torrents, EncryptionType minCryptoAllowed)
+        public PeerBEncryption(TorrentManagerCollection torrents, EncryptionType minCryptoAllowed)
             : base(minCryptoAllowed)
         {
             possibleSKEYs = new byte[torrents.Count][];

@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
 
         public abstract int CurrentRequestCount();
         public abstract bool IsInteresting(PeerId id);
-        public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
+        public abstract RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers);
         public abstract void ReceivedChokeMessage(PeerId id);
         public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
         public abstract PieceEvent ReceivedPieceMessage(PeerId id, byte[] buffer, PieceMessage message);
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
             return -1;
         } 
 
-        internal static Piece GetPieceFromIndex(List<Piece> pieces, int pieceIndex)
+        internal static Piece GetPieceFromIndex(PieceCollection pieces, int pieceIndex)
         {
             for (int i = 0; i < pieces.Count; i++)
                 if (pieces[i].Index == pieceIndex)

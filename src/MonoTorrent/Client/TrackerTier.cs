@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public TrackerTier(List<string> trackerUrls, AsyncCallback announceCallback,
+        public TrackerTier(stringCollection trackerUrls, AsyncCallback announceCallback,
                         AsyncCallback scrapeCallback, EngineSettings engineSettings)
         {
             this.trackers = new Tracker[trackerUrls.Count];

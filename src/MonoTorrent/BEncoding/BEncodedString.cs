@@ -30,7 +30,7 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using MonoTorrent.Common;
 
@@ -179,6 +179,12 @@ namespace MonoTorrent.BEncoding
             string output = this.textBytes.Length.ToString() + ":";
             return (output.Length + this.textBytes.Length);
         }
+
+        public int CompareTo(object other)
+        {
+            return CompareTo((BEncodedString)other);
+        }
+
 
         public int CompareTo(BEncodedString other)
         {

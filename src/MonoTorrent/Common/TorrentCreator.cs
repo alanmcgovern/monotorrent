@@ -48,7 +48,7 @@ namespace MonoTorrent.Common
     {
         #region Private Fields
 
-        private List<List<string>> announces;       // The list of announce urls
+        private List<stringCollection> announces;       // The list of announce urls
         private bool ignoreHiddenFiles;             // True if you want to ignore hidden files when making the torrent
         private string path;                        // The path from which the torrent will be created (can be file or directory)
         private bool storeMd5;                      // True if an MD5 hash of each file should be included
@@ -62,7 +62,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The list of announce urls for this 
         /// </summary>
-        public List<List<string>> Announces
+        public List<stringCollection> Announces
         {
             get { return this.announces; }
         }
@@ -191,7 +191,7 @@ namespace MonoTorrent.Common
         public TorrentCreator()
         {
             BEncodedDictionary info = new BEncodedDictionary();
-            this.announces = new List<List<string>>();
+            this.announces = new List<stringCollection>();
             this.ignoreHiddenFiles = true;
             this.torrent = new BEncodedDictionary();
             this.torrent.Add("info", info);
@@ -213,7 +213,7 @@ namespace MonoTorrent.Common
         ///<param name="dir">the top directory to start from</param>
         ///<param name="filesList">the list to store the file information</param>
         ///<param name="paths">a list of all files found. used for piece hashing later</param>
-        private void AddAllFileInfoDicts(string dir, BEncodedList filesList, List<string> paths)
+        private void AddAllFileInfoDicts(string dir, BEncodedList filesList, stringCollection paths)
         {
             GetAllFilePaths(dir, paths);
 
@@ -222,7 +222,7 @@ namespace MonoTorrent.Common
         }
 
 
-        private void GetAllFilePaths(string directory, List<string> paths)
+        private void GetAllFilePaths(string directory, stringCollection paths)
         {
             string[] subs = Directory.GetFileSystemEntries(directory);
             foreach (string path in subs)
@@ -329,7 +329,7 @@ namespace MonoTorrent.Common
         ///<summary>
         ///calculates all hashes over the files which should be included in the torrent
         ///</summmary>
-        private byte[] CalcPiecesHash(List<string> fullPaths)
+        private byte[] CalcPiecesHash(stringCollection fullPaths)
         {
             SHA1 hasher = SHA1.Create();
             byte[] piece = new byte[PieceLength];//holds one piece for sha1 calcing
@@ -404,7 +404,7 @@ namespace MonoTorrent.Common
             AddCommonStuff(this.torrent);
             BEncodedDictionary info = (BEncodedDictionary)this.torrent["info"];
 
-            List<string> fullPaths = new List<string>();//store files to hash over
+            stringCollection fullPaths = new stringCollection();//store files to hash over
             BEncodedList files = new BEncodedList();//the dict which hold the file infos
 
 
@@ -437,7 +437,7 @@ namespace MonoTorrent.Common
 
             infoDict.Add("name", new BEncodedString(System.IO.Path.GetFileName(Path)));
             Console.WriteLine("name == " + System.IO.Path.GetFileName(Path));
-            List<string> files = new List<string>();
+            stringCollection files = new stringCollection();
             files.Add(Path);
             infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(files)));
         }
@@ -491,7 +491,7 @@ namespace MonoTorrent.Common
         }
 
 
-        private long GetPieceCount(List<string> fullPaths)
+        private long GetPieceCount(stringCollection fullPaths)
         {
             long size = 0;
             foreach (string file in fullPaths)
@@ -509,7 +509,7 @@ namespace MonoTorrent.Common
         ///</summary>
         public long GetSize()
         {
-            List<string> paths = new List<string>();
+            stringCollection paths = new stringCollection();
 
             if (Directory.Exists(this.path))
                 GetAllFilePaths(this.path, paths);
@@ -575,11 +575,11 @@ namespace MonoTorrent.Common
     ///<summary>
     public class CatStreamReader : IDisposable
     {
-        private List<string> _files;
+        private stringCollection _files;
         private int _currentFile = 0;
         private FileStream _currentStream = null;
 
-        public CatStreamReader(List<string> files)
+        public CatStreamReader(stringCollection files)
         {
             _files = files;
             _currentStream = new FileStream(files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
