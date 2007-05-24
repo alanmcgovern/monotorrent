@@ -41,7 +41,9 @@ namespace MonoTorrent.BEncoding
     public class BEncodedList : BEncodedValue, IList<BEncodedValue>
     {
         #region Member Variables
+
         private List<BEncodedValue> list;
+
         #endregion
 
 
@@ -64,14 +66,11 @@ namespace MonoTorrent.BEncoding
 
         }
 
-        /// <summary>
-        /// Creates a new BEncoded list from the supplied List
-        /// </summary>
-        /// <param name="value">The list to use to create the BEncodedList</param>
-        public BEncodedList(List<BEncodedValue> value)
+        private BEncodedList(List<BEncodedValue> value)
         {
             this.list = value;
         }
+
         #endregion
 
 
@@ -89,8 +88,8 @@ namespace MonoTorrent.BEncoding
             int written = 0;
             buffer[offset] = (byte)'l';
             written++;
-            foreach (BEncodedValue value in this.list)
-                written += value.Encode(buffer, offset + written);
+            for (int i = 0; i < this.list.Count; i++)
+                written += this.list[i].Encode(buffer, offset + written);
             buffer[offset + written] = (byte)'e';
             written++;
             return written;
@@ -135,8 +134,8 @@ namespace MonoTorrent.BEncoding
             int length = 0;
 
             length += 1;   // Lists start with 'l'
-            foreach (BEncodedValue item in this.list)
-                length += item.LengthInBytes();
+            for (int i=0; i < this.list.Count; i++)
+                length += this.list[i].LengthInBytes();
 
             length += 1;   // Lists end with 'e'
             return length;
@@ -147,13 +146,13 @@ namespace MonoTorrent.BEncoding
         #region Overridden Methods
         public override bool Equals(object obj)
         {
-            BEncodedList obj2 = obj as BEncodedList;
+            BEncodedList other = obj as BEncodedList;
 
-            if (obj2 == null)
+            if (other == null)
                 return false;
 
             for (int i = 0; i < this.list.Count; i++)
-                if (this.list[i] != obj2.list[i])
+                if (!this.list[i].Equals(other.list[i]))
                     return false;
 
             return true;
@@ -162,7 +161,11 @@ namespace MonoTorrent.BEncoding
 
         public override int GetHashCode()
         {
-            return this.list.GetHashCode();
+            int result = 0;
+            for (int i = 0; i < list.Count; i++)
+                result ^= list[i].GetHashCode();
+
+            return result;
         }
 
 
@@ -170,8 +173,8 @@ namespace MonoTorrent.BEncoding
         {
             StringBuilder sb = new StringBuilder(32);
 
-            foreach (BEncodedValue value in this.list)
-                sb.Append(value.ToString());
+            for (int i = 0; i < list.Count; i++)
+                sb.Append(list[i].ToString());
 
             return sb.ToString();
         }

@@ -175,14 +175,14 @@ namespace MonoTorrent.Tracker
         private BEncodedValue GetNonCompactList(AnnounceParameters par)
         {
             Peer exclude = peers.Get(Peer.GetKey(par));            
-            IList<Peer> randomPeers = peers.GetRandomPeers(par.numberWanted, exclude);            
-            List<BEncodedValue> announceList = new List<BEncodedValue>(randomPeers.Count);
+            IList<Peer> randomPeers = peers.GetRandomPeers(par.numberWanted, exclude);
+            BEncodedList announceList = new BEncodedList(randomPeers.Count);
             
             foreach (Peer each in randomPeers) {
                 announceList.Add(each.PeersEntry);
             }
             
-            return new BEncodedList(announceList);
+            return announceList;
         }
         
         public BEncodedDictionary GetScrapeEntry()

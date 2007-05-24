@@ -32,6 +32,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.BEncoding
 {
@@ -79,9 +80,6 @@ namespace MonoTorrent.BEncoding
             : this(System.Text.Encoding.UTF8.GetBytes(value))
         {
         }
-
-
-
 
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
@@ -147,21 +145,19 @@ namespace MonoTorrent.BEncoding
                 throw new ArgumentNullException("reader");
 
             int letterCount;
-            StringBuilder sb = new StringBuilder(20);
+            string length = string.Empty;
 
             try
             {
-                while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))     // read in how many characters
-                    sb.Append((char)reader.ReadChar());                                 // the string is
+                while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))         // read in how many characters
+                    length += (char)reader.ReadChar();                                 // the string is
 
                 if (reader.ReadChar() != ':')                                           // remove the ':'
                     throw new BEncodingException("Invalid data found. Aborting");
 
-                letterCount = int.Parse(sb.ToString());
-                sb.Remove(0, sb.Length);
+                letterCount = int.Parse(length);
 
                 this.textBytes = new byte[letterCount];
-
                 if (reader.Read(textBytes, 0, letterCount) != letterCount)
                     throw new BEncodingException("Couldn't decode string");
             }
@@ -216,14 +212,7 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 return false;
 
-            if (this.textBytes.Length != other.textBytes.Length)
-                return false;
-
-            for (int i = 0; i < this.textBytes.Length; i++)
-                if (this.textBytes[i] != other.textBytes[i])
-                    return false;
-
-            return true;
+            return ToolBox.ByteMatch(this.textBytes, other.textBytes);
         }
 
         public override int GetHashCode()

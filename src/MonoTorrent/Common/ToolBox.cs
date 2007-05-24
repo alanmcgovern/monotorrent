@@ -36,27 +36,27 @@ namespace MonoTorrent.Common
 {
     public class ToolBox
     {
-		private static Random r = new Random();
+        private static Random r = new Random();
 
-		public static void Randomize<T>(List<T> array)
-		{
-			List<T> clone = new List<T>(array);
-			array.Clear();
+        public static void Randomize<T>(List<T> array)
+        {
+            List<T> clone = new List<T>(array);
+            array.Clear();
 
-			while (clone.Count > 0)
-			{
-				int index = r.Next(0, clone.Count);
-				array.Add(clone[index]);
-				clone.RemoveAt(index);
-			}
-		}
+            while (clone.Count > 0)
+            {
+                int index = r.Next(0, clone.Count);
+                array.Add(clone[index]);
+                clone.RemoveAt(index);
+            }
+        }
 
-		public static void Switch<T>(T[] array, int first, int second)
-		{
-			T obj = array[first];
-			array[first] = array[second];
-			array[second] = obj;
-		}
+        public static void Switch<T>(T[] array, int first, int second)
+        {
+            T obj = array[first];
+            array[first] = array[second];
+            array[second] = obj;
+        }
 
         public static string GetHex(byte[] infoHash)
         {
@@ -79,8 +79,10 @@ namespace MonoTorrent.Common
         /// <returns>True if the arrays are equal, false if they aren't</returns>
         public static bool ByteMatch(byte[] array1, byte[] array2)
         {
-            if (array1.Length != array2.Length)      // If the arrays are different lengths, then they are not equal
-                return false;
+            if (array1 == null)
+                throw new ArgumentNullException("array1");
+            if (array2 == null)
+                throw new ArgumentNullException("array2");
 
             return ByteMatch(array1, array2, 0, 0, array1.Length);
         }
@@ -89,8 +91,11 @@ namespace MonoTorrent.Common
         {
             if (array1 == null)
                 throw new ArgumentNullException("array1");
-            if(array2 == null)
+            if (array2 == null)
                 throw new ArgumentNullException("array2");
+
+            if (array1.Length != array2.Length)      // If the arrays are different lengths, then they are not equal
+                return false;
 
             for (int i = 0; i < count; i++)
                 if (array1[offset1 + i] != array2[offset2 + i]) // For each element, if it is not the same in both

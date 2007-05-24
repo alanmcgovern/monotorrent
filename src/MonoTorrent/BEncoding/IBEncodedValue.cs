@@ -40,6 +40,8 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public abstract class BEncodedValue
     {
+        internal abstract void DecodeInternal(BinaryReader reader);
+
         /// <summary>
         /// Encodes the BEncodedValue into a byte array
         /// </summary>
@@ -47,14 +49,12 @@ namespace MonoTorrent.BEncoding
         public byte[] Encode()
         {
             byte[] buffer = new byte[LengthInBytes()];
-
             if (Encode(buffer, 0) != buffer.Length)
                 throw new BEncodingException("Error encoding the data");
 
             return buffer;
         }
 
-        internal abstract void DecodeInternal(BinaryReader reader);
 
         /// <summary>
         /// Encodes the BEncodedValue into the supplied buffer
@@ -96,8 +96,7 @@ namespace MonoTorrent.BEncoding
                 throw new ArgumentOutOfRangeException("length");
 
             using (MemoryStream stream = new MemoryStream(buffer, offset, length))
-            using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
-                return Decode(reader);
+                return (BEncodedValue.Decode(stream));
         }
 
 
@@ -111,8 +110,7 @@ namespace MonoTorrent.BEncoding
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
-            using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
-                return Decode(reader);
+            return Decode(new BinaryReader(stream, Encoding.UTF8));
         }
 
 
@@ -160,6 +158,41 @@ namespace MonoTorrent.BEncoding
 
             data.DecodeInternal(reader);
             return data;
+        }
+
+
+        /// <summary>
+        /// Interface for all BEncoded values
+        /// </summary>
+        /// <param name="data">The byte array containing the BEncoded data</param>
+        /// <returns></returns>
+        public static T Decode<T>(byte[] data) where T : BEncodedValue
+        {
+            return (T)BEncodedValue.Decode(data);
+        }
+
+
+        /// <summary>
+        /// Decode BEncoded data in the given byte array
+        /// </summary>
+        /// <param name="buffer">The byte array containing the BEncoded data</param>
+        /// <param name="offset">The offset at which the data starts at</param>
+        /// <param name="length">The number of bytes to be decoded</param>
+        /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
+        public static T Decode<T>(byte[] buffer, int offset, int length) where T : BEncodedValue
+        {
+            return (T)BEncodedValue.Decode(buffer, offset, length);
+        }
+
+
+        /// <summary>
+        /// Decode BEncoded data in the given stream 
+        /// </summary>
+        /// <param name="stream">The stream containing the BEncoded data</param>
+        /// <returns>BEncodedValue containing the data that was in the stream</returns>
+        public static T Decode<T>(Stream stream) where T : BEncodedValue
+        {
+            return (T)BEncodedValue.Decode(stream);
         }
 
 
