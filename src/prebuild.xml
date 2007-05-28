@@ -53,6 +53,7 @@
         <Match path="Client" pattern="*.cs" recurse="true"/>
         <Match path="Common" pattern="*.cs" recurse="true"/>
         <Match path="Tracker" pattern="*.cs" recurse="true"/>
+        <Match path="Collections" pattern="*.cs" recurse="true" /> 
       </Files>
     </Project>
     <Project name="SampleClient" path="SampleClient" language="C#" type="Exe" assemblyName="SampleClient" rootNamespace="SampleClient">
