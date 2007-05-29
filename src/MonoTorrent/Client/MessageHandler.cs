@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 					SendMessage(sendMessageToId);
 
 				if (cleanupId != null)
-					ClientEngine.ConnectionManager.AsyncCleanupSocket(cleanupId, true, "Async Cleanup");
+                    cleanupId.ConnectionManager.AsyncCleanupSocket(cleanupId, true, "Async Cleanup");
 
 				this.waitHandle.WaitOne();
 			}
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
 			lock (id.TorrentManager.resumeLock)
 				lock (id)
 					if (id.Peer.Connection != null)
-						ClientEngine.ConnectionManager.ProcessQueue(id);
+						id.ConnectionManager.ProcessQueue(id);
 		}
 
 		public void Start()
@@ -178,17 +178,12 @@ namespace MonoTorrent.Client
 			}
 		}
 
-		internal void Dispose()
+		public void Dispose()
 		{
 			if (this.messageLoopThread == null)
 				return;
 
 			this.Stop();
-		}
-
-		void IDisposable.Dispose()
-		{
-			Dispose();
 		}
 	}
 }

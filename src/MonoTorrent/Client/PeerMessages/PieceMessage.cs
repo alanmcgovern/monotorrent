@@ -260,7 +260,7 @@ namespace MonoTorrent.Client.PeerMessages
 				if (!id.Peer.Connection.ProcessingQueue)
 				{
 					id.Peer.Connection.ProcessingQueue = true;
-					ClientEngine.ConnectionManager.MessageHandler.EnqueueSend(id);
+					id.ConnectionManager.MessageHandler.EnqueueSend(id);
 				}
 			}
 			finally

@@ -244,7 +244,7 @@ namespace MonoTorrent.Client
 
         internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
                                     TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
-                                    bool requireEncryption)
+                                    bool requireEncryption, string peerId)
         {
             IPAddress ipAddress;
             HttpWebRequest request;
@@ -262,7 +262,7 @@ namespace MonoTorrent.Client
             sb.Append("info_hash=");
             sb.Append(infohash);
             sb.Append("&peer_id=");
-            sb.Append(ClientEngine.PeerId);
+            sb.Append(peerId);
             sb.Append("&port=");
             sb.Append(ConnectionListener.ListenEndPoint.Port);
             sb.Append("&supportcrypto=");

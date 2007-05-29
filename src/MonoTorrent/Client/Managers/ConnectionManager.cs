@@ -63,10 +63,8 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
+        private ClientEngine engine;
         public const int ChunkLength = 2048;   // Download in 2kB chunks to allow for better rate limiting
-
-        private EngineSettings settings;
-
 
         // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
         private MessagingCallback bitfieldSentCallback;
@@ -107,7 +105,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MaxHalfOpenConnections
         {
-            get { return this.settings.GlobalMaxHalfOpenConnections; }
+            get { return this.engine.Settings.GlobalMaxHalfOpenConnections; }
         }
 
 
@@ -126,7 +124,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MaxOpenConnections
         {
-            get { return this.settings.GlobalMaxConnections; }
+            get { return this.engine.Settings.GlobalMaxConnections; }
         }
         #endregion
 
@@ -137,9 +135,9 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="settings"></param>
-        public ConnectionManager(EngineSettings settings)
+        public ConnectionManager(ClientEngine engine)
         {
-            this.settings = settings;
+            this.engine = engine;
 
             this.onEndReceiveMessageCallback = new AsyncCallback(EndReceiveMessage);
             this.onEndSendMessageCallback = new AsyncCallback(EndSendMessage);
@@ -178,7 +176,7 @@ namespace MonoTorrent.Client
                 if (id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption || !ClientEngine.SupportsEncryption)
                     encryptor = new NoEncryption();
                 else
-                    encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.settings.MinEncryptionLevel);
+                    encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.engine.Settings.MinEncryptionLevel);
 
                 encryptor.SetPeerConnectionID(id);
                 encryptor.onEncryptorReady += onEncryptorReadyHandler;
@@ -245,7 +243,7 @@ namespace MonoTorrent.Client
                         System.Threading.Interlocked.Increment(ref this.openConnections);
 
                         // Create a handshake message to send to the peer
-                        HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.PeerId, VersionInfo.ProtocolStringV100);
+                        HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
                         if (id.Peer.Connection.Encryptor is NoEncryption || !ClientEngine.SupportsEncryption)
                         {
@@ -864,7 +862,7 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        if (id.Peer.PeerId == ClientEngine.PeerId) // The tracker gave us our own IP/Port combination
+                        if (id.Peer.PeerId == engine.PeerId) // The tracker gave us our own IP/Port combination
                         {
                             Logger.Log(id, "Recieved myself");
                             reason = "Received myself";
@@ -894,7 +892,7 @@ namespace MonoTorrent.Client
                             return;
                         }
                         Logger.Log(id, "Recieving message length");
-                        ClientEngine.ConnectionManager.ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
+                        ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
                     }
                 }
             }
@@ -1121,7 +1119,7 @@ namespace MonoTorrent.Client
                 //id.Peer.Connection = null;
                 //id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
-                if (this.settings.MinEncryptionLevel == EncryptionType.None)
+                if (this.engine.Settings.MinEncryptionLevel == EncryptionType.None)
                     id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
             }
             catch (SocketException)
@@ -1201,7 +1199,7 @@ namespace MonoTorrent.Client
                         if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
                             id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
-                        if (id.Peer.PeerId != ClientEngine.PeerId)
+                        if (id.Peer.PeerId != engine.PeerId)
                             if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
                                 id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                     }

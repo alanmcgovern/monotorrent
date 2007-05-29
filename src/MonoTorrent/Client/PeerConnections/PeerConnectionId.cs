@@ -39,6 +39,12 @@ namespace MonoTorrent.Client
     public class PeerId : IComparable<PeerId>
     {
         #region Member Variables
+
+        public ConnectionManager ConnectionManager
+        {
+            get { return this.torrentManager.Engine.ConnectionManager; }
+        }
+
         /// <summary>
         /// 
         /// </summary>

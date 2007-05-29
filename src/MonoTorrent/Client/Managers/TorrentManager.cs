@@ -401,7 +401,7 @@ namespace MonoTorrent.Client
             else
                 UpdateState(TorrentState.Downloading);
 
-            ClientEngine.ConnectionManager.RegisterManager(this);
+            engine.ConnectionManager.RegisterManager(this);
             this.engine.Start();
         }
 
@@ -420,11 +420,11 @@ namespace MonoTorrent.Client
             {
                 while (this.peers.ConnectingToPeers.Count > 0)
                     lock (this.peers.ConnectingToPeers[0])
-                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+                        engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
 
                 while (this.peers.ConnectedPeers.Count > 0)
                     lock (this.peers.ConnectedPeers[0])
-                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+                        engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
             }
 
             if (this.fileManager.StreamsOpen)
@@ -433,7 +433,7 @@ namespace MonoTorrent.Client
             this.SaveFastResume();
             this.peers.ClearAll();
             this.monitor.Reset();
-            ClientEngine.ConnectionManager.UnregisterManager(this);
+            engine.ConnectionManager.UnregisterManager(this);
             this.engine.Stop();
 
             return handle;
@@ -466,7 +466,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                ClientEngine.ConnectionManager.TryConnect();
+                engine.ConnectionManager.TryConnect();
             }
         }
 
@@ -579,7 +579,7 @@ namespace MonoTorrent.Client
             DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
             DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
 
-            ClientEngine.ConnectionManager.TryConnect();
+            engine.ConnectionManager.TryConnect();
 
             lock (this.listLock)
             {
@@ -631,14 +631,14 @@ namespace MonoTorrent.Client
 
                         if (onhundredAndEightySecondsAgo > id.Peer.Connection.LastMessageReceived)
                         {
-                            ClientEngine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
+                            engine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
                             continue;
                         }
 
                         if (!id.Peer.Connection.ProcessingQueue && id.Peer.Connection.QueueLength > 0)
                         {
                             id.Peer.Connection.ProcessingQueue = true;
-                            ClientEngine.ConnectionManager.MessageHandler.EnqueueSend(id);
+                            engine.ConnectionManager.MessageHandler.EnqueueSend(id);
                         }
                     }
                 }
@@ -729,11 +729,11 @@ namespace MonoTorrent.Client
             while (this.peers.DownloadQueue.Count > 0 &&
                     this.fileManager.QueuedWrites < 20 &&
                     ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
+                if (engine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
 
             while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
-                if (ClientEngine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
+                if (engine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
 
         }
@@ -792,7 +792,7 @@ namespace MonoTorrent.Client
             if(!streamsOpen)
                 this.fileManager.OpenFileStreams(FileAccess.Read);
 
-            if (forceCheck || (!forceCheck && !ClientEngine.LoadFastResume(this)))
+            if (forceCheck || (!forceCheck && !MonoTorrent.Client.FileManager.LoadFastResume(this)))
                 for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     this.pieceManager.MyBitField[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
 

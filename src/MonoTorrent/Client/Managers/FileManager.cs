@@ -35,6 +35,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using MonoTorrent.Client.PeerMessages;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace MonoTorrent.Client
 {
@@ -52,23 +53,23 @@ namespace MonoTorrent.Client
 
         #region Private Members
 
+        private string baseDirectory;                           // The base directory into which all the files will be put
+        private Queue<BufferedFileWrite> bufferedReads;         // A list of all the reads which are waiting to be performed
+        private Queue<BufferedFileWrite> bufferedWrites;        // A list of all the writes which are waiting to be performed
         private TorrentFile[] files;                            // The files that are in the torrent that we have to downoad
-		private string baseDirectory;                           // The base directory into which all the files will be put
-		private string savePath;                                // The path where the base directory will be put
-        private readonly int pieceLength;                       // The length of a piece in the torrent
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
         private FileStream[] fileStreams;                       // The filestreams used to read/write to the files on disk
         private bool initialHashRequired;                       // Used to indicate whether we need to hashcheck the files or not
-        private Thread ioThread;                                // The dedicated thread used for reading/writing
         private bool ioActive;                                  // Used to signal when the IO thread is running
+        private Thread ioThread;                                // The dedicated thread used for reading/writing
+        private readonly int pieceLength;                       // The length of a piece in the torrent
+        private object queueLock;                               // Used to synchronise access on the IO thread
+        private string savePath;                                // The path where the base directory will be put
+        internal ReaderWriterLock streamsLock;
         private ManualResetEvent threadWait;                    // Used to signal the IO thread when some data is ready for it to work on
 
-		internal ReaderWriterLock streamsLock;
-        private object queueLock;                               // Used to synchronise access on the IO thread
-        private Queue<BufferedFileWrite> bufferedWrites;        // A list of all the writes which are waiting to be performed
-        private Queue<BufferedFileWrite> bufferedReads;         // A list of all the reads which are waiting to be performed
-        
+
         #endregion
 
 
@@ -84,19 +85,19 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Returns the number of pieces which are currently queued in the write buffer
-        /// </summary>
-        internal int QueuedWrites
-        {
-            get { return this.bufferedWrites.Count; }
-        }
-
-        /// <summary>
         /// The length of a piece in bytes
         /// </summary>
         public int PieceLength
         {
             get { return this.pieceLength; }
+        }
+
+        /// <summary>
+        /// Returns the number of pieces which are currently queued in the write buffer
+        /// </summary>
+        internal int QueuedWrites
+        {
+            get { return this.bufferedWrites.Count; }
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the file</param>
-		internal FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
+        internal FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
             : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
         {
         }
@@ -142,7 +143,7 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-		internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
+        internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
             : this(files, baseDirectory, savePath, pieceLength, FileAccess.Read)
         {
         }
@@ -155,14 +156,14 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-		internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
+        internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
             if (files.Length == 1)
                 this.baseDirectory = string.Empty;
             else
                 this.baseDirectory = baseDirectory;
 
-			this.streamsLock = new ReaderWriterLock();
+            this.streamsLock = new ReaderWriterLock();
             this.queueLock = new object();
             this.bufferedReads = new Queue<BufferedFileWrite>();
             this.bufferedWrites = new Queue<BufferedFileWrite>();
@@ -180,6 +181,16 @@ namespace MonoTorrent.Client
 
         #region Methods
 
+        private void AsyncBlockWritten(object args)
+        {
+            if (this.BlockWritten == null)
+                return;
+
+            BlockEventArgs e = (BlockEventArgs)args;
+            this.BlockWritten(e.ID, e);
+        }
+
+
         /// <summary>
         /// Closes all the filestreams
         /// </summary>
@@ -190,7 +201,7 @@ namespace MonoTorrent.Client
 
             // Allow the IO thread to run.
             SetHandleState(true);
-			this.ioThread.Join(150);
+            this.ioThread.Join(150);
 
             for (int i = 0; i < this.fileStreams.Length; i++)
                 this.fileStreams[i].Dispose();
@@ -212,15 +223,6 @@ namespace MonoTorrent.Client
         /// Disposes all necessary objects
         /// </summary>
         internal void Dispose()
-        {
-            this.Dispose(true);
-        }
-
-
-        /// <summary>
-        /// Disposes all necessary objects
-        /// </summary>
-        internal void Dispose(bool disposing)
         {
             hasher.Clear();
             if (this.StreamsOpen)
@@ -292,6 +294,7 @@ namespace MonoTorrent.Client
 
                         using (new ReaderLock(this.streamsLock))
                             bytesRead = this.Read(hashBuffer, 0, pieceStartIndex, bytesToRead);
+
                         hasher.TransformBlock(hashBuffer, 0, bytesRead, hashBuffer, 0);
                         totalRead += bytesRead;
                         pieceStartIndex += bytesToRead;
@@ -306,6 +309,68 @@ namespace MonoTorrent.Client
             finally
             {
                 ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
+            }
+        }
+
+
+        /// <summary>
+        /// Loads fast resume data if it exists
+        /// </summary>
+        /// <param name="manager">The manager to load fastresume data for</param>
+        /// <returns></returns>
+        internal static bool LoadFastResume(TorrentManager manager)
+        {
+            try
+            {
+                // We can't load fast resume data if we don't have a filepath
+                if (!manager.Settings.FastResumeEnabled || string.IsNullOrEmpty(manager.Torrent.TorrentPath))
+                    return false;
+
+                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
+                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
+
+                manager.loadedFastResume = true;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Moves all files from the current path to the new path. The existing directory structure is maintained
+        /// </summary>
+        /// <param name="path"></param>
+        public void MoveFiles(string path, bool overWriteExisting)
+        {
+            using (new WriterLock(this.streamsLock))
+            {
+                if (this.fileStreams != null)
+                    this.CloseFileStreams();
+
+                for (int i = 0; i < this.files.Length; i++)
+                {
+                    string oldPath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
+                    string newPath = GenerateFilePath(this.files[i], this.baseDirectory, path);
+
+                    if (!File.Exists(oldPath))
+                        continue;
+
+                    bool fileExists = File.Exists(newPath);
+                    if (!overWriteExisting && fileExists)
+                        throw new TorrentException("File already exists and overwriting is disabled");
+
+                    if (fileExists)
+                        File.Delete(newPath);
+
+                    File.Move(oldPath, newPath);
+                }
+
+                this.savePath = path;
+                this.OpenFileStreams(FileAccess.Read);
             }
         }
 
@@ -391,20 +456,6 @@ namespace MonoTorrent.Client
                 id.Peer.HashFails++;
         }
 
-        internal void RaiseBlockWritten(BlockEventArgs args)
-        {
-            if (this.BlockWritten != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockWritten), args);
-        }
-
-        private void AsyncBlockWritten(object args)
-        {
-            if (this.BlockWritten == null)
-                return;
-
-            BlockEventArgs e = (BlockEventArgs)args;
-            this.BlockWritten(e.ID, e);
-        }
 
         /// <summary>
         /// Performs the buffered read
@@ -457,6 +508,61 @@ namespace MonoTorrent.Client
         }
 
 
+        internal void RaiseBlockWritten(BlockEventArgs args)
+        {
+            if (this.BlockWritten != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockWritten), args);
+        }
+
+
+        /// <summary>
+        /// This method reads 'count' number of bytes from the filestream starting at index 'offset'.
+        /// The bytes are read into the buffer starting at index 'bufferOffset'.
+        /// </summary>
+        /// <param name="buffer">The byte[] containing the bytes to write</param>
+        /// <param name="bufferOffset">The offset in the byte[] at which to save the data</param>
+        /// <param name="offset">The offset in the file at which to start reading the data</param>
+        /// <param name="count">The number of bytes to read</param>
+        /// <returns>The number of bytes successfully read</returns>
+        internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            if (offset < 0 || offset + count > this.fileSize)
+                throw new ArgumentOutOfRangeException("offset");
+
+            int i = 0;
+            int bytesRead = 0;
+            int totalRead = 0;
+
+            for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
+            {                                                   // files until we find the file which contains
+                if (offset < this.files[i].Length)        // the start of the data we want to read
+                    break;
+
+                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
+            }                                                   // to read from fileStream[i].
+
+            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
+            {
+                if (i == fileStreams.Length)
+                    break;
+
+                lock (this.fileStreams[i])
+                {
+                    fileStreams[i].Seek(offset, SeekOrigin.Begin);
+                    offset = 0; // Any further files need to be read from the beginning
+                    bytesRead = fileStreams[i].Read(buffer, bufferOffset + totalRead, count - totalRead);
+                    totalRead += bytesRead;
+                    i++;
+                }
+            }
+
+            return totalRead;
+        }
+
+
         /// <summary>
         /// This method runs in a dedicated thread. It performs all the async reads and writes as they are queued
         /// </summary>
@@ -505,54 +611,6 @@ namespace MonoTorrent.Client
                 this.threadWait.Set();
             else
                 this.threadWait.Reset();
-        }
-
-
-        /// <summary>
-        /// This method reads 'count' number of bytes from the filestream starting at index 'offset'.
-        /// The bytes are read into the buffer starting at index 'bufferOffset'.
-        /// </summary>
-        /// <param name="buffer">The byte[] containing the bytes to write</param>
-        /// <param name="bufferOffset">The offset in the byte[] at which to save the data</param>
-        /// <param name="offset">The offset in the file at which to start reading the data</param>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The number of bytes successfully read</returns>
-        internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > this.fileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            int bytesRead = 0;
-            int totalRead = 0;
-
-            for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < this.files[i].Length)        // the start of the data we want to read
-                    break;
-
-				offset -= this.files[i].Length;           // Offset now contains the index of the data we want
-            }                                                   // to read from fileStream[i].
-
-            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
-            {
-                if (i == fileStreams.Length)
-                    break;
-
-                lock (this.fileStreams[i])
-                {
-                    fileStreams[i].Seek(offset, SeekOrigin.Begin);
-                    offset = 0; // Any further files need to be read from the beginning
-                    bytesRead = fileStreams[i].Read(buffer, bufferOffset + totalRead, count - totalRead);
-                    totalRead += bytesRead;
-                    i++;
-                }
-            }
-
-            return totalRead;
         }
 
 
@@ -613,43 +671,6 @@ namespace MonoTorrent.Client
                 }
             }
         }
-
-
-		/// <summary>
-		/// Moves all files from the current path to the new path. The existing directory structure is maintained
-		/// </summary>
-		/// <param name="path"></param>
-		public void MoveFiles(string path, bool overWriteExisting)
-		{
-			//this.savePath = path;
-
-			using (new WriterLock(this.streamsLock))
-			{
-				if (this.fileStreams != null)
-					this.CloseFileStreams();
-
-				for (int i = 0; i < this.files.Length; i++)
-				{
-					string oldPath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
-					string newPath = GenerateFilePath(this.files[i], this.baseDirectory, path);
-
-					if (!File.Exists(oldPath))
-						continue;
-
-					bool fileExists = File.Exists(newPath);
-					if (!overWriteExisting && fileExists)
-						throw new TorrentException("File already exists and overwriting is disabled");
-
-					if (fileExists)
-						File.Delete(newPath);
-
-					File.Move(oldPath, newPath);
-				}
-
-				this.savePath = path;
-				this.OpenFileStreams(FileAccess.Read);
-			}
-		}
 
         #endregion
     }

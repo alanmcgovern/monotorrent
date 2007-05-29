@@ -117,13 +117,13 @@ namespace MonoTorrent
                 manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
 
                 // Every time a message is transferred from us to a peer, or from a peer to us, this is fired
-                ClientEngine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
+                engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
 
                 // Every time a peer connects, this is fired
-                ClientEngine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
+                engine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
 
                 // Every time a peer disconnects, this is fired.
-                ClientEngine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
+                engine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
 
                 // Every time the tracker's state changes, this is fired
                 manager.TrackerManager.OnTrackerStateChange += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);

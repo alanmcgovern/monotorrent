@@ -63,59 +63,21 @@ namespace MonoTorrent.Client
 		#endregion
 
 
-        #region Constructors
-
-        /// <summary>
-        /// Creates a new ClientEngine
-        /// </summary>
-        /// <param name="engineSettings">The engine settings to use</param>
-        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
-        public ClientEngine(EngineSettings engineSettings, TorrentSettings defaultTorrentSettings)
-        {
-            if (engineSettings == null)
-                throw new ArgumentNullException("engineSettings");
-
-            if (defaultTorrentSettings == null)
-                throw new ArgumentNullException("defaultTorrentSettings");
-
-            ClientEngine.ConnectionManager = new ConnectionManager(engineSettings);
-            this.settings = engineSettings;
-            this.defaultTorrentSettings = defaultTorrentSettings;
-            this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(this.IncomingConnectionReceived));
-#warning I don't like this timer, but is there any other better way to do it?
-            this.timer = new System.Timers.Timer(TickLength);
-            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
-            this.torrents = new TorrentManagerCollection();
-            this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
-
-            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
-            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
-            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
-        }
-
-        #endregion
-
-
-		#region Private Member Variables
-		/// <summary>
-        /// A logic tick will be performed every TickLength miliseconds
-        /// </summary>
-        internal const int TickLength = 500;
-
-        #endregion
-
-
         #region Member Variables
         /// <summary>
         /// This manager is used to control Send/Receive buffer allocations for all running torrents
         /// </summary>
         internal static readonly BufferManager BufferManager = new BufferManager();
 
-
         /// <summary>
         /// The connection manager which manages all the connections for the library
         /// </summary>
-        public static ConnectionManager ConnectionManager;
+        public ConnectionManager ConnectionManager
+        {
+            get { return this.connectionManager; }
+        }
+
+        private ConnectionManager connectionManager;
 
 
         /// <summary>
@@ -156,11 +118,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Returns the engines PeerID
         /// </summary>
-        public static string PeerId
+        public string PeerId
         {
             get { return peerId; }
         }
-        private static readonly string peerId = GeneratePeerId();
+        private readonly string peerId = GeneratePeerId();
 
 
         /// <summary>
@@ -182,6 +144,11 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// A logic tick will be performed every TickLength miliseconds
+        /// </summary>
+        internal const int TickLength = 500;
+
+        /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
         public TorrentManagerCollection Torrents
@@ -191,10 +158,41 @@ namespace MonoTorrent.Client
         }
         private TorrentManagerCollection torrents;
         private ReaderWriterLock torrentsLock = new ReaderWriterLock();
+
         #endregion
 
 
-        #region Start/Stop/Pause
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new ClientEngine
+        /// </summary>
+        /// <param name="engineSettings">The engine settings to use</param>
+        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
+        public ClientEngine(EngineSettings engineSettings, TorrentSettings defaultTorrentSettings)
+        {
+            if (engineSettings == null)
+                throw new ArgumentNullException("engineSettings");
+
+            if (defaultTorrentSettings == null)
+                throw new ArgumentNullException("defaultTorrentSettings");
+
+            this.connectionManager = new ConnectionManager(this);
+            this.settings = engineSettings;
+            this.defaultTorrentSettings = defaultTorrentSettings;
+            this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(this.IncomingConnectionReceived));
+            this.timer = new System.Timers.Timer(TickLength);
+            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
+            this.torrents = new TorrentManagerCollection();
+            this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
+
+            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
+            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
+            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
+        }
+
+        #endregion
+
 
         /// <summary>
         /// Starts all torrents in the engine if they are not already started
@@ -226,10 +224,8 @@ namespace MonoTorrent.Client
                 this.listener.Stop();
         }
 
-        #endregion
 
 
-        #region Load/Remove Torrents
 
         private bool ContainsTorrent(string p)
         {
@@ -271,7 +267,6 @@ namespace MonoTorrent.Client
             manager.Engine = null;
         }
 
-        #endregion
 
 
         #region Misc
@@ -291,6 +286,7 @@ namespace MonoTorrent.Client
 
             return sb.ToString();
         }
+
 
 
         /// <summary>
@@ -326,18 +322,6 @@ namespace MonoTorrent.Client
 			RaiseStatsUpdate(new StateUpdateEventArgs());
         }
 
-		internal void RaiseStatsUpdate(StateUpdateEventArgs args)
-		{
-            if (StatsUpdate != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncStatsUpdate), args);
-		}
-
-        private void AsyncStatsUpdate(object args)
-        {
-            if (StatsUpdate != null)
-                StatsUpdate(this, (StateUpdateEventArgs)args);
-        }
-
 
         /// <summary>
         /// 
@@ -368,36 +352,25 @@ namespace MonoTorrent.Client
 
             this.timer.Dispose();
         }
+
+        internal void RaiseStatsUpdate(StateUpdateEventArgs args)
+        {
+            if (StatsUpdate != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncStatsUpdate), args);
+        }
+
+        private void AsyncStatsUpdate(object args)
+        {
+            if (StatsUpdate != null)
+                StatsUpdate(this, (StateUpdateEventArgs)args);
+        }
+
+
         #endregion
 
 
 
-        /// <summary>
-        /// Loads fast resume data if it exists
-        /// </summary>
-        /// <param name="manager">The manager to load fastresume data for</param>
-        /// <returns></returns>
-        internal static bool LoadFastResume(TorrentManager manager)
-        {
-            // If our TorrentManager object does not support fast-resume then we
-            // return false so the hash check will begin.
-            if (!manager.Settings.FastResumeEnabled)
-                return false;
 
-            try
-            {
-                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
-                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
-                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
-
-                manager.loadedFastResume = true;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
 
 
 
@@ -553,7 +526,7 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
             id.Peer.Connection.ClientApp = new Software(handshake.PeerId);
 
-            handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, ClientEngine.peerId, VersionInfo.ProtocolStringV100);
+            handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, this.peerId, VersionInfo.ProtocolStringV100);
             BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
 
             ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
@@ -562,7 +535,7 @@ namespace MonoTorrent.Client
             id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
             Logger.Log(id, "CE Sending to torrent manager");
-            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(ClientEngine.ConnectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
+            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(connectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
             id.Peer.Connection.ProcessingQueue = false;
         }
 

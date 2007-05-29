@@ -155,11 +155,11 @@ namespace MonoTorrent.Client
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             UpdateState(tracker, TrackerState.Announcing);
+            bool supportsEncryption = ClientEngine.SupportsEncryption && manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None;
             WaitHandle handle = tracker.Announce(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
-                                                clientEvent, this.infoHash, id,
-                                                this.manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None && ClientEngine.SupportsEncryption);
+                                                clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId);
             return handle;
         }
 
