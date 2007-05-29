@@ -49,8 +49,10 @@ namespace MonoTorrent.Client
     public class ClientEngine : IDisposable
     {
         #region Global Supports
-        internal static readonly bool SupportsFastPeer = true;
-        internal static readonly bool SupportsEncryption = true;
+        public static readonly bool SupportsFastPeer = true;
+        public static readonly bool SupportsEncryption = true;
+        public static readonly bool SupportsEndgameMode = false;
+        public static readonly bool SupportsDht = false;
         #endregion
 
 
@@ -59,6 +61,39 @@ namespace MonoTorrent.Client
 		public event EventHandler<StateUpdateEventArgs> StatsUpdate;
 
 		#endregion
+
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new ClientEngine
+        /// </summary>
+        /// <param name="engineSettings">The engine settings to use</param>
+        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
+        public ClientEngine(EngineSettings engineSettings, TorrentSettings defaultTorrentSettings)
+        {
+            if (engineSettings == null)
+                throw new ArgumentNullException("engineSettings");
+
+            if (defaultTorrentSettings == null)
+                throw new ArgumentNullException("defaultTorrentSettings");
+
+            ClientEngine.ConnectionManager = new ConnectionManager(engineSettings);
+            this.settings = engineSettings;
+            this.defaultTorrentSettings = defaultTorrentSettings;
+            this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(this.IncomingConnectionReceived));
+#warning I don't like this timer, but is there any other better way to do it?
+            this.timer = new System.Timers.Timer(TickLength);
+            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
+            this.torrents = new TorrentManagerCollection();
+            this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
+
+            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
+            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
+            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
+        }
+
+        #endregion
 
 
 		#region Private Member Variables
@@ -155,79 +190,22 @@ namespace MonoTorrent.Client
             set { this.torrents = value; }
         }
         private TorrentManagerCollection torrents;
-        #endregion
-
-
-        #region Constructors
-
-        /// <summary>
-        /// Creates a new ClientEngine
-        /// </summary>
-        /// <param name="engineSettings">The engine settings to use</param>
-        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
-        public ClientEngine(EngineSettings engineSettings, TorrentSettings defaultTorrentSettings)
-        {
-            ClientEngine.ConnectionManager = new ConnectionManager(engineSettings);
-            this.settings = engineSettings;
-            this.defaultTorrentSettings = defaultTorrentSettings;
-            this.listener = new ConnectionListener(engineSettings.ListenPort, new AsyncCallback(this.IncomingConnectionReceived));
-#warning I don't like this timer, but is there any other better way to do it?
-            this.timer = new System.Timers.Timer(TickLength);
-            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
-            this.torrents = new TorrentManagerCollection();
-            this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
-
-            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
-            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
-            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
-        }
-
+        private ReaderWriterLock torrentsLock = new ReaderWriterLock();
         #endregion
 
 
         #region Start/Stop/Pause
+
         /// <summary>
         /// Starts all torrents in the engine if they are not already started
         /// </summary>
-        public void Start()
-        {
-            for (int i = 0; i < this.torrents.Count; i++)
-                Start(this.torrents[i]);
-        }
-
-
-        /// <summary>
-        /// Starts the specified torrent
-        /// </summary>
-        /// <param name="manager">The torrent to start</param>
-        public void Start(TorrentManager manager)
+        internal void Start()
         {
             if (!this.listener.IsListening)
                 this.listener.Start();      // Start Listening for connections
 
             if (!timer.Enabled)
                 timer.Enabled = true;       // Start logic ticking
-
-            if (manager.State == TorrentState.Stopped || manager.State == TorrentState.Paused)
-                manager.Start();
-        }
-
-
-        /// <summary>
-        /// Stops all torrents in the engine and flushes out all peer information
-        /// </summary>
-        public WaitHandle[] Stop()
-        {
-            WaitHandleCollection waitHandles = new WaitHandleCollection(this.torrents.Count);
-
-            for (int i = 0; i < this.torrents.Count; i++)
-                if (this.torrents[i].State != TorrentState.Stopped)
-                    waitHandles.Add(this.Stop(this.torrents[i]));
-
-            if (waitHandles.Count == 0)
-                waitHandles.Add(new ManualResetEvent(true));
-
-            return waitHandles.ToArray();
         }
 
 
@@ -235,115 +213,23 @@ namespace MonoTorrent.Client
         /// Stops the specified torrent and flushes out all peer information
         /// </summary>
         /// <param name="manager"></param>
-        public WaitHandle Stop(TorrentManager manager)
+        internal void Stop()
         {
-            if (manager.State == TorrentState.Stopped)
-                throw new TorrentException("This torrent is already stopped");
-
-            WaitHandle handle = manager.Stop();
-
-            for (int i = 0; i < this.torrents.Count; i++)
-                if (this.torrents[i].State != TorrentState.Paused && this.torrents[i].State != TorrentState.Stopped)
-                    return handle;              // There's still a torrent running, so just return the handle
+            using (new ReaderLock(this.torrentsLock))
+                for (int i = 0; i < this.torrents.Count; i++)
+                    if (this.torrents[i].State != TorrentState.Stopped)
+                        return;
 
             timer.Enabled = false;              // All the torrents are stopped, so stop ticking
 
             if (this.listener.IsListening)      // Also stop listening for incoming connections
                 this.listener.Stop();
-
-            ClientEngine.ConnectionManager.MessageHandler.Dispose();
-
-            return handle;                      // Now return the handle
         }
 
-
-        /// <summary>
-        /// Stops all torrents in the engine but retains all peer information
-        /// </summary>
-        public void Pause()
-        {
-            for (int i = 0; i < this.torrents.Count; i++)
-                Pause(this.torrents[i]);
-        }
-
-
-        /// <summary>
-        /// Stops the specified torrent but retains all peer information
-        /// </summary>
-        /// <param name="manager"></param>
-        public void Pause(TorrentManager manager)
-        {
-            manager.Pause();
-
-            for (int i = 0; i < this.torrents.Count; i++)
-                if (this.torrents[i].State != TorrentState.Paused && this.torrents[i].State != TorrentState.Stopped)
-                    return;
-
-            timer.Enabled = false;      // All the torrents are stopped, so stop ticking
-
-            if (this.listener.IsListening)
-                this.listener.Stop();
-        }
         #endregion
 
 
         #region Load/Remove Torrents
-        /// <summary>
-        /// Loads a .torrent file from the specified path.
-        /// </summary>
-        /// <param name="path">The path to the .torrent file</param>
-        /// <returns>A TorrentManager used to control the torrent</returns>
-        public TorrentManager LoadTorrent(string path)
-        {
-            return this.LoadTorrent(path, this.settings.SavePath, this.defaultTorrentSettings);
-        }
-
-
-        /// <summary>
-        /// Loads a .torrent file from the specified path
-        /// </summary>
-        /// <param name="path">The path of the .torrent file</param>
-        /// <param name="savePath">The path to download the files to</param>
-        /// <returns>A TorrentManager used to control the torrent</returns>
-        public TorrentManager LoadTorrent(string path, string savePath)
-        {
-            return this.LoadTorrent(path, savePath, this.defaultTorrentSettings);
-        }
-
-
-        /// <summary>
-        /// Loads a .torrent file from the specified path
-        /// </summary>
-        /// <param name="path">The path to the .torrent file</param>
-        /// <param name="savePath">The path to download the files to</param>
-        /// <param name="torrentSettings">The TorrentSettings to initialise the torrent with</param>
-        /// <returns>A TorrentManager used to control the torrent</returns>
-        public TorrentManager LoadTorrent(string path, string savePath, TorrentSettings torrentSettings)
-        {
-            try
-            {
-                Torrent torrent = Torrent.Load(path);
-                return LoadTorrent(torrent, savePath, torrentSettings);
-            }
-            catch (Exception ex)
-            {
-                throw new TorrentLoadException("Could not load the torrent", ex);
-            }
-        }
-
-		public TorrentManager LoadTorrent(Torrent torrent, string savePath, TorrentSettings torrentSettings)
-		{
-			if (this.ContainsTorrent(BitConverter.ToString(torrent.InfoHash)))
-				throw new TorrentException("The torrent is already in the engine");
-
-			TorrentManager manager = new TorrentManager(torrent, savePath, torrentSettings, this.settings);
-			this.torrents.Add(manager);
-
-			if (File.Exists(torrent.TorrentPath + ".fresume"))
-				manager.HashChecked = LoadFastResume(manager);
-
-			return (manager);
-		}
 
         private bool ContainsTorrent(string p)
         {
@@ -354,119 +240,42 @@ namespace MonoTorrent.Client
             return false;
         }
 
-
-        /// <summary>
-        /// Loads a .torrent file from the specified URL
-        /// </summary>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
-        /// <returns></returns>
-        public TorrentManager LoadTorrent(Uri url, string location)
+        public void Register(TorrentManager manager)
         {
-            return this.LoadTorrent(url, location, settings.SavePath, this.defaultTorrentSettings);
+            if (manager == null)
+                throw new ArgumentNullException("torrent");
+
+            if (manager.Engine != null)
+                throw new TorrentException("This manager has already been registered");
+
+            using (new WriterLock(torrentsLock))
+                this.torrents.Add(manager);
+
+            manager.Engine = this;
         }
 
-
-        /// <summary>
-        /// Loads a .torrent file from the specified URL
-        /// </summary>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
-        /// <param name="savePath">The path to download the files to</param>
-        /// <returns></returns>
-        public TorrentManager LoadTorrent(Uri url, string location, string savePath)
+        public void Unregister(TorrentManager manager)
         {
-            return this.LoadTorrent(url, location, savePath, this.defaultTorrentSettings);
-        }
+            if (manager == null)
+                throw new ArgumentNullException("manager");
 
+            if (manager.Engine != this)
+                throw new TorrentException("The manager has not been registered with this engine");
 
-        /// <summary>
-        /// Loads a .torrent from the specified URL
-        /// </summary>
-        /// <param name="url">The URL to download the .torrent from</param>
-        /// <param name="location">The path on your computer to download the .torrent to before it's loaded into the engine</param>
-        /// <param name="savePath">The path to download the files to</param>
-        /// <param name="settings">The TorrentSettings to initialise the torrent with</param>
-        /// <returns></returns>
-        public TorrentManager LoadTorrent(Uri url, string location, string savePath, TorrentSettings settings)
-        {
-            WebClient client = new WebClient();
-            try
-            {
-                client.DownloadFile(url, location);
-            }
-            catch
-            {
-                throw new TorrentException("Could not download .torrent file from source");
-            }
-            return this.LoadTorrent(location, savePath, settings);
-        }
-
-
-        /// <summary>
-        /// Loads fast resume data if it exists
-        /// </summary>
-        /// <param name="manager">The manager to load fastresume data for</param>
-        /// <returns></returns>
-        internal static bool LoadFastResume(TorrentManager manager)
-        {
-            // If our TorrentManager object does not support fast-resume then we
-            // return false so the hash check will begin.
-            if (!manager.Settings.FastResumeEnabled)
-                return false;
-
-            try
-            {
-                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
-                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
-                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
-
-                manager.loadedFastResume = true;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-
-        /// <summary>
-        /// Removes the specified torrent from the engine
-        /// </summary>
-        /// <param name="manager"></param>
-        public WaitHandle Remove(TorrentManager manager)
-        {
-            WaitHandle handle = null;
             if (manager.State != TorrentState.Stopped)
-                handle = this.Stop(manager);
+                throw new TorrentException("The manager must be stopped before it can be unregistered");
 
-            this.torrents.Remove(manager);
-            manager.Dispose();
-            return handle;
+            using (new WriterLock(torrentsLock))
+                this.torrents.Remove(manager);
+
+            manager.Engine = null;
         }
 
-
-        /// <summary>
-        /// Removes all torrents from the Engine
-        /// </summary>
-        public WaitHandle[] RemoveAll()
-        {
-            WaitHandle[] handles = new WaitHandle[this.torrents.Count];
-            TorrentManagerCollection managers = new TorrentManagerCollection();
-
-            for (int i = 0; i < torrents.Count; i++)
-                managers.Add(this.torrents[i]);
-
-            for (int i = 0; i < managers.Count; i++)
-                handles[i] = Remove(managers[i]);
-
-            return handles;
-        }
         #endregion
 
 
         #region Misc
+
         /// <summary>
         /// 
         /// </summary>
@@ -529,6 +338,70 @@ namespace MonoTorrent.Client
                 StatsUpdate(this, (StateUpdateEventArgs)args);
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="disposing"></param>
+        public void Dispose(bool disposing)
+        {
+            // FIXME
+            //WaitHandle[] handles = this.RemoveAll();
+            //for (int i = 0; i < handles.Length; i++)
+            //    if (handles[i] != null)
+            //        handles[i].WaitOne();
+
+            //foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
+            //    keypair.Value.Dispose();
+
+            if (!this.listener.Disposed)
+                this.listener.Dispose();
+
+            this.timer.Dispose();
+        }
+        #endregion
+
+
+
+        /// <summary>
+        /// Loads fast resume data if it exists
+        /// </summary>
+        /// <param name="manager">The manager to load fastresume data for</param>
+        /// <returns></returns>
+        internal static bool LoadFastResume(TorrentManager manager)
+        {
+            // If our TorrentManager object does not support fast-resume then we
+            // return false so the hash check will begin.
+            if (!manager.Settings.FastResumeEnabled)
+                return false;
+
+            try
+            {
+                XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
+                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
+                    manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
+
+                manager.loadedFastResume = true;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+
+        #region Move to connection listener
         /// <summary>
         /// 
         /// </summary>
@@ -762,55 +635,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void Dispose()
-        {
-            this.Dispose(true);
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="disposing"></param>
-        public void Dispose(bool disposing)
-        {
-            WaitHandle[] handles = this.RemoveAll();
-            for (int i = 0; i < handles.Length; i++)
-                if (handles[i] != null)
-                    handles[i].WaitOne();
-
-            //foreach (KeyValuePair<string, TorrentManager> keypair in this.torrents)
-            //    keypair.Value.Dispose();
-
-            if (!this.listener.Disposed)
-                this.listener.Dispose();
-
-            this.timer.Dispose();
-        }
-
-
-        public double TotalDownloadSpeed()
-        {
-            double total = 0;
-            for (int i = 0; i < this.torrents.Count; i++)
-                total += this.torrents[i].Monitor.DownloadSpeed;
-
-            return total;
-        }
-
-
-        public double TotalUploadSpeed()
-        {
-            double total = 0;
-            for (int i = 0; i < this.torrents.Count; i++)
-                total += this.torrents[i].Monitor.UploadSpeed;
-
-            return total;
-        }
         #endregion
     }
 }

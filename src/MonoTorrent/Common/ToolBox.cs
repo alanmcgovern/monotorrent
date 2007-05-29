@@ -104,5 +104,14 @@ namespace MonoTorrent.Common
 
             return true;                            // If we get here, all the elements matched, so they are equal
         }
+
+        internal static int HashCode(byte[] array)
+        {
+            int result = 0;
+            for (int i = 0; i < array.Length; i++)
+                result ^= array[i];
+
+            return result;
+        }
     }
 }

@@ -35,6 +35,7 @@ using System.Text;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
 using System.Collections;
+using System.Net;
 
 namespace MonoTorrent.Common
 {
@@ -498,20 +499,79 @@ namespace MonoTorrent.Common
         }
 
 
+        public override string ToString()
+        {
+            return this.name;
+        }
+
+        #endregion Public Methods
+
+
+        #region Loading methods
+
         /// <summary>
         /// This method loads a .torrent file from the specified path.
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         public static Torrent Load(string path)
         {
-            if (String.IsNullOrEmpty(path))
+            if (path == null)
                 throw new ArgumentNullException("path");
 
-            using (BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read), System.Text.Encoding.UTF8))
+            using (Stream s = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                return Torrent.Load(s, path);
+        }
+
+
+        /// <summary>
+        /// Loads a .torrent from the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <returns></returns>
+        public static Torrent Load(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            return Torrent.Load(stream, "");
+        }
+
+
+        /// <summary>
+        /// Loads a .torrent file from the specified URL
+        /// </summary>
+        /// <param name="url">The URL to download the .torrent from</param>
+        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
+        /// <returns></returns>
+        public static Torrent Load(Uri url, string location)
+        {
+            if (url == null)
+                throw new ArgumentNullException("url");
+            if (location == null)
+                throw new ArgumentNullException("location");
+
+            try
+            {
+                using (WebClient client = new WebClient())
+                    client.DownloadFile(url, location);
+            }
+            catch
+            {
+                throw new TorrentException("Could not download .torrent file from the specified url");
+            }
+
+            return Torrent.Load(location);
+        }
+
+
+        private static Torrent Load(Stream stream, string path)
+        {
+            using (BinaryReader reader = new BinaryReader(stream, new UTF8Encoding()))
             {
                 try
                 {
-                    Torrent t = Torrent.Load((BEncodedDictionary)BEncodedValue.Decode(reader));
+                    BEncodedDictionary torrentDictionary = (BEncodedDictionary)BEncodedValue.Decode(reader);
+                    Torrent t = Torrent.Load(torrentDictionary);
                     t.torrentPath = path;
                     return t;
                 }
@@ -523,11 +583,7 @@ namespace MonoTorrent.Common
         }
 
 
-        /// <summary>
-        /// This method loads the torrent information from a BEncoded dictionary
-        /// </summary>
-        /// <param name="torrentInformation">The dictionary from a decoded .torrent file</param>
-        public static Torrent Load(BEncodedDictionary torrentInformation)
+        private static Torrent Load(BEncodedDictionary torrentInformation)
         {
             Torrent t = new Torrent();
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
@@ -549,16 +605,16 @@ namespace MonoTorrent.Common
 
                     case ("comment.utf-8"):
                         if (keypair.Value.ToString().Length != 0)
-                            t.comment = keypair.Value.ToString();        // Always take the UTF-8 version
-                        break;                                              // even if there's an existing value
+                            t.comment = keypair.Value.ToString();       // Always take the UTF-8 version
+                        break;                                          // even if there's an existing value
 
                     case ("comment"):
                         if (String.IsNullOrEmpty(t.comment))
                             t.comment = keypair.Value.ToString();
                         break;
 
-                    case ("publisher-url.utf-8"):                           // Always take the UTF-8 version
-                        t.publisherUrl = keypair.Value.ToString();       // even if there's an existing value
+                    case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
+                        t.publisherUrl = keypair.Value.ToString();      // even if there's an existing value
                         break;
 
                     case ("publisher-url"):
@@ -590,21 +646,21 @@ namespace MonoTorrent.Common
                         BEncodedList announces = (BEncodedList)keypair.Value;
                         t.announceUrls = new List<stringCollection>(announces.Count);
 
-						for (int j = 0; j < announces.Count; j++)
-						{
-							BEncodedList bencodedTier = (BEncodedList)announces[j];
-							List<string> tier = new List<string>(bencodedTier.Count);
+                        for (int j = 0; j < announces.Count; j++)
+                        {
+                            BEncodedList bencodedTier = (BEncodedList)announces[j];
+                            List<string> tier = new List<string>(bencodedTier.Count);
 
-							for (int k = 0; k < bencodedTier.Count; k++)
-								tier.Add(bencodedTier[k].ToString());
+                            for (int k = 0; k < bencodedTier.Count; k++)
+                                tier.Add(bencodedTier[k].ToString());
 
-							Toolbox.Randomize<string>(tier);
+                            Toolbox.Randomize<string>(tier);
 
                             stringCollection collection = new stringCollection(tier.Count);
                             for (int k = 0; k < tier.Count; k++)
                                 collection.Add(tier[k]);
                             t.announceUrls.Add(collection);
-						}
+                        }
                         break;
 
                     default:
@@ -625,23 +681,6 @@ namespace MonoTorrent.Common
             return t;
         }
 
-
-        /// <summary>
-        /// This method returns an Enumerator so you can enumerate through the TorrentFiles
-        /// contained within this Torrent
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerator GetEnumerator()
-        {
-            return this.torrentFiles.GetEnumerator();
-        }
-
-
-        public override string ToString()
-        {
-            return this.name;
-        }
-
-        #endregion Public Methods
+        #endregion Loading methods
     }
 }

@@ -45,7 +45,6 @@ namespace MonoTorrent.Client
         #region Member Variables
         private AsyncCallback announceCallback;
         private AsyncCallback scrapeCallback;
-        private EngineSettings engineSettings;
 
 
         /// <summary>
@@ -196,7 +195,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        public Tracker(string announceUrl, AsyncCallback announceCallback, AsyncCallback scrapeCallback, EngineSettings engineSettings)
+        public Tracker(string announceUrl, AsyncCallback announceCallback, AsyncCallback scrapeCallback)
         {
             this.state = TrackerState.Unknown;
             this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
@@ -207,7 +206,6 @@ namespace MonoTorrent.Client
             this.announceCallback = announceCallback;
             this.scrapeCallback = scrapeCallback;
             int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
-            this.engineSettings = engineSettings;
             this.warningMessage = string.Empty;
             this.failureMessage = string.Empty;
 
@@ -245,7 +243,8 @@ namespace MonoTorrent.Client
 
 
         internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                    TorrentEvent clientEvent, string infohash, TrackerConnectionID id)
+                                    TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
+                                    bool requireEncryption)
         {
             IPAddress ipAddress;
             HttpWebRequest request;
@@ -269,7 +268,7 @@ namespace MonoTorrent.Client
             sb.Append("&supportcrypto=");
             sb.Append(ClientEngine.SupportsEncryption ? 1 : 0);
             sb.Append("&requirecrypto=");
-            sb.Append((this.engineSettings.MinEncryptionLevel != EncryptionType.None) && ClientEngine.SupportsEncryption ? 1 : 0);
+            sb.Append(requireEncryption ? 1 : 0);
             sb.Append("&uploaded=");
             sb.Append(bytesUploaded);
             sb.Append("&downloaded=");

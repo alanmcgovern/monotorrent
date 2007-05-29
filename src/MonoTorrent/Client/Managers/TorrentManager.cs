@@ -69,9 +69,10 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Fields
+        #region Private Member Variables
 
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
+        private ClientEngine engine;            // The engine that this torrent is registered with
         private FileManager fileManager;        // Controls all reading/writing to/from the disk
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
@@ -107,6 +108,11 @@ namespace MonoTorrent.Client
             get { return this.bitfield; }
         }
 
+        internal ClientEngine Engine
+        {
+            get { return this.engine; }
+            set { this.engine = value; }
+        }
 
         /// <summary>
         /// The Torrent contained within this TorrentManager
@@ -227,17 +233,23 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-
+        
         /// <summary>
         /// Creates a new TorrentManager instance.
         /// </summary>
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
-        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, EngineSettings engineSettings)
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
         {
+            if (torrent == null)
+                throw new ArgumentNullException("torrent");
+
             if (string.IsNullOrEmpty(savePath))
-                throw new TorrentException("Torrent savepath cannot be null");
+                throw new ArgumentNullException("savePath");
+
+            if (settings == null)
+                throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
             this.fileManager = new FileManager(torrent.Files, torrent.Name, savePath, torrent.PieceLength, FileAccess.ReadWrite);
@@ -249,7 +261,7 @@ namespace MonoTorrent.Client
             this.peers = new PeerList(this);
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
-            this.trackerManager = new TrackerManager(this, engineSettings);
+            this.trackerManager = new TrackerManager(this);
         }
 
         #endregion
@@ -295,7 +307,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public bool Equals(TorrentManager other)
         {
-            return (other == null) ? false : BitConverter.ToString(this.torrent.InfoHash) == BitConverter.ToString(other.torrent.InfoHash);
+            return (other == null) ? false : Toolbox.ByteMatch(this.torrent.infoHash, other.torrent.infoHash);
         }
 
 
@@ -305,7 +317,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return BitConverter.ToString(this.torrent.InfoHash).GetHashCode();
+            return Toolbox.HashCode(this.torrent.infoHash);
         }
 
 
@@ -329,6 +341,102 @@ namespace MonoTorrent.Client
         public double Progress
         {
             get { return (this.bitfield.PercentComplete); }
+        }
+
+        /// <summary>
+        /// Starts the TorrentManager
+        /// </summary>
+        public void Start()
+        {
+            // If the torrent was "paused", then just update the state to Downloading and forcefully
+            // make sure the peers begin sending/receiving again
+            if (this.state == TorrentState.Paused)
+            {
+                UpdateState(TorrentState.Downloading);
+                lock (this.resumeLock)
+                    this.ResumePeers();
+                return;
+            }
+
+            if (!this.fileManager.StreamsOpen)
+                this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
+
+
+            // If the torrent needs to be hashed, hash it. If it's already in the process of being hashed
+            // just return
+            if (this.fileManager.InitialHashRequired)
+            {
+                if (!this.hashChecked && !(this.state == TorrentState.Hashing))
+                {
+                    HashCheck(false);
+                    return;
+                }
+
+                else if (!this.hashChecked)
+                {
+                    return;
+                }
+            }
+
+            this.fileManager.InitialHashRequired = false;
+            if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
+                throw new TorrentException("Torrent is already running");
+
+            // If we loaded the fast resume data, we fire the piece hashed event as if we had read
+            //  the pieces from the harddrive.
+            if (this.loadedFastResume)
+            {
+                for (int i = 0; i < this.bitfield.Length; i++)
+                    RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
+
+                this.loadedFastResume = false;
+            }
+
+            this.TrackerManager.Scrape();
+            this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+            this.startTime = DateTime.Now;
+
+            if (this.Progress == 100.0)
+                UpdateState(TorrentState.Seeding);
+            else
+                UpdateState(TorrentState.Downloading);
+
+            ClientEngine.ConnectionManager.RegisterManager(this);
+            this.engine.Start();
+        }
+
+
+        /// <summary>
+        /// Stops the TorrentManager
+        /// </summary>
+        public WaitHandle Stop()
+        {
+            WaitHandle handle;
+
+            UpdateState(TorrentState.Stopped);
+
+            handle = this.trackerManager.Announce(TorrentEvent.Stopped);
+            lock (this.listLock)
+            {
+                while (this.peers.ConnectingToPeers.Count > 0)
+                    lock (this.peers.ConnectingToPeers[0])
+                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+
+                while (this.peers.ConnectedPeers.Count > 0)
+                    lock (this.peers.ConnectedPeers[0])
+                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+            }
+
+            if (this.fileManager.StreamsOpen)
+                this.FileManager.CloseFileStreams();
+
+            this.SaveFastResume();
+            this.peers.ClearAll();
+            this.monitor.Reset();
+            ClientEngine.ConnectionManager.UnregisterManager(this);
+            this.engine.Stop();
+
+            return handle;
         }
 
         #endregion
@@ -595,7 +703,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Pauses the TorrentManager
         /// </summary>
-        internal void Pause()
+        public void Pause()
         {
             lock (this.listLock)
             {
@@ -652,100 +760,6 @@ namespace MonoTorrent.Client
 
             else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
                 SetAmInterestedStatus(id, false);
-        }
-
-
-        /// <summary>
-        /// Starts the TorrentManager
-        /// </summary>
-        internal void Start()
-        {
-            // If the torrent was "paused", then just update the state to Downloading and forcefully
-            // make sure the peers begin sending/receiving again
-            if (this.state == TorrentState.Paused)
-            {
-                UpdateState(TorrentState.Downloading);
-                lock (this.resumeLock)
-                    this.ResumePeers();
-                return;
-            }
-
-            if (!this.fileManager.StreamsOpen)
-                this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
-
-
-            // If the torrent needs to be hashed, hash it. If it's already in the process of being hashed
-            // just return
-            if (this.fileManager.InitialHashRequired)
-            {
-                if (!this.hashChecked && !(this.state == TorrentState.Hashing))
-                {
-                    HashCheck(false);
-                    return;
-                }
-
-                else if (!this.hashChecked)
-                {
-                    return;
-                }
-            }
-
-            this.fileManager.InitialHashRequired = false;
-            if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
-                throw new TorrentException("Torrent is already running");
-
-            // If we loaded the fast resume data, we fire the piece hashed event as if we had read
-            //  the pieces from the harddrive.
-            if (this.loadedFastResume)
-            {
-                for (int i = 0; i < this.bitfield.Length; i++)
-                    RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
-
-                this.loadedFastResume = false;
-            }
-
-            this.TrackerManager.Scrape();
-            this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-            this.startTime = DateTime.Now;
-            ClientEngine.ConnectionManager.RegisterManager(this);
-
-            if (this.Progress == 100.0)
-                UpdateState(TorrentState.Seeding);
-            else
-                UpdateState(TorrentState.Downloading);
-        }
-
-
-        /// <summary>
-        /// Stops the TorrentManager
-        /// </summary>
-        internal WaitHandle Stop()
-        {
-            WaitHandle handle;
-
-            UpdateState(TorrentState.Stopped);
-
-            handle = this.trackerManager.Announce(TorrentEvent.Stopped);
-            lock (this.listLock)
-            {
-                while (this.peers.ConnectingToPeers.Count > 0)
-                    lock (this.peers.ConnectingToPeers[0])
-                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
-
-                while (this.peers.ConnectedPeers.Count > 0)
-                    lock (this.peers.ConnectedPeers[0])
-                        ClientEngine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
-            }
-
-            if (this.fileManager.StreamsOpen)
-                this.FileManager.CloseFileStreams();
-
-            this.SaveFastResume();
-            this.peers.ClearAll();
-            this.monitor.Reset();
-            ClientEngine.ConnectionManager.UnregisterManager(this);
-
-            return handle;
         }
 
 

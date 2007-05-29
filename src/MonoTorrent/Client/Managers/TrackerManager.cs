@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager, EngineSettings engineSettings)
+        public TrackerManager(TorrentManager manager)
         {
             this.manager = manager;
             this.currentTrackerTierIndex = 0;
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
             // Check if this tracker supports scraping
             this.trackerTiers = new TrackerTier[manager.Torrent.AnnounceUrls.Count];
             for (int i = 0; i < manager.Torrent.AnnounceUrls.Count; i++)
-                this.trackerTiers[i] = new TrackerTier(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived, engineSettings);
+                this.trackerTiers[i] = new TrackerTier(manager.Torrent.AnnounceUrls[i], this.announceReceived, this.scrapeReceived);
         }
         #endregion
 
@@ -158,7 +158,8 @@ namespace MonoTorrent.Client
             WaitHandle handle = tracker.Announce(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
-                                                clientEvent, this.infoHash, id);
+                                                clientEvent, this.infoHash, id,
+                                                this.manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None && ClientEngine.SupportsEncryption);
             return handle;
         }
 
