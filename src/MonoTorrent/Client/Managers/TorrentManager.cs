@@ -54,12 +54,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
-
         /// <summary>
         /// Event that's fired every time a piece is hashed
         /// </summary>
         public event EventHandler<PieceHashedEventArgs> PieceHashed;
-
 
         /// <summary>
         /// Event that's fired every time the TorrentManagers state changes
@@ -97,16 +95,11 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public ConnectionMonitor Monitor
-        {
-            get { return this.monitor; }
-        }
-
-
         internal BitField Bitfield
         {
             get { return this.bitfield; }
         }
+
 
         internal ClientEngine Engine
         {
@@ -114,12 +107,86 @@ namespace MonoTorrent.Client
             set { this.engine = value; }
         }
 
+
         /// <summary>
-        /// The Torrent contained within this TorrentManager
+        /// The DiskManager associated with this torrent
         /// </summary>
-        public Torrent Torrent
+        public FileManager FileManager
         {
-            get { return this.torrent; }
+            get { return this.fileManager; }
+        }
+
+
+        /// <summary>
+        /// True if this file has been hashchecked
+        /// </summary>
+        public bool HashChecked
+        {
+            get { return this.hashChecked; }
+            internal set { this.hashChecked = value; }
+        }
+
+
+        /// <summary>
+        /// The number of times we recieved a piece that failed the hashcheck
+        /// </summary>
+        public int HashFails
+        {
+            get { return this.hashFails; }
+        }
+
+        
+        /// <summary>
+        /// Records statistics such as Download speed, Upload speed and amount of data uploaded/downloaded
+        /// </summary>
+        public ConnectionMonitor Monitor
+        {
+            get { return this.monitor; }
+        }
+
+
+        /// <summary>
+        /// The number of peers that this torrent instance is connected to
+        /// </summary>
+        public int OpenConnections
+        {
+            get { return this.peers.ConnectedPeers.Count; }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public PeerList Peers
+        {
+            get { return this.peers; }
+        }
+
+
+        /// <summary>
+        /// The piecemanager for this TorrentManager
+        /// </summary>
+        public PieceManager PieceManager
+        {
+            get { return this.pieceManager; }
+        }
+
+
+        /// <summary>
+        /// The current progress of the torrent in percent
+        /// </summary>
+        public double Progress
+        {
+            get { return (this.bitfield.PercentComplete); }
+        }
+
+
+        /// <summary>
+        /// The directory to download the files to
+        /// </summary>
+        public string SavePath
+        {
+            get { return this.savePath; }
         }
 
 
@@ -160,64 +227,11 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The piecemanager for this TorrentManager
+        /// The Torrent contained within this TorrentManager
         /// </summary>
-        public PieceManager PieceManager
+        public Torrent Torrent
         {
-            get { return this.pieceManager; }
-        }
-
-
-        /// <summary>
-        /// The DiskManager associated with this torrent
-        /// </summary>
-        public FileManager FileManager
-        {
-            get { return this.fileManager; }
-        }
-
-
-        public PeerList Peers
-        {
-            get { return this.peers; }
-        }
-
-
-        /// <summary>
-        /// The number of peers that this torrent instance is connected to
-        /// </summary>
-        public int OpenConnections
-        {
-            get { return this.peers.ConnectedPeers.Count; }
-        }
-
-
-        /// <summary>
-        /// True if this file has been hashchecked
-        /// </summary>
-        public bool HashChecked
-        {
-            get { return this.hashChecked; }
-            internal set { this.hashChecked = value; }
-        }
-
-
-        /// <summary>
-        /// The number of times we recieved a piece that failed the hashcheck
-        /// </summary>
-        public int HashFails
-        {
-            get { return this.hashFails; }
-        }
-
-
-        /// <summary>
-        /// The directory to download the files to
-        /// </summary>
-        public string SavePath
-        {
-            get { return this.savePath; }
-            set { this.savePath = value; }
+            get { return this.torrent; }
         }
 
 
@@ -229,6 +243,7 @@ namespace MonoTorrent.Client
             get { return this.uploadingTo; }
             internal set { this.uploadingTo = value; }
         }
+        
         #endregion
 
 
@@ -245,7 +260,7 @@ namespace MonoTorrent.Client
             if (torrent == null)
                 throw new ArgumentNullException("torrent");
 
-            if (string.IsNullOrEmpty(savePath))
+            if (savePath == null)
                 throw new ArgumentNullException("savePath");
 
             if (settings == null)
@@ -269,20 +284,7 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        /// <summary>
-        /// 
-        /// </summary>
         public void Dispose()
-        {
-            this.Dispose(true);
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="disposing"></param>
-        public void Dispose(bool disposing)
         {
             this.fileManager.Dispose();
         }
@@ -335,13 +337,21 @@ namespace MonoTorrent.Client
             ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), forceFullScan);
         }
 
+
         /// <summary>
-        /// The current progress of the torrent in percent
+        /// Pauses the TorrentManager
         /// </summary>
-        public double Progress
+        public void Pause()
         {
-            get { return (this.bitfield.PercentComplete); }
+            lock (this.listLock)
+            {
+                // By setting the state to "paused", peers will not be dequeued from the either the
+                // sending or receiving queues, so no traffic will be allowed.
+                UpdateState(TorrentState.Paused);
+                this.SaveFastResume();
+            }
         }
+
 
         /// <summary>
         /// Starts the TorrentManager
@@ -455,7 +465,9 @@ namespace MonoTorrent.Client
             {
                 lock (this.listLock)
                 {
-                    if (this.peers.AvailablePeers.Contains(peer) || this.peers.ConnectedPeers.Contains(peer) || this.peers.ConnectingToPeers.Contains(peer))
+                    if (this.peers.AvailablePeers.Contains(peer) ||
+                        this.peers.ConnectedPeers.Contains(peer) ||
+                        this.peers.ConnectingToPeers.Contains(peer))
                         return 0;
 
                     this.peers.AvailablePeers.Add(peer);
@@ -504,18 +516,6 @@ namespace MonoTorrent.Client
 
             RaisePeersFound(new PeersAddedEventArgs(added));
             return added;
-        }
-
-        internal void RaisePeersFound(PeersAddedEventArgs peersAddedEventArgs)
-        {
-            if (this.PeersFound != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeersFound), peersAddedEventArgs);
-        }
-
-        private void AsyncPeersFound(object args)
-        {
-            if (this.PeersFound != null)
-                this.PeersFound(this, (PeersAddedEventArgs)args);
         }
 
 
@@ -688,32 +688,24 @@ namespace MonoTorrent.Client
             RaisePieceHashed(pieceHashedEventArgs);
         }
 
+
+        internal void RaisePeersFound(PeersAddedEventArgs peersAddedEventArgs)
+        {
+            if (this.PeersFound != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeersFound), peersAddedEventArgs);
+        }
+
         internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
         {
             if (this.PieceHashed != null)
                 ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPieceHashed), pieceHashedEventArgs);
         }
 
-        private void AsyncPieceHashed(object args)
+        internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
         {
-            if (this.PieceHashed != null)
-                this.PieceHashed(this, (PieceHashedEventArgs)args);
+            if (this.TorrentStateChanged != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTorrentStateChanged), e);
         }
-
-        /// <summary>
-        /// Pauses the TorrentManager
-        /// </summary>
-        public void Pause()
-        {
-            lock (this.listLock)
-            {
-                // By setting the state to "paused", peers will not be dequeued from the either the
-                // sending or receiving queues, so no traffic will be allowed.
-                UpdateState(TorrentState.Paused);
-                this.SaveFastResume();
-            }
-        }
-
 
         /// <summary>
         /// Restarts peers which have been suspended from downloading/uploading due to rate limiting
@@ -776,6 +768,24 @@ namespace MonoTorrent.Client
 
 
         #region Private Methods
+
+        private void AsyncPeersFound(object args)
+        {
+            if (this.PeersFound != null)
+                this.PeersFound(this, (PeersAddedEventArgs)args);
+        }
+
+        private void AsyncPieceHashed(object args)
+        {
+            if (this.PieceHashed != null)
+                this.PieceHashed(this, (PieceHashedEventArgs)args);
+        }
+
+        private void AsyncTorrentStateChanged(object args)
+        {
+            if (this.TorrentStateChanged != null)
+                this.TorrentStateChanged(this, (TorrentStateChangedEventArgs)args);
+        }
 
         /// <summary>
         /// Hash checks the supplied torrent
@@ -957,18 +967,6 @@ namespace MonoTorrent.Client
 
             RaiseTorrentStateChanged(e);
 
-        }
-
-        internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
-        {
-            if (this.TorrentStateChanged != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTorrentStateChanged), e);
-        }
-
-        private void AsyncTorrentStateChanged(object args)
-        {
-            if (this.TorrentStateChanged != null)
-                this.TorrentStateChanged(this, (TorrentStateChangedEventArgs)args);
         }
 
         #endregion Private Methods

@@ -535,7 +535,9 @@ namespace MonoTorrent.Client
             id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
 
             Logger.Log(id, "CE Sending to torrent manager");
-            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend, SocketFlags.None, new AsyncCallback(connectionManager.IncomingConnectionAccepted), id, out id.ErrorCode);
+            id.Peer.Connection.BeginSend(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend,
+                                         SocketFlags.None, new AsyncCallback(connectionManager.IncomingConnectionAccepted),
+                                         id, out id.ErrorCode);
             id.Peer.Connection.ProcessingQueue = false;
         }
 
