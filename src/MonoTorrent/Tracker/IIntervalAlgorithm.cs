@@ -30,10 +30,10 @@ using System;
 
 namespace MonoTorrent.Tracker
 {
-	///<summary>This interface is used to set
-	///</summary>
-	public interface IIntervalAlgorithm
-	{
+    ///<summary>This interface is used to set
+    ///</summary>
+    public interface IIntervalAlgorithm
+    {
         ///<summary>this method is called when a peer was added to the tracker</summary>
         void PeerAdded();
         
@@ -57,5 +57,5 @@ namespace MonoTorrent.Tracker
         {
             get;
         }
-	}
+    }
 }

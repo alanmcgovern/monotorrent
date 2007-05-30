@@ -264,7 +264,7 @@ namespace MonoTorrent.Common
 
         private Torrent()
         {
-			this.announceUrls = new List<stringCollection>();
+            this.announceUrls = new List<stringCollection>();
             this.comment = string.Empty;
             this.createdBy = string.Empty;
             this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);

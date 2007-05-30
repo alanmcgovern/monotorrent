@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
                 this.array[i] = ~this.array[i];
 
             this.SetLastBitsFalse();
-			this.trueCount = this.length - this.trueCount;
+            this.trueCount = this.length - this.trueCount;
             return this;
         }
 
@@ -137,25 +137,25 @@ namespace MonoTorrent.Client
         /// <returns>Itself</returns>
         internal BitField And(BitField value)
         {
-			AndFast(value);
-			UpdateTrueCount();
-			return this;
+            AndFast(value);
+            UpdateTrueCount();
+            return this;
         }
 
 
-		internal BitField AndFast(BitField value)
-		{
-			if (value == null)
-				throw new ArgumentNullException("value");
+        internal BitField AndFast(BitField value)
+        {
+            if (value == null)
+                throw new ArgumentNullException("value");
 
-			if (this.length != value.length)
-				throw new ArgumentException("BitFields are of different lengths", "value");
+            if (this.length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
 
-			for (int i = 0; i < this.array.Length; i++)
-				this.array[i] &= value.array[i];
+            for (int i = 0; i < this.array.Length; i++)
+                this.array[i] &= value.array[i];
 
-			return this;
-		}
+            return this;
+        }
 
         /// <summary>
         /// Performs binary NAND on all the elements of this bitarray against the elements of the supplied BitField
@@ -326,15 +326,15 @@ namespace MonoTorrent.Client
         }
 
 
-		internal bool AllFalseSecure()
-		{
-			SetLastBitsFalse();
-			for (int i = 0; i < this.array.Length; i++)
-				if (this.array[i] != 0)
-					return false;
+        internal bool AllFalseSecure()
+        {
+            SetLastBitsFalse();
+            for (int i = 0; i < this.array.Length; i++)
+                if (this.array[i] != 0)
+                    return false;
 
-			return true;
-		}
+            return true;
+        }
 
 
         /// <summary>

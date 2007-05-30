@@ -9,171 +9,171 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class @TYPE@Collection : MonoTorrentCollectionBase
-	{
-		#region Private Fields
+    public class @TYPE@Collection : MonoTorrentCollectionBase
+    {
+        #region Private Fields
 
 #if NET_2_0
-		private List<@TYPE@> list;
+        private List<@TYPE@> list;
 #else
-		private ArrayList list;
+        private ArrayList list;
 #endif
 
-		#endregion Private Fields
+        #endregion Private Fields
 
 
-		#region Constructors
+        #region Constructors
 
-		public @TYPE@Collection()
-		{
+        public @TYPE@Collection()
+        {
 #if NET_2_0
-			list = new List<@TYPE@>();
+            list = new List<@TYPE@>();
 #else
-			list = new ArrayList();
+            list = new ArrayList();
 #endif
-		}
+        }
 
-		public @TYPE@Collection(int capacity)
-		{
+        public @TYPE@Collection(int capacity)
+        {
 #if NET_2_0
-			list = new List<@TYPE@>(capacity);
+            list = new List<@TYPE@>(capacity);
 #else
-			list = new ArrayList(capacity);
+            list = new ArrayList(capacity);
 #endif
-		}
+        }
 
-		#endregion
+        #endregion
 
 
-		#region Methods
+        #region Methods
 
-		public @TYPE@ this[int index]
-		{
-			get { return (@TYPE@)list[index]; }
-			set { list[index] = value; }
-		}
+        public @TYPE@ this[int index]
+        {
+            get { return (@TYPE@)list[index]; }
+            set { list[index] = value; }
+        }
 
-		public int Add(@TYPE@ value)
-		{
+        public int Add(@TYPE@ value)
+        {
 #if NET_2_0
-			list.Add(value);
-			return list.Count;
+            list.Add(value);
+            return list.Count;
 #else
-			return this.list.Add(value);
+            return this.list.Add(value);
 #endif
-		}
+        }
 
-		public void Clear()
-		{
-			this.list.Clear();
-		}
+        public void Clear()
+        {
+            this.list.Clear();
+        }
 
-		public MonoTorrentCollectionBase Clone()
-		{
-			@TYPE@Collection clone = new @TYPE@Collection(list.Count);
-			for (int i = 0; i < list.Count; i++)
-				clone.Add(this[i]);
-			return clone;
-		}
+        public MonoTorrentCollectionBase Clone()
+        {
+            @TYPE@Collection clone = new @TYPE@Collection(list.Count);
+            for (int i = 0; i < list.Count; i++)
+                clone.Add(this[i]);
+            return clone;
+        }
 
-		public bool Contains(@TYPE@ value)
-		{
-			return list.Contains(value);
-		}
+        public bool Contains(@TYPE@ value)
+        {
+            return list.Contains(value);
+        }
 
-		public void CopyTo(Array array, int index)
-		{
-			((IList)list).CopyTo(array, index);
-		}
+        public void CopyTo(Array array, int index)
+        {
+            ((IList)list).CopyTo(array, index);
+        }
 
-		public int Count
-		{
-			get { return list.Count; }
-		}
+        public int Count
+        {
+            get { return list.Count; }
+        }
 
-		public IEnumerator GetEnumerator()
-		{
-			return list.GetEnumerator();
-		}
+        public IEnumerator GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
 
-		public int IndexOf(@TYPE@ value)
-		{
-			return list.IndexOf(value);
-		}
+        public int IndexOf(@TYPE@ value)
+        {
+            return list.IndexOf(value);
+        }
 
-		public void Insert(int index, @TYPE@ value)
-		{
-			list.Insert(index, value);
-		}
+        public void Insert(int index, @TYPE@ value)
+        {
+            list.Insert(index, value);
+        }
 
-		public bool IsSynchronized
-		{
-			get { return ((IList)list).IsSynchronized; }
-		}
+        public bool IsSynchronized
+        {
+            get { return ((IList)list).IsSynchronized; }
+        }
 
-		public void Remove(@TYPE@ value)
-		{
-			list.Remove(value);
-		}
+        public void Remove(@TYPE@ value)
+        {
+            list.Remove(value);
+        }
 
-		public void RemoveAt(int index)
-		{
-			list.RemoveAt(index);
-		}
+        public void RemoveAt(int index)
+        {
+            list.RemoveAt(index);
+        }
 
-		public object SyncRoot
-		{
-			get { return ((IList)list).SyncRoot; }
-		}
+        public object SyncRoot
+        {
+            get { return ((IList)list).SyncRoot; }
+        }
 
-		#endregion Methods
+        #endregion Methods
 
 
-		#region Explicit Implementation
+        #region Explicit Implementation
 
-		int IList.Add(object value)
-		{
-			return Add((@TYPE@)value);
-		}
+        int IList.Add(object value)
+        {
+            return Add((@TYPE@)value);
+        }
 
-		int IList.IndexOf(object value)
-		{
-			return IndexOf((@TYPE@)value);
-		}
+        int IList.IndexOf(object value)
+        {
+            return IndexOf((@TYPE@)value);
+        }
 
-		bool IList.Contains(object value)
-		{
-			return Contains((@TYPE@)value);
-		}
+        bool IList.Contains(object value)
+        {
+            return Contains((@TYPE@)value);
+        }
 
-		void IList.Insert(int index, object value)
-		{
-			Insert(index, (@TYPE@)value);
-		}
+        void IList.Insert(int index, object value)
+        {
+            Insert(index, (@TYPE@)value);
+        }
 
-		bool IList.IsFixedSize
-		{
-			get { return ((IList)list).IsFixedSize; }
-		}
+        bool IList.IsFixedSize
+        {
+            get { return ((IList)list).IsFixedSize; }
+        }
 
-		bool IList.IsReadOnly
-		{
-			get { return ((IList)list).IsReadOnly; }
+        bool IList.IsReadOnly
+        {
+            get { return ((IList)list).IsReadOnly; }
 
-		}
+        }
 
-		void IList.Remove(object value)
-		{
-			Remove((@TYPE@)value);
-		}
+        void IList.Remove(object value)
+        {
+            Remove((@TYPE@)value);
+        }
 
-		object IList.this[int index]
-		{
-			get { return this[index]; }
-			set { this[index] = (@TYPE@)value; }
-		}
+        object IList.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (@TYPE@)value; }
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }
 */

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-	public class StateUpdateEventArgs : EventArgs
-	{
-	}
+    public class StateUpdateEventArgs : EventArgs
+    {
+    }
 }

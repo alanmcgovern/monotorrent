@@ -9,170 +9,170 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class TrackerCollection : MonoTorrentCollectionBase
-	{
-		#region Private Fields
+    public class TrackerCollection : MonoTorrentCollectionBase
+    {
+        #region Private Fields
 
 #if NET_2_0
-		private List<MonoTorrent.Client.Tracker> list;
+        private List<MonoTorrent.Client.Tracker> list;
 #else
-		private ArrayList list;
+        private ArrayList list;
 #endif
 
-		#endregion Private Fields
+        #endregion Private Fields
 
 
-		#region Constructors
+        #region Constructors
 
-		public TrackerCollection()
-		{
+        public TrackerCollection()
+        {
 #if NET_2_0
-			list = new List<MonoTorrent.Client.Tracker>();
+            list = new List<MonoTorrent.Client.Tracker>();
 #else
-			list = new ArrayList();
+            list = new ArrayList();
 #endif
-		}
+        }
 
-		public TrackerCollection(int capacity)
-		{
+        public TrackerCollection(int capacity)
+        {
 #if NET_2_0
-			list = new List<MonoTorrent.Client.Tracker>(capacity);
+            list = new List<MonoTorrent.Client.Tracker>(capacity);
 #else
-			list = new ArrayList(capacity);
+            list = new ArrayList(capacity);
 #endif
-		}
+        }
 
-		#endregion
+        #endregion
 
 
-		#region Methods
+        #region Methods
 
-		public MonoTorrent.Client.Tracker this[int index]
-		{
-			get { return (MonoTorrent.Client.Tracker)list[index]; }
-			set { list[index] = value; }
-		}
+        public MonoTorrent.Client.Tracker this[int index]
+        {
+            get { return (MonoTorrent.Client.Tracker)list[index]; }
+            set { list[index] = value; }
+        }
 
-		public int Add(MonoTorrent.Client.Tracker value)
-		{
+        public int Add(MonoTorrent.Client.Tracker value)
+        {
 #if NET_2_0
-			list.Add(value);
-			return list.Count;
+            list.Add(value);
+            return list.Count;
 #else
-			return this.list.Add(value);
+            return this.list.Add(value);
 #endif
-		}
+        }
 
-		public void Clear()
-		{
-			this.list.Clear();
-		}
+        public void Clear()
+        {
+            this.list.Clear();
+        }
 
-		public MonoTorrentCollectionBase Clone()
-		{
-			TrackerCollection clone = new TrackerCollection(list.Count);
-			for (int i = 0; i < list.Count; i++)
-				clone.Add(this[i]);
-			return clone;
-		}
+        public MonoTorrentCollectionBase Clone()
+        {
+            TrackerCollection clone = new TrackerCollection(list.Count);
+            for (int i = 0; i < list.Count; i++)
+                clone.Add(this[i]);
+            return clone;
+        }
 
-		public bool Contains(MonoTorrent.Client.Tracker value)
-		{
-			return list.Contains(value);
-		}
+        public bool Contains(MonoTorrent.Client.Tracker value)
+        {
+            return list.Contains(value);
+        }
 
-		public void CopyTo(Array array, int index)
-		{
-			((IList)list).CopyTo(array, index);
-		}
+        public void CopyTo(Array array, int index)
+        {
+            ((IList)list).CopyTo(array, index);
+        }
 
-		public int Count
-		{
-			get { return list.Count; }
-		}
+        public int Count
+        {
+            get { return list.Count; }
+        }
 
-		public IEnumerator GetEnumerator()
-		{
-			return list.GetEnumerator();
-		}
+        public IEnumerator GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
 
-		public int IndexOf(MonoTorrent.Client.Tracker value)
-		{
-			return list.IndexOf(value);
-		}
+        public int IndexOf(MonoTorrent.Client.Tracker value)
+        {
+            return list.IndexOf(value);
+        }
 
-		public void Insert(int index, MonoTorrent.Client.Tracker value)
-		{
-			list.Insert(index, value);
-		}
+        public void Insert(int index, MonoTorrent.Client.Tracker value)
+        {
+            list.Insert(index, value);
+        }
 
-		public bool IsSynchronized
-		{
-			get { return ((IList)list).IsSynchronized; }
-		}
+        public bool IsSynchronized
+        {
+            get { return ((IList)list).IsSynchronized; }
+        }
 
-		public void Remove(MonoTorrent.Client.Tracker value)
-		{
-			list.Remove(value);
-		}
+        public void Remove(MonoTorrent.Client.Tracker value)
+        {
+            list.Remove(value);
+        }
 
-		public void RemoveAt(int index)
-		{
-			list.RemoveAt(index);
-		}
+        public void RemoveAt(int index)
+        {
+            list.RemoveAt(index);
+        }
 
-		public object SyncRoot
-		{
-			get { return ((IList)list).SyncRoot; }
-		}
+        public object SyncRoot
+        {
+            get { return ((IList)list).SyncRoot; }
+        }
 
-		#endregion Methods
+        #endregion Methods
 
 
-		#region Explicit Implementation
+        #region Explicit Implementation
 
-		int IList.Add(object value)
-		{
-			return Add((MonoTorrent.Client.Tracker)value);
-		}
+        int IList.Add(object value)
+        {
+            return Add((MonoTorrent.Client.Tracker)value);
+        }
 
-		int IList.IndexOf(object value)
-		{
-			return IndexOf((MonoTorrent.Client.Tracker)value);
-		}
+        int IList.IndexOf(object value)
+        {
+            return IndexOf((MonoTorrent.Client.Tracker)value);
+        }
 
-		bool IList.Contains(object value)
-		{
-			return Contains((MonoTorrent.Client.Tracker)value);
-		}
+        bool IList.Contains(object value)
+        {
+            return Contains((MonoTorrent.Client.Tracker)value);
+        }
 
-		void IList.Insert(int index, object value)
-		{
-			Insert(index, (MonoTorrent.Client.Tracker)value);
-		}
+        void IList.Insert(int index, object value)
+        {
+            Insert(index, (MonoTorrent.Client.Tracker)value);
+        }
 
-		bool IList.IsFixedSize
-		{
-			get { return ((IList)list).IsFixedSize; }
-		}
+        bool IList.IsFixedSize
+        {
+            get { return ((IList)list).IsFixedSize; }
+        }
 
-		bool IList.IsReadOnly
-		{
-			get { return ((IList)list).IsReadOnly; }
+        bool IList.IsReadOnly
+        {
+            get { return ((IList)list).IsReadOnly; }
 
-		}
+        }
 
-		void IList.Remove(object value)
-		{
-			Remove((MonoTorrent.Client.Tracker)value);
-		}
+        void IList.Remove(object value)
+        {
+            Remove((MonoTorrent.Client.Tracker)value);
+        }
 
-		object IList.this[int index]
-		{
-			get { return this[index]; }
-			set { this[index] = (MonoTorrent.Client.Tracker)value; }
-		}
+        object IList.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (MonoTorrent.Client.Tracker)value; }
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }

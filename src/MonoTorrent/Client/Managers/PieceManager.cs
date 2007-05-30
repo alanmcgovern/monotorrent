@@ -83,11 +83,11 @@ namespace MonoTorrent.Client
         {
             RequestMessage msg;
 
-			// If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-			int maxRequests = PieceManager.MaxRequests + (int)(id.Peer.Connection.Monitor.UploadSpeed / 10);
-			maxRequests = maxRequests > 100 ? 100 : maxRequests;
+            // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
+            int maxRequests = PieceManager.MaxRequests + (int)(id.Peer.Connection.Monitor.UploadSpeed / 10);
+            maxRequests = maxRequests > 100 ? 100 : maxRequests;
 
-			if (id.Peer.Connection.AmRequestingPiecesCount >= maxRequests)
+            if (id.Peer.Connection.AmRequestingPiecesCount >= maxRequests)
                 return false;
 
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
@@ -139,8 +139,8 @@ namespace MonoTorrent.Client
 
         internal RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers)
         {
-			//if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
-			//    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
+            //if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
+            //    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
 
             return this.piecePicker.PickPiece(id, otherPeers);
         }

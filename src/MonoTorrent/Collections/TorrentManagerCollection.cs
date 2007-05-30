@@ -10,170 +10,170 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-	public class TorrentManagerCollection : MonoTorrentCollectionBase
-	{
-		#region Private Fields
+    public class TorrentManagerCollection : MonoTorrentCollectionBase
+    {
+        #region Private Fields
 
 #if NET_2_0
-		private List<TorrentManager> list;
+        private List<TorrentManager> list;
 #else
-		private ArrayList list;
+        private ArrayList list;
 #endif
 
-		#endregion Private Fields
+        #endregion Private Fields
 
 
-		#region Constructors
+        #region Constructors
 
-		public TorrentManagerCollection()
-		{
+        public TorrentManagerCollection()
+        {
 #if NET_2_0
-			list = new List<TorrentManager>();
+            list = new List<TorrentManager>();
 #else
-			list = new ArrayList();
+            list = new ArrayList();
 #endif
-		}
+        }
 
-		public TorrentManagerCollection(int capacity)
-		{
+        public TorrentManagerCollection(int capacity)
+        {
 #if NET_2_0
-			list = new List<TorrentManager>(capacity);
+            list = new List<TorrentManager>(capacity);
 #else
-			list = new ArrayList(capacity);
+            list = new ArrayList(capacity);
 #endif
-		}
+        }
 
-		#endregion
+        #endregion
 
 
-		#region Methods
+        #region Methods
 
-		public TorrentManager this[int index]
-		{
-			get { return (TorrentManager)list[index]; }
-			set { list[index] = value; }
-		}
+        public TorrentManager this[int index]
+        {
+            get { return (TorrentManager)list[index]; }
+            set { list[index] = value; }
+        }
 
-		public int Add(TorrentManager value)
-		{
+        public int Add(TorrentManager value)
+        {
 #if NET_2_0
-			list.Add(value);
-			return list.Count;
+            list.Add(value);
+            return list.Count;
 #else
-			return this.list.Add(value);
+            return this.list.Add(value);
 #endif
-		}
+        }
 
-		public void Clear()
-		{
-			this.list.Clear();
-		}
+        public void Clear()
+        {
+            this.list.Clear();
+        }
 
-		public MonoTorrentCollectionBase Clone()
-		{
-			TorrentManagerCollection clone = new TorrentManagerCollection(list.Count);
-			for (int i = 0; i < list.Count; i++)
-				clone.Add(this[i]);
-			return clone;
-		}
+        public MonoTorrentCollectionBase Clone()
+        {
+            TorrentManagerCollection clone = new TorrentManagerCollection(list.Count);
+            for (int i = 0; i < list.Count; i++)
+                clone.Add(this[i]);
+            return clone;
+        }
 
-		public bool Contains(TorrentManager value)
-		{
-			return list.Contains(value);
-		}
+        public bool Contains(TorrentManager value)
+        {
+            return list.Contains(value);
+        }
 
-		public void CopyTo(Array array, int index)
-		{
-			((IList)list).CopyTo(array, index);
-		}
+        public void CopyTo(Array array, int index)
+        {
+            ((IList)list).CopyTo(array, index);
+        }
 
-		public int Count
-		{
-			get { return list.Count; }
-		}
+        public int Count
+        {
+            get { return list.Count; }
+        }
 
-		public IEnumerator GetEnumerator()
-		{
-			return list.GetEnumerator();
-		}
+        public IEnumerator GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
 
-		public int IndexOf(TorrentManager value)
-		{
-			return list.IndexOf(value);
-		}
+        public int IndexOf(TorrentManager value)
+        {
+            return list.IndexOf(value);
+        }
 
-		public void Insert(int index, TorrentManager value)
-		{
-			list.Insert(index, value);
-		}
+        public void Insert(int index, TorrentManager value)
+        {
+            list.Insert(index, value);
+        }
 
-		public bool IsSynchronized
-		{
-			get { return ((IList)list).IsSynchronized; }
-		}
+        public bool IsSynchronized
+        {
+            get { return ((IList)list).IsSynchronized; }
+        }
 
-		public void Remove(TorrentManager value)
-		{
-			list.Remove(value);
-		}
+        public void Remove(TorrentManager value)
+        {
+            list.Remove(value);
+        }
 
-		public void RemoveAt(int index)
-		{
-			list.RemoveAt(index);
-		}
+        public void RemoveAt(int index)
+        {
+            list.RemoveAt(index);
+        }
 
-		public object SyncRoot
-		{
-			get { return ((IList)list).SyncRoot; }
-		}
+        public object SyncRoot
+        {
+            get { return ((IList)list).SyncRoot; }
+        }
 
-		#endregion Methods
+        #endregion Methods
 
 
-		#region Explicit Implementation
+        #region Explicit Implementation
 
-		int IList.Add(object value)
-		{
-			return Add((TorrentManager)value);
-		}
+        int IList.Add(object value)
+        {
+            return Add((TorrentManager)value);
+        }
 
-		int IList.IndexOf(object value)
-		{
-			return IndexOf((TorrentManager)value);
-		}
+        int IList.IndexOf(object value)
+        {
+            return IndexOf((TorrentManager)value);
+        }
 
-		bool IList.Contains(object value)
-		{
-			return Contains((TorrentManager)value);
-		}
+        bool IList.Contains(object value)
+        {
+            return Contains((TorrentManager)value);
+        }
 
-		void IList.Insert(int index, object value)
-		{
-			Insert(index, (TorrentManager)value);
-		}
+        void IList.Insert(int index, object value)
+        {
+            Insert(index, (TorrentManager)value);
+        }
 
-		bool IList.IsFixedSize
-		{
-			get { return ((IList)list).IsFixedSize; }
-		}
+        bool IList.IsFixedSize
+        {
+            get { return ((IList)list).IsFixedSize; }
+        }
 
-		bool IList.IsReadOnly
-		{
-			get { return ((IList)list).IsReadOnly; }
+        bool IList.IsReadOnly
+        {
+            get { return ((IList)list).IsReadOnly; }
 
-		}
+        }
 
-		void IList.Remove(object value)
-		{
-			Remove((TorrentManager)value);
-		}
+        void IList.Remove(object value)
+        {
+            Remove((TorrentManager)value);
+        }
 
-		object IList.this[int index]
-		{
-			get { return this[index]; }
-			set { this[index] = (TorrentManager)value; }
-		}
+        object IList.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (TorrentManager)value; }
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }

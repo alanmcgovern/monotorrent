@@ -469,17 +469,17 @@ namespace MonoTorrent.Client
         }
 
 
-		internal void RaiseTrackerStateChange(TrackerStateChangedEventArgs e)
-		{
-			if (this.OnTrackerStateChange != null)
-				ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTrackerStateChange), e);
-		}
+        internal void RaiseTrackerStateChange(TrackerStateChangedEventArgs e)
+        {
+            if (this.OnTrackerStateChange != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTrackerStateChange), e);
+        }
 
-		private void AsyncTrackerStateChange(object args)
-		{
-			if (this.OnTrackerStateChange != null)
-				this.OnTrackerStateChange(this.manager, (TrackerStateChangedEventArgs)args);
-		}
+        private void AsyncTrackerStateChange(object args)
+        {
+            if (this.OnTrackerStateChange != null)
+                this.OnTrackerStateChange(this.manager, (TrackerStateChangedEventArgs)args);
+        }
 
         #endregion
     }

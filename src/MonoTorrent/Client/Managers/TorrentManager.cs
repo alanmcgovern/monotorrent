@@ -619,9 +619,9 @@ namespace MonoTorrent.Client
                         if (id.Peer.Connection.PiecesSent > 50)
                             SetChokeStatus(id, true);
 
-						// If the peer is interesting, try to queue up some piece requests off him
-						if(id.Peer.Connection.IsInterestingToMe)
-							while (this.pieceManager.AddPieceRequest(id)) { }
+                        // If the peer is interesting, try to queue up some piece requests off him
+                        if(id.Peer.Connection.IsInterestingToMe)
+                            while (this.pieceManager.AddPieceRequest(id)) { }
 
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
@@ -814,7 +814,7 @@ namespace MonoTorrent.Client
 
             this.hashChecked = true;
             UpdateState(TorrentState.Stopped);
-			SaveFastResume();
+            SaveFastResume();
 //#warning Don't *always* start the torrent in the future.
 //            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
 //                this.Start();

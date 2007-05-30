@@ -32,46 +32,46 @@ using System.Diagnostics;
 
 namespace MonoTorrent.Tracker
 {
-	
-	public class TestHandler : IHttpHandler
-	{
-		
-		public TestHandler()
-		{
-		}
-		
-		public void ProcessRequest(HttpContext context)
-		{
-		
+    
+    public class TestHandler : IHttpHandler
+    {
+        
+        public TestHandler()
+        {
+        }
+        
+        public void ProcessRequest(HttpContext context)
+        {
+        
             Debug.WriteLine("processing test");
             //Debug.WriteLine(HttpUtility.UrlDecode("%CFI1Zh%17%AF%E7%AA%01%D1%2B%FE%99%A6%B3G%95%DC%01"));            
             context.Response.Write("<HTML><BODY>");
-			//context.Response.ContentType = "text/plain";
-			//context.Response.Write("Hallo");
-			context.Response.Write("<table border=1>");
-			foreach (string key in context.Request.Params.AllKeys) {                
+            //context.Response.ContentType = "text/plain";
+            //context.Response.Write("Hallo");
+            context.Response.Write("<table border=1>");
+            foreach (string key in context.Request.Params.AllKeys) {                
                 //Debug.WriteLine(key);
                 
-			    context.Response.Write("<tr>");
-			    context.Response.Write("<td>");
+                context.Response.Write("<tr>");
+                context.Response.Write("<td>");
                     context.Response.Write(key);
                 context.Response.Write("</td>");
                 context.Response.Write("<td>");
                     context.Response.Write(context.Request[key]);
                 context.Response.Write("</td>");
                 context.Response.Write("</tr>");
-			}
-			
-			context.Response.Write("</table>");
-			context.Response.Write("</BODY></HTML>");
-		}
-		
-		public bool IsReusable
-		{
-			get {
-				return true;
-			}
-		}
-	}
-	
+            }
+            
+            context.Response.Write("</table>");
+            context.Response.Write("</BODY></HTML>");
+        }
+        
+        public bool IsReusable
+        {
+            get {
+                return true;
+            }
+        }
+    }
+    
 }

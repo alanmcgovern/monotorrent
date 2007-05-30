@@ -6,20 +6,20 @@ using System.Threading;
 namespace MonoTorrent.Client
 {
     public struct ReaderLock : IDisposable
-	{
-		public ReaderWriterLock Locker;
+    {
+        public ReaderWriterLock Locker;
 
-		public ReaderLock(ReaderWriterLock locker)
-		{
-			Locker = locker;
-			locker.AcquireReaderLock(1000);
-		}
+        public ReaderLock(ReaderWriterLock locker)
+        {
+            Locker = locker;
+            locker.AcquireReaderLock(1000);
+        }
 
-		public void Dispose()
-		{
-			Locker.ReleaseReaderLock();
-		}
-	}
+        public void Dispose()
+        {
+            Locker.ReleaseReaderLock();
+        }
+    }
 }
 
 

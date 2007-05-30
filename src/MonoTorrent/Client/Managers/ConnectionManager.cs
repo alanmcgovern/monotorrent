@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void EndCreateConnection(IAsyncResult result)
         {
-			bool fireConnected = false;
+            bool fireConnected = false;
             bool cleanUp = false;
             string reason = null;
             PeerId id = (PeerId)result.AsyncState;
@@ -227,7 +227,7 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
                         id.TorrentManager.Peers.AddPeer(id, PeerType.Connected);
 
-						fireConnected = true;
+                        fireConnected = true;
 
                         // If we have too many open connections, close the connection
                         if (this.openConnections > this.MaxOpenConnections)
@@ -314,7 +314,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-				if(fireConnected)
+                if(fireConnected)
                     RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Outgoing));
 
                 // Decrement the half open connections

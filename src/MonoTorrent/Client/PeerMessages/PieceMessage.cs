@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.PeerMessages
         private int startOffset;
         private int requestLength;
 
-		private byte[] data;
+        private byte[] data;
         #endregion
 
         #region Properties
@@ -159,9 +159,9 @@ namespace MonoTorrent.Client.PeerMessages
 
             this.dataOffset = offset;
 
-			this.data = BufferManager.EmptyBuffer;
-			ClientEngine.BufferManager.GetBuffer(ref this.data, buffer.Length);
-			Buffer.BlockCopy(buffer, 0, this.data, 0, buffer.Length);
+            this.data = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref this.data, buffer.Length);
+            Buffer.BlockCopy(buffer, 0, this.data, 0, buffer.Length);
         }
 
 
@@ -250,23 +250,23 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerId id)
         {
-			try
-			{
-				id.TorrentManager.PieceManager.ReceivedPieceMessage(id, this.data, this);
+            try
+            {
+                id.TorrentManager.PieceManager.ReceivedPieceMessage(id, this.data, this);
 
-				// Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-				while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
+                // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
+                while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
-				if (!id.Peer.Connection.ProcessingQueue)
-				{
-					id.Peer.Connection.ProcessingQueue = true;
-					id.ConnectionManager.MessageHandler.EnqueueSend(id);
-				}
-			}
-			finally
-			{
-				ClientEngine.BufferManager.FreeBuffer(ref this.data);
-			}
+                if (!id.Peer.Connection.ProcessingQueue)
+                {
+                    id.Peer.Connection.ProcessingQueue = true;
+                    id.ConnectionManager.MessageHandler.EnqueueSend(id);
+                }
+            }
+            finally
+            {
+                ClientEngine.BufferManager.FreeBuffer(ref this.data);
+            }
         }
 
 

@@ -168,7 +168,7 @@ namespace MonoTorrent.Common
                         this.client = Common.Client.Lphant;
                         break;
 
-					case ("lt"):
+                    case ("lt"):
                     case ("LT"):
                         this.client = Common.Client.LibTorrent;
                         break;

@@ -4,8 +4,8 @@ using System.Collections;
 
 namespace MonoTorrent
 {
-	public interface MonoTorrentCollectionBase : IList
-	{
+    public interface MonoTorrentCollectionBase : IList
+    {
         MonoTorrentCollectionBase Clone();
-	}
+    }
 }

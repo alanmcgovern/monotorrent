@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
 
                             // Fire the event to say we recieved a new message
                             //if (this.PeerMessageTransferred != null)
-                            //	this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
+                            //    this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
 
                             message.Handle(id);
                         }

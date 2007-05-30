@@ -236,11 +236,11 @@ namespace MonoTorrent.Tracker
 
             dict.Add("peers", torrentManager.GetPeersList(par));
             
-			dict.Add("min interval", new BEncodedNumber((int)IntervalAlgorithm.MinInterval));
+            dict.Add("min interval", new BEncodedNumber((int)IntervalAlgorithm.MinInterval));
 
-			if (par.trackerId == null)//FIXME is this the right behaivour 
-				par.trackerId = "monotorrent-tracker";
-			dict.Add("tracker id", new BEncodedString(par.trackerId));            
+            if (par.trackerId == null)//FIXME is this the right behaivour 
+                par.trackerId = "monotorrent-tracker";
+            dict.Add("tracker id", new BEncodedString(par.trackerId));            
 
             return dict;
         }

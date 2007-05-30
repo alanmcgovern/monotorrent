@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         private bool isSeeder;
         private string location;
         private string peerId;
-		private DateTime lastConnectionAttempt;
+        private DateTime lastConnectionAttempt;
 
         #endregion Private Fields
 
@@ -126,11 +126,11 @@ namespace MonoTorrent.Client
         }
 
 
-		internal DateTime LastConnectionAttempt
-		{
-			get { return this.lastConnectionAttempt; }
-			set { this.lastConnectionAttempt = value; }
-		}
+        internal DateTime LastConnectionAttempt
+        {
+            get { return this.lastConnectionAttempt; }
+            set { this.lastConnectionAttempt = value; }
+        }
         /// <summary>
         /// The location at which the peer can be connected to at
         /// </summary>
