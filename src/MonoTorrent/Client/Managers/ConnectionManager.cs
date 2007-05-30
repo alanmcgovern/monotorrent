@@ -555,7 +555,7 @@ namespace MonoTorrent.Client
                 // even if they are choked
                 if (ClientEngine.SupportsFastPeer && id.Peer.Connection.SupportsFastPeer)
                     for (int i = 0; i < id.Peer.Connection.AmAllowedFastPieces.Count; i++)
-                        id.Peer.Connection.EnQueue(new AllowedFastMessage(id.Peer.Connection.AmAllowedFastPieces[i]));
+                        id.Peer.Connection.Enqueue(new AllowedFastMessage(id.Peer.Connection.AmAllowedFastPieces[i]));
 
                 // Allow the auto processing of the send queue to commence
                 id.Peer.Connection.ProcessingQueue = false;
@@ -1051,7 +1051,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            IPeerMessageInternal msg = id.Peer.Connection.DeQueue();
+            IPeerMessageInternal msg = id.Peer.Connection.Dequeue();
             if (msg is PieceMessage)
                 id.Peer.Connection.PiecesSent++;
 

@@ -44,6 +44,46 @@ namespace MonoTorrent.Client
     public abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
+
+        private UInt32Collection amAllowedFastPieces;
+        private bool amChoking;
+        private bool amInterested;
+        private int amRequestingPiecesCount;
+        private BitField bitField;
+        private int bytesReceived;
+        private int bytesSent;
+        private int bytesToRecieve;
+        private int bytesToSend;
+        private Software clientApp;
+        private IPeerMessageInternal currentlySendingMessage;
+        private IEncryptor encryptor;
+        private UInt32Collection isAllowedFastPieces;
+        private bool isChoking;
+        private bool isInterested;
+        private bool isinterestingtoMe;
+        private int isRequestingPiecesCount;
+        private DateTime lastMessageReceived;
+        private DateTime lastMessageSent;
+        private MessagingCallback messageReceivedCallback;
+        private MessagingCallback messageSentCallback;
+        private ConnectionMonitor monitor;
+        private int piecesSent;
+        private ushort port;
+        private bool processingQueue;
+        internal byte[] recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
+        internal byte[] sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
+        private Queue<IPeerMessageInternal> sendQueue;                  // This holds the peermessages waiting to be sent
+        private IntCollection suggestedPieces;
+        private bool supportsFastPeer;
+
+        #endregion Member Variables
+
+
+        #region Properties
+
+        internal abstract byte[] AddressBytes { get; }
+
+
         // FIXME Use these to request pieces
         /// <summary>
         /// Contains the indexs of all the pieces we will let the peer download even if they are choked
@@ -53,20 +93,6 @@ namespace MonoTorrent.Client
             get { return this.amAllowedFastPieces; }
             set { this.amAllowedFastPieces = value; }
         }
-        private UInt32Collection amAllowedFastPieces;
-
-
-        /// <summary>
-        /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
-        /// </summary>
-        internal UInt32Collection IsAllowedFastPieces
-        {
-            get { return this.isAllowedFastPieces; }
-            set { this.isAllowedFastPieces = value; }
-        }
-        private UInt32Collection isAllowedFastPieces;
-
-        public abstract byte[] AddressBytes { get; }
 
 
         /// <summary>
@@ -77,7 +103,6 @@ namespace MonoTorrent.Client
             get { return this.amChoking; }
             internal set { this.amChoking = value; }
         }
-        private bool amChoking;
 
 
         /// <summary>
@@ -88,7 +113,6 @@ namespace MonoTorrent.Client
             get { return this.amInterested; }
             internal set { this.amInterested = value; }
         }
-        private bool amInterested;
 
 
         /// <summary>
@@ -99,7 +123,6 @@ namespace MonoTorrent.Client
             get { return this.amRequestingPiecesCount; }
             set { this.amRequestingPiecesCount = value; }
         }
-        private int amRequestingPiecesCount;
 
 
         /// <summary>
@@ -110,7 +133,6 @@ namespace MonoTorrent.Client
             get { return this.bitField; }
             set { this.bitField = value; }
         }
-        private BitField bitField;
 
 
         /// <summary>
@@ -121,7 +143,6 @@ namespace MonoTorrent.Client
             get { return this.bytesReceived; }
             set { this.bytesReceived = value; }
         }
-        private int bytesReceived;
 
 
         /// <summary>
@@ -132,7 +153,6 @@ namespace MonoTorrent.Client
             get { return this.bytesSent; }
             set { this.bytesSent = value; }
         }
-        private int bytesSent;
 
 
         /// <summary>
@@ -143,7 +163,6 @@ namespace MonoTorrent.Client
             get { return this.bytesToRecieve; }
             set { this.bytesToRecieve = value; }
         }
-        private int bytesToRecieve;
 
 
         /// <summary>
@@ -154,22 +173,7 @@ namespace MonoTorrent.Client
             get { return this.bytesToSend; }
             set { this.bytesToSend = value; }
         }
-        private int bytesToSend;
 
-        internal MessagingCallback MessageSentCallback
-        {
-            get { return this.messageSentCallback; }
-            set { this.messageSentCallback = value; }
-        }
-        private MessagingCallback messageSentCallback;
-
-
-        internal MessagingCallback MessageReceivedCallback
-        {
-            get { return this.messageReceivedCallback; }
-            set { this.messageReceivedCallback = value; }
-        }
-        private MessagingCallback messageReceivedCallback;
 
         /// <summary>
         /// Contains the version and name of the application this client is using.
@@ -179,7 +183,6 @@ namespace MonoTorrent.Client
             get { return this.clientApp; }
             internal set { this.clientApp = value; }
         }
-        private Software clientApp;
 
 
         /// <summary>
@@ -190,7 +193,6 @@ namespace MonoTorrent.Client
             get { return this.currentlySendingMessage; }
             set { this.currentlySendingMessage = value; }
         }
-        private IPeerMessageInternal currentlySendingMessage;
 
 
         /// <summary>
@@ -201,7 +203,16 @@ namespace MonoTorrent.Client
             get { return this.encryptor; }
             set { this.encryptor = value; }
         }
-        private IEncryptor encryptor;
+
+
+        /// <summary>
+        /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
+        /// </summary>
+        internal UInt32Collection IsAllowedFastPieces
+        {
+            get { return this.isAllowedFastPieces; }
+            set { this.isAllowedFastPieces = value; }
+        }
 
 
         /// <summary>
@@ -212,8 +223,7 @@ namespace MonoTorrent.Client
             get { return this.isChoking; }
             internal set { this.isChoking = value; }
         }
-        private bool isChoking;
-
+  
 
         /// <summary>
         /// True if the peer is currently interested in us
@@ -223,7 +233,6 @@ namespace MonoTorrent.Client
             get { return this.isInterested; }
             internal set { this.isInterested = value; }
         }
-        private bool isInterested;
 
 
         /// <summary>
@@ -235,7 +244,6 @@ namespace MonoTorrent.Client
             get { return this.isinterestingtoMe; }
             set { this.isinterestingtoMe = value; }
         }
-        private bool isinterestingtoMe;
 
 
         /// <summary>
@@ -246,7 +254,6 @@ namespace MonoTorrent.Client
             get { return this.isRequestingPiecesCount; }
             set { this.isRequestingPiecesCount = value; }
         }
-        private int isRequestingPiecesCount;
 
 
         /// <summary>
@@ -257,7 +264,6 @@ namespace MonoTorrent.Client
             get { return this.lastMessageReceived; }
             set { this.lastMessageReceived = value; }
         }
-        private DateTime lastMessageReceived;
 
 
         /// <summary>
@@ -268,7 +274,20 @@ namespace MonoTorrent.Client
             get { return this.lastMessageSent; }
             set { this.lastMessageSent = value; }
         }
-        private DateTime lastMessageSent;
+
+
+        internal MessagingCallback MessageSentCallback
+        {
+            get { return this.messageSentCallback; }
+            set { this.messageSentCallback = value; }
+        }
+
+
+        internal MessagingCallback MessageReceivedCallback
+        {
+            get { return this.messageReceivedCallback; }
+            set { this.messageReceivedCallback = value; }
+        }
 
 
         /// <summary>
@@ -278,7 +297,6 @@ namespace MonoTorrent.Client
         {
             get { return this.monitor; }
         }
-        private ConnectionMonitor monitor;
 
 
         /// <summary>
@@ -289,7 +307,6 @@ namespace MonoTorrent.Client
             get { return this.piecesSent; }
             internal set { this.piecesSent = value; }
         }
-        private int piecesSent;
 
 
         /// <summary>
@@ -300,7 +317,6 @@ namespace MonoTorrent.Client
             get { return this.port; }
             set { this.port = value; }
         }
-        private ushort port;
 
 
         /// <summary>
@@ -311,25 +327,6 @@ namespace MonoTorrent.Client
             get { return this.processingQueue; }
             set { this.processingQueue = value; }
         }
-        private bool processingQueue;
-
-
-        /// <summary>
-        /// The byte array used to buffer data while it's being received
-        /// </summary>
-        internal byte[] recieveBuffer = BufferManager.EmptyBuffer;
-
-
-        /// <summary>
-        /// The byte array used to buffer data before it's sent
-        /// </summary>
-        internal byte[] sendBuffer = BufferManager.EmptyBuffer;
-
-
-        /// <summary>
-        /// This holds the peermessages waiting to be sent
-        /// </summary>
-        private Queue<IPeerMessageInternal> sendQueue;
 
 
         /// <summary>
@@ -340,7 +337,6 @@ namespace MonoTorrent.Client
             get { return this.supportsFastPeer; }
             internal set { this.supportsFastPeer = value; }
         }
-        private bool supportsFastPeer;
 
 
         /// <summary>
@@ -351,11 +347,12 @@ namespace MonoTorrent.Client
         {
             get { return this.suggestedPieces; }
         }
-        private IntCollection suggestedPieces;
-        #endregion
+
+        #endregion Properties
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new connection to the peer at the specified IPEndpoint
         /// </summary>
@@ -372,79 +369,38 @@ namespace MonoTorrent.Client
             this.isAllowedFastPieces = new UInt32Collection();
             this.amAllowedFastPieces = new UInt32Collection();
         }
+
         #endregion
 
 
         #region Methods
 
-        internal void SentBytes(int bytesSent, TransferType type)
-        {
-            this.bytesSent += bytesSent;
-            this.monitor.BytesSent(bytesSent, type);
-        }
-
-        internal void ReceivedBytes(int bytesRecieved, TransferType type)
-        {
-            this.bytesReceived += bytesRecieved;
-            this.monitor.BytesReceived(bytesRecieved, type);
-        }
-
-        /// <summary>
-        /// Queues a PeerMessage up to be sent to the remote host
-        /// </summary>
-        /// <param name="msg"></param>
-        internal void EnQueue(IPeerMessageInternal msg)
-        {
-            sendQueue.Enqueue(msg);
-        }
-
-
         /// <summary>
         /// Returns the PeerMessage at the head of the queue
         /// </summary>
         /// <returns></returns>
-        internal IPeerMessageInternal DeQueue()
+        internal IPeerMessageInternal Dequeue()
         {
             return sendQueue.Dequeue();
         }
 
 
         /// <summary>
-        /// The length of the Message queue
+        /// Queues a PeerMessage up to be sent to the remote host
         /// </summary>
-        internal int QueueLength
+        /// <param name="msg"></param>
+        internal void Enqueue(IPeerMessageInternal msg)
         {
-            get { return this.sendQueue.Count; }
+            sendQueue.Enqueue(msg);
         }
 
-        internal virtual void StartEncryption()
-        {
-        }
 
-        internal virtual void StartEncryption(byte[] initialBuffer, int offset, int count)
-        {
-        }
-        #endregion
-
-
-        #region Async Methods
-        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerId id);
-
-        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
-
-        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
-
-        internal abstract void EndConnect(System.IAsyncResult result);
-
-        internal abstract int EndReceive(System.IAsyncResult result, out SocketError errorCode);
-
-        internal abstract int EndSend(System.IAsyncResult result, out SocketError errorCode);
-
-        public abstract void Dispose();
-        #endregion
-
-
-        internal void EnQueueAt(IPeerMessageInternal message, int index)
+        /// <summary>
+        /// Enqueues a peer message at the specified index
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="index"></param>
+        internal void EnqueueAt(IPeerMessageInternal message, int index)
         {
             int length = this.sendQueue.Count;
 
@@ -459,5 +415,83 @@ namespace MonoTorrent.Client
                     this.sendQueue.Enqueue(this.sendQueue.Dequeue());
                 }
         }
+
+
+        /// <summary>
+        /// The length of the Message queue
+        /// </summary>
+        internal int QueueLength
+        {
+            get { return this.sendQueue.Count; }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytesRecieved"></param>
+        /// <param name="type"></param>
+        internal void ReceivedBytes(int bytesRecieved, TransferType type)
+        {
+            this.bytesReceived += bytesRecieved;
+            this.monitor.BytesReceived(bytesRecieved, type);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytesSent"></param>
+        /// <param name="type"></param>
+        internal void SentBytes(int bytesSent, TransferType type)
+        {
+            this.bytesSent += bytesSent;
+            this.monitor.BytesSent(bytesSent, type);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal virtual void StartEncryption()
+        {
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="initialBuffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        internal virtual void StartEncryption(byte[] initialBuffer, int offset, int count)
+        {
+        }
+
+        #endregion
+
+
+        #region Async Methods
+
+        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerId id);
+
+        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+
+        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+
+        internal abstract void Dispose();
+
+        void IDisposable.Dispose()
+        {
+            Dispose();
+        }
+
+        internal abstract void EndConnect(System.IAsyncResult result);
+
+        internal abstract int EndReceive(System.IAsyncResult result, out SocketError errorCode);
+
+        internal abstract int EndSend(System.IAsyncResult result, out SocketError errorCode);
+
+        #endregion
     }
 }

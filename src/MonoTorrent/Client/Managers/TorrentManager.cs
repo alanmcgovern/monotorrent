@@ -626,7 +626,7 @@ namespace MonoTorrent.Client
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
                             id.Peer.Connection.LastMessageSent = DateTime.Now;
-                            id.Peer.Connection.EnQueue(new KeepAliveMessage());
+                            id.Peer.Connection.Enqueue(new KeepAliveMessage());
                         }
 
                         if (onhundredAndEightySecondsAgo > id.Peer.Connection.LastMessageReceived)
@@ -834,10 +834,10 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < length; i++)
             {
-                message = id.Peer.Connection.DeQueue();
+                message = id.Peer.Connection.Dequeue();
                 if (!(message is PieceMessage))
                 {
-                    id.Peer.Connection.EnQueue(message);
+                    id.Peer.Connection.Enqueue(message);
                     continue;
                 }
 
@@ -853,11 +853,11 @@ namespace MonoTorrent.Client
                 // If the peer supports fast peer, queue the message if it is an AllowedFast piece
                 // Otherwise send a reject message for the piece
                 if (id.Peer.Connection.AmAllowedFastPieces.Contains((uint)pieceMessage.PieceIndex))
-                    id.Peer.Connection.EnQueue(pieceMessage);
+                    id.Peer.Connection.Enqueue(pieceMessage);
                 else
                 {
                     id.Peer.Connection.IsRequestingPiecesCount--;
-                    id.Peer.Connection.EnQueue(new RejectRequestMessage(pieceMessage));
+                    id.Peer.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
                 }
             }
         }
@@ -902,7 +902,7 @@ namespace MonoTorrent.Client
                             // Have supression is disabled
                             // If the peer does not have the piece, then we send them a have message so they can request it off me
                             //else
-                            this.peers.ConnectedPeers[i].Peer.Connection.EnQueue(new HaveMessage(pieceIndex));
+                            this.peers.ConnectedPeers[i].Peer.Connection.Enqueue(new HaveMessage(pieceIndex));
                         }
         }
 
@@ -919,9 +919,9 @@ namespace MonoTorrent.Client
             id.Peer.Connection.AmInterested = amInterested;
 
             if (amInterested)
-                id.Peer.Connection.EnQueue(new InterestedMessage());
+                id.Peer.Connection.Enqueue(new InterestedMessage());
             else
-                id.Peer.Connection.EnQueue(new NotInterestedMessage());
+                id.Peer.Connection.Enqueue(new NotInterestedMessage());
         }
 
 
@@ -941,13 +941,13 @@ namespace MonoTorrent.Client
             {
                 Interlocked.Decrement(ref this.uploadingTo);
                 RejectPendingRequests(id);
-                id.Peer.Connection.EnQueueAt(new ChokeMessage(), 0);
+                id.Peer.Connection.EnqueueAt(new ChokeMessage(), 0);
                 Logger.Log("Choking: " + this.uploadingTo);
             }
             else
             {
                 Interlocked.Increment(ref this.uploadingTo);
-                id.Peer.Connection.EnQueue(new UnchokeMessage());
+                id.Peer.Connection.Enqueue(new UnchokeMessage());
                 Logger.Log("UnChoking: " + this.uploadingTo);
             }
         }

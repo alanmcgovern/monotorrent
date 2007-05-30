@@ -38,6 +38,7 @@ namespace MonoTorrent.Client.Encryption
     internal class TCPConnection : PeerConnectionBase
     {
         #region Member Variables
+
         public IPEndPoint PeerEndPoint
         {
             get { return this.peerEndPoint; }
@@ -46,10 +47,12 @@ namespace MonoTorrent.Client.Encryption
 
 
         private Socket peerSocket;
+
         #endregion
 
 
         #region Constructors
+
         public TCPConnection(string location, int bitfieldLength, IEncryptor encryptor)
             : base(bitfieldLength, encryptor)
         {
@@ -74,18 +77,15 @@ namespace MonoTorrent.Client.Encryption
             this.peerEndPoint = (IPEndPoint)socket.RemoteEndPoint;
             this.peerSocket = socket;
         }
+
         #endregion
 
 
         #region Async Methods
-        internal override void StartEncryption()
-        {
-            Encryptor.Start(peerSocket);
-        }
 
-        internal override void StartEncryption(byte[] initialBuffer, int offset, int count)
+        internal override byte[] AddressBytes
         {
-            Encryptor.Start(peerSocket, initialBuffer, offset, count);
+            get { return this.peerEndPoint.Address.GetAddressBytes(); }
         }
 
         internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerId id)
@@ -131,6 +131,11 @@ namespace MonoTorrent.Client.Encryption
             //this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
+        internal override void Dispose()
+        {
+            this.peerSocket.Close();
+        }
+
         internal override void EndConnect(IAsyncResult result)
         {
             this.peerSocket.EndConnect(result);
@@ -156,15 +161,16 @@ namespace MonoTorrent.Client.Encryption
             //return this.peerSocket.EndReceive(result, out errorCode);
         }
 
-        public override void Dispose()
+        internal override void StartEncryption()
         {
-            this.peerSocket.Close();
+            Encryptor.Start(peerSocket);
         }
-        #endregion
 
-        public override byte[] AddressBytes
+        internal override void StartEncryption(byte[] initialBuffer, int offset, int count)
         {
-            get { return this.peerEndPoint.Address.GetAddressBytes(); }
+            Encryptor.Start(peerSocket, initialBuffer, offset, count);
         }
+
+        #endregion
     }
 }

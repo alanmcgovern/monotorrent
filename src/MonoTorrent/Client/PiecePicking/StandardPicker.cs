@@ -571,10 +571,10 @@ namespace MonoTorrent.Client
                 IPeerMessageInternal message;
                 int length = id.Peer.Connection.QueueLength;
                 for (int i = 0; i < length; i++)
-                    if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
+                    if ((message = id.Peer.Connection.Dequeue()) is RequestMessage)
                         RemoveRequests(id, (RequestMessage)message);
                     else
-                        id.Peer.Connection.EnQueue(message);
+                        id.Peer.Connection.Enqueue(message);
             }
         }
 

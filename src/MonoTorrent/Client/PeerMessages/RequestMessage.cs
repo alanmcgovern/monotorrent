@@ -227,7 +227,7 @@ namespace MonoTorrent.Client.PeerMessages
             if (!id.Peer.Connection.AmChoking)
             {
                 id.Peer.Connection.IsRequestingPiecesCount++;
-                id.Peer.Connection.EnQueue(m);
+                id.Peer.Connection.Enqueue(m);
             }
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
@@ -237,10 +237,10 @@ namespace MonoTorrent.Client.PeerMessages
                 if (id.Peer.Connection.AmAllowedFastPieces.Contains((uint)this.pieceIndex))
                 {
                     id.Peer.Connection.IsRequestingPiecesCount++;
-                    id.Peer.Connection.EnQueue(m);
+                    id.Peer.Connection.Enqueue(m);
                 }
                 else
-                    id.Peer.Connection.EnQueue(new RejectRequestMessage(m));
+                    id.Peer.Connection.Enqueue(new RejectRequestMessage(m));
             }
         }
 

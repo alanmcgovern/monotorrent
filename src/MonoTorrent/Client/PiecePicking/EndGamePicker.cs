@@ -182,10 +182,10 @@ namespace MonoTorrent.Client
                     IPeerMessageInternal message;
                     int length = id.Peer.Connection.QueueLength;
                     for (int i = 0; i < length; i++)
-                        if ((message = id.Peer.Connection.DeQueue()) is RequestMessage)
+                        if ((message = id.Peer.Connection.Dequeue()) is RequestMessage)
                             RemoveRequests(id, (RequestMessage)message);
                         else
-                            id.Peer.Connection.EnQueue(message);
+                            id.Peer.Connection.Enqueue(message);
                 }
             }
             return;
@@ -242,7 +242,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < activeRequestees.Count; i++)
                     lock (activeRequestees[i])
                         if (activeRequestees[i].Peer.Connection != null)
-                            activeRequestees[i].Peer.Connection.EnQueueAt(new CancelMessage(message.PieceIndex, message.StartOffset, message.RequestLength), 0);
+                            activeRequestees[i].Peer.Connection.EnqueueAt(new CancelMessage(message.PieceIndex, message.StartOffset, message.RequestLength), 0);
 
                 activeRequestees.Clear();
                 this.blockRequestees.Remove(p.Blocks[blockIndex]);

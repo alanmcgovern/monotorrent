@@ -71,12 +71,12 @@ namespace MonoTorrent.Client.PeerConnections
             throw new NotImplementedException();
         }
 
-        public override void Dispose()
+        internal override void Dispose()
         {
             throw new NotImplementedException();
         }
 
-        public override byte[] AddressBytes
+        internal override byte[] AddressBytes
         {
             get { return null; }
         }

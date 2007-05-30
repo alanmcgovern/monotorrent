@@ -147,17 +147,17 @@ namespace MonoTorrent.Client.PeerMessages
             IPeerMessageInternal msg;
             for (int i = 0; i < id.Peer.Connection.QueueLength; i++)
             {
-                msg = id.Peer.Connection.DeQueue();
+                msg = id.Peer.Connection.Dequeue();
                 if (!(msg is PieceMessage))
                 {
-                    id.Peer.Connection.EnQueue(msg);
+                    id.Peer.Connection.Enqueue(msg);
                     continue;
                 }
 
                 PieceMessage piece = msg as PieceMessage;
                 if (!(piece.PieceIndex == this.pieceIndex && piece.StartOffset == this.startOffset && piece.RequestLength == this.requestLength))
                 {
-                    id.Peer.Connection.EnQueue(msg);
+                    id.Peer.Connection.Enqueue(msg);
                 }
                 else
                 {

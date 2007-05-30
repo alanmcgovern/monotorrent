@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
             if (msg == null)
                 return false;
 
-            id.Peer.Connection.EnQueue(msg);
+            id.Peer.Connection.Enqueue(msg);
             id.Peer.Connection.AmRequestingPiecesCount++;
             return true;
         }
