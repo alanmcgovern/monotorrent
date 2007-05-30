@@ -244,18 +244,13 @@ namespace MonoTorrent.Client
 
         internal WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
                                     TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
-                                    bool requireEncryption, string peerId)
+                                    bool requireEncryption, string peerId, string ipaddress, int port)
         {
-            IPAddress ipAddress;
             HttpWebRequest request;
             StringBuilder sb = new StringBuilder(256);
 
             this.updateSucceeded = true;        // If the update ends up failing, reset this to false.
             this.lastUpdated = DateTime.Now;
-
-            ipAddress = ConnectionListener.ListenEndPoint.Address;
-            if (ipAddress != null && (ipAddress == IPAddress.Any || ipAddress == IPAddress.Loopback))
-                ipAddress = null;
 
             sb.Append(this.announceUrl);
             sb.Append((this.announceUrl.IndexOf('?') == -1) ? '?' : '&');
@@ -264,7 +259,7 @@ namespace MonoTorrent.Client
             sb.Append("&peer_id=");
             sb.Append(peerId);
             sb.Append("&port=");
-            sb.Append(ConnectionListener.ListenEndPoint.Port);
+            sb.Append(port);
             sb.Append("&supportcrypto=");
             sb.Append(ClientEngine.SupportsEncryption ? 1 : 0);
             sb.Append("&requirecrypto=");
@@ -278,10 +273,10 @@ namespace MonoTorrent.Client
             sb.Append("&compact=1");    // Always use compact response
             sb.Append("&numwant=");
             sb.Append(100);
-            if (ipAddress != null)
+            if (ipaddress != null)
             {
                 sb.Append("&ip=");
-                sb.Append(ipAddress.ToString());
+                sb.Append(ipaddress.ToString());
             }
 
             // If we have not successfully sent the started event to this tier, override the passed in started event

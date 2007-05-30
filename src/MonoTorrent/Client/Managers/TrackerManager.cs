@@ -156,10 +156,13 @@ namespace MonoTorrent.Client
             this.lastUpdated = DateTime.Now;
             UpdateState(tracker, TrackerState.Announcing);
             bool supportsEncryption = ClientEngine.SupportsEncryption && manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None;
+
+#warning Fix this. It's nasty looking.
             WaitHandle handle = tracker.Announce(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
-                                                clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId);
+                                                clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
+                                                null, manager.Engine.Settings.ListenPort);
             return handle;
         }
 
