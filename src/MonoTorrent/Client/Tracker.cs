@@ -276,7 +276,7 @@ namespace MonoTorrent.Client
             if (ipaddress != null)
             {
                 sb.Append("&ip=");
-                sb.Append(ipaddress.ToString());
+                sb.Append(ipaddress);
             }
 
             // If we have not successfully sent the started event to this tier, override the passed in started event

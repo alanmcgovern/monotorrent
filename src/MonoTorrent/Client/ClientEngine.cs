@@ -48,11 +48,14 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
-        #region Global Supports
+        #region Global Constants
+
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = false;
         public static readonly bool SupportsDht = false;
+        internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
+       
         #endregion
 
 
@@ -64,20 +67,21 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
-        /// <summary>
-        /// This manager is used to control Send/Receive buffer allocations for all running torrents
-        /// </summary>
+
         internal static readonly BufferManager BufferManager = new BufferManager();
-
-        /// <summary>
-        /// The connection manager which manages all the connections for the library
-        /// </summary>
-        public ConnectionManager ConnectionManager
-        {
-            get { return this.connectionManager; }
-        }
-
         private ConnectionManager connectionManager;
+        private ConnectionListener listener;    // Listens for incoming connections and passes them off to the correct TorrentManager
+        private readonly string peerId;
+        private EngineSettings settings;
+        private System.Timers.Timer timer;      // The timer used to call the logic methods for the torrent managers
+        private int tickCount;
+        private TorrentManagerCollection torrents;
+        internal ReaderWriterLock torrentsLock;
+
+        #endregion
+
+
+        #region Properties
 
         /// <summary>
         /// True if the engine has been started
@@ -89,9 +93,12 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Listens for incoming connections and passes them off to the correct TorrentManager
+        /// The connection manager which manages all the connections for the library
         /// </summary>
-        private ConnectionListener listener;
+        public ConnectionManager ConnectionManager
+        {
+            get { return this.connectionManager; }
+        }
 
 
         /// <summary>
@@ -101,7 +108,6 @@ namespace MonoTorrent.Client
         {
             get { return peerId; }
         }
-        private readonly string peerId = GeneratePeerId();
 
 
         /// <summary>
@@ -112,20 +118,7 @@ namespace MonoTorrent.Client
             get { return this.settings; }
             set { this.settings = value; }
         }
-        private EngineSettings settings;
 
-
-        /// <summary>
-        /// The timer used to call the logic methods for the torrent managers
-        /// </summary>
-        private System.Timers.Timer timer;
-        private int tickCount;
-
-
-        /// <summary>
-        /// A logic tick will be performed every TickLength miliseconds
-        /// </summary>
-        internal const int TickLength = 500;
 
         /// <summary>
         /// The TorrentManager's loaded into the engine
@@ -135,9 +128,6 @@ namespace MonoTorrent.Client
             get { return this.torrents; }
             set { this.torrents = value; }
         }
-        private TorrentManagerCollection torrents;
-       
-        internal ReaderWriterLock torrentsLock = new ReaderWriterLock();
 
         #endregion
 
@@ -158,9 +148,12 @@ namespace MonoTorrent.Client
 
             this.connectionManager = new ConnectionManager(this);
             this.listener = new ConnectionListener(this);
+            this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
-            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
             this.torrents = new TorrentManagerCollection();
+            this.torrentsLock = new ReaderWriterLock();
+
+            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
         }
 
         #endregion
@@ -354,7 +347,6 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-
         private void AsyncStatsUpdate(object args)
         {
             if (StatsUpdate != null)
@@ -423,10 +415,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
-
-
-
-
     }
 }
