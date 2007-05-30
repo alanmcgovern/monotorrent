@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Private Member Variables
+        #region Member Variables
 
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
         private ClientEngine engine;            // The engine that this torrent is registered with
@@ -90,7 +90,7 @@ namespace MonoTorrent.Client
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
 
-        #endregion
+        #endregion Member Variables
 
 
         #region Properties

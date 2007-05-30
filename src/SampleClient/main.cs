@@ -67,7 +67,7 @@ namespace MonoTorrent
             TorrentSettings torrentDefaults = new TorrentSettings(4, 50, 0, 0);
 
             // Create an instance of the engine.
-            engine = new ClientEngine(engineSettings, torrentDefaults);
+            engine = new ClientEngine(engineSettings);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
