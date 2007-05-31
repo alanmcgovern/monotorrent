@@ -7,8 +7,12 @@ namespace MonoTorrent
 {
     public class BEncodedKeyValuePair
     {
+		#region Fields
+		
         private BEncodedString key;
         private BEncodedValue _value;
+
+		#endregion Fields
 
         public BEncodedString Key
         {

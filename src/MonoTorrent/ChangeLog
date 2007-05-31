@@ -1,5 +1,4 @@
 2007-05-31  Alan McGovern <alan.mcgovern@gmail.com> 
 
-	* ChangeLog: Adding changelogs
+	* Collections/BEncodedKeyValuePair.cs: Added #regions
 
-// created on 31/05/2007 at 03:40
