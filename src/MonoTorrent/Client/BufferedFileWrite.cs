@@ -7,6 +7,8 @@ namespace MonoTorrent.Client
 {
     internal class BufferedFileWrite
     {
+        #region Fields
+        
         public byte[] Buffer;
         public PeerId Id;
         public IPeerMessageInternal Message;
@@ -14,6 +16,10 @@ namespace MonoTorrent.Client
         public BitField BitField;
         public IntCollection UnhashedPieces;
 
+		#endregion Fields
+
+
+		#region Constructors
 
         public BufferedFileWrite(PeerId id, byte[] buffer, IPeerMessageInternal message, Piece piece, BitField bitfield,
             IntCollection unhashedPieces)
@@ -25,5 +31,7 @@ namespace MonoTorrent.Client
             this.BitField = bitfield;
             this.UnhashedPieces = unhashedPieces;
         }
+        
+		#endregion Constructors
     }
 }
