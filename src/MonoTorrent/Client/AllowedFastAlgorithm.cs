@@ -35,9 +35,6 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Description of AllowedFastAlgorithm.
-    /// </summary>
     public static class AllowedFastAlgorithm
     {
         public const int AllowedFastPieceCount = 10;
