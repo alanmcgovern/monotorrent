@@ -62,37 +62,37 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         #region Methods
-        internal int Encode(byte[] buffer, int offset)
+        internal int Encode(ArraySegment<byte> buffer, int offset)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new ProtocolException("The method or operation is not implemented.");
         }
 
-        internal void Decode(byte[] buffer, int offset, int length)
+        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
         {
-            this.dictionary = (BEncodedDictionary)BEncodedValue.Decode(buffer, offset, length);
+            this.dictionary = (BEncodedDictionary)BEncodedValue.Decode(buffer.Array, buffer.Offset + offset, length);
         }
 
         internal void Handle(PeerId id)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new ProtocolException("The method or operation is not implemented.");
         }
 
         public int ByteLength
         {
 
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new ProtocolException("The method or operation is not implemented."); }
         }
         #endregion
 
        
         #region IPeerMessageInternal Explicit Calls
 
-        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
         {
             return this.Encode(buffer, offset);
         }
 
-        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
         {
             this.Decode(buffer, offset, length);
         }

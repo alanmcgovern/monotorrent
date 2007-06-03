@@ -257,7 +257,7 @@ namespace MonoTorrent.Client
 
                             // Get a buffer to encode the handshake into, encode the message and send it
 
-                            id.Peer.Connection.Encryptor.AddInitialData(id.Peer.Connection.sendBuffer, 0, id.Peer.Connection.BytesToSend);
+                            id.Peer.Connection.Encryptor.AddInitialData(id.Peer.Connection.sendBuffer.Array, id.Peer.Connection.sendBuffer.Offset, id.Peer.Connection.BytesToSend);
                             id.Peer.Connection.StartEncryption();
                         }
                     }
@@ -356,7 +356,8 @@ namespace MonoTorrent.Client
                         // If the first byte is '7' and we're receiving more than 256 bytes (a made up number)
                         // then this is a piece message, so we add it as "data", not protocol. 128 bytes should filter out
                         // any non piece messages that happen to have '7' as the first byte.
-                        TransferType type = (id.Peer.Connection.recieveBuffer[0] == 7 && id.Peer.Connection.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
+                        #warning Use the constants defined in the messages
+						TransferType type = (id.Peer.Connection.recieveBuffer.Array[id.Peer.Connection.recieveBuffer.Offset] == 7 && id.Peer.Connection.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
                         id.Peer.Connection.ReceivedBytes(bytesReceived, type);
                         id.TorrentManager.Monitor.BytesReceived(bytesReceived, type);
 
@@ -582,7 +583,7 @@ namespace MonoTorrent.Client
 
                 // Decode the message length from the buffer. It is a big endian integer, so make sure
                 // it is converted to host endianness.
-                int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.Peer.Connection.recieveBuffer, 0));
+                int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.Peer.Connection.recieveBuffer.Array, id.Peer.Connection.recieveBuffer.Offset));
 
                 // Free the existing receive buffer and then get a new one which can
                 // contain the amount of bytes we need to receive.

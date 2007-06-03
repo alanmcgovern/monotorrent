@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
     {
         private struct AsyncMessageDetails
         {
-            public byte[] Buffer;
+            public ArraySegment<byte> Buffer;
             public int StartOffset;
             public int Count;
         }
@@ -66,11 +66,11 @@ namespace MonoTorrent.Client
             this.Stop();
         }
 
-        internal void EnqueueReceived(PeerId id, byte[] buffer, int startOffset, int count)
+        internal void EnqueueReceived(PeerId id, ArraySegment<byte> buffer, int startOffset, int count)
         {
-            byte[] messageBuffer = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref messageBuffer, buffer.Length);
-            Buffer.BlockCopy(buffer, startOffset, messageBuffer, 0, count);
+            ArraySegment<byte> messageBuffer = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref messageBuffer, buffer.Count);
+            Buffer.BlockCopy(buffer.Array, buffer.Offset + startOffset, messageBuffer.Array, messageBuffer.Offset, count);
 
             AsyncMessageDetails details = new AsyncMessageDetails();
             details.Buffer = messageBuffer;

@@ -91,30 +91,30 @@ namespace MonoTorrent.Client.PeerMessages
 
         
         #region Methods
-        internal int Encode(byte[] buffer, int offset)
+        internal int Encode(ArraySegment<byte> buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-            buffer[offset + 4] = MessageId;
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.messageLength)), 0, buffer, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer, offset + 5, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer, offset + 9, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.requestLength)), 0, buffer, offset + 13, 4);
+            buffer.Array[buffer.Offset + offset + 4] = MessageId;
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.messageLength)), 0, buffer.Array, buffer.Offset + offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer.Array, buffer.Offset + offset + 5, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer.Array, buffer.Offset + offset + 9, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.requestLength)), 0, buffer.Array, buffer.Offset + offset + 13, 4);
             return this.messageLength + 4;
         }
 
 
-        internal void Decode(byte[] buffer, int offset, int length)
+        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
+            this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + offset));
             offset += 4;
-            this.startOffset = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
+            this.startOffset = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + offset));
             offset += 4;
-            this.requestLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
+            this.requestLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + offset));
             offset += 4;
         }
 
@@ -173,12 +173,12 @@ namespace MonoTorrent.Client.PeerMessages
 
         #region IPeerMessageInternal Explicit Calls
 
-        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
         {
             return this.Encode(buffer, offset);
         }
 
-        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
         {
             this.Decode(buffer, offset, length);
         }

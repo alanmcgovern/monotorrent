@@ -48,10 +48,10 @@ namespace MonoTorrent.Client
         public const int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
         public const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
-        public static readonly byte[] EmptyBuffer = new byte[0];
-        private Queue<byte[]> largeMessageBuffers;
-        private Queue<byte[]> mediumMessageBuffers;
-        private Queue<byte[]> smallMessageBuffers;
+        public static readonly ArraySegment<byte> EmptyBuffer = new System.ArraySegment<byte>(new byte[0]);
+        private Queue<ArraySegment<byte>> largeMessageBuffers;
+        private Queue<ArraySegment<byte>> mediumMessageBuffers;
+        private Queue<ArraySegment<byte>> smallMessageBuffers;
 
 
 
@@ -60,9 +60,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public BufferManager()
         {
-            this.largeMessageBuffers = new Queue<byte[]>();
-            this.mediumMessageBuffers = new Queue<byte[]>();
-            this.smallMessageBuffers = new Queue<byte[]>();
+            this.largeMessageBuffers = new Queue<ArraySegment<byte>>();
+            this.mediumMessageBuffers = new Queue<ArraySegment<byte>>();
+            this.smallMessageBuffers = new Queue<ArraySegment<byte>>();
 
             // Preallocate 35 of each buffer to help avoid heap fragmentation due to pinning
             this.AllocateBuffers(20, BufferType.LargeMessageBuffer);
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
-        public void GetBuffer(ref byte[] buffer, BufferType type)
+        public void GetBuffer(ref ArraySegment<byte> buffer, BufferType type)
         {
             // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
             // a buffer leak somewhere and the buffers aren't being freed properly.
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
-        public void GetBuffer(ref byte[] buffer, int minCapacity)
+        public void GetBuffer(ref ArraySegment<byte> buffer, int minCapacity)
         {
             if (minCapacity <= SmallMessageBufferSize)
                 GetBuffer(ref buffer, BufferType.SmallMessageBuffer);
@@ -142,23 +142,23 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The buffer to add back into the pool</param>
         /// <returns></returns>
-        public void FreeBuffer(ref byte[] buffer)
+        public void FreeBuffer(ref ArraySegment<byte> buffer)
         {
             // If true, the buffer has already been freed, so we just return
             if (buffer == EmptyBuffer)
                 return;
 
             // If the buffer is a small buffer, add it into that smallbuffer queue
-            if (buffer.Length == SmallMessageBufferSize)
+            if (buffer.Count == SmallMessageBufferSize)
                 lock (this.smallMessageBuffers)
                     this.smallMessageBuffers.Enqueue(buffer);
 
-            else if (buffer.Length == MediumMessageBufferSize)
+            else if (buffer.Count == MediumMessageBufferSize)
                 lock (this.mediumMessageBuffers)
                     this.mediumMessageBuffers.Enqueue(buffer);
 
             // If the buffer is a large buffer, add it into the largebuffer queue
-            else if (buffer.Length == LargeMessageBufferSize)
+            else if (buffer.Count == LargeMessageBufferSize)
                 lock (this.largeMessageBuffers)
                     this.largeMessageBuffers.Enqueue(buffer);
 
@@ -174,16 +174,30 @@ namespace MonoTorrent.Client
         private void AllocateBuffers(int number, BufferType type)
         {
             if (type == BufferType.LargeMessageBuffer)
-                while (number-- > 0)
-                    this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
+                while (number > 0)
+				{
+					byte[] buffer = new byte[LargeMessageBufferSize * 6];
+					for(int i=0; i < 6; i++)
+						this.largeMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * LargeMessageBufferSize, LargeMessageBufferSize));
+					number -= 6;
+				}
 
             else if (type == BufferType.MediumMessageBuffer)
-                while (number-- > 0)
-                    this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
+                while (number > 0)
+					{
+						byte[] buffer = new byte[MediumMessageBufferSize * 6];
+						for(int i=0; i < 6; i++)
+							this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * MediumMessageBufferSize, MediumMessageBufferSize));
+						number -= 6;
+					}
 
             else if (type == BufferType.SmallMessageBuffer)
-                while (number-- > 0)
-                    this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
+                while (number > 0)
+						{
+							byte[] buffer = new byte[SmallMessageBufferSize * 6];
+							for(int i=0; i < 6; i++)
+								this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * SmallMessageBufferSize, SmallMessageBufferSize));
+						}
 
             else
                  throw new ArgumentException("Unsupported BufferType detected");

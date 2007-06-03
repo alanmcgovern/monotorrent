@@ -164,7 +164,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal PieceEvent ReceivedPieceMessage(PeerId id, byte[] buffer, PieceMessage message)
+        internal PieceEvent ReceivedPieceMessage(PeerId id, ArraySegment<byte> buffer, PieceMessage message)
         {
             return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
         }

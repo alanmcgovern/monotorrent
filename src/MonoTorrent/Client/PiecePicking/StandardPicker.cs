@@ -492,7 +492,7 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        public override PieceEvent ReceivedPieceMessage(PeerId id, byte[] recieveBuffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PeerId id, ArraySegment<byte> recieveBuffer, PieceMessage message)
         {
             lock (this.requests)
             {

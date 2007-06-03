@@ -42,12 +42,12 @@ namespace MonoTorrent.Client.PeerMessages
         /// </summary>
         /// <param name="id">The peer to decode a message from</param>
         /// <returns>The PeerMessage decoded from the recieve buffer</returns>
-        public static IPeerMessageInternal Decode(byte[] buffer, int offset, int count, TorrentManager manager)
+        public static IPeerMessageInternal Decode(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
         {
             IPeerMessageInternal message = null;
 
             // The first byte tells us what kind of message it is
-            switch (buffer[offset])
+            switch (buffer.Array[buffer.Offset + offset])
             {
                 case AllowedFastMessage.MessageId:
                     message = new AllowedFastMessage();
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.PeerMessages
 
 
                 case 21:                            // An "extended" message
-                    switch (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, ++offset)))
+                    switch (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + (++offset))))
                     {
                         default:
                             throw new NotSupportedException();

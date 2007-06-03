@@ -274,7 +274,7 @@ namespace MonoTorrent.Client
             int bytesToRead = 0;
             long pieceStartIndex = (long)this.pieceLength * pieceIndex;
 
-            byte[] hashBuffer = BufferManager.EmptyBuffer;
+            ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref hashBuffer, BufferType.LargeMessageBuffer);
 
             try
@@ -287,22 +287,22 @@ namespace MonoTorrent.Client
                     // Read in the entire piece
                     do
                     {
-                        bytesToRead = (this.pieceLength - totalRead) > hashBuffer.Length ? hashBuffer.Length : (this.pieceLength - totalRead);
+                        bytesToRead = (this.pieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (this.pieceLength - totalRead);
 
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
 
                         using (new ReaderLock(this.streamsLock))
-                            bytesRead = this.Read(hashBuffer, 0, pieceStartIndex, bytesToRead);
+                            bytesRead = this.Read(hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
 
-                        hasher.TransformBlock(hashBuffer, 0, bytesRead, hashBuffer, 0);
+                        hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
                         pieceStartIndex += bytesToRead;
                     } while (bytesRead != 0);
 
 
                     // Compute the hash of the piece
-                    hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                    hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
                     return hasher.Hash;
                 }
             }
@@ -414,7 +414,7 @@ namespace MonoTorrent.Client
         private void PerformWrite(BufferedFileWrite bufferedFileIO)
         {
             PeerId id = bufferedFileIO.Id;
-            byte[] recieveBuffer = bufferedFileIO.Buffer;
+            ArraySegment<byte> recieveBuffer = bufferedFileIO.Buffer;
             PieceMessage message = (PieceMessage)bufferedFileIO.Message;
             Piece piece = bufferedFileIO.Piece;
 
@@ -426,7 +426,7 @@ namespace MonoTorrent.Client
             {
                 // Calculate the index where we will start to write the data
                 long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                this.Write(recieveBuffer, message.DataOffset, writeIndex, message.RequestLength);
+                this.Write(recieveBuffer.Array, recieveBuffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
             }
 
             piece.Blocks[index].Written = true;
@@ -474,16 +474,16 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(PeerId id, byte[] recieveBuffer, PieceMessage message, Piece piece, IntCollection unhashedPieces)
+        internal void QueueWrite(PeerId id, ArraySegment<byte> recieveBuffer, PieceMessage message, Piece piece, IntCollection unhashedPieces)
         {
             lock (this.queueLock)
             {
                 // Request a new buffer from the buffermanager and copy the data from the receive buffer
                 // into this new buffer. This is needed as the main code will automatically release the receive buffer
                 // and we will lose the data.
-                byte[] buffer = BufferManager.EmptyBuffer;
+                ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
                 ClientEngine.BufferManager.GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
-                Buffer.BlockCopy(recieveBuffer, 0, buffer, 0, recieveBuffer.Length);
+                Buffer.BlockCopy(recieveBuffer.Array, recieveBuffer.Offset, buffer.Array, buffer.Offset, recieveBuffer.Count);
 
                 bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield, unhashedPieces));
                 SetHandleState(true);
@@ -498,7 +498,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The buffer to read the data into</param>
         /// <param name="message">The RequestMessage</param>
         /// <param name="piece"></param>
-        internal void QueueRead(PeerId id, byte[] recieveBuffer, RequestMessage message, Piece piece)
+        internal void QueueRead(PeerId id, ArraySegment<byte> recieveBuffer, RequestMessage message, Piece piece)
         {
             lock (this.queueLock)
             {

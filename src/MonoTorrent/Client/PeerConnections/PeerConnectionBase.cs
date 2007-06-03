@@ -70,8 +70,8 @@ namespace MonoTorrent.Client
         private int piecesSent;
         private ushort port;
         private bool processingQueue;
-        internal byte[] recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
-        internal byte[] sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
+        internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
+        internal ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
         private Queue<IPeerMessageInternal> sendQueue;                  // This holds the peermessages waiting to be sent
         private IntCollection suggestedPieces;
         private bool supportsFastPeer;
@@ -464,7 +464,7 @@ namespace MonoTorrent.Client
         /// <param name="initialBuffer"></param>
         /// <param name="offset"></param>
         /// <param name="count"></param>
-        internal virtual void StartEncryption(byte[] initialBuffer, int offset, int count)
+        internal virtual void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count)
         {
         }
 
@@ -475,9 +475,9 @@ namespace MonoTorrent.Client
 
         internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerId id);
 
-        internal abstract void BeginReceive(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+        internal abstract void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
 
-        internal abstract void BeginSend(byte[] buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+        internal abstract void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
 
         internal abstract void Dispose();
 

@@ -59,10 +59,10 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to encode the message to</param>
         /// <param name="offset">The offset at which to start encoding the data to</param>
         /// <returns>The number of bytes encoded into the buffer</returns>
-        internal int Encode(byte[] buffer, int offset)
+        internal int Encode(ArraySegment<byte> buffer, int offset)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer, offset, 4);
-            buffer[offset + 4] = (byte)MessageId;
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer.Array, buffer.Offset + offset, 4);
+            buffer.Array[buffer.Offset + offset + 4] = (byte)MessageId;
 
             return (messageLength + 4);
         }
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        public void Decode( byte[] buffer, int offset, int length)
+        public void Decode( ArraySegment<byte> buffer, int offset, int length)
         {
             // No decoding needed
         }
@@ -124,12 +124,12 @@ namespace MonoTorrent.Client.PeerMessages
 
         #region IPeerMessageInternal Explicit Calls
 
-        int IPeerMessageInternal.Encode(byte[] buffer, int offset)
+        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
         {
             return this.Encode(buffer, offset);
         }
 
-        void IPeerMessageInternal.Decode(byte[] buffer, int offset, int length)
+        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
         {
             this.Decode(buffer, offset, length);
         }

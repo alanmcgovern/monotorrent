@@ -202,7 +202,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override PieceEvent ReceivedPieceMessage(PeerId id, byte[] buffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PeerId id, ArraySegment<byte> buffer, PieceMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -219,7 +219,7 @@ namespace MonoTorrent.Client
                 {
                     long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
                     using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
-                        id.TorrentManager.FileManager.Write(buffer, message.DataOffset, writeIndex, message.RequestLength);
+                        id.TorrentManager.FileManager.Write(buffer.Array, buffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
                 }
 
                 p.Blocks[blockIndex].Received = true;

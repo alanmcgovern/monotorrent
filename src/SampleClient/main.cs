@@ -39,8 +39,14 @@ namespace MonoTorrent
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             Thread.GetDomain().UnhandledException += new UnhandledExceptionEventHandler(UnhandledException);
             listener = new Top10Listener(25);
-
-            StartEngine();
+            try
+            {
+                StartEngine();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
 
         private static void StartEngine()

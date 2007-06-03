@@ -294,7 +294,7 @@ namespace MonoTorrent.Client
 
                 // Handshake was probably delivered as initial payload. Retrieve it if its' vailable
                 if (id.Peer.Connection.Encryptor.IsInitialDataAvailable())
-                    bytesReceived = id.Peer.Connection.Encryptor.GetInitialData(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
+                    bytesReceived = id.Peer.Connection.Encryptor.GetInitialData(id.Peer.Connection.recieveBuffer.Array, id.Peer.Connection.recieveBuffer.Offset, id.Peer.Connection.BytesToRecieve);
 
                 id.Peer.Connection.BytesReceived += bytesReceived;
                 if (id.Peer.Connection.BytesReceived != id.Peer.Connection.BytesToRecieve)

@@ -9,7 +9,7 @@ namespace MonoTorrent.Client
     {
         #region Fields
         
-        public byte[] Buffer;
+        public ArraySegment<byte> Buffer;
         public PeerId Id;
         public IPeerMessageInternal Message;
         public Piece Piece;
@@ -21,7 +21,7 @@ namespace MonoTorrent.Client
 
 		#region Constructors
 
-        public BufferedFileWrite(PeerId id, byte[] buffer, IPeerMessageInternal message, Piece piece, BitField bitfield,
+        public BufferedFileWrite(PeerId id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece, BitField bitfield,
             IntCollection unhashedPieces)
         {
             this.Id = id;
