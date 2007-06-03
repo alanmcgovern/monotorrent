@@ -184,20 +184,21 @@ namespace MonoTorrent.Client
 
             else if (type == BufferType.MediumMessageBuffer)
                 while (number > 0)
-					{
-						byte[] buffer = new byte[MediumMessageBufferSize * 6];
-						for(int i=0; i < 6; i++)
-							this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * MediumMessageBufferSize, MediumMessageBufferSize));
-						number -= 6;
-					}
+				{
+					byte[] buffer = new byte[MediumMessageBufferSize * 6];
+					for(int i=0; i < 6; i++)
+						this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * MediumMessageBufferSize, MediumMessageBufferSize));
+					number -= 6;
+				}
 
             else if (type == BufferType.SmallMessageBuffer)
                 while (number > 0)
-						{
-							byte[] buffer = new byte[SmallMessageBufferSize * 6];
-							for(int i=0; i < 6; i++)
-								this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * SmallMessageBufferSize, SmallMessageBufferSize));
-						}
+				{
+					byte[] buffer = new byte[SmallMessageBufferSize * 6];
+					for(int i=0; i < 6; i++)
+						this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * SmallMessageBufferSize, SmallMessageBufferSize));
+					number -= 6;
+				}
 
             else
                  throw new ArgumentException("Unsupported BufferType detected");
