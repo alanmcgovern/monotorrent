@@ -39,12 +39,17 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public TrackerTier(stringCollection trackerUrls, AsyncCallback announceCallback,
+        internal TrackerTier(stringCollection trackerUrls, AsyncCallback announceCallback,
                         AsyncCallback scrapeCallback)
         {
-            this.trackers = new Tracker[trackerUrls.Count];
+            Uri result;
+            List<Tracker> trackerList = new List<Tracker>(trackerUrls.Count);
+
             for (int i = 0; i < trackerUrls.Count; i++)
-                this.trackers[i] = new Tracker(trackerUrls[i], announceCallback, scrapeCallback);
+                if (Uri.TryCreate(trackerUrls[i], UriKind.Absolute, out result) && result.Scheme != "udp")
+                    trackerList.Add(new Tracker(trackerUrls[i], announceCallback, scrapeCallback));
+
+            this.trackers = trackerList.ToArray();
         }
 
         #endregion Constructors
