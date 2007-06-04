@@ -260,10 +260,10 @@ namespace MonoTorrent.Client
             sb.Append(peerId);
             sb.Append("&port=");
             sb.Append(port);
-            sb.Append("&supportcrypto=");
-            sb.Append(ClientEngine.SupportsEncryption ? 1 : 0);
-            sb.Append("&requirecrypto=");
-            sb.Append(requireEncryption ? 1 : 0);
+            if(ClientEngine.SupportsEncryption)
+                sb.Append("&supportcrypto=1");
+            if (requireEncryption)
+                sb.Append("&requirecrypto=1");
             sb.Append("&uploaded=");
             sb.Append(bytesUploaded);
             sb.Append("&downloaded=");
@@ -292,7 +292,7 @@ namespace MonoTorrent.Client
                 sb.Append(clientEvent.ToString().ToLower());
             }
 
-            if ((trackerId != null) && (trackerId.Length > 0))
+            if (!string.IsNullOrEmpty(trackerId))
             {
                 sb.Append("&trackerid=");
                 sb.Append(trackerId);
