@@ -282,12 +282,15 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops all TorrentManagers which are registered to this engine
         /// </summary>
-        public void StopAll()
+        public WaitHandle[] StopAll()
         {
+            List<WaitHandle> handles = new List<WaitHandle>();
             using (new ReaderLock(this.torrentsLock))
                 for (int i = 0; i < torrents.Count; i++)
                     if (torrents[i].State != TorrentState.Stopped)
-                        torrents[i].Stop();
+                        handles.Add(torrents[i].Stop());
+
+            return handles.ToArray();
         }
 
 
