@@ -456,7 +456,7 @@ namespace MonoTorrent.Client.Encryption
                 if (initialBuffer != null)
                 {
                     int toCopy = Math.Min(initialBufferCount, length);
-                    Array.Copy(initialBuffer, 0, buffer, initialBufferOffset, toCopy);
+                    Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
 
                     if (toCopy == initialBufferCount)
                         initialBuffer = null;

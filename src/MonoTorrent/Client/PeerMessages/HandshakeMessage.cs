@@ -168,6 +168,10 @@ namespace MonoTorrent.Client.PeerMessages
         {
             int i = 0;
             protocolStringLength = (int)buffer.Array[buffer.Offset + i];                  // First byte is length
+
+#warning Hack
+            if (protocolStringLength != VersionInfo.ProtocolStringV100.Length)
+                protocolStringLength = VersionInfo.ProtocolStringV100.Length;
 			i++;
 			
             protocolString = System.Text.Encoding.ASCII.GetString(buffer.Array, buffer.Offset + i, protocolStringLength);
