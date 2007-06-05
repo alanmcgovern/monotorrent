@@ -610,6 +610,12 @@ namespace MonoTorrent.Client
             }
         }
 
+
+        public override void Reset()
+        {
+            this.unhashedPieces.Clear();
+            this.requests.Clear();
+        }
         #endregion
     }
 }

@@ -313,5 +313,10 @@ namespace MonoTorrent.Client
 
             blocks.Clear();
         }
+
+        public override void Reset()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

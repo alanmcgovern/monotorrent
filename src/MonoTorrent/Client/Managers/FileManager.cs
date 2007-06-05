@@ -67,6 +67,7 @@ namespace MonoTorrent.Client
         private object queueLock;                               // Used to synchronise access on the IO thread
         private string savePath;                                // The path where the base directory will be put
         internal ReaderWriterLock streamsLock;
+        private TorrentManager manager;
         private ManualResetEvent threadWait;                    // Used to signal the IO thread when some data is ready for it to work on
 
 
@@ -100,6 +101,11 @@ namespace MonoTorrent.Client
             get { return this.bufferedWrites.Count; }
         }
 
+        internal string SavePath
+        {
+            get { return this.savePath; }
+        }
+
         /// <summary>
         /// Returns true if the write streams are open.
         /// </summary>
@@ -119,8 +125,8 @@ namespace MonoTorrent.Client
         /// <param name="file">The TorrentFile to open/create on disk</param>
         /// <param name="savePath">The directory the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        internal FileManager(TorrentFile file, string savePath, int pieceLength)
-            : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
+        internal FileManager(TorrentManager manager, TorrentFile file, string savePath, int pieceLength)
+            : this(manager, new TorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
         {
         }
 
@@ -131,8 +137,8 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that the file should be contained in</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the file</param>
-        internal FileManager(TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
-            : this(new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
+        internal FileManager(TorrentManager manager, TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
+            : this(manager, new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
         {
         }
 
@@ -143,8 +149,8 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
-        internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
-            : this(files, baseDirectory, savePath, pieceLength, FileAccess.Read)
+        internal FileManager(TorrentManager manager, TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
+            : this(manager, files, baseDirectory, savePath, pieceLength, FileAccess.Read)
         {
         }
 
@@ -156,7 +162,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-        internal FileManager(TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
+        internal FileManager(TorrentManager manager, TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
         {
             if (files.Length == 1)
                 this.baseDirectory = string.Empty;
@@ -171,6 +177,7 @@ namespace MonoTorrent.Client
             this.hasher = new SHA1Managed();
             this.initialHashRequired = false;
             this.ioActive = true;
+            this.manager = manager;
             this.pieceLength = pieceLength;
             this.savePath = savePath;
             this.threadWait = new ManualResetEvent(false);
@@ -322,12 +329,13 @@ namespace MonoTorrent.Client
         {
             try
             {
+                string fastResumePath = manager.Torrent.TorrentPath + ".fresume";
                 // We can't load fast resume data if we don't have a filepath
-                if (!manager.Settings.FastResumeEnabled || string.IsNullOrEmpty(manager.Torrent.TorrentPath))
+                if (!manager.Settings.FastResumeEnabled || !File.Exists(fastResumePath))
                     return false;
 
                 XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
-                using (FileStream file = File.OpenRead(manager.Torrent.TorrentPath + ".fresume"))
+                using (FileStream file = File.OpenRead(fastResumePath))
                     manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
 
                 manager.loadedFastResume = true;
@@ -346,6 +354,9 @@ namespace MonoTorrent.Client
         /// <param name="path"></param>
         public void MoveFiles(string path, bool overWriteExisting)
         {
+            if (manager.State != TorrentState.Stopped)
+                throw new TorrentException("Cannot move the files when the torrent is active");
+
             using (new WriterLock(this.streamsLock))
             {
                 if (this.fileStreams != null)

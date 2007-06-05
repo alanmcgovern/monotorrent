@@ -64,6 +64,7 @@ namespace MonoTorrent.Client
         public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
         public abstract PieceEvent ReceivedPieceMessage(PeerId id, ArraySegment<byte> buffer, PieceMessage message);
         public abstract void RemoveRequests(PeerId id);
+        public abstract void Reset();
 
         #endregion
 

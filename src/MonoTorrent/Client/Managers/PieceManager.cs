@@ -220,5 +220,10 @@ namespace MonoTorrent.Client
         }
 
         #endregion Event Firing Code
+
+        public void Reset()
+        {
+            this.piecePicker.Reset();
+        }
     }
 }

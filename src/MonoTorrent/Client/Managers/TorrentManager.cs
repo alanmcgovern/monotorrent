@@ -82,7 +82,6 @@ namespace MonoTorrent.Client
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
         private RateLimiter rateLimiter;        // Contains the logic to decide how many chunks we can download
         internal readonly object resumeLock;    // Used to control access to the upload and download queues 
-        private string savePath;                // The path which the files in the torrent should be saved to
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
@@ -186,7 +185,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public string SavePath
         {
-            get { return this.savePath; }
+            get { return this.fileManager.SavePath; }
         }
 
 
@@ -267,11 +266,10 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
-            this.fileManager = new FileManager(torrent.Files, torrent.Name, savePath, torrent.PieceLength, FileAccess.ReadWrite);
+            this.fileManager = new FileManager(this, torrent.Files, torrent.Name, savePath, torrent.PieceLength, FileAccess.ReadWrite);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
             this.resumeLock = new object();
-            this.savePath = savePath;
             this.settings = settings;
             this.peers = new PeerList(this);
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
@@ -412,6 +410,7 @@ namespace MonoTorrent.Client
                 UpdateState(TorrentState.Downloading);
 
             engine.ConnectionManager.RegisterManager(this);
+            this.pieceManager.Reset();
             this.engine.Start();
         }
 
@@ -446,6 +445,7 @@ namespace MonoTorrent.Client
             this.SaveFastResume();
             this.peers.ClearAll();
             this.monitor.Reset();
+            this.pieceManager.Reset();
             this.engine.ConnectionManager.UnregisterManager(this);
             this.engine.Stop();
 
