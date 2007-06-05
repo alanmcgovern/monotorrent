@@ -103,7 +103,6 @@ namespace MonoTorrent.Client
             get { return this.trackerTiers; }
         }
         private TrackerTier[] trackerTiers;
-        private int currentTrackerTierIndex;
 
         #endregion
 
@@ -116,7 +115,6 @@ namespace MonoTorrent.Client
         public TrackerManager(TorrentManager manager)
         {
             this.manager = manager;
-            this.currentTrackerTierIndex = 0;
             this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
 
             this.announceReceived = new AsyncCallback(this.AnnounceReceived);

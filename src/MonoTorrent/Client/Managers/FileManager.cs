@@ -56,14 +56,12 @@ namespace MonoTorrent.Client
         private string baseDirectory;                           // The base directory into which all the files will be put
         private Queue<BufferedFileWrite> bufferedReads;         // A list of all the reads which are waiting to be performed
         private Queue<BufferedFileWrite> bufferedWrites;        // A list of all the writes which are waiting to be performed
-        private TorrentFile[] files;                            // The files that are in the torrent that we have to downoad
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
         private FileStream[] fileStreams;                       // The filestreams used to read/write to the files on disk
         private bool initialHashRequired;                       // Used to indicate whether we need to hashcheck the files or not
         private bool ioActive;                                  // Used to signal when the IO thread is running
         private Thread ioThread;                                // The dedicated thread used for reading/writing
-        private readonly int pieceLength;                       // The length of a piece in the torrent
         private object queueLock;                               // Used to synchronise access on the IO thread
         private string savePath;                                // The path where the base directory will be put
         internal ReaderWriterLock streamsLock;
@@ -90,7 +88,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int PieceLength
         {
-            get { return this.pieceLength; }
+            get { return this.manager.Torrent.PieceLength; }
         }
 
         /// <summary>
@@ -120,41 +118,6 @@ namespace MonoTorrent.Client
         #region Constructors
 
         /// <summary>
-        /// Creates a new FileManager with read-only access
-        /// </summary>
-        /// <param name="file">The TorrentFile to open/create on disk</param>
-        /// <param name="savePath">The directory the file should be contained in</param>
-        /// <param name="pieceLength">The length of a "piece" for this file</param>
-        internal FileManager(TorrentManager manager, TorrentFile file, string savePath, int pieceLength)
-            : this(manager, new TorrentFile[] { file }, string.Empty, savePath, pieceLength, FileAccess.Read)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new FileManager with the supplied FileAccess
-        /// </summary>
-        /// <param name="file">The TorrentFile you want to create/open on the disk</param>
-        /// <param name="savePath">The path to the directory that the file should be contained in</param>
-        /// <param name="pieceLength">The length of a "piece" for this file</param>
-        /// <param name="fileAccess">The access level for the file</param>
-        internal FileManager(TorrentManager manager, TorrentFile file, string savePath, int pieceLength, FileAccess fileAccess)
-            : this(manager, new TorrentFile[] { file }, string.Empty, savePath, pieceLength, fileAccess)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new FileManager with read-only access
-        /// </summary>
-        /// <param name="files">The TorrentFiles you want to create/open on the disk</param>
-        /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
-        /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
-        /// <param name="pieceLength">The length of a "piece" for this file</param>
-        internal FileManager(TorrentManager manager, TorrentFile[] files, string baseDirectory, string savePath, int pieceLength)
-            : this(manager, files, baseDirectory, savePath, pieceLength, FileAccess.Read)
-        {
-        }
-
-        /// <summary>
         /// Creates a new FileManager with the supplied FileAccess
         /// </summary>
         /// <param name="files">The TorrentFiles you want to create/open on the disk</param>
@@ -162,23 +125,17 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-        internal FileManager(TorrentManager manager, TorrentFile[] files, string baseDirectory, string savePath, int pieceLength, FileAccess fileAccess)
+        internal FileManager(TorrentManager manager, string savePath, string baseDirectory)
         {
-            if (files.Length == 1)
-                this.baseDirectory = string.Empty;
-            else
-                this.baseDirectory = baseDirectory;
-
+            this.baseDirectory = baseDirectory;
             this.streamsLock = new ReaderWriterLock();
             this.queueLock = new object();
             this.bufferedReads = new Queue<BufferedFileWrite>();
             this.bufferedWrites = new Queue<BufferedFileWrite>();
-            this.files = files;
             this.hasher = new SHA1Managed();
             this.initialHashRequired = false;
             this.ioActive = true;
             this.manager = manager;
-            this.pieceLength = pieceLength;
             this.savePath = savePath;
             this.threadWait = new ManualResetEvent(false);
         }
@@ -279,7 +236,7 @@ namespace MonoTorrent.Client
             int bytesRead = 0;
             int totalRead = 0;
             int bytesToRead = 0;
-            long pieceStartIndex = (long)this.pieceLength * pieceIndex;
+            long pieceStartIndex = (long)this.manager.Torrent.PieceLength * pieceIndex;
 
             ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref hashBuffer, BufferType.LargeMessageBuffer);
@@ -294,7 +251,7 @@ namespace MonoTorrent.Client
                     // Read in the entire piece
                     do
                     {
-                        bytesToRead = (this.pieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (this.pieceLength - totalRead);
+                        bytesToRead = (PieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (PieceLength - totalRead);
 
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
@@ -362,10 +319,10 @@ namespace MonoTorrent.Client
                 if (this.fileStreams != null)
                     this.CloseFileStreams();
 
-                for (int i = 0; i < this.files.Length; i++)
+                for (int i = 0; i < this.manager.Torrent.Files.Length; i++)
                 {
-                    string oldPath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
-                    string newPath = GenerateFilePath(this.files[i], this.baseDirectory, path);
+                    string oldPath = GenerateFilePath(this.manager.Torrent.Files[i], this.baseDirectory, this.savePath);
+                    string newPath = GenerateFilePath(this.manager.Torrent.Files[i], this.baseDirectory, path);
 
                     if (!File.Exists(oldPath))
                         continue;
@@ -393,11 +350,11 @@ namespace MonoTorrent.Client
         internal void OpenFileStreams(FileAccess fileAccess)
         {
             string filePath = null;
-            this.fileStreams = new FileStream[files.Length];
+            this.fileStreams = new FileStream[manager.Torrent.Files.Length];
 
             for (int i = 0; i < this.fileStreams.Length; i++)
             {
-                filePath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
+                filePath = GenerateFilePath(this.manager.Torrent.Files[i], this.baseDirectory, this.savePath);
 
                 if (File.Exists(filePath))
                     this.initialHashRequired = true;
@@ -408,7 +365,7 @@ namespace MonoTorrent.Client
                 // preallocated. Might change to not have to preallocate files in future,
                 // but there's no benefits to doing that.
 
-                this.fileSize += files[i].Length;
+                this.fileSize += manager.Torrent.Files[i].Length;
             }
 
             SetHandleState(true);
@@ -549,10 +506,10 @@ namespace MonoTorrent.Client
 
             for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
             {                                                   // files until we find the file which contains
-                if (offset < this.files[i].Length)        // the start of the data we want to read
+                if (offset < this.manager.Torrent.Files[i].Length)        // the start of the data we want to read
                     break;
 
-                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
+                offset -= this.manager.Torrent.Files[i].Length;           // Offset now contains the index of the data we want
             }                                                   // to read from fileStream[i].
 
             while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
@@ -648,10 +605,10 @@ namespace MonoTorrent.Client
 
             for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
             {                                                   // files until we find the file which contains
-                if (offset < this.files[i].Length)        // the start of the data we want to write
+                if (offset < this.manager.Torrent.Files[i].Length)        // the start of the data we want to write
                     break;
 
-                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
+                offset -= this.manager.Torrent.Files[i].Length;           // Offset now contains the index of the data we want
             }                                                   // to write to fileStream[i].
 
             while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
@@ -668,7 +625,7 @@ namespace MonoTorrent.Client
                     offset = 0; // Any further files need to be written from the beginning of the file
 
                     // Find the maximum number of bytes we can write before we reach the end of the file
-                    bytesWeCanWrite = this.files[i].Length - this.fileStreams[i].Position;
+                    bytesWeCanWrite = this.manager.Torrent.Files[i].Length - this.fileStreams[i].Position;
 
                     // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
                     // amount and let the rest of the data be written with the next filestream
