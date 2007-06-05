@@ -120,10 +120,11 @@ namespace MonoTorrent.Client
         }
 
 
+#warning Make this threadsafe usage
         /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
-        public TorrentManagerCollection Torrents
+        internal TorrentManagerCollection Torrents
         {
             get { return this.torrents; }
             set { this.torrents = value; }
@@ -198,12 +199,15 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Dispose()
         {
-            for (int i = 0; i < this.torrents.Count; i++)
+            using (new WriterLock(this.torrentsLock))
             {
-                if (torrents[i].State != TorrentState.Stopped)
-                    torrents[i].Stop().WaitOne();
+                while (this.torrents.Count > 0)
+                {
+                    if (torrents[0].State != TorrentState.Stopped)
+                        torrents[0].Stop().WaitOne();
 
-                Unregister(torrents[i]);
+                    Unregister(torrents[0]);
+                }
             }
 
             if (!this.listener.Disposed)

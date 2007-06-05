@@ -1229,6 +1229,9 @@ namespace MonoTorrent.Client
                     throw new TorrentException("TorrentManager is not registered in the connection manager");
 
                 this.torrents.Remove(torrentManager);
+
+                if (this.messageHandler.IsActive && this.torrents.Count == 0)
+                    this.messageHandler.Stop();
             }
         }
 

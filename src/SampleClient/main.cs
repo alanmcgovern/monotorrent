@@ -274,7 +274,8 @@ namespace MonoTorrent
 		private static void shutdown()
 		{
             for (int i = 0; i < torrents.Count; i++)
-                torrents[i].Stop().WaitOne();
+                if (torrents[i].State != TorrentState.Stopped)
+                    torrents[i].Stop().WaitOne();
 
 			foreach (TraceListener lst in Debug.Listeners)
 			{

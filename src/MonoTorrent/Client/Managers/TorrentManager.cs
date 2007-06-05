@@ -421,6 +421,9 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
+            if (this.state == TorrentState.Stopped)
+                throw new TorrentException("Torrent already stopped");
+
             WaitHandle handle;
 
             UpdateState(TorrentState.Stopped);
@@ -443,7 +446,7 @@ namespace MonoTorrent.Client
             this.SaveFastResume();
             this.peers.ClearAll();
             this.monitor.Reset();
-            engine.ConnectionManager.UnregisterManager(this);
+            this.engine.ConnectionManager.UnregisterManager(this);
             this.engine.Stop();
 
             return handle;

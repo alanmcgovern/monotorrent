@@ -107,7 +107,8 @@ namespace MonoTorrent.Client
             if (IsActive)
                 throw new InvalidOperationException("Message loop already started");
 
-            messageLoopActive = true;
+            this.messageLoopActive = true;
+            this.waitHandle.Reset();
             this.messageLoopThread = new Thread(new ThreadStart(MessageLoop));
             this.messageLoopThread.Start();
         }
@@ -117,9 +118,10 @@ namespace MonoTorrent.Client
             if (!IsActive)
                 throw new InvalidOperationException("Message loop is not running");
 
-            messageLoopActive = false;
+            this.messageLoopActive = false;
             this.waitHandle.Set();
             this.messageLoopThread.Join(500);
+            this.messageLoopThread = null;
         }
 
         #endregion Internal Methods
