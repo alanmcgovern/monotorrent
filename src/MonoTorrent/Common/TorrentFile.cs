@@ -40,17 +40,46 @@ namespace MonoTorrent.Common
     /// </summary>
     public class TorrentFile
     {
-        #region Member Variables
-        /// <summary>
-        /// The priority of this torrent file
-        /// </summary>
-        public Priority Priority
-        {
-            get { return this.priority; }
-            set { this.priority = value; }
-        }
-        private Priority priority;
+        #region Private Fields
 
+        private BitField bitfield;
+        private byte[] ed2k;
+        private int endPiece;
+        private long length;
+        private byte[] md5;
+        private string path;
+        private Priority priority;
+        private byte[] sha1;
+        private int startPiece;
+
+        #endregion Private Fields
+
+
+        #region Member Variables
+
+        /// <summary>
+        /// The number of pieces which have been successfully downloaded which are from this file
+        /// </summary>
+        public BitField BitField
+        {
+            get { return this.bitfield; }
+        }
+
+        /// <summary>
+        /// The ED2K hash of the file
+        /// </summary>
+        public byte[] ED2K
+        {
+            get { return ed2k; }
+        }
+
+        /// <summary>
+        /// The index of the last piece of this file
+        /// </summary>
+        public int EndPieceIndex
+        {
+            get { return this.endPiece; }
+        }
 
         /// <summary>
         /// The length of the file in bytes
@@ -59,30 +88,14 @@ namespace MonoTorrent.Common
         {
             get { return length; }
         }
-        private long length;
-
 
         /// <summary>
-        /// The index of the first piece of this file
+        /// The MD5 hash of the file
         /// </summary>
-        public int StartPieceIndex
+        public byte[] MD5
         {
-            get { return this.startPiece; }
-            internal set { this.startPiece = value; }
+            get { return this.md5; }
         }
-        private int startPiece;
-
-
-        /// <summary>
-        /// The index of the last piece of this file
-        /// </summary>
-        public int EndPieceIndex
-        {
-            get { return this.endPiece; }
-            internal set { this.endPiece = value; }
-        }
-        private int endPiece;
-
 
         /// <summary>
         /// In the case of a single torrent file, this is the name of the file.
@@ -93,28 +106,15 @@ namespace MonoTorrent.Common
         {
             get { return path; }
         }
-        private string path;
-
 
         /// <summary>
-        /// The MD5 hash of the file
+        /// The priority of this torrent file
         /// </summary>
-        public byte[] MD5
+        public Priority Priority
         {
-            get { return this.md5; }
+            get { return this.priority; }
+            set { this.priority = value; }
         }
-        private byte[] md5;
-
-
-        /// <summary>
-        /// The ED2K hash of the file
-        /// </summary>
-        public byte[] ED2K
-        {
-            get { return ed2k; }
-        }
-        private byte[] ed2k;
-
 
         /// <summary>
         /// The SHA1 hash of the file
@@ -123,38 +123,50 @@ namespace MonoTorrent.Common
         {
             get { return this.sha1; }
         }
-        private byte[] sha1;
+
+        /// <summary>
+        /// The index of the first piece of this file
+        /// </summary>
+        public int StartPieceIndex
+        {
+            get { return this.startPiece; }
+        }
+
         #endregion
 
 
         #region Constructors
-        public TorrentFile(string path, long length)
-            : this(path, length, Priority.Normal, null, null, null)
-        {
-        }
 
-        public TorrentFile(string path, long length, Priority priority)
-            : this(path, length, priority, null, null, null)
+        public TorrentFile(string path, long length, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
         {
-        }
-
-        /// <summary>
-        /// Class representing a file that is available for download from a .torrent file
-        /// </summary>
-        /// <param name="length">The length of the file in bytes</param>
-        /// <param name="path">The filename (and path) of the file</param>
-        /// <param name="md5">The MD5 hash of the file</param>
-        /// <param name="ed2k">The ED2K hash of the file</param>
-        /// <param name="sha1">The SHA1 hash of the file</param>
-        public TorrentFile(string path, long length, Priority priority, byte[] md5, byte[] ed2k, byte[] sha1)
-        {
-            this.path = path;
-            this.length = length;
-            this.priority = priority;
-            this.md5 = md5;
+            this.bitfield = new BitField(endIndex - startIndex + 1);
             this.ed2k = ed2k;
+            this.endPiece = endIndex;
+            this.length = length;
+            this.md5 = md5;
+            this.path = path;
+            this.priority = Priority.Normal;
             this.sha1 = sha1;
+            this.startPiece = startIndex;
         }
+
         #endregion
+
+
+        #region Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder(32);
+            sb.Append("File: ");
+            sb.Append(System.IO.Path.GetFileName(path));
+            sb.Append(" StartIndex: ");
+            sb.Append(StartPieceIndex);
+            sb.Append(" EndIndex: ");
+            sb.Append(EndPieceIndex);
+            return sb.ToString();
+        }
+
+        #endregion Methods
     }
 }

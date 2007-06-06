@@ -278,6 +278,46 @@ namespace MonoTorrent.Common
         #endregion
 
 
+        #region Public Methods
+
+        /// <summary>
+        /// Two Torrent instances are considered equal if they have the same infohash
+        /// </summary>
+        /// <param name="obj">The object to compare</param>
+        /// <returns>True if they are equal</returns>
+        public override bool Equals(object obj)
+        {
+            Torrent torrent = obj as Torrent;
+
+            if (torrent == null)
+                return false;
+
+            return Toolbox.ByteMatch(this.infoHash, torrent.infoHash);
+        }
+
+
+        /// <summary>
+        /// Returns the hashcode of the infohash byte[]
+        /// </summary>
+        /// <returns>int</returns>
+        public override int GetHashCode()
+        {
+            int result = 0;
+            for (int i = 0; i < infoHash.Length; i++)
+                result ^= infoHash[i];
+
+            return result;
+        }
+
+
+        public override string ToString()
+        {
+            return this.name;
+        }
+
+        #endregion Public Methods
+
+
         #region Private Methods
 
         /// <summary>
@@ -303,11 +343,16 @@ namespace MonoTorrent.Common
         {
             this.torrentFiles = new TorrentFile[list.Count];
             int i = 0;
+            int j = 0;
+            int startIndex = 0;
+            int endIndex = 0;
             long length;
             string path;
             byte[] md5sum;
             byte[] ed2k;
             byte[] sha1;
+            long totalSize = 0;
+
             StringBuilder sb = new StringBuilder(32);
 
             foreach (BEncodedDictionary dict in list)
@@ -366,11 +411,14 @@ namespace MonoTorrent.Common
                     }
                 }
 
-                this.torrentFiles[i++] = new TorrentFile(path, length, Priority.Normal, md5sum, ed2k, sha1);
+                startIndex = j;
+                totalSize += length;
+                endIndex = (int)(totalSize + pieceLength / 2) / this.pieceLength;
+                j = endIndex;
+
+                this.torrentFiles[i++] = new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1);
                 this.size += length;
             }
-
-            return;
         }
 
 
@@ -381,6 +429,8 @@ namespace MonoTorrent.Common
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
+            this.pieceLength = int.Parse(dictionary["piece length"].ToString());
+            
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
             {
                 switch (keypair.Key.Text)
@@ -431,9 +481,9 @@ namespace MonoTorrent.Common
                             this.name = keypair.Value.ToString();
                         break;
 
-                    case ("piece length"):
-                        this.pieceLength = int.Parse(keypair.Value.ToString());
+                    case ("piece length"):  // Already handled
                         break;
+
                     case ("pieces"):
                         LoadHashPieces(((BEncodedString)keypair.Value).TextBytes);
                         break;
@@ -460,51 +510,11 @@ namespace MonoTorrent.Common
                 byte[] sha1 = (dictionary.ContainsKey("sha1")) ? ((BEncodedString)dictionary["sha1"]).TextBytes : null;
 
                 this.torrentFiles = new TorrentFile[1];
-                this.torrentFiles[0] = new TorrentFile(path, length, Priority.Normal, md5, ed2k, sha1);
+                this.torrentFiles[0] = new TorrentFile(path, length, 0, (int)(size + (pieceLength / 2)) / pieceLength, md5, ed2k, sha1);
             }
         }
 
         #endregion Private Methods
-
-
-        #region Public Methods
-
-        /// <summary>
-        /// Two Torrent instances are considered equal if they have the same infohash
-        /// </summary>
-        /// <param name="obj">The object to compare</param>
-        /// <returns>True if they are equal</returns>
-        public override bool Equals(object obj)
-        {
-            Torrent torrent = obj as Torrent;
-
-            if (torrent == null)
-                return false;
-
-            return Toolbox.ByteMatch(this.infoHash, torrent.infoHash);
-        }
-
-
-        /// <summary>
-        /// Returns the hashcode of the infohash byte[]
-        /// </summary>
-        /// <returns>int</returns>
-        public override int GetHashCode()
-        {
-            int result = 0;
-            for (int i = 0; i < infoHash.Length; i++)
-                result ^= infoHash[i];
-
-            return result;
-        }
-
-
-        public override string ToString()
-        {
-            return this.name;
-        }
-
-        #endregion Public Methods
 
 
         #region Loading methods
@@ -555,9 +565,9 @@ namespace MonoTorrent.Common
                 using (WebClient client = new WebClient())
                     client.DownloadFile(url, location);
             }
-            catch
+            catch(Exception ex)
             {
-                throw new TorrentException("Could not download .torrent file from the specified url");
+                throw new TorrentException("Could not download .torrent file from the specified url", ex);
             }
 
             return Torrent.Load(location);
@@ -566,19 +576,15 @@ namespace MonoTorrent.Common
 
         private static Torrent Load(Stream stream, string path)
         {
-            using (BinaryReader reader = new BinaryReader(stream, new UTF8Encoding()))
+            try
             {
-                try
-                {
-                    BEncodedDictionary torrentDictionary = (BEncodedDictionary)BEncodedValue.Decode(reader);
-                    Torrent t = Torrent.Load(torrentDictionary);
-                    t.torrentPath = path;
-                    return t;
-                }
-                catch (BEncodingException ex)
-                {
-                    throw new TorrentException("Invalid torrent file specified", ex);
-                }
+                Torrent t = Torrent.Load((BEncodedDictionary)BEncodedValue.Decode(stream));
+                t.torrentPath = path;
+                return t;
+            }
+            catch (BEncodingException ex)
+            {
+                throw new TorrentException("Invalid torrent file specified", ex);
             }
         }
 
@@ -666,16 +672,6 @@ namespace MonoTorrent.Common
                     default:
                         break;
                 }
-            }
-
-            int i = 0;
-            long totalSize = 0;
-            foreach (TorrentFile file in t.torrentFiles)
-            {
-                file.StartPieceIndex = i;
-                totalSize += file.Length;
-                file.EndPieceIndex = (int)(totalSize / t.pieceLength + (totalSize % t.pieceLength > 0 ? 0 : -1));
-                i = file.EndPieceIndex;
             }
 
             return t;

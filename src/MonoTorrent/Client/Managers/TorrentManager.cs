@@ -700,6 +700,13 @@ namespace MonoTorrent.Client
 
         internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
         {
+            int index = pieceHashedEventArgs.PieceIndex;
+            for (int i = 0; i < this.torrent.Files.Length; i++)
+                if (index >= this.torrent.Files[i].StartPieceIndex && index <= this.torrent.Files[i].EndPieceIndex)
+                    this.torrent.Files[i].BitField[index - this.torrent.Files[i].StartPieceIndex] = true;
+                else if (index < this.torrent.Files[i].StartPieceIndex)
+                    break;
+
             if (this.PieceHashed != null)
                 ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPieceHashed), pieceHashedEventArgs);
         }
