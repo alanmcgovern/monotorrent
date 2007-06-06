@@ -31,6 +31,7 @@
 
 using System.Net.Sockets;
 using System;
+using MonoTorrent.Common;
 namespace MonoTorrent.Client
 {
     /// <summary>

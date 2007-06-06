@@ -179,8 +179,15 @@ namespace MonoTorrent.Client
             {
                 if (id.Peer.Connection.Encryptor is NoEncryption && ClientEngine.SupportsEncryption)
                 {
-                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.
-                    id.Peer.Connection.Encryptor = new PeerBEncryption(engine.Torrents, engine.Settings.MinEncryptionLevel);
+                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.b
+                    byte[][] sKeys;
+                    using (new ReaderLock(engine.torrentsLock))
+                    {
+                        sKeys = new byte[engine.Torrents.Count][];
+                        for (int i = 0; i < engine.Torrents.Count; i++)
+                            sKeys[i] = engine.Torrents[i].Torrent.infoHash;
+                    }
+                    id.Peer.Connection.Encryptor = new PeerBEncryption(sKeys, engine.Settings.MinEncryptionLevel);
                     id.Peer.Connection.Encryptor.SetPeerConnectionID(id);
                     id.Peer.Connection.Encryptor.onEncryptorReady += onEncryptorReadyHandler;
                     id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
