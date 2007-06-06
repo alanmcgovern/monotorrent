@@ -462,7 +462,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// Returns the percentage of pieces that are true
         /// </summary>
-        internal double PercentComplete
+        public double PercentComplete
         {
             get { return (double)this.trueCount / this.length * 100.0; }
         }

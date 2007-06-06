@@ -173,9 +173,9 @@ namespace MonoTorrent
                         sb.Append(Environment.NewLine);
                         sb.Append("Torrent State:    "); sb.Append(manager.State);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds());
+                        sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds);
                         sb.Append(Environment.NewLine);
-                        sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs());
+                        sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs);
                         sb.Append(Environment.NewLine);
                         sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
                         sb.Append(Environment.NewLine);

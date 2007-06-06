@@ -102,16 +102,19 @@ namespace MonoTorrent.Client
         /// Returns the number of Leechs we are currently connected to
         /// </summary>
         /// <returns></returns>
-        public int Leechs()
+        public int Leechs
         {
-            int leechs = 0;
-            lock (this.manager.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        if (!this.connectedPeers[i].Peer.IsSeeder)
-                            leechs++;
+            get
+            {
+                int leechs = 0;
+                lock (this.manager.listLock)
+                    for (int i = 0; i < this.connectedPeers.Count; i++)
+                        lock (this.connectedPeers[i])
+                            if (!this.connectedPeers[i].Peer.IsSeeder)
+                                leechs++;
 
-            return leechs;
+                return leechs;
+            }
         }
 
 
@@ -119,15 +122,18 @@ namespace MonoTorrent.Client
         /// Returns the number of Seeds we are currently connected to
         /// </summary>
         /// <returns></returns>
-        public int Seeds()
+        public int Seeds
         {
-            int seeds = 0;
-            lock (this.manager.listLock)
-                for (int i = 0; i < this.connectedPeers.Count; i++)
-                    lock (this.connectedPeers[i])
-                        if (this.connectedPeers[i].Peer.IsSeeder)
-                            seeds++;
-            return seeds;
+            get
+            {
+                int seeds = 0;
+                lock (this.manager.listLock)
+                    for (int i = 0; i < this.connectedPeers.Count; i++)
+                        lock (this.connectedPeers[i])
+                            if (this.connectedPeers[i].Peer.IsSeeder)
+                                seeds++;
+                return seeds;
+            }
         }
 
         #endregion

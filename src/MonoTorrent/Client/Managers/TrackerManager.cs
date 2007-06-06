@@ -129,6 +129,12 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        public WaitHandle Announce()
+        {
+            return Announce(TorrentEvent.None);
+        }
+
         /// <summary>
         /// Sends a status update to the tracker
         /// </summary>

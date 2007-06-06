@@ -989,7 +989,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public void onEncryptorReady(PeerId id)
+        internal void onEncryptorReady(PeerId id)
         {
             try
             {
@@ -1007,7 +1007,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public void onEncryptorError(PeerId id)
+        internal void onEncryptorError(PeerId id)
         {
             try
             {

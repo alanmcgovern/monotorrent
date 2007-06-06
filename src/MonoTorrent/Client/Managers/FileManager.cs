@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The length of a piece in bytes
         /// </summary>
-        public int PieceLength
+        internal int PieceLength
         {
             get { return this.manager.Torrent.PieceLength; }
         }

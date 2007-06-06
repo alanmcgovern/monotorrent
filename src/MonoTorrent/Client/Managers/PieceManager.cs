@@ -169,6 +169,11 @@ namespace MonoTorrent.Client
             return this.piecePicker.ReceivedPieceMessage(id, buffer, message);
         }
 
+        internal void Reset()
+        {
+            this.piecePicker.Reset();
+        }
+
         #endregion
 
 
@@ -220,10 +225,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion Event Firing Code
-
-        public void Reset()
-        {
-            this.piecePicker.Reset();
-        }
     }
 }
