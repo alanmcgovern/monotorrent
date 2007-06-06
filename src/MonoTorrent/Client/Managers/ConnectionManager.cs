@@ -187,7 +187,17 @@ namespace MonoTorrent.Client
                 id.Peer.LastConnectionAttempt = DateTime.Now;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
                 id.Peer.Connection.LastMessageReceived = DateTime.Now;
-                id.Peer.Connection.BeginConnect(this.endCreateConnectionCallback, id);
+                try
+                {
+                    id.Peer.Connection.BeginConnect(this.endCreateConnectionCallback, id);
+                }
+                catch (SocketException ex)
+                {
+                    // If there's a socket exception at this point, just drop the peer's details silently
+                    // as they must be invalid.
+                    manager.Peers.RemovePeer(id, PeerType.Connecting);
+                    System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
+                }
             }
 
             // Try to connect to another peer
