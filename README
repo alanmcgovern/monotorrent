@@ -9,3 +9,8 @@ Enter the source folder, then run: ./configure; make; make install;
 This will compile monotorrent and install it into $PREFIX (defaults to /usr/local).
 To run the sample client you just have to run "monotorrent". Note, this assumes
 that your prefix is in your $PATH.
+
+
+More instructions can be found in the second readme file found in src/README.
+
+I will be consolidating documentation soon and this readme will vanish ;)
