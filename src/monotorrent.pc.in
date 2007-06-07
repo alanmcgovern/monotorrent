@@ -5,4 +5,4 @@ Libraries=${assemblies_dir}/MonoTorrent.dll ${assemblies_dir}/Upnp.dll
 Name: MonoTorrentLibs
 Description: Mono Torrent Libraries
 Version: @VERSION@
-Libs: -r:MonoTorrent.dll -r:Upnp.dll
+Libs: -r:MonoTorrent.dll
