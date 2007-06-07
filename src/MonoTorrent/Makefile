@@ -21,6 +21,7 @@ SOURCES=	\
 	Collections/TrackerCollection.cs \
 	Collections/UInt32Collection.cs \
 	Collections/WaitHandleCollection.cs \
+	Common/BitField.cs \
 	Common/Enums.cs \
 	Common/Hashes.cs \
 	Common/Peer.cs \
@@ -35,7 +36,6 @@ SOURCES=	\
 	Common/TorrentWatchers/TorrentFolderWatcher.cs \
 	Common/TorrentWatchers/TorrentWatcherEventArgs.cs \
 	Common/TorrentWatchers/TorrentWatchers.cs \
-	Client/BitField.cs \
 	Client/Block.cs \
 	Client/BufferedFileRead.cs \
 	Client/BufferedFileWrite.cs \
