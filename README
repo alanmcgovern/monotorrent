@@ -1,6 +1,11 @@
 Build instructions:
 Windows:
-Open the MonoTorrent.sln file in SharpDevelop  or Visual Studio. You may need to get the NUnit dlls to compile if you don't have them already. Make sure that either MonoTorrent.Interface or TestClient is set to be the startup client
+Run the "VS2005.bat" file in the buildscripts folder in order to generate the 
+standard Visual Studio project files. Then just use them as normal
 
-Linux:
-Go into the src folder and just run make.
+Linux/Mac OS X:
+Enter the source folder, then run: ./configure; make; make install;
+
+This will compile monotorrent and install it into $PREFIX (defaults to /usr/local).
+To run the sample client you just have to run "monotorrent". Note, this assumes
+that your prefix is in your $PATH.
