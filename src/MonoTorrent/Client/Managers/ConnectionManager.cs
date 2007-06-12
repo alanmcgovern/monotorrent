@@ -974,7 +974,7 @@ namespace MonoTorrent.Client
 
                         RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Incoming));
 
-                        if ((this.openConnections >= this.MaxOpenConnections))
+                        if (this.openConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
                         {
                             reason = "Too many peers";
                             cleanUp = true;
@@ -1216,7 +1216,7 @@ namespace MonoTorrent.Client
                         m = manager;
 
                         // Connect to the peer
-                        this.ConnectToPeer(manager, id);
+                        ConnectToPeer(manager, id);
                         break;
                     }
                 }
