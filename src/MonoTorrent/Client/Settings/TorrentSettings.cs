@@ -175,12 +175,17 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+        
 
         #region Methods
 
         public object Clone()
         {
-            return new TorrentSettings(this.uploadSlots, this.maxConnections, this.MaxDownloadSpeed, this.maxUploadSpeed, this.fastResumeEnabled);
+            return new TorrentSettings(this.uploadSlots, 
+                                       this.maxConnections,
+                                       this.MaxDownloadSpeed,
+                                       this.maxUploadSpeed,
+                                       this.fastResumeEnabled);
         }
 
         public override bool Equals(object obj)
@@ -195,7 +200,11 @@ namespace MonoTorrent.Client
 
         public override int GetHashCode()
         {
-            return this.fastResumeEnabled.GetHashCode() + this.maxConnections + this.maxDownloadSpeed + this.maxUploadSpeed + this.uploadSlots;
+            return this.fastResumeEnabled.GetHashCode() ^
+                   this.maxConnections ^ 
+                   this.maxDownloadSpeed ^ 
+                   this.maxUploadSpeed ^ 
+                   this.uploadSlots;
         }
 
         #endregion Methods
