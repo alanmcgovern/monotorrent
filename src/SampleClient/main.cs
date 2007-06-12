@@ -95,7 +95,7 @@ namespace MonoTorrent
 
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, TorrentSettings.DefaultSettings());
+                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -244,7 +244,7 @@ namespace MonoTorrent
 
         static void ConnectionManager_PeerConnected(object sender, PeerConnectionEventArgs e)
         {
-            listener.WriteLine("Connected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString());
+            listener.WriteLine("Connected: " + e.PeerID.Peer.Location + " - " + e.ConnectionDirection.ToString() + " Encryption: " + e.PeerID.Peer.Connection.Encryptor.ToString());
         }
 
         static void ConnectionManager_PeerMessageTransferred(object sender, PeerMessageEventArgs e)

@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The current encryption method being used to encrypt connections
         /// </summary>
-        internal IEncryptor Encryptor
+        public IEncryptor Encryptor
         {
             get { return this.encryptor; }
             set { this.encryptor = value; }
