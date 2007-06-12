@@ -46,7 +46,6 @@ namespace MonoTorrent.Client.Encryption
         public PeerAEncryption(byte[] InfoHash, EncryptionType minCryptoAllowed)
             : base(minCryptoAllowed)
         {
-            this.id = id;
             gotVerificationCallback = new AsyncCallback(gotVerification);
             gotPadDCallback = new AsyncCallback(gotPadD);
 
