@@ -39,7 +39,6 @@ namespace MonoTorrent.Client
     /// </summary>
     public class EngineSettings : ICloneable
     {
-
         #region Private Fields
 
         private bool allowLegacyConnections;            // True if you want to allowing non-encrypted incoming connections. Returns true if encrytion is off
