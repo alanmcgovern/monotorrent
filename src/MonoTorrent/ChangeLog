@@ -1,5 +1,10 @@
 2007-06-12  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* Client/Managers/ConnectionManager.cs: Fixed up the code and removed
+	  the warning.
+
+2007-06-12  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* Client/RateLimiter.cs: Fixed typo where i was using the wrong
 	  variable when calculating the increaseAmount. Should have more
 	  stable rate control now.
