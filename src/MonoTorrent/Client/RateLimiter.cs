@@ -59,12 +59,12 @@ namespace MonoTorrent.Client
             this.SavedErrorUpload = errorRateUp;
 
 
-            int increaseAmount = (int)((maxDownloadSpeed + this.SavedErrorDownload) / ConnectionManager.ChunkLength);
+            int increaseAmount = (int)((maxDownloadSpeed + changeAmountDown) / ConnectionManager.ChunkLength);
             Interlocked.Add(ref this.DownloadChunks, increaseAmount);
             if (this.DownloadChunks > (increaseAmount * 3))
                 Interlocked.Exchange(ref this.DownloadChunks, (increaseAmount * 3));
 
-            increaseAmount = (int)((maxUploadSpeed + this.SavedErrorUpload) / ConnectionManager.ChunkLength);
+            increaseAmount = (int)((maxUploadSpeed + changeAmountUp) / ConnectionManager.ChunkLength);
             Interlocked.Add(ref this.UploadChunks, increaseAmount);
             if (this.UploadChunks > increaseAmount * 3)
                 Interlocked.Exchange(ref this.UploadChunks, (increaseAmount * 3));

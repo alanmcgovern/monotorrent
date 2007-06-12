@@ -1,5 +1,13 @@
 2007-06-12  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* Client/RateLimiter.cs: Fixed typo where i was using the wrong
+	  variable when calculating the increaseAmount. Should have more
+	  stable rate control now.
+	* Client/Encryption/RC4.cs: Key is never used, commented it out
+	* Client/Managers/ConnectionManager.cs: Commented out unused variables
+
+2007-06-12  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	Removed typo
 
 2007-05-31  Alan McGovern <alan.mcgovern@gmail.com> 

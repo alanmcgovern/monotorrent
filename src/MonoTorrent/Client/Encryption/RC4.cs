@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.Encryption
     {
         static RandomNumberGenerator random = RandomNumberGenerator.Create();
 
-        byte[] key;
+        //byte[] key;
 
         byte[] S = new byte[256];
         int x;
@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Encryption
 
         public RC4(byte[] key)
         {
-            this.key = key;
+            //this.key = key;
 
             for (int i = 0; i <= 255; i++)
                 S[i] = (byte)i;

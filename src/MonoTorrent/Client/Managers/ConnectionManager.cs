@@ -191,7 +191,7 @@ namespace MonoTorrent.Client
                 {
                     id.Peer.Connection.BeginConnect(this.endCreateConnectionCallback, id);
                 }
-                catch (SocketException ex)
+                catch (SocketException)
                 {
                     // If there's a socket exception at this point, just drop the peer's details silently
                     // as they must be invalid.
@@ -511,7 +511,7 @@ namespace MonoTorrent.Client
                     msg.Handle(id);
 
                     Logger.Log(id, "Handshake recieved");
-                    HandshakeMessage handshake = msg as HandshakeMessage;
+                    //HandshakeMessage handshake = msg as HandshakeMessage;
 
                     if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                     {
