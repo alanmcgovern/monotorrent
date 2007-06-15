@@ -413,7 +413,7 @@ namespace MonoTorrent.Common
 
                 startIndex = j;
                 totalSize += length;
-                endIndex = (int)(totalSize + pieceLength / 2) / this.pieceLength;
+                endIndex = (int)((totalSize + pieceLength / 2) / this.pieceLength);
                 j = endIndex;
 
                 this.torrentFiles[i++] = new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1);
