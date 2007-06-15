@@ -325,14 +325,25 @@ namespace MonoTorrent.Client
         /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
         /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
         /// </summary>
-        /// <param name="forceFullScan"></param>
+        /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool forceFullScan)
+        {
+            HashCheck(forceFullScan, false);
+        }
+
+        /// <summary>
+        /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
+        /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
+        /// </summary>
+        /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
+        /// <param name="autoStart">True if the manager should start downloading immediately after hash checking is complete</param>
+        internal void HashCheck(bool forceFullScan, bool autoStart)
         {
             if (this.state != TorrentState.Stopped)
                 throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
 
             UpdateState(TorrentState.Hashing);
-            ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), forceFullScan);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), new bool[] { forceFullScan, autoStart });
         }
 
 
@@ -376,7 +387,7 @@ namespace MonoTorrent.Client
             {
                 if (!this.hashChecked && !(this.state == TorrentState.Hashing))
                 {
-                    HashCheck(false);
+                    HashCheck(false, true);
                     return;
                 }
 
@@ -386,7 +397,6 @@ namespace MonoTorrent.Client
                 }
             }
 
-            this.fileManager.InitialHashRequired = false;
             if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                 throw new TorrentException("Torrent is already running");
 
@@ -804,30 +814,37 @@ namespace MonoTorrent.Client
         private void PerformHashCheck(object state)
         {
             bool streamsOpen = this.fileManager.StreamsOpen;
-            bool forceCheck = (bool)state;
+
+            bool[] data = (bool[])state;
+            bool forceCheck = data[0];
+            bool autoStart = data[1];
 
             // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
             // perform a full scan.
-            
-            if(!streamsOpen)
+
+            if (!streamsOpen)
                 this.fileManager.OpenFileStreams(FileAccess.Read);
 
             if (forceCheck || (!forceCheck && !MonoTorrent.Client.FileManager.LoadFastResume(this)))
                 for (int i = 0; i < this.torrent.Pieces.Count; i++)
-                    this.pieceManager.MyBitField[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
+                {
+                    bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
+                    this.pieceManager.MyBitField[i] = temp;
+                    RaisePieceHashed(new PieceHashedEventArgs(i, temp));
+
+                }
 
             if (!streamsOpen)
                 this.fileManager.CloseFileStreams();
 
-            for (int i = 0; i < this.torrent.Pieces.Count; i++)
-                RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
-
+            this.fileManager.InitialHashRequired = false;
             this.hashChecked = true;
-            UpdateState(TorrentState.Stopped);
             SaveFastResume();
-//#warning Don't *always* start the torrent in the future.
-//            if (this.state == TorrentState.Stopped || (this.state == TorrentState.Paused) || this.state == TorrentState.Hashing)
-//                this.Start();
+
+            if (autoStart)
+                Start();
+            else
+                UpdateState(TorrentState.Stopped);
         }
 
 
