@@ -120,7 +120,6 @@ namespace MonoTorrent.Client
         }
 
 
-#warning Make this threadsafe usage
         /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
@@ -171,10 +170,10 @@ namespace MonoTorrent.Client
         {
             if (torrent == null)
                 return false;
-
-            for (int i = 0; i < this.torrents.Count; i++)
-                if (Toolbox.ByteMatch(this.torrents[i].Torrent.infoHash, torrent.infoHash))
-                    return true;
+            using (new ReaderLock(this.torrentsLock))
+                for (int i = 0; i < this.torrents.Count; i++)
+                    if (Toolbox.ByteMatch(this.torrents[i].Torrent.infoHash, torrent.infoHash))
+                        return true;
 
             return false;
         }
@@ -187,10 +186,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public bool Contains(TorrentManager manager)
         {
-            if (manager == null)
-                return false;
-
-            return Contains(manager.Torrent);
+            return manager == null ? false : Contains(manager.Torrent);
         }
 
 
@@ -203,10 +199,12 @@ namespace MonoTorrent.Client
             {
                 while (this.torrents.Count > 0)
                 {
-                    if (torrents[0].State != TorrentState.Stopped)
-                        torrents[0].Stop().WaitOne();
+                    TorrentManager t = torrents[0];
+                    if (t.State != TorrentState.Stopped)
+                        t.Stop().WaitOne();
 
-                    Unregister(torrents[0]);
+                    Unregister(t);
+                    t.Dispose();
                 }
             }
 
