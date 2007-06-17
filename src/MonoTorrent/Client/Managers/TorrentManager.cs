@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
-        internal object listLock = new object();// The object we use to syncronize list access
+        internal readonly object listLock = new object();// The object we use to syncronize list access
         internal bool loadedFastResume;         // Used to fire the "PieceHashed" event if fast resume data was loaded
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerList peers;                 // Stores all the peers we know of in a list
@@ -269,7 +269,7 @@ namespace MonoTorrent.Client
             this.fileManager = new FileManager(this, savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
-            this.resumeLock = new object();
+            this.resumeLock = listLock;
             this.settings = settings;
             this.peers = new PeerList(this);
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
