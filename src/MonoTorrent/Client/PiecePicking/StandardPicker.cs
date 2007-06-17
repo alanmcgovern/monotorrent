@@ -537,8 +537,9 @@ namespace MonoTorrent.Client
                 piece.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], piece, id));
-                lock(this.unhashedPieces)
-                    this.unhashedPieces.Add(piece.Index);
+                lock (this.unhashedPieces)
+                    if (!this.unhashedPieces.Contains(piece.Index))
+                        this.unhashedPieces.Add(piece.Index);
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece, unhashedPieces);
 
                 if (piece.AllBlocksReceived)
