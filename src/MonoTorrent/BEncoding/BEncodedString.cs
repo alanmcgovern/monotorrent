@@ -211,9 +211,11 @@ namespace MonoTorrent.BEncoding
 
         public override bool Equals(object obj)
         {
-            BEncodedString other = obj as BEncodedString;
+            BEncodedString other;
             if (obj is string)
                 other = new BEncodedString((string)obj);
+            else
+                other = obj as BEncodedString;
 
             if (other == null)
                 return false;

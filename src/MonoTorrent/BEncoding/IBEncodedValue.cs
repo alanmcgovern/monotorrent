@@ -74,8 +74,8 @@ namespace MonoTorrent.BEncoding
             if (data == null)
                 throw new ArgumentNullException("data");
 
-            using (MemoryStream stream = new MemoryStream(data))
-                return (BEncodedValue.Decode(stream));
+            using (BinaryReader stream = new BinaryReader(new MemoryStream(data), Encoding.UTF8))
+                return (Decode(stream));
         }
 
 
@@ -90,6 +90,9 @@ namespace MonoTorrent.BEncoding
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
+
+            if (offset < 0 || length < 0)
+                throw new IndexOutOfRangeException("Neither offset or length can be less than zero");
 
             if (offset > buffer.Length - length)
                 throw new ArgumentOutOfRangeException("length");
@@ -138,7 +141,7 @@ namespace MonoTorrent.BEncoding
                     data = new BEncodedList();
                     break;
 
-                case ('1'):             // String
+                case ('1'):                         // String
                 case ('2'):
                 case ('3'):
                 case ('4'):
