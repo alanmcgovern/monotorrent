@@ -346,19 +346,19 @@ namespace MonoTorrent.Client
                 if (highestPriorityFound == Priority.DoNotDownload)
                     return null;
 
-                for (int i = 0; i < otherPeers.Count; i++)
-                {
-                    lock (otherPeers[i])
-                    {
-                        if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
-                            continue;
+                //for (int i = 0; i < otherPeers.Count; i++)
+                //{
+                //    lock (otherPeers[i])
+                //    {
+                //        if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
+                //            continue;
 
-                        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                        this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
-                        if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
-                            break;
-                    }
-                }
+                //        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                //        this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
+                //        if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
+                //            break;
+                //    }
+                //}
 
                 // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
 
