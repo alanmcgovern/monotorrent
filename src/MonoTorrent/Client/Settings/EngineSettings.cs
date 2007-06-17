@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
         #region Private Fields
 
         private bool allowLegacyConnections;            // True if you want to allowing non-encrypted incoming connections. Returns true if encrytion is off
-        private bool enableHaveSurpression;             // True if you want to enable have surpression
+        private bool haveSupressionEnabled;             // True if you want to enable have surpression
         private EncryptionType minEncryptionLevel;      // The minimum encryption level to use. "None" corresponds to no encryption.
         private int listenPort;                         // The port to listen to incoming connections on
         private int globalMaxConnections;               // The maximum number of connections that can be opened
@@ -71,10 +71,10 @@ namespace MonoTorrent.Client
         /// This specifies whether have supression should be enabled or disabled. It is highly recommend that this should
         /// not be enabled
         /// </summary>
-        public bool EnableHaveSurpression
+        public bool HaveSupressionEnabled
         {
-            get { return this.enableHaveSurpression; }
-            set { this.enableHaveSurpression = value; }
+            get { return this.haveSupressionEnabled; }
+            set { this.haveSupressionEnabled = value; }
         }
 
 

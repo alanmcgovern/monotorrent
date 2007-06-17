@@ -920,16 +920,16 @@ namespace MonoTorrent.Client
                         if (this.peers.ConnectedPeers[i].Peer.Connection != null)
                         {
                             // If the peer has the piece already, we need to recalculate his "interesting" status.
-                            if (this.peers.ConnectedPeers[i].Peer.Connection.BitField[pieceIndex])
+                            bool hasPiece = this.peers.ConnectedPeers[i].Peer.Connection.BitField[pieceIndex];
+                            if (hasPiece)
                             {
                                 this.peers.ConnectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.peers.ConnectedPeers[i]);
                                 SetAmInterestedStatus(this.peers.ConnectedPeers[i]);
                             }
 
-                            // Have supression is disabled
-                            // If the peer does not have the piece, then we send them a have message so they can request it off me
-                            //else
-                            this.peers.ConnectedPeers[i].Peer.Connection.Enqueue(new HaveMessage(pieceIndex));
+                            // Check to see if have supression is enabled and send the have message accordingly
+                            if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
+                                this.peers.ConnectedPeers[i].Peer.Connection.Enqueue(new HaveMessage(pieceIndex));
                         }
         }
 
