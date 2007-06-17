@@ -42,6 +42,7 @@ namespace MonoTorrent.Client
         #region Private Fields
 
         private bool allowLegacyConnections;            // True if you want to allowing non-encrypted incoming connections. Returns true if encrytion is off
+        private bool enableHaveSurpression;             // True if you want to enable have surpression
         private EncryptionType minEncryptionLevel;      // The minimum encryption level to use. "None" corresponds to no encryption.
         private int listenPort;                         // The port to listen to incoming connections on
         private int globalMaxConnections;               // The maximum number of connections that can be opened
@@ -67,22 +68,13 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Specifies the minimum encryption level to use for outgoing connections.
+        /// This specifies whether have supression should be enabled or disabled. It is highly recommend that this should
+        /// not be enabled
         /// </summary>
-        public EncryptionType MinEncryptionLevel
+        public bool EnableHaveSurpression
         {
-            get { return this.minEncryptionLevel; }
-            set { this.minEncryptionLevel = value; }
-        }
-
-
-        /// <summary>
-        /// This is the default directory that torrents will be downloaded to
-        /// </summary>
-        public string SavePath
-        {
-            get { return this.savePath; }
-            set { this.savePath = value; }
+            get { return this.enableHaveSurpression; }
+            set { this.enableHaveSurpression = value; }
         }
 
 
@@ -135,12 +127,33 @@ namespace MonoTorrent.Client
             set { this.listenPort = value; }
         }
 
+
+        /// <summary>
+        /// Specifies the minimum encryption level to use for outgoing connections.
+        /// </summary>
+        public EncryptionType MinEncryptionLevel
+        {
+            get { return this.minEncryptionLevel; }
+            set { this.minEncryptionLevel = value; }
+        }
+
+
+        /// <summary>
+        /// This is the default directory that torrents will be downloaded to
+        /// </summary>
+        public string SavePath
+        {
+            get { return this.savePath; }
+            set { this.savePath = value; }
+        }
+
         #endregion Properties
 
 
         #region Defaults
 
         private const bool DefaultAllowLegacyConnections = true;
+        private const bool DefaultEnableHaveSupression = false;
         private const string DefaultSavePath = "";
         private const int DefaultMaxConnections = 150;
         private const int DefaultMaxDownloadSpeed = 0;
