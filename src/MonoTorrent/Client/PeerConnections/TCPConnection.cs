@@ -133,6 +133,8 @@ namespace MonoTorrent.Client.Encryption
 
         internal override void Dispose()
         {
+            if(this.peerSocket.Connected)
+                this.peerSocket.Shutdown(SocketShutdown.Both);
             this.peerSocket.Close();
         }
 
