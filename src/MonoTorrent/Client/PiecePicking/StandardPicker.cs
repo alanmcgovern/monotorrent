@@ -326,11 +326,11 @@ namespace MonoTorrent.Client
                     return message;
 
                 // Now we see what pieces the peer has that we don't have and try and request one
-                return GetStandardRequest(id);
+                return GetStandardRequest(id, otherPeers);
             }
         }
 
-        private RequestMessage GetStandardRequest(PeerId id)
+        private RequestMessage GetStandardRequest(PeerId id, PeerIdCollection otherPeers)
         {
             int checkIndex = 0;
             RequestMessage message = null;
