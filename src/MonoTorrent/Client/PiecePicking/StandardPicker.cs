@@ -306,9 +306,6 @@ namespace MonoTorrent.Client
         {
             RequestMessage message = null;
 
-            int checkIndex = 0;
-            Priority highestPriorityFound = Priority.DoNotDownload;
-
             lock (this.myBitfield)
             {
                 // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
@@ -329,82 +326,91 @@ namespace MonoTorrent.Client
                     return message;
 
                 // Now we see what pieces the peer has that we don't have and try and request one
-                Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                this.bufferBitfield.Not();
+                return GetStandardRequest(id);
+            }
+        }
 
-                if (!id.Peer.IsSeeder)
-                    this.bufferBitfield.AndFast(id.Peer.Connection.BitField);
+        private RequestMessage GetStandardRequest(PeerId id)
+        {
+            int checkIndex = 0;
+            RequestMessage message = null;
+            Priority highestPriorityFound = Priority.DoNotDownload;
 
-                Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+            Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+            this.bufferBitfield.Not();
 
-                // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
-                // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
-                // a piece from the "highest priority" available
-                highestPriorityFound = HighestPriorityAvailable(this.bufferBitfield);
+            if (!id.Peer.IsSeeder)
+                this.bufferBitfield.AndFast(id.Peer.Connection.BitField);
 
-                // Nothing to download. This peer may still be interesting, but we may have set files to "DoNotDownload"
-                if (highestPriorityFound == Priority.DoNotDownload)
-                    return null;
+            Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
 
-                //for (int i = 0; i < otherPeers.Count; i++)
-                //{
-                //    lock (otherPeers[i])
-                //    {
-                //        if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
-                //            continue;
+            // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
+            // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
+            // a piece from the "highest priority" available
+            highestPriorityFound = HighestPriorityAvailable(this.bufferBitfield);
 
-                //        Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                //        this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
-                //        if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
-                //            break;
-                //    }
-                //}
+            // Nothing to download. This peer may still be interesting, but we may have set files to "DoNotDownload"
+            if (highestPriorityFound == Priority.DoNotDownload)
+                return null;
 
-                // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
+            for (int i = 0; i < otherPeers.Count; i++)
+            {
+                lock (otherPeers[i])
+                {
+                    if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
+                        continue;
 
-                // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
-                // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
-                // uninteresting.
-                int midPoint = random.Next(0, this.previousBitfield.Length);
-                int endIndex = this.previousBitfield.Length;
-                checkIndex = midPoint;
+                    Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+                    this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
+                    if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
+                        break;
+                }
+            }
 
-                // First we check all the places from midpoint -> end
-                // Then if we dont find anything we check from 0 -> midpoint
-                while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, endIndex)) != -1)
+            // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
+
+            // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
+            // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
+            // uninteresting.
+            int midPoint = random.Next(0, this.previousBitfield.Length);
+            int endIndex = this.previousBitfield.Length;
+            checkIndex = midPoint;
+
+            // First we check all the places from midpoint -> end
+            // Then if we dont find anything we check from 0 -> midpoint
+            while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, endIndex)) != -1)
+                if (AlreadyHaveOrRequested(checkIndex))
+                    checkIndex++;
+                else
+                    break;
+
+            if (checkIndex == -1)
+            {
+                checkIndex = 0;
+                while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, midPoint)) != -1)
                     if (AlreadyHaveOrRequested(checkIndex))
                         checkIndex++;
                     else
                         break;
+            }
 
-                if (checkIndex == -1)
+            if (checkIndex == -1)
+                return null;
+
+            // Request the piece
+            else
+            {
+                message = this.GenerateRequest(id, checkIndex);
+                PieceCollection reqs = requests[id];
+                for (int i = 0; i < reqs.Count; i++)
                 {
-                    checkIndex = 0;
-                    while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, midPoint)) != -1)
-                        if (AlreadyHaveOrRequested(checkIndex))
-                            checkIndex++;
-                        else
-                            break;
+                    if (reqs[i].Index != checkIndex)
+                        continue;
+
+                    id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
                 }
 
-                if (checkIndex == -1)
-                    return null;
-
-                // Request the piece
-                else
-                {
-                    message = this.GenerateRequest(id, checkIndex);
-                    PieceCollection reqs = requests[id];
-                    for (int i = 0; i < reqs.Count; i++)
-                    {
-                        if (reqs[i].Index != checkIndex)
-                            continue;
-
-                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
-                    }
-
-                    return message;
-                }
+                return message;
             }
         }
 
