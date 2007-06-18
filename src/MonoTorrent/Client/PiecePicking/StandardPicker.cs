@@ -352,7 +352,7 @@ namespace MonoTorrent.Client
             // Nothing to download. This peer may still be interesting, but we may have set files to "DoNotDownload"
             if (highestPriorityFound == Priority.DoNotDownload)
                 return null;
-
+/*
             for (int i = 0; i < otherPeers.Count; i++)
             {
                 lock (otherPeers[i])
@@ -366,7 +366,7 @@ namespace MonoTorrent.Client
                         break;
                 }
             }
-
+*/
             // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
 
             // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
