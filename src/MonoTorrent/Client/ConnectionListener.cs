@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
         private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
         private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
         private AsyncCallback peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
-        private Socket socket;
+        private Socket listener;
 
         #endregion
 
@@ -104,7 +104,6 @@ namespace MonoTorrent.Client
             this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
             this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
-            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
         #endregion
@@ -114,7 +113,16 @@ namespace MonoTorrent.Client
 
         private void BeginAccept()
         {
-            this.socket.BeginAccept(this.newConnectionCallback, this.socket);
+            try
+            {
+                this.listener.BeginAccept(this.newConnectionCallback, this.listener);
+            }
+            catch (SocketException ex)
+            {
+            }
+            catch (ObjectDisposedException ex)
+            {
+            }
         }
 
 
@@ -152,7 +160,7 @@ namespace MonoTorrent.Client
             if (disposed)
                 throw new ObjectDisposedException(this.ToString());
 
-            this.socket.Close();
+            this.listener.Close();
             this.disposed = true;
         }
 
@@ -257,7 +265,7 @@ namespace MonoTorrent.Client
             PeerId id = null;
             try
             {
-                Socket peerSocket = ((Socket)result.AsyncState).EndAccept(result);
+                Socket peerSocket = listener.EndAccept(result);
                 if (!peerSocket.Connected)
                     return;
 
@@ -389,10 +397,10 @@ namespace MonoTorrent.Client
             this.newConnectionCallback = new AsyncCallback(IncomingConnectionReceived);
             this.listenEndPoint = new IPEndPoint(IPAddress.Any, engine.Settings.ListenPort);
             this.isListening = true;
-            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.socket.Bind(listenEndPoint);
-            this.socket.Listen(10);             // FIXME: Will this break on windows XP systems?
-            this.socket.BeginAccept(newConnectionCallback, this.socket);
+            this.listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.listener.Bind(listenEndPoint);
+            this.listener.Listen(10);             // FIXME: Will this break on windows XP systems?
+            this.listener.BeginAccept(newConnectionCallback, this.listener);
         }
 
 
@@ -403,7 +411,7 @@ namespace MonoTorrent.Client
         {
             this.disposed = true;
             this.isListening = false;
-            this.socket.Close();
+            this.listener.Close();
         }
 
         #endregion
