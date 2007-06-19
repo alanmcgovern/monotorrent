@@ -216,7 +216,8 @@ namespace MonoTorrent.Client
                     if (Toolbox.ByteMatch(handshake.infoHash, engine.Torrents[i].Torrent.InfoHash))
                         man = engine.Torrents[i];
 
-            if (man == null)        // We're not hosting that torrent
+#warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
+            if (man == null || man.State == TorrentState.Stopped)        // We're not hosting that torrent
             {
                 Logger.Log(id, "CE Not tracking torrent");
                 CleanupSocket(id);

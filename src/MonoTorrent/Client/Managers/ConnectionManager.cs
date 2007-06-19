@@ -715,7 +715,7 @@ namespace MonoTorrent.Client
                         if (length > RequestMessage.MaxSize)
                         {
                             Logger.Log("* * * * * *");
-                            Logger.Log(id.Peer.Connection.PeerId + " tried to send too much data: " + length.ToString() + " byte");
+                            Logger.Log(id.Peer.Connection.ClientApp.PeerId + " tried to send too much data: " + length.ToString() + " byte");
                             Logger.Log("* * * * * *");
 
                             cleanUp = true;
