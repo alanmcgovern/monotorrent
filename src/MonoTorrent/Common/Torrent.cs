@@ -510,7 +510,7 @@ namespace MonoTorrent.Common
                 byte[] sha1 = (dictionary.ContainsKey("sha1")) ? ((BEncodedString)dictionary["sha1"]).TextBytes : null;
 
                 this.torrentFiles = new TorrentFile[1];
-                this.torrentFiles[0] = new TorrentFile(path, length, 0, (int)(size + (pieceLength / 2)) / pieceLength, md5, ed2k, sha1);
+                this.torrentFiles[0] = new TorrentFile(path, length, 0, (int)((size + (pieceLength / 2)) / pieceLength), md5, ed2k, sha1);
             }
         }
 
