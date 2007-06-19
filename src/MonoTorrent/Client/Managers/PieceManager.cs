@@ -44,7 +44,9 @@ namespace MonoTorrent.Client
     {
         #region Internal Constants
 
-        internal const int MaxRequests = 12;
+        // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
+        internal const int BonusRequestPerKb = 10;  
+        internal const int NormalRequestAmount = 6;
         internal const int MaxEndGameRequests = 2;
 
         #endregion
@@ -84,7 +86,7 @@ namespace MonoTorrent.Client
             RequestMessage msg;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.MaxRequests + (int)(id.Peer.Connection.Monitor.UploadSpeed / 10);
+            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Peer.Connection.Monitor.UploadSpeed / BonusRequestPerKb);
             maxRequests = maxRequests > 100 ? 100 : maxRequests;
 
             if (id.Peer.Connection.AmRequestingPiecesCount >= maxRequests)

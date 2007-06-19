@@ -81,12 +81,12 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The current average download speed in bytes per second
+        /// The current average download speed in kB/sec
         /// </summary>
         /// <returns></returns>
         public double DownloadSpeed
         {
-            get { return this.downloadSpeed; }
+            get { return this.downloadSpeed / 1024.0; }
         }
 
 
@@ -109,12 +109,12 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The current average upload speed in byte/second
+        /// The current average upload speed in kB/sec
         /// </summary>
         /// <returns></returns>
         public double UploadSpeed
         {
-            get { return this.uploadSpeed; }
+            get { return this.uploadSpeed / 1024.0; }
         }
 
         #endregion Public Properties
