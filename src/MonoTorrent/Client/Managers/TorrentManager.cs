@@ -680,11 +680,13 @@ namespace MonoTorrent.Client
                         this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
+
+#warning Convert this to work in kB/sec for consistency
                 if (counter % (1000 / ClientEngine.TickLength) == 0)
                     this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
                                                           (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
-                                                          (int)(this.monitor.DownloadSpeed),
-                                                          (int)(this.monitor.UploadSpeed));
+                                                          (int)(this.monitor.DownloadSpeed * 1024),
+                                                          (int)(this.monitor.UploadSpeed * 1024));
             }
         }
 
