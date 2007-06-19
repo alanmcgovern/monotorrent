@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long DataBytesDownloaded
         {
-            get { return this.dataBytesDownloaded; }
+            get { return this.dataBytesDownloaded / 1024; }
         }
 
 
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long DataBytesUploaded
         {
-            get { return this.dataBytesUploaded; }
+            get { return this.dataBytesUploaded / 1024; }
         }
 
 
@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long ProtocolBytesDownloaded
         {
-            get { return this.protocolBytesDownloaded; }
+            get { return this.protocolBytesDownloaded / 1024; }
         }
 
 
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long ProtocolBytesUploaded
         {
-            get { return this.protocolBytesUploaded; }
+            get { return this.protocolBytesUploaded / 1024; }
         }
 
 
