@@ -39,7 +39,8 @@ namespace MonoTorrent.Client
     {
         SmallMessageBuffer,
         MediumMessageBuffer,
-        LargeMessageBuffer
+        LargeMessageBuffer,
+        MassiveBuffer
     }
 
     public class BufferManager
@@ -47,12 +48,13 @@ namespace MonoTorrent.Client
         public const int SmallMessageBufferSize = 1 << 8;               // 256 bytes
         public const int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
         public const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
-
+        
         public static readonly ArraySegment<byte> EmptyBuffer = new System.ArraySegment<byte>(new byte[0]);
+
         private Queue<ArraySegment<byte>> largeMessageBuffers;
         private Queue<ArraySegment<byte>> mediumMessageBuffers;
         private Queue<ArraySegment<byte>> smallMessageBuffers;
-
+        private Queue<ArraySegment<byte>> massiveBuffers;
 
 
         /// <summary>
@@ -60,11 +62,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public BufferManager()
         {
+            this.massiveBuffers = new Queue<ArraySegment<byte>>();
             this.largeMessageBuffers = new Queue<ArraySegment<byte>>();
             this.mediumMessageBuffers = new Queue<ArraySegment<byte>>();
             this.smallMessageBuffers = new Queue<ArraySegment<byte>>();
 
-            // Preallocate 35 of each buffer to help avoid heap fragmentation due to pinning
+            // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             this.AllocateBuffers(20, BufferType.LargeMessageBuffer);
             this.AllocateBuffers(10, BufferType.MediumMessageBuffer);
             this.AllocateBuffers(20, BufferType.SmallMessageBuffer);
@@ -76,12 +79,12 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
-        public void GetBuffer(ref ArraySegment<byte> buffer, BufferType type)
+        private void GetBuffer(ref ArraySegment<byte> buffer, BufferType type)
         {
             // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
             // a buffer leak somewhere and the buffers aren't being freed properly.
             if (buffer != EmptyBuffer)
-                throw new ArgumentException("The old Buffer should have been recovered before getting a new buffer");
+                throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
 
             // If we're getting a small buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
@@ -112,7 +115,7 @@ namespace MonoTorrent.Client
                 }
 
             else
-                throw new ArgumentException("Couldn't allocate the required buffer", "type");
+                throw new TorrentException("You cannot directly request a massive buffer");
         }
 
 
@@ -123,6 +126,9 @@ namespace MonoTorrent.Client
         /// <param name="type">The type of buffer that is needed</param>
         public void GetBuffer(ref ArraySegment<byte> buffer, int minCapacity)
         {
+            if (buffer != EmptyBuffer)
+                throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
+
             if (minCapacity <= SmallMessageBufferSize)
                 GetBuffer(ref buffer, BufferType.SmallMessageBuffer);
 
@@ -133,7 +139,19 @@ namespace MonoTorrent.Client
                 GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
 
             else
-                throw new TorrentException("Cannot allocate a big enough buffer");
+            {
+                Logger.Log("Allocating a massive buffer: " + minCapacity.ToString());
+                lock (this.massiveBuffers)
+                {
+                    for (int i = 0; i < massiveBuffers.Count; i++)
+                        if ((buffer = massiveBuffers.Dequeue()).Count >= minCapacity)
+                            return;
+                        else
+                            massiveBuffers.Enqueue(buffer);
+
+                    buffer = new ArraySegment<byte>(new byte[minCapacity], 0, minCapacity);
+                }
+            }
         }
 
 
@@ -148,7 +166,6 @@ namespace MonoTorrent.Client
             if (buffer == EmptyBuffer)
                 return;
 
-            // If the buffer is a small buffer, add it into that smallbuffer queue
             if (buffer.Count == SmallMessageBufferSize)
                 lock (this.smallMessageBuffers)
                     this.smallMessageBuffers.Enqueue(buffer);
@@ -157,15 +174,18 @@ namespace MonoTorrent.Client
                 lock (this.mediumMessageBuffers)
                     this.mediumMessageBuffers.Enqueue(buffer);
 
-            // If the buffer is a large buffer, add it into the largebuffer queue
             else if (buffer.Count == LargeMessageBufferSize)
                 lock (this.largeMessageBuffers)
                     this.largeMessageBuffers.Enqueue(buffer);
 
+            else if (buffer.Count > LargeMessageBufferSize)
+                lock (this.massiveBuffers)
+                    this.massiveBuffers.Enqueue(buffer);
+
             // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
             // We just throw an exception as someone has done something wrong.
             else
-                throw new Exception("That buffer wasn't created by this manager");
+                throw new TorrentException("That buffer wasn't created by this manager");
 
             buffer = EmptyBuffer; // After recovering the buffer, we send the "EmptyBuffer" back as a placeholder
         }

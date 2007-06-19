@@ -260,7 +260,7 @@ namespace MonoTorrent.Client
                         }
                         else
                         {
-                            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.SmallMessageBuffer);
+                            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, handshake.ByteLength);
 
                             id.Peer.Connection.BytesSent = 0;
                             id.Peer.Connection.BytesToSend += handshake.Encode(id.Peer.Connection.sendBuffer, 0);
@@ -703,6 +703,7 @@ namespace MonoTorrent.Client
         /// <param name="callback">The callback to invoke when the message has been received</param>
         private void ReceiveMessage(PeerId id, int length, MessagingCallback callback)
         {
+            bool cleanUp = false;
             try
             {
                 lock (id.TorrentManager.resumeLock)
@@ -710,6 +711,16 @@ namespace MonoTorrent.Client
                     {
                         if (id.Peer.Connection == null)
                             return;
+
+                        if (length > RequestMessage.MaxSize)
+                        {
+                            Logger.Log("* * * * * *");
+                            Logger.Log(id.Peer.Connection.PeerId + " tried to send too much data: " + length.ToString() + " byte");
+                            Logger.Log("* * * * * *");
+
+                            cleanUp = true;
+                            return;
+                        }
 
                         ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, length);
 
@@ -723,7 +734,13 @@ namespace MonoTorrent.Client
             }
             catch (SocketException)
             {
-                CleanupSocket(id, "Couldn't ReceiveMessage");
+                cleanUp = true;
+            }
+            finally
+            {
+                if(cleanUp)
+                    CleanupSocket(id, "Couldn't Receive Message");
+
             }
         }
 

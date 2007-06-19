@@ -41,8 +41,8 @@ namespace MonoTorrent.Client.PeerMessages
         public const int MessageId = 6;
         private const int messageLength = 13;
 
-        private const int MaxSize = 65536;
-        private const int MinSize = 4096;
+        internal const int MaxSize = 65536;
+        internal const int MinSize = 4096;
 
         #region Private Fields
         private int startOffset;
@@ -218,8 +218,8 @@ namespace MonoTorrent.Client.PeerMessages
             // If we are not on the last piece and the user requested a stupidly big/small amount of data
             // we will close the connection
             if (id.TorrentManager.Torrent.Pieces.Count != (this.pieceIndex + 1))
-                if (this.requestLength > (MaxSize) || this.requestLength < MinSize)
-                    throw new MessageException("Request length invalid");
+                if (this.requestLength > MaxSize || this.requestLength < MinSize)
+                    throw new MessageException("Illegal piece request received. Peer requested " + requestLength.ToString() + " byte");
 
             PieceMessage m = new PieceMessage(id.TorrentManager.FileManager, this.PieceIndex, this.startOffset, this.requestLength);
 

@@ -239,7 +239,7 @@ namespace MonoTorrent.Client
             long pieceStartIndex = (long)this.manager.Torrent.PieceLength * pieceIndex;
 
             ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, BufferType.LargeMessageBuffer);
+            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, PieceLength);
 
             try
             {
@@ -450,7 +450,7 @@ namespace MonoTorrent.Client
                 // into this new buffer. This is needed as the main code will automatically release the receive buffer
                 // and we will lose the data.
                 ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-                ClientEngine.BufferManager.GetBuffer(ref buffer, BufferType.LargeMessageBuffer);
+                ClientEngine.BufferManager.GetBuffer(ref buffer, recieveBuffer.Count);
                 Buffer.BlockCopy(recieveBuffer.Array, recieveBuffer.Offset, buffer.Array, buffer.Offset, recieveBuffer.Count);
 
                 bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield, unhashedPieces));

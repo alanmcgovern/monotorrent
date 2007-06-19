@@ -243,7 +243,7 @@ namespace MonoTorrent.Client
             handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
             BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
 
-            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, BufferType.LargeMessageBuffer);
+            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.sendBuffer, handshake.ByteLength + bf.ByteLength);
             id.Peer.Connection.BytesSent = 0;
             id.Peer.Connection.BytesToSend = handshake.Encode(id.Peer.Connection.sendBuffer, 0);
             id.Peer.Connection.BytesToSend += bf.Encode(id.Peer.Connection.sendBuffer, id.Peer.Connection.BytesToSend);
@@ -276,7 +276,7 @@ namespace MonoTorrent.Client
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
                 id.Peer.Connection.LastMessageReceived = DateTime.Now;
 
-                ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, BufferType.SmallMessageBuffer);
+                ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, 68);
                 id.Peer.Connection.BytesReceived = 0;
                 id.Peer.Connection.BytesToRecieve = 68;
                 Logger.Log(id, "CE Peer incoming connection accepted");

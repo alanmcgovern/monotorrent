@@ -85,23 +85,32 @@ namespace MonoTorrent.Common
 
     public struct Software
     {
+        private Client client;
+        private string peerId;
+        private string shortId;
+
         public Client Client
         {
             get { return this.client; }
         }
-        private Client client;
+
+        internal string PeerId
+        {
+            get { return this.peerId; }
+        }
 
         public string ShortId
         {
             get { return this.shortId; }
         }
-        private string shortId;
 
 
         public Software(string peerId)
         {
             Match m;
             Regex r;
+
+            this.peerId = peerId;
 
             #region Standard style peers
             r = new Regex(@"-(([A-Za-z]{2})\d{4})-*");
@@ -380,6 +389,12 @@ namespace MonoTorrent.Common
             this.client = Client.Unknown;
             this.shortId = peerId;
             System.Diagnostics.Trace.WriteLine("Unsupported clientid style: " + peerId);
+        }
+
+
+        public override string ToString()
+        {
+            return this.shortId;
         }
     }
 }
