@@ -410,8 +410,8 @@ namespace MonoTorrent.Client
             // Hashcheck the piece as we now have all the blocks.
             bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index), piece.Index);
             id.TorrentManager.Bitfield[message.PieceIndex] = result;
-            lock (bufferedFileIO.UnhashedPieces)
-                bufferedFileIO.UnhashedPieces.Remove(piece.Index);
+            lock (id.TorrentManager.PieceManager.UnhashedPieces)
+                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
 
@@ -442,7 +442,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(PeerId id, ArraySegment<byte> recieveBuffer, PieceMessage message, Piece piece, IntCollection unhashedPieces)
+        internal void QueueWrite(PeerId id, ArraySegment<byte> recieveBuffer, PieceMessage message, Piece piece)
         {
             lock (this.queueLock)
             {
@@ -453,7 +453,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref buffer, recieveBuffer.Count);
                 Buffer.BlockCopy(recieveBuffer.Array, recieveBuffer.Offset, buffer.Array, buffer.Offset, recieveBuffer.Count);
 
-                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield, unhashedPieces));
+                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield));
                 SetHandleState(true);
             }
         }
@@ -470,7 +470,7 @@ namespace MonoTorrent.Client
         {
             lock (this.queueLock)
             {
-                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield, null));
+                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield));
                 SetHandleState(true);
             }
         }

@@ -41,12 +41,12 @@ namespace MonoTorrent.Client
         private int[] priorities;
 
         private BitField bufferBitfield;
-        private BitField previousBitfield;
+        private List<BitField> previousBitfields;
         private BitField isInterestingBuffer;
+        private BitField unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
 
 
         private TorrentFile[] torrentFiles;
-        private IntCollection unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
         private Dictionary<PeerId, PieceCollection> requests;
         internal Dictionary<PeerId, PieceCollection> Requests
         {
@@ -71,6 +71,12 @@ namespace MonoTorrent.Client
             }
             return result;
         }
+
+        internal BitField UnhashedPieces
+        {
+            get { return this.unhashedPieces; }
+        }
+
         #endregion
 
 
@@ -91,9 +97,10 @@ namespace MonoTorrent.Client
 
             this.myBitfield = bitField;
             this.bufferBitfield = new BitField(myBitfield.Length);
-            this.previousBitfield = new BitField(myBitfield.Length);
+            this.previousBitfields = new List<BitField>();
+            this.previousBitfields.Add(new BitField(myBitfield.Length);
             this.torrentFiles = torrentFiles;
-            this.unhashedPieces = new IntCollection(8);
+            this.unhashedPieces = new BitField(myBitfield.Length);
             this.requests = new Dictionary<PeerId, PieceCollection>();
 
             // Order the priorities in decending order of priority. i.e. Immediate is first, and DoNotDownload is last
@@ -122,7 +129,7 @@ namespace MonoTorrent.Client
                         return true;
 
             lock (this.unhashedPieces)
-                return this.unhashedPieces.Contains(index);
+                return this.unhashedPieces[index];
         }
 
 
@@ -332,6 +339,7 @@ namespace MonoTorrent.Client
 
         private RequestMessage GetStandardRequest(PeerId id, PeerIdCollection otherPeers)
         {
+            int bitfieldIndex = 0;
             int checkIndex = 0;
             RequestMessage message = null;
             Priority highestPriorityFound = Priority.DoNotDownload;
@@ -342,7 +350,7 @@ namespace MonoTorrent.Client
             if (!id.Peer.IsSeeder)
                 this.bufferBitfield.AndFast(id.Peer.Connection.BitField);
 
-            Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
+            Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfields[bitfieldIndex].Array, 0, this.bufferBitfield.Array.Length * 4);
 
             // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
             // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
@@ -372,13 +380,13 @@ namespace MonoTorrent.Client
             // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
             // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
             // uninteresting.
-            int midPoint = random.Next(0, this.previousBitfield.Length);
-            int endIndex = this.previousBitfield.Length;
+            int midPoint = random.Next(0, this.myBitfield.Length);
+            int endIndex = this.myBitfield.Length;
             checkIndex = midPoint;
 
             // First we check all the places from midpoint -> end
             // Then if we dont find anything we check from 0 -> midpoint
-            while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, endIndex)) != -1)
+            while ((checkIndex = this.previousBitfields[bitfieldIndex].FirstTrue(checkIndex, endIndex)) != -1)
                 if (AlreadyHaveOrRequested(checkIndex))
                     checkIndex++;
                 else
@@ -387,7 +395,7 @@ namespace MonoTorrent.Client
             if (checkIndex == -1)
             {
                 checkIndex = 0;
-                while ((checkIndex = this.previousBitfield.FirstTrue(checkIndex, midPoint)) != -1)
+                while ((checkIndex = this.previousBitfields[bitfieldIndex].FirstTrue(checkIndex, midPoint)) != -1)
                     if (AlreadyHaveOrRequested(checkIndex))
                         checkIndex++;
                     else
@@ -543,13 +551,15 @@ namespace MonoTorrent.Client
                 piece.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], piece, id));
-                lock (this.unhashedPieces)
-                    if (!this.unhashedPieces.Contains(piece.Index))
-                        this.unhashedPieces.Add(piece.Index);
-                id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece, unhashedPieces);
+                id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
                 if (piece.AllBlocksReceived)
                 {
+#warning review usage of the unhashedpieces variable
+                    lock (this.unhashedPieces)
+                        if (!this.myBitfield[piece.Index])
+                            this.unhashedPieces[piece.Index] = true;
+
                     pieces.Remove(piece);
 
                     if (pieces.Count == 0)
@@ -620,7 +630,7 @@ namespace MonoTorrent.Client
 
         public override void Reset()
         {
-            this.unhashedPieces.Clear();
+            this.unhashedPieces.SetAll(false);
             this.requests.Clear();
         }
         #endregion

@@ -176,6 +176,11 @@ namespace MonoTorrent.Client
             this.piecePicker.Reset();
         }
 
+        internal BitField UnhashedPieces
+        {
+            get { return ((StandardPicker)this.piecePicker).UnhashedPieces; }
+        }
+
         #endregion
 
 

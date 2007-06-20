@@ -15,22 +15,19 @@ namespace MonoTorrent.Client
         public IPeerMessageInternal Message;
         public Piece Piece;
         public BitField BitField;
-        public IntCollection UnhashedPieces;
 
 		#endregion Fields
 
 
 		#region Constructors
 
-        public BufferedFileWrite(PeerId id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece, BitField bitfield,
-            IntCollection unhashedPieces)
+        public BufferedFileWrite(PeerId id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece, BitField bitfield)
         {
             this.Id = id;
             this.Buffer = buffer;
             this.Message = message;
             this.Piece = piece;
             this.BitField = bitfield;
-            this.UnhashedPieces = unhashedPieces;
         }
         
 		#endregion Constructors
