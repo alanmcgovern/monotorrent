@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The peers bitfield
         /// </summary>
-        internal BitField BitField
+        public BitField BitField
         {
             get { return this.bitField; }
             set { this.bitField = value; }
