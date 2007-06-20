@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
             this.myBitfield = bitField;
             this.bufferBitfield = new BitField(myBitfield.Length);
             this.previousBitfields = new List<BitField>();
-            this.previousBitfields.Add(new BitField(myBitfield.Length);
+            this.previousBitfields.Add(new BitField(myBitfield.Length));
             this.torrentFiles = torrentFiles;
             this.unhashedPieces = new BitField(myBitfield.Length);
             this.requests = new Dictionary<PeerId, PieceCollection>();
