@@ -145,8 +145,8 @@ namespace MonoTorrent.Client
                             IPeerMessageInternal message = PeerwireEncoder.Decode(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
 
                             // Fire the event to say we recieved a new message
-                            //if (this.PeerMessageTransferred != null)
-                            //    this.PeerMessageTransferred(id, new PeerMessageEventArgs((IPeerMessage)message, Direction.Incoming));
+                            PeerMessageEventArgs e = new PeerMessageEventArgs((IPeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
+                            id.ConnectionManager.RaisePeerMessageTransferred(e);
 
                             message.Handle(id);
                         }
