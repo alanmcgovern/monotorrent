@@ -633,9 +633,6 @@ namespace MonoTorrent.Client
                     if (id.Peer.Connection == null)
                         return;
 
-                    // Attempt to decode the message from the buffer.
-                    //message = PeerwireEncoder.Decode(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, id.TorrentManager);
-                    //message.Handle(id);
                     this.messageHandler.EnqueueReceived(id, id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
 
 
