@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="id"></param>
-        private void CleanupSocket(PeerId id)
+        private void CleanupSocket(PeerIdInternal id)
         {
             if (id == null) // Sometimes onEncryptionError fires with a null id
                 return;
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void handleHandshake(PeerId id)
+        private void handleHandshake(PeerIdInternal id)
         {
             TorrentManager man = null;
             bool handshakeFailed = false;
@@ -263,7 +263,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void IncomingConnectionReceived(IAsyncResult result)
         {
-            PeerId id = null;
+            PeerIdInternal id = null;
             try
             {
                 Socket peerSocket = listener.EndAccept(result);
@@ -272,7 +272,7 @@ namespace MonoTorrent.Client
 
                 Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
                 peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
-                id = new PeerId(peer);
+                id = new PeerIdInternal(peer);
                 id.Peer.Connection.ProcessingQueue = true;
                 id.Peer.Connection.LastMessageSent = DateTime.Now;
                 id.Peer.Connection.LastMessageReceived = DateTime.Now;
@@ -299,7 +299,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void onEncryptorReady(PeerId id)
+        private void onEncryptorReady(PeerIdInternal id)
         {
             try
             {
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void onEncryptorError(PeerId id)
+        private void onEncryptorError(PeerIdInternal id)
         {
             CleanupSocket(id);
         }
@@ -349,7 +349,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(IAsyncResult result)
         {
-            PeerId id = (PeerId)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 
             try
             {

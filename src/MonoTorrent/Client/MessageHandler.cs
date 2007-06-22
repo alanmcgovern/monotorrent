@@ -18,12 +18,12 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private Queue<PeerId> cleanUpQueue = new Queue<PeerId>();
+        private Queue<PeerIdInternal> cleanUpQueue = new Queue<PeerIdInternal>();
         private bool messageLoopActive;
         private Thread messageLoopThread;
         private readonly object queuelock = new object();
-        private Queue<Nullable<KeyValuePair<PeerId, AsyncMessageDetails>>> queue;
-        private Queue<PeerId> sendQueue;
+        private Queue<Nullable<KeyValuePair<PeerIdInternal, AsyncMessageDetails>>> queue;
+        private Queue<PeerIdInternal> sendQueue;
         private ManualResetEvent waitHandle;
 
         #endregion Member Variables
@@ -43,8 +43,8 @@ namespace MonoTorrent.Client
 
         public MessageHandler()
         {
-            this.queue = new Queue<KeyValuePair<PeerId, AsyncMessageDetails>?>();
-            this.sendQueue = new Queue<PeerId>();
+            this.queue = new Queue<KeyValuePair<PeerIdInternal, AsyncMessageDetails>?>();
+            this.sendQueue = new Queue<PeerIdInternal>();
             this.waitHandle = new ManualResetEvent(false);
         }
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
             this.Stop();
         }
 
-        internal void EnqueueReceived(PeerId id, ArraySegment<byte> buffer, int startOffset, int count)
+        internal void EnqueueReceived(PeerIdInternal id, ArraySegment<byte> buffer, int startOffset, int count)
         {
             ArraySegment<byte> messageBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref messageBuffer, buffer.Count);
@@ -79,12 +79,12 @@ namespace MonoTorrent.Client
 
             lock (this.queuelock)
             {
-                this.queue.Enqueue(new KeyValuePair<PeerId, AsyncMessageDetails>(id, details));
+                this.queue.Enqueue(new KeyValuePair<PeerIdInternal, AsyncMessageDetails>(id, details));
                 this.waitHandle.Set();
             }
         }
 
-        internal void EnqueueSend(PeerId id)
+        internal void EnqueueSend(PeerIdInternal id)
         {
             lock (this.queuelock)
             {
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void EnqueueCleanup(PeerId id)
+        internal void EnqueueCleanup(PeerIdInternal id)
         {
             lock (this.queuelock)
             {
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private void HandleMessage(PeerId id, AsyncMessageDetails messageDetails)
+        private void HandleMessage(PeerIdInternal id, AsyncMessageDetails messageDetails)
         {
             try
             {
@@ -166,9 +166,9 @@ namespace MonoTorrent.Client
 
         private void MessageLoop()
         {
-            PeerId sendMessageToId;
-            PeerId cleanupId;
-            Nullable<KeyValuePair<PeerId, AsyncMessageDetails>> receivedMessage;
+            PeerIdInternal sendMessageToId;
+            PeerIdInternal cleanupId;
+            Nullable<KeyValuePair<PeerIdInternal, AsyncMessageDetails>> receivedMessage;
 
             while (this.messageLoopActive)
             {
@@ -204,7 +204,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void SendMessage(PeerId id)
+        private void SendMessage(PeerIdInternal id)
         {
             lock (id.TorrentManager.resumeLock)
                 lock (id)

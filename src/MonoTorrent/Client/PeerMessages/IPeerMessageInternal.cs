@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        void Handle(PeerId id);
+        void Handle(PeerIdInternal id);
 
 
         /// <summary>

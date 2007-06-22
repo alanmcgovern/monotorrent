@@ -40,7 +40,7 @@ using System.Net;
 
 namespace MonoTorrent.Client
 {
-    internal delegate void MessagingCallback(PeerId id);
+    internal delegate void MessagingCallback(PeerIdInternal id);
 
     /// <summary>
     /// Main controller class for all incoming and outgoing connections
@@ -161,7 +161,7 @@ namespace MonoTorrent.Client
 
         #region Async Connection Methods
 
-        internal void ConnectToPeer(TorrentManager manager, PeerId id)
+        internal void ConnectToPeer(TorrentManager manager, PeerIdInternal id)
         {
             // Connect to the peer.
             lock (id)
@@ -214,7 +214,7 @@ namespace MonoTorrent.Client
             bool fireConnected = false;
             bool cleanUp = false;
             string reason = null;
-            PeerId id = (PeerId)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 
             try
             {
@@ -237,6 +237,8 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
                         id.TorrentManager.Peers.AddPeer(id, PeerType.Connected);
 
+                        id.PublicId = new PeerId();
+                        id.UpdatePublicStats();
                         fireConnected = true;
 
                         // If we have too many open connections, close the connection
@@ -342,7 +344,7 @@ namespace MonoTorrent.Client
         {
             string reason = null;
             bool cleanUp = false;
-            PeerId id = (PeerId)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 
             try
             {
@@ -409,7 +411,7 @@ namespace MonoTorrent.Client
         {
             string reason = null;
             bool cleanup = false;
-            PeerId id = (PeerId)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 
             try
             {
@@ -469,7 +471,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void onPeerHandshakeSent(PeerId id)
+        private void onPeerHandshakeSent(PeerIdInternal id)
         {
             lock (id.TorrentManager.resumeLock)
             lock (id)
@@ -489,7 +491,7 @@ namespace MonoTorrent.Client
         /// This method is called as part of the AsyncCallbacks when we recieve a peer handshake
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerHandshakeReceived(PeerId id)
+        private void onPeerHandshakeReceived(PeerIdInternal id)
         {
             string reason = null;
             bool cleanUp = false;
@@ -550,7 +552,7 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerBitfieldSent(PeerId id)
+        private void onPeerBitfieldSent(PeerIdInternal id)
         {
             lock (id.TorrentManager.resumeLock)
             lock (id)
@@ -579,7 +581,7 @@ namespace MonoTorrent.Client
         /// This method is called as part of the AsyncCallbacks when we recieve a peer message length
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerMessageLengthReceived(PeerId id)
+        private void onPeerMessageLengthReceived(PeerIdInternal id)
         {
             lock (id.TorrentManager.resumeLock)
             lock (id)
@@ -620,7 +622,7 @@ namespace MonoTorrent.Client
         /// This method is called as part of the AsyncCallbacks when we recieve a peer message
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerMessageReceived(PeerId id)
+        private void onPeerMessageReceived(PeerIdInternal id)
         {
             string reason = null;
             bool cleanUp = false;
@@ -672,7 +674,7 @@ namespace MonoTorrent.Client
         /// This method is called as part of the AsyncCallbacks when a peer message is sent
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerMessageSent(PeerId id)
+        private void onPeerMessageSent(PeerIdInternal id)
         {
             lock (id.TorrentManager.resumeLock)
             lock (id)
@@ -698,7 +700,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer to receive the message from</param>
         /// <param name="length">The length of the message to receive</param>
         /// <param name="callback">The callback to invoke when the message has been received</param>
-        private void ReceiveMessage(PeerId id, int length, MessagingCallback callback)
+        private void ReceiveMessage(PeerIdInternal id, int length, MessagingCallback callback)
         {
             bool cleanUp = false;
             try
@@ -748,7 +750,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer to send the message to</param>
         /// <param name="message">The  message to send</param>
         /// <param name="callback">The callback to invoke when the message has been sent</param>
-        private void SendMessage(PeerId id, IPeerMessageInternal message, MessagingCallback callback)
+        private void SendMessage(PeerIdInternal id, IPeerMessageInternal message, MessagingCallback callback)
         {
             bool cleanup = false;
 
@@ -812,7 +814,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal void AsyncCleanupSocket(PeerId id, bool localClose, string message)
+        internal void AsyncCleanupSocket(PeerIdInternal id, bool localClose, string message)
         {
             bool fireCleanup = false;
             if (id == null) // Sometimes onEncryptoError will fire with a null id
@@ -837,6 +839,7 @@ namespace MonoTorrent.Client
                         id.Peer.CleanedUpCount++;
                         id.Peer.ActiveReceive = false;
                         id.Peer.ActiveSend = false;
+                        id.PublicId.IsValid = false;
 
                         if (id.Peer.Connection != null)
                         {
@@ -918,13 +921,13 @@ namespace MonoTorrent.Client
         /// This method is called when a connection needs to be closed and the resources for it released.
         /// </summary>
         /// <param name="id">The peer whose connection needs to be closed</param>
-        internal void CleanupSocket(PeerId id, string message)
+        internal void CleanupSocket(PeerIdInternal id, string message)
         {
             CleanupSocket(id, true, message);
         }
 
 
-        internal void CleanupSocket(PeerId id, bool localClose, string message)
+        internal void CleanupSocket(PeerIdInternal id, bool localClose, string message)
         {
             this.messageHandler.EnqueueCleanup(id);
         }
@@ -939,7 +942,7 @@ namespace MonoTorrent.Client
             string reason = null;
             int bytesSent;
             bool cleanUp = false;
-            PeerId id = (PeerId)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 
             try
             {
@@ -985,6 +988,8 @@ namespace MonoTorrent.Client
 
                         ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
 
+                        id.PublicId = new PeerId();
+                        id.UpdatePublicStats();
                         RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Incoming));
 
                         if (this.openConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
@@ -1012,7 +1017,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void onEncryptorReady(PeerId id)
+        internal void onEncryptorReady(PeerIdInternal id)
         {
             try
             {
@@ -1030,7 +1035,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void onEncryptorError(PeerId id)
+        internal void onEncryptorError(PeerIdInternal id)
         {
             try
             {
@@ -1067,7 +1072,7 @@ namespace MonoTorrent.Client
         /// This method should be called to begin processing messages stored in the SendQueue
         /// </summary>
         /// <param name="id">The peer whose message queue you want to start processing</param>
-        internal void ProcessQueue(PeerId id)
+        internal void ProcessQueue(PeerIdInternal id)
         {
             if (id.Peer.Connection.QueueLength == 0)
             {
@@ -1137,7 +1142,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to resume</param>
         /// <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
-        internal int ResumePeer(PeerId id, bool downloading)
+        internal int ResumePeer(PeerIdInternal id, bool downloading)
         {
             int bytesRemaining;
             bool cleanUp = false;
@@ -1182,7 +1187,7 @@ namespace MonoTorrent.Client
         internal void TryConnect()
         {
             int i;
-            PeerId id;
+            PeerIdInternal id;
             TorrentManager m = null;
 
             // If we have already reached our max connections globally, don't try to connect to a new peer

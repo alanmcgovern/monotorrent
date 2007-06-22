@@ -213,7 +213,7 @@ namespace MonoTorrent.Client.PeerMessages
         }
 
 
-        internal void Handle(PeerId id)
+        internal void Handle(PeerIdInternal id)
         {
             if (!this.protocolString.Equals(VersionInfo.ProtocolStringV100))
             {
@@ -309,7 +309,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerId id)
+        void IPeerMessageInternal.Handle(PeerIdInternal id)
         {
             this.Handle(id);
         }

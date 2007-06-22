@@ -34,11 +34,11 @@ using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Encryption
 {
-    public delegate void EncryptorReadyHandler(PeerId id);
-    public delegate void EncryptorIOErrorHandler(PeerId id);
-    public delegate void EncryptorEncryptionErrorHandler(PeerId id);
+    internal delegate void EncryptorReadyHandler(PeerIdInternal id);
+    internal delegate void EncryptorIOErrorHandler(PeerIdInternal id);
+    internal delegate void EncryptorEncryptionErrorHandler(PeerIdInternal id);
 
-    public interface IEncryptor
+    internal interface IEncryptor
     {
         event EncryptorReadyHandler onEncryptorReady;
         event EncryptorIOErrorHandler onEncryptorIOError;
@@ -60,6 +60,6 @@ namespace MonoTorrent.Client.Encryption
 
         int GetInitialData(byte[] buffer, int offset, int count);
 
-        void SetPeerConnectionID(PeerId id);
+        void SetPeerConnectionID(PeerIdInternal id);
     }
 }

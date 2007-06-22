@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.PeerMessages
         }
 
 
-        internal void Handle(PeerId id)
+        internal void Handle(PeerIdInternal id)
         {
             if (!id.Peer.Connection.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerId id)
+        void IPeerMessageInternal.Handle(PeerIdInternal id)
         {
             this.Handle(id);
         }

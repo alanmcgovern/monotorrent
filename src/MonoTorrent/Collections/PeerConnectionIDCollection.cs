@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public class PeerIdCollection : MonoTorrentCollectionBase
+    internal class PeerIdCollection : MonoTorrentCollectionBase
     {
         #region Private Fields
 
@@ -48,13 +48,13 @@ namespace MonoTorrent
 
         #region Methods
 
-        public PeerId this[int index]
+        public PeerIdInternal this[int index]
         {
-            get { return (PeerId)list[index]; }
+            get { return (PeerIdInternal)list[index]; }
             set { list[index] = value; }
         }
 
-        public int Add(PeerId value)
+        public int Add(PeerIdInternal value)
         {
 #if NET_2_0
             list.Add(value);
@@ -77,7 +77,7 @@ namespace MonoTorrent
             return clone;
         }
 
-        public bool Contains(PeerId value)
+        public bool Contains(PeerIdInternal value)
         {
             return list.Contains(value);
         }
@@ -97,12 +97,12 @@ namespace MonoTorrent
             return list.GetEnumerator();
         }
 
-        public int IndexOf(PeerId value)
+        public int IndexOf(PeerIdInternal value)
         {
             return list.IndexOf(value);
         }
 
-        public void Insert(int index, PeerId value)
+        public void Insert(int index, PeerIdInternal value)
         {
             list.Insert(index, value);
         }
@@ -112,7 +112,7 @@ namespace MonoTorrent
             get { return ((IList)list).IsSynchronized; }
         }
 
-        public void Remove(PeerId value)
+        public void Remove(PeerIdInternal value)
         {
             list.Remove(value);
         }
@@ -134,22 +134,22 @@ namespace MonoTorrent
 
         int IList.Add(object value)
         {
-            return Add((PeerId)value);
+            return Add((PeerIdInternal)value);
         }
 
         int IList.IndexOf(object value)
         {
-            return IndexOf((PeerId)value);
+            return IndexOf((PeerIdInternal)value);
         }
 
         bool IList.Contains(object value)
         {
-            return Contains((PeerId)value);
+            return Contains((PeerIdInternal)value);
         }
 
         void IList.Insert(int index, object value)
         {
-            Insert(index, (PeerId)value);
+            Insert(index, (PeerIdInternal)value);
         }
 
         bool IList.IsFixedSize
@@ -165,13 +165,13 @@ namespace MonoTorrent
 
         void IList.Remove(object value)
         {
-            Remove((PeerId)value);
+            Remove((PeerIdInternal)value);
         }
 
         object IList.this[int index]
         {
             get { return this[index]; }
-            set { this[index] = (PeerId)value; }
+            set { this[index] = (PeerIdInternal)value; }
         }
 
         #endregion

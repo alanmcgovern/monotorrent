@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal void Handle(PeerId id)
+        internal void Handle(PeerIdInternal id)
         {
             id.Peer.Connection.BitField = this.bitField;
             id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);
@@ -167,7 +167,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerId id)
+        void IPeerMessageInternal.Handle(PeerIdInternal id)
         {
             this.Handle(id);
         }

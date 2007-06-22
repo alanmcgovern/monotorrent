@@ -8,19 +8,25 @@ namespace MonoTorrent.Client
 {
     public static class Logger
     {
-        private static Dictionary<PeerId, LinkedList<string>> log;
+        private static Dictionary<PeerIdInternal, LinkedList<string>> log;
         private static List<TraceListener> listeners;
 
         static Logger()
         {
             listeners = new List<TraceListener>();
-            log = new Dictionary<PeerId, LinkedList<string>>();
+            log = new Dictionary<PeerIdInternal, LinkedList<string>>();
         }
 
         static void AddListener(TraceListener listener)
         {
             lock (listeners)
                 listeners.Add(listener);
+        }
+
+        [Conditional("EnableLogging")]
+        internal static void Log(PeerIdInternal id, string message)
+        {
+            Log(id.PublicId, message);
         }
 
         [Conditional("EnableLogging")]
@@ -65,7 +71,7 @@ namespace MonoTorrent.Client
             }*/
         }
 
-        internal static void FlushToDisk(PeerId id)
+        internal static void FlushToDisk(PeerIdInternal id)
         {/*
             if (!Directory.Exists(@"C:\Logs\"))
                 Directory.CreateDirectory(@"C:\Logs\");

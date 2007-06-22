@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    public class PeerId : IComparable<PeerId>
+    internal class PeerIdInternal : IComparable<PeerIdInternal>
     {
         #region Member Variables
 
@@ -45,6 +45,18 @@ namespace MonoTorrent.Client
         {
             get { return this.torrentManager.Engine.ConnectionManager; }
         }
+
+
+        internal SocketError ErrorCode;
+
+
+        internal PeerId PublicId
+        {
+            get { return this.peerId; }
+            set { this.peerId = value; }
+        }
+        private PeerId peerId;
+
 
         /// <summary>
         /// 
@@ -69,8 +81,8 @@ namespace MonoTorrent.Client
             }
         }
         private TorrentManager torrentManager;
+        
 
-        internal SocketError ErrorCode;
         #endregion
 
 
@@ -79,7 +91,7 @@ namespace MonoTorrent.Client
         /// Creates a new PeerConnectionID
         /// </summary>
         /// <param name="peer"></param>
-        public PeerId(Peer peer)
+        public PeerIdInternal(Peer peer)
         {
             this.peer = peer;
             this.torrentManager = null;
@@ -92,7 +104,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="manager"></param>
-        public PeerId(Peer peer, TorrentManager manager)
+        public PeerIdInternal(Peer peer, TorrentManager manager)
         {
             this.peer = peer;
             this.torrentManager = manager;
@@ -108,7 +120,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            PeerId id2 = obj as PeerId;
+            PeerIdInternal id2 = obj as PeerIdInternal;
             if (id2 == null)
                 return false;
 
@@ -137,11 +149,16 @@ namespace MonoTorrent.Client
 
         #region IComparable<PeerConnectionID> Members
 
-        public int CompareTo(PeerId other)
+        public int CompareTo(PeerIdInternal other)
         {
             return this.peer.Location.CompareTo(other.peer.Location);
         }
 
         #endregion
+
+        internal void UpdatePublicStats()
+        {
+            peerId.UpdateStats(this);
+        }
     }
 }

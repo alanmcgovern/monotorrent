@@ -41,16 +41,16 @@ namespace MonoTorrent.Client
         private object requestsLocker = new object();                   // Used to synchronise access to the lists
         private PieceCollection pieces;                                     // A list of all the remaining pieces to download
         private BlockCollection blocks;                                     // A list of all the blocks in the remaining pieces to download
-        Dictionary<PeerId, BlockCollection> requests;             // Used to remember which blocks each peer is downloading
+        Dictionary<PeerIdInternal, BlockCollection> requests;             // Used to remember which blocks each peer is downloading
         Dictionary<Block, PeerIdCollection> blockRequestees;      // Used to remember which peers are getting each block so i can issue cancel messages
         #endregion
 
         #region Constructors
 
-        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerId, PieceCollection> existingRequests)
+        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerIdInternal, PieceCollection> existingRequests)
         {
             this.myBitfield = myBitfield;
-            this.requests = new Dictionary<PeerId, BlockCollection>();
+            this.requests = new Dictionary<PeerIdInternal, BlockCollection>();
             this.blockRequestees = new Dictionary<Block, PeerIdCollection>();
             this.pieces = new PieceCollection();
 
@@ -74,9 +74,9 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private void AddExistingRequests(Dictionary<PeerId, PieceCollection> existingRequests)
+        private void AddExistingRequests(Dictionary<PeerIdInternal, PieceCollection> existingRequests)
         {
-            foreach (KeyValuePair<PeerId, PieceCollection> keypair in existingRequests)
+            foreach (KeyValuePair<PeerIdInternal, PieceCollection> keypair in existingRequests)
             {
                 if (!this.requests.ContainsKey(keypair.Key))
                     this.requests.Add(keypair.Key, new BlockCollection());
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override bool IsInteresting(PeerId id)
+        public override bool IsInteresting(PeerIdInternal id)
         {
             lock (this.requestsLocker)
             {
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override RequestMessage PickPiece(PeerId id, PeerIdCollection otherPeers)
+        public override RequestMessage PickPiece(PeerIdInternal id, PeerIdCollection otherPeers)
         {
             lock (this.requestsLocker)
             {
@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override void ReceivedChokeMessage(PeerId id)
+        public override void ReceivedChokeMessage(PeerIdInternal id)
         {
             lock (this.requestsLocker)
             {
@@ -191,7 +191,7 @@ namespace MonoTorrent.Client
             return;
         }
 
-        private void RemoveRequests(PeerId id, RequestMessage requestMessage)
+        private void RemoveRequests(PeerIdInternal id, RequestMessage requestMessage)
         {
             Piece p = PiecePickerBase.GetPieceFromIndex(this.pieces, requestMessage.PieceIndex);
             int b = PiecePickerBase.GetBlockIndex(p.Blocks, requestMessage.StartOffset, requestMessage.RequestLength);
@@ -202,7 +202,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override PieceEvent ReceivedPieceMessage(PeerId id, ArraySegment<byte> buffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PeerIdInternal id, ArraySegment<byte> buffer, PieceMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public override void ReceivedRejectRequest(PeerId id, RejectRequestMessage message)
+        public override void ReceivedRejectRequest(PeerIdInternal id, RejectRequestMessage message)
         {
             lock (this.requestsLocker)
             {
@@ -291,7 +291,7 @@ namespace MonoTorrent.Client
 
         #endregion
 
-        public override void RemoveRequests(PeerId id)
+        public override void RemoveRequests(PeerIdInternal id)
         {
             if (!this.requests.ContainsKey(id))
                 return;

@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.PeerMessages
             throw new ProtocolException("Unknown message received");
         }
 
-        internal void Handle(PeerId id)
+        internal void Handle(PeerIdInternal id)
         {
             throw new ProtocolException("Unknown message");
         }
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client.PeerMessages
             this.Decode(buffer, offset, length);
         }
 
-        void IPeerMessageInternal.Handle(PeerId id)
+        void IPeerMessageInternal.Handle(PeerIdInternal id)
         {
             this.Handle(id);
         }

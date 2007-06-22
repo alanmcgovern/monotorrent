@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    public class EncryptedSocket : IEncryptor
+    internal class EncryptedSocket : IEncryptor
     {
         #region Events
 
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] CryptoSelect;
 
-        protected PeerId id;
+        protected PeerIdInternal id;
         #endregion
 
         public EncryptedSocket(EncryptionType minCryptoAllowed)
@@ -228,7 +228,7 @@ namespace MonoTorrent.Client.Encryption
         /// Sets the PeerConnectionID associated with this connection
         /// </summary>
         /// <param name="id">The PeerConnectionID associated with this connection</param>
-        public void SetPeerConnectionID(PeerId id)
+        public void SetPeerConnectionID(PeerIdInternal id)
         {
             this.id = id;
         }

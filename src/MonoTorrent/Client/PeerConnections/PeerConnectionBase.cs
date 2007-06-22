@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Holds the data for a connection to another peer
     /// </summary>
-    public abstract class PeerConnectionBase : IDisposable
+    internal abstract class PeerConnectionBase : IDisposable
     {
         #region Member Variables
 
@@ -473,11 +473,11 @@ namespace MonoTorrent.Client
 
         #region Async Methods
 
-        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerId id);
+        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerIdInternal id);
 
-        internal abstract void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+        internal abstract void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode);
 
-        internal abstract void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerId id, out SocketError errorCode);
+        internal abstract void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode);
 
         internal abstract void Dispose();
 

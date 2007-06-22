@@ -61,6 +61,11 @@ namespace MonoTorrent.Client
             this.piece = piece;
         }
 
+        internal BlockEventArgs(Block block, Piece piece, PeerIdInternal id)
+            :this(block, piece, id.PublicId)
+        {
+        }
+
         #endregion
 
 

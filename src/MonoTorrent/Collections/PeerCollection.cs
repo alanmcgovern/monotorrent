@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    public class PeerCollection : MonoTorrentCollectionBase
+    internal class PeerCollection : MonoTorrentCollectionBase
     {
         #region Private Fields
 

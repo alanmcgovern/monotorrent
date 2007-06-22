@@ -36,7 +36,7 @@ using MonoTorrent.Client.PeerMessages;
 
 namespace MonoTorrent.Client
 {
-    public class Peer
+    internal class Peer
     {
         #region Private Fields
 
