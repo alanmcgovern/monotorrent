@@ -368,7 +368,9 @@ namespace MonoTorrent.Common
             int start;
             int end;
 
-            for (int i = (startIndex / 32); i <= (endIndex / 32); i++)
+            // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
+            int loopEnd = (endIndex / 32) - ((endIndex % 32 == 0) ? 1 : 0);
+            for (int i = (startIndex / 32); i <= loopEnd; i++)
             {
                 if (this.array[i] == 0)        // This one has no true values
                     continue;
