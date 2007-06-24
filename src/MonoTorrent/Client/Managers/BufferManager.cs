@@ -56,6 +56,7 @@ namespace MonoTorrent.Client
         private Queue<ArraySegment<byte>> smallMessageBuffers;
         private Queue<ArraySegment<byte>> massiveBuffers;
 
+        private List<BitField> bitfields;
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
@@ -73,6 +74,29 @@ namespace MonoTorrent.Client
             this.AllocateBuffers(20, BufferType.SmallMessageBuffer);
         }
 
+        internal BitField GetBitfield(int length)
+        {
+            lock (this.bitfields)
+            {
+                for (int i = 0; i < bitfields.Count; i++)
+                {
+                    if (this.bitfields[i].Length == length)
+                    {
+                        BitField b = this.bitfields[i];
+                        this.bitfields.RemoveAt(i);
+                        return b;
+                    }
+                }
+
+                return new BitField(length);
+            }
+        }
+
+        internal void FreeBitfield(BitField b)
+        {
+            lock (this.bitfields)
+                this.bitfields.Add(b);
+        }
 
         /// <summary>
         /// Allocates an existing buffer from the pool
