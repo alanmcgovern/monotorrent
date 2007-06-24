@@ -236,17 +236,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// True if the peer has pieces that i might like to request. If he is interesting to me
-        /// i need to send an InterestedMessage.
-        /// </summary>
-        internal bool IsInterestingToMe
-        {
-            get { return this.isinterestingtoMe; }
-            set { this.isinterestingtoMe = value; }
-        }
-
-
-        /// <summary>
         /// The number of pieces the peer has requested off me
         /// </summary>
         public int IsRequestingPiecesCount

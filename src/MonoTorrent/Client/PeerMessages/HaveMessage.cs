@@ -118,10 +118,7 @@ namespace MonoTorrent.Client.PeerMessages
             // We can do a fast check to see if the peer is interesting or not when we receive a Have Message.
             // If the peer just received a piece we don't have, he's interesting. Otherwise his state is unchanged
             if (!id.TorrentManager.Bitfield[this.pieceIndex])
-            {
-                id.Peer.Connection.IsInterestingToMe = true;
-                id.TorrentManager.SetAmInterestedStatus(id);
-            }
+                id.TorrentManager.SetAmInterestedStatus(id, true);
 
             // Fastcheck to see if a peer is a seeder or not
             id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);

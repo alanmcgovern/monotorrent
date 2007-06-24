@@ -617,9 +617,6 @@ namespace MonoTorrent.Client
                         //if (counter % 500 == 0)
                         //    DumpStats(id, counter);
 
-                        // If the peer is interesting to me and i havent sent an Interested message
-                        SetAmInterestedStatus(id);
-
 
                         // If he is not interested and i am not choking him
                         if (!id.Peer.Connection.IsInterested && !id.Peer.Connection.AmChoking)
@@ -634,7 +631,7 @@ namespace MonoTorrent.Client
                             SetChokeStatus(id, true);
 
                         // If the peer is interesting, try to queue up some piece requests off him
-                        if(id.Peer.Connection.IsInterestingToMe)
+                        if(id.Peer.Connection.AmInterested)
                             while (this.pieceManager.AddPieceRequest(id)) { }
 
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
@@ -762,21 +759,6 @@ namespace MonoTorrent.Client
         {
             DownloadLogic(counter);
         }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        internal void SetAmInterestedStatus(PeerIdInternal id)
-        {
-            if (id.Peer.Connection.IsInterestingToMe && (!id.Peer.Connection.AmInterested))
-                SetAmInterestedStatus(id, true);
-
-            else if (!id.Peer.Connection.IsInterestingToMe && id.Peer.Connection.AmInterested)
-                SetAmInterestedStatus(id, false);
-        }
-
 
         /// <summary>
         /// 
@@ -926,8 +908,8 @@ namespace MonoTorrent.Client
                             bool hasPiece = this.peers.ConnectedPeers[i].Peer.Connection.BitField[pieceIndex];
                             if (hasPiece)
                             {
-                                this.peers.ConnectedPeers[i].Peer.Connection.IsInterestingToMe = this.pieceManager.IsInteresting(this.peers.ConnectedPeers[i]);
-                                SetAmInterestedStatus(this.peers.ConnectedPeers[i]);
+                                bool isInteresting = this.pieceManager.IsInteresting(this.peers.ConnectedPeers[i]);
+                                SetAmInterestedStatus(this.peers.ConnectedPeers[i], isInteresting);
                             }
 
                             // Check to see if have supression is enabled and send the have message accordingly
@@ -937,22 +919,7 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// Changes the peers "Interesting" status to the new value
-        /// </summary>
-        /// <param name="id">The peer to change the status of</param>
-        /// <param name="amInterested">True if we are interested in the peer, false otherwise</param>
-        private void SetAmInterestedStatus(PeerIdInternal id, bool amInterested)
-        {
-            // If we used to be not interested but now we are, send a message.
-            // If we used to be interested but now we're not, send a message
-            id.Peer.Connection.AmInterested = amInterested;
 
-            if (amInterested)
-                id.Peer.Connection.Enqueue(new InterestedMessage());
-            else
-                id.Peer.Connection.Enqueue(new NotInterestedMessage());
-        }
 
 
         /// <summary>
@@ -1000,5 +967,31 @@ namespace MonoTorrent.Client
         }
 
         #endregion Private Methods
+
+        internal void SetAmInterestedStatus(PeerIdInternal id, bool interesting)
+        {
+            bool enqueued = false;
+            if (interesting && !id.Peer.Connection.AmInterested)
+            {
+                id.Peer.Connection.AmInterested = true;
+                id.Peer.Connection.Enqueue(new InterestedMessage());
+
+                // He's interesting, so attempt to queue up any FastPieces (if that's possible)
+                while (id.TorrentManager.pieceManager.AddPieceRequest(id)) { }
+                enqueued = true;
+            }
+            else if (!interesting && id.Peer.Connection.AmInterested)
+            {
+                id.Peer.Connection.AmInterested = false;
+                id.Peer.Connection.Enqueue(new NotInterestedMessage());
+                enqueued = true;
+            }
+
+            if (enqueued && !id.Peer.Connection.ProcessingQueue)
+            {
+                id.Peer.Connection.ProcessingQueue = true;
+                id.ConnectionManager.MessageHandler.EnqueueSend(id);
+            }
+        }
     }
 }

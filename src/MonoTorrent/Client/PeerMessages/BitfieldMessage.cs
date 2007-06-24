@@ -114,8 +114,7 @@ namespace MonoTorrent.Client.PeerMessages
             id.Peer.Connection.BitField = this.bitField;
             id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);
 
-            id.Peer.Connection.IsInterestingToMe = id.TorrentManager.PieceManager.IsInteresting(id);
-            id.TorrentManager.SetAmInterestedStatus(id);
+            id.TorrentManager.SetAmInterestedStatus(id, id.TorrentManager.PieceManager.IsInteresting(id));
         }
 
 
