@@ -158,6 +158,18 @@ namespace MonoTorrent.Common
             return this;
         }
 
+        internal void AndNotFast(BitField bitField)
+        {
+            if (bitField == null)
+                throw new ArgumentNullException("bitField");
+
+            if (this.length != bitField.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
+
+            for (int i = 0; i < this.array.Length; i++)
+                this.array[i] &= ~bitField.array[i];
+        }
+
         /// <summary>
         /// Performs binary NAND on all the elements of this bitarray against the elements of the supplied BitField
         /// </summary>
