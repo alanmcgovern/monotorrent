@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
 
         public bool IsChoking
         {
-            get { return this.isSeeder; }
+            get { return this.isChoking; }
         }
 
         public bool IsInterested
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
         public bool IsValid
         {
             get { return isValid; }
-            set { isValid = value; }
+            internal set { isValid = value; }
         }
 
         public string Location
