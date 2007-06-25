@@ -73,6 +73,7 @@ SOURCES=	\
 	Client/Exceptions/ProtocolException.cs \
 	Client/Exceptions/TorrentLoadException.cs \
 	Client/Peers/Peer.cs \
+	Client/PeerConnections/PeerId.cs  \
 	Client/PeerConnections/PeerConnectionId.cs \
 	Client/PeerConnections/PeerConnectionBase.cs \
 	Client/PeerConnections/TCPConnection.cs \
