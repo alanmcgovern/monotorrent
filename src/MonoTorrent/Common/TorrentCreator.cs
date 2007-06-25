@@ -372,6 +372,15 @@ namespace MonoTorrent.Common
         }
 
 
+        public Torrent Create()
+        {
+            Reset();
+            CreateDict();
+            
+            return Torrent.Load(this.torrent);
+        }
+
+        
         ///<summary>
         ///creates an BencodedDictionary.
         ///</summary>
