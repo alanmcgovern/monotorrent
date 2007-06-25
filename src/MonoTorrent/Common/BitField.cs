@@ -522,19 +522,25 @@ namespace MonoTorrent.Common
         /// </summary>
         private void UpdateTrueCount()
         {
-            int capacity = sizeof(int) * 8;
+            // The number of bits in each int
+            int capacity = 32;
+
+            // Reset the true count to zero, then start iterating
+            this.trueCount = 0;
 
             for (int i = 0; i < this.array.Length; i++)
+            {
+                // Fastpath - none of the bits are true
                 if (this.array[i] == 0)
-                {
                     continue;
-                }
+                
+                // Fastpath  - all the bits are true
                 else if (this.array[i] == ~0)
-                {
                     this.trueCount += capacity;
-                }
+        
                 else
                 {
+                    // Check each index
                     int startIndex = i * 32;
                     int endIndex = (i + 1) * 32;
                     endIndex = endIndex > this.length ? this.length : endIndex;
@@ -542,6 +548,7 @@ namespace MonoTorrent.Common
                         if (Get(j))
                             trueCount++;
                 }
+            }
         }
 
 
