@@ -63,6 +63,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public BufferManager()
         {
+            this.bitfields = new List<BitField>();
             this.massiveBuffers = new Queue<ArraySegment<byte>>();
             this.largeMessageBuffers = new Queue<ArraySegment<byte>>();
             this.mediumMessageBuffers = new Queue<ArraySegment<byte>>();
@@ -92,10 +93,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void FreeBitfield(BitField b)
+        internal void FreeBitfield(ref BitField b)
         {
             lock (this.bitfields)
                 this.bitfields.Add(b);
+
+            b = null;
         }
 
         /// <summary>
@@ -246,6 +249,13 @@ namespace MonoTorrent.Client
 
             else
                  throw new ArgumentException("Unsupported BufferType detected");
+        }
+
+        internal BitField GetClonedBitfield(BitField bitfield)
+        {
+            BitField clone = GetBitfield(bitfield.Length);
+            Buffer.BlockCopy(bitfield.Array, 0, clone.Array, 0, clone.Array.Length * 4);
+            return clone;
         }
     }
 }

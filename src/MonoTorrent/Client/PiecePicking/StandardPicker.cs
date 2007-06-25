@@ -40,9 +40,7 @@ namespace MonoTorrent.Client
         #region Member Variables
         private int[] priorities;
 
-        private BitField bufferBitfield;
         private List<BitField> previousBitfields;
-        private BitField isInterestingBuffer;
         private BitField unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
 
 
@@ -90,13 +88,11 @@ namespace MonoTorrent.Client
         {
             this.torrentFiles = torrentFiles;
             this.requests = new Dictionary<PeerIdInternal, PieceCollection>(32);
-            this.isInterestingBuffer = new BitField(bitField.Length);
             this.priorities = (int[])Enum.GetValues(typeof(Priority));
             Array.Sort<int>(this.priorities);
             Array.Reverse(this.priorities);
 
             this.myBitfield = bitField;
-            this.bufferBitfield = new BitField(myBitfield.Length);
             this.previousBitfields = new List<BitField>();
             this.previousBitfields.Add(new BitField(myBitfield.Length));
             this.torrentFiles = torrentFiles;
@@ -235,86 +231,138 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         private RequestMessage GetStandardRequest(PeerIdInternal id, PeerIdCollection otherPeers)
         {
-            int bitfieldIndex = 0;
             int checkIndex = 0;
+            BitField current = null;
             RequestMessage message = null;
-            Priority highestPriorityFound = Priority.DoNotDownload;
+            Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers);
 
-            Buffer.BlockCopy(this.myBitfield.Array, 0, bufferBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-            this.bufferBitfield.Not();
-
-            if (!id.Peer.IsSeeder)
-                this.bufferBitfield.AndFast(id.Peer.Connection.BitField);
-
-            Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfields[bitfieldIndex].Array, 0, this.bufferBitfield.Array.Length * 4);
-
-            // Out of the pieces the other peer has that we want, we look for the highest priority and store it here.
-            // We then keep NANDing the bitfield until we no longer have pieces with that priority. Then we can pick
-            // a piece from the "highest priority" available
-            highestPriorityFound = HighestPriorityAvailable(this.bufferBitfield);
-
-            // Nothing to download. This peer may still be interesting, but we may have set files to "DoNotDownload"
-            if (highestPriorityFound == Priority.DoNotDownload)
-                return null;
-            /*
-                        for (int i = 0; i < otherPeers.Count; i++)
-                        {
-                            lock (otherPeers[i])
-                            {
-                                if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
-                                    continue;
-
-                                Buffer.BlockCopy(this.bufferBitfield.Array, 0, this.previousBitfield.Array, 0, this.bufferBitfield.Array.Length * 4);
-                                this.bufferBitfield.AndFast(otherPeers[i].Peer.Connection.BitField);
-                                if (this.bufferBitfield.AllFalseSecure() || highestPriorityFound != HighestPriorityAvailable(this.bufferBitfield))
-                                    break;
-                            }
-                        }
-            */
-            // FIXME: The bitfield still contains pieces from files which are *not* the highest priority. Fix this.
-
-            // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
-            // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
-            // uninteresting.
-            int midPoint = random.Next(0, this.myBitfield.Length);
-            int endIndex = this.myBitfield.Length;
-            checkIndex = midPoint;
-
-            // First we check all the places from midpoint -> end
-            // Then if we dont find anything we check from 0 -> midpoint
-            while ((checkIndex = this.previousBitfields[bitfieldIndex].FirstTrue(checkIndex, endIndex)) != -1)
-                if (AlreadyHaveOrRequested(checkIndex))
-                    checkIndex++;
-                else
-                    break;
-
-            if (checkIndex == -1)
+            try
             {
-                checkIndex = 0;
-                while ((checkIndex = this.previousBitfields[bitfieldIndex].FirstTrue(checkIndex, midPoint)) != -1)
-                    if (AlreadyHaveOrRequested(checkIndex))
-                        checkIndex++;
-                    else
-                        break;
-            }
-
-            if (checkIndex == -1)
-                return null;
-
-            // Request the piece
-            else
-            {
-                message = this.GenerateRequest(id, checkIndex);
-                PieceCollection reqs = requests[id];
-                for (int i = 0; i < reqs.Count; i++)
+                while (rarestFirstBitfields.Count > 0)
                 {
-                    if (reqs[i].Index != checkIndex)
-                        continue;
+                    current = rarestFirstBitfields.Pop();
 
-                    id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
+                    // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
+                    // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
+                    // uninteresting.
+                    int midPoint = random.Next(0, current.Length);
+                    int endIndex = current.Length;
+                    checkIndex = midPoint;
+
+                    // First we check all the places from midpoint -> end
+                    // Then if we dont find anything we check from 0 -> midpoint
+                    while ((checkIndex = current.FirstTrue(checkIndex, endIndex)) != -1)
+                        if (AlreadyHaveOrRequested(checkIndex))
+                            checkIndex++;
+                        else
+                            break;
+
+                    if (checkIndex == -1)
+                    {
+                        checkIndex = 0;
+                        while ((checkIndex = current.FirstTrue(checkIndex, midPoint)) != -1)
+                            if (AlreadyHaveOrRequested(checkIndex))
+                                checkIndex++;
+                            else
+                                break;
+                    }
+
+                    if (checkIndex == -1)
+                    {
+                        // FIXME: This might be optimisable. I've already checked all the indices in the
+                        // current bitfield and they weren't interesting, so i could NAND it against all the
+                        // other bitfields so i don't recheck the same indices over and over. It should be faster
+                        ClientEngine.BufferManager.FreeBitfield(ref current);
+                        continue;
+                    }
+
+                    // Request the piece
+                    message = this.GenerateRequest(id, checkIndex);
+                    PieceCollection reqs = requests[id];
+                    for (int i = 0; i < reqs.Count; i++)
+                    {
+                        if (reqs[i].Index != checkIndex)
+                            continue;
+
+                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(reqs[i].Blocks[0], reqs[i], id));
+                    }
+
+                    return message;
                 }
 
-                return message;
+                return null;
+            }
+
+            finally
+            {
+                if (current != null)
+                    ClientEngine.BufferManager.FreeBitfield(ref current);
+
+                while (rarestFirstBitfields.Count > 0)
+                {
+                    BitField popped = rarestFirstBitfields.Pop();
+                    ClientEngine.BufferManager.FreeBitfield(ref popped);
+                }
+            }
+        }
+
+        private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, PeerIdCollection otherPeers)
+        {
+            Priority highestPriority = Priority.Low;
+            Stack<BitField> bitfields = new Stack<BitField>();
+            BitField current = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
+
+            try
+            {
+                // Copy my bitfield into the buffer and invert it so it contains a list of pieces i want
+                Buffer.BlockCopy(myBitfield.Array, 0, current.Array, 0, current.Array.Length * 4);
+                current.Not();
+
+                // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
+                if (!id.Peer.IsSeeder)
+                    current.AndFast(id.Peer.Connection.BitField);
+
+                // Check the priority of the availabe pieces and record the highest one found
+                highestPriority = HighestPriorityAvailable(current);
+
+                // If true, then there are no pieces to download from this peer
+                if (highestPriority == Priority.DoNotDownload)
+                    return bitfields;
+
+                // Store this bitfield as the first iteration of the Rarest First algorithm.
+                bitfields.Push(current);
+
+                // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
+                current = ClientEngine.BufferManager.GetClonedBitfield(current);
+
+                for (int i = 0; i < otherPeers.Count; i++)
+                {
+                    lock (otherPeers[i])
+                    {
+                        if (otherPeers[i].Peer.Connection == null || otherPeers[i].Peer.IsSeeder)
+                            continue;
+
+                        // currentBitfield = currentBitfield & (!otherBitfield)
+                        // This calculation finds the pieces this peer has that other peers *do not* have.
+                        // i.e. the rarest piece.
+                        current.AndNotFast(otherPeers[i].Peer.Connection.BitField);
+
+                        // If the bitfield now has no pieces or we've knocked out a file which is at
+                        // a high priority then we've completed our task
+                        if (current.AllFalseSecure() || highestPriority != HighestPriorityAvailable(current))
+                            break;
+
+                        // Otherwise push the bitfield on the stack and clone it and iterate again.
+                        bitfields.Push(current);
+                        current = ClientEngine.BufferManager.GetClonedBitfield(current);
+                    }
+                }
+
+                return bitfields;
+            }
+            finally
+            {
+                ClientEngine.BufferManager.FreeBitfield(ref current);
             }
         }
 
@@ -379,18 +427,22 @@ namespace MonoTorrent.Client
         /// <returns>True if the peer is interesting, false otherwise</returns>
         public override bool IsInteresting(PeerIdInternal id)
         {
-            lock (this.isInterestingBuffer)     // I reuse a BitField as a buffer so i don't have to keep allocating new ones
+            BitField bitfield = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
+            try
             {
-                lock (this.myBitfield)
-                    Array.Copy(this.myBitfield.Array, 0, isInterestingBuffer.Array, 0, this.myBitfield.Array.Length);
+                Buffer.BlockCopy(myBitfield.Array, 0, bitfield.Array, 0, myBitfield.Array.Length * 4);
 
-                isInterestingBuffer.Not();
-                isInterestingBuffer.AndFast(id.Peer.Connection.BitField);
-                if (!isInterestingBuffer.AllFalseSecure())
+                bitfield.Not();
+                bitfield.AndFast(id.Peer.Connection.BitField);
+                if (!bitfield.AllFalseSecure())
                     return true;                            // He's interesting if he has a piece we want
 
                 lock (this.requests)
                     return (this.requests.ContainsKey(id)); // OR if we're already requesting a piece off him.
+            }
+            finally
+            {
+                ClientEngine.BufferManager.FreeBitfield(ref bitfield);
             }
         }
 
@@ -403,7 +455,6 @@ namespace MonoTorrent.Client
         public override RequestMessage PickPiece(PeerIdInternal id, PeerIdCollection otherPeers)
         {
             RequestMessage message = null;
-
             lock (this.myBitfield)
             {
                 // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only

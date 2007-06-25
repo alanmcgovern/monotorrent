@@ -210,10 +210,10 @@ namespace MonoTorrent
                         {
                             foreach (PeerId p in peers)
                             {
-                                count++;
                                 if (!p.IsValid) // If it's not valid, it means the peer has been disconnected. This reference should be dropped
                                     continue;
 
+                                count++;
                                 if (p.IsSeeder && !p.IsChoking)
                                     seedernotchoking++;
                                 areSeeders += p.IsSeeder ? 1 : 0;
@@ -225,7 +225,7 @@ namespace MonoTorrent
                                 maxPercent = !p.IsChoking ? Math.Max(maxPercent, p.Bitfield.PercentComplete) : maxPercent;
                             }
                         }
-                        averagePercent /= peers.Count;
+                        averagePercent /= count;
 
                         sb.Append("AreSeeders:            " + areSeeders.ToString());
                         sb.Append(Environment.NewLine);
