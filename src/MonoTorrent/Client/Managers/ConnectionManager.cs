@@ -839,7 +839,8 @@ namespace MonoTorrent.Client
                         id.Peer.CleanedUpCount++;
                         id.Peer.ActiveReceive = false;
                         id.Peer.ActiveSend = false;
-                        id.PublicId.IsValid = false;
+                        if (id.PublicId != null)
+                            id.PublicId.IsValid = false;
 
                         if (id.Peer.Connection != null)
                         {
