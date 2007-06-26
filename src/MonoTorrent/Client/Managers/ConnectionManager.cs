@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
         private ClientEngine engine;
-        public const int ChunkLength = 2048;   // Download in 2kB chunks to allow for better rate limiting
+        public const int ChunkLength = 2096;   // Download in 2kB chunks to allow for better rate limiting
 
         // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
         private MessagingCallback bitfieldSentCallback;
