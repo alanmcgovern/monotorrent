@@ -206,6 +206,9 @@ namespace MonoTorrent
                         double averagePercent = 0;
                         double maxPercent = 0;
                         double seedernotchoking = 0;
+                        int areInterested = 0;
+                        int amUnchoking = 0;
+                        int areRequestingCount = 0;
                         lock (peers)
                         {
                             foreach (PeerId p in peers)
@@ -219,35 +222,30 @@ namespace MonoTorrent
                                 areSeeders += p.IsSeeder ? 1 : 0;
                                 amInterested += p.AmInterested ? 1 : 0;
                                 isntChoking += !p.IsChoking ? 1 : 0;
-                                areChokingAndInteresting += p.IsChoking && p.AmInterested ? 1 : 0;
+                                areChokingAndInteresting += (p.IsChoking && p.AmInterested) ? 1 : 0;
                                 amRequestingPieces += p.AmRequestingPiecesCount;
                                 averagePercent += p.Bitfield.PercentComplete;
                                 maxPercent = !p.IsChoking ? Math.Max(maxPercent, p.Bitfield.PercentComplete) : maxPercent;
+                                areInterested += p.IsInterested ? 1 : 0;
+                                amUnchoking += !p.AmChoking ? 1 : 0;
+                                areRequestingCount += p.IsRequestingPiecesCount;
                             }
                         }
                         averagePercent /= count;
 
-                        sb.Append("AreSeeders:            " + areSeeders.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("AmInterested:          " + amInterested.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("AmRequesting:          " + amRequestingPieces.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("AmRequestingVerified:  " + messageCount.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("IsChoking+Interesting: " + areChokingAndInteresting.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Unchoked me:           " + isntChoking.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Unchoked me and seeder:" + seedernotchoking.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Count:                 " + count.ToString());
-                        sb.Append(Environment.NewLine);
-                        
-                        sb.Append("Average:               " + averagePercent.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Max    :               " +  maxPercent.ToString());
-                        sb.Append(Environment.NewLine);
+                        sb.AppendLine("Are seeders:            " + areSeeders.ToString());
+                        sb.AppendLine("Am interested:          " + amInterested.ToString());
+                        sb.AppendLine("Am requesting:          " + amRequestingPieces.ToString());
+                        sb.AppendLine("Is choking+Interesting: " + areChokingAndInteresting.ToString());
+                        sb.AppendLine("Unchoked me:            " + isntChoking.ToString());
+                        sb.AppendLine("Unchoked me and seeder: " + seedernotchoking.ToString());
+                        sb.AppendLine("Are interested:         " + areInterested.ToString());
+                        sb.AppendLine("Am unchoking:           " + amUnchoking.ToString());
+                        sb.AppendLine("Are requesting:         " + areRequestingCount.ToString());
+                        sb.AppendLine("Count:                  " + count.ToString());
+                        sb.AppendLine("Average:                " + averagePercent.ToString());
+                        sb.AppendLine("Max:                    " +  maxPercent.ToString());
+
                         // These are some of the other statistics which can be displayed. There are loads more available ;)
 
                         //sb.Append("Uploading to:     "); sb.Append(manager.UploadingTo);
