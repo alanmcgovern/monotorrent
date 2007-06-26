@@ -26,6 +26,7 @@ namespace MonoTorrent.Client
         private ConnectionMonitor monitor;
         private string peerId;
         private int piecesSent;
+        private int sendQueueLength;
         private bool supportsFastPeer;
         private TorrentManager manager;
 
@@ -115,6 +116,11 @@ namespace MonoTorrent.Client
             get { return this.piecesSent; }
         }
 
+        public int SendQueueLength
+        {
+            get { return this.sendQueueLength; }
+        }
+
         public bool SupportsFastPeer
         {
             get { return this.supportsFastPeer; }
@@ -157,6 +163,7 @@ namespace MonoTorrent.Client
             monitor = id.Peer.Connection.Monitor;
             peerId = id.Peer.PeerId;
             piecesSent = id.Peer.Connection.PiecesSent;
+            sendQueueLength = id.Peer.Connection.QueueLength;
             supportsFastPeer = id.Peer.Connection.SupportsFastPeer;
             manager = id.TorrentManager;
         }
