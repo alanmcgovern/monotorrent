@@ -217,9 +217,10 @@ namespace MonoTorrent.Client
                 // Only write to disk once
                 if (!p.Blocks[blockIndex].Received)
                 {
+#warning Actual writing isn't happening
                     long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                    using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
-                        id.TorrentManager.FileManager.Write(buffer.Array, buffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
+                    //using (new ReaderLock(id.TorrentManager.FileManager.streamsLock))
+                    //    id.TorrentManager.FileManager.Write(buffer.Array, buffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
                 }
 
                 p.Blocks[blockIndex].Received = true;

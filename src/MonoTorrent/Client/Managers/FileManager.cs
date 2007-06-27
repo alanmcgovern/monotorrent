@@ -590,7 +590,7 @@ namespace MonoTorrent.Client
         /// <param name="bufferOffset">The offset within the array to save the data</param>
         /// <param name="offset">The offset in the file from which to read the data</param>
         /// <param name="count">The number of bytes to read</param>
-        internal void Write(byte[] buffer, int bufferOffset, long offset, int count)
+        private void Write(byte[] buffer, int bufferOffset, long offset, int count)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
