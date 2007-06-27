@@ -1085,8 +1085,6 @@ namespace MonoTorrent.Client
             if (msg is PieceMessage)
                 id.Peer.Connection.PiecesSent++;
 
-            //id.Peer.MessageHistory.AppendLine(DateTime.Now.ToLongTimeString() + " " + msg.ToString());
-
             id.Peer.Connection.ProcessingQueue = true;
             try
             {
