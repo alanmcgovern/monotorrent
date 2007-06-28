@@ -266,7 +266,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
-            this.fileManager = new FileManager(this, savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
+            this.fileManager = new FileManager(this, this.torrent.Files, this.torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
             this.resumeLock = listLock;
