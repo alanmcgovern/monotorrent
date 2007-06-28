@@ -175,26 +175,27 @@ namespace MonoTorrent
                         sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed);
                         sb.Append(" kB/s");
                         sb.Append(Environment.NewLine);
-                        sb.Append("Torrent State:    "); sb.Append(manager.State);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / (1024.0 ));
-                        sb.Append(" MB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / (1024.0 ));
-                        sb.Append(" MB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
-                        sb.Append(Environment.NewLine);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Torrent State:    "); sb.Append(manager.State);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / (1024.0 ));
+                        //sb.Append(" MB");
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / (1024.0 ));
+                        //sb.Append(" MB");
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
+                        //sb.Append(Environment.NewLine);
+                        //sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
+                        //sb.Append(Environment.NewLine);
 
 
                         int areSeeders=0;
@@ -209,6 +210,7 @@ namespace MonoTorrent
                         int areInterested = 0;
                         int amUnchoking = 0;
                         int areRequestingCount = 0;
+                        int sendQueueLength = 0;
                         lock (peers)
                         {
                             foreach (PeerId p in peers)
@@ -229,22 +231,25 @@ namespace MonoTorrent
                                 areInterested += p.IsInterested ? 1 : 0;
                                 amUnchoking += !p.AmChoking ? 1 : 0;
                                 areRequestingCount += p.IsRequestingPiecesCount;
+                                sendQueueLength += p.SendQueueLength;
                             }
                         }
                         averagePercent /= count;
 
-                        sb.AppendLine("Are seeders:            " + areSeeders.ToString());
-                        sb.AppendLine("Am interested:          " + amInterested.ToString());
-                        sb.AppendLine("Am requesting:          " + amRequestingPieces.ToString());
-                        sb.AppendLine("Is choking+Interesting: " + areChokingAndInteresting.ToString());
-                        sb.AppendLine("Unchoked me:            " + isntChoking.ToString());
-                        sb.AppendLine("Unchoked me and seeder: " + seedernotchoking.ToString());
-                        sb.AppendLine("Are interested:         " + areInterested.ToString());
-                        sb.AppendLine("Am unchoking:           " + amUnchoking.ToString());
-                        sb.AppendLine("Are requesting:         " + areRequestingCount.ToString());
-                        sb.AppendLine("Count:                  " + count.ToString());
-                        sb.AppendLine("Average:                " + averagePercent.ToString());
-                        sb.AppendLine("Max:                    " +  maxPercent.ToString());
+                        sb.AppendLine("Are seeders:               " + areSeeders.ToString());
+                        sb.AppendLine("Am interested:             " + amInterested.ToString());
+                        sb.AppendLine("Am requesting:             " + amRequestingPieces.ToString());
+                        sb.AppendLine("Is choking+Interesting:    " + areChokingAndInteresting.ToString());
+                        sb.AppendLine("Unchoked me:               " + isntChoking.ToString());
+                        sb.AppendLine("Unchoked me and seeder:    " + seedernotchoking.ToString());
+                        sb.AppendLine("Are interested:            " + areInterested.ToString());
+                        sb.AppendLine("Am unchoking:              " + amUnchoking.ToString());
+                        sb.AppendLine("Are requesting:            " + areRequestingCount.ToString());
+                        sb.AppendLine("Send queue length:         " + sendQueueLength.ToString());
+                        sb.AppendLine("Average send queue length: " + (sendQueueLength / (float)count).ToString());
+                        sb.AppendLine("Count:                     " + count.ToString());
+                        sb.AppendLine("Average:                   " + averagePercent.ToString());
+                        sb.AppendLine("Max:                       " + maxPercent.ToString());
 
                         // These are some of the other statistics which can be displayed. There are loads more available ;)
 
