@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The DiskManager associated with this torrent
         /// </summary>
-        internal FileManager FileManager
+        public FileManager FileManager
         {
             get { return this.fileManager; }
         }
@@ -266,7 +266,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
-            this.fileManager = new FileManager(this, this.torrent.Files, this.torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
+            this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
             this.resumeLock = listLock;
