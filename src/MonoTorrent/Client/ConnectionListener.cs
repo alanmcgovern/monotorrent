@@ -45,8 +45,6 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private ClientEngine engine;
-        private bool disposed;
-        private bool isListening;
         private IPEndPoint listenEndPoint;
         private AsyncCallback newConnectionCallback;
         private EncryptorReadyHandler onEncryptorReadyHandler;
@@ -62,7 +60,7 @@ namespace MonoTorrent.Client
 
         internal bool Disposed
         {
-            get { return this.disposed; }
+            get { return this.listener == null; }
         }
 
         
@@ -71,7 +69,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool IsListening
         {
-            get { return this.isListening; }
+            get { return !this.Disposed; }
         }
 
 
@@ -120,7 +118,7 @@ namespace MonoTorrent.Client
             catch (SocketException ex)
             {
             }
-            catch (ObjectDisposedException ex)
+            catch (NullReferenceException ex)
             {
             }
         }
@@ -157,11 +155,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Dispose()
         {
-            if (disposed)
-                throw new ObjectDisposedException(this.ToString());
+            if (Disposed)
+                return;
 
             this.listener.Close();
-            this.disposed = true;
+            this.listener = null;
         }
 
 
@@ -288,7 +286,7 @@ namespace MonoTorrent.Client
                 if (id != null)
                     this.CleanupSocket(id);
             }
-            catch (ObjectDisposedException)
+            catch (NullReferenceException)
             {
             }
             finally
@@ -392,12 +390,11 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Start()
         {
-            if (this.isListening)
+            if (this.IsListening)
                 throw new ListenerException("The Listener is already listening");
 
             this.newConnectionCallback = new AsyncCallback(IncomingConnectionReceived);
             this.listenEndPoint = new IPEndPoint(IPAddress.Any, engine.Settings.ListenPort);
-            this.isListening = true;
             this.listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.listener.Bind(listenEndPoint);
             this.listener.Listen(10);             // FIXME: Will this break on windows XP systems?
@@ -410,9 +407,8 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Stop()
         {
-            this.disposed = true;
-            this.isListening = false;
             this.listener.Close();
+            this.listener = null;
         }
 
         #endregion
