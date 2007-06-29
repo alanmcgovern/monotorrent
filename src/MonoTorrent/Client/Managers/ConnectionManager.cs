@@ -888,10 +888,6 @@ namespace MonoTorrent.Client
                 }
        
             }
-            catch
-            {
-              Console.WriteLine("Wow, crash");                                                                                                          
-            }
                                                                                                                  
             finally
             {
