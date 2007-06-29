@@ -1,8 +1,0 @@
-prefix=@PREFIX@
-assemblies_dir=${prefix}/lib/bitsharp
-Libraries=${assemblies_dir}/MonoTorrent.dll ${assemblies_dir}/Upnp.dll
- 
-Name: MonoTorrentLibs
-Description: Mono Torrent Libraries
-Version: @VERSION@
-Libs: -r:MonoTorrent.dll

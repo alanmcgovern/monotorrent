@@ -1,2 +1,0 @@
-#!/bin/sh
-exec mono ../Prebuild.exe "$@"

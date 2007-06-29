@@ -886,7 +886,13 @@ namespace MonoTorrent.Client
                                 id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                     }
                 }
+       
             }
+            catch
+            {
+              Console.WriteLine("Wow, crash");                                                                                                          
+            }
+                                                                                                                 
             finally
             {
                 if (fireCleanup)

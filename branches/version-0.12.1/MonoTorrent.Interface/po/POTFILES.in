@@ -1,8 +1,0 @@
-[encoding: utf-8]
-src/MonoTorrent.Interface/View/MainWindow.cs
-src/MonoTorrent.Interface/View/TorrentsView.cs
-src/MonoTorrent.Interface/View/TorrentView.cs
-src/MonoTorrent.Interface/View/TorrentFilesView.cs
-src/MonoTorrent.Interface/View/TorrentChooserDialog.cs
-src/MonoTorrent.Interface/View/PreferencesDialog.cs
-src/MonoTorrent.Interface/View/UIBuilder.cs
