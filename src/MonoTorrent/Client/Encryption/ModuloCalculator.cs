@@ -59,9 +59,12 @@ namespace MonoTorrent.Client.Encryption
             return Calculate(new BigInteger(a), b); //UInt64ToBytes(Calculate(BytesToUInt64(a), b));
         }
 
+        private static object locker = new object();
         public static byte[] Calculate(BigInteger a, BigInteger b)
         {
-            byte[] bytes = a.ModPow(b, prime).GetBytes();
+            byte[] bytes;
+            lock (locker)
+                bytes = a.ModPow(b, prime).GetBytes();
 
             if (bytes.Length < 96)
             {
