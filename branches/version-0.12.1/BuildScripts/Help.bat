@@ -1,0 +1,2 @@
+cd ..
+Prebuild /usage /pause

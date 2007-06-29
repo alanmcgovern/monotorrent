@@ -1,0 +1,48 @@
+[ Client DLL ]
+There's still loads of work to be done to make this a fully fledged Bittorrent Client. I've divided the work into three sections (for the moment). Features to be added, features to be improved and sections of code that need rearchitecting. I've also put a difficulty estimation for anyone interested in picking an item and completing it.
+
+-- FEATURES TO BE ADDED --
+    01) HTTP Seeding - The ability to use a normal HTTP/FTP download as a "seed". [MEDIUM-HIGH]
+    04) Implement DHT/Peer Exchange. [MEDIUM-LOW]
+    10) Choking and Optimistic Unchoking algorithm needed. [MEDIUM]
+    11) Anti-snubbing needs to be implemented [MEDIUM]
+    14) Support SOCKS proxies
+    15) Automagic updates of the client - similar to azureus ideally
+    17) Put in more NUnit tests... i got lazy when it came to tests :p
+    29) Algorithm to allow for automatic scheduling of torrents based on rules is being implemented. Should allow for people to select "seed for 30 mins after completion or a ratio of 1.4 us reached and total bandwidth is below 150kB/sec" etc.
+
+-- FEATURES TO BE IMPROVED --
+    01) Allow editing of .torrent information EXCEPT for the infohash section [MEDIUM]
+    02) Support cancel messages [MEDIUM-LOW]
+    05) New super seeding algorithm. At the moment defaults to "seeding" which defaults to "downloading. [LOW]
+    11) Use PieceEventArgs properly [LOW]
+    12) Use a MemoryBuffer/DiskCache to avoid constant read/writes to the disk - Only useful for buffering pieces in memory before sending [MEDIUM-HIGH]
+    18) Custom attributes for .torrent files
+    19) Fix global upload/download speed. Make it follow the settings [LOW] [ FIXED FOR PER TORRENT LIMITS ]
+    21) Support IPV6
+    29) Implement the new mechanism for catching bad peers and resuming pieces where the inital peer stops sending pieces. Just like i talked about in the utorrent forum
+    30) Put peers that i can connect to but drop the connection in a seperate "busy" list instead of dropping them completely.
+    31) After receiving X number of pieces from a peer, reduce their FailedConnectionAttempts value as they are "good"
+    38) Rewrite EndGameMode to support cancel messages and enter endgame as soon as the StandardPiecePicker has no available pieces.
+	39) Fix build scripts
+If anyone finds bugs or anything in the code (which i'm sure there are many :p) feel free to drop me an email. For the moment i don't want people commiting patches directly to SVN, i'd like to see them first. But if you want to fix a bug, please go right ahead and write the code. The only request i have is to do your best to match my coding style. There's nothing worse than having several different coding styles in the same class.
+
+[ Tracker DLL ]
+
+-- FEATURES TO BE ADDED --
+    01) Use Asynchronous IO where possible and useful
+    02) Implement some events for the gui
+    03) Add some stats to Asp.Net frontend
+    04) Add http torrent upload to Asp.Net frontend
+    05) Refactor identification of Peers into a seperate class and use that for indexing in dictionaries
+    06) Integrate the Tracker into the GUI 
+    06.1) Add Torrent Generation to the GUI
+    07) Add some events to the tracker so the gui can display some stats
+    08) Change the backend to use the event form 07
+    09) Add in support for NAT-Checking (checking if peers are connectable). If they aren't, send em a warning message
+	
+
+-- FEATURES TO BE IMPROVED --
+    01) Asp.Net Frontend needs to be improved
+    02) Test Asp.Net Frontend with mod_mono
+    03) Improve doc

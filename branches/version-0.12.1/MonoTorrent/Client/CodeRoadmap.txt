@@ -1,0 +1,115 @@
+Here's a brief overview of the way i can imagine the library running in the future.
+
+At the moment, the library is a rough implementation of this ideal. So i'll first fix any high
+importance bugs and implement high importance features, then rearchitecturing should be the
+first thing that gets completed. This will allow for easily extendablility in the future. Already
+i can see two cases where this will help hugely.
+
+The overall layout will be something like this...
+
+
+[ CLIENT ENGINE ]
+ClientEngine
+    - List<TorrentManager> torrentManagers;    // a list of currently active torrents in the library
+    - ConnectionManager connectionManager;     // The ConnectionManager which deals with *all* connections for *all* torrents
+    - ConnectionListener listener;	       // The socket that listens for incoming connections
+    - Timer logicTick;   // When a TorrentManager is started, this timer as also started. Every "tick" we run through the download logic for all active torrentmanagers. (I don't like this, but i can't think of another way)
+
+
+So, the ClientEngine is initialised with some default settings and the user calls engine.LoadTorrent(),
+then engine.Start(); What happens now is that all TorrentManagers in the engine get started, meaning
+they hashcheck if required and send an update to the tracker. Then, every logic tick we call the
+TorrentManager.DownloadLogic() method which is used to decide when we should connect to a peer, who we
+should unchoke, who we should be interested in etc. The ClientEngine's only involvement is to hold a list
+ of currently active TorrentManagers, call the correct Logic method and listen for incoming connections.
+Everything else is handled by the TorrentManager.
+
+
+
+
+
+[ TORRENTMANAGER ]
+The TorrentManager is an (unnessecarily?) large class at the moment. I have a few ideas on how to reduce complexity (and theading complexity). Here's what i can imagine it looking like in the future:
+
+TorrentManager
+    - Torrent torrent;                     // The internal representation of the .torrent file that was loaded. (Possibly keep the actual dictionary in memory)?
+    - TorrentSettings settings;            // Rename to TorrentManagerSettings. Settings for the TorrentManager
+    - TrackerConnection trackerConnection; // Rename to TrackerManager. Handles everything to do with tracker connections
+    - PieceManager pieceManager;           // Handles everything to do with pieces (Picking pieces, seeing if a guy has pieces we need, handles what to do when we recieve a piece message
+    - DiskManager fileManager 		   // Rename class to FileManager. Opens the files for read/write mode, reads/writes to the file and can return the hash for a piece at any index.
+    - Peers peers;			   // Holds all information about peers. Handles the addition of new peers from Announces
+    - ConnectionManager connectionManager; // Holds a reference to the ConnectionManager created by the ClientEngine
+    - List<PeerConnectionId> uploadQueue;
+    - List<PeerConnectionId> downloadQueue; // Holds a list of peers as they wait to be allowed download/upload based on ratelimiting.
+
+The TorrentManager is the "brains" of downloading. This is the central location where a lot of the processing happens.
+The manager holds the logic to decide when a tracker update has to happen, when it should try to connect to another peer,
+when it should allow peers to download/upload based on current download/upload speed and the speed limits in the settings.
+It also holds a reference to everything needed to be able to download. It has a reference to it's own PieceManager, which
+decides what pieces need to be requested and what happens when a piece is recieved. The FileManager is used to write pieces
+to the disk for that TorrentManager, Peers is a class containing lists of Peers which the engine has connected to,
+can connect to and currently is connecting to. It also contains the logic needed to add new non-duplicate peers
+when the Tracker sends new peers. Disposing a TorrentManager should clean up *all* resources that are created when a
+.torrent is loaded into the ClientEngine.
+
+
+[ TRACKERCONNECTION ]
+TrackerConnection will be an abstract base class. The reason for this is because there are (currently) two different kinds
+of tracker, a TCP tracker and a UDP tracker. In the future there will also be an IPV6 based tracker. All implementations
+will behave identically except for the "SendUpdate" method, which makes an abstract base class ideal for this.
+
+
+TrackerConnection
+    - TorrentManager manager; // A reference to the TorrentManager that owns this TrackerConnection
+    - byte[] infoHash;	      // (Store the string instead). The infohash of the TorrentManager that owns this trackerconnection
+    - string[] announceUrls;  // (make readonly collection). The announceurls for the Torrent that owns this trackerconnection
+
+This class is fairly dumb. It has one major method which takes in a few parameters and just sends an update to
+whatever tracker url is currently active. If a tracker is unreachable, it tries the next available one in the list.
+
+
+[ CLIENTPEER ]
+This class will be an abstract base class. There is currently only one kind of peer, a TCP based one, but support
+will be added in the future for HTTP based peers. HTTP based peers will require different downloading logic. A good
+way to abstract this out to make it easy for the ConnectionManager needs to be decided upon. The current method for
+downloading only really works for TCP socket based peers. It should be easily exendable to work with IPV6 based peers in
+future.
+
+
+ClientPeer
+    - PeerConnection connection; // Instantiated only after we connect successfully to a peer. Contains send/recieve buffers, a message queue for sending IPeerMessages and a ConnectionMonitor for recording upload/download speed
+    - BitField bitField;	 // The remote peers bitfield, so we know what pieces he has.
+    - bool AmChoking, isChoking, amInterested, isInterested; // Bools to hold peer state
+
+This class is fairly dumb aswell. All of it's member variables (except for Connection) are for informational purposes. They
+don't contribute to the working of the peer itself. The PeerConnection is instantiated when we try to connect to the peer.
+This is done to avoid allocating large amounts of unneccessary buffers. We only need buffers when we are actively
+communicating with a peer. The PeerConnection contains the queue for peer messages we want to send to the peer,
+the recieve and upload buffers that are used to store complete messages as we send them bit by bit to the remote
+peer. It also contains some statistics which can be used by GUI developers.
+
+
+
+
+
+[ IPEERMESSAGE ]
+This class is perfect (if i'm allowed say that ;). New peer messages can be easily implemented by just inheriting
+the interface.
+
+IPeerMessage
+    - int Encode(byte[] buffer, int offset);	// Puts the IPeerMessage into a byte[] buffer.
+    - void Decode();				// Decods an IPeerMessage froma byte[] buffer
+    - void Handle();				// Any logic needed to "use" a recieved peer message goes in here
+    - int ByteLength { get; }   		// Returns the length of the peer message in bytes
+
+This Interface sums up everything a peer message would ever need. Messages need to be decoded, encoded and handled.
+The ByteLength property is there so you know how big the message is going to be, so you can make sure your byte[] buffer
+is large enough and to make encoding of multiple messages into the one buffer easy to handle. New messages can easily be
+added at the moment simply by inheriting the interface, filling in the implementation and then adding code to add the
+new message to the MessageQueue in a PeerConnection as required.
+
+
+
+[ ORDEREDDICTIONARY ]
+The reason for this class is that we need preserve the order of the elements in a .torrent when we decode them. That's all.
+Other than that it's a normal dictionary (albeit internally based on lists, so it's quite inefficient when it gets large).

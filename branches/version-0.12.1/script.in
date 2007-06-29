@@ -1,0 +1,2 @@
+#!/bin/sh
+exec mono $MONO_OPTIONS @prefix@/lib/bitsharp/@cmd@ $@
