@@ -5,7 +5,7 @@
       <Options>
         <CompilerDefines>DEBUG;TRACE</CompilerDefines>
         <OptimizeCode>false</OptimizeCode>
-        <AllowUnsafe>false</AllowUnsafe>
+        <AllowUnsafe>true</AllowUnsafe>
         <OutputPath>bin/Debug</OutputPath>
         <DebugInformation>true</DebugInformation>
         <WarningLevel>4</WarningLevel>
@@ -16,7 +16,7 @@
       <Options>
         <CompilerDefines>TRACE</CompilerDefines>
         <OptimizeCode>true</OptimizeCode>
-        <AllowUnsafe>false</AllowUnsafe>
+        <AllowUnsafe>true</AllowUnsafe>
         <OutputPath>bin/Release</OutputPath>
         <DebugInformation>false</DebugInformation>
         <WarningLevel>1</WarningLevel>
@@ -28,7 +28,7 @@
         <Options>
           <CompilerDefines>DEBUG;TRACE</CompilerDefines>
           <OptimizeCode>false</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
+          <AllowUnsafe>true</AllowUnsafe>
           <OutputPath>bin/Debug</OutputPath>
           <DebugInformation>true</DebugInformation>
           <WarningLevel>4</WarningLevel>
@@ -38,7 +38,7 @@
         <Options>
           <CompilerDefines>TRACE</CompilerDefines>
           <OptimizeCode>true</OptimizeCode>
-          <AllowUnsafe>false</AllowUnsafe>
+          <AllowUnsafe>true</AllowUnsafe>
           <OutputPath>bin/Release</OutputPath>
           <DebugInformation>false</DebugInformation>
           <WarningLevel>4</WarningLevel>
