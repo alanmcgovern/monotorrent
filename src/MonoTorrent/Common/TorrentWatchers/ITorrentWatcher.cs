@@ -26,12 +26,14 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
+using System;
 namespace MonoTorrent.Common
 {
     public interface ITorrentWatcher
     {
-        void Register(TorrentWatchers.TorrentFound torrentFound, TorrentWatchers.TorrentLost torrentLost);
+        event EventHandler<TorrentWatcherEventArgs> TorrentFound;
+        event EventHandler<TorrentWatcherEventArgs> TorrentLost;
+
         void StartWatching();
         void StopWatching();
         void ForceScan();

@@ -34,13 +34,20 @@ namespace MonoTorrent.Common
 {
     public class TorrentFolderWatcher : ITorrentWatcher
     {
+        #region Events
+
+        public event EventHandler<TorrentWatcherEventArgs> TorrentFound;
+        public event EventHandler<TorrentWatcherEventArgs> TorrentLost;
+
+        #endregion Events
+
+
         #region Member Variables
-        private TorrentWatchers.TorrentFound torrentFound;
-        private TorrentWatchers.TorrentLost torrentLost;
 
         private FileSystemWatcher watcher;
         private string torrentDirectory;
         private string watchFilter;
+
         #endregion
 
 
@@ -48,6 +55,12 @@ namespace MonoTorrent.Common
 
         public TorrentFolderWatcher(string torrentDirectory, string watchFilter)
         {
+            if (torrentDirectory == null)
+                throw new ArgumentNullException("torrentDirectory");
+
+            if (watchFilter == null)
+                throw new ArgumentNullException("watchFilter");
+
             if (!Directory.Exists(torrentDirectory))
                 Directory.CreateDirectory(torrentDirectory);
 
@@ -56,21 +69,15 @@ namespace MonoTorrent.Common
         }
 
         public TorrentFolderWatcher(DirectoryInfo torrentDirectory)
-            :this(torrentDirectory.FullName, "*.torrent")
+            : this(torrentDirectory.FullName, "*.torrent")
         {
-
+            
         }
 
         #endregion
 
 
         #region ITorrentWatcher implementations
-
-        public void Register(TorrentWatchers.TorrentFound torrentFound, TorrentWatchers.TorrentLost torrentLost)
-        {
-            this.torrentFound = torrentFound;
-            this.torrentLost = torrentLost;
-        }
 
         ///<summary>Start the FileSystemWatcher on torrentDirectory</summary>
         public void StartWatching()
@@ -97,7 +104,7 @@ namespace MonoTorrent.Common
         {
             Console.WriteLine("loading torrents from " + torrentDirectory);
             foreach (string path in Directory.GetFiles(torrentDirectory, this.watchFilter))
-                this.torrentFound(path);
+                RaiseTorrentFound(path);
         }
         #endregion
 
@@ -107,13 +114,25 @@ namespace MonoTorrent.Common
         ///<summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
-            this.torrentFound(e.FullPath);
+            RaiseTorrentFound(e.FullPath);
         }
 
         ///<summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
         private void OnDeleted(object sender, FileSystemEventArgs e)
         {
-            this.torrentLost(e.FullPath);
+            RaiseTorrentLost(e.FullPath);
+        }
+
+        private void RaiseTorrentFound(string path)
+        {
+            if (TorrentFound != null)
+                TorrentFound(this, new TorrentWatcherEventArgs(path));
+        }
+
+        private void RaiseTorrentLost(string path)
+        {
+            if (TorrentLost != null)
+                TorrentLost(this, new TorrentWatcherEventArgs(path));
         }
 
         #endregion

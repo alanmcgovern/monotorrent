@@ -37,6 +37,7 @@ namespace MonoTorrent.Common
     public class TorrentWatcherEventArgs : EventArgs
     {
         #region Member Variables
+
         /// <summary>
         /// The path of the torrent
         /// </summary>
@@ -45,18 +46,21 @@ namespace MonoTorrent.Common
             get { return this.torrentPath; }
         }
         private string torrentPath;
+
         #endregion
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new TorrentWatcherEventArgs
         /// </summary>
         /// <param name="torrent">The torrent which is affected</param>
-        public TorrentWatcherEventArgs(string torrentPath)
+        internal TorrentWatcherEventArgs(string torrentPath)
         {
             this.torrentPath = torrentPath;
         }
+
         #endregion
     }
 }

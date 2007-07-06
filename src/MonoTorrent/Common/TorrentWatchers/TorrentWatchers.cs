@@ -37,116 +37,52 @@ namespace MonoTorrent.Common
     /// </summary>
     public class TorrentWatchers : ITorrentWatcherCollection
     {
-        #region Events
-        /// <summary>
-        /// Event that's fired every time a new Torrent is detected
-        /// </summary>
-        public event EventHandler<TorrentWatcherEventArgs> OnTorrentFound;
-
-
-        /// <summary>
-        /// Event that's fired every time a Torrent is removed
-        /// </summary>
-        public event EventHandler<TorrentWatcherEventArgs> OnTorrentLost;
-        #endregion
-
-
-        #region Member Variables
-
-        public delegate void TorrentFound(string torrentPath);
-        public delegate void TorrentLost(string torrentPath);
-
-        #endregion
-
-
         #region Constructors
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="settings"></param>
-        public TorrentWatchers() : base()
+        public TorrentWatchers()
+            : base()
         {
-            
+
         }
+
         #endregion
 
 
         #region Methods
 
-
         /// <summary>
-        /// Removes the ITorrentWatcher at the specified index
+        /// 
         /// </summary>
-        /// <param name="index">The index to remove the ITorrentWatcher at</param>
-        public void Remove(int index)
+        public void StartAll()
         {
-            ITorrentWatcher torrentWatcher = this[index];
-            this.Remove(torrentWatcher);
+            for (int i = 0; i < Count; i++)
+                this[i].StartWatching();
         }
 
 
         /// <summary>
         /// 
         /// </summary>
-        public void StartWatching()
+        public void StopAll()
         {
-            foreach (ITorrentWatcher torrentWatcher in this)
-            {
-                torrentWatcher.StartWatching();
-            }
+            for (int i = 0; i < Count; i++)
+                this[i].StopWatching();
         }
 
 
         /// <summary>
         /// 
         /// </summary>
-        public void StopWatching()
+        public void ForceScanAll()
         {
-            foreach (ITorrentWatcher torrentWatcher in this)
-            {
-                torrentWatcher.StopWatching();
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void ForceScan()
-        {
-            foreach (ITorrentWatcher torrentWatcher in this)
-            {
-                torrentWatcher.ForceScan();
-            }
-        }
-        #endregion
-
-
-        #region Event Throwers
-
-        private void RaiseTorrentFound(string torrentPath)
-        {
-            TorrentWatcherEventArgs eventArgs = new TorrentWatcherEventArgs(torrentPath);
-
-            if (this.OnTorrentFound != null)
-                this.OnTorrentFound(this, eventArgs);
-        }
-
-        private void RaiseTorrentLost(string torrentPath)
-        {
-            TorrentWatcherEventArgs eventArgs = new TorrentWatcherEventArgs(torrentPath);
-
-            if (this.OnTorrentLost != null)
-                this.OnTorrentLost(this, eventArgs);
+            for (int i = 0; i < Count; i++)
+                this[i].ForceScan();
         }
 
         #endregion
-
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
-
     }
 }
-

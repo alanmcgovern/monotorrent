@@ -54,7 +54,8 @@ namespace MonoTorrent.Tracker
                 
         private TrackerEngine()
         {           
-            running = false;            
+            running = false;
+            torrentWatchers = new TorrentWatchers();
         }
         
         ///<summary>Gets an instance of the TrackerEngine.
@@ -145,11 +146,9 @@ namespace MonoTorrent.Tracker
                 }
                 Tracker.ClearTorrents();            
                 
-                if (torrentWatchers != null)
-                {
-                    TorrentWatchers.StartWatching();
-                    TorrentWatchers.ForceScan();
-                }
+
+                TorrentWatchers.StartAll();
+                TorrentWatchers.ForceScanAll();
             }
         }
         
@@ -188,17 +187,7 @@ namespace MonoTorrent.Tracker
         ///<summary></summary>
         public TorrentWatchers TorrentWatchers
         {
-            get
-            {
-                if (this.torrentWatchers == null)
-                {
-                    this.torrentWatchers = new TorrentWatchers();
-                    this.torrentWatchers.OnTorrentFound += new EventHandler<TorrentWatcherEventArgs>(OnTorrentCreated);
-                    this.torrentWatchers.OnTorrentLost += new EventHandler<TorrentWatcherEventArgs>(OnTorrentRemoved);
-                }
-
-                return this.torrentWatchers;
-            }
+            get { return this.torrentWatchers; }
         }
 
         void OnTorrentCreated(object sender, TorrentWatcherEventArgs e)
