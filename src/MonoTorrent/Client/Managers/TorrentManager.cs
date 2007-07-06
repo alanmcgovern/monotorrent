@@ -100,6 +100,12 @@ namespace MonoTorrent.Client
         }
 
 
+        public bool Complete
+        {
+            get { return this.bitfield.AllTrue; }
+        }
+
+
         internal ClientEngine Engine
         {
             get { return this.engine; }
