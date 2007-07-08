@@ -289,6 +289,9 @@ namespace MonoTorrent.Client
             catch (NullReferenceException)
             {
             }
+            catch (ObjectDisposedException)
+            {
+            }
             finally
             {
                 if (!Disposed)
