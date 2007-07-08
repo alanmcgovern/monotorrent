@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
 
         public bool InEndGameMode
         {
-            get { return this.piecePicker is EndGamePicker; }
+            get { return false; }//this.piecePicker is EndGamePicker; }
         }
 
 
