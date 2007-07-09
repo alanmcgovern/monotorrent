@@ -46,6 +46,22 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
+        private Block[] blocks;
+        private int index;
+        private int totalReceived;
+        private int totalRequested;
+        private int totalWritten;
+
+        #endregion MemberVariables
+
+
+        #region Fields
+
+        public Block this[int index]
+        {
+            get { return this.blocks[index]; }
+        }
+
         /// <summary>
         /// The blocks that this piece is composed of
         /// </summary>
@@ -53,8 +69,38 @@ namespace MonoTorrent.Client
         {
             get { return this.blocks; }
         }
-        private Block[] blocks;
 
+        /// <summary>
+        /// True if all the blocks have been requested
+        /// </summary>
+        public bool AllBlocksRequested
+        {
+            get { return this.totalRequested == BlockCount; }
+        }
+
+        /// <summary>
+        /// True if all the blocks have been received
+        /// </summary>
+        public bool AllBlocksReceived
+        {
+            get { return this.totalReceived == BlockCount; }
+        }
+        
+        /// <summary>
+        /// True if all the blocks have been written to disk
+        /// </summary>
+        public bool AllBlocksWritten
+        {
+            get { return this.totalWritten == BlockCount; }
+        }
+
+        /// <summary>
+        /// The number of blocks in this piece
+        /// </summary>
+        public int BlockCount
+        {
+            get { return this.blocks.Length; }
+        }
 
         /// <summary>
         /// The index of the piece
@@ -63,9 +109,43 @@ namespace MonoTorrent.Client
         {
             get { return this.index; }
         }
-        private int index;
 
-        #endregion
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool NoBlocksRequested
+        {
+            get { return this.totalRequested == 0; }
+        }
+
+        /// <summary>
+        /// The number of blocks which have been received from this piece
+        /// </summary>
+        public int TotalReceived
+        {
+            get { return this.totalReceived; }
+            internal set { this.totalReceived = value; }
+        }
+
+        /// <summary>
+        /// The number of blocks which have been requested from this piece
+        /// </summary>
+        public int TotalRequested
+        {
+            get { return this.totalRequested; }
+            internal set { this.totalRequested = value; }
+        }
+
+        /// <summary>
+        /// The number of blocks which have been written to disk from this piece
+        /// </summary>
+        public int TotalWritten
+        {
+            get { return totalWritten; }
+            internal set { this.totalWritten = value; }
+        }
+
+        #endregion Fields
 
 
         #region Constructors
@@ -89,10 +169,10 @@ namespace MonoTorrent.Client
                 blocks = new Block[numberOfPieces];
 
                 for (int i = 0; i < numberOfPieces; i++)
-                    blocks[i] = new Block(pieceIndex, i * BlockSize, BlockSize);
+                    blocks[i] = new Block(this, i * BlockSize, BlockSize);
 
                 if ((torrent.PieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
-                    blocks[blocks.Length - 1] = new Block(pieceIndex, blocks[blocks.Length - 1].StartOffset, (int)(torrent.PieceLength - blocks[blocks.Length - 1].StartOffset));
+                    blocks[blocks.Length - 1] = new Block(this, blocks[blocks.Length - 1].StartOffset, (int)(torrent.PieceLength - blocks[blocks.Length - 1].StartOffset));
             }
         }
 
@@ -114,12 +194,12 @@ namespace MonoTorrent.Client
             int i = 0;
             while (bytesRemaining - BlockSize > 0)
             {
-                blocks[i] = new Block(pieceIndex, i * BlockSize, BlockSize);
+                blocks[i] = new Block(this, i * BlockSize, BlockSize);
                 bytesRemaining -= BlockSize;
                 i++;
             }
 
-            blocks[i] = new Block(pieceIndex, i * BlockSize, bytesRemaining);
+            blocks[i] = new Block(this, i * BlockSize, bytesRemaining);
         }
 
         #endregion
@@ -127,83 +207,20 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public bool AllBlocksRequested
-        {
-            get
-            {
-                for (int i = 0; i < this.blocks.Length; i++)
-                    if (!this.blocks[i].Requested)
-                        return false;
-
-                return true;
-            }
-        }
-
-
-        public bool AllBlocksReceived
-        {
-            get
-            {
-                for (int i = 0; i < this.blocks.Length; i++)
-                    if (!this.blocks[i].Received)
-                        return false;
-
-                return true;
-            }
-        }
-
-
-        public bool AllBlocksWritten
-        {
-            get
-            {
-                for (int i = 0; i < this.blocks.Length; i++)
-                    if (!this.blocks[i].Written)
-                        return false;
-
-                return true;
-            }
-        }
-
-
         public override bool Equals(object obj)
         {
             Piece p = obj as Piece;
             return (p == null) ? false : this.index.Equals(p.index);
         }
 
-
         public System.Collections.IEnumerator GetEnumerator()
         {
             return this.blocks.GetEnumerator();
         }
 
-
         public override int GetHashCode()
         {
             return this.index;
-        }
-
-
-        public bool NoBlocksRequested
-        {
-            get
-            {
-                for (int i = 0; i < this.blocks.Length; i++)
-                    if (this.blocks[i].Requested)
-                        return false;
-
-                return true;
-            }
-        }
-
-        public int BlockCount
-        {
-            get { return this.blocks.Length; }
-        }
-        public Block this[int index]
-        {
-            get { return this.blocks[index]; }
         }
 
         #endregion

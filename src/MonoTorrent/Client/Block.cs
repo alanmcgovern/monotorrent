@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private int pieceIndex;
+        private Piece piece;
         private int startOffset;
         private PeerIdInternal requestedOff;
         private int requestLength;
@@ -50,25 +50,51 @@ namespace MonoTorrent.Client
         #endregion Private Fields
 
 
-        #region Public Properties
+        #region Properties
 
         /// <summary>
         /// The index of the piece
         /// </summary>
         public int PieceIndex
         {
-            get { return this.pieceIndex; }
+            get { return this.piece.Index; }
         }
-
 
         /// <summary>
-        /// The offset in bytes that this block starts at
+        /// True if this piece has been Received
         /// </summary>
-        public int StartOffset
+        public bool Received
         {
-            get { return this.startOffset; }
+            get { return this.received; }
+            internal set
+            {
+                if (value && !received)
+                    piece.TotalReceived++;
+
+                else if (!value && received)
+                    piece.TotalReceived--;
+
+                this.received = value;
+            }
         }
 
+        /// <summary>
+        /// True if this block has been requested
+        /// </summary>
+        public bool Requested
+        {
+            get { return this.requested; }
+            internal set
+            {
+                if (value && !requested)
+                    piece.TotalRequested++;
+
+                else if (!value && requested)
+                    piece.TotalRequested--;
+
+                this.requested = value;
+            }
+        }
 
         /// <summary>
         /// The length in bytes of this block
@@ -77,17 +103,6 @@ namespace MonoTorrent.Client
         {
             get { return this.requestLength; }
         }
-
-
-        /// <summary>
-        /// True if this block has been requested
-        /// </summary>
-        public bool Requested
-        {
-            get { return this.requested; }
-            set { this.requested = value; }
-        }
-
 
         /// <summary>
         /// The peer who we requested this piece off
@@ -98,16 +113,13 @@ namespace MonoTorrent.Client
             set { this.requestedOff = value; }
         }
 
-
         /// <summary>
-        /// True if this piece has been Received
+        /// The offset in bytes that this block starts at
         /// </summary>
-        public bool Received
+        public int StartOffset
         {
-            get { return this.received; }
-            set { this.received = value; }
+            get { return this.startOffset; }
         }
-
 
         /// <summary>
         /// True if the block has been written to disk
@@ -115,11 +127,19 @@ namespace MonoTorrent.Client
         public bool Written
         {
             get { return this.written; }
-            set { this.written = value; }
+            internal set
+            {
+                if (value && !written)
+                    piece.TotalWritten++;
+
+                else if (!value && written)
+                    piece.TotalWritten--;
+
+                this.written = value;
+            }
         }
 
-
-        #endregion Public Properties
+        #endregion Properties
 
 
         #region Constructors
@@ -130,10 +150,10 @@ namespace MonoTorrent.Client
         /// <param name="pieceIndex">The index of the piece this block is from</param>
         /// <param name="startOffset">The offset in bytes that this block starts at</param>
         /// <param name="requestLength">The length in bytes of the block</param>
-        internal Block(int pieceIndex, int startOffset, int requestLength)
+        internal Block(Piece piece, int startOffset, int requestLength)
         {
             this.requestedOff = null;
-            this.pieceIndex = pieceIndex;
+            this.piece = piece;
             this.received = false;
             this.requested = false;
             this.requestLength = requestLength;
@@ -153,9 +173,8 @@ namespace MonoTorrent.Client
         internal RequestMessage CreateRequest(PeerIdInternal id)
         {
             this.requestedOff = id;
-            return new RequestMessage(this.pieceIndex, this.startOffset, this.requestLength);
+            return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
         }
-
 
         public override bool Equals(object obj)
         {
@@ -163,13 +182,12 @@ namespace MonoTorrent.Client
                 return false;
 
             Block other = (Block)obj;
-            return this.pieceIndex == other.pieceIndex && this.startOffset == other.startOffset && this.requestLength == other.requestLength;
+            return this.PieceIndex == other.PieceIndex && this.startOffset == other.startOffset && this.requestLength == other.requestLength;
         }
-
 
         public override int GetHashCode()
         {
-            return this.pieceIndex ^ this.requestLength ^ this.startOffset;
+            return this.PieceIndex ^ this.requestLength ^ this.startOffset;
         }
 
         #endregion

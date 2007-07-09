@@ -150,6 +150,10 @@ namespace MonoTorrent.Client
                         continue;
 
                     Piece p = keypair.Value[i];
+
+                    if (p.AllBlocksRequested)
+                        continue;
+                    
                     for (int j = 0; j < p.Blocks.Length; j++)
                         if (!p.Blocks[j].Requested)
                         {
@@ -179,6 +183,9 @@ namespace MonoTorrent.Client
             PieceCollection reqs = this.requests[id];
             for (int i = 0; i < reqs.Count; i++)
             {
+                if (reqs[i].AllBlocksRequested)
+                    continue;
+
                 for (int j = 0; j < reqs[i].Blocks.Length; j++)
                 {
                     if (!reqs[i].Blocks[j].Requested)
