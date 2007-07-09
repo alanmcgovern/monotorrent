@@ -639,7 +639,7 @@ namespace MonoTorrent.Client
 
 
                     // if the peer has sent us three bad pieces, we close the connection.
-                    if (id.Peer.HashFails == 3)
+                    if (id.Peer.TotalHashFails == 3)
                     {
                         reason = "3 hashfails";
                         Logger.Log(id, "3 hashfails");

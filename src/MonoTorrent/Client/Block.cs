@@ -41,6 +41,7 @@ namespace MonoTorrent.Client
 
         private int pieceIndex;
         private int startOffset;
+        private PeerIdInternal requestedOff;
         private int requestLength;
         private bool requested;
         private bool received;
@@ -89,6 +90,16 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// The peer who we requested this piece off
+        /// </summary>
+        internal PeerIdInternal RequestedOff
+        {
+            get { return this.requestedOff; }
+            set { this.requestedOff = value; }
+        }
+
+
+        /// <summary>
         /// True if this piece has been Received
         /// </summary>
         public bool Received
@@ -121,6 +132,7 @@ namespace MonoTorrent.Client
         /// <param name="requestLength">The length in bytes of the block</param>
         internal Block(int pieceIndex, int startOffset, int requestLength)
         {
+            this.requestedOff = null;
             this.pieceIndex = pieceIndex;
             this.received = false;
             this.requested = false;
@@ -138,8 +150,9 @@ namespace MonoTorrent.Client
         /// Creates a RequestMessage for this Block
         /// </summary>
         /// <returns></returns>
-        internal RequestMessage CreateRequest()
+        internal RequestMessage CreateRequest(PeerIdInternal id)
         {
+            this.requestedOff = id;
             return new RequestMessage(this.pieceIndex, this.startOffset, this.requestLength);
         }
 

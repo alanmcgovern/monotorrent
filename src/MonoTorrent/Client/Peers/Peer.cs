@@ -46,10 +46,11 @@ namespace MonoTorrent.Client
         private PeerConnectionBase connection;
         private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
         private int failedConnectionAttempts;
-        private int hashFails;
+        private int totalHashFails;
         private bool isSeeder;
         private string location;
         private string peerId;
+        private int repeatedHashFails;
         private DateTime lastConnectionAttempt;
 
         #endregion Private Fields
@@ -89,10 +90,9 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Returns the number of times the peer has sent us a piece which failed a hashcheck
         /// </summary>
-        public int HashFails
+        public int TotalHashFails
         {
-            get { return this.hashFails; }
-            internal set { this.hashFails = value; }
+            get { return this.totalHashFails; }
         }
 
 
@@ -149,6 +149,11 @@ namespace MonoTorrent.Client
             internal set { this.encryptionSupported = value; }
         }
 
+        public int RepeatedHashFails
+        {
+            get { return this.repeatedHashFails; }
+        }
+
         #endregion Properties
 
 
@@ -194,6 +199,18 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, 4, 2);
 
             return data;
+        }
+
+        internal void HashedPiece(bool succeeded)
+        {
+            if (succeeded && repeatedHashFails > 0)
+                repeatedHashFails--;
+            
+            if (!succeeded)
+            {
+                repeatedHashFails++;
+                totalHashFails++;
+            }
         }
     }
 }

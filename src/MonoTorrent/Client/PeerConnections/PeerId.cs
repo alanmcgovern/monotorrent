@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
             bitField = id.Peer.Connection.BitField;
             clientApp = id.Peer.Connection.ClientApp;
             encryptor = id.Peer.Connection.Encryptor;
-            hashFails = id.Peer.HashFails;
+            hashFails = id.Peer.TotalHashFails;
             isChoking = id.Peer.Connection.IsChoking;
             isInterested = id.Peer.Connection.IsInterested;
             isRequestingPiecesCount = id.Peer.Connection.IsRequestingPiecesCount;
