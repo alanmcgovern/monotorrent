@@ -595,6 +595,7 @@ namespace MonoTorrent.Client
                     this.ResumePeers();
 
             DateTime nowTime = DateTime.Now;
+            DateTime thirtySecondsAgo = nowTime.AddSeconds(-50);
             DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
             DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
 
@@ -619,10 +620,6 @@ namespace MonoTorrent.Client
 
                         if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
-
-                        //if (counter % 500 == 0)
-                        //    DumpStats(id, counter);
-
 
                         // If he is not interested and i am not choking him
                         if (!id.Peer.Connection.IsInterested && !id.Peer.Connection.AmChoking)
@@ -649,6 +646,12 @@ namespace MonoTorrent.Client
                         if (onhundredAndEightySecondsAgo > id.Peer.Connection.LastMessageReceived)
                         {
                             engine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
+                            continue;
+                        }
+
+                        if (thirtySecondsAgo > id.Peer.Connection.LastMessageReceived && id.Peer.Connection.AmRequestingPiecesCount > 0)
+                        {
+                            engine.ConnectionManager.CleanupSocket(id, true, "Didn't send pieces");
                             continue;
                         }
 
@@ -685,7 +688,7 @@ namespace MonoTorrent.Client
                     }
                 }
 
-#warning Convert this to work in kB/sec for consistency
+
                 if (counter % (1000 / ClientEngine.TickLength) == 0)
                     this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
                                                           (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
