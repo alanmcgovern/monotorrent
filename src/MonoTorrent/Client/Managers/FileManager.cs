@@ -299,6 +299,9 @@ namespace MonoTorrent.Client
                 using (FileStream file = File.OpenRead(fastResumePath))
                     manager.PieceManager.MyBitField.FromArray((int[])fastResume.Deserialize(file), manager.Torrent.Pieces.Count);
 
+                // We need to delete the old fast resume data so in the event of a crash we don't 
+                // accidently reload it and think we've downloaded less data than we actually have
+                File.Delete(fastResumePath);
                 manager.loadedFastResume = true;
                 return true;
             }
