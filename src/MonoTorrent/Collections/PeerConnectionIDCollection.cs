@@ -15,7 +15,7 @@ namespace MonoTorrent
         #region Private Fields
 
 #if NET_2_0
-        private List<PeerId> list;
+        private List<PeerIdInternal> list;
 #else
         private ArrayList list;
 #endif
@@ -28,7 +28,7 @@ namespace MonoTorrent
         public PeerIdCollection()
         {
 #if NET_2_0
-            list = new List<PeerId>();
+            list = new List<PeerIdInternal>();
 #else
             list = new ArrayList();
 #endif
@@ -37,7 +37,7 @@ namespace MonoTorrent
         public PeerIdCollection(int capacity)
         {
 #if NET_2_0
-            list = new List<PeerId>(capacity);
+            list = new List<PeerIdInternal>(capacity);
 #else
             list = new ArrayList(capacity);
 #endif
