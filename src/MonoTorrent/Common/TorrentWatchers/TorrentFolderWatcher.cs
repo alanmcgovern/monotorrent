@@ -86,6 +86,7 @@ namespace MonoTorrent.Common
             {
                 this.watcher = new FileSystemWatcher(torrentDirectory);
                 this.watcher.Filter = this.watchFilter;
+                this.watcher.NotifyFilter = NotifyFilters.LastWrite;
                 this.watcher.Created += new FileSystemEventHandler(OnCreated);
                 this.watcher.Deleted += new FileSystemEventHandler(OnDeleted);
             }
