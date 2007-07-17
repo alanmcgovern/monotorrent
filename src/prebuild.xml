@@ -85,5 +85,34 @@
         <Match path="." pattern="*.cs" recurse="true"/>
       </Files>
     </Project>
+	<Project name="TrackerApp" path="TrackerApp" language="C#" type="Exe" assemblyName="TrackerApp" rootNamespace="TrackerApp">
+      <Configuration name="Debug">
+        <Options>
+          <CompilerDefines>DEBUG;TRACE</CompilerDefines>
+          <OptimizeCode>false</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Debug</OutputPath>
+          <DebugInformation>true</DebugInformation>
+          <WarningLevel>4</WarningLevel>
+        </Options>
+      </Configuration>
+      <Configuration name="Release">
+        <Options>
+          <CompilerDefines>TRACE</CompilerDefines>
+          <OptimizeCode>true</OptimizeCode>
+          <AllowUnsafe>false</AllowUnsafe>
+          <OutputPath>bin/Release</OutputPath>
+          <DebugInformation>false</DebugInformation>
+          <WarningLevel>4</WarningLevel>
+        </Options>
+      </Configuration>
+	<Reference name="System" />
+	<Reference name="System.Web" />
+	<Reference name="System.Xml" />
+	<Reference name="MonoTorrent"/>
+      <Files>
+        <Match path="." pattern="*.cs" recurse="true"/>
+      </Files>
+    </Project>
   </Solution>
 </Prebuild>
