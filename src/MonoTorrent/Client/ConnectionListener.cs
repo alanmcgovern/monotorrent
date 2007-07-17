@@ -195,9 +195,9 @@ namespace MonoTorrent.Client
                     }
                     id.Peer.Connection.Encryptor = new PeerBEncryption(sKeys, engine.Settings.MinEncryptionLevel);
                     id.Peer.Connection.Encryptor.SetPeerConnectionID(id);
-                    id.Peer.Connection.Encryptor.onEncryptorReady += onEncryptorReadyHandler;
-                    id.Peer.Connection.Encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
-                    id.Peer.Connection.Encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
+                    id.Peer.Connection.Encryptor.EncryptorReady += onEncryptorReadyHandler;
+                    id.Peer.Connection.Encryptor.EncryptorIOError += onEncryptorIOErrorHandler;
+                    id.Peer.Connection.Encryptor.EncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
                     id.Peer.Connection.StartEncryption(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve);
                     return;
                 }

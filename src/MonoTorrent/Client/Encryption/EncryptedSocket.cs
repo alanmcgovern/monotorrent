@@ -44,24 +44,41 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    internal class EncryptedSocket : IEncryptor
+    internal class EncryptedSocket : IEncryptorInternal
     {
         #region Events
+
+        private EncryptorReadyHandler encryptorReady;
+        private EncryptorIOErrorHandler encryptorIOError;
+        private EncryptorEncryptionErrorHandler encryptorEncryptionError;
+
 
         /// <summary>
         /// Invoked when handshaking is complete and the Encrypt() and Decrypt() methods are ready to be used
         /// </summary>
-        public event EncryptorReadyHandler onEncryptorReady;
+        event EncryptorReadyHandler IEncryptorInternal.EncryptorReady
+        {
+            add { encryptorReady += value; }
+            remove { encryptorReady -= value; }
+        }
 
         /// <summary>
         /// Invoked when a socket error has occured
         /// </summary>
-        public event EncryptorIOErrorHandler onEncryptorIOError;
+        event EncryptorIOErrorHandler IEncryptorInternal.EncryptorIOError
+        {
+            add { encryptorIOError += value; }
+            remove { encryptorIOError -= value; }
+        }
 
         /// <summary>
         /// Invoked when encryption handshaking could not be completed due to something other than a socket error
         /// </summary>
-        public event EncryptorEncryptionErrorHandler onEncryptorEncryptionError;
+        event EncryptorEncryptionErrorHandler IEncryptorInternal.EncryptorEncryptionError
+        {
+            add { encryptorEncryptionError += value; }
+            remove { encryptorEncryptionError -= value; }
+        }
         #endregion
 
         #region Private members
@@ -596,12 +613,12 @@ namespace MonoTorrent.Client.Encryption
 
         protected void IOError()
         {
-            onEncryptorIOError(id);
+            encryptorIOError(id);
         }
 
         protected void EncryptionError()
         {
-            onEncryptorEncryptionError(id);
+            encryptorEncryptionError(id);
         }
         #endregion
 
@@ -830,7 +847,7 @@ namespace MonoTorrent.Client.Encryption
 
             isReady = true;
 
-            onEncryptorReady(id);
+            encryptorReady(id);
         }
 
         protected void SetMinCryptoAllowed(EncryptionType minCryptoAllowed)

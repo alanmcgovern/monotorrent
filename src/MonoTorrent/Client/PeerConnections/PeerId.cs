@@ -15,7 +15,7 @@ namespace MonoTorrent.Client
         private int amRequestingPiecesCount;
         private BitField bitField;
         private Software clientApp;
-        private IEncryptor encryptor;
+        private IEncryptorInternal encryptor;
         private int hashFails;
         private bool isChoking;
         private bool isInterested;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
             get { return this.clientApp; }
         }
 
-        internal IEncryptor Encryptor
+        public IEncryptor Encryptor
         {
             get { return this.encryptor; }
         }

@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
                 manager.Peers.AddPeer(id, PeerType.Connecting);
                 System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
 
-                IEncryptor encryptor;
+                IEncryptorInternal encryptor;
 
                 if (id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption || !ClientEngine.SupportsEncryption)
                     encryptor = new NoEncryption();
@@ -178,9 +178,9 @@ namespace MonoTorrent.Client
                     encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.engine.Settings.MinEncryptionLevel);
 
                 encryptor.SetPeerConnectionID(id);
-                encryptor.onEncryptorReady += onEncryptorReadyHandler;
-                encryptor.onEncryptorIOError += onEncryptorIOErrorHandler;
-                encryptor.onEncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
+                encryptor.EncryptorReady += onEncryptorReadyHandler;
+                encryptor.EncryptorIOError += onEncryptorIOErrorHandler;
+                encryptor.EncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
 
                 id.Peer.Connection = new TCPConnection(id.Peer.Location, id.TorrentManager.Torrent.Pieces.Count, encryptor);
                 id.Peer.Connection.ProcessingQueue = true;

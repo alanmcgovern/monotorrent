@@ -38,11 +38,15 @@ namespace MonoTorrent.Client.Encryption
     internal delegate void EncryptorIOErrorHandler(PeerIdInternal id);
     internal delegate void EncryptorEncryptionErrorHandler(PeerIdInternal id);
 
-    internal interface IEncryptor
+    public interface IEncryptor
     {
-        event EncryptorReadyHandler onEncryptorReady;
-        event EncryptorIOErrorHandler onEncryptorIOError;
-        event EncryptorEncryptionErrorHandler onEncryptorEncryptionError;
+    }
+
+    internal interface IEncryptorInternal : IEncryptor
+    {
+        event EncryptorReadyHandler EncryptorReady;
+        event EncryptorIOErrorHandler EncryptorIOError;
+        event EncryptorEncryptionErrorHandler EncryptorEncryptionError;
 
         void Encrypt(byte[] buffer, int offset, int count);
 

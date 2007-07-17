@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.Encryption
         int x;
         int y;
 
-        public RC4(byte[] key)
+        internal RC4(byte[] key)
         {
             //this.key = key;
 
@@ -73,7 +73,34 @@ namespace MonoTorrent.Client.Encryption
             DoCrypt(wasteBuffer);
         }
 
-        public byte[] DoCrypt(byte[] buffer)
+        byte[] IEncryption.DoCrypt(byte[] buffer)
+        {
+            return DoCrypt(buffer);
+        }
+
+        void IEncryption.InPlaceCrypt(byte[] buffer, int offset, int length)
+        {
+            InPlaceCrypt(buffer, offset, length);
+        }
+
+        internal void InPlaceCrypt(byte[] buffer, int offset, int length)
+        {
+            byte c;
+
+            for (int i = offset; i < (offset + length); i++)
+            {
+                x = (x + 1) & 0xFF;
+                y = (y + S[x]) & 0xFF;
+
+                c = S[y];
+                S[y] = S[x];
+                S[x] = c;
+
+                buffer[i] ^= S[(S[x] + S[y]) & 0xFF];
+            }
+        }
+
+        internal byte[] DoCrypt(byte[] buffer)
         {
             byte c;
 
@@ -91,23 +118,6 @@ namespace MonoTorrent.Client.Encryption
             }
 
             return outBuffer;
-        }
-
-        public void InPlaceCrypt(byte[] buffer, int offset, int length)
-        {
-            byte c;
-
-            for (int i = offset; i < (offset + length); i++)
-            {
-                x = (x + 1) & 0xFF;
-                y = (y + S[x]) & 0xFF;
-
-                c = S[y];
-                S[y] = S[x];
-                S[x] = c;
-
-                buffer[i] ^= S[(S[x] + S[y]) & 0xFF];
-            }
         }
     }
 }

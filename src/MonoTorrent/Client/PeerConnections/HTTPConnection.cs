@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PeerConnections
 {
     internal class HTTPConnection : PeerConnectionBase
     {
-        public HTTPConnection(string location, int bitfieldLength, IEncryptor encryptor)
+        public HTTPConnection(string location, int bitfieldLength, IEncryptorInternal encryptor)
             : base(bitfieldLength, encryptor)
         {
             throw new NotImplementedException();

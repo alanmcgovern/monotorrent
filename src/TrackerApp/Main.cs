@@ -42,21 +42,6 @@ namespace MonoTorrent.TrackerApp
     class MySimpleTracker
     {
         const string TORRENT_DIR = "Torrents";
-        /////<summary>Add all Torrents in the TORRENT_DIR Directory.
-        /////Done once at startup. 
-        /////</summary>
-        //public void AddTorrents()
-        //{                       
-        //    //MonoTorrent.Tracker.Tracker tracker = MonoTorrent.Tracker.Tracker.Instance;
-        //    if (!Directory.Exists(TORRENT_DIR)) {
-        //        Directory.CreateDirectory(TORRENT_DIR);
-        //    }
-        //    Console.WriteLine("loading torrents from " + TORRENT_DIR);
-        //    foreach (string path in Directory.GetFiles(TORRENT_DIR, "*.torrent")) {
-        //        AddTorrent(path);
-        //    }
-        //}
-        
         
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
@@ -66,46 +51,49 @@ namespace MonoTorrent.TrackerApp
             engine.Address = "127.0.0.1";
             engine.Port = 10000;
             engine.Frontend = TrackerFrontend.InternalHttp;
-            engine.TorrentWatchers.Add(new TorrentFolderWatcher(Path.Combine(Environment.CurrentDirectory, TORRENT_DIR), "*.torrent"));
+            TorrentFolderWatcher watcher = new TorrentFolderWatcher(Path.Combine(Environment.CurrentDirectory, TORRENT_DIR), "*.torrent");
+            watcher.TorrentFound += new EventHandler<TorrentWatcherEventArgs>(watcher_TorrentFound);
+            watcher.TorrentLost += new EventHandler<TorrentWatcherEventArgs>(watcher_TorrentLost);
+            engine.TorrentWatchers.Add(watcher);
+
+            engine.TorrentWatchers.StartAll();
+            engine.TorrentWatchers.ForceScanAll();
+            
             engine.Start();
-            //AddTorrents();
-            //StartWatching();
             Console.WriteLine("started");
         }
-        
-        /////<summary>Start the FileSystemWatcher on TORRENT_DIR</summary>
-        //public void StartWatching()
-        //{
-        //    FileSystemWatcher watcher = new FileSystemWatcher(TORRENT_DIR, "*.torrent");
-        //    watcher.Created += new FileSystemEventHandler(OnCreated);
-        //    watcher.EnableRaisingEvents = true;
-        //}
-        
-        /////<summary>Gets called when a File with .torrent extension was added to the TORRENT_DIR</summary>
-        //public void OnCreated(object sender, FileSystemEventArgs e) 
-        //{
-        //    AddTorrent(e.FullPath);
-        //}
-        
-        /////<summary>Add the Torrent to the Tracker</summary>
-        /////<param name=path>Path to the Torrent which should be added</param>
-        //public void AddTorrent(string path) 
-        //{
-        //    try {
-        //        Torrent t = new Torrent();
-        //        t.LoadTorrent(path);
-        //        TrackerEngine.Instance.Tracker.AddTorrent(t);         
-        //    } catch (TorrentException exc) {
-                
-        //        Console.Error.WriteLine("Failed to load Torrent " + path);
-        //        Console.Error.WriteLine("Reason: " + exc.Message);
-        //    }
-        //}
+
+        void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e)
+        {
+            try
+            {
+                TrackerEngine.Instance.Tracker.RemoveTorrent(e.TorrentPath);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Couldn't remove torrent: {0}", e.TorrentPath);
+                Console.WriteLine("Reason: {0}", ex.Message);
+            }
+        }
+
+        void watcher_TorrentFound(object sender, TorrentWatcherEventArgs e)
+        {
+            try
+            {
+                Torrent t = Torrent.Load(e.TorrentPath);
+                TrackerEngine.Instance.Tracker.AddTorrent(t);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Couldn't load {0}.", e.TorrentPath);
+                Console.WriteLine("Reason: {0}", ex.Message);
+            }
+        }
         
         public void OnProcessExit(object sender, EventArgs e)
         {
             Console.Write("shutting down the Tracker...");
-            //TrackerEngine.Instance.Stop();
+            TrackerEngine.Instance.Stop();
             Console.WriteLine("done");
         }
         

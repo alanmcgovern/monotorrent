@@ -34,18 +34,33 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Plaintext "encryption"
     /// </summary>
-    class NullEncryption : IEncryption
+    public class NullEncryption : IEncryption
     {
         public static NullEncryption NullEncryptor = new NullEncryption();
 
-        public byte[] DoCrypt(byte[] buffer)
+        
+        internal byte[] DoCrypt(byte[] buffer)
         {
             return buffer;
         }
 
-        public void InPlaceCrypt(byte[] buffer, int offset, int length)
+        internal void InPlaceCrypt(byte[] buffer, int offset, int length)
         {
             return;
         }
+
+        #region IEncryption Members
+
+        byte[] IEncryption.DoCrypt(byte[] buffer)
+        {
+            return DoCrypt(buffer);
+        }
+
+        void IEncryption.InPlaceCrypt(byte[] buffer, int offset, int length)
+        {
+            InPlaceCrypt(buffer, offset, length);
+        }
+
+        #endregion
     }
 }

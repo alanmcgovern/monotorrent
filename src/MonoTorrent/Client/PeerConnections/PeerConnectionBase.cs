@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         private int bytesToSend;
         private Software clientApp;
         private IPeerMessageInternal currentlySendingMessage;
-        private IEncryptor encryptor;
+        private IEncryptorInternal encryptor;
         private UInt32Collection isAllowedFastPieces;
         private bool isChoking;
         private bool isInterested;
@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The current encryption method being used to encrypt connections
         /// </summary>
-        public IEncryptor Encryptor
+        public IEncryptorInternal Encryptor
         {
             get { return this.encryptor; }
             set { this.encryptor = value; }
@@ -346,7 +346,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection to the peer at the specified IPEndpoint
         /// </summary>
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
-        protected PeerConnectionBase(int bitfieldLength, IEncryptor encryptor)
+        protected PeerConnectionBase(int bitfieldLength, IEncryptorInternal encryptor)
         {
             this.suggestedPieces = new IntCollection();
             this.encryptor = encryptor;

@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.Encryption
 
         #region Constructors
 
-        public TCPConnection(string location, int bitfieldLength, IEncryptor encryptor)
+        public TCPConnection(string location, int bitfieldLength, IEncryptorInternal encryptor)
             : base(bitfieldLength, encryptor)
         {
             string[] s = location.Split(':');
@@ -64,14 +64,14 @@ namespace MonoTorrent.Client.Encryption
             this.peerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public TCPConnection(IPEndPoint endPoint, int bitfieldLength, IEncryptor encryptor)
+        public TCPConnection(IPEndPoint endPoint, int bitfieldLength, IEncryptorInternal encryptor)
             : base(bitfieldLength, encryptor)
         {
             this.peerEndPoint = endPoint;
             this.peerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public TCPConnection(Socket socket, int bitfieldLength, IEncryptor encryptor)
+        public TCPConnection(Socket socket, int bitfieldLength, IEncryptorInternal encryptor)
             : base(bitfieldLength, encryptor)
         {
             this.peerEndPoint = (IPEndPoint)socket.RemoteEndPoint;

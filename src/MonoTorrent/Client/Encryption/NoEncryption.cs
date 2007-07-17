@@ -34,67 +34,88 @@ using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal class NoEncryption : IEncryptor
+    public class NoEncryption : IEncryptorInternal
     {
         PeerIdInternal id;
 
-        public event EncryptorReadyHandler onEncryptorReady;
-        public event EncryptorIOErrorHandler onEncryptorIOError;
-        public event EncryptorEncryptionErrorHandler onEncryptorEncryptionError;
 
-        public NoEncryption()
+        private EncryptorReadyHandler encryptorReady;
+        private EncryptorIOErrorHandler encryptorIOError;
+        private EncryptorEncryptionErrorHandler encryptorEncryptionError;
+
+
+        event EncryptorReadyHandler IEncryptorInternal.EncryptorReady
+        {
+            add { encryptorReady += value; }
+            remove { encryptorReady -= value; }
+        }
+        event EncryptorIOErrorHandler IEncryptorInternal.EncryptorIOError
+        {
+            add { encryptorIOError += value; }
+            remove { encryptorIOError -= value; }
+        }
+
+        event EncryptorEncryptionErrorHandler IEncryptorInternal.EncryptorEncryptionError
+        {
+            add { encryptorEncryptionError += value; }
+            remove { encryptorEncryptionError -= value; }
+        }
+
+        internal NoEncryption()
         {
         }
 
 
-        public void Encrypt(byte[] buffer, int offset, int count)
+        void IEncryptorInternal.Encrypt(byte[] buffer, int offset, int count)
         {
             return;
         }
 
 
-        public void Decrypt(byte[] buffer, int offset, int count)
+        void IEncryptorInternal.Decrypt(byte[] buffer, int offset, int count)
         {
             return;
         }
 
 
-        public void AddInitialData(byte[] buffer, int offset, int count)
+        void IEncryptorInternal.AddInitialData(byte[] buffer, int offset, int count)
         {
             return;
         }
 
-        public void Start(Socket socket)
-        {
-            onEncryptorReady(id);
-            return;
-        }
-
-        public void Start(Socket socket, byte[] initialBuffer, int offset, int count)
+        void IEncryptorInternal.Start(Socket socket)
         {
             Start(socket);
-            return;
         }
 
-        public bool IsReady()
+        void IEncryptorInternal.Start(Socket socket, byte[] initialBuffer, int offset, int count)
+        {
+            Start(socket);
+        }
+
+        private void Start(Socket s)
+        {
+            encryptorReady(id);
+        }
+
+        bool IEncryptorInternal.IsReady()
         {
             return true;
         }
 
-        public bool IsInitialDataAvailable()
+        bool IEncryptorInternal.IsInitialDataAvailable()
         {
             return false;
         }
 
-        public int GetInitialData(byte[] buffer, int offset, int count)
+        int IEncryptorInternal.GetInitialData(byte[] buffer, int offset, int count)
         {
             return 0;
         }
 
-        public void SetPeerConnectionID(PeerIdInternal id)
+        void IEncryptorInternal.SetPeerConnectionID(PeerIdInternal id)
         {
             this.id = id;
-            return;
         }
     }
 }

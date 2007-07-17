@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        public Peer Peer
+        internal Peer Peer
         {
             get { return this.peer; }
             set { this.peer = value; }
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
         /// Creates a new PeerConnectionID
         /// </summary>
         /// <param name="peer"></param>
-        public PeerIdInternal(Peer peer)
+        internal PeerIdInternal(Peer peer)
         {
             this.peer = peer;
             this.torrentManager = null;
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="manager"></param>
-        public PeerIdInternal(Peer peer, TorrentManager manager)
+        internal PeerIdInternal(Peer peer, TorrentManager manager)
         {
             this.peer = peer;
             this.torrentManager = manager;
