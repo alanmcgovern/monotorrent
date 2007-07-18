@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
     internal class PeerIdInternal : IComparable<PeerIdInternal>
     {
         #region Member Variables
-
+        public string NulledAt = string.Empty;
         public ConnectionManager ConnectionManager
         {
             get { return this.torrentManager.Engine.ConnectionManager; }
@@ -113,28 +113,6 @@ namespace MonoTorrent.Client
 
 
         #region Overridden Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
-        {
-            PeerIdInternal id2 = obj as PeerIdInternal;
-            if (id2 == null)
-                return false;
-
-            return (this.peer.Equals(id2.peer));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override int GetHashCode()
-        {
-            return this.peer.GetHashCode();
-        }
 
         /// <summary>
         /// 

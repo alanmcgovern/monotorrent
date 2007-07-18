@@ -206,7 +206,7 @@ namespace MonoTorrent.Client
 
         private void SendMessage(PeerIdInternal id)
         {
-            lock (id.TorrentManager.resumeLock)
+            lock (id.TorrentManager.listLock)
                 lock (id)
                     if (id.Peer.Connection != null)
                         id.ConnectionManager.ProcessQueue(id);

@@ -139,7 +139,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal RequestMessage PickPiece(PeerIdInternal id, PeerIdCollection otherPeers)
+        internal RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
             //if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
             //    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);

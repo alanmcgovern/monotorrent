@@ -78,10 +78,9 @@ namespace MonoTorrent.Client
         internal readonly object listLock = new object();// The object we use to syncronize list access
         internal bool loadedFastResume;         // Used to fire the "PieceHashed" event if fast resume data was loaded
         private ConnectionMonitor monitor;      // Calculates download/upload speed
-        private PeerList peers;                 // Stores all the peers we know of in a list
+        private PeerManager peers;                 // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
         private RateLimiter rateLimiter;        // Contains the logic to decide how many chunks we can download
-        internal readonly object resumeLock;    // Used to control access to the upload and download queues 
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
@@ -162,7 +161,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        public PeerList Peers
+        public PeerManager Peers
         {
             get { return this.peers; }
         }
@@ -275,9 +274,8 @@ namespace MonoTorrent.Client
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.monitor = new ConnectionMonitor();
-            this.resumeLock = listLock;
             this.settings = settings;
-            this.peers = new PeerList(this);
+            this.peers = new PeerManager(engine, this);
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this);
@@ -378,7 +376,7 @@ namespace MonoTorrent.Client
             if (this.state == TorrentState.Paused)
             {
                 UpdateState(TorrentState.Downloading);
-                lock (this.resumeLock)
+                lock (this.listLock)
                     this.ResumePeers();
                 return;
             }
@@ -478,15 +476,13 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer">The peer to add</param>
         /// <returns>The number of peers added</returns>
-        internal int AddPeers(PeerIdInternal peer)
+        internal int AddPeers(Peer peer)
         {
             try
             {
                 lock (this.listLock)
                 {
-                    if (this.peers.AvailablePeers.Contains(peer) ||
-                        this.peers.ConnectedPeers.Contains(peer) ||
-                        this.peers.ConnectingToPeers.Contains(peer))
+                    if (this.peers.Contains(peer))
                         return 0;
 
                     this.peers.AvailablePeers.Add(peer);
@@ -509,7 +505,7 @@ namespace MonoTorrent.Client
         /// <returns>The number of peers added</returns>
         internal int AddPeers(BEncodedList list)
         {
-            PeerIdInternal id;
+            Peer peer;
             int added = 0;
             foreach (BEncodedDictionary dict in list)
             {
@@ -524,8 +520,8 @@ namespace MonoTorrent.Client
                     else
                         peerId = string.Empty;
 
-                    id = new PeerIdInternal(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()), this);
-                    added += this.AddPeers(id);
+                    peer = new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString());
+                    added += this.AddPeers(peer);
                 }
                 catch (Exception ex)
                 {
@@ -552,7 +548,7 @@ namespace MonoTorrent.Client
             int i = 0;
             int added = 0;
             UInt16 port;
-            PeerIdInternal id;
+            Peer peer;
             StringBuilder sb = new StringBuilder(16);
 
             while (i < byteOrderedData.Length)
@@ -571,9 +567,9 @@ namespace MonoTorrent.Client
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);
-                id = new PeerIdInternal(new Peer(null, sb.ToString()), this);
+                peer = new Peer(null, sb.ToString());
 
-                added += this.AddPeers(id);
+                added += this.AddPeers(peer);
             }
 
             RaisePeersFound(new PeersAddedEventArgs(added));
@@ -590,7 +586,7 @@ namespace MonoTorrent.Client
             PeerIdInternal id;
 
             // First attempt to resume downloading (just in case we've stalled for whatever reason)
-            lock (this.resumeLock)
+            lock (this.listLock)
                 if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
                     this.ResumePeers();
 
@@ -614,9 +610,13 @@ namespace MonoTorrent.Client
                     id = this.peers.ConnectedPeers[i];
                     lock (id)
                     {
-                        id.UpdatePublicStats();
                         if (id.Peer.Connection == null)
+                        {
+                            Console.WriteLine("Nulled out: " + id.Peer.Location);
                             continue;
+                        }
+
+                        id.UpdatePublicStats();
 
                         if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();

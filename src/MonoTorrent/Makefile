@@ -42,7 +42,6 @@ SOURCES=	\
 	Client/ClientEngine.cs \
 	Client/ConnectionListener.cs \
 	Client/Logger.cs \
-	Client/PeerList.cs \
 	Client/RateLimiter.cs \
 	Client/ReaderLock.cs \
 	Client/MessageHandler.cs \
@@ -84,6 +83,7 @@ SOURCES=	\
 	Client/Managers/ConnectionManager.cs \
 	Client/Managers/ConnectionMonitor.cs \
 	Client/Managers/FileManager.cs \
+	Client/Managers/PeerManager.cs \
 	Client/Managers/PieceManager.cs \
 	Client/Managers/TorrentManager.cs \
 	Client/Managers/TrackerManager.cs \

@@ -293,6 +293,7 @@ namespace MonoTorrent.Client
                         }
 
                         id.Peer.Connection = null;
+                        id.NulledAt = "1";
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
@@ -317,6 +318,7 @@ namespace MonoTorrent.Client
                         }
 
                         id.Peer.Connection = null;
+                        id.NulledAt = "2";
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
@@ -348,7 +350,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                     lock (id)
                     {
                         // If the connection is null, just return
@@ -415,7 +417,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                     lock (id)
                     {
                         // If the peer has disconnected, don't continue
@@ -473,7 +475,7 @@ namespace MonoTorrent.Client
 
         private void onPeerHandshakeSent(PeerIdInternal id)
         {
-            lock (id.TorrentManager.resumeLock)
+            lock (id.TorrentManager.listLock)
             lock (id)
             {
                 Logger.Log(id, "Sent Handshake");
@@ -499,7 +501,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                 lock (id)
                 {
                     // If the connection is closed, just return
@@ -554,7 +556,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerBitfieldSent(PeerIdInternal id)
         {
-            lock (id.TorrentManager.resumeLock)
+            lock (id.TorrentManager.listLock)
             lock (id)
             {
                 if (id.Peer.Connection == null)
@@ -583,7 +585,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerMessageLengthReceived(PeerIdInternal id)
         {
-            lock (id.TorrentManager.resumeLock)
+            lock (id.TorrentManager.listLock)
             lock (id)
             {
                 // If the connection is null, we just return
@@ -629,7 +631,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                 lock (id)
                 {
                     if (id.Peer.Connection == null)
@@ -676,7 +678,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerMessageSent(PeerIdInternal id)
         {
-            lock (id.TorrentManager.resumeLock)
+            lock (id.TorrentManager.listLock)
             lock (id)
             {
                 // If the peer has been cleaned up, just return.
@@ -706,7 +708,7 @@ namespace MonoTorrent.Client
             bool cleanUp = false;
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                     lock (id)
                     {
                         if (id.Peer.Connection == null)
@@ -777,7 +779,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id.TorrentManager.resumeLock)
+                lock (id.TorrentManager.listLock)
                     lock (id)
                     {
                         if (id.Peer.Connection == null)
@@ -825,6 +827,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        Console.WriteLine("Cleaned Up: " + id.Peer.Location);
                         Logger.Log(id, "Cleanup Reason : " + message);
                         Logger.FlushToDisk(id);
 
@@ -852,10 +855,12 @@ namespace MonoTorrent.Client
 
                             id.Peer.Connection.Dispose();
                             id.Peer.Connection = null;
+                            id.NulledAt = "3";
+                            Console.WriteLine("Nulling: " + id.Peer.Location);
                         }
                         else
                         {
-                            Logger.Log(id, "!!!!Connection already null!!!!");
+                            Console.WriteLine("Already Null: " + id.Peer.Location);
                         }
 
                         int found = 0;
@@ -863,12 +868,12 @@ namespace MonoTorrent.Client
                             found++;
                         if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id))
                             found++;
-                        if (id.TorrentManager.Peers.AvailablePeers.Contains(id))
+                        if (id.TorrentManager.Peers.AvailablePeers.Contains(id.Peer))
                             found++;
 
                         if (found > 1)
                         {
-                            Logger.Log("Found: " + found.ToString());
+                            Console.WriteLine("Found: " + found.ToString());
                         }
 
                         id.TorrentManager.Peers.RemovePeer(id, PeerType.UploadQueue);
@@ -881,7 +886,7 @@ namespace MonoTorrent.Client
                             id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                         if (id.Peer.PeerId != engine.PeerId)
-                            if (!id.TorrentManager.Peers.AvailablePeers.Contains(id) && id.Peer.CleanedUpCount < 5)
+                            if (!id.TorrentManager.Peers.AvailablePeers.Contains(id.Peer) && id.Peer.CleanedUpCount < 5)
                                 id.TorrentManager.Peers.AddPeer(id, PeerType.Available);
                     }
                 }
@@ -1215,10 +1220,9 @@ namespace MonoTorrent.Client
                     {
                         for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
                             if ((manager.State != TorrentState.Seeding ||
-                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].Peer.IsSeeder))
-                                && (!manager.Peers.AvailablePeers[i].Peer.ActiveReceive)
-                                && (!manager.Peers.AvailablePeers[i].Peer.ActiveSend)
-                                && manager.Peers.AvailablePeers[i].Peer.LastConnectionAttempt < DateTime.Now.AddMinutes(-1))
+                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder))
+                                && (!manager.Peers.AvailablePeers[i].ActiveReceive)
+                                && (!manager.Peers.AvailablePeers[i].ActiveSend))
                                 break;
 
                         // If this is true, there were no peers in the available list to connect to.
@@ -1226,11 +1230,8 @@ namespace MonoTorrent.Client
                             continue;
 
                         // Remove the peer from the lists so we can start connecting to him
-                        id = manager.Peers.AvailablePeers[i];
+                        id = new PeerIdInternal(manager.Peers.AvailablePeers[i], manager);
                         manager.Peers.AvailablePeers.RemoveAt(i);
-
-                        if (id.Peer.Connection != null)
-                            Logger.Log("CRITICAL ERROR: Trying to connect to an already connected peer");
 
                         // Save the manager we're using so we can place it to the end of the list
                         m = manager;

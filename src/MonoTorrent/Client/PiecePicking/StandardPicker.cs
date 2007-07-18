@@ -228,7 +228,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private RequestMessage GetStandardRequest(PeerIdInternal id, PeerIdCollection otherPeers)
+        private RequestMessage GetStandardRequest(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
             int checkIndex = 0;
             BitField current = null;
@@ -298,7 +298,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, PeerIdCollection otherPeers)
+        private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
             Priority highestPriority = Priority.Low;
             Stack<BitField> bitfields = new Stack<BitField>();
@@ -448,7 +448,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The id of the peer to request a piece off of</param>
         /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
         /// <returns></returns>
-        public override RequestMessage PickPiece(PeerIdInternal id, PeerIdCollection otherPeers)
+        public override RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
             RequestMessage message = null;
             try
