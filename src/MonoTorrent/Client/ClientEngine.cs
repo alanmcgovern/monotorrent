@@ -84,20 +84,20 @@ namespace MonoTorrent.Client
         #region Properties
 
         /// <summary>
-        /// True if the engine has been started
-        /// </summary>
-        public bool IsRunning
-        {
-            get { return this.timer.Enabled; }
-        }
-
-
-        /// <summary>
         /// The connection manager which manages all the connections for the library
         /// </summary>
         public ConnectionManager ConnectionManager
         {
             get { return this.connectionManager; }
+        }
+
+
+        /// <summary>
+        /// True if the engine has been started
+        /// </summary>
+        public bool IsRunning
+        {
+            get { return this.timer.Enabled; }
         }
 
 
@@ -116,7 +116,6 @@ namespace MonoTorrent.Client
         public EngineSettings Settings
         {
             get { return this.settings; }
-            set { this.settings = value; }
         }
 
 
