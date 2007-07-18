@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
         private EngineSettings settings;
         private System.Timers.Timer timer;      // The timer used to call the logic methods for the torrent managers
         private int tickCount;
-        private TorrentManagerCollection torrents;
+        private MonoTorrentCollection<TorrentManager> torrents;
         internal ReaderWriterLock torrentsLock;
 
         #endregion
@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The TorrentManager's loaded into the engine
         /// </summary>
-        internal TorrentManagerCollection Torrents
+        internal MonoTorrentCollection<TorrentManager> Torrents
         {
             get { return this.torrents; }
             set { this.torrents = value; }
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
             this.listener = new ConnectionListener(this);
             this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
-            this.torrents = new TorrentManagerCollection();
+            this.torrents = new MonoTorrentCollection<TorrentManager>();
             this.torrentsLock = new ReaderWriterLock();
 
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);

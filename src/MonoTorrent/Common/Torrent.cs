@@ -48,7 +48,7 @@ namespace MonoTorrent.Common
         #region Private Fields
 
         private BEncodedValue azureusProperties;
-        private List<stringCollection> announceUrls;
+        private List<MonoTorrentCollection<string>> announceUrls;
         private string comment;
         private string createdBy;
         private DateTime creationDate;
@@ -76,7 +76,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The announce URLs contained within the .torrent file
         /// </summary>
-        public List<stringCollection> AnnounceUrls
+        public List<MonoTorrentCollection<string>> AnnounceUrls
         {
             get { return this.announceUrls; }
         }
@@ -264,7 +264,7 @@ namespace MonoTorrent.Common
 
         private Torrent()
         {
-            this.announceUrls = new List<stringCollection>();
+            this.announceUrls = new List<MonoTorrentCollection<string>>();
             this.comment = string.Empty;
             this.createdBy = string.Empty;
             this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -597,7 +597,7 @@ namespace MonoTorrent.Common
                 switch (keypair.Key.Text)
                 {
                     case ("announce"):
-                        t.announceUrls.Add(new stringCollection());
+                        t.announceUrls.Add(new MonoTorrentCollection<string>());
                         t.announceUrls[0].Add(keypair.Value.ToString());
                         break;
 
@@ -650,7 +650,7 @@ namespace MonoTorrent.Common
 
                     case ("announce-list"):
                         BEncodedList announces = (BEncodedList)keypair.Value;
-                        t.announceUrls = new List<stringCollection>(announces.Count);
+                        t.announceUrls = new List<MonoTorrentCollection<string>>(announces.Count);
 
                         for (int j = 0; j < announces.Count; j++)
                         {
@@ -662,7 +662,7 @@ namespace MonoTorrent.Common
 
                             Toolbox.Randomize<string>(tier);
 
-                            stringCollection collection = new stringCollection(tier.Count);
+                            MonoTorrentCollection<string> collection = new MonoTorrentCollection<string>(tier.Count);
                             for (int k = 0; k < tier.Count; k++)
                                 collection.Add(tier[k]);
                             t.announceUrls.Add(collection);

@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
         private object requestsLocker = new object();                   // Used to synchronise access to the lists
-        private PieceCollection pieces;                                     // A list of all the remaining pieces to download
+        private MonoTorrentCollection<Piece> pieces;                                     // A list of all the remaining pieces to download
         private BlockCollection blocks;                                     // A list of all the blocks in the remaining pieces to download
         Dictionary<PeerIdInternal, BlockCollection> requests;             // Used to remember which blocks each peer is downloading
         Dictionary<Block, PeerIdCollection> blockRequestees;      // Used to remember which peers are getting each block so i can issue cancel messages
@@ -47,12 +47,12 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerIdInternal, PieceCollection> existingRequests)
+        public EndGamePicker(BitField myBitfield, Torrent torrent, Dictionary<PeerIdInternal, MonoTorrentCollection<Piece>> existingRequests)
         {
             this.myBitfield = myBitfield;
             this.requests = new Dictionary<PeerIdInternal, BlockCollection>();
             this.blockRequestees = new Dictionary<Block, PeerIdCollection>();
-            this.pieces = new PieceCollection();
+            this.pieces = new MonoTorrentCollection<Piece>();
 
             // For all the pieces that we have *not* requested yet, add them into our list of pieces
             for (int i = 0; i < this.myBitfield.Length; i++)
@@ -74,9 +74,9 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private void AddExistingRequests(Dictionary<PeerIdInternal, PieceCollection> existingRequests)
+        private void AddExistingRequests(Dictionary<PeerIdInternal, MonoTorrentCollection<Piece>> existingRequests)
         {
-            foreach (KeyValuePair<PeerIdInternal, PieceCollection> keypair in existingRequests)
+            foreach (KeyValuePair<PeerIdInternal, MonoTorrentCollection<Piece>> keypair in existingRequests)
             {
                 if (!this.requests.ContainsKey(keypair.Key))
                     this.requests.Add(keypair.Key, new BlockCollection());

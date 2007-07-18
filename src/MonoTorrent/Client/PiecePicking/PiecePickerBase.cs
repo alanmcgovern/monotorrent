@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
             return -1;
         } 
 
-        internal static Piece GetPieceFromIndex(PieceCollection pieces, int pieceIndex)
+        internal static Piece GetPieceFromIndex(MonoTorrentCollection<Piece> pieces, int pieceIndex)
         {
             for (int i = 0; i < pieces.Count; i++)
                 if (pieces[i].Index == pieceIndex)

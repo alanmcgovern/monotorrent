@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private UInt32Collection amAllowedFastPieces;
+        private MonoTorrentCollection<uint> amAllowedFastPieces;
         private bool amChoking;
         private bool amInterested;
         private int amRequestingPiecesCount;
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         private Software clientApp;
         private IPeerMessageInternal currentlySendingMessage;
         private IEncryptorInternal encryptor;
-        private UInt32Collection isAllowedFastPieces;
+        private MonoTorrentCollection<uint> isAllowedFastPieces;
         private bool isChoking;
         private bool isInterested;
         private bool isinterestingtoMe;
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
         internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
         internal ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
         private Queue<IPeerMessageInternal> sendQueue;                  // This holds the peermessages waiting to be sent
-        private IntCollection suggestedPieces;
+        private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
 
         #endregion Member Variables
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the indexs of all the pieces we will let the peer download even if they are choked
         /// </summary>
-        internal UInt32Collection AmAllowedFastPieces
+        internal MonoTorrentCollection<uint> AmAllowedFastPieces
         {
             get { return this.amAllowedFastPieces; }
             set { this.amAllowedFastPieces = value; }
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
         /// </summary>
-        internal UInt32Collection IsAllowedFastPieces
+        internal MonoTorrentCollection<uint> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
             set { this.isAllowedFastPieces = value; }
@@ -332,7 +332,7 @@ namespace MonoTorrent.Client
         /// A list of pieces that this peer has suggested we download. These should be downloaded
         /// with higher priority than standard pieces.
         /// </summary>
-        internal IntCollection SuggestedPieces
+        internal MonoTorrentCollection<int> SuggestedPieces
         {
             get { return this.suggestedPieces; }
         }
@@ -348,15 +348,15 @@ namespace MonoTorrent.Client
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
         protected PeerConnectionBase(int bitfieldLength, IEncryptorInternal encryptor)
         {
-            this.suggestedPieces = new IntCollection();
+            this.suggestedPieces = new MonoTorrentCollection<int>();
             this.encryptor = encryptor;
             this.amChoking = true;
             this.isChoking = true;
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessageInternal>(12);
-            this.isAllowedFastPieces = new UInt32Collection();
-            this.amAllowedFastPieces = new UInt32Collection();
+            this.isAllowedFastPieces = new MonoTorrentCollection<uint>();
+            this.amAllowedFastPieces = new MonoTorrentCollection<uint>();
         }
 
         #endregion

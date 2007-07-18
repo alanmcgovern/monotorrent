@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal TrackerTier(stringCollection trackerUrls, AsyncCallback announceCallback,
+        internal TrackerTier(MonoTorrentCollection<string> trackerUrls, AsyncCallback announceCallback,
                         AsyncCallback scrapeCallback)
         {
             Uri result;

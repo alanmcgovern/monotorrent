@@ -45,8 +45,8 @@ namespace MonoTorrent.Client
 
 
         private TorrentFile[] torrentFiles;
-        private PieceCollection requests;
-        internal PieceCollection Requests
+        private MonoTorrentCollection<Piece> requests;
+        internal MonoTorrentCollection<Piece> Requests
         {
             get { return this.requests; }
         }
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             this.previousBitfields = new List<BitField>();
             this.previousBitfields.Add(new BitField(bitField.Length));
             this.priorities = (int[])Enum.GetValues(typeof(Priority));
-            this.requests = new PieceCollection(16);
+            this.requests = new MonoTorrentCollection<Piece>(16);
             this.torrentFiles = torrentFiles;
             this.unhashedPieces = new BitField(bitField.Length);
 

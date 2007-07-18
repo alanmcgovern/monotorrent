@@ -35,7 +35,7 @@ namespace MonoTorrent.Common
     /// <summary>
     /// Main controller class for ITorrentWatcher
     /// </summary>
-    public class TorrentWatchers : ITorrentWatcherCollection
+    public class TorrentWatchers : MonoTorrentCollection<ITorrentWatcher>
     {
         #region Constructors
 
