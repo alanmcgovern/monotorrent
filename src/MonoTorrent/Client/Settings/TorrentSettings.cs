@@ -35,6 +35,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Class representing the "Settings" for individual torrents
     /// </summary>
+    [Serializable]
     public class TorrentSettings : ICloneable
     {
         #region Member Variables
