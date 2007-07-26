@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        private TorrentSettings()
+        public TorrentSettings()
         {
         }
 

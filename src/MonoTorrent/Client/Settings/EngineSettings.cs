@@ -168,7 +168,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        private EngineSettings()
+        public EngineSettings()
         {
         }
 
