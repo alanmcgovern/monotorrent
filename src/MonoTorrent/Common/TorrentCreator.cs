@@ -42,7 +42,7 @@ using System.Threading;
 
 namespace MonoTorrent.Common
 {
-    internal class TorrentCreatorAsyncResult : IAsyncResult
+    public class TorrentCreatorAsyncResult : IAsyncResult
     {
         #region Member Variables
 
@@ -416,7 +416,7 @@ namespace MonoTorrent.Common
         }
 
 
-        public IAsyncResult BeginCreate(object asyncState, AsyncCallback callback)
+        public TorrentCreatorAsyncResult BeginCreate(object asyncState, AsyncCallback callback)
         {
             if (result != null)
                 throw new TorrentException("You must call EndCreate before calling BeginCreate again");
@@ -482,6 +482,9 @@ namespace MonoTorrent.Common
                 len = reader.Read(piece, 0, piece.Length);
                 while (len != 0)
                 {
+                    if (result.Aborted)
+                        return piecesBuffer;
+
                     byte[] currentHash = hasher.ComputeHash(piece, 0, len);
                     RaiseHashed(new TorrentCreatorEventArgs(1, 1, piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
                     Buffer.BlockCopy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
