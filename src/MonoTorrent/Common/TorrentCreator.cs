@@ -45,7 +45,7 @@ namespace MonoTorrent.Common
     public class TorrentCreator
     {
         #region Events
-        
+
         /// <summary>
         /// This event indicates the progress of the torrent creation and is fired every time a piece is hashed
         /// </summary>
@@ -182,7 +182,7 @@ namespace MonoTorrent.Common
             this.torrent.Add("info", info);
 
             // Add in initial values for some of the torrent attributes
-            PieceLength =  256 * 1024;   // 256kB default piece size
+            PieceLength = 256 * 1024;   // 256kB default piece size
             torrent.Add("encoding", (BEncodedString)"UTF-8");
         }
 
@@ -202,7 +202,7 @@ namespace MonoTorrent.Common
         {
             GetAllFilePaths(dir, paths);
 
-            for(int i=0; i < paths.Count; i++)
+            for (int i = 0; i < paths.Count; i++)
                 filesList.Add(GetFileInfoDict(paths[i], dir));
         }
 
@@ -345,7 +345,7 @@ namespace MonoTorrent.Common
             {
                 result.SavedException = ex;
             }
-            
+
             result.IsCompleted = true;
             ((ManualResetEvent)result.AsyncWaitHandle).Set();
 
@@ -415,10 +415,10 @@ namespace MonoTorrent.Common
         {
             Reset();
             CreateDict();
-            
+
             return Torrent.Load(this.torrent);
         }
-        
+
         ///<summary>
         ///creates an BencodedDictionary.
         ///</summary>
@@ -437,7 +437,7 @@ namespace MonoTorrent.Common
                 CreateSingleFileTorrent();
                 return;
             }
-            
+
             throw new ArgumentException("no such file or directory", "storagePath");
         }
 
@@ -591,7 +591,7 @@ namespace MonoTorrent.Common
             finally
             {
                 this.torrent.Add("info", new BEncodedDictionary());
-               ((BEncodedDictionary) this.torrent["info"]).Add("piece length", oldInfo["piece length"]);
+                ((BEncodedDictionary)this.torrent["info"]).Add("piece length", oldInfo["piece length"]);
             }
         }
 
