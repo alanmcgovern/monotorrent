@@ -327,7 +327,7 @@ namespace MonoTorrent.Common
                 if (this.result.SavedException != null)
                     throw this.result.SavedException;
 
-                return this.torrent;
+                return this.result.Aborted ? null : this.torrent;
             }
             finally
             {
