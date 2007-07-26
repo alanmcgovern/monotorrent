@@ -49,7 +49,6 @@ namespace MonoTorrent.Common
         private bool aborted;
         private object asyncState;
         private AsyncCallback callback;
-        private bool completedSynchronously;
         private bool isCompleted;
         private Exception savedException;
         private ManualResetEvent waitHandle;
@@ -81,8 +80,7 @@ namespace MonoTorrent.Common
 
         public bool CompletedSynchronously
         {
-            get { return completedSynchronously; }
-            internal set { completedSynchronously = value; }
+            get { return false; }
         }
 
         public bool IsCompleted
@@ -457,9 +455,8 @@ namespace MonoTorrent.Common
             {
                 result.SavedException = ex;
             }
-
+            
             result.IsCompleted = true;
-            result.CompletedSynchronously = false;
             ((ManualResetEvent)result.AsyncWaitHandle).Set();
 
             if (result.Callback != null)
