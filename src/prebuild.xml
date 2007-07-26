@@ -47,7 +47,6 @@
       <Reference name="System" />
       <Reference name="System.Web" />
       <Reference name="System.Xml" />
-	<Reference name="Mono.Security" localCopy="true" path="../Libs"/>
       <Files>
         <Match path="BEncoding" pattern="*.cs" recurse="true"/>
         <Match path="Client" pattern="*.cs" recurse="true"/>
