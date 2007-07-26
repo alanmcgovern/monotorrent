@@ -219,6 +219,7 @@ namespace MonoTorrent.Common
             set { Set((BEncodedDictionary)this.torrent["info"], "piece length", new BEncodedNumber(value)); }
         }
 
+
         ///<summary>
         ///This property sets whether this is a private torrent or not
         ///</summary>
@@ -486,7 +487,8 @@ namespace MonoTorrent.Common
                         return piecesBuffer;
 
                     byte[] currentHash = hasher.ComputeHash(piece, 0, len);
-                    RaiseHashed(new TorrentCreatorEventArgs(1, 1, piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
+                    RaiseHashed(new TorrentCreatorEventArgs(reader.CurrentFile.Position, reader.CurrentFile.Length,
+                                                            piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
                     Buffer.BlockCopy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
                     piecesBufferOffset += currentHash.Length;
                     len = reader.Read(piece, 0, piece.Length);
@@ -739,6 +741,11 @@ namespace MonoTorrent.Common
         private int _currentFile = 0;
         private FileStream _currentStream = null;
 
+        public FileStream CurrentFile
+        {
+            get { return _currentStream; }
+        }
+
         public CatStreamReader(MonoTorrentCollection<string> files)
         {
             _files = files;
@@ -755,21 +762,16 @@ namespace MonoTorrent.Common
                 len += tmp;
                 if (tmp == 0)
                 {
-                    if (_currentFile < _files.Count)
-                    {
-                        _currentStream.Close();
-                        _currentStream.Dispose();
-                        _currentStream = new FileStream(_files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
-                    }
-                    else
-                    {
+                    if (_currentFile == _files.Count)
                         return len;
-                    }
+
+                    _currentStream.Close();
+                    _currentStream.Dispose();
+                    _currentStream = new FileStream(_files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
                 }
             }
             return len;
         }
-
 
         public void Dispose()
         {
