@@ -42,92 +42,13 @@ using System.Threading;
 
 namespace MonoTorrent.Common
 {
-    public class TorrentCreatorAsyncResult : IAsyncResult
-    {
-        #region Member Variables
-
-        private bool aborted;
-        private object asyncState;
-        private AsyncCallback callback;
-        private bool isCompleted;
-        private Exception savedException;
-        private ManualResetEvent waitHandle;
-
-        #endregion Member Variables
-
-
-        #region Properties
-
-        public object AsyncState
-        {
-            get { return asyncState; }
-        }
-
-        public bool Aborted
-        {
-            get { return this.aborted; }
-        }
-
-        public WaitHandle AsyncWaitHandle
-        {
-            get { return waitHandle; }
-        }
-
-        internal AsyncCallback Callback
-        {
-            get { return callback; }
-        }
-
-        public bool CompletedSynchronously
-        {
-            get { return false; }
-        }
-
-        public bool IsCompleted
-        {
-            get { return isCompleted; }
-            internal set { isCompleted = value; }
-        }
-
-        internal Exception SavedException
-        {
-            get { return this.savedException; }
-            set { this.savedException = value; }
-        }
-
-        #endregion Properties
-
-
-        #region Constructors
-
-        public TorrentCreatorAsyncResult(object asyncState, AsyncCallback callback)
-        {
-            this.asyncState = asyncState;
-            this.callback = callback;
-            this.waitHandle = new ManualResetEvent(false);
-        }
-
-        #endregion Constructors
-
-
-        #region Methods
-
-        public void Abort()
-        {
-            this.aborted = true;
-        }
-
-        #endregion Methods
-    }
-
-
-    ///<summary>
-    ///this class is used to create on disk torrent files.
-    ///</summary>
     public class TorrentCreator
     {
         #region Events
-
+        
+        /// <summary>
+        /// This event indicates the progress of the torrent creation and is fired every time a piece is hashed
+        /// </summary>
         public event EventHandler<TorrentCreatorEventArgs> Hashed;
 
         #endregion
@@ -147,18 +68,11 @@ namespace MonoTorrent.Common
 
         #region Properties
 
-        /// <summary>
-        /// The list of announce urls for this 
-        /// </summary>
         public List<MonoTorrentCollection<string>> Announces
         {
             get { return this.announces; }
         }
 
-
-        ///<summary>
-        ///this property sets the comment entry in the torrent file. default is string.Empty to conserve bandwidth.
-        ///</summary>
         public string Comment
         {
             get
@@ -169,9 +83,6 @@ namespace MonoTorrent.Common
             set { Set(this.torrent, "comment", new BEncodedString(value)); }
         }
 
-
-        ///<summary>this property sets the created by entrie in the torrent file
-        ///</summary>
         public string CreatedBy
         {
             get
@@ -182,19 +93,20 @@ namespace MonoTorrent.Common
             set { Set(this.torrent, "created by", new BEncodedString(value)); }
         }
 
-
-        /// <summary>
-        ///  The encoding used to create the torrent
-        /// </summary>
         public string Encoding
         {
             get { return Get(this.torrent, new BEncodedString("encoding")).ToString(); }
         }
 
+        public bool IgnoreHiddenFiles
+        {
+            get { return ignoreHiddenFiles; }
+            set { ignoreHiddenFiles = value; }
+        }
 
         /// <summary>
-        /// The path from which you would like to make a torrent of.
-        ///Path can be a file and a directory. 
+        /// The path from which the torrent can be created. This can be either
+        /// a file or a folder containing the files to hash.
         /// </summary>
         public string Path
         {
@@ -203,9 +115,8 @@ namespace MonoTorrent.Common
 
         }
 
-
         ///<summary>
-        ///this property sets the length of the pieces. default is 512 kb.
+        /// The length of each piece in bytes (range 16384 bytes -> 4MB)
         ///</summary>
         public long PieceLength
         {
@@ -217,9 +128,9 @@ namespace MonoTorrent.Common
             set { Set((BEncodedDictionary)this.torrent["info"], "piece length", new BEncodedNumber(value)); }
         }
 
-
         ///<summary>
-        ///This property sets whether this is a private torrent or not
+        /// A private torrent can only accept peers from the tracker and will not share peer data
+        /// through DHT
         ///</summary>
         public bool Private
         {
@@ -231,7 +142,6 @@ namespace MonoTorrent.Common
             set { Set((BEncodedDictionary)this.torrent["info"], "private", new BEncodedNumber(value ? 1 : 0)); }
         }
 
-
         public string Publisher
         {
             get
@@ -242,9 +152,6 @@ namespace MonoTorrent.Common
             set { Set(this.torrent, "publisher", new BEncodedString(value)); }
         }
 
-
-        ///<summary>this property sets the Publisher Url entry
-        ///</summary>
         public string PublisherUrl
         {
             get
@@ -255,21 +162,10 @@ namespace MonoTorrent.Common
             set { Set(this.torrent, "publisher-url", new BEncodedString(value)); }
         }
 
-
-        ///<summary>this property sets wheather the optional field md5sum should be included. 
-        ///default is false to conserve bandwidth
-        ///</summary>
         public bool StoreMD5
         {
             get { return storeMd5; }
             set { storeMd5 = value; }
-        }
-
-
-        public bool IgnoreHiddenFiles
-        {
-            get { return ignoreHiddenFiles; }
-            set { ignoreHiddenFiles = value; }
         }
 
         #endregion Properties
@@ -310,7 +206,6 @@ namespace MonoTorrent.Common
                 filesList.Add(GetFileInfoDict(paths[i], dir));
         }
 
-
         private void GetAllFilePaths(string directory, MonoTorrentCollection<string> paths)
         {
             string[] subs = Directory.GetFileSystemEntries(directory);
@@ -340,7 +235,6 @@ namespace MonoTorrent.Common
                 }
             }
         }
-
 
         ///<summary>
         ///this adds stuff common to single and multi file torrents
@@ -373,7 +267,6 @@ namespace MonoTorrent.Common
             torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
         }
 
-
         /// <summary>
         /// This can be used to add custom values to the main bencoded dictionary
         /// </summary>        
@@ -382,7 +275,6 @@ namespace MonoTorrent.Common
             this.torrent.Add(key, value);
         }
 
-
         /// <summary>
         /// This can be used to add custom values to the main bencoded dictionary
         /// </summary>        
@@ -390,7 +282,6 @@ namespace MonoTorrent.Common
         {
             this.torrent.Add(customInfo);
         }
-
 
         ///<summary>calculate md5sum of a file</summary>
         ///<param name="fileName">the file to sum with md5</param>
@@ -413,7 +304,6 @@ namespace MonoTorrent.Common
             }
             dict.Add("md5sum", new BEncodedString(sb.ToString()));
         }
-
 
         public TorrentCreatorAsyncResult BeginCreate(object asyncState, AsyncCallback callback)
         {
@@ -521,7 +411,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
         public Torrent Create()
         {
             Reset();
@@ -529,7 +418,6 @@ namespace MonoTorrent.Common
             
             return Torrent.Load(this.torrent);
         }
-
         
         ///<summary>
         ///creates an BencodedDictionary.
@@ -552,7 +440,6 @@ namespace MonoTorrent.Common
             
             throw new ArgumentException("no such file or directory", "storagePath");
         }
-
 
         ///<summary>
         ///used for creating multi file mode torrents.
@@ -579,7 +466,6 @@ namespace MonoTorrent.Common
             info.Add("pieces", new BEncodedString(CalcPiecesHash(fullPaths)));
         }
 
-
         ///<summary>
         ///used for creating a single file torrent file
         ///<summary>
@@ -601,12 +487,10 @@ namespace MonoTorrent.Common
             infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(files)));
         }
 
-
         private static BEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
         {
             return dictionary.ContainsKey(key) ? dictionary[key] : null;
         }
-
 
         ///<summary>
         ///this method is used for multi file mode torrents to return a dictionary with
@@ -639,7 +523,6 @@ namespace MonoTorrent.Common
             return fileDict;
         }
 
-
         private string GetDirName(string path)
         {
             string[] pathEntries = path.Split(new char[] { System.IO.Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
@@ -648,7 +531,6 @@ namespace MonoTorrent.Common
                 i--;
             return pathEntries[i];
         }
-
 
         private long GetPieceCount(MonoTorrentCollection<string> fullPaths)
         {
@@ -661,7 +543,6 @@ namespace MonoTorrent.Common
             Console.WriteLine("piece count: " + pieceCount);
             return pieceCount;
         }
-
 
         ///<summary>
         /// Returns the approximate size of the resultant .torrent file in bytes
@@ -682,7 +563,6 @@ namespace MonoTorrent.Common
             return size;
         }
 
-
         /// <summary>This can be used to remove custom values from the main bencoded dictionary.
         /// </summary>
         public void RemoveCustom(BEncodedString key)
@@ -690,14 +570,12 @@ namespace MonoTorrent.Common
             this.torrent.Remove(key);
         }
 
-
         /// <summary>This can be used to remove custom values from the main bencoded dictionary.
         /// </summary>
         public void RemoveCustom(KeyValuePair<BEncodedString, BEncodedValue> customInfo)
         {
             this.torrent.Remove(customInfo);
         }
-
 
         private void Reset()
         {
@@ -717,7 +595,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
         private static void Set(BEncodedDictionary dictionary, BEncodedString key, BEncodedValue value)
         {
             if (dictionary.ContainsKey(key))
@@ -728,6 +605,7 @@ namespace MonoTorrent.Common
 
         #endregion
     }
+
 
     ///<summary>
     ///this class is used to concatenate all the files provided as parameter from the constructor.
