@@ -189,7 +189,105 @@ namespace MonoTorrent.Common
         #endregion Constructors
 
 
-        #region Methods
+        #region Public Methods
+
+        /// <summary>
+        /// Adds a custom value to the main bencoded dictionary
+        /// </summary>        
+        public void AddCustom(BEncodedString key, BEncodedValue value)
+        {
+            this.torrent.Add(key, value);
+        }
+
+        public TorrentCreatorAsyncResult BeginCreate(object asyncState, AsyncCallback callback)
+        {
+            if (result != null)
+                throw new TorrentException("You must call EndCreate before calling BeginCreate again");
+
+            result = new TorrentCreatorAsyncResult(asyncState, callback);
+
+            // Start the processing in a seperate thread, a user thread.
+            new Thread(new ThreadStart(AsyncCreate)).Start();
+            return result;
+        }
+
+        public BEncodedDictionary Create()
+        {
+            Reset();
+            CreateDict();
+
+            // Return a clone of the internal dictionary
+            return BEncodedValue.Decode<BEncodedDictionary>(this.torrent.Encode());
+        }
+
+        ///<summary>
+        ///creates and stores a torrent at storagePath
+        ///<summary>
+        ///<param name="storagePath">place and name to store the torrent file</param>
+        public void Create(string path)
+        {
+            Reset();
+            CreateDict();
+
+            using (FileStream stream = new FileStream(path, FileMode.Create))
+            {
+                byte[] data = this.torrent.Encode();
+                stream.Write(data, 0, data.Length);
+            }
+        }
+
+        public BEncodedDictionary EndCreate(IAsyncResult result)
+        {
+            if (result == null)
+                throw new ArgumentNullException("result");
+
+            if (result != this.result)
+                throw new ArgumentException("The supplied async result does not correspond to currently active async result");
+
+            try
+            {
+                if (this.result.SavedException != null)
+                    throw this.result.SavedException;
+
+                return this.result.Aborted ? null : this.torrent;
+            }
+            finally
+            {
+                this.result = null;
+            }
+        }
+
+        ///<summary>
+        /// Calculates the approximate size of the final .torrent in bytes
+        ///</summary>
+        public long GetSize()
+        {
+            MonoTorrentCollection<string> paths = new MonoTorrentCollection<string>();
+
+            if (Directory.Exists(this.path))
+                GetAllFilePaths(this.path, paths);
+            else
+                paths.Add(path);
+
+            long size = 0;
+            for (int i = 0; i < paths.Count; i++)
+                size += new FileInfo(paths[i]).Length;
+
+            return size;
+        }
+
+        /// <summary>
+        /// Removes a custom value from the main bencoded dictionary.
+        /// </summary>
+        public void RemoveCustom(BEncodedString key)
+        {
+            this.torrent.Remove(key);
+        }
+
+        #endregion Public Methods
+
+
+        #region Private Methods
 
         ///<summary>
         ///this method runs recursively through all subdirs under dir and ads information
@@ -206,34 +304,28 @@ namespace MonoTorrent.Common
                 filesList.Add(GetFileInfoDict(paths[i], dir));
         }
 
-        private void GetAllFilePaths(string directory, MonoTorrentCollection<string> paths)
+        private void AsyncCreate()
         {
-            string[] subs = Directory.GetFileSystemEntries(directory);
-            foreach (string path in subs)
+            try
             {
-                if (Directory.Exists(path))
-                {
-                    if (ignoreHiddenFiles)
-                    {
-                        DirectoryInfo info = new DirectoryInfo(path);
-                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-                            continue;
-                    }
-
-                    GetAllFilePaths(path, paths);
-                }
-                else
-                {
-                    if (ignoreHiddenFiles)
-                    {
-                        FileInfo info = new FileInfo(path);
-                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-                            continue;
-                    }
-
-                    paths.Add(path);
-                }
+                Create();
             }
+            catch (Exception ex)
+            {
+                result.SavedException = ex;
+            }
+
+            result.IsCompleted = true;
+            ((ManualResetEvent)result.AsyncWaitHandle).Set();
+
+            if (result.Callback != null)
+                result.Callback(this.result);
+        }
+
+        private void AsyncRaiseHashed(object e)
+        {
+            if (Hashed != null)
+                Hashed(this, (TorrentCreatorEventArgs)e);
         }
 
         ///<summary>
@@ -267,22 +359,6 @@ namespace MonoTorrent.Common
             torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
         }
 
-        /// <summary>
-        /// This can be used to add custom values to the main bencoded dictionary
-        /// </summary>        
-        public void AddCustom(BEncodedString key, BEncodedValue value)
-        {
-            this.torrent.Add(key, value);
-        }
-
-        /// <summary>
-        /// This can be used to add custom values to the main bencoded dictionary
-        /// </summary>        
-        public void AddCustom(KeyValuePair<BEncodedString, BEncodedValue> customInfo)
-        {
-            this.torrent.Add(customInfo);
-        }
-
         ///<summary>calculate md5sum of a file</summary>
         ///<param name="fileName">the file to sum with md5</param>
         private void AddMD5(BEncodedDictionary dict, string fileName)
@@ -303,54 +379,6 @@ namespace MonoTorrent.Common
                 Console.WriteLine("sum for file " + fileName + " = " + sb.ToString());
             }
             dict.Add("md5sum", new BEncodedString(sb.ToString()));
-        }
-
-        public TorrentCreatorAsyncResult BeginCreate(object asyncState, AsyncCallback callback)
-        {
-            if (result != null)
-                throw new TorrentException("You must call EndCreate before calling BeginCreate again");
-
-            result = new TorrentCreatorAsyncResult(asyncState, callback);
-
-            // Start the processing in a seperate thread, a user thread.
-            new Thread(new ThreadStart(AsyncCreate)).Start();
-            return result;
-        }
-
-        public BEncodedDictionary EndCreate(IAsyncResult result)
-        {
-
-            if (result != this.result)
-                throw new ArgumentException("The supplied async result does not correspond to currently active async result");
-            try
-            {
-                if (this.result.SavedException != null)
-                    throw this.result.SavedException;
-
-                return this.result.Aborted ? null : this.torrent;
-            }
-            finally
-            {
-                this.result = null;
-            }
-        }
-
-        private void AsyncCreate()
-        {
-            try
-            {
-                Create();
-            }
-            catch (Exception ex)
-            {
-                result.SavedException = ex;
-            }
-
-            result.IsCompleted = true;
-            ((ManualResetEvent)result.AsyncWaitHandle).Set();
-
-            if (result.Callback != null)
-                result.Callback(this.result);
         }
 
         ///<summary>
@@ -382,41 +410,6 @@ namespace MonoTorrent.Common
                 }
             }
             return piecesBuffer;
-        }
-
-        private void RaiseHashed(TorrentCreatorEventArgs e)
-        {
-            ThreadPool.QueueUserWorkItem(AsyncRaiseHashed, e);
-        }
-
-        private void AsyncRaiseHashed(object e)
-        {
-            if (Hashed != null)
-                Hashed(this, (TorrentCreatorEventArgs)e);
-        }
-
-        ///<summary>
-        ///creates and stores a torrent at storagePath
-        ///<summary>
-        ///<param name="storagePath">place and name to store the torrent file</param>
-        public void Create(string storagePath)
-        {
-            Reset();
-            CreateDict();
-
-            using (FileStream stream = new FileStream(storagePath, FileMode.Create))
-            {
-                byte[] data = this.torrent.Encode();
-                stream.Write(data, 0, data.Length);
-            }
-        }
-
-        public Torrent Create()
-        {
-            Reset();
-            CreateDict();
-
-            return Torrent.Load(this.torrent);
         }
 
         ///<summary>
@@ -492,6 +485,45 @@ namespace MonoTorrent.Common
             return dictionary.ContainsKey(key) ? dictionary[key] : null;
         }
 
+        private void GetAllFilePaths(string directory, MonoTorrentCollection<string> paths)
+        {
+            string[] subs = Directory.GetFileSystemEntries(directory);
+            foreach (string path in subs)
+            {
+                if (Directory.Exists(path))
+                {
+                    if (ignoreHiddenFiles)
+                    {
+                        DirectoryInfo info = new DirectoryInfo(path);
+                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                            continue;
+                    }
+
+                    GetAllFilePaths(path, paths);
+                }
+                else
+                {
+                    if (ignoreHiddenFiles)
+                    {
+                        FileInfo info = new FileInfo(path);
+                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                            continue;
+                    }
+
+                    paths.Add(path);
+                }
+            }
+        }
+
+        private string GetDirName(string path)
+        {
+            string[] pathEntries = path.Split(new char[] { System.IO.Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            int i = pathEntries.Length - 1;
+            while (String.IsNullOrEmpty(pathEntries[i]))
+                i--;
+            return pathEntries[i];
+        }
+
         ///<summary>
         ///this method is used for multi file mode torrents to return a dictionary with
         ///file relevant informations. 
@@ -523,15 +555,6 @@ namespace MonoTorrent.Common
             return fileDict;
         }
 
-        private string GetDirName(string path)
-        {
-            string[] pathEntries = path.Split(new char[] { System.IO.Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-            int i = pathEntries.Length - 1;
-            while (String.IsNullOrEmpty(pathEntries[i]))
-                i--;
-            return pathEntries[i];
-        }
-
         private long GetPieceCount(MonoTorrentCollection<string> fullPaths)
         {
             long size = 0;
@@ -544,37 +567,9 @@ namespace MonoTorrent.Common
             return pieceCount;
         }
 
-        ///<summary>
-        /// Returns the approximate size of the resultant .torrent file in bytes
-        ///</summary>
-        public long GetSize()
+        private void RaiseHashed(TorrentCreatorEventArgs e)
         {
-            MonoTorrentCollection<string> paths = new MonoTorrentCollection<string>();
-
-            if (Directory.Exists(this.path))
-                GetAllFilePaths(this.path, paths);
-            else
-                paths.Add(path);
-
-            long size = 0;
-            for (int i = 0; i < paths.Count; i++)
-                size += new FileInfo(paths[i]).Length;
-
-            return size;
-        }
-
-        /// <summary>This can be used to remove custom values from the main bencoded dictionary.
-        /// </summary>
-        public void RemoveCustom(BEncodedString key)
-        {
-            this.torrent.Remove(key);
-        }
-
-        /// <summary>This can be used to remove custom values from the main bencoded dictionary.
-        /// </summary>
-        public void RemoveCustom(KeyValuePair<BEncodedString, BEncodedValue> customInfo)
-        {
-            this.torrent.Remove(customInfo);
+            ThreadPool.QueueUserWorkItem(AsyncRaiseHashed, e);
         }
 
         private void Reset()
@@ -603,7 +598,7 @@ namespace MonoTorrent.Common
                 dictionary.Add(key, value);
         }
 
-        #endregion
+        #endregion Private Methods
     }
 
 
