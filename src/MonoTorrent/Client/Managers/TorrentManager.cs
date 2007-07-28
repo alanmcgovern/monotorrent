@@ -807,33 +807,35 @@ namespace MonoTorrent.Client
         /// <param name="state">The TorrentManager to hashcheck</param>
         private void PerformHashCheck(object state)
         {
+            // Store the value for whether the streams are open or not
+            // If they are initially closed, we need to close them again after we hashcheck
             bool streamsOpen = this.fileManager.StreamsOpen;
-
-            bool[] data = (bool[])state;
-            bool forceCheck = data[0];
-            bool autoStart = data[1];
+            bool forceCheck = ((bool[])state)[0];
+            bool autoStart = ((bool[])state)[1];
 
             // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
             // perform a full scan.
+            if (forceCheck || (!forceCheck && !FileManager.LoadFastResume(this)))
+            {
+                if (!streamsOpen)
+                    this.fileManager.OpenFileStreams(FileAccess.Read);
 
-            if (!streamsOpen)
-                this.fileManager.OpenFileStreams(FileAccess.Read);
-
-            if (forceCheck || (!forceCheck && !MonoTorrent.Client.FileManager.LoadFastResume(this)))
                 for (int i = 0; i < this.torrent.Pieces.Count; i++)
                 {
                     bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
                     this.pieceManager.MyBitField[i] = temp;
                     RaisePieceHashed(new PieceHashedEventArgs(i, temp));
-
                 }
 
-            if (!streamsOpen)
+                SaveFastResume();
+            }
+
+            // Close the streams if they were originally closed
+            if (!streamsOpen && this.fileManager.StreamsOpen)
                 this.fileManager.CloseFileStreams();
 
             this.fileManager.InitialHashRequired = false;
             this.hashChecked = true;
-            SaveFastResume();
 
             if (autoStart)
                 Start();
