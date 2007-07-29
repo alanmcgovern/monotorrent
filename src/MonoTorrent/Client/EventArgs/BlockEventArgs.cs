@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class BlockEventArgs : EventArgs
+    public class BlockEventArgs : TorrentEventArgs
     {
         #region Private Fields
 
@@ -54,15 +54,16 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        internal BlockEventArgs(Block block, Piece piece, PeerId id)
+        internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerId id)
+            : base(manager)
         {
             this.block = block;
             this.id = id;
             this.piece = piece;
         }
 
-        internal BlockEventArgs(Block block, Piece piece, PeerIdInternal id)
-            :this(block, piece, id.PublicId)
+        internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerIdInternal id)
+            :this(manager, block, piece, id.PublicId)
         {
         }
 

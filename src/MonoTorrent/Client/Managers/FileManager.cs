@@ -405,7 +405,7 @@ namespace MonoTorrent.Client
             }
 
             piece.Blocks[index].Written = true;
-            RaiseBlockWritten(new BlockEventArgs(piece.Blocks[index], piece, id));
+            RaiseBlockWritten(new BlockEventArgs(id.TorrentManager, piece.Blocks[index], piece, id));
 
             // Release the buffer back into the buffer manager.
             ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
@@ -420,7 +420,7 @@ namespace MonoTorrent.Client
             lock (id.TorrentManager.PieceManager.UnhashedPieces)
                 id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
-            id.TorrentManager.HashedPiece(new PieceHashedEventArgs(piece.Index, result));
+            id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
             id.Peer.HashedPiece(result);
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out

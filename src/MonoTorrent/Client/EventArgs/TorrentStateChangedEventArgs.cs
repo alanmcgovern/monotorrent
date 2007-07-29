@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a TorrentStateChanged event
     /// </summary>
-    public class TorrentStateChangedEventArgs : EventArgs
+    public class TorrentStateChangedEventArgs : TorrentEventArgs
     {
         #region Member Variables
         /// <summary>
@@ -67,7 +67,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="oldState">The old state of the Torrent</param>
         /// <param name="newState">The new state of the Torrent</param>
-        public TorrentStateChangedEventArgs(TorrentState oldState, TorrentState newState)
+        public TorrentStateChangedEventArgs(TorrentManager manager, TorrentState oldState, TorrentState newState)
+            : base(manager)
         {
             this.oldState = oldState;
             this.newState = newState;

@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a PeerMessage event
     /// </summary>
-    public class PeerMessageEventArgs : EventArgs
+    public class PeerMessageEventArgs : TorrentEventArgs
     {
         #region Member Variables
 
@@ -76,15 +76,16 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        internal PeerMessageEventArgs(IPeerMessage message, Direction direction, PeerId id)
+        internal PeerMessageEventArgs(TorrentManager manager, IPeerMessage message, Direction direction, PeerId id)
+            :base(manager)
         {
             this.direction = direction;
             this.id = id;
             this.message = message;
         }
 
-        internal PeerMessageEventArgs(IPeerMessage message, Direction direction, PeerIdInternal id)
-            : this(message, direction, id.PublicId)
+        internal PeerMessageEventArgs(TorrentManager manager, IPeerMessage message, Direction direction, PeerIdInternal id)
+            : this(manager, message, direction, id.PublicId)
         {
         }
 

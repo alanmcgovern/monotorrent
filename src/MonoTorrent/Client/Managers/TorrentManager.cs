@@ -409,7 +409,7 @@ namespace MonoTorrent.Client
             if (this.loadedFastResume)
             {
                 for (int i = 0; i < this.bitfield.Length; i++)
-                    RaisePieceHashed(new PieceHashedEventArgs(i, this.bitfield[i]));
+                    RaisePieceHashed(new PieceHashedEventArgs(this, i, this.bitfield[i]));
 
                 this.loadedFastResume = false;
             }
@@ -529,7 +529,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            RaisePeersFound(new PeersAddedEventArgs(added));
+            RaisePeersFound(new PeersAddedEventArgs(this, added));
             return added;
         }
 
@@ -572,7 +572,7 @@ namespace MonoTorrent.Client
                 added += this.AddPeers(peer);
             }
 
-            RaisePeersFound(new PeersAddedEventArgs(added));
+            RaisePeersFound(new PeersAddedEventArgs(this, added));
             return added;
         }
 
@@ -824,7 +824,7 @@ namespace MonoTorrent.Client
                 {
                     bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
                     this.pieceManager.MyBitField[i] = temp;
-                    RaisePieceHashed(new PieceHashedEventArgs(i, temp));
+                    RaisePieceHashed(new PieceHashedEventArgs(this, i, temp));
                 }
 
                 SaveFastResume();
@@ -970,7 +970,7 @@ namespace MonoTorrent.Client
             if (this.state == newState)
                 return;
 
-            TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this.state, newState);
+            TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this, this.state, newState);
             this.state = newState;
 
             RaiseTorrentStateChanged(e);

@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
 
         #region Events
 
-        public event EventHandler<StateUpdateEventArgs> StatsUpdate;
+        public event EventHandler<StatsUpdateEventArgs> StatsUpdate;
 
         #endregion
 
@@ -354,7 +354,7 @@ namespace MonoTorrent.Client
         private void AsyncStatsUpdate(object args)
         {
             if (StatsUpdate != null)
-                StatsUpdate(this, (StateUpdateEventArgs)args);
+                StatsUpdate(this, (StatsUpdateEventArgs)args);
         }
 
 
@@ -384,11 +384,11 @@ namespace MonoTorrent.Client
                 }
             }
 
-            RaiseStatsUpdate(new StateUpdateEventArgs());
+            RaiseStatsUpdate(new StatsUpdateEventArgs());
         }
 
 
-        internal void RaiseStatsUpdate(StateUpdateEventArgs args)
+        internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {
             if (StatsUpdate != null)
                 ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncStatsUpdate), args);

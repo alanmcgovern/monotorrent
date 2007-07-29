@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a PeersAdded event
     /// </summary>
-    public class PeersAddedEventArgs : EventArgs
+    public class PeersAddedEventArgs : TorrentEventArgs
     {
         #region Member Variables
         /// <summary>
@@ -55,7 +55,8 @@ namespace MonoTorrent.Client
         /// Creates a new PeersAddedEventArgs
         /// </summary>
         /// <param name="peersAdded">The number of peers just added</param>
-        public PeersAddedEventArgs(int peersAdded)
+        public PeersAddedEventArgs(TorrentManager manager, int peersAdded)
+            : base(manager)
         {
             this.count = peersAdded;
         }

@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a Piece event
     /// </summary>
-    internal class PieceEventArgs : EventArgs
+    internal class PieceEventArgs : TorrentEventArgs
     {
         #region Member Variables
         /// <summary>
@@ -66,7 +66,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The index of the piece involved</param>
         /// <param name="pieceEvent">The PieceEvent that just happened</param>
-        public PieceEventArgs(int pieceIndex, PieceEvent pieceEvent)
+        public PieceEventArgs(TorrentManager manager, int pieceIndex, PieceEvent pieceEvent)
+            : base(manager)
         {
             this.pieceIndex = pieceIndex;
             this.pieceEvent = pieceEvent;

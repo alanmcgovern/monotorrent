@@ -329,7 +329,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if(fireConnected)
-                    RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Outgoing));
+                    RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
 
                 // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
@@ -686,7 +686,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // Fire the event to let the user know a message was sent
-                RaisePeerMessageTransferred(new PeerMessageEventArgs((IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing, id));
+                RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, (IPeerMessage)id.Peer.Connection.CurrentlySendingMessage, Direction.Outgoing, id));
 
                 //ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
                 Logger.Log(id, "Sent message: " + id.Peer.Connection.CurrentlySendingMessage.ToString());
@@ -896,7 +896,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if (fireCleanup)
-                    RaisePeerDisconnected(new PeerConnectionEventArgs(id, Direction.None));
+                    RaisePeerDisconnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
 
                 TryConnect();
             }
@@ -997,7 +997,7 @@ namespace MonoTorrent.Client
 
                         id.PublicId = new PeerId();
                         id.UpdatePublicStats();
-                        RaisePeerConnected(new PeerConnectionEventArgs(id, Direction.Incoming));
+                        RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Incoming));
 
                         if (this.openConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
                         {

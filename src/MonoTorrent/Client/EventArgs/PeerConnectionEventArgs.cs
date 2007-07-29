@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a PeerConnection event
     /// </summary>
-    public class PeerConnectionEventArgs : EventArgs
+    public class PeerConnectionEventArgs : TorrentEventArgs
     {
         #region Member Variables
 
@@ -61,15 +61,16 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerConnectionEventArgs(PeerIdInternal id, Direction connectionDirection)
-             :this(id.PublicId, connectionDirection)
+        internal PeerConnectionEventArgs(TorrentManager manager, PeerIdInternal id, Direction connectionDirection)
+             :this(manager, id.PublicId, connectionDirection)
         {
         }
         /// <summary>
         /// Creates a new PeerConnectionEventArgs
         /// </summary>
         /// <param name="peerEvent">The peer event that just happened</param>
-        internal PeerConnectionEventArgs(PeerId id, Direction connectionDirection)
+        internal PeerConnectionEventArgs(TorrentManager manager, PeerId id, Direction connectionDirection)
+            : base(manager)
         {
             this.peerConnectionId = id;
             this.connectionDirection = connectionDirection;

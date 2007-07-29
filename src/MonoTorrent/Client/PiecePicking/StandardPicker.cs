@@ -489,7 +489,7 @@ namespace MonoTorrent.Client
                             continue;
 
                         int index = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
-                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(p.Blocks[index], p, id));
+                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
                         break;
                     }
                 }
@@ -514,7 +514,7 @@ namespace MonoTorrent.Client
                             p.Blocks[i].Requested = false;
                             p.Blocks[i].RequestedOff = null;
                             id.Peer.Connection.AmRequestingPiecesCount--;
-                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[i], p, id));
+                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[i], p, id));
                         }
                     }
                 }
@@ -544,7 +544,7 @@ namespace MonoTorrent.Client
                             p.Blocks[blockIndex].Requested = false;
                             p.Blocks[blockIndex].RequestedOff = null;
                             id.Peer.Connection.AmRequestingPiecesCount--;
-                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[blockIndex], p, id));
+                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                             return;
                         }
                     }
@@ -603,7 +603,7 @@ namespace MonoTorrent.Client
 
                 piece.Blocks[blockIndex].Received = true;
                 id.Peer.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(piece.Blocks[blockIndex], piece, id));
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(id.TorrentManager, piece.Blocks[blockIndex], piece, id));
                 id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
 
                 if (piece.AllBlocksReceived)
@@ -669,7 +669,7 @@ namespace MonoTorrent.Client
                         p.Blocks[blockIndex].RequestedOff = null;
                         p.Blocks[blockIndex].Requested = false;
                         id.Peer.Connection.AmRequestingPiecesCount--;
-                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(p.Blocks[blockIndex], p, id));
+                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                     }
                 }
             }

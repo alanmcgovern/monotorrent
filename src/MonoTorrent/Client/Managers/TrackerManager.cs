@@ -408,7 +408,7 @@ namespace MonoTorrent.Client
             if (tracker.State == newState)
                 return;
 
-            TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(tracker, tracker.State, newState);
+            TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(this.manager, tracker, tracker.State, newState);
             tracker.State = newState;
 
             RaiseTrackerStateChange(e);

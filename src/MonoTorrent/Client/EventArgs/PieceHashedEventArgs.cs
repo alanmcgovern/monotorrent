@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides the data needed to handle a PieceHashed event
     /// </summary>
-    public class PieceHashedEventArgs : EventArgs
+    public class PieceHashedEventArgs : TorrentEventArgs
     {
         #region Member Variables
         /// <summary>
@@ -66,7 +66,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The index of the piece that was hashed</param>
         /// <param name="hashPassed">True if the piece passed the hashcheck, false otherwise</param>
-        public PieceHashedEventArgs(int pieceIndex, bool hashPassed)
+        public PieceHashedEventArgs(TorrentManager manager, int pieceIndex, bool hashPassed)
+            : base(manager)
         {
             this.pieceIndex = pieceIndex;
             this.hashPassed = hashPassed;
