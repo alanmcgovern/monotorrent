@@ -1267,5 +1267,10 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+        internal bool IsRegistered(TorrentManager torrentManager)
+        {
+            return this.torrents.Contains(torrentManager);
+        }
     }
 }
