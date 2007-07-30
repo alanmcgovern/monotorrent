@@ -52,6 +52,7 @@ SOURCES=	\
 	Client/EventArgs/PieceEventArgs.cs \
 	Client/EventArgs/PieceHashedEventArgs.cs \
 	Client/EventArgs/StateUpdateEventArgs.cs \
+	Client/EventArgs/TorrentEventArgs.cs \
 	Client/EventArgs/TorrentStateChangedEventArgs.cs \
 	Client/EventArgs/TrackerStateChangedEventArgs.cs \
 	Client/Exceptions/ConnectionException.cs \
