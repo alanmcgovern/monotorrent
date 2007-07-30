@@ -252,6 +252,19 @@ namespace MonoTorrent.Client
                                       this.allowLegacyConnections);
         }
 
+        public void CopyFrom(EngineSettings other)
+        {
+            this.allowLegacyConnections = other.allowLegacyConnections;
+            this.globalMaxConnections = other.globalMaxConnections;
+            this.globalMaxDownloadSpeed = other.globalMaxDownloadSpeed;
+            this.globalMaxHalfOpenConnections = other.globalMaxHalfOpenConnections;
+            this.globalMaxUploadSpeed = other.globalMaxUploadSpeed;
+            this.haveSupressionEnabled = other.haveSupressionEnabled;
+            this.listenPort = other.listenPort;
+            this.minEncryptionLevel = other.minEncryptionLevel;
+            this.savePath = other.savePath;
+        }
+
         public override bool Equals(object obj)
         {
             EngineSettings settings = obj as EngineSettings;
