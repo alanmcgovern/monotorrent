@@ -27,7 +27,7 @@ monotorrent.pc: monotorrent.pc.in Makefile
 install-setup: monotorrent.pc
 	-mkdir -p $(prefix)/lib/bitsharp
 	-mkdir -p $(prefix)/bin
-	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.exe/' < script.in > monotorrent.x
+	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/SampleClient.exe/' < script.in > monotorrent.x
 	chmod +x monotorrent.x
 	mv monotorrent.x $(prefix)/bin/monotorrent.x
 	sed -e "s,@prefix@,$(prefix)," -e 's/@cmd@/MonoTorrent.Interface.exe/' < script.in > monotorrent-gtk

@@ -1,5 +1,5 @@
 TARGET=-target:exe
-OUT=../bin/MonoTorrent.exe
+OUT=../bin/SampleClient.exe
 
 REFERENCES=\
 	-r:../bin/MonoTorrent.dll
