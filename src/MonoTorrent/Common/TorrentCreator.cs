@@ -246,6 +246,9 @@ namespace MonoTorrent.Common
 
             try
             {
+                if(!result.IsCompleted)
+                    result.AsyncWaitHandle.WaitOne();
+
                 if (this.result.SavedException != null)
                     throw this.result.SavedException;
 
