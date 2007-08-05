@@ -209,18 +209,18 @@ namespace MonoTorrent.Client
             // For all the remaining fast pieces
             for (int i = 0; i < id.Peer.Connection.IsAllowedFastPieces.Count; i++)
             {
-                // If the peer has this piece
-                if (id.Peer.Connection.BitField[(int)id.Peer.Connection.IsAllowedFastPieces[i]])
-                {
-                    // We request that piece and remove it from the list
-                    requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[i];
-                    id.Peer.Connection.IsAllowedFastPieces.RemoveAt(i);
+                // The peer may not always have the piece that is marked as 'allowed fast'
+                if (!id.Peer.Connection.BitField[(int)id.Peer.Connection.IsAllowedFastPieces[i]])
+                    continue;
 
-                    Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
-                    requests.Add(p);
-                    p.Blocks[0].Requested = true;
-                    return p.Blocks[0].CreateRequest(id);
-                }
+                // We request that piece and remove it from the list
+                requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[i];
+                id.Peer.Connection.IsAllowedFastPieces.RemoveAt(i);
+
+                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                requests.Add(p);
+                p.Blocks[0].Requested = true;
+                return p.Blocks[0].CreateRequest(id);
             }
 
             return null;
@@ -261,7 +261,6 @@ namespace MonoTorrent.Client
         {
             int checkIndex = 0;
             BitField current = null;
-            RequestMessage message = null;
             Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers);
 
             try
@@ -397,30 +396,23 @@ namespace MonoTorrent.Client
         private RequestMessage GetSuggestedPiece(PeerIdInternal id)
         {
             int requestIndex;
-            while (id.Peer.Connection.SuggestedPieces.Count > 0)
+            // Remove any pieces that we already have
+            RemoveOwnedPieces(id.Peer.Connection.SuggestedPieces);
+
+            for (int i = 0; i < id.Peer.Connection.SuggestedPieces.Count; i++)
             {
-                // If we already have that piece, then remove it from the suggested pieces
-                if (AlreadyHaveOrRequested(id.Peer.Connection.SuggestedPieces[0]))
-                {
-                    id.Peer.Connection.SuggestedPieces.RemoveAt(0);
+                // A peer should only suggest a piece he has, but just in case.
+                if (!id.Peer.Connection.BitField[id.Peer.Connection.SuggestedPieces[i]])
                     continue;
-                }
 
-                for (int i = 0; i < id.Peer.Connection.SuggestedPieces.Count; i++)
-                {
-                    if (!id.Peer.Connection.BitField[id.Peer.Connection.SuggestedPieces[i]])
-                        continue;
-
-                    requestIndex = id.Peer.Connection.SuggestedPieces[i];
-                    id.Peer.Connection.SuggestedPieces.RemoveAt(i);
-                    Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
-                    this.requests.Add(p);
-                    p.Blocks[0].Requested = true;
-                    return p.Blocks[0].CreateRequest(id);
-                }
-
-                break;
+                requestIndex = id.Peer.Connection.SuggestedPieces[i];
+                id.Peer.Connection.SuggestedPieces.RemoveAt(i);
+                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                this.requests.Add(p);
+                p.Blocks[0].Requested = true;
+                return p.Blocks[0].CreateRequest(id);
             }
+
 
             return null;
         }
@@ -462,8 +454,6 @@ namespace MonoTorrent.Client
                 if (!bitfield.AllFalseSecure())
                     return true;                            // He's interesting if he has a piece we want
 
-                // FIXME: I used to check if we were requesting a piece off the peer to mark him as interesting.
-                // That shouldn't be necessary. If it is, then there's a bug in the library.
                 return false;
             }
             finally
@@ -518,7 +508,7 @@ namespace MonoTorrent.Client
                     {
                         if (p.Index != message.PieceIndex)
                             continue;
-
+                        
                         int index = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
                         id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
                         break;
