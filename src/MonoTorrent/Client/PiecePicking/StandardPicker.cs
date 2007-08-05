@@ -197,44 +197,58 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         private RequestMessage GetFastPiece(PeerIdInternal id)
         {
-            int requestIndex; 
+            int requestIndex;
 
             // If fast peers isn't supported on both sides, then return null
             if (!id.Peer.Connection.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
 
-            while (id.Peer.Connection.IsAllowedFastPieces.Count > 0)
+            // Remove pieces in the list that we already have
+            RemoveOwnedPieces(id.Peer.Connection.IsAllowedFastPieces);
+
+            // For all the remaining fast pieces
+            for (int i = 0; i < id.Peer.Connection.IsAllowedFastPieces.Count; i++)
             {
-                // If we already have that piece, then remove it from the list so we don't check it again
-                if (AlreadyHaveOrRequested((int)id.Peer.Connection.IsAllowedFastPieces[0]))
+                // If the peer has this piece
+                if (id.Peer.Connection.BitField[(int)id.Peer.Connection.IsAllowedFastPieces[i]])
                 {
-                    id.Peer.Connection.IsAllowedFastPieces.RemoveAt(0);
-                    continue;
+                    // We request that piece and remove it from the list
+                    requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[i];
+                    id.Peer.Connection.IsAllowedFastPieces.RemoveAt(i);
+
+                    Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                    requests.Add(p);
+                    p.Blocks[0].Requested = true;
+                    return p.Blocks[0].CreateRequest(id);
                 }
-
-                // For all the remaining fast pieces
-                for (int i = 0; i < id.Peer.Connection.IsAllowedFastPieces.Count; i++)
-                {
-                    // If the peer has this piece
-                    if (id.Peer.Connection.BitField[(int)id.Peer.Connection.IsAllowedFastPieces[i]])
-                    {
-                        // We request that piece and remove it from the list
-                        requestIndex = (int)id.Peer.Connection.IsAllowedFastPieces[i];
-                        id.Peer.Connection.IsAllowedFastPieces.RemoveAt(i);
-
-                        Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
-                        requests.Add(p);
-                        p.Blocks[0].Requested = true;
-                        return p.Blocks[0].CreateRequest(id);
-                    }
-                }
-
-                // If we get here it means that the peer had none of the fast pieces that we're allowed request
-                // so it means we can request no fast pieces off them
-                break;
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Remove all the pieces in the list that we already have
+        /// </summary>
+        /// <param name="list"></param>
+        private void RemoveOwnedPieces(MonoTorrentCollection<uint> list)
+        {
+            while (true)
+            {
+                bool removed = false;
+
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (AlreadyHaveOrRequested((int)list[i]))
+                    {
+                        list.RemoveAt(i);
+                        removed = true;
+                        break;
+                    }
+                }
+
+                if (!removed)
+                    break;
+            }
         }
 
 
