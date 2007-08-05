@@ -68,6 +68,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
+        internal object asyncCompletionLock;     // The lock used to avoid nasty race conditions when async methods are returned
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
         private ConnectionListener listener;    // Listens for incoming connections and passes them off to the correct TorrentManager
@@ -145,6 +146,7 @@ namespace MonoTorrent.Client
 
             this.settings = engineSettings;
 
+            this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
             this.listener = new ConnectionListener(this);
             this.peerId = GeneratePeerId();
@@ -207,10 +209,13 @@ namespace MonoTorrent.Client
                 }
             }
 
-            if (!this.listener.Disposed)
-                this.listener.Dispose();
+            lock (asyncCompletionLock)
+            {
+                if (!this.listener.Disposed)
+                    this.listener.Dispose();
 
-            this.timer.Dispose();
+                this.timer.Dispose();
+            }
         }
 
 
@@ -236,12 +241,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public void PauseAll()
         {
-            using (new ReaderLock(this.torrentsLock))
-                for (int i = 0; i < torrents.Count; i++)
-                    if (torrents[i].State == TorrentState.Downloading ||
-                        torrents[i].State == TorrentState.Seeding ||
-                        torrents[i].State == TorrentState.SuperSeeding)
-                        torrents[i].Pause();
+            lock (asyncCompletionLock)
+                using (new ReaderLock(this.torrentsLock))
+                    for (int i = 0; i < torrents.Count; i++)
+                        if (torrents[i].State == TorrentState.Downloading ||
+                            torrents[i].State == TorrentState.Seeding ||
+                            torrents[i].State == TorrentState.SuperSeeding)
+                            torrents[i].Pause();
         }
 
 
@@ -269,10 +275,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public void StartAll()
         {
-            using (new ReaderLock(this.torrentsLock))
-                for (int i = 0; i < torrents.Count; i++)
-                    if (torrents[i].State == TorrentState.Stopped || torrents[i].State == TorrentState.Paused)
-                        torrents[i].Start();
+            lock (asyncCompletionLock)
+                using (new ReaderLock(this.torrentsLock))
+                    for (int i = 0; i < torrents.Count; i++)
+                        if (torrents[i].State == TorrentState.Stopped || torrents[i].State == TorrentState.Paused)
+                            torrents[i].Start();
         }
 
 
@@ -282,10 +289,11 @@ namespace MonoTorrent.Client
         public WaitHandle[] StopAll()
         {
             List<WaitHandle> handles = new List<WaitHandle>();
-            using (new ReaderLock(this.torrentsLock))
-                for (int i = 0; i < torrents.Count; i++)
-                    if (torrents[i].State != TorrentState.Stopped)
-                        handles.Add(torrents[i].Stop());
+            lock (asyncCompletionLock)
+                using (new ReaderLock(this.torrentsLock))
+                    for (int i = 0; i < torrents.Count; i++)
+                        if (torrents[i].State != TorrentState.Stopped)
+                            handles.Add(torrents[i].Stop());
 
             return handles.ToArray();
         }
@@ -397,25 +405,31 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            if (!this.listener.IsListening)
-                this.listener.Start();      // Start Listening for connections
+            lock (asyncCompletionLock)
+            {
+                if (!this.listener.IsListening)
+                    this.listener.Start();      // Start Listening for connections
 
-            if (!timer.Enabled)
-                timer.Enabled = true;       // Start logic ticking
+                if (!timer.Enabled)
+                    timer.Enabled = true;       // Start logic ticking
+            }
         }
 
 
         internal void Stop()
         {
-            using (new ReaderLock(this.torrentsLock))
-                for (int i = 0; i < this.torrents.Count; i++)
-                    if (this.torrents[i].State != TorrentState.Stopped)
-                        return;
+            lock (asyncCompletionLock)
+            {
+                using (new ReaderLock(this.torrentsLock))
+                    for (int i = 0; i < this.torrents.Count; i++)
+                        if (this.torrents[i].State != TorrentState.Stopped)
+                            return;
 
-            timer.Enabled = false;              // All the torrents are stopped, so stop ticking
+                timer.Enabled = false;              // All the torrents are stopped, so stop ticking
 
-            if (this.listener.IsListening)      // Also stop listening for incoming connections
-                this.listener.Stop();
+                if (this.listener.IsListening)      // Also stop listening for incoming connections
+                    this.listener.Stop();
+            }
         }
 
         #endregion

@@ -69,7 +69,6 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        internal object asyncCompletionLock;     // The lock used to avoid nasty race conditions when async methods are returned
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
         private ClientEngine engine;            // The engine that this torrent is registered with
         private FileManager fileManager;        // Controls all reading/writing to/from the disk
@@ -271,7 +270,6 @@ namespace MonoTorrent.Client
             if (settings == null)
                 throw new ArgumentNullException("settings");
 
-            this.asyncCompletionLock = new object();
             this.bitfield = new BitField(torrent.Pieces.Count);
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
@@ -335,7 +333,7 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool forceFullScan)
         {
-            lock (asyncCompletionLock)
+            lock (this.engine.asyncCompletionLock)
                 HashCheck(forceFullScan, false);
         }
 
@@ -361,7 +359,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
-            lock (asyncCompletionLock)
+            lock (this.engine.asyncCompletionLock)
             lock (this.listLock)
             {
                 // By setting the state to "paused", peers will not be dequeued from the either the
@@ -377,7 +375,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            lock (asyncCompletionLock)
+            lock (this.engine.asyncCompletionLock)
             {
                 // If the torrent was "paused", then just update the state to Downloading and forcefully
                 // make sure the peers begin sending/receiving again
@@ -443,7 +441,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-            lock (asyncCompletionLock)
+            lock (this.engine.asyncCompletionLock)
             {
                 if (this.state == TorrentState.Stopped)
                     throw new TorrentException("Torrent already stopped");
@@ -824,7 +822,7 @@ namespace MonoTorrent.Client
             int enterCount =0;
             try
             {
-                System.Threading.Monitor.Enter(asyncCompletionLock);
+                System.Threading.Monitor.Enter(this.engine.asyncCompletionLock);
                 enterCount ++;
                 // Store the value for whether the streams are open or not
                 // If they are initially closed, we need to close them again after we hashcheck
@@ -842,11 +840,11 @@ namespace MonoTorrent.Client
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
                         bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
-                        System.Threading.Monitor.Exit(asyncCompletionLock);
+                        System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
                         enterCount--;
                         this.pieceManager.MyBitField[i] = temp;
                         RaisePieceHashed(new PieceHashedEventArgs(this, i, temp));
-                        System.Threading.Monitor.Enter(asyncCompletionLock);
+                        System.Threading.Monitor.Enter(this.engine.asyncCompletionLock);
                         enterCount++;
                         if (State != TorrentState.Hashing)
                         {
@@ -873,7 +871,7 @@ namespace MonoTorrent.Client
             finally
             {
                 while (enterCount-- > 0)
-                    System.Threading.Monitor.Exit(asyncCompletionLock);
+                    System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
             }
         }
 

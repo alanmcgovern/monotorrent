@@ -262,40 +262,44 @@ namespace MonoTorrent.Client
         private void IncomingConnectionReceived(IAsyncResult result)
         {
             PeerIdInternal id = null;
-            try
+            lock (engine.asyncCompletionLock)
             {
-                Socket peerSocket = listener.EndAccept(result);
-                if (!peerSocket.Connected)
-                    return;
+                try
+                {
+                    if (Disposed)
+                        return;
 
-                Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
-                peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
-                id = new PeerIdInternal(peer);
-                id.Peer.Connection.ProcessingQueue = true;
-                id.Peer.Connection.LastMessageSent = DateTime.Now;
-                id.Peer.Connection.LastMessageReceived = DateTime.Now;
+                    Socket peerSocket = listener.EndAccept(result);
+                    if (!peerSocket.Connected)
+                        return;
 
-                ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, 68);
-                id.Peer.Connection.BytesReceived = 0;
-                id.Peer.Connection.BytesToRecieve = 68;
-                Logger.Log(id, "CE Peer incoming connection accepted");
-                id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
-            }
-            catch (SocketException)
-            {
-                if (id != null)
-                    this.CleanupSocket(id);
-            }
-            catch (NullReferenceException)
-            {
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            finally
-            {
-                if (!Disposed)
-                    BeginAccept();
+                    Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
+                    peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
+                    id = new PeerIdInternal(peer);
+                    id.Peer.Connection.ProcessingQueue = true;
+                    id.Peer.Connection.LastMessageSent = DateTime.Now;
+                    id.Peer.Connection.LastMessageReceived = DateTime.Now;
+
+                    ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, 68);
+                    id.Peer.Connection.BytesReceived = 0;
+                    id.Peer.Connection.BytesToRecieve = 68;
+                    Logger.Log(id, "CE Peer incoming connection accepted");
+                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
+
+                }
+                catch (SocketException)
+                {
+                    if (id != null)
+                        this.CleanupSocket(id);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                finally
+                {
+                    if (!Disposed)
+                        BeginAccept();
+                }
             }
         }
 
@@ -393,15 +397,18 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Start()
         {
-            if (this.IsListening)
-                throw new ListenerException("The Listener is already listening");
+            lock (engine.asyncCompletionLock)
+            {
+                if (this.IsListening)
+                    return;
 
-            this.newConnectionCallback = new AsyncCallback(IncomingConnectionReceived);
-            this.listenEndPoint = new IPEndPoint(IPAddress.Any, engine.Settings.ListenPort);
-            this.listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.listener.Bind(listenEndPoint);
-            this.listener.Listen(10);             // FIXME: Will this break on windows XP systems?
-            this.listener.BeginAccept(newConnectionCallback, this.listener);
+                this.newConnectionCallback = new AsyncCallback(IncomingConnectionReceived);
+                this.listenEndPoint = new IPEndPoint(IPAddress.Any, engine.Settings.ListenPort);
+                this.listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                this.listener.Bind(listenEndPoint);
+                this.listener.Listen(10);             // FIXME: Will this break on windows XP systems?
+                this.listener.BeginAccept(newConnectionCallback, this.listener);
+            }
         }
 
 
@@ -410,8 +417,14 @@ namespace MonoTorrent.Client
         /// </summary>
         internal void Stop()
         {
-            this.listener.Close();
-            this.listener = null;
+            lock (this.engine.asyncCompletionLock)
+            {
+                if (!IsListening)
+                    return;
+
+                this.listener.Close();
+                this.listener = null;
+            }
         }
 
         #endregion
