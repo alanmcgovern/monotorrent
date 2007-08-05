@@ -38,20 +38,28 @@ namespace MonoTorrent.Client
     internal class StandardPicker : PiecePickerBase
     {
         #region Member Variables
-        private int[] priorities;
 
+        // This list is used to store the temporary bitfields created when calculating the rarest pieces
         private List<BitField> previousBitfields;
-        private BitField unhashedPieces;   // Store the index of finished pieces which are not hashed. These count as "AlreadyHaveOrRequested"
-
-
-        private TorrentFile[] torrentFiles;
-        private MonoTorrentCollection<Piece> requests;
-        internal MonoTorrentCollection<Piece> Requests
-        {
-            get { return this.requests; }
-        }
-
+        
+        // This is used to store the numerical representation of the priorities
+        private int[] priorities;
+        
+        // A random number generator used to choose the starting index when downloading a piece randomly
         private Random random = new Random();
+
+        // The list of pieces that are currently being requested
+        private MonoTorrentCollection<Piece> requests;
+
+        // The list of files in the torrent being requested
+        private TorrentFile[] torrentFiles;
+
+        // Stores the indices of pieces which have been downloaded but are not hashed. These count as "AlreadyHaveOrRequested"
+        private BitField unhashedPieces;   
+
+        #endregion Member Variables
+
+        #region Properties
 
         /// <summary>
         /// Returns the number of outstanding requests
@@ -66,6 +74,11 @@ namespace MonoTorrent.Client
             return result;
         }
 
+        internal MonoTorrentCollection<Piece> Requests
+        {
+            get { return this.requests; }
+        }
+
         internal BitField UnhashedPieces
         {
             get { return this.unhashedPieces; }
@@ -75,6 +88,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
+
         /// <summary>
         /// Creates a new piece picker with support for prioritisation of files
         /// </summary>
@@ -94,6 +108,7 @@ namespace MonoTorrent.Client
             Array.Sort<int>(this.priorities);
             Array.Reverse(this.priorities);
         }
+
         #endregion
 
 
@@ -185,7 +200,7 @@ namespace MonoTorrent.Client
             int requestIndex; 
 
             // If fast peers isn't supported on both sides, then return null
-            if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+            if (!id.Peer.Connection.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
 
             while (id.Peer.Connection.IsAllowedFastPieces.Count > 0)
@@ -297,6 +312,7 @@ namespace MonoTorrent.Client
                 }
             }
         }
+
 
         private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
@@ -441,6 +457,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.FreeBitfield(ref bitfield);
             }
         }
+
 
         /// <summary>
         /// Creates a request message for the first available block that the peer can download
