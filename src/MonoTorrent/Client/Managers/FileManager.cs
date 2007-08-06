@@ -421,7 +421,15 @@ namespace MonoTorrent.Client
                 id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-            id.Peer.HashedPiece(result);
+            List<PeerIdInternal> peers = new List<PeerIdInternal>(piece.Blocks.Length);
+            for (int i = 0; i < piece.Blocks.Length; i++)
+                if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
+                    peers.Add(piece.Blocks[i].RequestedOff);
+
+            for (int i = 0; i < peers.Count; i++)
+                lock (peers[i])
+                    if (peers[i].Peer.Connection != null)
+                        id.Peer.HashedPiece(result);
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)
