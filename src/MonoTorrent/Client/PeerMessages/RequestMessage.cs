@@ -234,7 +234,7 @@ namespace MonoTorrent.Client.PeerMessages
             // otherwise send back a reject request message
             else if (id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
             {
-                if (id.Peer.Connection.AmAllowedFastPieces.Contains((uint)this.pieceIndex))
+                if (id.Peer.Connection.AmAllowedFastPieces.Contains(this.pieceIndex))
                 {
                     id.Peer.Connection.IsRequestingPiecesCount++;
                     id.Peer.Connection.Enqueue(m);

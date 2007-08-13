@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private MonoTorrentCollection<uint> amAllowedFastPieces;
+        private MonoTorrentCollection<int> amAllowedFastPieces;
         private bool amChoking;
         private bool amInterested;
         private int amRequestingPiecesCount;
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         private Software clientApp;
         private IPeerMessageInternal currentlySendingMessage;
         private IEncryptorInternal encryptor;
-        private MonoTorrentCollection<uint> isAllowedFastPieces;
+        private MonoTorrentCollection<int> isAllowedFastPieces;
         private bool isChoking;
         private bool isInterested;
         private bool isinterestingtoMe;
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the indexs of all the pieces we will let the peer download even if they are choked
         /// </summary>
-        internal MonoTorrentCollection<uint> AmAllowedFastPieces
+        internal MonoTorrentCollection<int> AmAllowedFastPieces
         {
             get { return this.amAllowedFastPieces; }
             set { this.amAllowedFastPieces = value; }
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
         /// </summary>
-        internal MonoTorrentCollection<uint> IsAllowedFastPieces
+        internal MonoTorrentCollection<int> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
             set { this.isAllowedFastPieces = value; }
@@ -355,8 +355,8 @@ namespace MonoTorrent.Client
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new Queue<IPeerMessageInternal>(12);
-            this.isAllowedFastPieces = new MonoTorrentCollection<uint>();
-            this.amAllowedFastPieces = new MonoTorrentCollection<uint>();
+            this.isAllowedFastPieces = new MonoTorrentCollection<int>();
+            this.amAllowedFastPieces = new MonoTorrentCollection<int>();
         }
 
         #endregion

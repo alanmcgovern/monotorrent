@@ -1,165 +1,130 @@
-//
-// ConnectionListener.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-
 using System;
-using System.Net;
-using System.Net.Sockets;
-using MonoTorrent.Client.Encryption;
+using System.Collections.Generic;
+using System.Text;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Encryption;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Accepts incoming connections and passes them off to the right TorrentManager
+    /// Instance methods of this class are threadsafe
     /// </summary>
-    internal class ConnectionListener : IDisposable
+    public class ListenManager : IDisposable
     {
-        #region Member Variables
+        #region old members
 
-        private ClientEngine engine;
-        private IPEndPoint listenEndPoint;
-        private AsyncCallback newConnectionCallback;
         private EncryptorReadyHandler onEncryptorReadyHandler;
         private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
         private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
         private AsyncCallback peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
-        private Socket listener;
 
-        #endregion
+        #endregion old members
+
+
+        #region Member Variables
+
+        private object locker;
+        private ClientEngine engine;
+        private MonoTorrentCollection<ConnectionListenerBase> listeners;
+
+        #endregion Member Variables
 
 
         #region Properties
 
-        internal bool Disposed
+        public MonoTorrentCollection<ConnectionListenerBase> Listeners
         {
-            get { return this.listener == null; }
+            get { return listeners; }
         }
 
-        
-        /// <summary>
-        /// Returns True if the listener is listening for incoming connections.
-        /// </summary>
-        public bool IsListening
+        internal object Locker
         {
-            get { return !this.Disposed; }
+            get { return locker; }
+            private set { locker = value; }
         }
 
-
-        /// <summary>
-        /// The Endpoint the listener should listen for connections on
-        /// </summary>
-        public IPEndPoint ListenEndPoint
+        internal ClientEngine Engine
         {
-            get { return listenEndPoint; }
+            get { return engine; }
+            private set { engine = value; }
         }
 
-
-        /// <summary>
-        /// The AsyncCallback to invoke when a new connection is Received
-        /// </summary>
-        public AsyncCallback NewConnectionCallback
-        {
-            get { return this.newConnectionCallback; }
-        }
-
-        #endregion
+        #endregion Properties
 
 
         #region Constructors
 
-        public ConnectionListener(ClientEngine engine)
+        internal ListenManager(ClientEngine engine)
         {
-            this.engine = engine;
+            Engine = engine;
+            Locker = new object();
+            listeners = new MonoTorrentCollection<ConnectionListenerBase>();
+            listeners.IsReadOnly = true;
+            peerHandshakeReceived = new AsyncCallback(onPeerHandshakeReceived);
             this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
             this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
             this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
             this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
         }
 
-        #endregion
+        #endregion Constructors
 
 
-        #region Methods
+        #region Public Methods
 
-        private void BeginAccept()
-        {
-            try
-            {
-                this.listener.BeginAccept(this.newConnectionCallback, this.listener);
-            }
-            catch (SocketException ex)
-            {
-            }
-            catch (NullReferenceException ex)
-            {
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        private void CleanupSocket(PeerIdInternal id)
-        {
-            if (id == null) // Sometimes onEncryptionError fires with a null id
-                return;
-
-            lock (id)
-            {
-                Logger.Log(id, "***********CE Cleaning up*************");
-                if (id.Peer.Connection != null)
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
-                    id.Peer.Connection.Dispose();
-                }
-                else
-                {
-                    Logger.Log(id, "!!!!!!!!!!CE Already null!!!!!!!!");
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
         public void Dispose()
         {
-            if (Disposed)
-                return;
+            for (int i = 0; i < listeners.Count; i++)
+                listeners[i].Dispose();
+        }
 
-            this.listener.Close();
-            this.listener = null;
+        public void Register(ConnectionListenerBase listener)
+        {
+            lock (Locker)
+            {
+                if (listener.Engine != null)
+                    throw new ListenerException("This listener is registered to a different engine");
+
+                if (listeners.Contains(listener))
+                    throw new ListenerException("This listener has already been registered with the manager");
+
+                listener.Engine = engine;
+                listeners.Add(listener, true);
+                listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
+            }
+        }
+
+        public void Unregister(ConnectionListenerBase listener)
+        {
+            lock (Locker)
+            {
+                if (listener.Engine != this.engine)
+                    throw new ListenerException("This listener is registered to a different engine");
+
+                if (!listeners.Contains(listener))
+                    throw new ListenerException("This listener has not been registered with the manager");
+
+                listener.Engine = null;
+                listeners.Remove(listener, true);
+                listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
+            }
+        }
+
+        #endregion Public Methods
+
+
+
+
+        private void ConnectionReceived(object sender, NewConnectionEventArgs e)
+        {
+            PeerIdInternal id = new PeerIdInternal(e.Peer, null);
+            ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, 68);
+            id.Peer.Connection.BytesReceived = 0;
+            id.Peer.Connection.BytesToRecieve = 68;
+            Logger.Log(id, "CE Peer incoming connection accepted");
+            id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
         }
 
 
@@ -254,56 +219,11 @@ namespace MonoTorrent.Client
             id.Peer.Connection.ProcessingQueue = false;
         }
 
-
+        
         /// <summary>
         /// 
         /// </summary>
         /// <param name="result"></param>
-        private void IncomingConnectionReceived(IAsyncResult result)
-        {
-            PeerIdInternal id = null;
-            lock (engine.asyncCompletionLock)
-            {
-                try
-                {
-                    if (Disposed)
-                        return;
-
-                    Socket peerSocket = listener.EndAccept(result);
-                    if (!peerSocket.Connected)
-                        return;
-
-                    Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
-                    peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
-                    id = new PeerIdInternal(peer);
-                    id.Peer.Connection.ProcessingQueue = true;
-                    id.Peer.Connection.LastMessageSent = DateTime.Now;
-                    id.Peer.Connection.LastMessageReceived = DateTime.Now;
-
-                    ClientEngine.BufferManager.GetBuffer(ref id.Peer.Connection.recieveBuffer, 68);
-                    id.Peer.Connection.BytesReceived = 0;
-                    id.Peer.Connection.BytesToRecieve = 68;
-                    Logger.Log(id, "CE Peer incoming connection accepted");
-                    id.Peer.Connection.BeginReceive(id.Peer.Connection.recieveBuffer, 0, id.Peer.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
-
-                }
-                catch (SocketException)
-                {
-                    if (id != null)
-                        this.CleanupSocket(id);
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-                finally
-                {
-                    if (!Disposed)
-                        BeginAccept();
-                }
-            }
-        }
-
-
         private void onEncryptorReady(PeerIdInternal id)
         {
             try
@@ -393,40 +313,28 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Begin listening for incoming connections
+        /// 
         /// </summary>
-        internal void Start()
+        /// <param name="id"></param>
+        private void CleanupSocket(PeerIdInternal id)
         {
-            lock (engine.asyncCompletionLock)
-            {
-                if (this.IsListening)
-                    return;
+            if (id == null) // Sometimes onEncryptionError fires with a null id
+                return;
 
-                this.newConnectionCallback = new AsyncCallback(IncomingConnectionReceived);
-                this.listenEndPoint = new IPEndPoint(IPAddress.Any, engine.Settings.ListenPort);
-                this.listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                this.listener.Bind(listenEndPoint);
-                this.listener.Listen(10);             // FIXME: Will this break on windows XP systems?
-                this.listener.BeginAccept(newConnectionCallback, this.listener);
+            lock (id)
+            {
+                Logger.Log(id, "***********CE Cleaning up*************");
+                if (id.Peer.Connection != null)
+                {
+                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.recieveBuffer);
+                    ClientEngine.BufferManager.FreeBuffer(ref id.Peer.Connection.sendBuffer);
+                    id.Peer.Connection.Dispose();
+                }
+                else
+                {
+                    Logger.Log(id, "!!!!!!!!!!CE Already null!!!!!!!!");
+                }
             }
         }
-
-
-        /// <summary>
-        /// Stop listening for incoming connections
-        /// </summary>
-        internal void Stop()
-        {
-            lock (this.engine.asyncCompletionLock)
-            {
-                if (!IsListening)
-                    return;
-
-                this.listener.Close();
-                this.listener = null;
-            }
-        }
-
-        #endregion
     }
 }

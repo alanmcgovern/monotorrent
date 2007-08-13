@@ -230,7 +230,7 @@ namespace MonoTorrent.Client
         /// Remove all the pieces in the list that we already have
         /// </summary>
         /// <param name="list"></param>
-        private void RemoveOwnedPieces(MonoTorrentCollection<uint> list)
+        private void RemoveOwnedPieces(MonoTorrentCollection<int> list)
         {
             while (true)
             {

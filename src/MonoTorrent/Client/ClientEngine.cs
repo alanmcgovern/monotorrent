@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         internal object asyncCompletionLock;     // The lock used to avoid nasty race conditions when async methods are returned
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
-        private ConnectionListener listener;    // Listens for incoming connections and passes them off to the correct TorrentManager
+        private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private readonly string peerId;
         private EngineSettings settings;
         private System.Timers.Timer timer;      // The timer used to call the logic methods for the torrent managers
@@ -140,21 +140,46 @@ namespace MonoTorrent.Client
         /// <param name="engineSettings">The engine settings to use</param>
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings engineSettings)
+            : this(engineSettings, null, true)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new ClientEngine
+        /// </summary>
+        /// <param name="engineSettings">The engine settings to use</param>
+        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
+        public ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener)
+            : this(engineSettings, listener, false)
+        {
+        }
+
+        private ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener, bool createListener)
         {
             if (engineSettings == null)
                 throw new ArgumentNullException("engineSettings");
+
+            if (listener == null && !createListener)
+                throw new ArgumentNullException("listener");
 
             this.settings = engineSettings;
 
             this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
-            this.listener = new ConnectionListener(this);
+            this.listenManager = new ListenManager(this);
             this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
             this.torrentsLock = new ReaderWriterLock();
-
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
+
+            if (createListener)
+                listener = new SocketListener(new IPEndPoint(IPAddress.Any, engineSettings.ListenPort));
+
+            listenManager.Register(listener);
+
+            if (createListener)
+                listener.Start();
         }
 
         #endregion
@@ -211,9 +236,7 @@ namespace MonoTorrent.Client
 
             lock (asyncCompletionLock)
             {
-                if (!this.listener.Disposed)
-                    this.listener.Dispose();
-
+                this.listenManager.Dispose();
                 this.timer.Dispose();
             }
         }
@@ -407,9 +430,6 @@ namespace MonoTorrent.Client
         {
             lock (asyncCompletionLock)
             {
-                if (!this.listener.IsListening)
-                    this.listener.Start();      // Start Listening for connections
-
                 if (!timer.Enabled)
                     timer.Enabled = true;       // Start logic ticking
             }
@@ -426,9 +446,6 @@ namespace MonoTorrent.Client
                             return;
 
                 timer.Enabled = false;              // All the torrents are stopped, so stop ticking
-
-                if (this.listener.IsListening)      // Also stop listening for incoming connections
-                    this.listener.Stop();
             }
         }
 

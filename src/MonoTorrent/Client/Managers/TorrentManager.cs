@@ -907,7 +907,7 @@ namespace MonoTorrent.Client
 
                 // If the peer supports fast peer, queue the message if it is an AllowedFast piece
                 // Otherwise send a reject message for the piece
-                if (id.Peer.Connection.AmAllowedFastPieces.Contains((uint)pieceMessage.PieceIndex))
+                if (id.Peer.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
                     id.Peer.Connection.Enqueue(pieceMessage);
                 else
                 {

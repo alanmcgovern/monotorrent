@@ -54,9 +54,9 @@ namespace MonoTorrent.Client.PeerMessages
         {
         }
 
-        internal AllowedFastMessage(uint pieceIndex)
+        internal AllowedFastMessage(int pieceIndex)
         {
-            this.pieceIndex = (int)pieceIndex;
+            this.pieceIndex = pieceIndex;
         }
         #endregion
 
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.PeerMessages
             if (!id.Peer.Connection.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.Peer.Connection.IsAllowedFastPieces.Add((uint)this.pieceIndex);
+            id.Peer.Connection.IsAllowedFastPieces.Add(this.pieceIndex);
         }
 
 
