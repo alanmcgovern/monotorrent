@@ -349,6 +349,7 @@ namespace MonoTorrent.Client
             if (this.state != TorrentState.Stopped)
                 throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
 
+			this.startTime = DateTime.Now;
             UpdateState(TorrentState.Hashing);
             ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), new bool[] { forceFullScan, autoStart });
         }
