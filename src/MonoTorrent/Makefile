@@ -28,7 +28,8 @@ SOURCES=	\
 	Client/BufferedFileRead.cs \
 	Client/BufferedFileWrite.cs \
 	Client/ClientEngine.cs \
-	Client/ConnectionListener.cs \
+	Client/ConnectionListeners/IConnectionListener.cs \
+	Client/ConnectionListeners/SocketListener.cs \
 	Client/Logger.cs \
 	Client/RateLimiter.cs \
 	Client/ReaderLock.cs \
@@ -47,6 +48,7 @@ SOURCES=	\
 	Client/Encryption/RC4.cs \
 	Client/EventArgs/BlockEventArgs.cs \
 	Client/EventArgs/MessageEventArgs.cs \
+	Client/EventArgs/NewConnectionEventArgs.cs \
 	Client/EventArgs/PeerConnectionEventArgs.cs \
 	Client/EventArgs/PeersAddedEventArgs.cs \
 	Client/EventArgs/PieceEventArgs.cs \
@@ -72,6 +74,7 @@ SOURCES=	\
 	Client/Managers/ConnectionManager.cs \
 	Client/Managers/ConnectionMonitor.cs \
 	Client/Managers/FileManager.cs \
+	Client/Managers/ListenManager.cs \
 	Client/Managers/PeerManager.cs \
 	Client/Managers/PieceManager.cs \
 	Client/Managers/TorrentManager.cs \

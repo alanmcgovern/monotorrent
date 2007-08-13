@@ -231,7 +231,6 @@ namespace MonoTorrent
                                 areInterested += p.IsInterested ? 1 : 0;
                                 amUnchoking += !p.AmChoking ? 1 : 0;
                                 areRequestingCount += p.IsRequestingPiecesCount;
-                                sendQueueLength += p.SendQueueLength;
                             }
                         }
                         averagePercent /= count;

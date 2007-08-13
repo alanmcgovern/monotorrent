@@ -734,7 +734,7 @@ namespace MonoTorrent.Client
             int index = pieceHashedEventArgs.PieceIndex;
             for (int i = 0; i < this.torrent.Files.Length; i++)
                 if (index >= this.torrent.Files[i].StartPieceIndex && index <= this.torrent.Files[i].EndPieceIndex)
-                    this.torrent.Files[i].BitField[index - this.torrent.Files[i].StartPieceIndex] = true;
+                    this.torrent.Files[i].BitField[index - this.torrent.Files[i].StartPieceIndex] = pieceHashedEventArgs.HashPassed;
                 else if (index < this.torrent.Files[i].StartPieceIndex)
                     break;
 
