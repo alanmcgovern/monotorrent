@@ -211,31 +211,49 @@ namespace MonoTorrent.Common
             return result;
         }
 
+        /// <summary>
+        /// Creates a Torrent and returns it in it's dictionary form
+        /// </summary>
+        /// <returns></returns>
         public BEncodedDictionary Create()
         {
-            Reset();
-            CreateDict();
-
-            // Return a clone of the internal dictionary
-            return BEncodedValue.Decode<BEncodedDictionary>(this.torrent.Encode());
+            // Use the async methods behind the scenes to do this
+            return EndCreate(BeginCreate(null, null));
         }
 
         ///<summary>
-        ///creates and stores a torrent at storagePath
+        /// Creates a Torrent and writes it to disk in the specified location
         ///<summary>
-        ///<param name="storagePath">place and name to store the torrent file</param>
+        ///<param name="storagePath">The path (including filename) where the new Torrent will be written to</param>
         public void Create(string path)
         {
-            Reset();
-            CreateDict();
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException("path");
 
             using (FileStream stream = new FileStream(path, FileMode.Create))
-            {
-                byte[] data = this.torrent.Encode();
-                stream.Write(data, 0, data.Length);
-            }
+                Create(stream);
         }
 
+        /// <summary>
+        /// Generates a Torrent and writes it to the supplied stream
+        /// </summary>
+        /// <param name="stream">The stream to write the torrent to</param>
+        public void Create(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            Create();
+
+            byte[] data = this.torrent.Encode();
+            stream.Write(data, 0, data.Length);
+        }
+
+        /// <summary>
+        /// Ends the asynchronous torrent creation and returns the torrent in it's dictionary form
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
         public BEncodedDictionary EndCreate(IAsyncResult result)
         {
             if (result == null)
@@ -252,12 +270,40 @@ namespace MonoTorrent.Common
                 if (this.result.SavedException != null)
                     throw this.result.SavedException;
 
-                return this.result.Aborted ? null : this.torrent;
+                return this.result.Aborted ? null : BEncodedValue.Decode<BEncodedDictionary>(this.torrent.Encode());
             }
             finally
             {
                 this.result = null;
             }
+        }
+
+        /// <summary>
+        /// Ends the asynchronous torrent creation and writes the torrent to the specified path
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public void EndCreate(IAsyncResult result, string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException("path");
+
+            using (FileStream s = File.OpenWrite(path))
+                EndCreate(result, s);
+        }
+
+        /// <summary>
+        /// Ends the asynchronous torrent creation and writes the torrent to the specified stream
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public void EndCreate(IAsyncResult result, Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            byte[] data = EndCreate(result).Encode();
+            stream.Write(data, 0, data.Length);
         }
 
         ///<summary>
@@ -311,7 +357,8 @@ namespace MonoTorrent.Common
         {
             try
             {
-                Create();
+                Reset();
+                CreateDict();
             }
             catch (Exception ex)
             {
