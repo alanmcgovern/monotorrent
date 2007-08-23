@@ -40,6 +40,7 @@ namespace MonoTorrent.Client
         #region Private Fields
 
         protected BitField myBitfield;
+        private bool linearPickingEnabled;
 
         #endregion Private Fields
 
@@ -53,6 +54,11 @@ namespace MonoTorrent.Client
             get { return this.myBitfield; }
         }
 
+        public bool LinearPickingEnabled
+        {
+            get { return linearPickingEnabled; }
+            set { linearPickingEnabled = value; }
+        }
         #endregion Properties
 
         #region Abstract Methods

@@ -59,6 +59,7 @@ namespace MonoTorrent.Client
 
         #endregion Member Variables
 
+
         #region Properties
 
         /// <summary>
@@ -271,8 +272,8 @@ namespace MonoTorrent.Client
 
                     // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
                     // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
-                    // uninteresting.
-                    int midPoint = random.Next(0, current.Length);
+                    // uninteresting. If we're doing linear searching, then the start index is 0.
+                    int midPoint = LinearPickingEnabled ? 0 : random.Next(0, current.Length);
                     int endIndex = current.Length;
                     checkIndex = midPoint;
 
@@ -352,6 +353,10 @@ namespace MonoTorrent.Client
 
                 // Store this bitfield as the first iteration of the Rarest First algorithm.
                 bitfields.Push(current);
+
+                // If we're doing linear picking, then we don't want to calculate the rarest pieces
+                if (base.LinearPickingEnabled)
+                    return bitfields;
 
                 // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
                 current = ClientEngine.BufferManager.GetClonedBitfield(current);

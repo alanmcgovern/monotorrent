@@ -62,15 +62,36 @@ namespace MonoTorrent.Client
 
 
         #region Member Variables
+
+        private bool linearPickingEnabled;
         private PiecePickerBase piecePicker;
+
         #endregion
 
 
+        #region Properties
+
+        /// <summary>
+        /// This option changes the picking algorithm from rarest first to linear. This should
+        /// only be enabled if the content being downloaded is streaming audio/video. It degrades
+        /// overall performance of the swarm.
+        /// </summary>
+        public bool LinearPickingEnabled
+        {
+            get { return piecePicker.LinearPickingEnabled; }
+            set { piecePicker.LinearPickingEnabled = value; }
+        }
+
+        #endregion Properties
+
+
         #region Constructors
+
         internal PieceManager(BitField bitfield, TorrentFile[] files)
         {
             this.piecePicker = new StandardPicker(bitfield, files);
         }
+
         #endregion
 
 
