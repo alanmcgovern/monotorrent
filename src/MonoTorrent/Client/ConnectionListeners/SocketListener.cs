@@ -142,7 +142,6 @@ namespace MonoTorrent.Client
 
         private void EndAccept(IAsyncResult result)
         {
-            PeerIdInternal id = null;
             Socket peerSocket = null;
             try
             {
