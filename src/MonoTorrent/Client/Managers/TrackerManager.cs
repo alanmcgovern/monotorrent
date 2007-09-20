@@ -329,6 +329,9 @@ namespace MonoTorrent.Client
 
         private WaitHandle Scrape(TrackerTier tier, Tracker tracker, bool trySubsequent)
         {
+            if (!tracker.CanScrape)
+                throw new TorrentException("This tracker does not support scraping");
+
             TrackerConnectionID id = new TrackerConnectionID(tier, tracker, trySubsequent, TorrentEvent.None, null);
             WaitHandle handle = tracker.Scrape(this.infoHash, id);
             UpdateState(tracker, TrackerState.Scraping);
