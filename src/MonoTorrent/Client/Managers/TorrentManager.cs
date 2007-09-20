@@ -421,7 +421,9 @@ namespace MonoTorrent.Client
                     this.loadedFastResume = false;
                 }
 
-                this.TrackerManager.Scrape();
+                if(TrackerManager.CurrentTracker.CanScrape)
+                    this.TrackerManager.Scrape();
+
                 this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 this.startTime = DateTime.Now;
 
