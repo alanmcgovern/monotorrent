@@ -723,7 +723,9 @@ namespace MonoTorrent.Common
                             MonoTorrentCollection<string> collection = new MonoTorrentCollection<string>(tier.Count);
                             for (int k = 0; k < tier.Count; k++)
                                 collection.Add(tier[k]);
-                            t.announceUrls.Add(collection);
+
+                            if (collection.Count != 0)
+                                t.announceUrls.Add(collection);
                         }
                         break;
 
