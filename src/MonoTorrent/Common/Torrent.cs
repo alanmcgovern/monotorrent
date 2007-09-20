@@ -430,7 +430,7 @@ namespace MonoTorrent.Common
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
             this.pieceLength = int.Parse(dictionary["piece length"].ToString());
-            
+
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
             {
                 switch (keypair.Key.Text)
@@ -533,25 +533,28 @@ namespace MonoTorrent.Common
         }
 
 
-	/// <summary>
-	/// Loads a .torrent from the specificed path. A return value indicates
-	/// whether the operation was successful.
-	/// </summary>
-	/// <param name="path">The path to load the .torrent file from</param>
-	/// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-	/// <returns>True if successful</returns>
-	public static bool TryLoad(string path, out Torrent torrent)
-	{
-		try{
-			torrent = Torrent.Load(path);
-		} catch {
-			torrent = null;
-		}
-		
-		return torrent != null;
-	}
-	
-	
+        /// <summary>
+        /// Loads a .torrent from the specificed path. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="path">The path to load the .torrent file from</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad(string path, out Torrent torrent)
+        {
+            try
+            {
+                torrent = Torrent.Load(path);
+            }
+            catch
+            {
+                torrent = null;
+            }
+
+            return torrent != null;
+        }
+
+
         /// <summary>
         /// Loads a .torrent from the supplied stream
         /// </summary>
@@ -566,23 +569,26 @@ namespace MonoTorrent.Common
         }
 
 
-	/// <summary>
-	/// Loads a .torrent from the supplied stream. A return value indicates
-	/// whether the operation was successful.
-	/// </summary>
-	/// <param name="stream">The stream containing the data to load</param>
-	/// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-	/// <returns>True if successful</returns>
-	public static bool TryLoad(Stream stream, out Torrent torrent)
-	{
-		try{
-			torrent = Torrent.Load(stream);
-		} catch {
-			torrent = null;
-		}
-		
-		return torrent != null;
-	}
+        /// <summary>
+        /// Loads a .torrent from the supplied stream. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="stream">The stream containing the data to load</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad(Stream stream, out Torrent torrent)
+        {
+            try
+            {
+                torrent = Torrent.Load(stream);
+            }
+            catch
+            {
+                torrent = null;
+            }
+
+            return torrent != null;
+        }
 
 
         /// <summary>
@@ -603,33 +609,36 @@ namespace MonoTorrent.Common
                 using (WebClient client = new WebClient())
                     client.DownloadFile(url, location);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new TorrentException("Could not download .torrent file from the specified url", ex);
             }
 
             return Torrent.Load(location);
         }
-        
-        
-	/// <summary>
-	/// Loads a .torrent file from the specified URL. A return value indicates
-	/// whether the operation was successful.
-	/// </summary>
-	/// <param name="url">The URL to download the .torrent from</param>
-	/// <param name="location">The path to download the .torrent to before it gets loaded</param>
-	/// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
-	/// <returns>True if successful</returns>
-	public static bool TryLoad(Uri url, string location, out Torrent torrent)
-	{
-		try{
-			torrent = Torrent.Load(url, location);
-		} catch {
-			torrent = null;
-		}
-		
-		return torrent != null;
-	}
+
+
+        /// <summary>
+        /// Loads a .torrent file from the specified URL. A return value indicates
+        /// whether the operation was successful.
+        /// </summary>
+        /// <param name="url">The URL to download the .torrent from</param>
+        /// <param name="location">The path to download the .torrent to before it gets loaded</param>
+        /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        /// <returns>True if successful</returns>
+        public static bool TryLoad(Uri url, string location, out Torrent torrent)
+        {
+            try
+            {
+                torrent = Torrent.Load(url, location);
+            }
+            catch
+            {
+                torrent = null;
+            }
+
+            return torrent != null;
+        }
 
 
         private static Torrent Load(Stream stream, string path)
