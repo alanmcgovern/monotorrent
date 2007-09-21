@@ -62,6 +62,9 @@ namespace MonoTorrent.Common
             if (hash.Length != HashCodeLength)
                 throw new ArgumentException(string.Format("Hash must be {0} bytes in length", HashCodeLength), "hash");
 
+            if (hashIndex < 0 || hashIndex > count)
+                throw new ArgumentOutOfRangeException("hashIndex", string.Format("hashIndex must be between 0 and {0}", count)); 
+
             int start = hashIndex * HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
                 if (hash[i] != this.hashData[i + start])
@@ -71,7 +74,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Return hash for individual piece
+        /// Returns the hash for a specific piece
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
