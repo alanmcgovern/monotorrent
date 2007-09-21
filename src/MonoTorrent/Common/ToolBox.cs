@@ -39,6 +39,11 @@ namespace MonoTorrent.Common
     {
         private static Random r = new Random();
 
+        /// <summary>
+        /// Randomizes the contents of the array
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
         public static void Randomize<T>(List<T> array)
         {
             List<T> clone = new List<T>(array);
@@ -52,6 +57,13 @@ namespace MonoTorrent.Common
             }
         }
 
+        /// <summary>
+        /// Switches the positions of two elements in an array
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
         public static void Switch<T>(T[] array, int first, int second)
         {
             T obj = array[first];
@@ -59,11 +71,16 @@ namespace MonoTorrent.Common
             array[second] = obj;
         }
 
-        public static string GetHex(byte[] infoHash)
+        /// <summary>
+        /// Creates a hex string from the given byte[]
+        /// </summary>
+        /// <param name="infoHash">The byte[] to create the hex string from</param>
+        /// <returns></returns>
+        public static string ToHex(byte[] array)
         {
             StringBuilder sb = new StringBuilder();
 
-            foreach (byte b in infoHash)
+            foreach (byte b in array)
             {
                 string hex = b.ToString("X");
                 hex = hex.Length < 2 ? "0" + hex : hex;
@@ -73,7 +90,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// This method takes in two byte arrays and checks if they are equal
+        /// Checks to see if the contents of two byte arrays are equal
         /// </summary>
         /// <param name="array1">The first array</param>
         /// <param name="array2">The second array</param>
@@ -85,24 +102,38 @@ namespace MonoTorrent.Common
             if (array2 == null)
                 throw new ArgumentNullException("array2");
 
-            return ByteMatch(array1, array2, 0, 0, array1.Length);
+            if (array1.Length != array2.Length)
+                return false;
+
+            return ByteMatch(array1, 0, array2, 0, array1.Length);
         }
 
-        public static bool ByteMatch(byte[] array1, byte[] array2, int offset1, int offset2, int count)
+        /// <summary>
+        /// Checks to see if the contents of two byte arrays are equal
+        /// </summary>
+        /// <param name="array1">The first array</param>
+        /// <param name="array2">The second array</param>
+        /// <param name="offset1">The starting index for the first array</param>
+        /// <param name="offset2">The starting index for the second array</param>
+        /// <param name="count">The number of bytes to check</param>
+        /// <returns></returns>
+        public static bool ByteMatch(byte[] array1, int offset1, byte[] array2, int offset2, int count)
         {
             if (array1 == null)
                 throw new ArgumentNullException("array1");
             if (array2 == null)
                 throw new ArgumentNullException("array2");
 
-            if (array1.Length != array2.Length)      // If the arrays are different lengths, then they are not equal
+            // If either of the arrays is too small, they're not equal
+            if ((array1.Length - offset1) < count || (array2.Length - offset2) < count)
                 return false;
 
+            // Check if any elements are unequal
             for (int i = 0; i < count; i++)
-                if (array1[offset1 + i] != array2[offset2 + i]) // For each element, if it is not the same in both
-                    return false;                               // arrays, return false
+                if (array1[offset1 + i] != array2[offset2 + i])
+                    return false;
 
-            return true;                            // If we get here, all the elements matched, so they are equal
+            return true;
         }
 
         internal static int HashCode(byte[] array)
