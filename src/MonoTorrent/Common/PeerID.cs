@@ -89,23 +89,32 @@ namespace MonoTorrent.Common
         private string peerId;
         private string shortId;
 
+        /// <summary>
+        /// The name of the torrent software being used
+        /// </summary>
         public Client Client
         {
             get { return this.client; }
         }
 
+        /// <summary>
+        /// The peer's ID
+        /// </summary>
         internal string PeerId
         {
             get { return this.peerId; }
         }
 
+        /// <summary>
+        /// A shortened version of the peers ID
+        /// </summary>
         public string ShortId
         {
             get { return this.shortId; }
         }
 
 
-        public Software(string peerId)
+        internal Software(string peerId)
         {
             Match m;
             Regex r;
@@ -388,7 +397,7 @@ namespace MonoTorrent.Common
 
             this.client = Client.Unknown;
             this.shortId = peerId;
-            System.Diagnostics.Trace.WriteLine("Unsupported clientid style: " + peerId);
+            System.Diagnostics.Trace.WriteLine("Unrecognisable clientid style: " + peerId);
         }
 
 
