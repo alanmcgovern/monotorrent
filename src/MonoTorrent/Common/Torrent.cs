@@ -540,7 +540,7 @@ namespace MonoTorrent.Common
         public static Torrent Load(byte[] data)
         {
             using (MemoryStream s = new MemoryStream(data))
-                Load(s, "");
+                return Load(s, "");
         }
 
         /// <summary>
