@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns>The PeerMessage decoded from the recieve buffer</returns>
         public static IPeerMessageInternal Decode(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
         {
-            IPeerMessageInternal message = null;
+            IPeerMessageInternal message;
 
             // The first byte tells us what kind of message it is
             switch (buffer.Array[buffer.Offset + offset])
@@ -53,19 +53,19 @@ namespace MonoTorrent.Client.PeerMessages
                     message = new AllowedFastMessage();
                     break;
 
-                case BitfieldMessage.MessageId:     // 5
+                case BitfieldMessage.MessageId:
                     message = new BitfieldMessage(manager.Torrent.Pieces.Count);
                     break;
 
-                case CancelMessage.MessageId:       // 8
+                case CancelMessage.MessageId:
                     message = new CancelMessage();
                     break;
 
-                case ChokeMessage.MessageId:        // 0
+                case ChokeMessage.MessageId:
                     message = new ChokeMessage();
                     break;
 
-                case ExtendedListMessage.MessageId: // 20
+                case ExtendedListMessage.MessageId:
                     message = new ExtendedListMessage();
                     break;
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PeerMessages
                     message = new HaveAllMessage();
                     break;
 
-                case HaveMessage.MessageId:         // 4
+                case HaveMessage.MessageId:
                     message = new HaveMessage();
                     break;
 
@@ -81,19 +81,19 @@ namespace MonoTorrent.Client.PeerMessages
                     message = new HaveNoneMessage();
                     break;
 
-                case InterestedMessage.MessageId:   // 2
+                case InterestedMessage.MessageId:
                     message = new InterestedMessage();
                     break;
 
-                case NotInterestedMessage.MessageId:// 3
+                case NotInterestedMessage.MessageId:
                     message = new NotInterestedMessage();
                     break;
 
-                case PieceMessage.MessageId:        // 7
+                case PieceMessage.MessageId:
                     message = new PieceMessage(manager.FileManager);
                     break;
 
-                case PortMessage.MessageId:         // 9
+                case PortMessage.MessageId:
                     message = new PortMessage();
                     break;
 
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.PeerMessages
                     message = new RejectRequestMessage();
                     break;
 
-                case RequestMessage.MessageId:      // 6
+                case RequestMessage.MessageId:
                     message = new RequestMessage();
                     break;
 
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client.PeerMessages
                     message = new SuggestPieceMessage();
                     break;
 
-                case UnchokeMessage.MessageId:      // 1
+                case UnchokeMessage.MessageId:
                     message = new UnchokeMessage();
                     break;
 
