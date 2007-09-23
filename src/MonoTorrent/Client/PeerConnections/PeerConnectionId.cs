@@ -40,23 +40,34 @@ namespace MonoTorrent.Client
     internal class PeerIdInternal : IComparable<PeerIdInternal>
     {
         #region Member Variables
+
         public string NulledAt = string.Empty;
+        private PeerId peerId;
+        private Peer peer;
+        private TorrentManager torrentManager;
+
+        #endregion Member Variables
+
+
+        #region Properties
+
         public ConnectionManager ConnectionManager
         {
             get { return this.torrentManager.Engine.ConnectionManager; }
         }
 
+        public ClientEngine Engine
+        {
+            get { return torrentManager.Engine; }
+        }
 
         internal SocketError ErrorCode;
-
 
         internal PeerId PublicId
         {
             get { return this.peerId; }
             set { this.peerId = value; }
         }
-        private PeerId peerId;
-
 
         /// <summary>
         /// 
@@ -66,7 +77,6 @@ namespace MonoTorrent.Client
             get { return this.peer; }
             set { this.peer = value; }
         }
-        private Peer peer;
 
         /// <summary>
         /// 
@@ -80,8 +90,6 @@ namespace MonoTorrent.Client
                 this.peer.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
         }
-        private TorrentManager torrentManager;
-        
 
         #endregion
 
@@ -112,31 +120,23 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Overridden Methods
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return this.peer.Location;
-        }
-        #endregion
-
-
-        #region IComparable<PeerConnectionID> Members
+        #region Methods
 
         public int CompareTo(PeerIdInternal other)
         {
             return this.peer.Location.CompareTo(other.peer.Location);
         }
 
-        #endregion
+        public override string ToString()
+        {
+            return this.peer.Location;
+        }
 
         internal void UpdatePublicStats()
         {
             peerId.UpdateStats(this);
         }
+
+        #endregion Methods
     }
 }
