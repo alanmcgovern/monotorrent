@@ -86,6 +86,15 @@ namespace MonoTorrent.Tracker
 
 
         /// <summary>
+        /// The list of all peers being monitored by this manager
+        /// </summary>
+        public ICollection<Peer> Peers
+        {
+            get { return peers.Values; }
+        }
+
+
+        /// <summary>
         /// The torrent being tracked
         /// </summary>
         public Torrent Torrent
