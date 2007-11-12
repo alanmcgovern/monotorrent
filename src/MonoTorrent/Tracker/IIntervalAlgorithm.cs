@@ -30,30 +30,34 @@ using System;
 
 namespace MonoTorrent.Tracker
 {
-    ///<summary>This interface is used to set
+    ///<summary>
     ///</summary>
     public interface IIntervalAlgorithm
     {
-        ///<summary>this method is called when a peer was added to the tracker</summary>
         void PeerAdded();
         
-        ///<summary>this method is called when a peer was removed from the tracker</summary>
         void PeerRemoved();
-        
-        ///<summary>Returns the minimum interval</summary> 
+
+        ///<summary>
+        /// Minimum announce interval in seconds
+        ///</summary> 
         uint MinInterval
         {
             get;
         }
-        
-        ///<summary>Returns the interval</summary>
+
+        ///<summary>
+        /// Regular announce interval in seconds
+        ///</summary>
         uint Interval
         {
             get;
         }
-        
-        ///<summary>timeout before peer is removed</summary>
-        long PeerTimeout
+
+        /// <summary>
+        /// Peer timeout interval in seconds
+        /// </summary>
+        uint PeerTimeout
         {
             get;
         }

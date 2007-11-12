@@ -37,7 +37,7 @@ using System.Web;
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.TrackerApp
+namespace SampleTracker
 {
     class MySimpleTracker
     {
@@ -46,60 +46,61 @@ namespace MonoTorrent.TrackerApp
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
-            TrackerEngine engine = TrackerEngine.Instance;
-            engine.Address = "127.0.0.1";
-            engine.Port = 10000;
-            engine.Frontend = TrackerFrontend.InternalHttp;
-            TorrentFolderWatcher watcher = new TorrentFolderWatcher(Path.Combine(Environment.CurrentDirectory, TORRENT_DIR), "*.torrent");
-            watcher.TorrentFound += new EventHandler<TorrentWatcherEventArgs>(watcher_TorrentFound);
-            watcher.TorrentLost += new EventHandler<TorrentWatcherEventArgs>(watcher_TorrentLost);
-            engine.TorrentWatchers.Add(watcher);
+            ListenerBase listener = new HttpListener(System.Net.IPAddress.Loopback, 10000);
+            Tracker tracker = new Tracker();
 
-            engine.TorrentWatchers.StartAll();
-            engine.TorrentWatchers.ForceScanAll();
-            
-            engine.Start();
-            Console.WriteLine("started");
+            tracker.RegisterListener(listener);
+            tracker.Add(Torrent.Load(@"c:\test.torrent"));
+            listener.Start();
+
+            while (true)
+            {
+                foreach (SimpleTorrentManager m in tracker)
+                {
+                    Console.WriteLine("Name: {0}", m.Torrent.Name);
+                    Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
+                    Console.WriteLine();
+                    System.Threading.Thread.Sleep(10000);
+                }
+            }
         }
 
         void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e)
         {
-            try
-            {
-                TrackerEngine.Instance.Tracker.RemoveTorrent(e.TorrentPath);
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine("Couldn't remove torrent: {0}", e.TorrentPath);
-                Console.WriteLine("Reason: {0}", ex.Message);
-            }
+            //try
+            //{
+            //    TrackerEngine.Instance.Tracker.Remove(e.TorrentPath);
+            //}
+            //catch(Exception ex)
+            //{
+            //    Console.WriteLine("Couldn't remove torrent: {0}", e.TorrentPath);
+            //    Console.WriteLine("Reason: {0}", ex.Message);
+            //}
         }
 
         void watcher_TorrentFound(object sender, TorrentWatcherEventArgs e)
         {
-            try
-            {
-                Torrent t = Torrent.Load(e.TorrentPath);
-                TrackerEngine.Instance.Tracker.AddTorrent(t);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Couldn't load {0}.", e.TorrentPath);
-                Console.WriteLine("Reason: {0}", ex.Message);
-            }
+            //try
+            //{
+            //    Torrent t = Torrent.Load(e.TorrentPath);
+            //    TrackerEngine.Instance.Tracker.Add(t);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine("Couldn't load {0}.", e.TorrentPath);
+            //    Console.WriteLine("Reason: {0}", ex.Message);
+            //}
         }
         
         public void OnProcessExit(object sender, EventArgs e)
         {
-            Console.Write("shutting down the Tracker...");
-            TrackerEngine.Instance.Stop();
-            Console.WriteLine("done");
+            //Console.Write("shutting down the Tracker...");
+            //TrackerEngine.Instance.Stop();
+            //Console.WriteLine("done");
         }
         
         public static void Main(string[] args)
         {
-            
             Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Debug.WriteLine("starting FrontendEngine");
             new MySimpleTracker();

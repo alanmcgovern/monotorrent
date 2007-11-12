@@ -27,40 +27,69 @@
 //
 
 using System;
+using System.Collections.Specialized;
+using System.Collections;
+using System.Collections.Generic;
+using System.Web;
+using System.Net;
 
 
 namespace MonoTorrent.Tracker
 {
     ///<summary>Struct to hold and iterate parameters used by the Scraperequest.</summary> 
-    public struct ScrapeParameters
+    public class ScrapeParameters : RequestParameters
     {
-        byte[][] hashs;
+        private List<byte[]> hashs;
         
         ///<summary>Number of infoHashs.</summary>
         public int Count
         {
-            get { return hashs.Length; }
+            get { return hashs.Count; }
         }
         
         ///<summary>The first infohash</summary>
-        public byte[] InfoHash
+        public List<byte[]> InfoHashes
         {
-            get { return hashs[0]; }
+            get { return hashs; }
         }
-        
-        public ScrapeParameters(byte[][] infoHashs)
+
+
+        public override bool IsValid
         {
-            hashs = infoHashs;    
+            get { return true; }
         }
-        
-        ///<summary>Enumerate over the infohashs</summary>
-        public System.Collections.IEnumerator GetEnumerator()
+
+
+        public ScrapeParameters(NameValueCollection collection, IPAddress address)
+            : base(collection, address)
         {
-            for (int i = 0; i < hashs.Length; i++)
+            hashs = new List<byte[]>();
+            ParseHashes(Parameters["info_hash"]);
+        }
+
+
+        private void ParseHashes(string infoHash)
+        {
+            if (string.IsNullOrEmpty(infoHash))
+                return;
+
+            if (infoHash.IndexOf(',') > 0)
             {
-                yield return hashs[i];
+                string[] stringHashs = infoHash.Split(',');
+                for (int i = 0; i < stringHashs.Length; i++)
+                    hashs.Add(HttpUtility.UrlDecodeToBytes(stringHashs[i]));
+            }
+            else
+            {
+                hashs.Add(HttpUtility.UrlDecodeToBytes(infoHash));
             }
         }
+
+
+        ///<summary>Enumerate over the infohashs</summary>
+        public IEnumerator GetEnumerator()
+        {
+            return hashs.GetEnumerator();
+        }
     }
-    
 }

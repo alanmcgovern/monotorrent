@@ -36,7 +36,10 @@ namespace MonoTorrent.Tracker
     ///</summary>
     public class StaticIntervalAlgorithm : IIntervalAlgorithm
     {
-        
+        private uint min_interval = 10 * 60; // 10 minutes
+        private uint interval = 45 * 60;     // 45 minutes
+        private uint timeout = 50 * 60;      // 50 minutes
+
         public StaticIntervalAlgorithm()
         {
             
@@ -52,30 +55,28 @@ namespace MonoTorrent.Tracker
             //ignore
         }
         
-        ///<summary>Default value is two minutes
+        ///<summary>
+        /// Minimum announce interval in seconds
         ///</summary>
-        public uint MinInterval {
-            get {
-                return min_interval;
-            }
+        public uint MinInterval 
+        {
+            get { return min_interval; }
         }
-        private uint min_interval = 5*60; //= 2*60;
         
-        ///<summary>Default value is 5 minutes
+        ///<summary>
+        /// Regular announce interval in seconds
         ///</summary>
-        public uint Interval {
-            get {
-                return interval;
-            }
+        public uint Interval
+        {
+            get { return interval;  }
         }
-        private uint interval = 1*60; //= 5*60;
-                
-        public long PeerTimeout {
-            get {
-                return timeout;
-            }
+
+        /// <summary>
+        /// Peer timeout interval in seconds
+        /// </summary>
+        public uint PeerTimeout
+        {
+            get {  return timeout; }
         }
-        private long timeout = 45*60*1000;
     }
-    
 }

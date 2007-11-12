@@ -40,249 +40,249 @@ using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
-{   
-    public class Tracker
+{
+    public class Tracker //: IEnumerable<SimpleTorrentManager>
     {
-        private Dictionary<string, ITorrentManager> torrents;
-                
+        #region Fields
+
+        private bool allowScrape;
+        private bool allowNonCompact;
+        private Dictionary<byte[], SimpleTorrentManager> torrents;
+        private IIntervalAlgorithm intervalAlgorithm;
+
+        #endregion Fields
+
+
+        #region Properties
+
         ///<summary>
-        ///starts the tracker
+        /// True if non-compact responses are enabled
         ///</summary>
-        private Tracker()
-        {
-            torrents = new Dictionary<string, ITorrentManager>();
-            
-        }
-        
-        ///<summary>Singleton returning an instance of the Tracker class.</summary>
-        public static Tracker Instance
-        {
-            get {
-                if (tracker == null)
-                    tracker = new Tracker();
-                return tracker;
-            }
-        }
-        private static Tracker tracker = null;
-        
-        ///<summary>AllowNonCompact allows or denie requests in compact or 
-        ///non compact format default is true</summary>
-        ///
         public bool AllowNonCompact
         {
-            get { 
-                return allow_non_compact; 
-            }
-            set { 
-                allow_non_compact = value; 
-            }
-        }       
-        private bool allow_non_compact = true;
-        
-        ///<summary>Get and set the IntervalAlgorithm used by this Tracker</summary>
-        public IIntervalAlgorithm IntervalAlgorithm
-        {
-            get {
-                return interval_algorithm;
-            }
-            set {
-                interval_algorithm = value;
-            }
-        }
-        private IIntervalAlgorithm interval_algorithm = new StaticIntervalAlgorithm();
-        
-        ///<summary>
-        ///Add a Torrent to this Tracker. After the Add was called this torrent is served to the Peers.
-        ///
-        ///</summary>
-        ///<param name="torrent">
-        ///The torrent which should be added. If it is already in the List the Method returns immidiatly.
-        ///</param>
-        public void AddTorrent(Torrent torrent)
-        {                       
-            //Console.WriteLine("adding torrent " + HttpUtility.UrlEncode(torrent.InfoHash) + " to the tracker"); 
-            Console.WriteLine("adding torrent " + Toolbox.ToHex(torrent.InfoHash) + " to the tracker");
-            
-            if (torrents.ContainsKey(Toolbox.ToHex(torrent.InfoHash))) {
-                Console.WriteLine("torrent already added");//TODO remove
-                return;
-            }            
-            torrents.Add(Toolbox.ToHex(torrent.InfoHash), new SimpleTorrentManager(torrent));
-            
-        }
-        
-        ///<summary>This Method is used to Disable Torrents.
-        ///</summary>
-        ///<param>The Torrent to be removed from the Tracker</param>
-        public void RemoveTorrent(Torrent torrent)
-        {
-            Console.WriteLine("removing torrent " + Toolbox.ToHex(torrent.InfoHash) + " from the tracker");
-            if (torrents.ContainsKey(Toolbox.ToHex(torrent.InfoHash)))
-                torrents.Remove(Toolbox.ToHex(torrent.InfoHash));
+            get { return allowNonCompact; }
+            set { allowNonCompact = value; }
         }
 
-        public void RemoveTorrent(string path)
+
+        /// <summary>
+        /// True if scrape requests should be handled
+        /// </summary>
+        public bool AllowScrape
         {
-            foreach (KeyValuePair<string, ITorrentManager> keypair in this.torrents)
+            get { return allowScrape; }
+            set { allowScrape = value; }
+        }
+
+
+        ///<summary>
+        /// Get and set the IntervalAlgorithm used by this Tracker
+        ///</summary>
+        private IIntervalAlgorithm IntervalAlgorithm
+        {
+            get { return intervalAlgorithm; }
+            set { intervalAlgorithm = value; }
+        }
+
+        #endregion Properties
+
+
+        #region Constructors
+
+        /// <summary>
+        /// Creates a new tracker
+        /// </summary>
+        public Tracker()
+        {
+            allowNonCompact = true;
+            allowScrape = true;
+            intervalAlgorithm = new StaticIntervalAlgorithm();
+            torrents = new Dictionary<byte[], SimpleTorrentManager>(new ByteComparer());
+        }
+
+        #endregion Constructors
+
+
+        #region Methods
+
+        /// <summary>
+        /// Adds the torrent to the tracker so that the tracker will monitor peers for that torrent
+        /// </summary>
+        /// <param name="torrent">The torrent to add to the tracker</param>
+        /// <returns>True if the torrent was added, false if it was already being tracked</returns>
+        public bool Add(Torrent torrent)
+        {
+            return Add(torrent, false);
+        }
+
+
+        /// <summary>
+        /// Adds the torrent to the tracker so that the tracker will monitor peers for that torrent
+        /// </summary>
+        /// <param name="torrent">The torrent to add to the tracker</param>
+        /// <param name="rewriteAnnounces">True if the tracker should ensure that the torrent contains
+        /// the correct announce url for this tracker</param>
+        /// <returns>True if the torrent was added, false if it was already being tracked</returns>
+        private bool Add(Torrent torrent, bool rewriteAnnounces)
+        {
+            if (torrent == null)
+                throw new ArgumentNullException("torrent");
+
+            if (torrents.ContainsKey(torrent.InfoHash))
+                return false;
+
+            Debug.WriteLine(string.Format("Tracking Torrent: {0}", torrent.Name));
+            torrents.Add(torrent.InfoHash, new SimpleTorrentManager(torrent));
+            return true;
+        }
+
+
+        /// <summary>
+        /// Gets an enumerator which iterates through all torrents which are being tracked
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerator<SimpleTorrentManager> GetEnumerator()
+        {
+            return this.torrents.Values.GetEnumerator();
+        }
+
+
+        /// <summary>
+        /// This method has been hooked up to the AnnounceReceived event on registered listeners
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnAnnounceReceived(object sender, AnnounceParameters e)
+        {
+            SimpleTorrentManager manager;
+
+            // Check to see if we're monitoring the requested torrent
+            if (!torrents.TryGetValue(e.InfoHash, out manager))
             {
-                if (keypair.Value.Torrent.TorrentPath != path)
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
+                return;
+            }
+
+            // If a non-compact response is expected and we do not allow non-compact responses
+            // bail out
+            if (!AllowNonCompact && !e.HasRequestedCompact)
+            {
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not support non-compact responses");
+                return;
+            }
+
+            // Update the tracker with the peers information. This adds the peer to the tracker,
+            // updates it's information or removes it depending on the context
+            manager.Update(e);
+
+            // Fulfill the announce request
+            manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
+            e.Response.Add("interval", new BEncodedNumber((int)IntervalAlgorithm.Interval));
+            e.Response.Add("min interval", new BEncodedNumber((int)IntervalAlgorithm.MinInterval));
+            e.Response.Add("tracker id", new BEncodedString("monotorrent-tracker")); // FIXME: Is this right?
+            e.Response.Add("complete", new BEncodedNumber(manager.Complete));
+            e.Response.Add("incomplete", new BEncodedNumber(manager.Count - manager.Complete));
+
+            //FIXME is this the right behaivour 
+            //if (par.TrackerId == null)
+            //    par.TrackerId = "monotorrent-tracker";
+        }
+
+
+        /// <summary>
+        /// This method has been hooked up to the ScrapeReceived event on registered listeners
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnScrapeReceived(object sender, ScrapeParameters e)
+        {
+            if (!AllowScrape)
+            {
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not allow scraping");
+                return;
+            }
+
+            if (e.InfoHashes.Count == 0)
+            {
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
+                return;
+            }
+            BEncodedDictionary files = new BEncodedDictionary();
+            for (int i = 0; i < e.InfoHashes.Count; i++)
+            {
+                // FIXME: Converting infohash
+                SimpleTorrentManager manager;
+                string key = Toolbox.ToHex(e.InfoHashes[i]);
+                if (!torrents.TryGetValue(e.InfoHashes[i], out manager))
                     continue;
 
-                RemoveTorrent(keypair.Value.Torrent);
-                return;
+                BEncodedDictionary dict = new BEncodedDictionary();
+                dict.Add("complete", new BEncodedNumber(manager.Complete));
+                dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
+                dict.Add("incomplete", new BEncodedNumber(manager.Count - manager.Complete));
+                dict.Add("name", new BEncodedString(manager.Torrent.Name));
+                files.Add(key, dict);
             }
+
+            e.Response.Add("files", files);
         }
 
-        ///<summary>This Method is called by the Frontend if a Peer called the announc URL
-        ///</summary>
-        public void Announce(AnnounceParameters par, Stream stream)
+
+        /// <summary>
+        /// Registers a listener with the tracker so any incoming connections can be processed
+        /// by the tracker. A listener can be registered with multiple trackers.
+        /// </summary>
+        /// <param name="listener">The listener to register with the tracker</param>
+        public void RegisterListener(ListenerBase listener)
         {
-            //some pre checks
-            if (!torrents.ContainsKey(Toolbox.ToHex(par.infoHash))) {
-                throw new TrackerException("Torrent not Registered at this Tracker");                
-            }
-            
-            if (!AllowNonCompact && par.compact) {
-                throw new TrackerException("Tracker does not allow Non Compact Format");
-            }        
-            
-            ITorrentManager torrent = torrents[Toolbox.ToHex(par.infoHash)];                      
-            
-            switch (par.@event)
-            {
-                case TorrentEvent.Completed:
-                    torrent.Update(par);                    
-                    break;
-                case TorrentEvent.Stopped:
-                    torrent.Remove(par);
-                    IntervalAlgorithm.PeerRemoved();
-                    //Alan said do nothing, me agrees
-                    //Debug.WriteLine("removed peer and do nothing");
-                    //return;
-                    break;
-                case TorrentEvent.Started:
-                    torrent.Add(par);
-                    IntervalAlgorithm.PeerAdded();
-                    break;
-                case TorrentEvent.None:
-                    torrent.Update(par);
-                    break;
-                default:
-                    throw new TorrentException("unknown announce event");                    
-            }
-            
-            //write response
-            byte[] encData = GetAnnounceResponse(par).Encode();           
-            stream.Write(encData, 0, encData.Length);
-            
-            WriteResult("announce", encData);
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+
+            listener.AnnounceReceived += new EventHandler<AnnounceParameters>(OnAnnounceReceived);
+            listener.ScrapeReceived += new EventHandler<ScrapeParameters>(OnScrapeReceived);
         }
-        
-        ///<summary>Handles Scrape requests</summary>
-        ///
-        public void Scrape(ScrapeParameters par, Stream stream)
-        {                        
-            byte[] encData = GetScrapeResponse(par).Encode();
-            stream.Write(encData, 0, encData.Length);
-            
-            WriteResult("scrape", encData);
-        }
-        
-        [Conditional("DEBUG")]
-        private void WriteResult(string prefix, byte[] encData) 
+
+
+        /// <summary>
+        /// Removes the specified torrent from the tracker and drops all peer information
+        /// related to that torrent
+        /// </summary>
+        /// <param name="torrent">The torrent to remove</param>
+        public void Remove(Torrent torrent)
         {
-            string tmpPath = Path.GetTempFileName();
-            using (FileStream tmpFile = new FileStream(tmpPath, FileMode.Open)) {
-                tmpFile.Write(encData, 0, encData.Length);
-                Debug.WriteLine(prefix +" return written to: " + tmpPath);
-            }
+            if (torrent == null)
+                throw new ArgumentNullException("torrent");
+
+            if (torrents.ContainsKey(torrent.InfoHash))
+                torrents.Remove(torrent.InfoHash);
         }
-        
-        ///<summary>writes the failure bencoded dict to the calling peer</summary>
-        ///
-        ///
-        public void Failure(string reason, Stream stream)
+
+
+        /// <summary>
+        /// Drops all peer information from memory and unloads all loaded torrents
+        /// </summary>
+        public void Reset()
         {
-            BEncodedDictionary bencErrorDict = new BEncodedDictionary();
-            bencErrorDict.Add("failure reason", new BEncodedString(reason));
-            
-            byte[] encData = bencErrorDict.Encode();  
-            stream.Write(encData, 0, encData.Length);           
-            //Console.WriteLine("failue contents: -->" + Encoding.ASCII.GetString(encData)+ "<--");              
-            //TODO check if we need to close the writer; does it close the stream?; http 1.1 needs an open stream?
-            WriteResult("error", encData);
-        }
-        
-        ///<summary>
-        ///This is called if we would like to Reset the Tracker and 
-        ///clear all Torrents from the internal List of Torrents. This Method should only be called from 
-        ///TrackeEngine see TrackerEngine.cs
-        ///</summary>       
-        internal void ClearTorrents()
-        {           
+            Debug.WriteLine("Resetting tracker... ");
+            Debug.WriteLine("Flushing data from memory... COMPLETE");
             torrents.Clear();
         }
-        
-        private BEncodedDictionary GetAnnounceResponse(AnnounceParameters par)  
-        {
-            ITorrentManager torrentManager = torrents[Toolbox.ToHex(par.infoHash)];
-            BEncodedDictionary dict = new BEncodedDictionary();
-            
-            Debug.WriteLine(torrentManager.Count);
-            
-            dict.Add("complete", new BEncodedNumber(torrentManager.CountComplete));
-            dict.Add("incomplete", new BEncodedNumber(torrentManager.Count - torrentManager.CountComplete));
-            dict.Add("interval", new BEncodedNumber((int)IntervalAlgorithm.Interval));
 
-            dict.Add("peers", torrentManager.GetPeersList(par));
-            
-            dict.Add("min interval", new BEncodedNumber((int)IntervalAlgorithm.MinInterval));
 
-            if (par.trackerId == null)//FIXME is this the right behaivour 
-                par.trackerId = "monotorrent-tracker";
-            dict.Add("tracker id", new BEncodedString(par.trackerId));            
+        /// <summary>
+        /// Unregisters a listener with the tracker so the tracker does not try to process incoming
+        /// requests from that listener
+        /// </summary>
+        /// <param name="listener">The listener to unregister</param>
+        public void UnregisterListener(ListenerBase listener)
+        {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
 
-            return dict;
+            listener.AnnounceReceived -= new EventHandler<AnnounceParameters>(OnAnnounceReceived);
+            listener.ScrapeReceived -= new EventHandler<ScrapeParameters>(OnScrapeReceived);
         }
-        
-        private BEncodedDictionary GetScrapeResponse(ScrapeParameters par)
-        {
-            Console.WriteLine("GetScrapeResponse number of infohashes " + par.Count);
-            BEncodedDictionary dict = new BEncodedDictionary();
-            BEncodedDictionary filesDict = new BEncodedDictionary();
-            
-            if (par.Count == 1) {                
-                //uniscrape
-                ITorrentManager torrent = torrents[Toolbox.ToHex(par.InfoHash)];
-                //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
-                filesDict.Add(torrent.Torrent.InfoHash, torrent.GetScrapeEntry());
-            } 
-            if (par.Count == 0) {
-                //fullscrape
-                foreach (ITorrentManager torrent in torrents.Values) {
-                    //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
-                    filesDict.Add(torrent.Torrent.InfoHash, torrent.GetScrapeEntry());
-                }
-                
-            }
-            
-            if (par.Count > 1) {
-                //multiscrape
-                foreach (byte[] infoHash in par) {
-                    ITorrentManager torrent = torrents[Toolbox.ToHex(infoHash)];
-                    //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
-                    filesDict.Add(new BEncodedString(torrent.Torrent.InfoHash), torrent.GetScrapeEntry());
-                }
-            }
-            dict.Add("files", filesDict);
-            return dict;
-        }
-    }
-    
-    public class TrackerException : Exception
-    {
-        internal TrackerException(string message) : base(message)
-        {
-        }
+
+        #endregion Methods
     }
 }
