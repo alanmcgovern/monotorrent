@@ -39,12 +39,60 @@ using MonoTorrent.Common;
 
 namespace SampleTracker
 {
+    /// <summary>
+    /// This is a sample implementation of how you could create a custom ITrackable
+    /// </summary>
+    public class CustomITrackable : ITrackable
+    {
+        // I just want to keep the TorrentFiles in memory when i'm tracking the torrent, so i store
+        // a reference to them in the ITrackable. This allows me to display information about the
+        // files in a GUI without having to keep the entire (really really large) Torrent instance in memory.
+        private TorrentFile[] files;
+
+        // We require the infohash and the name of the torrent so the tracker can work correctly
+        private byte[] infoHash;
+        private string name;
+
+        public CustomITrackable(Torrent t)
+        {
+            // Note: I'm just storing the files, infohash and name. A typical Torrent instance
+            // is ~100kB in memory. A typical CustomITrackable will be ~100 bytes.
+            files = t.Files;
+            infoHash = t.InfoHash;
+            name = t.Name;
+        }
+
+        /// <summary>
+        /// The files in the torrent
+        /// </summary>
+        public TorrentFile[] Files
+        {
+            get { return files; }
+        }
+
+        /// <summary>
+        /// The infohash of the torrent
+        /// </summary>
+        public byte[] InfoHash
+        {
+            get { return infoHash; }
+        }
+
+        /// <summary>
+        /// The name of the torrent
+        /// </summary>
+        public string Name
+        {
+            get { return name; }
+        }
+    }
+
     class MySimpleTracker
     {
         Tracker tracker;
         TorrentFolderWatcher watcher;
         const string TORRENT_DIR = "Torrents";
-        
+
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
@@ -58,26 +106,31 @@ namespace SampleTracker
 
             while (true)
             {
-                lock(tracker)
-                foreach (SimpleTorrentManager m in tracker)
-                {
-                    Console.WriteLine("Name: {0}", m.Trackable.Name);
-                    Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
-                    Console.WriteLine();
-                    System.Threading.Thread.Sleep(10000);
-                }
+                lock (tracker)
+                    foreach (SimpleTorrentManager m in tracker)
+                    {
+                        Console.WriteLine("Name: {0}", m.Trackable.Name);
+                        Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
+                        Console.WriteLine();
+                        System.Threading.Thread.Sleep(10000);
+                    }
             }
         }
 
         private void SetupTorrentWatcher()
         {
             watcher = new TorrentFolderWatcher(Path.GetFullPath(TORRENT_DIR), "*.torrent");
-            watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
+            watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e)
+            {
                 try
                 {
                     Torrent t = Torrent.Load(e.TorrentPath);
-                    lock(tracker)
-                    tracker.Add(new InfoHashTrackable(t));
+                    // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
+                    // just stores the infohash and name of the torrent. This is all that the tracker
+                    // needs to run. So if you want an ITrackable that "just works", then use InfoHashTrackable.
+                    ITrackable trackable = new CustomITrackable(t);
+                    lock (tracker)
+                        tracker.Add(trackable);
                 }
                 catch (Exception ex)
                 {
@@ -116,14 +169,14 @@ namespace SampleTracker
             //    Console.WriteLine("Reason: {0}", ex.Message);
             //}
         }
-        
+
         public void OnProcessExit(object sender, EventArgs e)
         {
             //Console.Write("shutting down the Tracker...");
             //TrackerEngine.Instance.Stop();
             //Console.WriteLine("done");
         }
-        
+
         public static void Main(string[] args)
         {
             Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
