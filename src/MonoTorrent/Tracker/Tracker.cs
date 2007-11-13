@@ -41,7 +41,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {
-    public class Tracker //: IEnumerable<SimpleTorrentManager>
+    public class Tracker : IEnumerable<SimpleTorrentManager>
     {
         #region Fields
 
@@ -110,29 +110,16 @@ namespace MonoTorrent.Tracker
         /// </summary>
         /// <param name="torrent">The torrent to add to the tracker</param>
         /// <returns>True if the torrent was added, false if it was already being tracked</returns>
-        public bool Add(Torrent torrent)
+        public bool Add(ITrackable trackable)
         {
-            return Add(torrent, false);
-        }
-
-
-        /// <summary>
-        /// Adds the torrent to the tracker so that the tracker will monitor peers for that torrent
-        /// </summary>
-        /// <param name="torrent">The torrent to add to the tracker</param>
-        /// <param name="rewriteAnnounces">True if the tracker should ensure that the torrent contains
-        /// the correct announce url for this tracker</param>
-        /// <returns>True if the torrent was added, false if it was already being tracked</returns>
-        private bool Add(Torrent torrent, bool rewriteAnnounces)
-        {
-            if (torrent == null)
+            if (trackable == null)
                 throw new ArgumentNullException("torrent");
 
-            if (torrents.ContainsKey(torrent.InfoHash))
+            if (torrents.ContainsKey(trackable.InfoHash))
                 return false;
 
-            Debug.WriteLine(string.Format("Tracking Torrent: {0}", torrent.Name));
-            torrents.Add(torrent.InfoHash, new SimpleTorrentManager(torrent));
+            Debug.WriteLine(string.Format("Tracking Torrent: {0}", trackable.Name));
+            torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable));
             return true;
         }
 
@@ -220,7 +207,7 @@ namespace MonoTorrent.Tracker
                 dict.Add("complete", new BEncodedNumber(manager.Complete));
                 dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
                 dict.Add("incomplete", new BEncodedNumber(manager.Count - manager.Complete));
-                dict.Add("name", new BEncodedString(manager.Torrent.Name));
+                dict.Add("name", new BEncodedString(manager.Trackable.Name));
                 files.Add(key, dict);
             }
 
@@ -284,5 +271,14 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Methods
+
+        #region IEnumerable Members
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        #endregion
     }
 }

@@ -51,7 +51,7 @@ namespace MonoTorrent.Tracker
         private int downloaded;
         private Dictionary<IPEndPoint, Peer> peers;
         private Random random;
-        private Torrent torrent;
+        private ITrackable trackable;
 
         #endregion Member Variables
 
@@ -97,9 +97,9 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The torrent being tracked
         /// </summary>
-        public Torrent Torrent
+        public ITrackable Trackable
         {
-            get { return torrent; }
+            get { return trackable; }
         }
 
         #endregion Properties
@@ -107,9 +107,9 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        public SimpleTorrentManager(Torrent torrent)
+        public SimpleTorrentManager(ITrackable trackable)
         {
-            this.torrent = torrent;
+            this.trackable = trackable;
             peers = new Dictionary<IPEndPoint, Peer>();
             random = new Random();
         }
