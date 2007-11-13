@@ -41,28 +41,65 @@ namespace SampleTracker
 {
     class MySimpleTracker
     {
+        Tracker tracker;
+        TorrentFolderWatcher watcher;
         const string TORRENT_DIR = "Torrents";
         
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
             ListenerBase listener = new HttpListener(System.Net.IPAddress.Loopback, 10000);
-            Tracker tracker = new Tracker();
-
+            tracker = new Tracker();
             tracker.RegisterListener(listener);
-            tracker.Add(Torrent.Load(@"c:\test.torrent"));
             listener.Start();
+
+            SetupTorrentWatcher();
+
 
             while (true)
             {
                 foreach (SimpleTorrentManager m in tracker)
                 {
-                    Console.WriteLine("Name: {0}", m.Torrent.Name);
+                    Console.WriteLine("Name: {0}", m.Trackable.Name);
                     Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
                     Console.WriteLine();
                     System.Threading.Thread.Sleep(10000);
                 }
             }
+        }
+
+        private void SetupTorrentWatcher()
+        {
+            watcher = new TorrentFolderWatcher(TORRENT_DIR, "*.torrent");
+            watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
+                try
+                {
+                    Torrent t = Torrent.Load(e.TorrentPath);
+                    tracker.Add(new InfoHashTrackable(t));
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
+                    Debug.WriteLine("Stacktrace: {0}", ex.ToString());
+                }
+            };
+
+            watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
+                try
+                {
+                    Torrent t = Torrent.Load(e.TorrentPath);
+                    tracker.Remove(new InfoHashTrackable(t));
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
+                    Debug.WriteLine("Stacktrace: {0}", ex.ToString());
+                }
+            };
+
+
+            watcher.StartWatching();
+            watcher.ForceScan();
         }
 
         void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e)
