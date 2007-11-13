@@ -86,7 +86,7 @@ namespace MonoTorrent.Common
             {
                 this.watcher = new FileSystemWatcher(torrentDirectory);
                 this.watcher.Filter = this.watchFilter;
-                this.watcher.NotifyFilter = NotifyFilters.LastWrite;
+                //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
                 this.watcher.Created += new FileSystemEventHandler(OnCreated);
                 this.watcher.Deleted += new FileSystemEventHandler(OnDeleted);
             }
@@ -103,7 +103,6 @@ namespace MonoTorrent.Common
         ///<summary>Start the FileSystemWatcher on torrentDirectory</summary>
         public void ForceScan()
         {
-            Console.WriteLine("loading torrents from " + torrentDirectory);
             foreach (string path in Directory.GetFiles(torrentDirectory, this.watchFilter))
                 RaiseTorrentFound(path);
         }
