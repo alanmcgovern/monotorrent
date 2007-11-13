@@ -106,14 +106,14 @@ namespace MonoTorrent.Tracker
         #region Methods
 
         /// <summary>
-        /// Adds the torrent to the tracker so that the tracker will monitor peers for that torrent
+        /// Adds the trackable to the tracker so that the tracker will monitor peers for that torrent
         /// </summary>
-        /// <param name="torrent">The torrent to add to the tracker</param>
-        /// <returns>True if the torrent was added, false if it was already being tracked</returns>
+        /// <param name="torrent">The trackable to add to the tracker</param>
+        /// <returns>True if the trackable was added, false if it was already being tracked</returns>
         public bool Add(ITrackable trackable)
         {
             if (trackable == null)
-                throw new ArgumentNullException("torrent");
+                throw new ArgumentNullException("trackable");
 
             if (torrents.ContainsKey(trackable.InfoHash))
                 return false;
@@ -235,13 +235,12 @@ namespace MonoTorrent.Tracker
         /// related to that torrent
         /// </summary>
         /// <param name="torrent">The torrent to remove</param>
-        public void Remove(Torrent torrent)
+        public void Remove(ITrackable trackable)
         {
-            if (torrent == null)
-                throw new ArgumentNullException("torrent");
+            if (trackable == null)
+                throw new ArgumentNullException("trackable");
 
-            if (torrents.ContainsKey(torrent.InfoHash))
-                torrents.Remove(torrent.InfoHash);
+            torrents.Remove(trackable.InfoHash);
         }
 
 
