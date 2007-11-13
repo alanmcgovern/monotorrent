@@ -58,6 +58,7 @@ namespace SampleTracker
 
             while (true)
             {
+                lock(tracker)
                 foreach (SimpleTorrentManager m in tracker)
                 {
                     Console.WriteLine("Name: {0}", m.Trackable.Name);
@@ -70,11 +71,12 @@ namespace SampleTracker
 
         private void SetupTorrentWatcher()
         {
-            watcher = new TorrentFolderWatcher(TORRENT_DIR, "*.torrent");
+            watcher = new TorrentFolderWatcher(Path.GetFullPath(TORRENT_DIR), "*.torrent");
             watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
                 try
                 {
                     Torrent t = Torrent.Load(e.TorrentPath);
+                    lock(tracker)
                     tracker.Add(new InfoHashTrackable(t));
                 }
                 catch (Exception ex)
@@ -83,20 +85,6 @@ namespace SampleTracker
                     Debug.WriteLine("Stacktrace: {0}", ex.ToString());
                 }
             };
-
-            watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
-                try
-                {
-                    Torrent t = Torrent.Load(e.TorrentPath);
-                    tracker.Remove(new InfoHashTrackable(t));
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
-                    Debug.WriteLine("Stacktrace: {0}", ex.ToString());
-                }
-            };
-
 
             watcher.StartWatching();
             watcher.ForceScan();
