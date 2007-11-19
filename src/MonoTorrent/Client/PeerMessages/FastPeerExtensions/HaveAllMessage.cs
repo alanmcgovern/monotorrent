@@ -73,6 +73,7 @@ namespace MonoTorrent.Client.PeerMessages
 
             id.Peer.Connection.BitField.SetAll(true);
             id.Peer.IsSeeder = true;
+            id.TorrentManager.SetAmInterestedStatus(id, !id.TorrentManager.Complete);
         }
 
 

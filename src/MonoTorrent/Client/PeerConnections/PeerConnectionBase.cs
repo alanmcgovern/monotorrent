@@ -60,7 +60,6 @@ namespace MonoTorrent.Client
         private MonoTorrentCollection<int> isAllowedFastPieces;
         private bool isChoking;
         private bool isInterested;
-        private bool isinterestingtoMe;
         private int isRequestingPiecesCount;
         private DateTime lastMessageReceived;
         private DateTime lastMessageSent;
