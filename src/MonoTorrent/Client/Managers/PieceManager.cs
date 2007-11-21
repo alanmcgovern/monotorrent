@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         internal bool IsInteresting(PeerIdInternal id)
         {
             // If i have completed the torrent, then no-one is interesting
-            if (id.TorrentManager.Bitfield.AllTrue)
+            if (id.TorrentManager.Complete)
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
