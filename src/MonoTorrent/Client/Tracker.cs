@@ -42,9 +42,12 @@ namespace MonoTorrent.Client
     /// </summary>
     public class Tracker
     {
+        private static Random random = new Random();
+
         #region Member Variables
         private AsyncCallback announceCallback;
         private AsyncCallback scrapeCallback;
+        private readonly string key;
 
 
         /// <summary>
@@ -208,6 +211,10 @@ namespace MonoTorrent.Client
             int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
             this.warningMessage = string.Empty;
             this.failureMessage = string.Empty;
+            byte[] passwordKey = new byte[8];
+            lock (random)
+                random.NextBytes(passwordKey);
+            this.key = HttpUtility.UrlEncode(passwordKey);
 
             if ((indexOfAnnounce + 8) <= announceUrl.Length && announceUrl.Substring(indexOfAnnounce, 8) == "announce")
             {
@@ -273,6 +280,8 @@ namespace MonoTorrent.Client
             sb.Append("&compact=1");    // Always use compact response
             sb.Append("&numwant=");
             sb.Append(100);
+            sb.Append("&key=");  // The 'key' protocol, used as a kind of 'password'. Must be the same between announces
+            sb.Append(key);
             if (ipaddress != null)
             {
                 sb.Append("&ip=");
