@@ -71,6 +71,8 @@ namespace MonoTorrent.Client.PeerMessages
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
             id.Peer.Connection.BitField.SetAll(false);
+            id.Peer.IsSeeder = false;
+            id.TorrentManager.SetAmInterestedStatus(id, false);
         }
 
 
