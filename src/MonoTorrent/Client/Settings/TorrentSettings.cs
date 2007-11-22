@@ -85,14 +85,49 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The number of upload slots for the torrent
+        /// The number of upload slots for the torrent - must be at least 2
         /// </summary>
         public int UploadSlots
         {
             get { return this.uploadSlots; }
-            set { this.uploadSlots = value; }
+            set
+            {
+                if (value < 2)
+                    throw new ArgumentNullException("You must use at least 2 upload slots");
+                this.uploadSlots = value;
+            }
         }
         private int uploadSlots;
+
+
+		/// <summary>
+		/// Minimum time in seconds that needs to pass before we execute a review of peer performance; 0 to disable 'tit-for-tat' code (default 30)
+		/// </summary>
+		public int MinimumTimeBetweenReviews
+		{
+			get { return this.minimumTimeBetweenReviews; }
+			set
+			{
+				this.minimumTimeBetweenReviews = value;
+			}
+		}
+		private int minimumTimeBetweenReviews = 30;
+
+
+		/// <summary>
+		/// If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the peer performance review (default 90)
+		/// </summary>
+		public int PercentOfMaxRateToSkipReview
+		{
+			get { return this.percentOfMaxRateToSkipReview; }
+			set
+			{
+                if(value < 0 || value > 100)
+                    throw new ArgumentOutOfRangeException();
+				this.percentOfMaxRateToSkipReview = value;
+			}
+		}
+		private int percentOfMaxRateToSkipReview = 90;
 
         #endregion
 

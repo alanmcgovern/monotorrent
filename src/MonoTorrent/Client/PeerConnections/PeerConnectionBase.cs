@@ -75,6 +75,14 @@ namespace MonoTorrent.Client
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
 
+
+        private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
+        private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
+        //downloaded during a review period
+        private long bytesUploadedAtLastReview = 0;   //Ditto for uploaded bytes
+        private double lastReviewDownloadRate = 0;    //Download rate determined at the end of the last full review period when this peer was unchoked
+        private double lastReviewUploadRate = 0;      //Ditto for upload rate
+        private bool firstReviewPeriod;               //Set true if this is the first review period since this peer was last unchoked
         #endregion Member Variables
 
 
@@ -336,6 +344,67 @@ namespace MonoTorrent.Client
             get { return this.suggestedPieces; }
         }
 
+
+
+
+        /// <summary>
+        /// When this peer was last unchoked, or null if we haven't unchoked it yet
+        /// </summary>
+        public DateTime? LastUnchoked
+        {
+            get { return this.lastUnchoked; }
+            set { this.lastUnchoked = value; }
+        }
+
+
+        /// <summary>
+        /// Number of bytes downloaded when this peer was last reviewed
+        /// </summary>
+        public long BytesDownloadedAtLastReview
+        {
+            get { return this.bytesDownloadedAtLastReview; }
+            set { this.bytesDownloadedAtLastReview = value; }
+        }
+
+
+        /// <summary>
+        /// Number of bytes uploaded when this peer was last reviewed
+        /// </summary>
+        public long BytesUploadedAtLastReview
+        {
+            get { return this.bytesUploadedAtLastReview; }
+            set { this.bytesUploadedAtLastReview = value; }
+        }
+
+
+        /// <summary>
+        /// Download rate determined at the end of the last full review period when this peer was unchoked
+        /// </summary>
+        public double LastReviewDownloadRate
+        {
+            get { return this.lastReviewDownloadRate; }
+            set { this.lastReviewDownloadRate = value; }
+        }
+
+
+        /// <summary>
+        /// Upload rate determined at the end of the last full review period when this peer was unchoked
+        /// </summary>
+        public double LastReviewUploadRate
+        {
+            get { return this.lastReviewUploadRate; }
+            set { this.lastReviewUploadRate = value; }
+        }
+
+
+        /// <summary>
+        /// True if this is the first review period since this peer was last unchoked
+        /// </summary>
+        public bool FirstReviewPeriod
+        {
+            get { return this.firstReviewPeriod; }
+            internal set { this.firstReviewPeriod = value; }
+        }
         #endregion Properties
 
 

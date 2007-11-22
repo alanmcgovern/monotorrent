@@ -87,6 +87,7 @@ namespace MonoTorrent.Client
         private Torrent torrent;                // All the information from the physical torrent that was loaded
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
+        private ChokeUnchokeManager chokeUnchoker; //???AGH Used to choke and unchoke peers
 
         #endregion Member Variables
 
@@ -139,7 +140,7 @@ namespace MonoTorrent.Client
             get { return this.hashFails; }
         }
 
-        
+
         /// <summary>
         /// Records statistics such as Download speed, Upload speed and amount of data uploaded/downloaded
         /// </summary>
@@ -247,12 +248,12 @@ namespace MonoTorrent.Client
             get { return this.uploadingTo; }
             internal set { this.uploadingTo = value; }
         }
-        
+
         #endregion
 
 
         #region Constructors
-        
+
         /// <summary>
         /// Creates a new TorrentManager instance.
         /// </summary>
@@ -271,7 +272,7 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
-            this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength,  savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
+            this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.listLock = new object();
             this.monitor = new ConnectionMonitor();
@@ -349,7 +350,7 @@ namespace MonoTorrent.Client
             if (this.state != TorrentState.Stopped)
                 throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
 
-			this.startTime = DateTime.Now;
+            this.startTime = DateTime.Now;
             UpdateState(TorrentState.Hashing);
             ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), new bool[] { forceFullScan, autoStart });
         }
@@ -361,13 +362,13 @@ namespace MonoTorrent.Client
         public void Pause()
         {
             lock (this.engine.asyncCompletionLock)
-            lock (this.listLock)
-            {
-                // By setting the state to "paused", peers will not be dequeued from the either the
-                // sending or receiving queues, so no traffic will be allowed.
-                UpdateState(TorrentState.Paused);
-                this.SaveFastResume();
-            }
+                lock (this.listLock)
+                {
+                    // By setting the state to "paused", peers will not be dequeued from the either the
+                    // sending or receiving queues, so no traffic will be allowed.
+                    UpdateState(TorrentState.Paused);
+                    this.SaveFastResume();
+                }
         }
 
 
@@ -421,7 +422,7 @@ namespace MonoTorrent.Client
                     this.loadedFastResume = false;
                 }
 
-                if(TrackerManager.CurrentTracker.CanScrape)
+                if (TrackerManager.CurrentTracker.CanScrape)
                     this.TrackerManager.Scrape();
 
                 this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
@@ -468,12 +469,12 @@ namespace MonoTorrent.Client
                 if (this.fileManager.StreamsOpen)
                     this.FileManager.CloseFileStreams();
 
-                if(this.hashChecked)
+                if (this.hashChecked)
                     this.SaveFastResume();
                 this.peers.ClearAll();
                 this.monitor.Reset();
                 this.pieceManager.Reset();
-                if(this.engine.ConnectionManager.IsRegistered(this))
+                if (this.engine.ConnectionManager.IsRegistered(this))
                     this.engine.ConnectionManager.UnregisterManager(this);
                 this.engine.Stop();
 
@@ -592,11 +593,7 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="counter"></param>
-        internal void DownloadLogic(int counter)
+        internal void PreLogicTick(int counter)
         {
             PeerIdInternal id;
 
@@ -605,13 +602,9 @@ namespace MonoTorrent.Client
                 if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
                     this.ResumePeers();
 
-            DateTime nowTime = DateTime.Now;
-            DateTime thirtySecondsAgo = nowTime.AddSeconds(-50);
-            DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
-            DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
-
             engine.ConnectionManager.TryConnect();
 
+            //Execute iniitial logic for individual peers
             lock (this.listLock)
             {
                 if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
@@ -636,21 +629,31 @@ namespace MonoTorrent.Client
                         if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                             id.Peer.Connection.Monitor.TimePeriodPassed();
 
-                        // If he is not interested and i am not choking him
-                        if (!id.Peer.Connection.IsInterested && !id.Peer.Connection.AmChoking)
-                            SetChokeStatus(id, true);
+                    }
+                }
+            }
+        }
 
-                        // If i am choking the peer, and he is interested in downloading from us, and i haven't reached my maximum upload slots
-                        if (id.Peer.Connection.AmChoking && id.Peer.Connection.IsInterested && this.uploadingTo < this.settings.UploadSlots)
-                            SetChokeStatus(id, false);
 
-                        // If i have sent 50 pieces to the peer, choke him to let someone else download
-                        if (id.Peer.Connection.PiecesSent > 50)
-                            SetChokeStatus(id, true);
 
-                        // If the peer is interesting, try to queue up some piece requests off him
-                        if(id.Peer.Connection.AmInterested)
-                            while (this.pieceManager.AddPieceRequest(id)) { }
+        internal void PostLogicTick(int counter)
+        {
+
+            PeerIdInternal id;
+            DateTime nowTime = DateTime.Now;
+            DateTime thirtySecondsAgo = nowTime.AddSeconds(-50);
+            DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
+            DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
+
+            lock (this.listLock)
+            {
+                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                {
+                    id = this.peers.ConnectedPeers[i];
+                    lock (id)
+                    {
+                        if (id.Peer.Connection == null)
+                            continue;
 
                         if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
                         {
@@ -677,39 +680,48 @@ namespace MonoTorrent.Client
                         }
                     }
                 }
+            }
 
-                if (counter % 100 == 0)
+            if (counter % 100 == 0)
+            {
+                // If the last connection succeeded, then update at the regular interval
+                if (this.trackerManager.UpdateSucceeded)
                 {
-                    if (this.Progress == 100.0 && this.state != TorrentState.Seeding)
-                    {
-                        //this.Stop();
-                        //this.Start();
-                        //this.hashChecked = false;
-                        //this.fileManager.InitialHashRequired = true;
-                        UpdateState(TorrentState.Seeding);
-                    }
-                    // If the last connection succeeded, then update at the regular interval
-                    if (this.trackerManager.UpdateSucceeded)
-                    {
-                        if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].UpdateInterval)))
-                        {
-                            this.trackerManager.Announce(TorrentEvent.None);
-                        }
-                    }
-                    // Otherwise update at the min interval
-                    else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].MinUpdateInterval)))
+                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].UpdateInterval)))
                     {
                         this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
-
-
-                if (counter % (1000 / ClientEngine.TickLength) == 0)
-                    this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
-                                                          (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
-                                                          (int)(this.monitor.DownloadSpeed * 1024),
-                                                          (int)(this.monitor.UploadSpeed * 1024));
+                // Otherwise update at the min interval
+                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].MinUpdateInterval)))
+                {
+                    this.trackerManager.Announce(TorrentEvent.None);
+                }
             }
+
+            if (counter % (1000 / ClientEngine.TickLength) == 0)
+                this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
+                                                      (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
+                                                      (int)(this.monitor.DownloadSpeed * 1024),
+                                                      (int)(this.monitor.UploadSpeed * 1024));
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="counter"></param>
+        internal void DownloadLogic(int counter)
+        {
+            //???AGH if download is complete, set state to 'Seeding'
+            if (this.Progress == 100.0 && this.State != TorrentState.Seeding)
+                UpdateState(TorrentState.Seeding);
+
+            //Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
+            if (chokeUnchoker == null)
+                chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
+
+            chokeUnchoker.TimePassed();
         }
 
 
@@ -774,14 +786,17 @@ namespace MonoTorrent.Client
 
         }
 
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="counter"></param>
         internal void SeedingLogic(int counter)
         {
-            DownloadLogic(counter);
+            //Choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
+            if (chokeUnchoker == null)
+                chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
+
+            chokeUnchoker.TimePassed();
         }
 
         /// <summary>
@@ -822,11 +837,11 @@ namespace MonoTorrent.Client
         /// <param name="state">The TorrentManager to hashcheck</param>
         private void PerformHashCheck(object state)
         {
-            int enterCount =0;
+            int enterCount = 0;
             try
             {
                 System.Threading.Monitor.Enter(this.engine.asyncCompletionLock);
-                enterCount ++;
+                enterCount++;
                 // Store the value for whether the streams are open or not
                 // If they are initially closed, we need to close them again after we hashcheck
                 bool streamsOpen = this.fileManager.StreamsOpen;
@@ -879,46 +894,46 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// Checks the send queue of the peer to see if there are any outstanding pieces which they requested
-        /// and rejects them as necessary
-        /// </summary>
-        /// <param name="id"></param>
-        private void RejectPendingRequests(PeerIdInternal id)
-        {
-            IPeerMessageInternal message;
-            PieceMessage pieceMessage;
-            int length = id.Peer.Connection.QueueLength;
+        ///// <summary>
+        ///// Checks the send queue of the peer to see if there are any outstanding pieces which they requested
+        ///// and rejects them as necessary
+        ///// </summary>
+        ///// <param name="id"></param>
+        //private void RejectPendingRequests(PeerIdInternal id)
+        //{
+        //    IPeerMessageInternal message;
+        //    PieceMessage pieceMessage;
+        //    int length = id.Peer.Connection.QueueLength;
 
-            for (int i = 0; i < length; i++)
-            {
-                message = id.Peer.Connection.Dequeue();
-                if (!(message is PieceMessage))
-                {
-                    id.Peer.Connection.Enqueue(message);
-                    continue;
-                }
+        //    for (int i = 0; i < length; i++)
+        //    {
+        //        message = id.Peer.Connection.Dequeue();
+        //        if (!(message is PieceMessage))
+        //        {
+        //            id.Peer.Connection.Enqueue(message);
+        //            continue;
+        //        }
 
-                pieceMessage = (PieceMessage)message;
+        //        pieceMessage = (PieceMessage)message;
 
-                // If the peer doesn't support fast peer, then we will never requeue the message
-                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
-                {
-                    id.Peer.Connection.IsRequestingPiecesCount--;
-                    continue;
-                }
+        //        // If the peer doesn't support fast peer, then we will never requeue the message
+        //        if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+        //        {
+        //            id.Peer.Connection.IsRequestingPiecesCount--;
+        //            continue;
+        //        }
 
-                // If the peer supports fast peer, queue the message if it is an AllowedFast piece
-                // Otherwise send a reject message for the piece
-                if (id.Peer.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
-                    id.Peer.Connection.Enqueue(pieceMessage);
-                else
-                {
-                    id.Peer.Connection.IsRequestingPiecesCount--;
-                    id.Peer.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
-                }
-            }
-        }
+        //        // If the peer supports fast peer, queue the message if it is an AllowedFast piece
+        //        // Otherwise send a reject message for the piece
+        //        if (id.Peer.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
+        //            id.Peer.Connection.Enqueue(pieceMessage);
+        //        else
+        //        {
+        //            id.Peer.Connection.IsRequestingPiecesCount--;
+        //            id.Peer.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
+        //        }
+        //    }
+        //}
 
 
         /// <summary>
@@ -965,32 +980,32 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// Sets the "AmChoking" status of the peer to the new value and enqueues the relevant peer message
-        /// </summary>
-        /// <param name="id">The peer to update the choke status for</param>
-        /// <param name="amChoking">The new status for "AmChoking"</param>
-        private void SetChokeStatus(PeerIdInternal id, bool amChoking)
-        {
-            if (id.Peer.Connection.AmChoking == amChoking)
-                return;
+        ///// <summary>
+        ///// Sets the "AmChoking" status of the peer to the new value and enqueues the relevant peer message
+        ///// </summary>
+        ///// <param name="id">The peer to update the choke status for</param>
+        ///// <param name="amChoking">The new status for "AmChoking"</param>
+        //private void SetChokeStatus(PeerIdInternal id, bool amChoking)
+        //{
+        //    if (id.Peer.Connection.AmChoking == amChoking)
+        //        return;
 
-            id.Peer.Connection.PiecesSent = 0;
-            id.Peer.Connection.AmChoking = amChoking;
-            if (amChoking)
-            {
-                Interlocked.Decrement(ref this.uploadingTo);
-                RejectPendingRequests(id);
-                id.Peer.Connection.EnqueueAt(new ChokeMessage(), 0);
-                Logger.Log("Choking: " + this.uploadingTo);
-            }
-            else
-            {
-                Interlocked.Increment(ref this.uploadingTo);
-                id.Peer.Connection.Enqueue(new UnchokeMessage());
-                Logger.Log("UnChoking: " + this.uploadingTo);
-            }
-        }
+        //    id.Peer.Connection.PiecesSent = 0;
+        //    id.Peer.Connection.AmChoking = amChoking;
+        //    if (amChoking)
+        //    {
+        //        Interlocked.Decrement(ref this.uploadingTo);
+        //        RejectPendingRequests(id);
+        //        id.Peer.Connection.EnqueueAt(new ChokeMessage(), 0);
+        //        Logger.Log("Choking: " + this.uploadingTo);
+        //    }
+        //    else
+        //    {
+        //        Interlocked.Increment(ref this.uploadingTo);
+        //        id.Peer.Connection.Enqueue(new UnchokeMessage());
+        //        Logger.Log("UnChoking: " + this.uploadingTo);
+        //    }
+        //}
 
 
         /// <summary>

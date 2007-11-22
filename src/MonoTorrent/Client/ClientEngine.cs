@@ -396,6 +396,7 @@ namespace MonoTorrent.Client
             using(new ReaderLock(this.torrentsLock))
             for (int i = 0; i < this.torrents.Count; i++)
             {
+				this.torrents[i].PreLogicTick(tickCount);
                 switch (this.torrents[i].State)
                 {
                     case (TorrentState.Downloading):
@@ -413,6 +414,7 @@ namespace MonoTorrent.Client
                     default:
                         break;  // Do nothing.
                 }
+				this.torrents[i].PostLogicTick(tickCount);
             }
 
             RaiseStatsUpdate(new StatsUpdateEventArgs());

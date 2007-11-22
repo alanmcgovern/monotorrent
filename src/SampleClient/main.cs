@@ -73,7 +73,7 @@ namespace MonoTorrent
             // 50 open connections - should never really need to be changed
             // Unlimited download speed - valid range from 0 -> int.Max
             // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 100, 25);
+            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 25);
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
@@ -165,16 +165,16 @@ namespace MonoTorrent
                         if (manager.State != TorrentState.Stopped)
                             running = true;
                         sb.Remove(0, sb.Length);
-                        sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
-                        sb.Append(Environment.NewLine);
+                        //sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
+                        //sb.Append(Environment.NewLine);
                         sb.Append("Progress:         "); sb.AppendFormat("{0:0.00}", manager.Progress);
                         sb.Append(Environment.NewLine);
                         sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00}", manager.Monitor.DownloadSpeed);
                         sb.Append(" kB/s");
                         sb.Append(Environment.NewLine);
-                        sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed);
-                        sb.Append(" kB/s");
-                        sb.Append(Environment.NewLine);
+                        //sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed);
+                        //sb.Append(" kB/s");
+                        //sb.Append(Environment.NewLine);
                         //sb.Append(Environment.NewLine);
                         //sb.Append("Torrent State:    "); sb.Append(manager.State);
                         //sb.Append(Environment.NewLine);
@@ -192,63 +192,63 @@ namespace MonoTorrent
                         //sb.Append(Environment.NewLine);
                         //sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
                         //sb.Append(Environment.NewLine);
-                        //sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
-                        //sb.Append(Environment.NewLine);
-                        //sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
-                        //sb.Append(Environment.NewLine);
+                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
+                        sb.Append(Environment.NewLine);
 
 
-                        int areSeeders=0;
-                        int amInterested = 0;
-                        int amRequestingPieces = 0;
-                        int areChokingAndInteresting = 0;
-                        int count = 0;
-                        int isntChoking = 0;
-                        double averagePercent = 0;
-                        double maxPercent = 0;
-                        double seedernotchoking = 0;
-                        int areInterested = 0;
-                        int amUnchoking = 0;
-                        int areRequestingCount = 0;
-                        int sendQueueLength = 0;
-                        lock (peers)
-                        {
-                            foreach (PeerId p in peers)
-                            {
-                                if (!p.IsValid) // If it's not valid, it means the peer has been disconnected. This reference should be dropped
-                                    continue;
+                        //int areSeeders=0;
+                        //int amInterested = 0;
+                        //int amRequestingPieces = 0;
+                        //int areChokingAndInteresting = 0;
+                        //int count = 0;
+                        //int isntChoking = 0;
+                        //double averagePercent = 0;
+                        //double maxPercent = 0;
+                        //double seedernotchoking = 0;
+                        //int areInterested = 0;
+                        //int amUnchoking = 0;
+                        //int areRequestingCount = 0;
+                        //int sendQueueLength = 0;
+                        //lock (peers)
+                        //{
+                        //    foreach (PeerId p in peers)
+                        //    {
+                        //        if (!p.IsValid) // If it's not valid, it means the peer has been disconnected. This reference should be dropped
+                        //            continue;
 
-                                count++;
-                                if (p.IsSeeder && !p.IsChoking)
-                                    seedernotchoking++;
-                                areSeeders += p.IsSeeder ? 1 : 0;
-                                amInterested += p.AmInterested ? 1 : 0;
-                                isntChoking += !p.IsChoking ? 1 : 0;
-                                areChokingAndInteresting += (p.IsChoking && p.AmInterested) ? 1 : 0;
-                                amRequestingPieces += p.AmRequestingPiecesCount;
-                                averagePercent += p.Bitfield.PercentComplete;
-                                maxPercent = !p.IsChoking ? Math.Max(maxPercent, p.Bitfield.PercentComplete) : maxPercent;
-                                areInterested += p.IsInterested ? 1 : 0;
-                                amUnchoking += !p.AmChoking ? 1 : 0;
-                                areRequestingCount += p.IsRequestingPiecesCount;
-                            }
-                        }
-                        averagePercent /= count;
+                        //        count++;
+                        //        if (p.IsSeeder && !p.IsChoking)
+                        //            seedernotchoking++;
+                        //        areSeeders += p.IsSeeder ? 1 : 0;
+                        //        amInterested += p.AmInterested ? 1 : 0;
+                        //        isntChoking += !p.IsChoking ? 1 : 0;
+                        //        areChokingAndInteresting += (p.IsChoking && p.AmInterested) ? 1 : 0;
+                        //        amRequestingPieces += p.AmRequestingPiecesCount;
+                        //        averagePercent += p.Bitfield.PercentComplete;
+                        //        maxPercent = !p.IsChoking ? Math.Max(maxPercent, p.Bitfield.PercentComplete) : maxPercent;
+                        //        areInterested += p.IsInterested ? 1 : 0;
+                        //        amUnchoking += !p.AmChoking ? 1 : 0;
+                        //        areRequestingCount += p.IsRequestingPiecesCount;
+                        //    }
+                        //}
+                        //averagePercent /= count;
 
-                        sb.AppendLine("Are seeders:               " + areSeeders.ToString());
-                        sb.AppendLine("Am interested:             " + amInterested.ToString());
-                        sb.AppendLine("Am requesting:             " + amRequestingPieces.ToString());
-                        sb.AppendLine("Is choking+Interesting:    " + areChokingAndInteresting.ToString());
-                        sb.AppendLine("Unchoked me:               " + isntChoking.ToString());
-                        sb.AppendLine("Unchoked me and seeder:    " + seedernotchoking.ToString());
-                        sb.AppendLine("Are interested:            " + areInterested.ToString());
-                        sb.AppendLine("Am unchoking:              " + amUnchoking.ToString());
-                        sb.AppendLine("Are requesting:            " + areRequestingCount.ToString());
-                        sb.AppendLine("Send queue length:         " + sendQueueLength.ToString());
-                        sb.AppendLine("Average send queue length: " + (sendQueueLength / (float)count).ToString());
-                        sb.AppendLine("Count:                     " + count.ToString());
-                        sb.AppendLine("Average:                   " + averagePercent.ToString());
-                        sb.AppendLine("Max:                       " + maxPercent.ToString());
+                        //sb.AppendLine("Are seeders:               " + areSeeders.ToString());
+                        //sb.AppendLine("Am interested:             " + amInterested.ToString());
+                        //sb.AppendLine("Am requesting:             " + amRequestingPieces.ToString());
+                        //sb.AppendLine("Is choking+Interesting:    " + areChokingAndInteresting.ToString());
+                        //sb.AppendLine("Unchoked me:               " + isntChoking.ToString());
+                        //sb.AppendLine("Unchoked me and seeder:    " + seedernotchoking.ToString());
+                        //sb.AppendLine("Are interested:            " + areInterested.ToString());
+                        //sb.AppendLine("Am unchoking:              " + amUnchoking.ToString());
+                        //sb.AppendLine("Are requesting:            " + areRequestingCount.ToString());
+                        //sb.AppendLine("Send queue length:         " + sendQueueLength.ToString());
+                        //sb.AppendLine("Average send queue length: " + (sendQueueLength / (float)count).ToString());
+                        //sb.AppendLine("Count:                     " + count.ToString());
+                        //sb.AppendLine("Average:                   " + averagePercent.ToString());
+                        //sb.AppendLine("Max:                       " + maxPercent.ToString());
 
                         // These are some of the other statistics which can be displayed. There are loads more available ;)
 
@@ -273,13 +273,11 @@ namespace MonoTorrent
                         //sb.Append("Endgame Mode:     "); sb.Append(manager.PieceManager.InEndGameMode);
                         //sb.Append(Environment.NewLine);
                     }
-
                     Console.Clear();
                     Console.WriteLine(sb.ToString());
-                    //listener.ExportTo(Console.Out);
                 }
 
-                System.Threading.Thread.Sleep(100);
+                System.Threading.Thread.Sleep(500);
             }
 
             for (int l = 0; l < torrents.Count; l++)

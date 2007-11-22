@@ -123,4 +123,11 @@ namespace MonoTorrent.Common
         HashPassed,
         HashFailed
     }
+
+	public enum PeerListType
+	{
+		NascentPeers,
+		CandidatePeers,
+		OptimisticUnchokeCandidatePeers
+	}
 }
