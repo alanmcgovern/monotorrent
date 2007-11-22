@@ -827,6 +827,11 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        // It's possible the peer could be in an async send *and* receive and so end up
+                        // in this block twice. This check makes sure we don't try to double dispose.
+                        if (id.Peer.Connection == null)
+                            return;
+
                         Console.WriteLine("Cleaned Up: " + id.Peer.Location);
                         Logger.Log(id, "Cleanup Reason : " + message);
                         Logger.FlushToDisk(id);
