@@ -217,8 +217,9 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public BEncodedDictionary Create()
         {
-            // Use the async methods behind the scenes to do this
-            return EndCreate(BeginCreate(null, null));
+            Reset();
+            CreateDict();
+            return BEncodedValue.Decode<BEncodedDictionary>(this.torrent.Encode());
         }
 
         ///<summary>
@@ -448,7 +449,8 @@ namespace MonoTorrent.Common
                 len = reader.Read(piece, 0, piece.Length);
                 while (len != 0)
                 {
-                    if (result.Aborted)
+                    // If we are using the synchronous version, result is null
+                    if (result != null && result.Aborted)
                         return piecesBuffer;
 
                     byte[] currentHash = hasher.ComputeHash(piece, 0, len);
