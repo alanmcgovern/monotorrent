@@ -139,18 +139,16 @@ namespace MonoTorrent.Tracker
         {
             DateTime now = DateTime.Now;
             double elapsedTime = (now - lastAnnounceTime).TotalSeconds;
+            if (elapsedTime < 1)
+                elapsedTime = 1;
             downloadSpeed = (int)((par.Downloaded - parameters.Downloaded) / elapsedTime);
             uploadSpeed = (int)((par.Uploaded - parameters.Uploaded) / elapsedTime);
             lastAnnounceTime = now;
 
-            Debug.WriteLine(string.Format("Upload Speed: {0:0.00} DownloadSpeed: {1:0.00}", uploadSpeed / 1024.0, downloadSpeed / 1024.0));
-
-            // FIXME: I don't think this will ever change: If the port or IP changed, then we wouldn't have
+            // FIXME: I don't think this will ever change: If the IP changed, then we wouldn't have
             // selected this peer. If the PeerID changed... well, a client restart would do that.
             // Only update if there's a change
-            if (parameters.Port != par.Port
-                || !parameters.ClientAddress.Equals(par.ClientAddress)
-                || parameters.PeerId != par.PeerId
+             if(parameters.PeerId != par.PeerId
                 || compactEntry == null)
             {
                 GenerateCompactPeersEntry();
