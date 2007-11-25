@@ -269,15 +269,11 @@ namespace MonoTorrent.Tracker
             listener.ScrapeReceived -= new EventHandler<ScrapeParameters>(OnScrapeReceived);
         }
 
-        #endregion Methods
-
-        #region IEnumerable Members
-
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
 
-        #endregion
+        #endregion Methods
     }
 }
