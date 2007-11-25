@@ -513,84 +513,16 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// Adds a non-compact tracker response of peers to the list
-        /// </summary>
-        /// <param name="list">The list of peers to add</param>
-        /// <returns>The number of peers added</returns>
-        internal int AddPeers(BEncodedList list)
+        internal int AddPeers(IEnumerable<Peer> peers)
         {
-            Peer peer;
-            int added = 0;
-            foreach (BEncodedDictionary dict in list)
-            {
-                try
-                {
-                    string peerId;
-
-                    if (dict.ContainsKey("peer id"))
-                        peerId = dict["peer id"].ToString();
-                    else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
-                        peerId = dict["peer_id"].ToString();
-                    else
-                        peerId = string.Empty;
-
-                    peer = new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString());
-                    added += this.AddPeers(peer);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log((PeerId)null, ex.ToString());
-                }
-            }
-
-            RaisePeersFound(new PeersAddedEventArgs(this, added));
-            return added;
+            int count = 0;
+            foreach (Peer p in peers)
+                count += AddPeers(p);
+            return count;
         }
 
 
-        /// <summary>
-        /// Adds a compact tracker response of peers to the list
-        /// </summary>
-        /// <param name="byteOrderedData">The byte[] containing the peers to add</param>
-        /// <returns>The number of peers added</returns>
-        internal int AddPeers(byte[] byteOrderedData)
-        {
-            // "Compact Response" peers are encoded in network byte order. 
-            // IP's are the first four bytes
-            // Ports are the following 2 bytes
 
-            int i = 0;
-            int added = 0;
-            UInt16 port;
-            Peer peer;
-            StringBuilder sb = new StringBuilder(16);
-
-            while (i < byteOrderedData.Length)
-            {
-                sb.Remove(0, sb.Length);
-
-                sb.Append(byteOrderedData[i++]);
-                sb.Append('.');
-                sb.Append(byteOrderedData[i++]);
-                sb.Append('.');
-                sb.Append(byteOrderedData[i++]);
-                sb.Append('.');
-                sb.Append(byteOrderedData[i++]);
-
-                port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
-                i += 2;
-                sb.Append(':');
-                sb.Append(port);
-                peer = new Peer(null, sb.ToString());
-
-                added += this.AddPeers(peer);
-            }
-
-            RaisePeersFound(new PeersAddedEventArgs(this, added));
-            return added;
-        }
 
 
         internal void PreLogicTick(int counter)

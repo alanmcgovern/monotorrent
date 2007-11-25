@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
 
 
         #region Private/Internal Methods
-        internal override void Dispose()
+        public override void Dispose()
         {
             // Already disposed?
             if (Disposed)

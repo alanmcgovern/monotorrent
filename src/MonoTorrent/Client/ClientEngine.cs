@@ -134,6 +134,14 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
+        static ClientEngine()
+        {
+            // Register builtin tracker clients
+            TrackerFactory.RegisterTypeForProtocol("http", typeof(HTTPTracker));
+            TrackerFactory.RegisterTypeForProtocol("https", typeof(HTTPTracker));
+        }
+
+
         /// <summary>
         /// Creates a new ClientEngine
         /// </summary>

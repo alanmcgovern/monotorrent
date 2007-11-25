@@ -1,10 +1,10 @@
-﻿//
-// IConnectionListener.cs
+//
+// TrackerFactory.cs
 //
 // Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
+//   Eric Butler eric@extremeboredom.net
 //
-// Copyright (C) 2007 Alan McGovern
+// Copyright (C) 2007 Eric Butler
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,41 +26,33 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
 using System;
 using System.Net;
+using System.Threading;
+using MonoTorrent.Common;
+using System.Collections.Generic;
+
 namespace MonoTorrent.Client
 {
-    public abstract class ConnectionListenerBase : IDisposable
+    public static class TrackerFactory
     {
-        protected ClientEngine engine;
-        private bool isListening;
+        private static object locker = new object();
+        static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
 
-        internal event EventHandler<NewConnectionEventArgs> ConnectionReceived;
-
-        public bool IsListening
+        public static void RegisterTypeForProtocol(string protocol, Type trackerType)
         {
-            get { return isListening; }
-            protected set { isListening = value; }
+            lock (locker)
+                trackerTypes.Add(protocol, trackerType);
         }
 
-        void IDisposable.Dispose()
+        public static Tracker CreateForProtocol(string protocol, string announceUrl)
         {
-            Dispose();
-        }
-        public abstract void Dispose();
-        internal ClientEngine Engine
-        {
-            get { return engine; }
-            set { engine = value; }
-        }
-        public abstract void Start();
-        public abstract void Stop();
+            Type type;
+            lock (locker)
+                if (!trackerTypes.TryGetValue(protocol, out type))
+                    return null;
 
-        internal virtual void RaiseConnectionReceived(Peer peer)
-        {
-            ConnectionReceived(this, new NewConnectionEventArgs(peer));
+            return (Tracker)Activator.CreateInstance(type, announceUrl);
         }
     }
 }

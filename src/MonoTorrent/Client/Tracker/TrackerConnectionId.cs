@@ -37,14 +37,14 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Provides a method of keeping a TrackerConnection linked with its TorrentManager during an AsyncRequest
     /// </summary>
-    internal class TrackerConnectionID
+    public class TrackerConnectionID
     {
-        public TorrentEvent TorrentEvent;
+        internal TorrentEvent TorrentEvent;
 
         /// <summary>
-        /// The HttpWebRequest that fired the async event
+        /// Object containing information about the async event
         /// </summary>
-        public HttpWebRequest Request;
+        public object Request;
 
 
         /// <summary>
@@ -56,16 +56,16 @@ namespace MonoTorrent.Client
         public TrackerTier TrackerTier;
 
 
-        public bool TrySubsequent;
+        internal bool TrySubsequent;
 
 
         #region Constructors
         /// <summary>
         /// Creates a new TrackerConnectionID
         /// </summary>
-        /// <param name="request">The HttpWebRequest that sent the Async Request</param>
+        /// <param name="request">Object containing information about the Async Request</param>
         /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
-        public TrackerConnectionID(TrackerTier tier, Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, HttpWebRequest request)
+        internal TrackerConnectionID(TrackerTier tier, Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
         {
             this.TrackerTier = tier;
             this.Tracker = tracker;
