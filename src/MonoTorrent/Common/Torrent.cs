@@ -687,9 +687,10 @@ namespace MonoTorrent.Common
             }
         }
 
-        internal static Torrent Load(BEncodedDictionary torrentInformation)
+        public static Torrent Load(BEncodedDictionary torrentInformation)
         {
             Torrent t = new Torrent();
+            t.torrentPath = "";
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
             {
                 switch (keypair.Key.Text)
