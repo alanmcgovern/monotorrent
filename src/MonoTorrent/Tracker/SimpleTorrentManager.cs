@@ -49,7 +49,7 @@ namespace MonoTorrent.Tracker
 
         private int complete;
         private int downloaded;
-        private Dictionary<IPEndPoint, Peer> peers;
+        private Dictionary<IPAddress, Peer> peers;
         private Random random;
         private ITrackable trackable;
 
@@ -110,7 +110,7 @@ namespace MonoTorrent.Tracker
         public SimpleTorrentManager(ITrackable trackable)
         {
             this.trackable = trackable;
-            peers = new Dictionary<IPEndPoint, Peer>();
+            peers = new Dictionary<IPAddress, Peer>();
             random = new Random();
         }
 
@@ -129,7 +129,7 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
-            peers.Add(peer.ClientAddress, peer);
+            peers.Add(peer.ClientAddress.Address, peer);
 
             if (peer.HasCompleted)
                 System.Threading.Interlocked.Increment(ref complete);
@@ -188,7 +188,7 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
-            peers.Remove(peer.ClientAddress);
+            peers.Remove(peer.ClientAddress.Address);
 
             if (peer.HasCompleted)
                 System.Threading.Interlocked.Decrement(ref complete);
@@ -201,7 +201,7 @@ namespace MonoTorrent.Tracker
         internal void Update(AnnounceParameters par)
         {
             Peer peer;
-            if (!peers.TryGetValue(par.ClientAddress, out peer))
+            if (!peers.TryGetValue(par.ClientAddress.Address, out peer))
             {
                 peer = new Peer(par);
                 Add(peer);
