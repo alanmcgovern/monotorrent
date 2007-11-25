@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
             log = new Dictionary<PeerIdInternal, LinkedList<string>>();
         }
 
-        static void AddListener(TraceListener listener)
+        public static void AddListener(TraceListener listener)
         {
             lock (listeners)
                 listeners.Add(listener);
