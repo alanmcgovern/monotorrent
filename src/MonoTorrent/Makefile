@@ -7,6 +7,8 @@ EXTRA_DIST = AssemblyInfo.cs.in
 
 SOURCES=	\
 	Collections/MonoTorrentCollectionBase.cs \
+	\
+	\
 	Common/BitField.cs \
 	Common/Enums.cs \
 	Common/Hashes.cs \
@@ -24,19 +26,26 @@ SOURCES=	\
 	Common/TorrentWatchers/TorrentFolderWatcher.cs \
 	Common/TorrentWatchers/TorrentWatcherEventArgs.cs \
 	Common/TorrentWatchers/TorrentWatchers.cs \
+	\
+	\
+	Client/AllowedFastAlgorithm.cs \
 	Client/Block.cs \
 	Client/BufferedFileRead.cs \
 	Client/BufferedFileWrite.cs \
 	Client/ClientEngine.cs \
-	Client/ConnectionListeners/IConnectionListener.cs \
-	Client/ConnectionListeners/SocketListener.cs \
 	Client/Logger.cs \
+	Client/MessageHandler.cs \
+	Client/Piece.cs \
 	Client/RateLimiter.cs \
 	Client/ReaderLock.cs \
-	Client/MessageHandler.cs \
 	Client/TransferType.cs \
-	Client/TrackerTier.cs \
 	Client/WriterLock.cs \
+	\
+	\
+	Client/ConnectionListeners/IConnectionListener.cs \
+	Client/ConnectionListeners/SocketListener.cs \
+	\
+	\
 	Client/Encryption/EncryptedSocket.cs \
 	Client/Encryption/IEncryption.cs \
 	Client/Encryption/IEncryptor.cs \
@@ -46,6 +55,9 @@ SOURCES=	\
 	Client/Encryption/PeerAEncryption.cs \
 	Client/Encryption/PeerBEncryption.cs \
 	Client/Encryption/RC4.cs \
+	\
+	\
+	Client/EventArgs/AnnounceResponseEventArgs.cs \
 	Client/EventArgs/BlockEventArgs.cs \
 	Client/EventArgs/MessageEventArgs.cs \
 	Client/EventArgs/NewConnectionEventArgs.cs \
@@ -53,24 +65,23 @@ SOURCES=	\
 	Client/EventArgs/PeersAddedEventArgs.cs \
 	Client/EventArgs/PieceEventArgs.cs \
 	Client/EventArgs/PieceHashedEventArgs.cs \
+	Client/EventArgs/ScrapeResponseEventArgs.cs \
 	Client/EventArgs/StateUpdateEventArgs.cs \
 	Client/EventArgs/TorrentEventArgs.cs \
 	Client/EventArgs/TorrentStateChangedEventArgs.cs \
+	Client/EventArgs/TrackerRequestEventArgs.cs \
 	Client/EventArgs/TrackerStateChangedEventArgs.cs \
+	\
+	\
 	Client/Exceptions/ConnectionException.cs \
 	Client/Exceptions/MessageException.cs \
 	Client/Exceptions/ListenerException.cs \
 	Client/Exceptions/ProtocolException.cs \
 	Client/Exceptions/TorrentLoadException.cs \
-	Client/Peers/Peer.cs \
-	Client/PeerConnections/PeerId.cs  \
-	Client/PeerConnections/PeerConnectionId.cs \
-	Client/PeerConnections/PeerConnectionBase.cs \
-	Client/PeerConnections/TCPConnection.cs \
-	Client/PiecePicking/EndGamePicker.cs \
-	Client/PiecePicking/PiecePickerBase.cs \
-	Client/PiecePicking/StandardPicker.cs \
+	\
+	\
 	Client/Managers/BufferManager.cs \
+	Client/Managers/ChokeUnchokeManager.cs \
 	Client/Managers/ConnectionManager.cs \
 	Client/Managers/ConnectionMonitor.cs \
 	Client/Managers/FileManager.cs \
@@ -79,6 +90,15 @@ SOURCES=	\
 	Client/Managers/PieceManager.cs \
 	Client/Managers/TorrentManager.cs \
 	Client/Managers/TrackerManager.cs \
+	\
+	\
+	Client/PeerConnections/HTTPConnection.cs  \
+	Client/PeerConnections/PeerConnectionBase.cs \
+	Client/PeerConnections/PeerConnectionId.cs \
+	Client/PeerConnections/PeerId.cs \
+	Client/PeerConnections/TCPConnection.cs \
+	\
+	\
 	Client/PeerMessages/BitfieldMessage.cs \
 	Client/PeerMessages/CancelMessage.cs \
 	Client/PeerMessages/ChokeMessage.cs \
@@ -101,36 +121,47 @@ SOURCES=	\
 	Client/PeerMessages/FastPeerExtensions/HaveNoneMessage.cs \
 	Client/PeerMessages/FastPeerExtensions/RejectRequestMessage.cs \
 	Client/PeerMessages/FastPeerExtensions/SuggestPieceMessage.cs \
+	\
+	\
+	Client/Peers/Peer.cs \
+	Client/Peers/PeerList.cs \
+	\
+	\
+	Client/PiecePicking/EndGamePicker.cs \
+	Client/PiecePicking/PiecePickerBase.cs \
+	Client/PiecePicking/StandardPicker.cs \
+	\
+	\
 	Client/Settings/EngineSettings.cs \
 	Client/Settings/TorrentSettings.cs \
-	Client/Piece.cs \
-	Client/TrackerConnectionId.cs \
-	Client/AllowedFastAlgorithm.cs \
-	Client/Tracker.cs	\
+	\
+	\
+	Client/Tracker/HTTPTracker.cs \
+	Client/Tracker/TrackerConnectionId.cs \
+	Client/Tracker/Tracker.cs \
+	Client/Tracker/TrackerFactory.cs \
+	Client/Tracker/TrackerTier.cs \
+	\
+	\
 	BEncoding/BEncodedDictionary.cs \
 	BEncoding/BEncodedList.cs \
 	BEncoding/BEncodedNumber.cs \
 	BEncoding/BEncodedString.cs \
 	BEncoding/BEncodingException.cs \
 	BEncoding/IBEncodedValue.cs	\
-	Tracker/Frontend/AnnounceHandler.cs \
-	Tracker/Frontend/AnnounceParameterParser.cs \
-	Tracker/Frontend/AnnounceParameters.cs \
-	Tracker/Frontend/global.asax.cs \
-	Tracker/Frontend/InternalHttpServer.cs \
-	Tracker/Frontend/ParameterParser.cs \
-	Tracker/Frontend/ScrapeHandler.cs \
-	Tracker/Frontend/ScrapeParameterParser.cs \
-	Tracker/Frontend/ScrapeParameters.cs \
-	Tracker/Frontend/TestHandler.cs \
+	Tracker/ByteComparer.cs \
 	Tracker/IIntervalAlgorithm.cs \
-	Tracker/ITorrentManager.cs \
+	Tracker/ITrackable.cs \
 	Tracker/Peer.cs \
-	Tracker/PeerManager.cs \
+	Tracker/RequestParameters.cs \
 	Tracker/SimpleTorrentManager.cs \
 	Tracker/StaticIntervalAlgorithm.cs \
 	Tracker/Tracker.cs \
-	Tracker/TrackerEngine.cs \
+	Tracker/Exceptions/TrackerException.cs \
+	Tracker/Frontend/AnnounceParameters.cs \
+	Tracker/Frontend/ScrapeParameters.cs \
+	Tracker/Listeners/HttpListener.cs \
+	Tracker/Listeners/ListenerBase.cs \
 	AssemblyInfo.cs
 
 all: $(OUT)
