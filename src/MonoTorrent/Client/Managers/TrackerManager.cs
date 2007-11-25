@@ -202,14 +202,14 @@ namespace MonoTorrent.Client
 
         private void OnScrapeComplete(object sender, ScrapeResponseEventArgs e)
         {
-            throw new NotImplementedException();
+            // No need to do anything here.
         }
 
         private void OnAnnounceComplete(object sender, AnnounceResponseEventArgs e)
         {
-            this.updateSucceeded = e.Succeeded;
+            this.updateSucceeded = e.Successful;
 
-            if (e.Succeeded)
+            if (e.Successful)
             {
                 Toolbox.Switch<Tracker>(e.TrackerId.TrackerTier.Trackers, 0, e.TrackerId.TrackerTier.IndexOf(e.Tracker));
                 manager.AddPeers(e.Peers);

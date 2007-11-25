@@ -6,30 +6,28 @@ namespace MonoTorrent.Client
 {
     public abstract class TrackerResponseEventArgs : EventArgs
     {
-        private string failureMessage;
+        private bool successful;
         private Tracker tracker;
-        private string warningMessage;
 
-        public string FailureMessage
+        /// <summary>
+        /// True if the request completed successfully
+        /// </summary>
+        public bool Successful
         {
-            get { return failureMessage; }
-            protected internal set { failureMessage = value ?? ""; }
+            get { return successful; }
+            protected internal set { successful = value; }
         }
-        
+
+        /// <summary>
+        /// The tracker which the request was sent to
+        /// </summary>
         public Tracker Tracker
         {
             get { return tracker; }
             protected set { tracker = value; }
         }
 
-        public string WarningMessage
-        {
-            get { return warningMessage; }
-            protected internal set { warningMessage = value ?? ""; }
-        }
-
-
-        protected TrackerResponseEventArgs(Tracker tracker)
+        protected TrackerResponseEventArgs(Tracker tracker, bool successful)
         {
             if (tracker == null)
                 throw new ArgumentNullException("tracker");

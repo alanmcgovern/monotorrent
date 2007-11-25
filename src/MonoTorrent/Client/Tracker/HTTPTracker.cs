@@ -253,7 +253,7 @@ namespace MonoTorrent.Client
             }
 
             id.TrackerTier.SendingStartedEvent = false;
-            args.Succeeded = UpdateSucceeded;
+            args.Successful = UpdateSucceeded;
             RaiseAnnounceComplete(args);
         }
 
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client
 
                     case ("failure reason"):
                         FailureMessage = keypair.Value.ToString();
-                        args.Succeeded = false;
+                        args.Successful = false;
                         break;
 
                     case ("warning message"):
@@ -321,60 +321,59 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="result"></param>
         private void ScrapeReceived(IAsyncResult result)
-        {/*
+        {
             BEncodedDictionary d;
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
             BEncodedDictionary dict = id.Tracker.DecodeResponse(result);
 
-            if (dict.ContainsKey("custom error"))
+            bool successful = !dict.ContainsKey("custom error");
+            ScrapeResponseEventArgs args = new ScrapeResponseEventArgs(this, successful);
+
+            if (!successful)
             {
                 FailureMessage = dict["custom error"].ToString();
                 UpdateState(TrackerState.ScrapingFailed);
-
-                if (!id.TrySubsequent)
-                    return;
-
-                do
-                {
-                    GetNextTracker(id.Tracker, out id.TrackerTier, out id.Tracker);
-                } while (id.Tracker != null && id.TrackerTier != null && !id.Tracker.CanScrape);
-
-                if (id.TrackerTier == null || id.Tracker == null)
-                    return;
-
-                Scrape(id.TrackerTier, id.Tracker, true);
             }
-            if (!dict.ContainsKey("files"))
-                return;
 
-            BEncodedDictionary files = (BEncodedDictionary)dict["files"];
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in files)
+            else if (!dict.ContainsKey("files"))
             {
-                d = (BEncodedDictionary)keypair.Value;
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
+                args.Successful = false;
+                UpdateState(TrackerState.ScrapingFailed);
+            }
+
+            else
+            {
+                BEncodedDictionary files = (BEncodedDictionary)dict["files"];
+                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in files)
                 {
-                    switch (kp.Key.ToString())
+                    d = (BEncodedDictionary)keypair.Value;
+                    foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
                     {
-                        case ("complete"):
-                            id.Tracker.Complete = Convert.ToInt32(kp.Value.ToString());
-                            break;
+                        switch (kp.Key.ToString())
+                        {
+                            case ("complete"):
+                                Complete = Convert.ToInt32(kp.Value.ToString());
+                                break;
 
-                        case ("downloaded"):
-                            id.Tracker.Downloaded = Convert.ToInt32(kp.Value.ToString());
-                            break;
+                            case ("downloaded"):
+                                Downloaded = Convert.ToInt32(kp.Value.ToString());
+                                break;
 
-                        case ("incomplete"):
-                            id.Tracker.Incomplete = Convert.ToInt32(kp.Value.ToString());
-                            break;
+                            case ("incomplete"):
+                                Incomplete = Convert.ToInt32(kp.Value.ToString());
+                                break;
 
-                        default:
-                            Logger.Log("Key: " + kp.Key.ToString() + " Value: " + kp.Value.ToString());
-                            break;
+                            default:
+                                Logger.Log("Key: " + kp.Key.ToString() + " Value: " + kp.Value.ToString());
+                                break;
+                        }
                     }
                 }
+
+                UpdateState(TrackerState.ScrapeSuccessful);
             }
 
-            UpdateState(TrackerState.ScrapeSuccessful);*/
+            RaiseScrapeComplete(args);
         }
 
 

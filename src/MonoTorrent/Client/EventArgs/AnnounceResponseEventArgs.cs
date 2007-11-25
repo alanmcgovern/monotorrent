@@ -6,15 +6,13 @@ namespace MonoTorrent.Client
 {
     public class AnnounceResponseEventArgs : TrackerResponseEventArgs
     {
-        public bool Succeeded;
         internal MonoTorrentCollection<Peer> Peers;
         internal TrackerConnectionID TrackerId;
 
 
         public AnnounceResponseEventArgs(TrackerConnectionID id)
-            : base(id.Tracker)
+            : base(id.Tracker, true)
         {
-            Succeeded = true;
             Peers = new MonoTorrentCollection<Peer>();
             TrackerId = id;
         }
