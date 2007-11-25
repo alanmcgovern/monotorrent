@@ -33,6 +33,7 @@ using System.Text;
 using System.Net;
 using MonoTorrent.Common;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
@@ -168,7 +169,6 @@ namespace MonoTorrent.Client
         #endregion
 
 
-        #region Overidden Methods
         public override bool Equals(object obj)
         {
             Peer peer = obj as Peer;
@@ -189,7 +189,6 @@ namespace MonoTorrent.Client
         {
             return this.location;
         }
-        #endregion
 
 
         public byte[] CompactPeer()
@@ -203,6 +202,7 @@ namespace MonoTorrent.Client
             return data;
         }
 
+
         internal void HashedPiece(bool succeeded)
         {
             if (succeeded && repeatedHashFails > 0)
@@ -213,6 +213,60 @@ namespace MonoTorrent.Client
                 repeatedHashFails++;
                 totalHashFails++;
             }
+        }
+
+
+        public static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
+        {
+            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
+            foreach (BEncodedDictionary dict in peers)
+            {
+                string peerId;
+
+                if (dict.ContainsKey("peer id"))
+                    peerId = dict["peer id"].ToString();
+                else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
+                    peerId = dict["peer_id"].ToString();
+                else
+                    peerId = string.Empty;
+
+                list.Add(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()));
+            }
+
+            return list;
+        }
+
+        public static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
+        {
+            // "Compact Response" peers are encoded in network byte order. 
+            // IP's are the first four bytes
+            // Ports are the following 2 bytes
+            byte[] byteOrderedData = peers.TextBytes;
+            int i = 0;
+            UInt16 port;
+            Peer peer;
+            StringBuilder sb = new StringBuilder(16);
+            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
+            while (i < byteOrderedData.Length)
+            {
+                sb.Remove(0, sb.Length);
+
+                sb.Append(byteOrderedData[i++]);
+                sb.Append('.');
+                sb.Append(byteOrderedData[i++]);
+                sb.Append('.');
+                sb.Append(byteOrderedData[i++]);
+                sb.Append('.');
+                sb.Append(byteOrderedData[i++]);
+
+                port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
+                i += 2;
+                sb.Append(':');
+                sb.Append(port);
+                list.Add(new Peer("", sb.ToString()));
+            }
+
+            return list;
         }
     }
 }
