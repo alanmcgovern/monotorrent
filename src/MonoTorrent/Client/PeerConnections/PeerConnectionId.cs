@@ -127,6 +127,17 @@ namespace MonoTorrent.Client
             return this.peer.Location.CompareTo(other.peer.Location);
         }
 
+        public override bool Equals(object obj)
+        {
+            PeerIdInternal id = obj as PeerIdInternal;
+            return id == null ? false : this.peer.Location == id.peer.Location;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.peer.Location.GetHashCode();
+        }
+
         public override string ToString()
         {
             return this.peer.Location;
