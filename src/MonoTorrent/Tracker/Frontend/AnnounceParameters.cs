@@ -140,7 +140,7 @@ namespace MonoTorrent.Tracker
             /* If the user has supplied an IP address, we use that instead of
              * the IP address we read from the announce request connection. */
             IPAddress supplied;
-            if (IPAddress.TryParse(Parameters["ip"] ?? "", out supplied))
+            if (IPAddress.TryParse(Parameters["ip"] ?? "", out supplied) && !supplied.Equals(IPAddress.Any))
                 clientAddress = new IPEndPoint(supplied, Port);
             else
                 clientAddress = new IPEndPoint(address, Port);
