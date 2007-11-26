@@ -142,7 +142,9 @@ namespace MonoTorrent
                 engine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
 
                 // Every time the tracker's state changes, this is fired
-                manager.TrackerManager.OnTrackerStateChange += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);
+                foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)
+                    foreach(MonoTorrent.Client.Tracker t in tier.Trackers)
+                        t.StateChanged += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);
 
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
