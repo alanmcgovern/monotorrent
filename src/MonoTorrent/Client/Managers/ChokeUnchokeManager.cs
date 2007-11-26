@@ -56,38 +56,35 @@ namespace MonoTorrent.Client
 			List<Peer> chokedInterestedPeers = new List<Peer>();
 			int interestedCount = 0;
 			int unchokedCount = 0;
-			lock (owningTorrent.listLock)
-			{
-				foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
-				{
-                    lock(connectedPeer)
+            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            {
+                lock (connectedPeer)
+                {
+                    if (connectedPeer.Peer.Connection == null)
+                        continue;
+
+                    // If the peer is interesting try to queue up some piece requests off him
+                    // If he is choking, we will only queue a piece if there is a FastPiece we can choose
+                    if (connectedPeer.Peer.Connection.AmInterested)
+                        while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
+
+                    if (!connectedPeer.Peer.IsSeeder)
                     {
-					    if (connectedPeer.Peer.Connection == null)
-                            continue;
+                        if (!connectedPeer.Peer.Connection.IsInterested && !connectedPeer.Peer.Connection.AmChoking)
+                            //This peer is disinterested and unchoked; choke it
+                            Choke(connectedPeer.Peer);
 
-						// If the peer is interesting try to queue up some piece requests off him
-                        // If he is choking, we will only queue a piece if there is a FastPiece we can choose
-						if (connectedPeer.Peer.Connection.AmInterested)
-							while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
-
-						if (!connectedPeer.Peer.IsSeeder)
-						{
-							if (!connectedPeer.Peer.Connection.IsInterested && !connectedPeer.Peer.Connection.AmChoking)
-								//This peer is disinterested and unchoked; choke it
-								Choke(connectedPeer.Peer);
-
-							else if (connectedPeer.Peer.Connection.IsInterested)
-                            {
-                                interestedCount++;
-                                if(!connectedPeer.Peer.Connection.AmChoking)       //This peer is interested and unchoked, count it
-                                    unchokedCount++; 
-                                else  
-                                    chokedInterestedPeers.Add(connectedPeer.Peer); //This peer is interested and choked, remember it and count it
-                            }
-						}
-					}
-				}
-			}
+                        else if (connectedPeer.Peer.Connection.IsInterested)
+                        {
+                            interestedCount++;
+                            if (!connectedPeer.Peer.Connection.AmChoking)       //This peer is interested and unchoked, count it
+                                unchokedCount++;
+                            else
+                                chokedInterestedPeers.Add(connectedPeer.Peer); //This peer is interested and choked, remember it and count it
+                        }
+                    }
+                }
+            }
 
 			if (firstCall)
 			{
@@ -251,8 +248,6 @@ namespace MonoTorrent.Client
 
 			int unchokedPeers = 0;
 
-			lock (owningTorrent.listLock)
-			{
 				foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
 				{
                     lock(connectedPeer)
@@ -323,7 +318,6 @@ namespace MonoTorrent.Client
 							if (timeUnchoked >= minimumTimeBetweenReviews)
                                 p.Connection.FirstReviewPeriod = false;
 						}
-					}
 				}
 
 //				Send2Log(nascentPeers.Count.ToString() + "," + candidatePeers.Count.ToString() + "," + optimisticUnchokeCandidates.Count.ToString());

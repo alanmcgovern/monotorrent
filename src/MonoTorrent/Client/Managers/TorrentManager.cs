@@ -457,13 +457,24 @@ namespace MonoTorrent.Client
                 handle = this.trackerManager.Announce(TorrentEvent.Stopped);
                 lock (this.listLock)
                 {
+                    // HACK - Fix this properly with the peer event code 
                     while (this.peers.ConnectingToPeers.Count > 0)
                         lock (this.peers.ConnectingToPeers[0])
-                            engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+                        {
+                            if (peers.ConnectingToPeers[0].Peer.Connection == null)
+                                peers.ConnectingToPeers.RemoveAt(0);
+                            else
+                                engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+                        }
 
                     while (this.peers.ConnectedPeers.Count > 0)
                         lock (this.peers.ConnectedPeers[0])
-                            engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+                        {
+                            if (peers.ConnectedPeers[0].Peer.Connection == null)
+                                peers.ConnectedPeers.RemoveAt(0);
+                            else
+                                engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+                        }
                 }
 
                 if (this.fileManager.StreamsOpen)
@@ -653,7 +664,8 @@ namespace MonoTorrent.Client
             if (chokeUnchoker == null)
                 chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
 
-            chokeUnchoker.TimePassed();
+            lock (listLock)
+                chokeUnchoker.TimePassed();
         }
 
 
@@ -728,7 +740,8 @@ namespace MonoTorrent.Client
             if (chokeUnchoker == null)
                 chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
 
-            chokeUnchoker.TimePassed();
+            lock (listLock)
+                chokeUnchoker.TimePassed();
         }
 
         /// <summary>
