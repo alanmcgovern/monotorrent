@@ -836,10 +836,6 @@ namespace MonoTorrent.Client
                         Logger.Log(id, "Cleanup Reason : " + message);
                         Logger.FlushToDisk(id);
 
-                        // We can't clean up until the pending sends and receives have all had the corresponding End*** method called
-                        if (!localClose && (id.Peer.ActiveReceive || id.Peer.ActiveSend))
-                            return;
-
                         Logger.Log(id, "*******Cleaning up*******");
                         System.Threading.Interlocked.Decrement(ref this.openConnections);
                         id.TorrentManager.PieceManager.RemoveRequests(id);
