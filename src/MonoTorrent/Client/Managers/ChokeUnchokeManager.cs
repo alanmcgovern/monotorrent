@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
 			if (firstCall)
 			{
 				//This is the first time we've been called for this torrent; set current status and run an initial review
-				isDownloading = owningTorrent.Complete; //If progress is less than 100% we must be downloading
+				isDownloading = !owningTorrent.Complete; //If progress is less than 100% we must be downloading
 				firstCall = false;
 				ExecuteReview();
 			}
@@ -104,9 +104,9 @@ namespace MonoTorrent.Client
 				//Since we have enough slots to satisfy everyone that's interested, unchoke them all; no review needed
 				UnchokePeerList(chokedInterestedPeers);
 
-			else if ((SecondsBetween(timeOfLastReview, DateTime.Now) >= minimumTimeBetweenReviews) &&
-				((isDownloading && owningTorrent.Monitor.DownloadSpeed < owningTorrent.Settings.MaxDownloadSpeed * percentOfMaxRateToSkipReview / 100.0) ||
-				(!isDownloading && owningTorrent.Monitor.UploadSpeed < owningTorrent.Settings.MaxUploadSpeed * percentOfMaxRateToSkipReview / 100.0)))
+			else if (minimumTimeBetweenReviews > 0 && (SecondsBetween(timeOfLastReview, DateTime.Now) >= minimumTimeBetweenReviews) &&
+				((isDownloading && (owningTorrent.Monitor.DownloadSpeed < (owningTorrent.Settings.MaxDownloadSpeed * percentOfMaxRateToSkipReview / 100.0))) ||
+				(!isDownloading && (owningTorrent.Monitor.UploadSpeed < (owningTorrent.Settings.MaxUploadSpeed * percentOfMaxRateToSkipReview / 100.0)))))  
 				//Based on the time of the last review, a new review is due
 				//There are more interested peers than available upload slots
 				//If we're downloading, the download rate is insufficient to skip the review
@@ -206,7 +206,6 @@ namespace MonoTorrent.Client
 			optimisticUnchokeCandidates.Clear();
 
 			//No review needed or disabled by the torrent settings
-			if (minimumTimeBetweenReviews <= 0) return;
 
 			/////???Remove when working
 			////Log peer status - temporary
@@ -248,9 +247,9 @@ namespace MonoTorrent.Client
 
 			int unchokedPeers = 0;
 
-				foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
-				{
-                    lock(connectedPeer)
+			foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            {
+				lock (connectedPeer)
 					if (connectedPeer.Peer.Connection != null)
 					{
 						if (!connectedPeer.Peer.IsSeeder)
@@ -319,7 +318,7 @@ namespace MonoTorrent.Client
                                 p.Connection.FirstReviewPeriod = false;
 						}
 				}
-
+            }
 //				Send2Log(nascentPeers.Count.ToString() + "," + candidatePeers.Count.ToString() + "," + optimisticUnchokeCandidates.Count.ToString());
 
 				//Now sort the lists of peers so we are ready to reallocate them
@@ -377,7 +376,6 @@ namespace MonoTorrent.Client
 						else if (!nextPeer.Equals(optimisticUnchokePeer))
 							//This isn't the optimistic unchoke peer
 							Choke(nextPeer);
-				}
 			}
 
 			timeOfLastReview = DateTime.Now;
