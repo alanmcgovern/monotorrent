@@ -111,11 +111,12 @@ namespace SampleTracker
                 lock (tracker)
                     foreach (SimpleTorrentManager m in tracker)
                     {
-                        Console.WriteLine("Name: {0}", m.Trackable.Name);
+                        Console.Write("Name: {0}   ", m.Trackable.Name);
                         Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
                         Console.WriteLine();
-                        System.Threading.Thread.Sleep(10000);
                     }
+
+                System.Threading.Thread.Sleep(10000);
             }
         }
 
