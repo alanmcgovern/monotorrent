@@ -127,6 +127,14 @@ namespace SampleTracker
             {
                 try
                 {
+                    // This is a hack to work around the issue where a file triggers the event
+                    // before it has finished copying. As the filesystem still has an exclusive lock
+                    // on the file, monotorrent can't access the file and throws an exception.
+                    // The best way to handle this depends on the actual application. 
+                    // Generally the solution is: Wait a few hundred milliseconds
+                    // then try load the file.
+                    System.Threading.Thread.Sleep(500);
+					
                     Torrent t = Torrent.Load(e.TorrentPath);
                     // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
                     // just stores the infohash and name of the torrent. This is all that the tracker
