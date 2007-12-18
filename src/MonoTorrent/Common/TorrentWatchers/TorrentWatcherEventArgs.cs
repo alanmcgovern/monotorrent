@@ -56,7 +56,7 @@ namespace MonoTorrent.Common
         /// Creates a new TorrentWatcherEventArgs
         /// </summary>
         /// <param name="torrent">The torrent which is affected</param>
-        internal TorrentWatcherEventArgs(string torrentPath)
+        public TorrentWatcherEventArgs(string torrentPath)
         {
             this.torrentPath = torrentPath;
         }

@@ -359,9 +359,9 @@ namespace MonoTorrent.Client
 
                         // If we receive 0 bytes, the connection has been closed, so exit
                         int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
+                        if (id.ErrorCode != SocketError.Success)
                         {
-                            reason = "Received zero";
+                            reason = "EndReceiveMessage: " + id.ErrorCode.ToString();
                             Logger.Log(id, "Couldn't receive message");
                             cleanUp = true;
                             return;
@@ -426,9 +426,9 @@ namespace MonoTorrent.Client
 
                         // If we have sent zero bytes, that is a sign the connection has been closed
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success || bytesSent == 0)
+                        if (id.ErrorCode != SocketError.Success)
                         {
-                            reason = "Sent zero";
+                            reason = "Sending error: " + id.ErrorCode.ToString();
                             Logger.Log(id, "Couldn't send message");
                             cleanup = true;
                             return;
@@ -960,10 +960,10 @@ namespace MonoTorrent.Client
                     {
                         Interlocked.Increment(ref this.openConnections);
                         bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
-                        if (bytesSent == 0)
+                        if (id.ErrorCode != SocketError.Success)
                         {
                             Logger.Log(id, "Sent 0 for incoming connection accepted");
-                            reason = "sent 0 for incoming";
+                            reason = "IncomingConnectionAccepted: " + id.ErrorCode.ToString();
                             cleanUp = true;
                             return;
                         }

@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Encryption
             errorCode = SocketError.Success;
             try
             {
-                this.peerSocket.BeginReceive(buffer.Array, buffer.Offset + offset, count, socketFlags, asyncCallback, id);
+                this.peerSocket.BeginReceive(buffer.Array, buffer.Offset + offset, count, socketFlags, out errorCode, asyncCallback, id);
                 id.Peer.ActiveReceive = true;
             }
             catch
@@ -120,7 +120,7 @@ namespace MonoTorrent.Client.Encryption
 
             try
             {
-                this.peerSocket.BeginSend(buffer.Array, buffer.Offset + offset, count, socketFlags, asyncCallback, id);
+                this.peerSocket.BeginSend(buffer.Array, buffer.Offset + offset, count, socketFlags, out errorCode, asyncCallback, id);
                 id.Peer.ActiveSend = true;
             }
             catch
@@ -128,7 +128,6 @@ namespace MonoTorrent.Client.Encryption
                 id.Peer.ActiveSend = false;
                 throw;
             }
-            //this.peerSocket.BeginSend(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
         }
 
         internal override void Dispose()
@@ -146,21 +145,17 @@ namespace MonoTorrent.Client.Encryption
         internal override int EndSend(IAsyncResult result, out SocketError errorCode )
         {
             PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-            errorCode = SocketError.Success;
             id.Peer.ActiveSend = false;
-            return this.peerSocket.EndSend(result);
-            //return this.peerSocket.EndSend(result, out errorCode);
+            return this.peerSocket.EndSend(result, out errorCode);
         }
 
         internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
         {
             PeerIdInternal id = (PeerIdInternal)result.AsyncState;
             id.Peer.ActiveReceive = false;
-            int received = this.peerSocket.EndReceive(result);
+            int received = this.peerSocket.EndReceive(result, out errorCode);
             Encryptor.Decrypt(id.Peer.Connection.recieveBuffer.Array, id.Peer.Connection.recieveBuffer.Offset + id.Peer.Connection.BytesReceived, received);
-            errorCode = SocketError.Success;
             return received;
-            //return this.peerSocket.EndReceive(result, out errorCode);
         }
 
         internal override void StartEncryption()

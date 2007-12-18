@@ -1,0 +1,4 @@
+2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TCPConnection.cs: Now using the 'out ErrorCode' overloads for the sockets.
+
