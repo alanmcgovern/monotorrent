@@ -1,5 +1,9 @@
 2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* Main.cs: Added comment
+
+2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* Main.cs: Put in a fix for issues where the torrent watcher is firing too
 	  early.
 

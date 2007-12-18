@@ -136,9 +136,12 @@ namespace SampleTracker
                     System.Threading.Thread.Sleep(500);
 					
                     Torrent t = Torrent.Load(e.TorrentPath);
+					
                     // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
                     // just stores the infohash and name of the torrent. This is all that the tracker
                     // needs to run. So if you want an ITrackable that "just works", then use InfoHashTrackable.
+					
+                    // ITrackable trackable = new InfoHashTrackable(t);
                     ITrackable trackable = new CustomITrackable(t);
                     lock (tracker)
                         tracker.Add(trackable);
