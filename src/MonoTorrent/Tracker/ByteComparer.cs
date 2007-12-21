@@ -68,7 +68,7 @@ namespace MonoTorrent.Tracker
             else
             {
                 for (int i = 0; i < array.Length; i++)
-                    result ^= array[i];
+                    result ^= array[i] << i;
             }
 
             return result;
