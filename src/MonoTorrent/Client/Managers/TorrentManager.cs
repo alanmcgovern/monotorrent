@@ -409,6 +409,8 @@ namespace MonoTorrent.Client
                     }
                 }
 
+                this.hashChecked = true;
+
                 if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                     throw new TorrentException("Torrent is already running");
 
