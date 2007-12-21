@@ -120,16 +120,17 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        public SimpleTorrentManager(ITrackable trackable)
-            : this(trackable, new IPAddressComparer())
-        {
+        //public SimpleTorrentManager(ITrackable trackable)
+        //    : this(trackable, new IPAddressComparer())
+        //{
 
-        }
+        //}
 
-        public SimpleTorrentManager(ITrackable trackable, IEqualityComparer<Peer> comparer)
+        // FIXME: Use the comparer
+        public SimpleTorrentManager(ITrackable trackable)//, IEqualityComparer<Peer> comparer)
         {
             this.trackable = trackable;
-            peers = new Dictionary<IPAddress, Peer>(comparer);
+            peers = new Dictionary<IPAddress, Peer>();
             random = new Random();
         }
 
