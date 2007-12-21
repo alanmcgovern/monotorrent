@@ -39,6 +39,19 @@ using System.Net;
 
 namespace MonoTorrent.Tracker
 {
+    public class IPAddressComparer : IEqualityComparer<Peer>
+    {
+        public bool Equals(Peer left, Peer right)
+        {
+            return left.ClientAddress.Equals(right.ClientAddress);
+        }
+
+        public int GetHashCode(Peer peer)
+        {
+            return peer.ClientAddress.GetHashCode();
+        }
+    }
+
     ///<summary>
     ///This class is a TorrentManager which uses .Net Generics datastructures, such 
     ///as Dictionary and List to manage Peers from a Torrent.
@@ -108,9 +121,15 @@ namespace MonoTorrent.Tracker
         #region Constructors
 
         public SimpleTorrentManager(ITrackable trackable)
+            : this(trackable, new IPAddressComparer())
+        {
+
+        }
+
+        public SimpleTorrentManager(ITrackable trackable, IEqualityComparer<Peer> comparer)
         {
             this.trackable = trackable;
-            peers = new Dictionary<IPAddress, Peer>();
+            peers = new Dictionary<IPAddress, Peer>(comparer);
             random = new Random();
         }
 
@@ -232,4 +251,3 @@ namespace MonoTorrent.Tracker
         #endregion Methods
     }
 }
-
