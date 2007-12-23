@@ -359,7 +359,7 @@ namespace MonoTorrent.Client
 
                         // If we receive 0 bytes, the connection has been closed, so exit
                         int bytesReceived = id.Peer.Connection.EndReceive(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success)
+                        if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
                         {
                             reason = "EndReceiveMessage: " + id.ErrorCode.ToString();
                             Logger.Log(id, "Couldn't receive message");
@@ -426,7 +426,7 @@ namespace MonoTorrent.Client
 
                         // If we have sent zero bytes, that is a sign the connection has been closed
                         int bytesSent = id.Peer.Connection.EndSend(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success)
+                        if (id.ErrorCode != SocketError.Success || bytesSent == 0)
                         {
                             reason = "Sending error: " + id.ErrorCode.ToString();
                             Logger.Log(id, "Couldn't send message");
