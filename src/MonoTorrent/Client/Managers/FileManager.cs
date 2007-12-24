@@ -434,7 +434,7 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < peers.Count; i++)
                 lock (peers[i])
-                    if (peers[i].Peer.Connection != null)
+                    if (peers[i].Connection != null)
                         id.Peer.HashedPiece(result);
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out

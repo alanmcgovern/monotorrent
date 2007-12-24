@@ -241,12 +241,12 @@ namespace MonoTorrent.Client.PeerMessages
             }
 
             // Attempt to parse the application that the peer is using
-            id.Peer.Connection.ClientApp = new Software(this.peerId);
-            id.Peer.Connection.SupportsFastPeer = this.supportsFastPeer;
+            id.Connection.ClientApp = new Software(this.peerId);
+            id.Connection.SupportsFastPeer = this.supportsFastPeer;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (this.supportsFastPeer && id.TorrentManager != null)
-                id.Peer.Connection.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.Peer.Connection.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Count);
+                id.Connection.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.Connection.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Count);
 
         }
 

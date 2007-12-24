@@ -152,10 +152,10 @@ namespace MonoTorrent.Client
                 peerSocket = listener.EndAccept(result);
 
                 Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
-                peer.Connection = new TCPConnection(peerSocket, 0, new NoEncryption());
+                TCPConnection connection = new TCPConnection(peerSocket, 0, new NoEncryption());
 
 
-                RaiseConnectionReceived(peer);
+                RaiseConnectionReceived(peer, connection);
             }
             catch (SocketException)
             {

@@ -87,15 +87,15 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerIdInternal id)
         {
-            id.Peer.Connection.IsChoking = false;
+            id.Connection.IsChoking = false;
 
             // Add requests to the peers message queue
             while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
             // If we're not already processing the send queue, start processing it now
-            if (!id.Peer.Connection.ProcessingQueue)
+            if (!id.Connection.ProcessingQueue)
             {
-                id.Peer.Connection.ProcessingQueue = true;
+                id.Connection.ProcessingQueue = true;
                 id.ConnectionManager.MessageHandler.EnqueueSend(id);
             }
         }

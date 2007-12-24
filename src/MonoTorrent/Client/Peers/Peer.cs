@@ -44,7 +44,6 @@ namespace MonoTorrent.Client
         private bool activeReceive;
         private bool activeSend;
         private int cleanedUpCount;
-        private PeerConnectionBase connection;
         private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
         private int failedConnectionAttempts;
         private int totalHashFails;
@@ -71,14 +70,6 @@ namespace MonoTorrent.Client
             set { this.activeSend = value; }
         }
 
-        /// <summary>
-        /// The connection associated with this peer
-        /// </summary>
-        public PeerConnectionBase Connection
-        {
-            get { return this.connection; }
-            set { this.connection = value; }
-        }
 
 
         public int CleanedUpCount
@@ -244,7 +235,6 @@ namespace MonoTorrent.Client
             byte[] byteOrderedData = peers.TextBytes;
             int i = 0;
             UInt16 port;
-            Peer peer;
             StringBuilder sb = new StringBuilder(16);
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
             while (i < byteOrderedData.Length)

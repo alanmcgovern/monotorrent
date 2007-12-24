@@ -112,10 +112,10 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerIdInternal id)
         {
             // First set the peers bitfield to true for that piece
-            id.Peer.Connection.BitField[this.pieceIndex] = true;
+            id.Connection.BitField[this.pieceIndex] = true;
 
             // Fastcheck to see if a peer is a seeder or not
-            id.Peer.IsSeeder = id.Peer.Connection.BitField.AllTrue;
+            id.Peer.IsSeeder = id.Connection.BitField.AllTrue;
 
             // We can do a fast check to see if the peer is interesting or not when we receive a Have Message.
             // If the peer just received a piece we don't have, he's interesting. Otherwise his state is unchanged

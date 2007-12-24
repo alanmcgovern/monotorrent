@@ -107,22 +107,22 @@ namespace MonoTorrent.Client
             RequestMessage msg;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Peer.Connection.Monitor.DownloadSpeed / BonusRequestPerKb);
+            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Connection.Monitor.DownloadSpeed / BonusRequestPerKb);
             maxRequests = maxRequests > 100 ? 100 : maxRequests;
 
-            if (id.Peer.Connection.AmRequestingPiecesCount >= maxRequests)
+            if (id.Connection.AmRequestingPiecesCount >= maxRequests)
                 return false;
 
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
-                if (id.Peer.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+                if (id.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
 
-            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
+            msg = this.PickPiece(id, id.TorrentManager.ConnectedPeers);
             if (msg == null)
                 return false;
 
-            id.Peer.Connection.Enqueue(msg);
-            id.Peer.Connection.AmRequestingPiecesCount++;
+            id.Connection.Enqueue(msg);
+            id.Connection.AmRequestingPiecesCount++;
             return true;
         }
 
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.Peer.Connection.BitField.AllTrue))
+            if ((id.Peer.IsSeeder = id.Connection.BitField.AllTrue))
                 return true;
 
             // Otherwise we need to do a full check

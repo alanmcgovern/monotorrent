@@ -9,7 +9,7 @@ namespace MonoTorrent.Client
 	{
 		#region Private Fields
 
-		private List<Peer> peers; //Peers held
+		private List<PeerIdInternal> peers; //Peers held
 		private PeerListType listType; //The type of list this represents
 		private int scanIndex = 0; //Position in the list when scanning peers
 
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client
 		/// <param name="ListType">The type of list</param>
 		public PeerList(PeerListType ListType)
 		{
-			peers = new List<Peer>();
+			peers = new List<PeerIdInternal>();
 			listType = ListType;
 		}
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
 			get
 			{
 				int peersCount = 0;
-				foreach (Peer peer in peers)
+				foreach (PeerIdInternal peer in peers)
 					if (!peer.Connection.AmChoking)
 						peersCount++;
 				return peersCount;
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Adds a peer to the peer list
 		/// </summary>
-		public void Add(Peer peer)
+        public void Add(PeerIdInternal peer)
 		{
 			peers.Add(peer);
 		}
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Gets the next peer to be scanned, returns null if there are no more
 		/// </summary>
-		public Peer GetNextPeer()
+        public PeerIdInternal GetNextPeer()
 		{
 			if (scanIndex < peers.Count)
 			{
@@ -106,10 +106,10 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Gets the first choked peer in the list, or null if none found
 		/// </summary>
-		public Peer GetFirstInterestedChokedPeer()
+        public PeerIdInternal GetFirstInterestedChokedPeer()
 		{
 			//Look for a choked peer
-			foreach (Peer peer in peers)
+            foreach (PeerIdInternal peer in peers)
 				if (peer.Connection != null)
 					if (peer.Connection.IsInterested && peer.Connection.AmChoking)
 						return peer;
@@ -120,12 +120,12 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Looks for a choked peer that we can optimistically unchoke, or null if none found
 		/// </summary>
-		public Peer GetOUPeer()
+        public PeerIdInternal GetOUPeer()
 		{
 			//Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
-			Peer longestIntervalPeer = null;
+            PeerIdInternal longestIntervalPeer = null;
 			double longestIntervalPeerTime = 0;
-			foreach (Peer peer in peers)
+            foreach (PeerIdInternal peer in peers)
 				if (peer.Connection != null)
 					if (peer.Connection.AmChoking)
 					{
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
 		/// Tests to see if the list includes a given peer
 		/// </summary>
 		/// <param name="Peer">The peer we are testing for</param>
-		public bool Includes(Peer peer)
+        public bool Includes(PeerIdInternal peer)
 		{
 			//Return false if the supplied peer is null
 			if (peer == null)
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
 
 		#region Private Methods
 
-		private static int CompareCandidatePeersWhileDownloading(Peer P1, Peer P2)
+        private static int CompareCandidatePeersWhileDownloading(PeerIdInternal P1, PeerIdInternal P2)
 		{
 			//Comparer for candidate peers for use when the torrent is downloading
 			//First sort Am interested before !AmInterested
@@ -223,14 +223,14 @@ namespace MonoTorrent.Client
             return P2.Connection.LastReviewDownloadRate.CompareTo(P1.Connection.LastReviewDownloadRate);
 		}
 
-		private static int CompareCandidatePeersWhileSeeding(Peer P1, Peer P2)
+        private static int CompareCandidatePeersWhileSeeding(PeerIdInternal P1, PeerIdInternal P2)
 		{
 			//Comparer for candidate peers for use when the torrent is seeding
 			//Sort by upload rate, largest first
             return P2.Connection.LastReviewUploadRate.CompareTo(P1.Connection.LastReviewUploadRate);
 		}
 
-		private static int CompareNascentPeers(Peer P1, Peer P2)
+        private static int CompareNascentPeers(PeerIdInternal P1, PeerIdInternal P2)
 		{
 			//Comparer for nascent peers
 			//Sort most recent first
@@ -242,7 +242,7 @@ namespace MonoTorrent.Client
 				return 0;
 		}
 
-		private static int CompareOptimisticUnchokeCandidatesWhileDownloading(Peer P1, Peer P2)
+        private static int CompareOptimisticUnchokeCandidatesWhileDownloading(PeerIdInternal P1, PeerIdInternal P2)
 		{
 			//Comparer for optimistic unchoke candidates
 
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
 				return 0;
 		}
 
-		private static int CompareOptimisticUnchokeCandidatesWhileSeeding(Peer P1, Peer P2)
+        private static int CompareOptimisticUnchokeCandidatesWhileSeeding(PeerIdInternal P1, PeerIdInternal P2)
 		{
 			//Comparer for optimistic unchoke candidates
 

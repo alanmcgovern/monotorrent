@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerIdInternal id)
         {
-            id.Peer.Connection.IsChoking = true;
+            id.Connection.IsChoking = true;
             id.TorrentManager.PieceManager.ReceivedChokeMessage(id);
         }
 

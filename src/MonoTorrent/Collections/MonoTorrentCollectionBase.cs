@@ -37,6 +37,13 @@ namespace MonoTorrent
             return clone;
         }
 
+        public T Dequeue()
+        {
+            T result = this[0];
+            RemoveAt(0);
+            return result;
+        }
+
         public int IndexOf(T item)
         {
             return list.IndexOf(item);
@@ -56,6 +63,11 @@ namespace MonoTorrent
         public void RemoveAt(int index)
         {
             RemoveAt(index, false);
+        }
+
+        public void RemoveAll(Predicate<T> match)
+        {
+            list.RemoveAll(match);
         }
 
         internal void RemoveAt(int index, bool ignoreReadonly)

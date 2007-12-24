@@ -67,10 +67,10 @@ namespace MonoTorrent.Client.PeerMessages
 
         internal void Handle(PeerIdInternal id)
         {
-            if (!id.Peer.Connection.SupportsFastPeer)
+            if (!id.Connection.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.Peer.Connection.BitField.SetAll(false);
+            id.Connection.BitField.SetAll(false);
             id.Peer.IsSeeder = false;
             id.TorrentManager.SetAmInterestedStatus(id, false);
         }

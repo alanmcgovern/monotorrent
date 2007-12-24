@@ -148,23 +148,23 @@ namespace MonoTorrent.Client
 
         internal void UpdateStats(PeerIdInternal id)
         {
-            amChoking = id.Peer.Connection.AmChoking;
-            amInterested = id.Peer.Connection.AmInterested;
-            amRequestingPiecesCount = id.Peer.Connection.AmRequestingPiecesCount;
-            bitField = id.Peer.Connection.BitField;
-            clientApp = id.Peer.Connection.ClientApp;
-            encryptor = id.Peer.Connection.Encryptor;
+            amChoking = id.Connection.AmChoking;
+            amInterested = id.Connection.AmInterested;
+            amRequestingPiecesCount = id.Connection.AmRequestingPiecesCount;
+            bitField = id.Connection.BitField;
+            clientApp = id.Connection.ClientApp;
+            encryptor = id.Connection.Encryptor;
             hashFails = id.Peer.TotalHashFails;
-            isChoking = id.Peer.Connection.IsChoking;
-            isInterested = id.Peer.Connection.IsInterested;
-            isRequestingPiecesCount = id.Peer.Connection.IsRequestingPiecesCount;
+            isChoking = id.Connection.IsChoking;
+            isInterested = id.Connection.IsInterested;
+            isRequestingPiecesCount = id.Connection.IsRequestingPiecesCount;
             isSeeder = id.Peer.IsSeeder;
             location = id.Peer.Location;
-            monitor = id.Peer.Connection.Monitor;
+            monitor = id.Connection.Monitor;
             peerId = id.Peer.PeerId;
-            piecesSent = id.Peer.Connection.PiecesSent;
-            sendQueueLength = id.Peer.Connection.QueueLength;
-            supportsFastPeer = id.Peer.Connection.SupportsFastPeer;
+            piecesSent = id.Connection.PiecesSent;
+            sendQueueLength = id.Connection.QueueLength;
+            supportsFastPeer = id.Connection.SupportsFastPeer;
             manager = id.TorrentManager;
         }
 

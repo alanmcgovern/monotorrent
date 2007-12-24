@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
-                        if (id.Peer.Connection == null)
+                        if (id.Connection == null)
                             return;
 
                         try
@@ -208,7 +208,7 @@ namespace MonoTorrent.Client
         {
             lock (id.TorrentManager.listLock)
                 lock (id)
-                    if (id.Peer.Connection != null)
+                    if (id.Connection != null)
                         id.ConnectionManager.ProcessQueue(id);
         }
 

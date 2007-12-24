@@ -116,7 +116,7 @@ namespace MonoTorrent.Client.Encryption
 
             // Encrypt the *entire* message exactly once.
             if (offset == 0)
-                Encryptor.Encrypt(buffer.Array, buffer.Offset, id.Peer.Connection.BytesToSend);
+                Encryptor.Encrypt(buffer.Array, buffer.Offset, id.Connection.BytesToSend);
 
             try
             {
@@ -154,7 +154,7 @@ namespace MonoTorrent.Client.Encryption
             PeerIdInternal id = (PeerIdInternal)result.AsyncState;
             id.Peer.ActiveReceive = false;
             int received = this.peerSocket.EndReceive(result, out errorCode);
-            Encryptor.Decrypt(id.Peer.Connection.recieveBuffer.Array, id.Peer.Connection.recieveBuffer.Offset + id.Peer.Connection.BytesReceived, received);
+            Encryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset + id.Connection.BytesReceived, received);
             return received;
         }
 

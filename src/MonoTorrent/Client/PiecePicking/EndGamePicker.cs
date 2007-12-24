@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
             {
                 // See if the peer has any of the pieces in our list of "To Be Requested" pieces
                 for (int i = 0; i < this.pieces.Count; i++)
-                    if (id.Peer.Connection.BitField[pieces[i].Index])
+                    if (id.Connection.BitField[pieces[i].Index])
                         return true;
 
                 return false;
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                 // For each block, see if the peer has that piece, and if so, request the block
                 for (int i = 0; i < this.blocks.Count; i++)
                 {
-                    if (!id.Peer.Connection.BitField[this.blocks[i].PieceIndex] || this.blocks[i].Received)
+                    if (!id.Connection.BitField[this.blocks[i].PieceIndex] || this.blocks[i].Received)
                         continue;
 
                     Block b = this.blocks[i];
@@ -174,18 +174,18 @@ namespace MonoTorrent.Client
         {
             lock (this.requestsLocker)
             {
-                if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+                if (!(id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
                     RemoveRequests(id);
                 else
                 {
                     // Cleanly remove any pending request messages from the send queue as there's no point in sending them
                     IPeerMessageInternal message;
-                    int length = id.Peer.Connection.QueueLength;
+                    int length = id.Connection.QueueLength;
                     for (int i = 0; i < length; i++)
-                        if ((message = id.Peer.Connection.Dequeue()) is RequestMessage)
+                        if ((message = id.Connection.Dequeue()) is RequestMessage)
                             RemoveRequests(id, (RequestMessage)message);
                         else
-                            id.Peer.Connection.Enqueue(message);
+                            id.Connection.Enqueue(message);
                 }
             }
             return;
@@ -224,7 +224,7 @@ namespace MonoTorrent.Client
                 }
 
                 p.Blocks[blockIndex].Received = true;
-                id.Peer.Connection.AmRequestingPiecesCount--;
+                id.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(p.Blocks[blockIndex], p, id));
 
                 if (!p.AllBlocksReceived)
@@ -284,7 +284,7 @@ namespace MonoTorrent.Client
                 {
                     this.requests[id].Remove(piece.Blocks[block]);
                     this.blockRequestees[piece.Blocks[block]].Remove(id);
-                    id.Peer.Connection.AmRequestingPiecesCount--;
+                    id.Connection.AmRequestingPiecesCount--;
                     id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(piece.Blocks[block], piece, id));
                 }
             }
@@ -300,7 +300,7 @@ namespace MonoTorrent.Client
             BlockCollection blocks = this.requests[id];
             for (int i = 0; i < blocks.Count; i++)
             {
-                id.Peer.Connection.AmRequestingPiecesCount--;
+                id.Connection.AmRequestingPiecesCount--;
                 id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(blocks[i], GetPieceFromIndex(this.pieces, blocks[i].PieceIndex), id));
 
                 if (this.blockRequestees.ContainsKey(blocks[i]))

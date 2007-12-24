@@ -111,8 +111,8 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerIdInternal id)
         {
-            id.Peer.Connection.BitField = this.bitField;
-            id.Peer.IsSeeder = (id.Peer.Connection.BitField.AllTrue);
+            id.Connection.BitField = this.bitField;
+            id.Peer.IsSeeder = (id.Connection.BitField.AllTrue);
 
             id.TorrentManager.SetAmInterestedStatus(id, id.TorrentManager.PieceManager.IsInteresting(id));
         }

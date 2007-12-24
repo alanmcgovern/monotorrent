@@ -24,10 +24,8 @@ namespace MonoTorrent.Client
         private List<Peer> availablePeers;
         private List<Peer> banned;
         private List<Peer> busy;
-        private List<PeerIdInternal> connectedPeers;
-        private List<PeerIdInternal> connectingTo;
-        private List<PeerIdInternal> downloadQueue;
-        private List<PeerIdInternal> uploadQueue;
+        private List<Peer> connectedPeers;
+        private List<Peer> connectingTo;
         #endregion Member Variables
 
 
@@ -52,7 +50,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that we are currently connected to
         /// </summary>
-        internal List<PeerIdInternal> ConnectedPeers
+        internal List<Peer> ConnectedPeers
         {
             get { return this.connectedPeers; }
         }
@@ -60,17 +58,9 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that we are currently trying to connect to
         /// </summary>
-        internal List<PeerIdInternal> ConnectingToPeers
+        internal List<Peer> ConnectingToPeers
         {
             get { return this.connectingTo; }
-        }
-
-        /// <summary>
-        /// The list of peers which have data queued up to download
-        /// </summary>
-        internal List<PeerIdInternal> DownloadQueue
-        {
-            get { return this.downloadQueue; }
         }
 
         /// <summary>
@@ -85,7 +75,7 @@ namespace MonoTorrent.Client
                 lock (this.manager.listLock)
                     for (int i = 0; i < this.connectedPeers.Count; i++)
                         lock (this.connectedPeers[i])
-                            if (!this.connectedPeers[i].Peer.IsSeeder)
+                            if (!this.connectedPeers[i].IsSeeder)
                                 leechs++;
 
                 return leechs;
@@ -104,18 +94,10 @@ namespace MonoTorrent.Client
                 lock (this.manager.listLock)
                     for (int i = 0; i < this.connectedPeers.Count; i++)
                         lock (this.connectedPeers[i])
-                            if (this.connectedPeers[i].Peer.IsSeeder)
+                            if (this.connectedPeers[i].IsSeeder)
                                 seeds++;
                 return seeds;
             }
-        }
-
-        /// <summary>
-        /// The list of peers which have data queued up to send
-        /// </summary>
-        internal List<PeerIdInternal> UploadQueue
-        {
-            get { return this.uploadQueue; }
         }
 
         #endregion
@@ -130,10 +112,8 @@ namespace MonoTorrent.Client
             this.availablePeers = new List<Peer>();
             this.banned = new List<Peer>();
             this.busy = new List<Peer>();
-            this.connectedPeers = new List<PeerIdInternal>();
-            this.connectingTo = new List<PeerIdInternal>();
-            this.downloadQueue = new List<PeerIdInternal>();
-            this.uploadQueue = new List<PeerIdInternal>();
+            this.connectedPeers = new List<Peer>();
+            this.connectingTo = new List<Peer>();
         }
 
         #endregion Constructors
@@ -147,10 +127,10 @@ namespace MonoTorrent.Client
                 yield return availablePeers[i];
 
             for (int i = 0; i < this.connectedPeers.Count; i++)
-                yield return connectedPeers[i].Peer;
+                yield return connectedPeers[i];
 
             for (int i = 0; i < this.connectingTo.Count; i++)
-                yield return this.connectingTo[i].Peer;
+                yield return this.connectingTo[i];
 
             for (int i = 0; i < this.banned.Count; i++)
                 yield return this.banned[i];
@@ -159,28 +139,20 @@ namespace MonoTorrent.Client
                 yield return this.busy[i];
         }
 
-        internal void AddPeer(PeerIdInternal id, PeerType type)
+        internal void AddPeer(Peer peer, PeerType type)
         {
             switch (type)
             {
                 case (PeerType.Connected):
-                    this.connectedPeers.Add(id);
+                    this.connectedPeers.Add(peer);
                     break;
 
                 case (PeerType.Connecting):
-                    this.connectingTo.Add(id);
+                    this.connectingTo.Add(peer);
                     break;
 
                 case (PeerType.Available):
-                    this.availablePeers.Add(id.Peer);
-                    break;
-
-                case (PeerType.DownloadQueue):
-                    this.downloadQueue.Add(id);
-                    break;
-
-                case (PeerType.UploadQueue):
-                    this.uploadQueue.Remove(id);
+                    this.availablePeers.Add(peer);
                     break;
 
                 default:
@@ -193,8 +165,6 @@ namespace MonoTorrent.Client
             this.availablePeers.Clear();
             this.connectedPeers.Clear();
             this.connectingTo.Clear();
-            this.downloadQueue.Clear();
-            this.uploadQueue.Clear();
         }
 
         internal bool Contains(Peer peer)
@@ -206,9 +176,9 @@ namespace MonoTorrent.Client
             return false;
         }
 
-        internal PeerIdInternal Dequeue(PeerType type)
+        internal Peer Dequeue(PeerType type)
         {
-            PeerIdInternal id;
+            Peer id;
             switch (type)
             {
                 case (PeerType.Connected):
@@ -222,18 +192,8 @@ namespace MonoTorrent.Client
                     return id;
 
                 case (PeerType.Available):
-                    id = new PeerIdInternal(this.availablePeers[0], manager);
+                    id = this.availablePeers[0];
                     this.availablePeers.RemoveAt(0);
-                    return id;
-
-                case (PeerType.DownloadQueue):
-                    id = this.downloadQueue[0];
-                    this.downloadQueue.RemoveAt(0);
-                    return id;
-
-                case (PeerType.UploadQueue):
-                    id = this.uploadQueue[0];
-                    this.uploadQueue.RemoveAt(0);
                     return id;
 
                 default:
@@ -241,7 +201,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void Enqueue(PeerIdInternal id, PeerType type)
+        internal void Enqueue(Peer id, PeerType type)
         {
             switch (type)
             {
@@ -254,15 +214,7 @@ namespace MonoTorrent.Client
                     return;
 
                 case (PeerType.Available):
-                    this.availablePeers.Add(id.Peer);
-                    return;
-
-                case (PeerType.DownloadQueue):
-                    this.downloadQueue.Add(id);
-                    return;
-
-                case (PeerType.UploadQueue):
-                    this.uploadQueue.Add(id);
+                    this.availablePeers.Add(id);
                     return;
 
                 default:
@@ -270,7 +222,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal void RemovePeer(PeerIdInternal id, PeerType type)
+        internal void RemovePeer(Peer id, PeerType type)
         {
             switch (type)
             {
@@ -283,15 +235,7 @@ namespace MonoTorrent.Client
                     break;
 
                 case (PeerType.Available):
-                    this.availablePeers.Remove(id.Peer);
-                    break;
-
-                case (PeerType.DownloadQueue):
-                    this.downloadQueue.Remove(id);
-                    break;
-
-                case (PeerType.UploadQueue):
-                    this.uploadQueue.Remove(id);
+                    this.availablePeers.Remove(id);
                     break;
 
                 default:

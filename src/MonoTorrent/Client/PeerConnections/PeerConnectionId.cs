@@ -44,12 +44,22 @@ namespace MonoTorrent.Client
         public string NulledAt = string.Empty;
         private PeerId peerId;
         private Peer peer;
+        private PeerConnectionBase connection;
         private TorrentManager torrentManager;
 
         #endregion Member Variables
 
 
         #region Properties
+
+        /// <summary>
+        /// The connection associated with this peer
+        /// </summary>
+        public PeerConnectionBase Connection
+        {
+            get { return this.connection; }
+            set { this.connection = value; }
+        }
 
         public ConnectionManager ConnectionManager
         {
@@ -87,7 +97,7 @@ namespace MonoTorrent.Client
             set
             {
                 this.torrentManager = value;
-                this.peer.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
+                this.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
         }
 
@@ -100,10 +110,9 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="peer"></param>
         internal PeerIdInternal(Peer peer)
+            : this(peer, null)
         {
-            this.peer = peer;
-            this.torrentManager = null;
-            this.peer.Connection.BitField = null;
+
         }
 
 

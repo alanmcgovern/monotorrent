@@ -180,7 +180,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="id">The Peer who's message will be handled</param>
         internal void Handle(PeerIdInternal id)
         {
-            id.Peer.Connection.Port = this.port;
+            id.Connection.Port = this.port;
         }
 
 

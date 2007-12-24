@@ -47,6 +47,11 @@ namespace MonoTorrent.Client
     /// </summary>
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
+        internal MonoTorrentCollection<PeerIdInternal> downloadQueue = new MonoTorrentCollection<PeerIdInternal>();
+        internal MonoTorrentCollection<PeerIdInternal> uploadQueue = new MonoTorrentCollection<PeerIdInternal>();
+        internal List<PeerIdInternal> ConnectedPeers;
+        internal List<PeerIdInternal> ConnectingToPeers;
+
         #region Events
 
         /// <summary>
@@ -272,6 +277,8 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
+            this.ConnectedPeers = new List<PeerIdInternal>();
+            this.ConnectingToPeers = new List<PeerIdInternal>();
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
             this.finishedPieces = new Queue<int>();
             this.listLock = new object();
@@ -459,23 +466,22 @@ namespace MonoTorrent.Client
                 handle = this.trackerManager.Announce(TorrentEvent.Stopped);
                 lock (this.listLock)
                 {
-                    // HACK - Fix this properly with the peer event code 
-                    while (this.peers.ConnectingToPeers.Count > 0)
-                        lock (this.peers.ConnectingToPeers[0])
+                    while (this.ConnectingToPeers.Count > 0)
+                        lock (this.ConnectingToPeers[0])
                         {
-                            if (peers.ConnectingToPeers[0].Peer.Connection == null)
-                                peers.ConnectingToPeers.RemoveAt(0);
+                            if (this.ConnectingToPeers[0].Connection == null)
+                                this.ConnectingToPeers.RemoveAt(0);
                             else
-                                engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectingToPeers[0], true, "Called stop");
+                                engine.ConnectionManager.AsyncCleanupSocket(this.ConnectingToPeers[0], true, "Called stop");
                         }
 
-                    while (this.peers.ConnectedPeers.Count > 0)
-                        lock (this.peers.ConnectedPeers[0])
+                    while (this.ConnectedPeers.Count > 0)
+                        lock (this.ConnectedPeers[0])
                         {
-                            if (peers.ConnectedPeers[0].Peer.Connection == null)
-                                peers.ConnectedPeers.RemoveAt(0);
+                            if (this.ConnectedPeers[0].Connection == null)
+                                this.ConnectedPeers.RemoveAt(0);
                             else
-                                engine.ConnectionManager.AsyncCleanupSocket(this.peers.ConnectedPeers[0], true, "Called stop");
+                                engine.ConnectionManager.AsyncCleanupSocket(this.ConnectedPeers[0], true, "Called stop");
                         }
                 }
 
@@ -544,7 +550,7 @@ namespace MonoTorrent.Client
 
             // First attempt to resume downloading (just in case we've stalled for whatever reason)
             lock (this.listLock)
-                if (this.peers.DownloadQueue.Count > 0 || this.peers.UploadQueue.Count > 0)
+                if (this.downloadQueue.Count > 0 || this.uploadQueue.Count > 0)
                     this.ResumePeers();
 
             engine.ConnectionManager.TryConnect();
@@ -558,12 +564,12 @@ namespace MonoTorrent.Client
                 while (this.finishedPieces.Count > 0)
                     this.SendHaveMessageToAll(this.finishedPieces.Dequeue());
 
-                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                for (int i = 0; i < this.ConnectedPeers.Count; i++)
                 {
-                    id = this.peers.ConnectedPeers[i];
+                    id = this.ConnectedPeers[i];
                     lock (id)
                     {
-                        if (id.Peer.Connection == null)
+                        if (id.Connection == null)
                         {
                             Console.WriteLine("Nulled out: " + id.Peer.Location);
                             continue;
@@ -572,7 +578,7 @@ namespace MonoTorrent.Client
                         id.UpdatePublicStats();
 
                         if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
-                            id.Peer.Connection.Monitor.TimePeriodPassed();
+                            id.Connection.Monitor.TimePeriodPassed();
 
                     }
                 }
@@ -583,7 +589,6 @@ namespace MonoTorrent.Client
 
         internal void PostLogicTick(int counter)
         {
-
             PeerIdInternal id;
             DateTime nowTime = DateTime.Now;
             DateTime thirtySecondsAgo = nowTime.AddSeconds(-50);
@@ -592,35 +597,35 @@ namespace MonoTorrent.Client
 
             lock (this.listLock)
             {
-                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                for (int i = 0; i < this.ConnectedPeers.Count; i++)
                 {
-                    id = this.peers.ConnectedPeers[i];
+                    id = this.ConnectedPeers[i];
                     lock (id)
                     {
-                        if (id.Peer.Connection == null)
+                        if (id.Connection == null)
                             continue;
 
-                        if (nintySecondsAgo > id.Peer.Connection.LastMessageSent)
+                        if (nintySecondsAgo > id.Connection.LastMessageSent)
                         {
-                            id.Peer.Connection.LastMessageSent = DateTime.Now;
-                            id.Peer.Connection.Enqueue(new KeepAliveMessage());
+                            id.Connection.LastMessageSent = DateTime.Now;
+                            id.Connection.Enqueue(new KeepAliveMessage());
                         }
 
-                        if (onhundredAndEightySecondsAgo > id.Peer.Connection.LastMessageReceived)
+                        if (onhundredAndEightySecondsAgo > id.Connection.LastMessageReceived)
                         {
                             engine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
                             continue;
                         }
 
-                        if (thirtySecondsAgo > id.Peer.Connection.LastMessageReceived && id.Peer.Connection.AmRequestingPiecesCount > 0)
+                        if (thirtySecondsAgo > id.Connection.LastMessageReceived && id.Connection.AmRequestingPiecesCount > 0)
                         {
                             engine.ConnectionManager.CleanupSocket(id, true, "Didn't send pieces");
                             continue;
                         }
 
-                        if (!id.Peer.Connection.ProcessingQueue && id.Peer.Connection.QueueLength > 0)
+                        if (!id.Connection.ProcessingQueue && id.Connection.QueueLength > 0)
                         {
-                            id.Peer.Connection.ProcessingQueue = true;
+                            id.Connection.ProcessingQueue = true;
                             engine.ConnectionManager.MessageHandler.EnqueueSend(id);
                         }
                     }
@@ -720,14 +725,15 @@ namespace MonoTorrent.Client
 
             // While there are peers queued in the list and i haven't used my download allowance, resume downloading
             // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
-            while (this.peers.DownloadQueue.Count > 0 &&
+            while (this.downloadQueue.Count > 0 &&
                     this.fileManager.QueuedWrites < 20 &&
                     ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
-                if (engine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.DownloadQueue), true) > ConnectionManager.ChunkLength / 2.0)
+            {
+                if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
-
-            while (this.peers.UploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
-                if (engine.ConnectionManager.ResumePeer(this.peers.Dequeue(PeerType.UploadQueue), false) > ConnectionManager.ChunkLength / 2.0)
+            }
+            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+                if (engine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
 
         }
@@ -850,34 +856,34 @@ namespace MonoTorrent.Client
         //{
         //    IPeerMessageInternal message;
         //    PieceMessage pieceMessage;
-        //    int length = id.Peer.Connection.QueueLength;
+        //    int length = id.Connection.QueueLength;
 
         //    for (int i = 0; i < length; i++)
         //    {
-        //        message = id.Peer.Connection.Dequeue();
+        //        message = id.Connection.Dequeue();
         //        if (!(message is PieceMessage))
         //        {
-        //            id.Peer.Connection.Enqueue(message);
+        //            id.Connection.Enqueue(message);
         //            continue;
         //        }
 
         //        pieceMessage = (PieceMessage)message;
 
         //        // If the peer doesn't support fast peer, then we will never requeue the message
-        //        if (!(id.Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+        //        if (!(id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
         //        {
-        //            id.Peer.Connection.IsRequestingPiecesCount--;
+        //            id.Connection.IsRequestingPiecesCount--;
         //            continue;
         //        }
 
         //        // If the peer supports fast peer, queue the message if it is an AllowedFast piece
         //        // Otherwise send a reject message for the piece
-        //        if (id.Peer.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
-        //            id.Peer.Connection.Enqueue(pieceMessage);
+        //        if (id.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
+        //            id.Connection.Enqueue(pieceMessage);
         //        else
         //        {
-        //            id.Peer.Connection.IsRequestingPiecesCount--;
-        //            id.Peer.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
+        //            id.Connection.IsRequestingPiecesCount--;
+        //            id.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
         //        }
         //    }
         //}
@@ -908,22 +914,28 @@ namespace MonoTorrent.Client
             // This is "Have Suppression" as defined in the spec.
 
             lock (this.listLock)
+            {
                 for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                {
                     lock (this.peers.ConnectedPeers[i])
-                        if (this.peers.ConnectedPeers[i].Peer.Connection != null)
-                        {
-                            // If the peer has the piece already, we need to recalculate his "interesting" status.
-                            bool hasPiece = this.peers.ConnectedPeers[i].Peer.Connection.BitField[pieceIndex];
-                            if (hasPiece)
-                            {
-                                bool isInteresting = this.pieceManager.IsInteresting(this.peers.ConnectedPeers[i]);
-                                SetAmInterestedStatus(this.peers.ConnectedPeers[i], isInteresting);
-                            }
+                    {
+                        if (this.ConnectedPeers[i].Connection == null)
+                            continue;
 
-                            // Check to see if have supression is enabled and send the have message accordingly
-                            if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
-                                this.peers.ConnectedPeers[i].Peer.Connection.Enqueue(new HaveMessage(pieceIndex));
+                        // If the peer has the piece already, we need to recalculate his "interesting" status.
+                        bool hasPiece = this.ConnectedPeers[i].Connection.BitField[pieceIndex];
+                        if (hasPiece)
+                        {
+                            bool isInteresting = this.pieceManager.IsInteresting(this.ConnectedPeers[i]);
+                            SetAmInterestedStatus(this.ConnectedPeers[i], isInteresting);
                         }
+
+                        // Check to see if have supression is enabled and send the have message accordingly
+                        if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
+                            this.ConnectedPeers[i].Connection.Enqueue(new HaveMessage(pieceIndex));
+                    }
+                }
+            }
         }
 
 
@@ -934,22 +946,22 @@ namespace MonoTorrent.Client
         ///// <param name="amChoking">The new status for "AmChoking"</param>
         //private void SetChokeStatus(PeerIdInternal id, bool amChoking)
         //{
-        //    if (id.Peer.Connection.AmChoking == amChoking)
+        //    if (id.Connection.AmChoking == amChoking)
         //        return;
 
-        //    id.Peer.Connection.PiecesSent = 0;
-        //    id.Peer.Connection.AmChoking = amChoking;
+        //    id.Connection.PiecesSent = 0;
+        //    id.Connection.AmChoking = amChoking;
         //    if (amChoking)
         //    {
         //        Interlocked.Decrement(ref this.uploadingTo);
         //        RejectPendingRequests(id);
-        //        id.Peer.Connection.EnqueueAt(new ChokeMessage(), 0);
+        //        id.Connection.EnqueueAt(new ChokeMessage(), 0);
         //        Logger.Log("Choking: " + this.uploadingTo);
         //    }
         //    else
         //    {
         //        Interlocked.Increment(ref this.uploadingTo);
-        //        id.Peer.Connection.Enqueue(new UnchokeMessage());
+        //        id.Connection.Enqueue(new UnchokeMessage());
         //        Logger.Log("UnChoking: " + this.uploadingTo);
         //    }
         //}
@@ -976,25 +988,25 @@ namespace MonoTorrent.Client
         internal void SetAmInterestedStatus(PeerIdInternal id, bool interesting)
         {
             bool enqueued = false;
-            if (interesting && !id.Peer.Connection.AmInterested)
+            if (interesting && !id.Connection.AmInterested)
             {
-                id.Peer.Connection.AmInterested = true;
-                id.Peer.Connection.Enqueue(new InterestedMessage());
+                id.Connection.AmInterested = true;
+                id.Connection.Enqueue(new InterestedMessage());
 
                 // He's interesting, so attempt to queue up any FastPieces (if that's possible)
                 while (id.TorrentManager.pieceManager.AddPieceRequest(id)) { }
                 enqueued = true;
             }
-            else if (!interesting && id.Peer.Connection.AmInterested)
+            else if (!interesting && id.Connection.AmInterested)
             {
-                id.Peer.Connection.AmInterested = false;
-                id.Peer.Connection.Enqueue(new NotInterestedMessage());
+                id.Connection.AmInterested = false;
+                id.Connection.Enqueue(new NotInterestedMessage());
                 enqueued = true;
             }
 
-            if (enqueued && !id.Peer.Connection.ProcessingQueue)
+            if (enqueued && !id.Connection.ProcessingQueue)
             {
-                id.Peer.Connection.ProcessingQueue = true;
+                id.Connection.ProcessingQueue = true;
                 id.ConnectionManager.MessageHandler.EnqueueSend(id);
             }
         }

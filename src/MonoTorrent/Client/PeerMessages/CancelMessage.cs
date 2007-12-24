@@ -145,23 +145,23 @@ namespace MonoTorrent.Client.PeerMessages
         internal void Handle(PeerIdInternal id)
         {
             IPeerMessageInternal msg;
-            for (int i = 0; i < id.Peer.Connection.QueueLength; i++)
+            for (int i = 0; i < id.Connection.QueueLength; i++)
             {
-                msg = id.Peer.Connection.Dequeue();
+                msg = id.Connection.Dequeue();
                 if (!(msg is PieceMessage))
                 {
-                    id.Peer.Connection.Enqueue(msg);
+                    id.Connection.Enqueue(msg);
                     continue;
                 }
 
                 PieceMessage piece = msg as PieceMessage;
                 if (!(piece.PieceIndex == this.pieceIndex && piece.StartOffset == this.startOffset && piece.RequestLength == this.requestLength))
                 {
-                    id.Peer.Connection.Enqueue(msg);
+                    id.Connection.Enqueue(msg);
                 }
                 else
                 {
-                    id.Peer.Connection.IsRequestingPiecesCount--;
+                    id.Connection.IsRequestingPiecesCount--;
                 }
             }
         }
