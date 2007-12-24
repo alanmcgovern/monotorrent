@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    public class NewConnectionEventArgs : TorrentEventArgs
+    internal class NewConnectionEventArgs : TorrentEventArgs
     {
         private Peer peer;
         private PeerConnectionBase connection;

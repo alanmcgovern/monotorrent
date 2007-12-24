@@ -160,7 +160,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int OpenConnections
         {
-            get { return this.peers.ConnectedPeers.Count; }
+            get { return this.ConnectedPeers.Count; }
         }
 
 
@@ -915,9 +915,9 @@ namespace MonoTorrent.Client
 
             lock (this.listLock)
             {
-                for (int i = 0; i < this.peers.ConnectedPeers.Count; i++)
+                for (int i = 0; i < this.ConnectedPeers.Count; i++)
                 {
-                    lock (this.peers.ConnectedPeers[i])
+                    lock (this.ConnectedPeers[i])
                     {
                         if (this.ConnectedPeers[i].Connection == null)
                             continue;

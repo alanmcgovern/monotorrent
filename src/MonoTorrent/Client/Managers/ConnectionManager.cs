@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
             lock (id)
             {
                 Logger.Log(id, "Connecting");
-                manager.Peers.AddPeer(id.Peer, PeerType.Connecting);
+                manager.Peers.AddPeer(id.Peer, PeerType.Active);
                 id.TorrentManager.ConnectingToPeers.Add(id);
                 System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
 
@@ -195,7 +195,7 @@ namespace MonoTorrent.Client
                 {
                     // If there's a socket exception at this point, just drop the peer's details silently
                     // as they must be invalid.
-                    manager.Peers.RemovePeer(id.Peer, PeerType.Connecting);
+                    manager.Peers.RemovePeer(id.Peer, PeerType.Active);
                     id.TorrentManager.ConnectingToPeers.Remove(id);
                     System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 }
@@ -235,9 +235,7 @@ namespace MonoTorrent.Client
 
                         // Remove the peer from the "connecting" list and put them in the "connected" list
                         // because we have now successfully connected to them
-                        id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Connecting);
                         id.TorrentManager.ConnectingToPeers.Remove(id);
-                        id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Connected);
                         id.TorrentManager.ConnectedPeers.Add(id);
 
                         id.PublicId = new PeerId();
@@ -297,11 +295,13 @@ namespace MonoTorrent.Client
 
                         id.Connection = null;
                         id.NulledAt = "1";
-                        id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Connecting);
+                        id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
                         id.TorrentManager.ConnectingToPeers.Remove(id);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
                             id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);
+                        else
+                            id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
                     }
                 }
             }
@@ -323,11 +323,13 @@ namespace MonoTorrent.Client
 
                         id.Connection = null;
                         id.NulledAt = "2";
-                        id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Connecting);
+                        id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
                         id.TorrentManager.ConnectingToPeers.Remove(id);
 
                         if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
                             id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);
+                        else
+                            id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
                     }
                 }
             }
@@ -865,16 +867,15 @@ namespace MonoTorrent.Client
                         id.TorrentManager.ConnectingToPeers.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
                         id.TorrentManager.ConnectedPeers.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
 
-                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id.Peer))
-                            id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Connected);
-
-                        if (id.TorrentManager.Peers.ConnectingToPeers.Contains(id.Peer))
-                            id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Connecting);
+                        if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
+                            id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
 
                         // If we get our own details, this check makes sure we don't try connecting to ourselves again
                         if (id.Peer.PeerId != engine.PeerId)
+                        {
                             if (!id.TorrentManager.Peers.AvailablePeers.Contains(id.Peer) && id.Peer.CleanedUpCount < 5)
                                 id.TorrentManager.Peers.AvailablePeers.Insert(0, id.Peer);
+                        }
                     }
                 }
             }
@@ -966,7 +967,7 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        if (id.TorrentManager.Peers.ConnectedPeers.Contains(id.Peer) || id.TorrentManager.Peers.ConnectingToPeers.Contains(id.Peer))
+                        if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
                         {
                             Logger.Log(id, "Already connected to peer");
                             id.Connection.Dispose();
@@ -975,7 +976,7 @@ namespace MonoTorrent.Client
 
                         Logger.Log(id, "Peer accepted ok");
                         id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Available);
-                        id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Connected);
+                        id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Active);
                         id.TorrentManager.ConnectedPeers.Add(id);
 
                         //ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
@@ -1191,8 +1192,8 @@ namespace MonoTorrent.Client
             {
                 foreach (TorrentManager manager in this.torrents)
                 {
-                    // If we have reached the max peers allo5wed for this torrent, don't connect to a new peer for this torrent
-                    if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
+                    // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
+                    if (manager.ConnectedPeers.Count >= manager.Settings.MaxConnections)
                         continue;
 
                     // If the torrent isn't active, don't connect to a peer for it

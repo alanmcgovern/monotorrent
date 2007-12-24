@@ -6,13 +6,10 @@ namespace MonoTorrent.Client
 {
     internal enum PeerType
     {
-        Connecting,
-        Connected,
+        Active,
         Available,
-        UploadQueue,
-        DownloadQueue,
-        Busy,
-        Banned
+        Banned,
+        Busy
     }
 
     public class PeerManager
@@ -21,11 +18,11 @@ namespace MonoTorrent.Client
 
         private ClientEngine engine;
         private TorrentManager manager;
-        private List<Peer> availablePeers;
-        private List<Peer> banned;
-        private List<Peer> busy;
-        private List<Peer> connectedPeers;
-        private List<Peer> connectingTo;
+        private MonoTorrentCollection<Peer> activePeers;
+        private MonoTorrentCollection<Peer> availablePeers;
+        private MonoTorrentCollection<Peer> bannedPeers;
+        private MonoTorrentCollection<Peer> busyPeers;
+
         #endregion Member Variables
 
 
@@ -36,13 +33,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public int Available
         {
-            get { return this.availablePeers.Count + this.connectedPeers.Count + this.connectingTo.Count; }
+            get { return this.availablePeers.Count + this.activePeers.Count + this.busyPeers.Count; }
         }
 
         /// <summary>
         /// The list of peers that are available to be connected to
         /// </summary>
-        internal List<Peer> AvailablePeers
+        internal MonoTorrentCollection<Peer> AvailablePeers
         {
             get { return this.availablePeers; }
         }
@@ -50,17 +47,9 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The list of peers that we are currently connected to
         /// </summary>
-        internal List<Peer> ConnectedPeers
+        internal MonoTorrentCollection<Peer> ActivePeers
         {
-            get { return this.connectedPeers; }
-        }
-
-        /// <summary>
-        /// The list of peers that we are currently trying to connect to
-        /// </summary>
-        internal List<Peer> ConnectingToPeers
-        {
-            get { return this.connectingTo; }
+            get { return this.activePeers; }
         }
 
         /// <summary>
@@ -73,9 +62,9 @@ namespace MonoTorrent.Client
             {
                 int leechs = 0;
                 lock (this.manager.listLock)
-                    for (int i = 0; i < this.connectedPeers.Count; i++)
-                        lock (this.connectedPeers[i])
-                            if (!this.connectedPeers[i].IsSeeder)
+                    for (int i = 0; i < this.activePeers.Count; i++)
+                        lock (this.activePeers[i])
+                            if (!this.activePeers[i].IsSeeder)
                                 leechs++;
 
                 return leechs;
@@ -92,9 +81,9 @@ namespace MonoTorrent.Client
             {
                 int seeds = 0;
                 lock (this.manager.listLock)
-                    for (int i = 0; i < this.connectedPeers.Count; i++)
-                        lock (this.connectedPeers[i])
-                            if (this.connectedPeers[i].IsSeeder)
+                    for (int i = 0; i < this.activePeers.Count; i++)
+                        lock (this.activePeers[i])
+                            if (this.activePeers[i].IsSeeder)
                                 seeds++;
                 return seeds;
             }
@@ -109,11 +98,10 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
             this.manager = manager;
-            this.availablePeers = new List<Peer>();
-            this.banned = new List<Peer>();
-            this.busy = new List<Peer>();
-            this.connectedPeers = new List<Peer>();
-            this.connectingTo = new List<Peer>();
+            this.activePeers = new MonoTorrentCollection<Peer>();
+            this.availablePeers = new MonoTorrentCollection<Peer>();
+            this.bannedPeers = new MonoTorrentCollection<Peer>();
+            this.busyPeers = new MonoTorrentCollection<Peer>();
         }
 
         #endregion Constructors
@@ -123,36 +111,37 @@ namespace MonoTorrent.Client
 
         internal IEnumerable<Peer> AllPeers()
         {
-            for (int i = 0; i < this.availablePeers.Count; i++)
+            for (int i = 0; i < availablePeers.Count; i++)
                 yield return availablePeers[i];
 
-            for (int i = 0; i < this.connectedPeers.Count; i++)
-                yield return connectedPeers[i];
+            for (int i = 0; i < activePeers.Count; i++)
+                yield return activePeers[i];
 
-            for (int i = 0; i < this.connectingTo.Count; i++)
-                yield return this.connectingTo[i];
+            for (int i = 0; i < bannedPeers.Count; i++)
+                yield return bannedPeers[i];
 
-            for (int i = 0; i < this.banned.Count; i++)
-                yield return this.banned[i];
-
-            for (int i = 0; i < this.busy.Count; i++)
-                yield return this.busy[i];
+            for (int i = 0; i < busyPeers.Count; i++)
+                yield return busyPeers[i];
         }
 
         internal void AddPeer(Peer peer, PeerType type)
         {
             switch (type)
             {
-                case (PeerType.Connected):
-                    this.connectedPeers.Add(peer);
-                    break;
-
-                case (PeerType.Connecting):
-                    this.connectingTo.Add(peer);
+                case (PeerType.Active):
+                    this.activePeers.Add(peer);
                     break;
 
                 case (PeerType.Available):
                     this.availablePeers.Add(peer);
+                    break;
+
+                case(PeerType.Banned):
+                    bannedPeers.Add(peer);
+                    break;
+
+                case(PeerType.Busy):
+                    busyPeers.Add(peer);
                     break;
 
                 default:
@@ -162,9 +151,10 @@ namespace MonoTorrent.Client
 
         internal void ClearAll()
         {
+            this.activePeers.Clear();
             this.availablePeers.Clear();
-            this.connectedPeers.Clear();
-            this.connectingTo.Clear();
+            this.bannedPeers.Clear();
+            this.busyPeers.Clear();
         }
 
         internal bool Contains(Peer peer)
@@ -181,20 +171,17 @@ namespace MonoTorrent.Client
             Peer id;
             switch (type)
             {
-                case (PeerType.Connected):
-                    id = this.connectedPeers[0];
-                    this.connectedPeers.RemoveAt(0);
-                    return id;
-
-                case (PeerType.Connecting):
-                    id = this.connectingTo[0];
-                    this.connectingTo.RemoveAt(0);
-                    return id;
+                case (PeerType.Active):
+                    return activePeers.Dequeue();
 
                 case (PeerType.Available):
-                    id = this.availablePeers[0];
-                    this.availablePeers.RemoveAt(0);
-                    return id;
+                    return availablePeers.Dequeue();
+
+                case (PeerType.Banned):
+                    return bannedPeers.Dequeue();
+
+                case (PeerType.Busy):
+                    return busyPeers.Dequeue();
 
                 default:
                     throw new NotSupportedException();
@@ -205,17 +192,21 @@ namespace MonoTorrent.Client
         {
             switch (type)
             {
-                case (PeerType.Connected):
-                    this.connectedPeers.Add(id);
-                    return;
-
-                case (PeerType.Connecting):
-                    this.connectingTo.Add(id);
-                    return;
+                case (PeerType.Active):
+                    activePeers.Add(id);
+                    break;
 
                 case (PeerType.Available):
-                    this.availablePeers.Add(id);
-                    return;
+                     availablePeers.Add(id);
+                     break;
+
+                case (PeerType.Banned):
+                    bannedPeers.Add(id);
+                    break;
+
+                case (PeerType.Busy):
+                    busyPeers.Add(id);
+                    break;
 
                 default:
                     throw new NotSupportedException();
@@ -226,16 +217,20 @@ namespace MonoTorrent.Client
         {
             switch (type)
             {
-                case (PeerType.Connected):
-                    this.connectedPeers.Remove(id);
-                    break;
-
-                case (PeerType.Connecting):
-                    this.connectingTo.Remove(id);
+                case (PeerType.Active):
+                    activePeers.Remove(id);
                     break;
 
                 case (PeerType.Available):
-                    this.availablePeers.Remove(id);
+                    availablePeers.Remove(id);
+                    break;
+
+                case (PeerType.Banned):
+                    bannedPeers.Remove(id);
+                    break;
+
+                case (PeerType.Busy):
+                    busyPeers.Remove(id);
                     break;
 
                 default:
