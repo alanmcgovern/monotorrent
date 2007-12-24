@@ -185,7 +185,9 @@ namespace MonoTorrent
                         sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs);
                         sb.Append(Environment.NewLine);
                         sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
-                        sb.Append(Environment.NewLine);
+                        sb.AppendLine();
+                        sb.Append("Actively connected to: "); sb.Append(manager.OpenConnections);
+                        sb.AppendLine();
                         sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / (1024.0));
                         sb.Append(" MB");
                         sb.Append(Environment.NewLine);
