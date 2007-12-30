@@ -64,6 +64,13 @@ namespace MonoTorrent.Client
                     if (connectedPeer.Connection == null)
                         continue;
 
+					//If the peer is a seeder and we are not currently interested in it, put that right
+					if (connectedPeer.Peer.IsSeeder && !connectedPeer.Connection.AmInterested)
+					{
+						owningTorrent.SetAmInterestedStatus(connectedPeer, true);
+						//Send2Log("Forced AmInterested: " + connectedPeer.Peer.Location);
+					}
+
                     // If the peer is interesting try to queue up some piece requests off him
                     // If he is choking, we will only queue a piece if there is a FastPiece we can choose
                     if (connectedPeer.Connection.AmInterested)
@@ -150,7 +157,10 @@ namespace MonoTorrent.Client
                 while ((peer = list.GetFirstInterestedChokedPeer()) != null && (availableSlots-- > 0))
                     Unchoke(peer);
 
-            // Is this section of code needed? Shouldn't all the peers be in one of the lists above?
+            // In the time that has passed since the last review we might have connected to more peers
+			// that don't appear in AllLists.  It's also possible we have not yet run a review in
+			// which case AllLists will be empty.  Fill remaining slots with unchoked, interested peers
+			// from the full list.
             while (availableSlots-- > 0)
             {
                 //No peers left, look for any interested choked peers
