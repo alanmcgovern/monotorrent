@@ -169,7 +169,7 @@ namespace MonoTorrent.Client.PeerMessages
             int i = 0;
             protocolStringLength = (int)buffer.Array[buffer.Offset + i];                  // First byte is length
 
-#warning Hack
+            // #warning Fix this hack - is there a better way of verifying the protocol string? Hack
             if (protocolStringLength != VersionInfo.ProtocolStringV100.Length)
                 protocolStringLength = VersionInfo.ProtocolStringV100.Length;
 			i++;
