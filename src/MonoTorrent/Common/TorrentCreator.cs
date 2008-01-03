@@ -417,7 +417,7 @@ namespace MonoTorrent.Common
             MD5 hasher = MD5.Create();
             StringBuilder sb = new StringBuilder();
 
-            using (FileStream stream = new FileStream(fileName, FileMode.Open))
+            using (FileStream stream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 byte[] hash = hasher.ComputeHash(stream);
 
