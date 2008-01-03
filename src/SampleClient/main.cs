@@ -73,7 +73,7 @@ namespace MonoTorrent
             // 50 open connections - should never really need to be changed
             // Unlimited download speed - valid range from 0 -> int.Max
             // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 100, 25);
+            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 25);
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
