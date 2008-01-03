@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
 
             base.UpdateSucceeded = true;        // If the update ends up failing, reset this to false.
             //base.LastUpdated = DateTime.Now;
-#warning FIXME
+            // FIXME: This method should be tidied up. I don't like the way it current works
             sb.Append(this.announceUrl);
             sb.Append((this.announceUrl.IndexOf('?') == -1) ? '?' : '&');
             sb.Append("info_hash=");
