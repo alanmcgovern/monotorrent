@@ -244,7 +244,7 @@ namespace MonoTorrent.Client
         {
             try
             {
-#warning Store all the fast resume in a 'data' file in a known location instead?
+                // FIXME: #warning Store all the fast resume in a 'data' file in a known location instead?
                 // If we don't know where the .torrent is on disk, then don't save
                 // fast resume data.
                 if (string.IsNullOrEmpty(manager.Torrent.TorrentPath))
