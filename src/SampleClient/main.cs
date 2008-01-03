@@ -73,7 +73,7 @@ namespace MonoTorrent
             // 50 open connections - should never really need to be changed
             // Unlimited download speed - valid range from 0 -> int.Max
             // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 25);
+            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 100, 25);
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
@@ -177,6 +177,17 @@ namespace MonoTorrent
                         sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed);
                         sb.Append(" kB/s");
                         sb.Append(Environment.NewLine);
+                        sb.Append("Read Rate:        "); sb.AppendFormat("{0:0.00}", engine.DiskManager.ReadRate);
+                        sb.AppendFormat(" kB/s");
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Write Rate:       "); sb.AppendFormat("{0:0.00}", engine.DiskManager.WriteRate);
+                        sb.AppendFormat(" kB/s");
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Total Read:       "); sb.AppendFormat("{0:0.00}", engine.DiskManager.TotalRead);
+                        sb.AppendFormat(" kB");
+                        sb.Append(Environment.NewLine);
+                        sb.Append("Total Written:    "); sb.AppendFormat("{0:0.00}", engine.DiskManager.TotalWritten);
+                        sb.AppendFormat(" kB");
                         sb.Append(Environment.NewLine);
                         sb.Append("Torrent State:    "); sb.Append(manager.State);
                         sb.Append(Environment.NewLine);

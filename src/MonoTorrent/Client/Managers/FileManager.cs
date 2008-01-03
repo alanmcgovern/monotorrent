@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// This class manages writing and reading of pieces from the disk
     /// </summary>
-    public class FileManager : IDisposable
+    public class FileManager
     {
         #region Public Events
 
@@ -54,20 +54,11 @@ namespace MonoTorrent.Client
         #region Private Members
 
         private string baseDirectory;                           // The base directory into which all the files will be put
-        private Queue<BufferedFileWrite> bufferedReads;         // A list of all the reads which are waiting to be performed
-        private Queue<BufferedFileWrite> bufferedWrites;        // A list of all the writes which are waiting to be performed
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
-        private FileStream[] fileStreams;                       // The filestreams used to read/write to the files on disk
         private bool initialHashRequired;                       // Used to indicate whether we need to hashcheck the files or not
-        private bool ioActive;                                  // Used to signal when the IO thread is running
-        private Thread ioThread;                                // The dedicated thread used for reading/writing
-        private object queueLock;                               // Used to synchronise access on the IO thread
         private string savePath;                                // The path where the base directory will be put
-        internal ReaderWriterLock streamsLock;
         private TorrentManager manager;
-        private ManualResetEvent threadWait;                    // Used to signal the IO thread when some data is ready for it to work on
-
         private TorrentFile[] files;
         private int pieceLength;
 
@@ -75,6 +66,21 @@ namespace MonoTorrent.Client
 
 
         #region Properties
+
+        public string BaseDirectory
+        {
+            get { return baseDirectory; }
+        }
+
+        public TorrentFile[] Files
+        {
+            get { return files; }
+        }
+
+        public long FileSize
+        {
+            get { return fileSize; }
+        }
 
         /// <summary>
         /// True if we need to hash the files (i.e. some were preexisting)
@@ -93,14 +99,17 @@ namespace MonoTorrent.Client
             get { return this.pieceLength; }
         }
 
-        /// <summary>
-        /// Returns the number of pieces which are currently queued in the write buffer
-        /// </summary>
-        internal int QueuedWrites
-        {
-            get { return this.bufferedWrites.Count; }
-        }
+        ///// <summary>
+        ///// Returns the number of pieces which are currently queued in the write buffer
+        ///// </summary>
+        //internal int QueuedWrites
+        //{
+        //    get { return this.bufferedWrites.Count; }
+        //}
 
+        /// <summary>
+        /// 
+        /// </summary>
         internal string SavePath
         {
             get { return this.savePath; }
@@ -111,7 +120,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool StreamsOpen
         {
-            get { return this.fileStreams != null; }
+            get { return true; }// return this.fileStreams != null; }
         }
 
         #endregion
@@ -130,18 +139,32 @@ namespace MonoTorrent.Client
         internal FileManager(TorrentManager manager, TorrentFile[] files, int pieceLength, string savePath, string baseDirectory)
         {
             this.baseDirectory = baseDirectory;
-            this.streamsLock = new ReaderWriterLock();
-            this.queueLock = new object();
-            this.bufferedReads = new Queue<BufferedFileWrite>();
-            this.bufferedWrites = new Queue<BufferedFileWrite>();
+            //this.streamsLock = new ReaderWriterLock();
+            //this.queueLock = new object();
+            //this.bufferedReads = new Queue<BufferedIO>();
+            //this.bufferedWrites = new Queue<BufferedIO>();
             this.hasher = new SHA1Managed();
             this.initialHashRequired = false;
-            this.ioActive = true;
+            //this.ioActive = true;
             this.manager = manager;
             this.savePath = savePath;
-            this.threadWait = new ManualResetEvent(false);
+            //this.threadWait = new ManualResetEvent(false);
             this.files = files;
             this.pieceLength = pieceLength;
+
+            foreach (TorrentFile file in files)
+                fileSize += file.Length;
+
+            initialHashRequired = CheckFilesExist();
+        }
+
+        private bool CheckFilesExist()
+        {
+            foreach (TorrentFile file in files)
+                if(File.Exists(GenerateFilePath(file, BaseDirectory, savePath)))
+                    return true;
+
+            return false;
         }
 
         #endregion
@@ -156,56 +179,6 @@ namespace MonoTorrent.Client
 
             BlockEventArgs e = (BlockEventArgs)args;
             this.BlockWritten(e.ID, e);
-        }
-
-
-        /// <summary>
-        /// Closes all the filestreams
-        /// </summary>
-        internal void CloseFileStreams()
-        {
-            // Setting this boolean true allows the IO thread to terminate gracefully
-            this.ioActive = false;
-
-            // Allow the IO thread to run.
-            SetHandleState(true);
-            this.ioThread.Join(150);
-
-            for (int i = 0; i < this.fileStreams.Length; i++)
-                this.fileStreams[i].Dispose();
-
-            this.fileStreams = null;
-        }
-
-
-        /// <summary>
-        /// Disposes all necessary objects
-        /// </summary>
-        void IDisposable.Dispose()
-        {
-            Dispose();
-        }
-
-
-        /// <summary>
-        /// Disposes all necessary objects
-        /// </summary>
-        internal void Dispose()
-        {
-            hasher.Clear();
-            if (this.StreamsOpen)
-                CloseFileStreams();
-        }
-
-
-        /// <summary>
-        /// Flushes all data in the FileStreams to disk
-        /// </summary>
-        internal void FlushAll()
-        {
-            foreach (FileStream stream in this.fileStreams)
-                lock (stream)
-                    stream.Flush();
         }
 
 
@@ -260,8 +233,8 @@ namespace MonoTorrent.Client
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
 
-                        using (new ReaderLock(this.streamsLock))
-                            bytesRead = this.Read(hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                        //using (new ReaderLock(this.streamsLock))
+                        bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
 
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
@@ -327,130 +300,27 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move the files when the torrent is active");
 
-            using (new WriterLock(this.streamsLock))
+            manager.Engine.DiskManager.CloseFileStreams(this.manager);
+
+            for (int i = 0; i < this.files.Length; i++)
             {
-                if (this.fileStreams != null)
-                    this.CloseFileStreams();
+                string oldPath = GenerateFilePath(files[i], this.baseDirectory, this.savePath);
+                string newPath = GenerateFilePath(files[i], this.baseDirectory, path);
 
-                for (int i = 0; i < this.files.Length; i++)
-                {
-                    string oldPath = GenerateFilePath(files[i], this.baseDirectory, this.savePath);
-                    string newPath = GenerateFilePath(files[i], this.baseDirectory, path);
+                if (!File.Exists(oldPath))
+                    continue;
 
-                    if (!File.Exists(oldPath))
-                        continue;
+                bool fileExists = File.Exists(newPath);
+                if (!overWriteExisting && fileExists)
+                    throw new TorrentException("File already exists and overwriting is disabled");
 
-                    bool fileExists = File.Exists(newPath);
-                    if (!overWriteExisting && fileExists)
-                        throw new TorrentException("File already exists and overwriting is disabled");
+                if (fileExists)
+                    File.Delete(newPath);
 
-                    if (fileExists)
-                        File.Delete(newPath);
-
-                    File.Move(oldPath, newPath);
-                }
-
-                this.savePath = path;
-                this.OpenFileStreams(FileAccess.Read);
-            }
-        }
-
-
-        /// <summary>
-        /// Opens all the filestreams with the specified file access
-        /// </summary>
-        /// <param name="fileAccess"></param>
-        internal void OpenFileStreams(FileAccess fileAccess)
-        {
-            string filePath = null;
-            this.fileStreams = new FileStream[files.Length];
-
-            for (int i = 0; i < this.fileStreams.Length; i++)
-            {
-                filePath = GenerateFilePath(this.files[i], this.baseDirectory, this.savePath);
-
-                if (File.Exists(filePath))
-                    this.initialHashRequired = true;
-
-                this.fileStreams[i] = new FileStream(filePath, FileMode.OpenOrCreate, fileAccess, FileShare.Read);
-
-                // This hashing algorithm is written on the basis that the files are
-                // preallocated. Might change to not have to preallocate files in future,
-                // but there's no benefits to doing that.
-
-                this.fileSize += files[i].Length;
+                File.Move(oldPath, newPath);
             }
 
-            SetHandleState(true);
-            this.ioActive = true;
-            this.ioThread = new Thread(new ThreadStart(this.RunIO));
-            this.ioThread.Start();
-        }
-
-
-        /// <summary>
-        /// Performs the buffered write
-        /// </summary>
-        /// <param name="bufferedFileIO"></param>
-        private void PerformWrite(BufferedFileWrite bufferedFileIO)
-        {
-            PeerIdInternal id = bufferedFileIO.Id;
-            ArraySegment<byte> recieveBuffer = bufferedFileIO.Buffer;
-            PieceMessage message = (PieceMessage)bufferedFileIO.Message;
-            Piece piece = bufferedFileIO.Piece;
-
-            // Find the block that this data belongs to and set it's state to "Written"
-            int index = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
-
-            // Perform the actual write
-            using (new ReaderLock(this.streamsLock))
-            {
-                // Calculate the index where we will start to write the data
-                long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                this.Write(recieveBuffer.Array, recieveBuffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
-            }
-
-            piece.Blocks[index].Written = true;
-            RaiseBlockWritten(new BlockEventArgs(id.TorrentManager, piece.Blocks[index], piece, id));
-
-            // Release the buffer back into the buffer manager.
-            ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
-
-            // If we haven't written all the pieces to disk, there's no point in hash checking
-            if (!piece.AllBlocksWritten)
-                return;
-
-            // Hashcheck the piece as we now have all the blocks.
-            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index), piece.Index);
-            id.TorrentManager.Bitfield[message.PieceIndex] = result;
-            lock (id.TorrentManager.PieceManager.UnhashedPieces)
-                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
-
-            id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-            List<PeerIdInternal> peers = new List<PeerIdInternal>(piece.Blocks.Length);
-            for (int i = 0; i < piece.Blocks.Length; i++)
-                if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
-                    peers.Add(piece.Blocks[i].RequestedOff);
-
-            for (int i = 0; i < peers.Count; i++)
-                lock (peers[i])
-                    if (peers[i].Connection != null)
-                        id.Peer.HashedPiece(result);
-
-            // If the piece was successfully hashed, enqueue a new "have" message to be sent out
-            if (result)
-                lock (id.TorrentManager.finishedPieces)
-                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
-        }
-
-
-        /// <summary>
-        /// Performs the buffered read
-        /// </summary>
-        /// <param name="bufferedFileIO"></param>
-        private void PerformRead(BufferedFileWrite bufferedFileIO)
-        {
-            throw new Exception("The method or operation is not implemented.");
+            this.savePath = path;
         }
 
 
@@ -463,35 +333,7 @@ namespace MonoTorrent.Client
         /// <param name="piece">The piece that the block to be written is part of</param>
         internal void QueueWrite(PeerIdInternal id, ArraySegment<byte> recieveBuffer, PieceMessage message, Piece piece)
         {
-            lock (this.queueLock)
-            {
-                // Request a new buffer from the buffermanager and copy the data from the receive buffer
-                // into this new buffer. This is needed as the main code will automatically release the receive buffer
-                // and we will lose the data.
-                ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-                ClientEngine.BufferManager.GetBuffer(ref buffer, recieveBuffer.Count);
-                Buffer.BlockCopy(recieveBuffer.Array, recieveBuffer.Offset, buffer.Array, buffer.Offset, recieveBuffer.Count);
-
-                bufferedWrites.Enqueue(new BufferedFileWrite(id, buffer, message, piece, id.TorrentManager.Bitfield));
-                SetHandleState(true);
-            }
-        }
-
-
-        /// <summary>
-        /// Queues a read request to be completed asynchronously
-        /// </summary>
-        /// <param name="id">The peer which the write request is for</param>
-        /// <param name="recieveBuffer">The buffer to read the data into</param>
-        /// <param name="message">The RequestMessage</param>
-        /// <param name="piece"></param>
-        internal void QueueRead(PeerIdInternal id, ArraySegment<byte> recieveBuffer, RequestMessage message, Piece piece)
-        {
-            lock (this.queueLock)
-            {
-                this.bufferedReads.Enqueue(new BufferedFileWrite(id, recieveBuffer, message, piece, id.TorrentManager.Bitfield));
-                SetHandleState(true);
-            }
+            manager.Engine.DiskManager.QueueWrite(id, recieveBuffer, message, piece);
         }
 
 
@@ -513,150 +355,7 @@ namespace MonoTorrent.Client
         /// <returns>The number of bytes successfully read</returns>
         internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
         {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > this.fileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            int bytesRead = 0;
-            int totalRead = 0;
-
-            for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < this.files[i].Length)        // the start of the data we want to read
-                    break;
-
-                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
-            }                                                   // to read from fileStream[i].
-
-            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
-            {
-                if (i == fileStreams.Length)
-                    break;
-
-                lock (this.fileStreams[i])
-                {
-                    fileStreams[i].Seek(offset, SeekOrigin.Begin);
-                    offset = 0; // Any further files need to be read from the beginning
-                    bytesRead = fileStreams[i].Read(buffer, bufferOffset + totalRead, count - totalRead);
-                    totalRead += bytesRead;
-                    i++;
-                }
-            }
-
-            return totalRead;
-        }
-
-
-        /// <summary>
-        /// This method runs in a dedicated thread. It performs all the async reads and writes as they are queued
-        /// </summary>
-        private void RunIO()
-        {
-            BufferedFileWrite write;
-            BufferedFileWrite read;
-            while (ioActive)
-            {
-                write = null;
-                read = null;
-
-                // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
-                // performing the actual read/write to avoid blocking other threads
-                lock (this.queueLock)
-                {
-                    if (this.bufferedWrites.Count > 0)
-                        write = this.bufferedWrites.Dequeue();
-
-                    if (this.bufferedReads.Count > 0)
-                        read = this.bufferedReads.Dequeue();
-
-                    // If there are no more reads available and no more writes available, set the handle to wait
-                    if (this.bufferedReads.Count == 0 && this.bufferedWrites.Count == 0)
-                        SetHandleState(false);
-                }
-
-                if (write != null)
-                    PerformWrite(write);
-
-                if (read != null)
-                    PerformRead(read);
-
-                this.threadWait.WaitOne();
-            }
-        }
-
-
-        /// <summary>
-        /// Sets the wait handle to Signaled (true) or Non-Signaled(false)
-        /// </summary>
-        /// <param name="set"></param>
-        private void SetHandleState(bool set)
-        {
-            if (set)
-                this.threadWait.Set();
-            else
-                this.threadWait.Reset();
-        }
-
-
-        /// <summary>
-        /// This method reads 'count' number of bytes starting at the position 'offset' into the
-        /// byte[] 'buffer'. The data gets written in the buffer starting at index 'bufferOffset'
-        /// </summary>
-        /// <param name="buffer">The byte[] to read the data into</param>
-        /// <param name="bufferOffset">The offset within the array to save the data</param>
-        /// <param name="offset">The offset in the file from which to read the data</param>
-        /// <param name="count">The number of bytes to read</param>
-        private void Write(byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > this.fileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            long bytesWritten = 0;
-            long totalWritten = 0;
-            long bytesWeCanWrite = 0;
-
-            for (i = 0; i < this.fileStreams.Length; i++)       // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < this.files[i].Length)        // the start of the data we want to write
-                    break;
-
-                offset -= this.files[i].Length;           // Offset now contains the index of the data we want
-            }                                                   // to write to fileStream[i].
-
-            while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
-            {
-                if (i == fileStreams.Length)
-                    break;
-
-                lock (this.fileStreams[i])
-                {
-                    if (fileStreams[i].Length < offset)
-                        fileStreams[i].SetLength(offset);
-
-                    fileStreams[i].Seek(offset, SeekOrigin.Begin);
-                    offset = 0; // Any further files need to be written from the beginning of the file
-
-                    // Find the maximum number of bytes we can write before we reach the end of the file
-                    bytesWeCanWrite = this.files[i].Length - this.fileStreams[i].Position;
-
-                    // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
-                    // amount and let the rest of the data be written with the next filestream
-                    bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
-
-                    // Write the data
-                    this.fileStreams[i].Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
-
-                    totalWritten += bytesWritten;
-                    i++;
-                }
-            }
+            return manager.Engine.DiskManager.Read(this, buffer, bufferOffset, offset, count);
         }
 
         #endregion

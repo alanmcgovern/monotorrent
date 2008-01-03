@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    internal class BufferedFileWrite
+    internal class BufferedIO
     {
         #region Fields
         
@@ -14,20 +14,18 @@ namespace MonoTorrent.Client
         public PeerIdInternal Id;
         public IPeerMessageInternal Message;
         public Piece Piece;
-        public BitField BitField;
 
 		#endregion Fields
 
 
 		#region Constructors
 
-        public BufferedFileWrite(PeerIdInternal id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece, BitField bitfield)
+        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece)
         {
             this.Id = id;
             this.Buffer = buffer;
             this.Message = message;
             this.Piece = piece;
-            this.BitField = bitfield;
         }
         
 		#endregion Constructors

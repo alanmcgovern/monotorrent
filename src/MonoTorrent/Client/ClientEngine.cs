@@ -40,6 +40,7 @@ using System.Threading;
 using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Managers;
 
 namespace MonoTorrent.Client
 {
@@ -71,6 +72,7 @@ namespace MonoTorrent.Client
         internal object asyncCompletionLock;     // The lock used to avoid nasty race conditions when async methods are returned
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
+        private DiskManager diskManager;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private readonly string peerId;
         private EngineSettings settings;
@@ -90,6 +92,15 @@ namespace MonoTorrent.Client
         public ConnectionManager ConnectionManager
         {
             get { return this.connectionManager; }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public DiskManager DiskManager
+        {
+            get { return diskManager; }
         }
 
 
@@ -174,6 +185,7 @@ namespace MonoTorrent.Client
 
             this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
+            this.diskManager = new DiskManager(this);
             this.listenManager = new ListenManager(this);
             this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
@@ -401,6 +413,14 @@ namespace MonoTorrent.Client
         {
             tickCount++;
 
+            if (tickCount % (1000 / TickLength) == 0)
+            {
+                diskManager.Monitor.TimePeriodPassed();
+                diskManager.rateLimiter.UpdateDownloadChunks((int)(diskManager.MaxWriteRate * 1024),
+                                                             (int)(diskManager.MaxReadRate * 1024),
+                                                             (int)(diskManager.WriteRate * 1024),
+                                                             (int)(diskManager.ReadRate * 1024));
+            }
             using(new ReaderLock(this.torrentsLock))
             for (int i = 0; i < this.torrents.Count; i++)
             {

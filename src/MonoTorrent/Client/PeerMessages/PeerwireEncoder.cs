@@ -90,7 +90,7 @@ namespace MonoTorrent.Client.PeerMessages
                     break;
 
                 case PieceMessage.MessageId:
-                    message = new PieceMessage(manager.FileManager);
+                    message = new PieceMessage(manager);
                     break;
 
                 case PortMessage.MessageId:

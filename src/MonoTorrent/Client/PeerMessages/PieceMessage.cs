@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.PeerMessages
 
         #region Private Fields
         private int dataOffset;
-        private FileManager fileManager;
+        private TorrentManager manager;
         private int pieceIndex;
         private int startOffset;
         private int requestLength;
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// </summary>
         public int PieceLength
         {
-            get { return this.fileManager.PieceLength; }
+            get { return this.manager.FileManager.PieceLength; }
         }
 
 
@@ -120,9 +120,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Creates a new piece message
         /// </summary>
-        internal PieceMessage(FileManager manager)
+        internal PieceMessage(TorrentManager manager)
         {
-            this.fileManager = manager;
+            this.manager = manager;
         }
 
 
@@ -132,9 +132,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// <param name="pieceIndex">The index of the piece</param>
         /// <param name="startOffset">The start offset in bytes of the block of data</param>
         /// <param name="blockLength">The length in bytes of the data</param>
-        internal PieceMessage(FileManager manager, int pieceIndex, int startOffset, int blockLength)
+        internal PieceMessage(TorrentManager manager, int pieceIndex, int startOffset, int blockLength)
         {
-            this.fileManager = manager;
+            this.manager = manager;
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
             this.requestLength = blockLength;
@@ -191,9 +191,8 @@ namespace MonoTorrent.Client.PeerMessages
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer.Array, buffer.Offset + offset + 5, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.startOffset)), 0, buffer.Array, buffer.Offset + offset + 9, 4);
 
-            long pieceOffset = (long)this.PieceIndex * this.fileManager.PieceLength + this.startOffset;
-            using (new ReaderLock(this.fileManager.streamsLock))
-                bytesRead = this.fileManager.Read(buffer.Array, buffer.Offset + offset + 13, pieceOffset, this.RequestLength);
+            long pieceOffset = (long)this.PieceIndex * this.manager.FileManager.PieceLength + this.startOffset;
+            bytesRead = this.manager.FileManager.Read(buffer.Array, buffer.Offset + offset + 13, pieceOffset, this.RequestLength);
 
             if (bytesRead != this.RequestLength)
                 throw new MessageException("Could not read required data");
@@ -226,7 +225,7 @@ namespace MonoTorrent.Client.PeerMessages
                                             && this.startOffset == msg.startOffset
                                             && this.requestLength == msg.requestLength
                                             && this.dataOffset == msg.dataOffset
-                                            && this.fileManager == msg.fileManager);
+                                            && this.manager == msg.manager);
         }
 
 
@@ -240,7 +239,7 @@ namespace MonoTorrent.Client.PeerMessages
                 ^ this.dataOffset.GetHashCode()
                 ^ this.pieceIndex.GetHashCode()
                 ^ this.startOffset.GetHashCode()
-                ^ this.fileManager.GetHashCode());
+                ^ this.manager.GetHashCode());
         }
 
 

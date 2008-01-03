@@ -221,7 +221,7 @@ namespace MonoTorrent.Client.PeerMessages
                 if (this.requestLength > MaxSize || this.requestLength < MinSize)
                     throw new MessageException("Illegal piece request received. Peer requested " + requestLength.ToString() + " byte");
 
-            PieceMessage m = new PieceMessage(id.TorrentManager.FileManager, this.PieceIndex, this.startOffset, this.requestLength);
+            PieceMessage m = new PieceMessage(id.TorrentManager, this.PieceIndex, this.startOffset, this.requestLength);
 
             // If we're not choking the peer, enqueue the message right away
             if (!id.Connection.AmChoking)

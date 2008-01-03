@@ -297,7 +297,8 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            this.fileManager.Dispose();
+#warning Fix This One
+            //this.fileManager.Dispose();
         }
 
 
@@ -396,10 +397,6 @@ namespace MonoTorrent.Client
                     return;
                 }
 
-                if (!this.fileManager.StreamsOpen)
-                    this.FileManager.OpenFileStreams(FileAccess.ReadWrite);
-
-
                 // If the torrent needs to be hashed, hash it. If it's already in the process of being hashed
                 // just return
                 if (this.fileManager.InitialHashRequired)
@@ -485,8 +482,7 @@ namespace MonoTorrent.Client
                         }
                 }
 
-                if (this.fileManager.StreamsOpen)
-                    this.FileManager.CloseFileStreams();
+                engine.DiskManager.CloseFileStreams(this);
 
                 if (this.hashChecked)
                     this.SaveFastResume();
@@ -726,7 +722,7 @@ namespace MonoTorrent.Client
             // While there are peers queued in the list and i haven't used my download allowance, resume downloading
             // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
             while (this.downloadQueue.Count > 0 &&
-                    this.fileManager.QueuedWrites < 20 &&
+                    //this.fileManager.QueuedWrites < 20 &&
                     ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
             {
                 if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
@@ -805,9 +801,6 @@ namespace MonoTorrent.Client
                 // perform a full scan.
                 if (forceCheck || (!forceCheck && !FileManager.LoadFastResume(this)))
                 {
-                    if (!streamsOpen)
-                        this.fileManager.OpenFileStreams(FileAccess.Read);
-
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
                         bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
@@ -826,10 +819,6 @@ namespace MonoTorrent.Client
 
                     SaveFastResume();
                 }
-
-                // Close the streams if they were originally closed
-                if (!streamsOpen && this.fileManager.StreamsOpen)
-                    this.fileManager.CloseFileStreams();
 
                 this.fileManager.InitialHashRequired = false;
                 this.hashChecked = true;
