@@ -164,7 +164,7 @@ namespace MonoTorrent.Tracker
 
         public override int GetHashCode()
         {
-            return RemoteAddress.Address.GetHashCode();
+            return RemoteAddress.GetHashCode();
         }
 
         public override bool Equals(object obj)
