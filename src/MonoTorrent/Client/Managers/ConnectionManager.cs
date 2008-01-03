@@ -402,12 +402,6 @@ namespace MonoTorrent.Client
                 reason = "Socket Exception receiving";
                 cleanUp = true;
             }
-            catch (ArgumentException ex)
-            {
-                reason = "FECKIN ARGUMENT EXCEPTIONS!";
-                cleanUp = true;
-                Logger.Log(id, ex.ToString());
-            }
             finally
             {
                 if (cleanUp)
