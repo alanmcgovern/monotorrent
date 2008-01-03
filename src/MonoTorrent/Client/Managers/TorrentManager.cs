@@ -700,7 +700,7 @@ namespace MonoTorrent.Client
             // While there are peers queued in the list and i haven't used my download allowance, resume downloading
             // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
             while (this.downloadQueue.Count > 0 &&
-                    //this.fileManager.QueuedWrites < 20 &&
+                    this.engine.DiskManager.QueuedWrites < 20 &&
                     ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
             {
                 if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
@@ -786,7 +786,7 @@ namespace MonoTorrent.Client
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
-                        bitfield[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
+                        bitfield[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i, true), i);
                         System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
                         enterCount--;
                         RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));

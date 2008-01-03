@@ -49,6 +49,11 @@ namespace MonoTorrent.Client.Managers
             get { return openStreams; }
         }
 
+        public int QueuedWrites
+        {
+            get { return this.bufferedWrites.Count; }
+        }
+
         public double ReadRate
         {
             get { return monitor.UploadSpeed; }
@@ -227,7 +232,7 @@ namespace MonoTorrent.Client.Managers
                 return;
 
             // Hashcheck the piece as we now have all the blocks.
-            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index), piece.Index);
+            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
             id.TorrentManager.Bitfield[message.PieceIndex] = result;
             lock (id.TorrentManager.PieceManager.UnhashedPieces)
                 id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
@@ -382,7 +387,7 @@ namespace MonoTorrent.Client.Managers
 
                     // If both the read queue and write queue are empty, then we unset the handle.
                     // Or if we have reached the max read/write rate and can't dequeue something, we unset the handle
-                    if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null) && (read == null))
+                    if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null && read == null))
                         SetHandleState(false);
                 }
 

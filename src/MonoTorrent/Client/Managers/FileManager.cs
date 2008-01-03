@@ -189,7 +189,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="pieceIndex">The piece to generate the hash for</param>
         /// <returns>The 20 byte SHA1 hash of the supplied piece</returns>
-        internal byte[] GetHash(int pieceIndex)
+        internal byte[] GetHash(int pieceIndex, bool asynchronous)
         {
             int bytesRead = 0;
             int totalRead = 0;
@@ -214,15 +214,22 @@ namespace MonoTorrent.Client
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
 
-                        BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
-                        manager.Engine.DiskManager.QueueRead(read);
-                        read.WaitHandle.WaitOne();
-                        read.WaitHandle.Close();
-                        bytesRead = read.BytesRead;
+                        if (asynchronous)
+                        {
+                            BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                            manager.Engine.DiskManager.QueueRead(read);
+                            read.WaitHandle.WaitOne();
+                            read.WaitHandle.Close();
+                            bytesRead = read.BytesRead;
+                        }
+                        else
+                        {
+                            bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                        }
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
                         pieceStartIndex += bytesToRead;
-                    } while (bytesRead != 0);
+                    } while (bytesRead != 0 && totalRead != bytesToRead);
 
 
                     // Compute the hash of the piece
