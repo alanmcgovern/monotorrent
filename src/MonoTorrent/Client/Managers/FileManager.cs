@@ -56,7 +56,6 @@ namespace MonoTorrent.Client
         private string baseDirectory;                           // The base directory into which all the files will be put
         private long fileSize;                                  // The combined length of all the files
         private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
-        private bool initialHashRequired;                       // Used to indicate whether we need to hashcheck the files or not
         private string savePath;                                // The path where the base directory will be put
         private TorrentManager manager;
         private TorrentFile[] files;
@@ -80,15 +79,6 @@ namespace MonoTorrent.Client
         public long FileSize
         {
             get { return fileSize; }
-        }
-
-        /// <summary>
-        /// True if we need to hash the files (i.e. some were preexisting)
-        /// </summary>
-        internal bool InitialHashRequired
-        {
-            get { return this.initialHashRequired; }
-            set { this.initialHashRequired = value; }
         }
 
         /// <summary>
@@ -139,26 +129,17 @@ namespace MonoTorrent.Client
         internal FileManager(TorrentManager manager, TorrentFile[] files, int pieceLength, string savePath, string baseDirectory)
         {
             this.baseDirectory = baseDirectory;
-            //this.streamsLock = new ReaderWriterLock();
-            //this.queueLock = new object();
-            //this.bufferedReads = new Queue<BufferedIO>();
-            //this.bufferedWrites = new Queue<BufferedIO>();
             this.hasher = new SHA1Managed();
-            this.initialHashRequired = false;
-            //this.ioActive = true;
             this.manager = manager;
             this.savePath = savePath;
-            //this.threadWait = new ManualResetEvent(false);
             this.files = files;
             this.pieceLength = pieceLength;
 
             foreach (TorrentFile file in files)
                 fileSize += file.Length;
-
-            initialHashRequired = CheckFilesExist();
         }
 
-        private bool CheckFilesExist()
+        internal bool CheckFilesExist()
         {
             foreach (TorrentFile file in files)
                 if(File.Exists(GenerateFilePath(file, BaseDirectory, savePath)))
@@ -281,11 +262,11 @@ namespace MonoTorrent.Client
                 // We need to delete the old fast resume data so in the event of a crash we don't 
                 // accidently reload it and think we've downloaded less data than we actually have
                 File.Delete(fastResumePath);
-                manager.loadedFastResume = true;
                 return true;
             }
             catch
             {
+                manager.PieceManager.MyBitField.SetAll(false);
                 return false;
             }
         }

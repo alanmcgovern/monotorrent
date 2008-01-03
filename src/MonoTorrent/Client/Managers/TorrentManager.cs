@@ -81,7 +81,6 @@ namespace MonoTorrent.Client
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
         internal object listLock;               // The object we use to syncronize list access
-        internal bool loadedFastResume;         // Used to fire the "PieceHashed" event if fast resume data was loaded
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
@@ -397,36 +396,18 @@ namespace MonoTorrent.Client
                     return;
                 }
 
-                // If the torrent needs to be hashed, hash it. If it's already in the process of being hashed
-                // just return
-                if (this.fileManager.InitialHashRequired)
+                // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
+                // before attempting to start again
+                if (!hashChecked)
                 {
-                    if (!this.hashChecked && !(this.state == TorrentState.Hashing))
-                    {
+                    if (state != TorrentState.Hashing)
                         HashCheck(false, true);
-                        return;
-                    }
-
-                    else if (!this.hashChecked)
-                    {
-                        return;
-                    }
+                    return;
                 }
 
-                this.hashChecked = true;
 
                 if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
                     throw new TorrentException("Torrent is already running");
-
-                // If we loaded the fast resume data, we fire the piece hashed event as if we had read
-                //  the pieces from the harddrive.
-                if (this.loadedFastResume)
-                {
-                    for (int i = 0; i < this.bitfield.Length; i++)
-                        RaisePieceHashed(new PieceHashedEventArgs(this, i, this.bitfield[i]));
-
-                    this.loadedFastResume = false;
-                }
 
                 if (TrackerManager.CurrentTracker.CanScrape)
                     this.TrackerManager.Scrape();
@@ -536,10 +517,6 @@ namespace MonoTorrent.Client
             return count;
         }
 
-
-
-
-
         internal void PreLogicTick(int counter)
         {
             PeerIdInternal id;
@@ -580,8 +557,6 @@ namespace MonoTorrent.Client
                 }
             }
         }
-
-
 
         internal void PostLogicTick(int counter)
         {
@@ -793,34 +768,39 @@ namespace MonoTorrent.Client
                 enterCount++;
                 // Store the value for whether the streams are open or not
                 // If they are initially closed, we need to close them again after we hashcheck
-                bool streamsOpen = this.fileManager.StreamsOpen;
                 bool forceCheck = ((bool[])state)[0];
                 bool autoStart = ((bool[])state)[1];
 
+                // We only need to hashcheck if at least one file already exists on the disk
+                bool filesExist = fileManager.CheckFilesExist();
+
+                // We only load fast resume if one (or more) of the files exist on disk.
+                bool loadedFastResume = filesExist && FileManager.LoadFastResume(this);
+
                 // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
                 // perform a full scan.
-                if (forceCheck || (!forceCheck && !FileManager.LoadFastResume(this)))
+                if (filesExist && (forceCheck || !loadedFastResume))
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
-                        bool temp = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
+                        bitfield[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i), i);
                         System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
                         enterCount--;
-                        this.pieceManager.MyBitField[i] = temp;
-                        RaisePieceHashed(new PieceHashedEventArgs(this, i, temp));
+                        RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
                         System.Threading.Monitor.Enter(this.engine.asyncCompletionLock);
                         enterCount++;
-                        if (State != TorrentState.Hashing)
-                        {
-                            this.bitfield.SetAll(false);
-                            return;
-                        }
-                    }
 
-                    SaveFastResume();
+                        // This happens if the user cancels the hash by stopping the torrent.
+                        if (State != TorrentState.Hashing)
+                            return;
+                    }
                 }
 
-                this.fileManager.InitialHashRequired = false;
+                // If we loaded fastresume data then we need to fire the piece hashed events
+                if (loadedFastResume)
+                    for (int i = 0; i < bitfield.Length; i++)
+                        RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
+
                 this.hashChecked = true;
 
                 if (autoStart)
