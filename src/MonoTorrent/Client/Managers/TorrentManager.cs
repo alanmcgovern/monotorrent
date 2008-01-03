@@ -384,6 +384,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
+            this.engine.Start();
             lock (this.engine.asyncCompletionLock)
             {
                 // If the torrent was "paused", then just update the state to Downloading and forcefully
@@ -422,7 +423,6 @@ namespace MonoTorrent.Client
 
                 engine.ConnectionManager.RegisterManager(this);
                 this.pieceManager.Reset();
-                this.engine.Start();
             }
         }
 

@@ -13,6 +13,7 @@ namespace MonoTorrent.Client.Managers
     {
         #region Member Variables
 
+        Queue<BufferedFileRead> bufferedReads;
         Queue<BufferedIO> bufferedWrites;
         private ClientEngine engine;
         private int maxOpenStreams;
@@ -29,7 +30,6 @@ namespace MonoTorrent.Client.Managers
 
         #region Old Variables
 
-        //private FileStream[] fileStreams;                     // The filestreams used to read/write to the files on disk
         private bool ioActive;                                  // Used to signal when the IO thread is running
         private Thread ioThread;                                // The dedicated thread used for reading/writing
         private object queueLock;                               // Used to synchronise access on the IO thread
@@ -96,6 +96,7 @@ namespace MonoTorrent.Client.Managers
 
         public DiskManager(ClientEngine engine)
         {
+            this.bufferedReads = new Queue<BufferedFileRead>();
             this.bufferedWrites = new Queue<BufferedIO>();
             this.engine = engine;
             this.ioActive = true;
@@ -105,7 +106,7 @@ namespace MonoTorrent.Client.Managers
             this.rateLimiter = new RateLimiter();
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
-            this.MaxWriteRate = 50;
+            this.MaxReadRate = 1000;
             this.ioThread.Start();
         }
 
@@ -130,6 +131,17 @@ namespace MonoTorrent.Client.Managers
             foreach (List<TorrentFileStream> list in streams.Values)
                 foreach (TorrentFileStream stream in list)
                     stream.Dispose();*/
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="torrentManager"></param>
+        internal void CloseFileStreams(TorrentManager torrentManager)
+        {
+#warning Buffer the Filestreams
+            return;
         }
 
 
@@ -178,8 +190,11 @@ namespace MonoTorrent.Client.Managers
         /// <param name="s"></param>
         internal void FreeStream(Stream s)
         {
-            s.Dispose();
-            Interlocked.Decrement(ref openStreams);
+            if (s != null)
+            {
+                s.Dispose();
+                Interlocked.Decrement(ref openStreams);
+            }
         }
 
 
@@ -260,9 +275,10 @@ namespace MonoTorrent.Client.Managers
         /// Performs the buffered read
         /// </summary>
         /// <param name="bufferedFileIO"></param>
-        private void PerformRead(BufferedIO bufferedFileIO)
+        private void PerformRead(BufferedFileRead io)
         {
-            throw new Exception("The method or operation is not implemented.");
+            Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
+            io.WaitHandle.Set();
         }
 
 
@@ -290,22 +306,13 @@ namespace MonoTorrent.Client.Managers
         }
 
 
-        /// <summary>
-        /// Queues a read request to be completed asynchronously
-        /// </summary>
-        /// <param name="id">The peer which the write request is for</param>
-        /// <param name="recieveBuffer">The buffer to read the data into</param>
-        /// <param name="message">The RequestMessage</param>
-        /// <param name="piece"></param>
-        internal void QueueRead(PeerIdInternal id, ArraySegment<byte> recieveBuffer, RequestMessage message, Piece piece)
+        internal void QueueRead(BufferedFileRead io)
         {
-            throw new NotImplementedException();
-
-            /*lock (this.queueLock)
+            lock (this.queueLock)
             {
-                this.bufferedReads.Enqueue(new BufferedIO(id, recieveBuffer, message, piece));
+                bufferedReads.Enqueue(io);
                 SetHandleState(true);
-            }*/
+            }
         }
 
 
@@ -372,11 +379,11 @@ namespace MonoTorrent.Client.Managers
         private void RunIO()
         {
             BufferedIO write;
-            //BufferedIO read;
+            BufferedFileRead read;
             while (ioActive)
             {
                 write = null;
-                //read = null;
+                read = null;
 
                 // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
                 // performing the actual read/write to avoid blocking other threads
@@ -387,19 +394,26 @@ namespace MonoTorrent.Client.Managers
                         write = this.bufferedWrites.Dequeue();
                         Interlocked.Add(ref rateLimiter.DownloadChunks, -write.Buffer.Count / ConnectionManager.ChunkLength);
                     }
-                    //if (this.bufferedReads.Count > 0)
-                    //    read = this.bufferedReads.Dequeue();
 
-                    // If there are no more reads available and no more writes available, set the handle to wait
-                    if (this.bufferedWrites.Count == 0 || write == null) // this.bufferedReads.Count == 0 && 
+                    if (this.bufferedReads.Count > 0 && (rateLimiter.UploadChunks > 0))
+                    {
+                        read = this.bufferedReads.Dequeue();
+                        Interlocked.Add(ref rateLimiter.UploadChunks, -read.Count / ConnectionManager.ChunkLength);
+                    }
+
+                    // If both the read queue and write queue are empty, then we unset the handle.
+                    // Or if we have reached the max read/write rate and can't dequeue something, we unset the handle
+                    if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null) && (read == null))
                         SetHandleState(false);
                 }
 
                 if (write != null)
                     PerformWrite(write);
 
-                //if (read != null)
-                //    PerformRead(read);
+                if (read != null)
+                    PerformRead(read);
+
+                // Wait ~100 ms before trying to read/write something again to give the rate limiting a chance to recover
                 this.threadWait.WaitOne(100, false);
             }
         }
@@ -487,10 +501,5 @@ namespace MonoTorrent.Client.Managers
 
         #endregion
 
-        internal void CloseFileStreams(TorrentManager torrentManager)
-        {
-#warning Buffer the Filestreams
-            return;
-        }
     }
 }

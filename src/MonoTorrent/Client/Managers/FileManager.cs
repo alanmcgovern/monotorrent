@@ -214,8 +214,10 @@ namespace MonoTorrent.Client
                         if ((pieceStartIndex + bytesToRead) > this.fileSize)
                             bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
 
-                        //using (new ReaderLock(this.streamsLock))
-                        bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                        BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                        manager.Engine.DiskManager.QueueRead(read);
+                        read.WaitHandle.WaitOne();
+                        read.WaitHandle.Close();
 
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
