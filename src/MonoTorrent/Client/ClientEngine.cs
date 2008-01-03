@@ -416,8 +416,8 @@ namespace MonoTorrent.Client
             if (tickCount % (1000 / TickLength) == 0)
             {
                 diskManager.Monitor.TimePeriodPassed();
-                diskManager.rateLimiter.UpdateDownloadChunks((int)(diskManager.MaxWriteRate * 1024),
-                                                             (int)(diskManager.MaxReadRate * 1024),
+                diskManager.rateLimiter.UpdateDownloadChunks((int)(settings.MaxWriteRate * 1024),
+                                                             (int)(settings.MaxReadRate * 1024),
                                                              (int)(diskManager.WriteRate * 1024),
                                                              (int)(diskManager.ReadRate * 1024));
             }

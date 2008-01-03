@@ -50,6 +50,9 @@ namespace MonoTorrent.Client
         private int globalMaxHalfOpenConnections;       // The maximum number of simultaenous 1/2 open connections
         private int globalMaxDownloadSpeed;             // The maximum combined download speed
         private int globalMaxUploadSpeed;               // The maximum combined upload speed
+        private int maxOpenStreams;                     // The maximum number of simultaenous open filestreams
+        private int maxReadRate;                        // The maximum read rate from the harddisk (for all active torrentmanagers)
+        private int maxWriteRate;                       // The maximum write rate to the harddisk (for all active torrentmanagers)
         private string savePath;                        // The path that torrents will be downloaded to by default
 
         #endregion Private Fields
@@ -126,6 +129,36 @@ namespace MonoTorrent.Client
         {
             get { return this.listenPort; }
             set { this.listenPort = value; }
+        }
+
+
+        /// <summary>
+        /// The maximum number of files which can be opened at the same time
+        /// </summary>
+        public int MaxOpenFiles
+        {
+            get { return maxOpenStreams; }
+            set { maxOpenStreams = value; }
+        }
+
+
+        /// <summary>
+        /// The maximum read rate from the hard disk
+        /// </summary>
+        public int MaxReadRate
+        {
+            get { return maxReadRate; }
+            set { maxReadRate = value; }
+        }
+
+
+        /// <summary>
+        /// The maximum write rate to the hard disk
+        /// </summary>
+        public int MaxWriteRate
+        {
+            get { return maxWriteRate; }
+            set { maxWriteRate = value; }
         }
 
 

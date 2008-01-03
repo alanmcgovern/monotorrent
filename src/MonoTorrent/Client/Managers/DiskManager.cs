@@ -16,9 +16,7 @@ namespace MonoTorrent.Client.Managers
         Queue<BufferedFileRead> bufferedReads;
         Queue<BufferedIO> bufferedWrites;
         private ClientEngine engine;
-        private int maxOpenStreams;
-        private int maxReadRate;
-        private int maxWriteRate;
+
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
         private int openStreams;
@@ -44,24 +42,6 @@ namespace MonoTorrent.Client.Managers
         internal ConnectionMonitor Monitor
         {
             get { return monitor; }
-        }
-
-        public int MaxOpenStreams
-        {
-            get { return maxOpenStreams; }
-            set { maxOpenStreams = value; }
-        }
-
-        public int MaxReadRate
-        {
-            get { return maxReadRate; }
-            set { maxReadRate = value; }
-        }
-
-        public int MaxWriteRate
-        {
-            get { return maxWriteRate; }
-            set { maxWriteRate = value; }
         }
 
         public int OpenFiles
@@ -106,7 +86,6 @@ namespace MonoTorrent.Client.Managers
             this.rateLimiter = new RateLimiter();
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
-            this.MaxReadRate = 1000;
             this.ioThread.Start();
         }
 
@@ -389,13 +368,13 @@ namespace MonoTorrent.Client.Managers
                 // performing the actual read/write to avoid blocking other threads
                 lock (this.queueLock)
                 {
-                    if (this.bufferedWrites.Count > 0 && (rateLimiter.DownloadChunks > 0))
+                    if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || rateLimiter.DownloadChunks > 0))
                     {
                         write = this.bufferedWrites.Dequeue();
                         Interlocked.Add(ref rateLimiter.DownloadChunks, -write.Buffer.Count / ConnectionManager.ChunkLength);
                     }
 
-                    if (this.bufferedReads.Count > 0 && (rateLimiter.UploadChunks > 0))
+                    if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || rateLimiter.UploadChunks > 0))
                     {
                         read = this.bufferedReads.Dequeue();
                         Interlocked.Add(ref rateLimiter.UploadChunks, -read.Count / ConnectionManager.ChunkLength);
