@@ -256,7 +256,7 @@ namespace MonoTorrent.Client.Managers
         /// <param name="bufferedFileIO"></param>
         private void PerformRead(BufferedFileRead io)
         {
-            Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
+            io.BytesRead = Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
             io.WaitHandle.Set();
         }
 

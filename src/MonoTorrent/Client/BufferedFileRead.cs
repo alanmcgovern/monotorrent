@@ -13,6 +13,7 @@ namespace MonoTorrent.Client
         public int BufferOffset;
         public long PieceStartIndex;
         public int Count;
+        public int BytesRead;
 
 
         public BufferedFileRead(FileManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int count)

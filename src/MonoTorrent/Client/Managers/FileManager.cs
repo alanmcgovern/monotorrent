@@ -218,7 +218,7 @@ namespace MonoTorrent.Client
                         manager.Engine.DiskManager.QueueRead(read);
                         read.WaitHandle.WaitOne();
                         read.WaitHandle.Close();
-
+                        bytesRead = read.BytesRead;
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
                         pieceStartIndex += bytesToRead;
