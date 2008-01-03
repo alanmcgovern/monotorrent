@@ -168,7 +168,6 @@ namespace MonoTorrent.Client
 
         internal Peer Dequeue(PeerType type)
         {
-            Peer id;
             switch (type)
             {
                 case (PeerType.Active):
