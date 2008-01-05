@@ -38,6 +38,7 @@ SOURCES=	\
 	Client/Piece.cs \
 	Client/RateLimiter.cs \
 	Client/ReaderLock.cs \
+	Client/TorrentFileStream.cs \
 	Client/TransferType.cs \
 	Client/WriterLock.cs \
 	\
@@ -84,6 +85,7 @@ SOURCES=	\
 	Client/Managers/ChokeUnchokeManager.cs \
 	Client/Managers/ConnectionManager.cs \
 	Client/Managers/ConnectionMonitor.cs \
+	Client/Managers/DiskManager.cs \
 	Client/Managers/FileManager.cs \
 	Client/Managers/ListenManager.cs \
 	Client/Managers/PeerManager.cs \
