@@ -152,7 +152,7 @@ namespace MonoTorrent.Client
                         }
                         catch (Exception)
                         {
-#warning Do this in a better way so as to not hide an important exception!
+                            //FIXME: #warning Do this in a better way so as to not hide an important exception!
                             return;
                         }
                     }

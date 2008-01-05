@@ -138,7 +138,6 @@ namespace MonoTorrent.Client
             try
             {
                 handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
-#warning call handshake.Handle to do this properly
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                     handshakeFailed = true;
             }
@@ -180,7 +179,7 @@ namespace MonoTorrent.Client
                     if (Toolbox.ByteMatch(handshake.infoHash, engine.Torrents[i].Torrent.InfoHash))
                         man = engine.Torrents[i];
 
-#warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
+            //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
             if (man == null || man.State == TorrentState.Stopped)        // We're not hosting that torrent
             {
                 Logger.Log(id, "CE Not tracking torrent");

@@ -64,7 +64,7 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        public HttpListener(IPAddress address, ushort port)
+        public HttpListener(IPAddress address, int port)
             : this(new IPEndPoint(address, port))
         {
 

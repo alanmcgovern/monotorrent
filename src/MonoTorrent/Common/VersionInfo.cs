@@ -44,6 +44,6 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static string ClientVersion = "-MO0121-";    // 'MO' for MonoTorrent then four digit version number
+        public static string ClientVersion = "-MO0200-";    // 'MO' for MonoTorrent then four digit version number
     }
 }

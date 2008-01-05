@@ -296,7 +296,7 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-#warning Fix This One
+			// FIXME: Dispose of the streams when this is reached
             //this.fileManager.Dispose();
         }
 

@@ -114,9 +114,9 @@ namespace MonoTorrent.Tracker
             get { return Parameters["peer_id"]; } 
         }
 
-        public ushort Port
+        public int Port
         {
-            get { return (ushort)ParseInt("port"); }
+            get { return ParseInt("port"); }
         }
 
         public string TrackerId

@@ -63,7 +63,6 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private bool linearPickingEnabled;
         private PiecePickerBase piecePicker;
 
         #endregion

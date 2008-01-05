@@ -634,7 +634,7 @@ namespace MonoTorrent.Client
 
                 if (piece.AllBlocksReceived)
                 {
-#warning review usage of the unhashedpieces variable
+                    // FIXME review usage of the unhashedpieces variable
                     lock (this.unhashedPieces)
                         if (!this.myBitfield[piece.Index])
                             this.unhashedPieces[piece.Index] = true;

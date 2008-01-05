@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public Tracker()
+        protected Tracker()
         {
             this.state = TrackerState.Unknown;
             this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
@@ -244,7 +244,8 @@ namespace MonoTorrent.Client
         {
             if (State == newState)
                 return;
-#warning FIX THE NULL
+
+            // FIXME: Don't send null!
             TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(null, this, State, newState);
             State = newState;
 

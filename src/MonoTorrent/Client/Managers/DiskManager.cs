@@ -110,7 +110,7 @@ namespace MonoTorrent.Client.Managers
             // Allow the IO thread to run.
             SetHandleState(true);
             this.ioThread.Join(150);
-#warning Buffer the filestreams
+            //FIXME: #warning Buffer the filestreams
             /*
             foreach (List<TorrentFileStream> list in streams.Values)
                 foreach (TorrentFileStream stream in list)
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.Managers
         /// <param name="torrentManager"></param>
         internal void CloseFileStreams(TorrentManager torrentManager)
         {
-#warning Buffer the Filestreams
+            //FIXME: #warning Buffer the Filestreams
             return;
         }
 
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client.Managers
         /// </summary>
         internal void FlushAll()
         {
-#warning Buffer the filestreams
+			//FIXME: #warning Buffer the filestreams
         }
 
 

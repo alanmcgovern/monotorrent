@@ -537,7 +537,7 @@ namespace MonoTorrent.Client
                     SendMessage(id, msg, this.bitfieldSentCallback);
                 }
             }
-            catch (TorrentException ex)
+            catch (TorrentException)
             {
                 reason = "Couldn't decode handshake";
                 cleanUp = true;
@@ -1027,12 +1027,12 @@ namespace MonoTorrent.Client
         {
             try
             {
-#warning Terrible logic actually. I need to fix this.
+                //FIXME: #warning Terrible logic actually. I need to fix this.
                 id.Peer.EncryptionSupported = EncryptionMethods.NoEncryption;
                 CleanupSocket(id, "Encryptor error... somewhere");
                 return;
 
-
+                /*
                 if (id.Connection != null)
                 {
                     ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
@@ -1043,7 +1043,7 @@ namespace MonoTorrent.Client
                 //id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
 
                 if (this.engine.Settings.MinEncryptionLevel == EncryptionType.None)
-                    id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);
+                    id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);*/
             }
             catch (SocketException)
             {
@@ -1078,7 +1078,7 @@ namespace MonoTorrent.Client
                 SendMessage(id, msg, this.messageSentCallback);
                 Logger.Log(id, "Sending message from queue: " + msg.ToString());
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 Logger.Log(id, "Exception dequeuing message");
                 CleanupSocket(id, "Exception calling SendMessage");
