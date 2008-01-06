@@ -191,8 +191,6 @@ namespace MonoTorrent.Client.Managers
             string filePath = GenerateFilePath(file, manager.BaseDirectory, manager.SavePath);
             
             TorrentFileStream stream = new TorrentFileStream(file, filePath, FileMode.OpenOrCreate, access, FileShare.Read);
-            if (stream.Length != file.Length)
-                stream.SetLength(file.Length);
             
             Interlocked.Increment(ref openStreams);
             return stream;
