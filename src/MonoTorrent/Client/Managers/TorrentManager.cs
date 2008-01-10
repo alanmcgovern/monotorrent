@@ -782,7 +782,7 @@ namespace MonoTorrent.Client
 
                 // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
                 // perform a full scan.
-                if (filesExist && (forceCheck || !loadedFastResume))
+                if (forceCheck || !loadedFastResume)
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
