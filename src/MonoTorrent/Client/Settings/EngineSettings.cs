@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         private int globalMaxHalfOpenConnections;       // The maximum number of simultaenous 1/2 open connections
         private int globalMaxDownloadSpeed;             // The maximum combined download speed
         private int globalMaxUploadSpeed;               // The maximum combined upload speed
-        private int maxOpenStreams;                     // The maximum number of simultaenous open filestreams
+        private int maxOpenStreams = 15;                // The maximum number of simultaenous open filestreams
         private int maxReadRate;                        // The maximum read rate from the harddisk (for all active torrentmanagers)
         private int maxWriteRate;                       // The maximum write rate to the harddisk (for all active torrentmanagers)
         private string savePath;                        // The path that torrents will be downloaded to by default
