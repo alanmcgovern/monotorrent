@@ -211,7 +211,8 @@ namespace MonoTorrent.Client
 
             if (e.Successful)
             {
-                Toolbox.Switch<Tracker>(e.TrackerId.TrackerTier.Trackers, 0, e.TrackerId.TrackerTier.IndexOf(e.Tracker));
+                // FIXME: Figure out why manually firing the event throws an exception here
+                try {Toolbox.Switch<Tracker>(e.TrackerId.TrackerTier.Trackers, 0, e.TrackerId.TrackerTier.IndexOf(e.Tracker));}catch{}
                 manager.AddPeers(e.Peers);
             }
             else

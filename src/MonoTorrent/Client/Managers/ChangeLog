@@ -1,3 +1,7 @@
+2008-01-12  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TrackerManager.cs: Added fix for meshwork
+
 2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* ConnectionManager.cs: Now using the 'out ErrorCode' overloads for the
