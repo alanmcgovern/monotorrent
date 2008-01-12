@@ -6,7 +6,7 @@ namespace MonoTorrent.Client
 {
     public class AnnounceResponseEventArgs : TrackerResponseEventArgs
     {
-        internal MonoTorrentCollection<Peer> Peers;
+        public MonoTorrentCollection<Peer> Peers;
         internal TrackerConnectionID TrackerId;
 
 

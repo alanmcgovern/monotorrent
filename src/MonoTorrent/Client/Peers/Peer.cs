@@ -37,7 +37,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
-    internal class Peer
+    public class Peer
     {
         #region Private Fields
 
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client
 
 
 
-        public int CleanedUpCount
+        internal int CleanedUpCount
         {
             get { return this.cleanedUpCount; }
             set { this.cleanedUpCount = value; }
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Returns the number of times the peer has sent us a piece which failed a hashcheck
         /// </summary>
-        public int TotalHashFails
+        internal int TotalHashFails
         {
             get { return this.totalHashFails; }
         }
@@ -91,30 +91,30 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The ID of the peer
         /// </summary>
-        public string PeerId
+        internal string PeerId
         {
             get { return peerId; }
-            internal set { peerId = value; }
+            set { peerId = value; }
         }
 
 
         /// <summary>
         /// True if the peer is a seeder
         /// </summary>
-        public bool IsSeeder
+        internal bool IsSeeder
         {
             get { return this.isSeeder; }
-            internal set { this.isSeeder = value; }
+            set { this.isSeeder = value; }
         }
 
 
         /// <summary>
         /// The number of times we tried to connect to the peer and failed
         /// </summary>
-        public int FailedConnectionAttempts
+        internal int FailedConnectionAttempts
         {
             get { return this.failedConnectionAttempts; }
-            internal set { this.failedConnectionAttempts = value; }
+            set { this.failedConnectionAttempts = value; }
         }
 
 
@@ -137,13 +137,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The highest level of encryption that should be attempted with this peer
         /// </summary>
-        public EncryptionMethods EncryptionSupported
+        internal EncryptionMethods EncryptionSupported
         {
             get { return this.encryptionSupported; }
-            internal set { this.encryptionSupported = value; }
+            set { this.encryptionSupported = value; }
         }
 
-        public int RepeatedHashFails
+        internal int RepeatedHashFails
         {
             get { return this.repeatedHashFails; }
         }
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public byte[] CompactPeer()
+        internal byte[] CompactPeer()
         {
             byte[] data = new byte[6];
 
@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
+        internal static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
         {
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
             foreach (BEncodedDictionary dict in peers)
@@ -227,7 +227,7 @@ namespace MonoTorrent.Client
             return list;
         }
 
-        public static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
+        internal static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
         {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes

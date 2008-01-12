@@ -15,7 +15,7 @@ namespace MonoTorrent.Client
         public bool Successful
         {
             get { return successful; }
-            protected internal set { successful = value; }
+            set { successful = value; }
         }
 
         /// <summary>

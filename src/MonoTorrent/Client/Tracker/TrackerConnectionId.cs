@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="request">Object containing information about the Async Request</param>
         /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
-        internal TrackerConnectionID(TrackerTier tier, Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
+        public TrackerConnectionID(TrackerTier tier, Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
         {
             this.TrackerTier = tier;
             this.Tracker = tracker;
