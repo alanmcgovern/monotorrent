@@ -114,43 +114,14 @@ namespace MonoTorrent.Tracker
 
         private void HandleRequest(HttpListenerContext context)
         {
-            RequestParameters parameters;
             bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
-            NameValueCollection collection = ParseQuery(context.Request.RawUrl);
-            if (isScrape)
-                parameters = new ScrapeParameters(collection, context.Request.RemoteEndPoint.Address);
-            else
-                parameters = new AnnounceParameters(collection, context.Request.RemoteEndPoint.Address);
 
-            if (!parameters.IsValid)
-            {
-                // The failure reason has already been filled in to the response
-                return;
-            }
-            else
-            {
-                if (isScrape)
-                    RaiseScrapeReceived((ScrapeParameters)parameters);
-                else
-                    RaiseAnnounceReceived((AnnounceParameters)parameters);
-            }
+            BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 
-            byte[] response = parameters.Response.Encode();
+            byte[] response = responseData.Encode();
             context.Response.ContentType = "text/plain";
             context.Response.StatusCode = 200;
             context.Response.OutputStream.Write(response, 0, response.Length);
-        }
-
-        private NameValueCollection ParseQuery(string url)
-        {
-            url = url.Substring(url.IndexOf('?') + 1);
-            string[] parts = url.Split('&', '=');
-            NameValueCollection c = new NameValueCollection(1 + parts.Length / 2);
-            for (int i = 0; i < parts.Length; i += 2)
-                if (parts.Length > i + 1)
-                    c.Add(parts[i], parts[i + 1]);
-
-            return c;
         }
 
         #endregion Methods
