@@ -19,9 +19,9 @@ namespace MonoTorrent.Client.Managers
 
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
+        private FileStreamBuffer streamsBuffer;
         private int openStreams;
 
-        //private Dictionary<TorrentManager, List<TorrentFileStream>> streams;
 
         #endregion Member Variables
 
@@ -89,6 +89,7 @@ namespace MonoTorrent.Client.Managers
             this.monitor = new ConnectionMonitor();
             this.queueLock = new object();
             this.rateLimiter = new RateLimiter();
+            this.streamsBuffer = new FileStreamBuffer(engine.Settings.MaxOpenFiles);
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
             this.ioThread.Start();
@@ -99,33 +100,10 @@ namespace MonoTorrent.Client.Managers
 
         #region Methods
 
-        /// <summary>
-        /// Closes all the filestreams
-        /// </summary>
-        internal void CloseFileStreams()
+        internal void CloseFileStreams(TorrentManager manager)
         {
-            // Setting this boolean true allows the IO thread to terminate gracefully
-            this.ioActive = false;
-
-            // Allow the IO thread to run.
-            SetHandleState(true);
-            this.ioThread.Join(150);
-            //FIXME: #warning Buffer the filestreams
-            /*
-            foreach (List<TorrentFileStream> list in streams.Values)
-                foreach (TorrentFileStream stream in list)
-                    stream.Dispose();*/
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="torrentManager"></param>
-        internal void CloseFileStreams(TorrentManager torrentManager)
-        {
-            //FIXME: #warning Buffer the Filestreams
-            return;
+            foreach (TorrentFile file in manager.Torrent.Files)
+                streamsBuffer.CloseStream(file);
         }
 
 
@@ -134,16 +112,9 @@ namespace MonoTorrent.Client.Managers
         /// </summary>
         internal void Dispose()
         {
-            CloseFileStreams();
-        }
-
-
-        /// <summary>
-        /// Flushes all data in the FileStreams to disk
-        /// </summary>
-        internal void FlushAll()
-        {
-			//FIXME: #warning Buffer the filestreams
+            ioActive = false;
+            threadWait.Set();
+            streamsBuffer.Dispose();
         }
 
 
@@ -169,31 +140,13 @@ namespace MonoTorrent.Client.Managers
 
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="s"></param>
-        internal void FreeStream(Stream s)
-        {
-            if (s != null)
-            {
-                s.Dispose();
-                Interlocked.Decrement(ref openStreams);
-            }
-        }
-
-
-        /// <summary>
         /// Opens all the filestreams with the specified file access
         /// </summary>
         /// <param name="fileAccess"></param>
-        internal Stream GetStream(FileManager manager, TorrentFile file, FileAccess access)
+        internal TorrentFileStream GetStream(FileManager manager, TorrentFile file, FileAccess access)
         {
             string filePath = GenerateFilePath(file, manager.BaseDirectory, manager.SavePath);
-            
-            TorrentFileStream stream = new TorrentFileStream(file, filePath, FileMode.OpenOrCreate, access, FileShare.Read);
-            
-            Interlocked.Increment(ref openStreams);
-            return stream;
+            return streamsBuffer.GetStream(file, filePath, access);
         }
 
 
@@ -334,20 +287,12 @@ namespace MonoTorrent.Client.Managers
 
                 lock (manager.Files[i])
                 {
-                    Stream s = null;
-                    try
-                    {
-                        s = GetStream(manager, manager.Files[i], FileAccess.Read);
-                        s.Seek(offset, SeekOrigin.Begin);
-                        offset = 0; // Any further files need to be read from the beginning
-                        bytesRead = s.Read(buffer, bufferOffset + totalRead, count - totalRead);
-                        totalRead += bytesRead;
-                        i++;
-                    }
-                    finally
-                    {
-                        FreeStream(s);
-                    }
+                    TorrentFileStream s = GetStream(manager, manager.Files[i], FileAccess.Read);
+                    s.Seek(offset, SeekOrigin.Begin);
+                    offset = 0; // Any further files need to be read from the beginning
+                    bytesRead = s.Read(buffer, bufferOffset + totalRead, count - totalRead);
+                    totalRead += bytesRead;
+                    i++;
                 }
             }
             monitor.BytesSent(totalRead, TransferType.Data);
@@ -448,33 +393,25 @@ namespace MonoTorrent.Client.Managers
             {
                 lock (manager.Files[i])
                 {
-                    Stream stream = null;
-                    try
-                    {
-                        stream = GetStream(manager, manager.Files[i], FileAccess.Write);
-                        stream.Seek(offset, SeekOrigin.Begin);
+                    TorrentFileStream stream = GetStream(manager, manager.Files[i], FileAccess.ReadWrite);
+                    stream.Seek(offset, SeekOrigin.Begin);
 
-                        // Find the maximum number of bytes we can write before we reach the end of the file
-                        bytesWeCanWrite = manager.Files[i].Length - offset;
+                    // Find the maximum number of bytes we can write before we reach the end of the file
+                    bytesWeCanWrite = manager.Files[i].Length - offset;
 
-                        // Any further files need to be written from the beginning of the file
-                        offset = 0;
+                    // Any further files need to be written from the beginning of the file
+                    offset = 0;
 
-                        // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
-                        // amount and let the rest of the data be written with the next filestream
-                        bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
+                    // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
+                    // amount and let the rest of the data be written with the next filestream
+                    bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
 
-                        // Write the data
-                        stream.Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
+                    // Write the data
+                    stream.Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
 
-                        // Any further data should be written to the next available file
-                        totalWritten += bytesWritten;
-                        i++;
-                    }
-                    finally
-                    {
-                        FreeStream(stream);
-                    }
+                    // Any further data should be written to the next available file
+                    totalWritten += bytesWritten;
+                    i++;
                 }
             }
 
@@ -482,6 +419,5 @@ namespace MonoTorrent.Client.Managers
         }
 
         #endregion
-
     }
 }

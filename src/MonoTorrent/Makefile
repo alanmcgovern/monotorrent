@@ -33,6 +33,7 @@ SOURCES=	\
 	Client/BufferedFileRead.cs \
 	Client/BufferedFileWrite.cs \
 	Client/ClientEngine.cs \
+	Client/FileStreamBuffer.cs \
 	Client/Logger.cs \
 	Client/MessageHandler.cs \
 	Client/Piece.cs \
