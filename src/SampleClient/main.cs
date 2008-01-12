@@ -98,9 +98,10 @@ namespace MonoTorrent
                         // You can use this to do preprocessing should you need to
                         torrent = Torrent.Load(file);
                     }
-                    catch (Exception exception)
+                    catch (Exception e)
                     {
-                        Console.WriteLine("Couldn't decode the torrent");
+                        Console.Write("Couldn't decode {0}: ", file);
+                        Console.WriteLine(e.Message);
                         continue;
                     }
                     // When any preprocessing has been completed, you create a TorrentManager
@@ -341,9 +342,9 @@ namespace MonoTorrent
 		{
 			TorrentManager manager = (TorrentManager)sender;
 			if (e.HashPassed)
-				listener.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+				Console.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
 			else
-				listener.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+                Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
 		}
 
 		#endregion Handlers for the torrentmanager events
