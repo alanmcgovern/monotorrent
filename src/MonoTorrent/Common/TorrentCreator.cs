@@ -639,6 +639,10 @@ namespace MonoTorrent.Common
             {
                 this.torrent.Add("info", new BEncodedDictionary());
                 ((BEncodedDictionary)this.torrent["info"]).Add("piece length", oldInfo["piece length"]);
+
+                //restore private value
+                if (oldInfo.ContainsKey("private"))
+                    ((BEncodedDictionary)this.torrent["info"]).Add("private", oldInfo["private"]);
             }
         }
 
