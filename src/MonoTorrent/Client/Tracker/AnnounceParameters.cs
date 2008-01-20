@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// FIXME: Maybe this should be private....
         /// </summary>
-        internal TrackerConnectionID Id
+        public TrackerConnectionID Id
         {
             get { return id; }
             set { id = value; }
@@ -129,7 +129,5 @@ namespace MonoTorrent.Client
             this.ipaddress = ipaddress;
             this.port = port;
         }
-
-
     }
 }
