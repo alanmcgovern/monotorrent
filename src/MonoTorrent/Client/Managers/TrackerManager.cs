@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The infohash for the torrent
         /// </summary>
-        private string infoHash;
+        private byte[] infoHash;
 
 
         /// <summary>
@@ -106,7 +106,8 @@ namespace MonoTorrent.Client
         public TrackerManager(TorrentManager manager)
         {
             this.manager = manager;
-            this.infoHash = HttpUtility.UrlEncode(manager.Torrent.InfoHash);
+            this.infoHash = new byte[20];
+            Buffer.BlockCopy(manager.Torrent.infoHash, 0, infoHash, 0, 20);
 
             // Check if this tracker supports scraping
             this.trackerTiers = new TrackerTier[manager.Torrent.AnnounceUrls.Count];
@@ -117,6 +118,7 @@ namespace MonoTorrent.Client
             {
                 foreach (Tracker tracker in tier)
                 {
+                    tracker.Tier = tier;
                     tracker.AnnounceComplete += new EventHandler<AnnounceResponseEventArgs>(OnAnnounceComplete);
                     tracker.ScrapeComplete += new EventHandler<ScrapeResponseEventArgs>(OnScrapeComplete);
                 }
@@ -142,27 +144,28 @@ namespace MonoTorrent.Client
         /// <param name="clientEvent">The Event (if any) that represents this update</param>
         internal WaitHandle Announce(TorrentEvent clientEvent)
         {
-            return Announce(this.trackerTiers[0], this.trackerTiers[0].Trackers[0], clientEvent, true);
+            return Announce(this.trackerTiers[0].Trackers[0], clientEvent, true);
         }
 
         public WaitHandle Announce(TrackerTier tier, Tracker tracker)
         {
-            return Announce(tier, tracker, TorrentEvent.None, false);
+            return Announce(tracker, TorrentEvent.None, false);
         }
 
-        private WaitHandle Announce(TrackerTier tier, Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
+        private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
         {
-            TrackerConnectionID id = new TrackerConnectionID(tier, tracker, trySubsequent, clientEvent, null);
+            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, null);
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             
             bool supportsEncryption = ClientEngine.SupportsEncryption && manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None;
 
-            WaitHandle handle = tracker.Announce(this.manager.Monitor.DataBytesDownloaded,
+            AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
                                                 clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
                                                 null, manager.Engine.Settings.ListenPort);
+            WaitHandle handle = tracker.Announce(p);
             return handle;
         }
 
@@ -212,7 +215,7 @@ namespace MonoTorrent.Client
             if (e.Successful)
             {
                 // FIXME: Figure out why manually firing the event throws an exception here
-                try {Toolbox.Switch<Tracker>(e.TrackerId.TrackerTier.Trackers, 0, e.TrackerId.TrackerTier.IndexOf(e.Tracker));}catch{}
+                try {Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));}catch{}
                 manager.AddPeers(e.Peers);
             }
             else
@@ -220,11 +223,14 @@ namespace MonoTorrent.Client
                 if (!e.TrackerId.TrySubsequent)
                     return;
 
-                GetNextTracker(e.TrackerId.Tracker, out e.TrackerId.TrackerTier, out e.TrackerId.Tracker);
-                if (e.TrackerId.TrackerTier == null || e.TrackerId.Tracker == null)
+                TrackerTier tier = e.Tracker.Tier;
+                Tracker tracker = e.Tracker;
+
+                GetNextTracker(e.TrackerId.Tracker, out tier, out tracker);
+                if (tier == null || tracker == null)
                     return;
 
-                Announce(e.TrackerId.TrackerTier, e.TrackerId.Tracker, e.TrackerId.TorrentEvent, true);
+                Announce(tracker, e.TrackerId.TorrentEvent, true);
             }
         }
 
@@ -235,7 +241,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public WaitHandle Scrape()
         {
-            return Scrape(this.trackerTiers[0], this.trackerTiers[0].Trackers[0], true);
+            return Scrape(this.trackerTiers[0].Trackers[0], true);
         }
 
         /// <summary>
@@ -243,17 +249,17 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
         /// <returns></returns>
-        public WaitHandle Scrape(TrackerTier tier, Tracker tracker)
+        public WaitHandle Scrape(Tracker tracker)
         {
-            return Scrape(tier, tracker, false);
+            return Scrape(tracker, false);
         }
 
-        private WaitHandle Scrape(TrackerTier tier, Tracker tracker, bool trySubsequent)
+        private WaitHandle Scrape(Tracker tracker, bool trySubsequent)
         {
             if (!tracker.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
 
-            TrackerConnectionID id = new TrackerConnectionID(tier, tracker, trySubsequent, TorrentEvent.None, null);
+            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, TorrentEvent.None, null);
             WaitHandle handle = tracker.Scrape(this.infoHash, id);
             
             return handle;

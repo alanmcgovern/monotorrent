@@ -36,6 +36,7 @@ using MonoTorrent.BEncoding;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Collections.Generic;
+using System.Web;
 
 namespace MonoTorrent.Client
 {
@@ -67,7 +68,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public override WaitHandle Scrape(string infohash, TrackerConnectionID id)
+        public override WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
         {
             HttpWebRequest request;
             string url = scrapeUrl;
@@ -87,25 +88,20 @@ namespace MonoTorrent.Client
             return request.BeginGetResponse(ScrapeReceived, id).AsyncWaitHandle;
         }
 
-        public override WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                              TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
-                                              bool requireEncryption, string peerId, string ipaddress, int port)
+        public override WaitHandle Announce(AnnounceParameters parameters)
         {
-            string announceString = CreateAnnounceString(bytesDownloaded, bytesUploaded, bytesLeft,
-                                    clientEvent, infohash, id, requireEncryption, peerId, ipaddress, port);
+            string announceString = CreateAnnounceString(parameters);
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
-            id.Request = request;
+            parameters.Id.Request = request;
 
             UpdateState(TrackerState.Announcing);
-            return request.BeginGetResponse(AnnounceReceived, id).AsyncWaitHandle;
+            return request.BeginGetResponse(AnnounceReceived, parameters.Id).AsyncWaitHandle;
         }
 
 
 
-        protected string CreateAnnounceString(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                      TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
-                                      bool requireEncryption, string peerId, string ipaddress, int port)
+        protected string CreateAnnounceString(AnnounceParameters parameters)
         {
             StringBuilder sb = new StringBuilder(256);
 
@@ -115,43 +111,43 @@ namespace MonoTorrent.Client
             sb.Append(this.announceUrl);
             sb.Append((this.announceUrl.IndexOf('?') == -1) ? '?' : '&');
             sb.Append("info_hash=");
-            sb.Append(infohash);
+            sb.Append(HttpUtility.UrlEncode(parameters.Infohash));
             sb.Append("&peer_id=");
-            sb.Append(peerId);
+            sb.Append(parameters.PeerId);
             sb.Append("&port=");
-            sb.Append(port);
+            sb.Append(parameters.Port);
             if (ClientEngine.SupportsEncryption)
                 sb.Append("&supportcrypto=1");
-            if (requireEncryption)
+            if (parameters.RequireEncryption && ClientEngine.SupportsEncryption)
                 sb.Append("&requirecrypto=1");
             sb.Append("&uploaded=");
-            sb.Append(bytesUploaded);
+            sb.Append(parameters.BytesUploaded);
             sb.Append("&downloaded=");
-            sb.Append(bytesDownloaded);
+            sb.Append(parameters.BytesDownloaded);
             sb.Append("&left=");
-            sb.Append(bytesLeft);
+            sb.Append(parameters.BytesLeft);
             sb.Append("&compact=1");    // Always use compact response
             sb.Append("&numwant=");
             sb.Append(100);
             sb.Append("&key=");  // The 'key' protocol, used as a kind of 'password'. Must be the same between announces
             sb.Append(Key);
-            if (ipaddress != null)
+            if (parameters.Ipaddress != null)
             {
                 sb.Append("&ip=");
-                sb.Append(ipaddress);
+                sb.Append(parameters.Ipaddress);
             }
 
             // If we have not successfully sent the started event to this tier, override the passed in started event
             // Otherwise append the event if it is not "none"
-            if (!id.TrackerTier.SentStartedEvent)
+            if (!parameters.Id.Tracker.Tier.SentStartedEvent)
             {
                 sb.Append("&event=started");
-                id.TrackerTier.SendingStartedEvent = true;
+                parameters.Id.Tracker.Tier.SendingStartedEvent = true;
             }
-            else if (clientEvent != TorrentEvent.None)
+            else if (parameters.ClientEvent != TorrentEvent.None)
             {
                 sb.Append("&event=");
-                sb.Append(clientEvent.ToString().ToLower());
+                sb.Append(parameters.ClientEvent.ToString().ToLower());
             }
 
             if (!string.IsNullOrEmpty(TrackerId))
@@ -170,7 +166,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="result"></param>
         /// <returns></returns>
-        public override BEncodedDictionary DecodeResponse(IAsyncResult result)
+        private BEncodedDictionary DecodeResponse(IAsyncResult result)
         {
             int bytesRead = 0;
             int totalRead = 0;
@@ -233,7 +229,7 @@ namespace MonoTorrent.Client
         private void AnnounceReceived(IAsyncResult result)
         {
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
-            BEncodedDictionary dict = id.Tracker.DecodeResponse(result);
+            BEncodedDictionary dict = DecodeResponse(result);
             AnnounceResponseEventArgs args = new AnnounceResponseEventArgs(id);
 
 
@@ -245,14 +241,14 @@ namespace MonoTorrent.Client
             }
             else
             {
-                if (id.TrackerTier.SendingStartedEvent)
-                    id.TrackerTier.SentStartedEvent = true;
+                if (id.Tracker.Tier.SendingStartedEvent)
+                    id.Tracker.Tier.SentStartedEvent = true;
                 
                 HandleAnnounce(dict, args);
                 UpdateState(TrackerState.AnnounceSuccessful);
             }
 
-            id.TrackerTier.SendingStartedEvent = false;
+            id.Tracker.Tier.SendingStartedEvent = false;
             args.Successful = UpdateSucceeded;
             RaiseAnnounceComplete(args);
         }
@@ -324,7 +320,7 @@ namespace MonoTorrent.Client
         {
             BEncodedDictionary d;
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
-            BEncodedDictionary dict = id.Tracker.DecodeResponse(result);
+            BEncodedDictionary dict = DecodeResponse(result);
 
             bool successful = !dict.ContainsKey("custom error");
             ScrapeResponseEventArgs args = new ScrapeResponseEventArgs(this, successful);

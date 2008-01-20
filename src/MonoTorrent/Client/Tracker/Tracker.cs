@@ -65,6 +65,7 @@ namespace MonoTorrent.Client
         private DateTime lastUpdated;
         private int minUpdateInterval;
         private TrackerState state;
+        private TrackerTier tier;
         private string trackerId;
         private int updateInterval;
         private bool updateSucceeded;
@@ -159,9 +160,13 @@ namespace MonoTorrent.Client
         public TrackerState State
         {
             get { return this.state; }
-            internal set { this.state = value; }
         }
 
+        internal TrackerTier Tier
+        {
+            get { return tier; }
+            set { tier = value; }
+        }
 
         /// <summary>
         /// The ID for the current tracker
@@ -227,13 +232,11 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public abstract BEncodedDictionary DecodeResponse(IAsyncResult result);
+        public abstract WaitHandle Announce(AnnounceParameters parameters);
 
-        public abstract WaitHandle Scrape(string infohash, TrackerConnectionID id);
+        public abstract WaitHandle Scrape(byte[] infohash, TrackerConnectionID id);
 
-        public abstract WaitHandle Announce(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                            TorrentEvent clientEvent, string infohash, TrackerConnectionID id,
-                                            bool requireEncryption, string peerId, string ipaddress, int port);
+
 
         /// <summary>
         /// Wrapper method to call the OnStateChanged event correctly
@@ -242,12 +245,12 @@ namespace MonoTorrent.Client
         /// <param name="newState"></param>
         protected void UpdateState(TrackerState newState)
         {
-            if (State == newState)
+            if (state == newState)
                 return;
 
             // FIXME: Don't send null!
             TrackerStateChangedEventArgs e = new TrackerStateChangedEventArgs(null, this, State, newState);
-            State = newState;
+            state = newState;
 
             RaiseStateChanged(e);
         }

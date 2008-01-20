@@ -53,8 +53,6 @@ namespace MonoTorrent.Client
         public Tracker Tracker;
 
 
-        public TrackerTier TrackerTier;
-
 
         internal bool TrySubsequent;
 
@@ -65,9 +63,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="request">Object containing information about the Async Request</param>
         /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
-        public TrackerConnectionID(TrackerTier tier, Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
+        public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
         {
-            this.TrackerTier = tier;
             this.Tracker = tracker;
             this.TrySubsequent = trySubsequent;
             this.TorrentEvent = torrentEvent;

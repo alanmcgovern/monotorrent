@@ -139,6 +139,7 @@ SOURCES=	\
 	Client/Settings/TorrentSettings.cs \
 	\
 	\
+	Client/Tracker/AnnounceParameters.cs \
 	Client/Tracker/HTTPTracker.cs \
 	Client/Tracker/TrackerConnectionId.cs \
 	Client/Tracker/Tracker.cs \
