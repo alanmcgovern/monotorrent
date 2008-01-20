@@ -265,6 +265,19 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
+            : this(torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name)
+        {
+
+        }
+
+        /// <summary>
+        /// Creates a new TorrentManager instance.
+        /// </summary>
+        /// <param name="torrent">The torrent to load in</param>
+        /// <param name="savePath">The directory to save downloaded files to</param>
+        /// <param name="settings">The settings to use for controlling connections</param>
+        /// <param name="baseDirectory">In the case of a multi-file torrent, the name of the base directory containing the files. Defaults to Torrent.Name</param>
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
         {
             if (torrent == null)
                 throw new ArgumentNullException("torrent");
@@ -278,7 +291,7 @@ namespace MonoTorrent.Client
             this.bitfield = new BitField(torrent.Pieces.Count);
             this.ConnectedPeers = new List<PeerIdInternal>();
             this.ConnectingToPeers = new List<PeerIdInternal>();
-            this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, torrent.Files.Length == 1 ? "" : torrent.Name);
+            this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, baseDirectory);
             this.finishedPieces = new Queue<int>();
             this.listLock = new object();
             this.monitor = new ConnectionMonitor();
