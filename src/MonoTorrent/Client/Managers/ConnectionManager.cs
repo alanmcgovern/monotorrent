@@ -366,22 +366,13 @@ namespace MonoTorrent.Client
 
                         // If we receive 0 bytes, the connection has been closed, so exit
                         int bytesReceived = id.Connection.EndReceive(result, out id.ErrorCode);
-
-						// Recycle the connection if we got an error
-						if (id.ErrorCode != SocketError.Success)
-						{
-							Logger.Log(id, "EndReceiveMessage: Error from EndReceive: " + id.ErrorCode.ToString());
-							CleanupSocket(id, "EndReceiveMessage: Error from EndReceive: " + id.ErrorCode.ToString());
-							return;
-						}
-
-						// Recycle the connection if we get a zero length return - indicates a lost connection
-						if (bytesReceived == 0)
-						{
-							Logger.Log(id, "EndReceiveMessage: EndReceive returned empty string");
-							CleanupSocket(id, "EndReceiveMessage: EndReceive returned empty string");
-							return;
-						}
+                        if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
+                        {
+                            reason = "EndReceiveMessage: " + id.ErrorCode.ToString();
+                            Logger.Log(id, "Couldn't receive message");
+                            cleanUp = true;
+                            return;
+                        }
 
                         // If the first byte is '7' and we're receiving more than 256 bytes (a made up number)
                         // then this is a piece message, so we add it as "data", not protocol. 256 bytes should filter out
