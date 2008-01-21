@@ -59,12 +59,11 @@ namespace MonoTorrent.Client
             : base()
         {
             this.announceUrl = announceUrl;
-            int indexOfAnnounce = announceUrl.LastIndexOf('/') + 1;
-            if ((indexOfAnnounce + 8) <= announceUrl.Length && announceUrl.Substring(indexOfAnnounce, 8) == "announce")
+            if (announceUrl.EndsWith("/announce", StringComparison.OrdinalIgnoreCase))
             {
                 CanScrape = true;
                 Regex r = new Regex("announce");
-                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, indexOfAnnounce);
+                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, announceUrl.LastIndexOf('/') - 1);
             }
         }
 
