@@ -366,10 +366,17 @@ namespace MonoTorrent.Client
 
                         // If we receive 0 bytes, the connection has been closed, so exit
                         int bytesReceived = id.Connection.EndReceive(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success || bytesReceived == 0)
+                        if (id.ErrorCode != SocketError.Success)
                         {
                             reason = "EndReceiveMessage: " + id.ErrorCode.ToString();
-                            Logger.Log(id, "Couldn't receive message");
+                            Logger.Log(id, "Couldn't receive message. Error from socket" + id.ErrorCode.ToString());
+                            cleanUp = true;
+                            return;
+                        }
+                        if (bytesReceived == 0)
+                        {
+                            reason = "EndReceiveMessage: Received zero bytes";
+                            Logger.Log(id, "Got zero bytes when receiving a message");
                             cleanUp = true;
                             return;
                         }
@@ -427,10 +434,17 @@ namespace MonoTorrent.Client
 
                         // If we have sent zero bytes, that is a sign the connection has been closed
                         int bytesSent = id.Connection.EndSend(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success || bytesSent == 0)
+                        if (id.ErrorCode != SocketError.Success)
                         {
                             reason = "Sending error: " + id.ErrorCode.ToString();
-                            Logger.Log(id, "Couldn't send message");
+                            Logger.Log(id, "Couldn't send message. Socket returned: " + id.ErrorCode.ToString());
+                            cleanup = true;
+                            return;
+                        }
+                        if (bytesSent == 0)
+                        {
+                            reason = "Sending error: Sent zero bytes";
+                            Logger.Log(id, "Sent zero bytes when sending a message");
                             cleanup = true;
                             return;
                         }
