@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
             {
                 CanScrape = true;
                 Regex r = new Regex("announce");
-                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, announceUrl.LastIndexOf('/') - 1);
+                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, index);
             }
         }
 
