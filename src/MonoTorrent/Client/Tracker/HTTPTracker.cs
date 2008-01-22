@@ -59,7 +59,9 @@ namespace MonoTorrent.Client
             : base()
         {
             this.announceUrl = announceUrl;
-            if (announceUrl.EndsWith("/announce", StringComparison.OrdinalIgnoreCase))
+            int index = announceUrl.LastIndexOf('/');
+            string part = (index + 9 <= announceUrl.Length) ? announceUrl.Substring(index + 1, 8) : "";
+            if (part.Equals("announce", StringComparison.OrdinalIgnoreCase))
             {
                 CanScrape = true;
                 Regex r = new Regex("announce");
