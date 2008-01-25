@@ -95,7 +95,9 @@ SOURCES=	\
 	Client/Managers/TrackerManager.cs \
 	\
 	\
+	Client/PeerConnections/ConnectionFactory.cs  \
 	Client/PeerConnections/HTTPConnection.cs  \
+	Client/PeerConnections/IConnection.cs  \
 	Client/PeerConnections/PeerConnectionBase.cs \
 	Client/PeerConnections/PeerConnectionId.cs \
 	Client/PeerConnections/PeerId.cs \
