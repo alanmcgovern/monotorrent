@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public override void Start()
         {
-            if (engine == null)
+            if (Engine == null)
                 throw new ListenerException("This listener hasn't been registered with a torrent manager");
 
             if (Disposed)
@@ -151,8 +151,10 @@ namespace MonoTorrent.Client
 
                 peerSocket = listener.EndAccept(result);
 
-                Peer peer = new Peer(string.Empty, peerSocket.RemoteEndPoint.ToString());
-                TCPConnection connection = new TCPConnection(peerSocket, 0, new NoEncryption());
+                IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
+                Uri uri = new Uri("tcp://" + endpoint.Address.ToString() + endpoint.Port);
+                Peer peer = new Peer("", uri, new NoEncryption());
+				IConnection connection = new TCPConnection(peerSocket, true);
 
 
                 RaiseConnectionReceived(peer, connection);

@@ -34,11 +34,25 @@ using System.Net;
 using MonoTorrent.Common;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
     public class Peer
     {
+        Uri connectionUri;
+        IEncryptor encryptor;
+
+        public Uri ConnectionUri
+        {
+            get { return connectionUri; }
+        }
+
+        public IEncryptor Encryptor
+        {
+            get { return encryptor; }
+        }
+
         #region Private Fields
 
         private bool activeReceive;
@@ -48,7 +62,6 @@ namespace MonoTorrent.Client
         private int failedConnectionAttempts;
         private int totalHashFails;
         private bool isSeeder;
-        private string location;
         private string peerId;
         private int repeatedHashFails;
         private DateTime lastConnectionAttempt;
@@ -126,15 +139,6 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The location at which the peer can be connected to at
-        /// </summary>
-        public string Location
-        {
-            get { return this.location; }
-        }
-
-
-        /// <summary>
         /// The highest level of encryption that should be attempted with this peer
         /// </summary>
         internal EncryptionMethods EncryptionSupported
@@ -152,11 +156,26 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        public Peer(string peerId, string location)
+        public Peer(string peerId, Uri connectionUri)
+            : this (peerId, connectionUri, new NoEncryption())
         {
-            this.peerId = peerId;
-            this.location = location;
+
         }
+
+        public Peer(string peerId, Uri connectionUri, IEncryptor encryptor)
+        {
+            if (peerId == null)
+                throw new ArgumentNullException("peerId");
+            if (connectionUri == null)
+                throw new ArgumentNullException("connectionUri");
+            if (encryptor == null)
+                throw new ArgumentNullException("encryptor");
+
+            this.connectionUri = connectionUri;
+            this.encryptor = encryptor;
+            this.peerId = peerId;
+        }
+
         #endregion
 
 
@@ -166,27 +185,27 @@ namespace MonoTorrent.Client
             if(peer ==null)
                 return false;
 
-            return this.location.Equals(peer.location);
+            return this.connectionUri.Equals(peer.connectionUri);
         }
 
 
         public override int GetHashCode()
         {
-            return this.location.GetHashCode();
+            return this.connectionUri.GetHashCode();
         }
 
 
         public override string ToString()
         {
-            return this.location;
+            return this.connectionUri.ToString();
         }
 
 
         internal byte[] CompactPeer()
         {
             byte[] data = new byte[6];
-
-            string[] peer = this.location.Split(':');
+            // FIXME: This probably isn't right
+            string[] peer = this.connectionUri.ToString().Split(':');
             Buffer.BlockCopy(IPAddress.Parse(peer[0]).GetAddressBytes(), 0, data, 0, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, 4, 2);
 
@@ -221,7 +240,8 @@ namespace MonoTorrent.Client
                 else
                     peerId = string.Empty;
 
-                list.Add(new Peer(peerId, dict["ip"].ToString() + ':' + dict["port"].ToString()));
+                Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
+                list.Add(new Peer(peerId, connectionUri, new NoEncryption()));
             }
 
             return list;
@@ -253,7 +273,9 @@ namespace MonoTorrent.Client
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);
-                list.Add(new Peer("", sb.ToString()));
+
+                Uri uri = new Uri("tcp://" + sb.ToString());
+                list.Add(new Peer("", uri, new NoEncryption()));
             }
 
             return list;

@@ -54,9 +54,9 @@ namespace MonoTorrent.Client.Encryption
 
         void AddInitialData(byte[] buffer, int offset, int count);
 
-        void Start(Socket socket);
+        void Start(IConnection socket);
 
-        void Start(Socket socket, byte[] initialBuffer, int offset, int count);
+        void Start(IConnection socket, byte[] initialBuffer, int offset, int count);
 
         bool IsReady();
 

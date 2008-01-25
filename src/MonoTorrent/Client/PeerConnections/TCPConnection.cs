@@ -32,50 +32,74 @@ using System;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using MonoTorrent.Client.Encryption;
 
-namespace MonoTorrent.Client.Encryption
+namespace MonoTorrent.Client
 {
-    internal class TCPConnection : PeerConnectionBase
+    public class TCPConnection : IConnection
     {
+        private bool isIncoming;
+        private IPEndPoint endPoint;
+        private Socket socket;
+
         #region Member Variables
 
-        public IPEndPoint PeerEndPoint
+        public bool CanReconnect
         {
-            get { return this.peerEndPoint; }
+            get { return true; }
         }
-        private IPEndPoint peerEndPoint;
 
+        public bool Connected
+        {
+            get { return socket.Connected; }
+        }
 
-        private Socket peerSocket;
+        EndPoint IConnection.EndPoint
+        {
+            get { return endPoint; }
+        }
+
+        public IPEndPoint EndPoint
+        {
+            get { return this.endPoint; }
+        }
+
+        public bool IsIncoming
+        {
+            get { return isIncoming; }
+        }
 
         #endregion
 
 
         #region Constructors
 
-        public TCPConnection(string location, int bitfieldLength, IEncryptorInternal encryptor)
-            : base(bitfieldLength, encryptor)
+        public TCPConnection(Uri uri)
+            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), 
+                   new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
+                   false)
         {
-            string[] s = location.Split(':');
-            if (s.Length != 2)
-                throw new ArgumentException("Location should be in the form ipaddress:port", "location");
 
-            this.peerEndPoint = new IPEndPoint(IPAddress.Parse(s[0]), Convert.ToInt32(s[1]));
-            this.peerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public TCPConnection(IPEndPoint endPoint, int bitfieldLength, IEncryptorInternal encryptor)
-            : base(bitfieldLength, encryptor)
+        public TCPConnection(IPEndPoint endPoint, bool isIncoming)
+            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), endPoint, isIncoming)
         {
-            this.peerEndPoint = endPoint;
-            this.peerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
         }
 
-        public TCPConnection(Socket socket, int bitfieldLength, IEncryptorInternal encryptor)
-            : base(bitfieldLength, encryptor)
+        public TCPConnection(Socket socket, bool isIncoming)
+            : this(socket, (IPEndPoint)socket.RemoteEndPoint, isIncoming)
         {
-            this.peerEndPoint = (IPEndPoint)socket.RemoteEndPoint;
-            this.peerSocket = socket;
+
+        }
+
+
+        private TCPConnection(Socket socket, IPEndPoint endpoint, bool isIncoming)
+        {
+            this.socket = socket;
+            this.endPoint = endpoint;
+            this.isIncoming = isIncoming;
         }
 
         #endregion
@@ -83,89 +107,48 @@ namespace MonoTorrent.Client.Encryption
 
         #region Async Methods
 
-        internal override byte[] AddressBytes
+        public byte[] AddressBytes
         {
-            get { return this.peerEndPoint.Address.GetAddressBytes(); }
+            get { return this.endPoint.Address.GetAddressBytes(); }
         }
 
-        internal override void BeginConnect(AsyncCallback peerEndCreateConnection, PeerIdInternal id)
+        public IAsyncResult BeginConnect(AsyncCallback peerEndCreateConnection, object state)
         {
-            this.peerSocket.BeginConnect(this.peerEndPoint, peerEndCreateConnection, id);
+            return this.socket.BeginConnect(this.endPoint, peerEndCreateConnection, state);
         }
 
         // FIXME: Until mono supports the 'out errorcode' overload, we continue as before
-        internal override void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+        public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)
         {
-            errorCode = SocketError.Success;
-            try
-            {
-                this.peerSocket.BeginReceive(buffer.Array, buffer.Offset + offset, count, socketFlags, out errorCode, asyncCallback, id);
-                id.Peer.ActiveReceive = true;
-            }
-            catch
-            {
-                id.Peer.ActiveReceive = false;
-                throw;
-            }
-            //this.peerSocket.BeginReceive(buffer, offset, count, socketFlags, out errorCode, asyncCallback, id);
+            return this.socket.BeginReceive(buffer, offset, count, SocketFlags.None, asyncCallback, state);
         }
 
-        internal override void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+        public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)
         {
-            errorCode = SocketError.Success;
-
-            // Encrypt the *entire* message exactly once.
-            if (offset == 0)
-                Encryptor.Encrypt(buffer.Array, buffer.Offset, id.Connection.BytesToSend);
-
-            try
-            {
-                this.peerSocket.BeginSend(buffer.Array, buffer.Offset + offset, count, socketFlags, out errorCode, asyncCallback, id);
-                id.Peer.ActiveSend = true;
-            }
-            catch
-            {
-                id.Peer.ActiveSend = false;
-                throw;
-            }
+            return this.socket.BeginSend(buffer, offset, count, SocketFlags.None, asyncCallback, state);
         }
 
-        internal override void Dispose()
+        public void Dispose()
         {
             //if(this.peerSocket.Connected)
             //    this.peerSocket.Shutdown(SocketShutdown.Both);
-            this.peerSocket.Close();
+            this.socket.Close();
         }
 
-        internal override void EndConnect(IAsyncResult result)
+        public void EndConnect(IAsyncResult result)
         {
-            this.peerSocket.EndConnect(result);
+            this.isIncoming = true;
+            this.socket.EndConnect(result);
         }
 
-        internal override int EndSend(IAsyncResult result, out SocketError errorCode )
+        public int EndSend(IAsyncResult result)
         {
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-            id.Peer.ActiveSend = false;
-            return this.peerSocket.EndSend(result, out errorCode);
+            return this.socket.EndSend(result);
         }
 
-        internal override int EndReceive(IAsyncResult result, out SocketError errorCode)
+        public int EndReceive(IAsyncResult result)
         {
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-            id.Peer.ActiveReceive = false;
-            int received = this.peerSocket.EndReceive(result, out errorCode);
-            Encryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset + id.Connection.BytesReceived, received);
-            return received;
-        }
-
-        internal override void StartEncryption()
-        {
-            Encryptor.Start(peerSocket);
-        }
-
-        internal override void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count)
-        {
-            Encryptor.Start(peerSocket, initialBuffer.Array, initialBuffer.Offset + offset, count);
+            return this.socket.EndReceive(result);
         }
 
         #endregion

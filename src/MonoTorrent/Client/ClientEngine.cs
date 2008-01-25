@@ -103,6 +103,10 @@ namespace MonoTorrent.Client
             get { return diskManager; }
         }
 
+        public ListenManager ListenManager
+        {
+            get { return listenManager; }
+        }
 
         /// <summary>
         /// True if the engine has been started
@@ -252,6 +256,7 @@ namespace MonoTorrent.Client
                     Unregister(t);
                     t.Dispose();
                 }
+                this.diskManager.Dispose();
             }
 
             lock (asyncCompletionLock)

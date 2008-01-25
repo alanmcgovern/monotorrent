@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Encryption
         private byte[] Y; // 2^X mod P
         private byte[] OtherY = null;
         
-        private Socket socket;
+        private IConnection socket;
 
         // Data to be passed to initial ReceiveMessage requests
         private byte[] initialBuffer;
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual void Start(Socket socket)
+        public virtual void Start(IConnection socket)
         {
             this.socket = socket;
 
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual void Start(Socket socket, byte[] initialBuffer, int offset, int count)
+        public virtual void Start(IConnection socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
@@ -363,7 +363,7 @@ namespace MonoTorrent.Client.Encryption
 
             try
             {
-                socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, SocketFlags.None, fillSynchronizeBytesCallback, 0);
+                socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
             }
             catch (Exception)
             {
@@ -442,13 +442,13 @@ namespace MonoTorrent.Client.Encryption
                     }
 
                     // fill the rest of the window
-                    socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, SocketFlags.None, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
+                    socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
                 }
                 else // there's no match in this window
                 {
                     try
                     {
-                        socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, SocketFlags.None, fillSynchronizeBytesCallback, 0);
+                        socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
                     }
                     catch (Exception)
                     {
@@ -491,7 +491,7 @@ namespace MonoTorrent.Client.Encryption
                     {
                         try
                         {
-                            socket.BeginReceive(buffer, toCopy, length - toCopy, SocketFlags.None, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
+                            socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
                         }
                         catch (Exception)
                         {
@@ -504,7 +504,7 @@ namespace MonoTorrent.Client.Encryption
                 {
                     try
                     {
-                        socket.BeginReceive(buffer, 0, length, SocketFlags.None, doneReceiveCallback, new object[] { callback, buffer, 0, length });
+                        socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
                     }
                     catch (Exception)
                     {
@@ -553,7 +553,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 receiveData[2] = start + received;
                 receiveData[3] = length - received;
-                socket.BeginReceive(buffer, start + received, length - received, SocketFlags.None, doneReceiveCallback, receiveData);
+                socket.BeginReceive(buffer, start + received, length - received, doneReceiveCallback, receiveData);
             }
             else
             {
@@ -567,9 +567,9 @@ namespace MonoTorrent.Client.Encryption
             {
                 try
                 {
-                    socket.BeginSend(toSend, 0, toSend.Length, SocketFlags.None, doneSendCallback, new object[] { toSend, 0, toSend.Length });
+                    socket.BeginSend(toSend, 0, toSend.Length, doneSendCallback, new object[] { toSend, 0, toSend.Length });
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     IOError();
                     return;
@@ -607,7 +607,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 sendData[1] = start + sent;
                 sendData[2] = length - sent;
-                socket.BeginSend(toSend, start + sent, length - sent, SocketFlags.None, doneSendCallback, sendData);
+                socket.BeginSend(toSend, start + sent, length - sent, doneSendCallback, sendData);
             }
         }
 

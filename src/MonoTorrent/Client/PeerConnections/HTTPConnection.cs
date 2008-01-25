@@ -32,9 +32,10 @@ using System.Text;
 using MonoTorrent.Client.Encryption;
 using System.Net.Sockets;
 
-namespace MonoTorrent.Client.PeerConnections
+namespace MonoTorrent.Client
 {
-    internal class HTTPConnection : PeerConnectionBase
+	/*
+    internal class HTTPConnection : IConnection
     {
         public HTTPConnection(string location, int bitfieldLength, IEncryptorInternal encryptor)
             : base(bitfieldLength, encryptor)
@@ -80,5 +81,5 @@ namespace MonoTorrent.Client.PeerConnections
         {
             get { return null; }
         }
-    }
+    }*/
 }

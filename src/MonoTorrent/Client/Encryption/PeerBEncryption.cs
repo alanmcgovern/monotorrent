@@ -55,9 +55,9 @@ namespace MonoTorrent.Client.Encryption
             gotInitialPayloadCallback = new AsyncCallback(gotInitialPayload);
         }
 
-        public override void Start(Socket socket)
+        public override void Start(IConnection socket)
         {
-            Logger.Log(id, "B: Start " + socket.Available);
+            //Logger.Log(id, "B: Start " + socket.Available);
             base.Start(socket);
         }
 

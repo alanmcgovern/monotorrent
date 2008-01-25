@@ -34,10 +34,16 @@ namespace MonoTorrent.Client
 {
     public abstract class ConnectionListenerBase : IDisposable
     {
-        protected ClientEngine engine;
+        public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+
+        private ClientEngine engine;
         private bool isListening;
 
-        internal event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        protected internal ClientEngine Engine
+        {
+            get { return engine; }
+            set { engine = value; }
+        }
 
         public bool IsListening
         {
@@ -45,20 +51,11 @@ namespace MonoTorrent.Client
             protected set { isListening = value; }
         }
 
-        void IDisposable.Dispose()
-        {
-            Dispose();
-        }
         public abstract void Dispose();
-        internal ClientEngine Engine
-        {
-            get { return engine; }
-            set { engine = value; }
-        }
         public abstract void Start();
         public abstract void Stop();
 
-        internal virtual void RaiseConnectionReceived(Peer peer, PeerConnectionBase connection)
+        protected internal virtual void RaiseConnectionReceived(Peer peer, IConnection connection)
         {
             ConnectionReceived(this, new NewConnectionEventArgs(peer, connection));
         }

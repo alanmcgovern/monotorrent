@@ -41,10 +41,11 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Holds the data for a connection to another peer
     /// </summary>
-    internal abstract class PeerConnectionBase : IDisposable
+    internal class PeerConnectionBase
     {
         #region Member Variables
 
+		public IConnection Connection;
         private MonoTorrentCollection<int> amAllowedFastPieces;
         private bool amChoking;
         private bool amInterested;
@@ -83,12 +84,16 @@ namespace MonoTorrent.Client
         private double lastReviewDownloadRate = 0;    //Download rate determined at the end of the last full review period when this peer was unchoked
         private double lastReviewUploadRate = 0;      //Ditto for upload rate
         private bool firstReviewPeriod;               //Set true if this is the first review period since this peer was last unchoked
+
         #endregion Member Variables
 
 
         #region Properties
 
-        internal abstract byte[] AddressBytes { get; }
+        internal byte[] AddressBytes
+		{
+			get { return Connection.AddressBytes; }
+		}
 
 
         // FIXME Use these to request pieces
@@ -414,7 +419,7 @@ namespace MonoTorrent.Client
         /// Creates a new connection to the peer at the specified IPEndpoint
         /// </summary>
         /// <param name="peerEndpoint">The IPEndpoint to connect to</param>
-        protected PeerConnectionBase(int bitfieldLength, IEncryptorInternal encryptor)
+        public PeerConnectionBase(int bitfieldLength, IEncryptorInternal encryptor)
         {
             this.suggestedPieces = new MonoTorrentCollection<int>();
             this.encryptor = encryptor;
@@ -506,23 +511,15 @@ namespace MonoTorrent.Client
             this.monitor.BytesSent(bytesSent, type);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        internal virtual void StartEncryption()
+		
+		internal void StartEncryption()
         {
+            Encryptor.Start(Connection);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="initialBuffer"></param>
-        /// <param name="offset"></param>
-        /// <param name="count"></param>
-        internal virtual void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count)
+        internal void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count)
         {
+            Encryptor.Start(Connection, initialBuffer.Array, initialBuffer.Offset + offset, count);
         }
 
         #endregion
@@ -530,24 +527,76 @@ namespace MonoTorrent.Client
 
         #region Async Methods
 
-        internal abstract void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerIdInternal id);
+        internal void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerIdInternal id)
+		{
+			Connection.BeginConnect(peerEndCreateConnection, id);
+		}
 
-        internal abstract void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode);
+        internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+		{
+            if(!(this.Encryptor is NoEncryption))
+                Console.WriteLine("ENCRYPTED: {0}", encryptor.GetType().Name);
 
-        internal abstract void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode);
+			errorCode = SocketError.Success;
+			
+            try
+            {
+                Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
+                id.Peer.ActiveReceive = true;
+            }
+            catch
+            {
+                id.Peer.ActiveReceive = false;
+                throw;
+            }
+		}
 
-        internal abstract void Dispose();
+        internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+		{
+			errorCode = SocketError.Success;
+            // Encrypt the *entire* message exactly once.
+            if (offset == 0)
+                Encryptor.Encrypt(buffer.Array, buffer.Offset, id.Connection.BytesToSend);
 
-        void IDisposable.Dispose()
-        {
-            Dispose();
-        }
+            try
+            {
+                Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
+                id.Peer.ActiveSend = true;
+            }
+            catch
+            {
+                id.Peer.ActiveSend = false;
+                throw;
+            }
+		}
 
-        internal abstract void EndConnect(System.IAsyncResult result);
+        internal void Dispose()
+		{
+			Connection.Dispose();
+		}
 
-        internal abstract int EndReceive(System.IAsyncResult result, out SocketError errorCode);
+        internal void EndConnect(IAsyncResult result)
+		{
+			Connection.EndConnect(result);
+		}
 
-        internal abstract int EndSend(System.IAsyncResult result, out SocketError errorCode);
+        internal int EndReceive(IAsyncResult result, out SocketError errorCode)
+		{
+			errorCode = SocketError.Success;
+			int received = Connection.EndReceive(result);
+			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+			id.Peer.ActiveReceive = false;
+            Encryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset + id.Connection.BytesReceived, received);
+			return received;
+		}
+
+        internal int EndSend(IAsyncResult result, out SocketError errorCode)
+		{
+			errorCode = SocketError.Success;
+			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            id.Peer.ActiveSend = false;
+			return Connection.EndSend(result);
+		}
 
         #endregion
     }

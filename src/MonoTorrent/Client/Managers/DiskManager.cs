@@ -9,7 +9,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Managers
 {
-    public class DiskManager
+    public class DiskManager : IDisposable
     {
         #region Member Variables
 
@@ -20,7 +20,6 @@ namespace MonoTorrent.Client.Managers
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
         private FileStreamBuffer streamsBuffer;
-        private int openStreams;
 
 
         #endregion Member Variables
@@ -46,7 +45,7 @@ namespace MonoTorrent.Client.Managers
 
         public int OpenFiles
         {
-            get { return openStreams; }
+            get { return streamsBuffer.Count; }
         }
 
         public int QueuedWrites
@@ -104,17 +103,6 @@ namespace MonoTorrent.Client.Managers
         {
             foreach (TorrentFile file in manager.Torrent.Files)
                 streamsBuffer.CloseStream(file);
-        }
-
-
-        /// <summary>
-        /// Disposes all necessary objects
-        /// </summary>
-        internal void Dispose()
-        {
-            ioActive = false;
-            threadWait.Set();
-            streamsBuffer.Dispose();
         }
 
 
@@ -419,5 +407,13 @@ namespace MonoTorrent.Client.Managers
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            ioActive = false;
+            this.threadWait.Set();
+            this.ioThread.Join();
+            this.streamsBuffer.Dispose();
+        }
     }
 }

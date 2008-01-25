@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    internal class PeerIdInternal : IComparable<PeerIdInternal>
+    internal class PeerIdInternal //: IComparable<PeerIdInternal>
     {
         #region Member Variables
 
@@ -131,25 +131,25 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public int CompareTo(PeerIdInternal other)
-        {
-            return this.peer.Location.CompareTo(other.peer.Location);
-        }
+        //public int CompareTo(PeerIdInternal other)
+        //{
+        //    return 
+        //}
 
         public override bool Equals(object obj)
         {
             PeerIdInternal id = obj as PeerIdInternal;
-            return id == null ? false : this.peer.Location == id.peer.Location;
+            return id == null ? false : this.peer.ConnectionUri.Equals(id.peer.ConnectionUri);
         }
 
         public override int GetHashCode()
         {
-            return this.peer.Location.GetHashCode();
+            return this.peer.ConnectionUri.GetHashCode();
         }
 
         public override string ToString()
         {
-            return this.peer.Location;
+            return this.peer.ConnectionUri.ToString();
         }
 
         internal void UpdatePublicStats()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
+using System.Net;
 
 namespace MonoTorrent.Client
 {
@@ -22,7 +23,7 @@ namespace MonoTorrent.Client
         private int isRequestingPiecesCount;
         private bool isSeeder;
         private bool isValid;
-        private string location;
+        private Uri location;
         private ConnectionMonitor monitor;
         private string peerId;
         private int piecesSent;
@@ -96,7 +97,7 @@ namespace MonoTorrent.Client
             internal set { isValid = value; }
         }
 
-        public string Location
+        public Uri Location
         {
             get { return this.location; }
         }
@@ -159,7 +160,7 @@ namespace MonoTorrent.Client
             isInterested = id.Connection.IsInterested;
             isRequestingPiecesCount = id.Connection.IsRequestingPiecesCount;
             isSeeder = id.Peer.IsSeeder;
-            location = id.Peer.Location;
+            location = id.Peer.ConnectionUri;
             monitor = id.Connection.Monitor;
             peerId = id.Peer.PeerId;
             piecesSent = id.Connection.PiecesSent;

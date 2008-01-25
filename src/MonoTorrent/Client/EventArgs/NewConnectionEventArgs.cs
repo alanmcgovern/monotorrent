@@ -4,12 +4,13 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    internal class NewConnectionEventArgs : TorrentEventArgs
+    public class NewConnectionEventArgs : TorrentEventArgs
     {
+        private IConnection connection;
+        private TorrentManager manager;
         private Peer peer;
-        private PeerConnectionBase connection;
 
-        public PeerConnectionBase Connection
+        public IConnection Connection
         {
             get { return connection; }
         }
@@ -18,10 +19,23 @@ namespace MonoTorrent.Client
         {
             get { return peer; }
         }
-        
-        public NewConnectionEventArgs(Peer peer, PeerConnectionBase connection)
+
+        public TorrentManager Manager
+        {
+            get { return manager; }
+        }
+
+        public NewConnectionEventArgs(Peer peer, IConnection connection)
+            : this(peer, connection, null)
+        {
+        }
+
+        public NewConnectionEventArgs(Peer peer, IConnection connection, TorrentManager manager)
             : base(null)
         {
+            if (!connection.IsIncoming && manager == null)
+                throw new InvalidOperationException("An outgoing connection must specify the torrent manager it belongs to");
+
             this.connection = connection;
             this.peer = peer;
         }

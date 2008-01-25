@@ -12,6 +12,12 @@ namespace MonoTorrent.Client
         // The most recently used is at the last position in the array
         private List<TorrentFileStream> list;
         private int maxStreams;
+		
+		public int Count
+		{
+			get { return list.Count; }
+		}
+		
         public FileStreamBuffer(int maxStreams)
         {
             this.maxStreams = maxStreams;

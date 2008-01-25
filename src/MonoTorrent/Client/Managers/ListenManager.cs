@@ -120,12 +120,17 @@ namespace MonoTorrent.Client
         private void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
             PeerIdInternal id = new PeerIdInternal(e.Peer, null);
-            id.Connection = e.Connection;
+            id.Connection = new PeerConnectionBase(0, new NoEncryption());
+            id.Connection.Connection = e.Connection;
             ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);
             id.Connection.BytesReceived = 0;
             id.Connection.BytesToRecieve = 68;
             Logger.Log(id, "CE Peer incoming connection accepted");
-            id.Connection.BeginReceive(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
+
+            if (id.Connection.Connection.IsIncoming)
+                id.Connection.BeginReceive(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
+            else
+                id.ConnectionManager.ProcessFreshConnection(id);
         }
 
 
@@ -256,6 +261,10 @@ namespace MonoTorrent.Client
                 CleanupSocket(id);
             }
             catch (NullReferenceException)
+            {
+                CleanupSocket(id);
+            }
+            catch
             {
                 CleanupSocket(id);
             }

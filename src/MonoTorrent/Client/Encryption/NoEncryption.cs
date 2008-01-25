@@ -38,7 +38,6 @@ namespace MonoTorrent.Client.Encryption
     {
         PeerIdInternal id;
 
-
         private EncryptorReadyHandler encryptorReady;
         private EncryptorIOErrorHandler encryptorIOError;
         private EncryptorEncryptionErrorHandler encryptorEncryptionError;
@@ -49,6 +48,7 @@ namespace MonoTorrent.Client.Encryption
             add { encryptorReady += value; }
             remove { encryptorReady -= value; }
         }
+
         event EncryptorIOErrorHandler IEncryptorInternal.EncryptorIOError
         {
             add { encryptorIOError += value; }
@@ -61,39 +61,37 @@ namespace MonoTorrent.Client.Encryption
             remove { encryptorEncryptionError -= value; }
         }
 
-        internal NoEncryption()
+        public NoEncryption()
         {
-        }
 
+        }
 
         void IEncryptorInternal.Encrypt(byte[] buffer, int offset, int count)
         {
-            return;
-        }
 
+        }
 
         void IEncryptorInternal.Decrypt(byte[] buffer, int offset, int count)
         {
-            return;
-        }
 
+        }
 
         void IEncryptorInternal.AddInitialData(byte[] buffer, int offset, int count)
         {
-            return;
+
         }
 
-        void IEncryptorInternal.Start(Socket socket)
+        void IEncryptorInternal.Start(IConnection socket)
         {
             Start(socket);
         }
 
-        void IEncryptorInternal.Start(Socket socket, byte[] initialBuffer, int offset, int count)
+        void IEncryptorInternal.Start(IConnection socket, byte[] initialBuffer, int offset, int count)
         {
             Start(socket);
         }
 
-        private void Start(Socket s)
+        private void Start(IConnection s)
         {
             encryptorReady(id);
         }

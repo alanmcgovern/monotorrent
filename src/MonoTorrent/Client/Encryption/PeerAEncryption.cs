@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Encryption
             SKEY = InfoHash;
         }
 
-        public override void Start(Socket socket)
+        public override void Start(IConnection socket)
         {
             Logger.Log(id, " A: Encryption started");
             base.Start(socket);
