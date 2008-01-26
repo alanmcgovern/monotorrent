@@ -43,6 +43,22 @@ namespace MonoTorrent.Tracker
 {
     public class Tracker : IEnumerable<SimpleTorrentManager>
     {
+        #region Static BEncodedStrings
+
+        internal static readonly BEncodedString peers = "peers";
+        internal static readonly BEncodedString interval = "interval";
+        internal static readonly BEncodedString min_interval = "min interval";
+        internal static readonly BEncodedString tracker_id = "tracker id";
+        internal static readonly BEncodedString complete = "complete";
+        internal static readonly BEncodedString incomplete = "incomplete";
+        internal static readonly BEncodedString tracker_id_value = "monotorrent-tracker";
+        internal static readonly BEncodedString peer_id = "peer id";
+        internal static readonly BEncodedString port = "port";
+        internal static readonly BEncodedString ip = "ip";
+        internal static readonly BEncodedNumber interval_value = new BEncodedNumber(0);
+        internal static readonly BEncodedNumber min_interval_value = new BEncodedNumber(0);
+
+        #endregion Static BEncodedStrings
         #region Fields
 
         private bool allowScrape;
@@ -158,17 +174,25 @@ namespace MonoTorrent.Tracker
                 return;
             }
 
-            // Update the tracker with the peers information. This adds the peer to the tracker,
-            // updates it's information or removes it depending on the context
-            manager.Update(e);
+            lock (manager)
+            {
+                // Update the tracker with the peers information. This adds the peer to the tracker,
+                // updates it's information or removes it depending on the context
+                manager.Update(e);
 
-            // Fulfill the announce request
-            manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
-            e.Response.Add("interval", new BEncodedNumber((int)IntervalAlgorithm.Interval));
-            e.Response.Add("min interval", new BEncodedNumber((int)IntervalAlgorithm.MinInterval));
-            e.Response.Add("tracker id", new BEncodedString("monotorrent-tracker")); // FIXME: Is this right?
-            e.Response.Add("complete", new BEncodedNumber(manager.Complete));
-            e.Response.Add("incomplete", new BEncodedNumber(manager.Count - manager.Complete));
+                // Fulfill the announce request
+                manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
+            }
+
+            // Make sure the values are updated
+            Tracker.interval_value.Number = IntervalAlgorithm.Interval;
+            Tracker.min_interval_value.Number = IntervalAlgorithm.MinInterval;
+
+            e.Response.Add(Tracker.interval, Tracker.interval_value);
+            e.Response.Add(Tracker.min_interval, Tracker.min_interval_value);
+            e.Response.Add(Tracker.tracker_id, Tracker.tracker_id_value); // FIXME: Is this right?
+            e.Response.Add(Tracker.complete, manager.Complete);
+            e.Response.Add(Tracker.incomplete, manager.Incomplete);
 
             //FIXME is this the right behaivour 
             //if (par.TrackerId == null)
@@ -204,9 +228,9 @@ namespace MonoTorrent.Tracker
                     continue;
 
                 BEncodedDictionary dict = new BEncodedDictionary();
-                dict.Add("complete", new BEncodedNumber(manager.Complete));
-                dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
-                dict.Add("incomplete", new BEncodedNumber(manager.Count - manager.Complete));
+                dict.Add("complete", manager.Complete);
+                dict.Add("downloaded", manager.Downloaded);
+                dict.Add("incomplete", manager.Incomplete);
                 dict.Add("name", new BEncodedString(manager.Trackable.Name));
                 files.Add(key, dict);
             }

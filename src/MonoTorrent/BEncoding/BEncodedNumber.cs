@@ -49,7 +49,7 @@ namespace MonoTorrent.BEncoding
             get { return number; }
             set { number = value; }
         }
-        private long number;
+        internal long number;
         #endregion
 
 

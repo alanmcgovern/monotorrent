@@ -36,6 +36,7 @@ using System.Web;
 
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
+using TrackerApp;
 
 namespace SampleTracker
 {
@@ -112,7 +113,7 @@ namespace SampleTracker
                     foreach (SimpleTorrentManager m in tracker)
                     {
                         Console.Write("Name: {0}   ", m.Trackable.Name);
-                        Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
+                        Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded.Number, m.Complete, m.Incomplete.Number);
                         Console.WriteLine();
                     }
 
@@ -194,8 +195,59 @@ namespace SampleTracker
         public static void Main(string[] args)
         {
             Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-            Debug.WriteLine("starting FrontendEngine");
-            new MySimpleTracker();
+
+
+            Console.WriteLine("Welcome to the MonoTorrent tracker");
+            Console.WriteLine("1. Start the tracker");
+            Console.WriteLine("2. Start a benchmark");
+            
+            Console.Write("Choice: ");
+            int val = 0;
+            while (true)
+            {
+                if (int.TryParse(Console.ReadLine(), out val))
+                {
+                    if (val == 1 || val == 2)
+                        break;
+                }
+            }
+
+            if (val == 1)
+            {
+                Debug.WriteLine("starting FrontendEngine");
+                new MySimpleTracker();
+            }
+            else
+            {
+                Console.Clear();
+                Console.Write("How many active torrents will be simulated: ");
+                int torrents = GetInt();
+                Console.Write("How many active peers per torrent: ");
+                int peers = GetInt();
+                Console.Write("How many requests per second: ");
+                int requests = GetInt();
+
+                StressTest test = new StressTest();
+                test.Initialise(torrents, peers, requests);
+                test.StartThreadedStress();
+
+                while (true)
+                {
+
+                    Console.WriteLine("Requests/Second: {0:0.00}", test.TotalRequests);
+                    test.TotalRequests = 0;
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
+        }
+
+        private static int GetInt()
+        {
+            int ret = 0;
+            while (!int.TryParse(Console.ReadLine(), out ret))
+            {
+            }
+            return ret;
         }
     }
 }

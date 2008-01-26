@@ -61,10 +61,11 @@ namespace TrackerApp
         private int averagePeers;
         private int torrents;
 
+        private Thread[] threads;
         public StressTest()
         {
-            averagePeers = 20;
-            torrents = 8000;
+            averagePeers = 300;
+            torrents = 10000;
             hashes = new List<byte[]>(torrents);
             listener = new ManualListener();
             random = new Random(1);
@@ -73,71 +74,41 @@ namespace TrackerApp
             tracker.RegisterListener(listener);
         }
 
-        internal void Initialise(bool testA)
-        {
-            if (testA)
-                TestA();
-            else
-                TestB();
-        }
-        private void TestB()
+        internal void Initialise(int torrents, int peers, int requests)
         {
             long ipAddress;
-            byte[] torrent;
-
-            List<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>();
-            list.Add(new KeyValuePair<int, int>(50, 1000));
-            list.Add(new KeyValuePair<int, int>(100, 500));
-            list.Add(new KeyValuePair<int, int>(250, 50));
-            list.Add(new KeyValuePair<int, int>(200, 60));
-            foreach (KeyValuePair<int, int> pair in list)
-            {
-                for (int i = 0; i < pair.Key; i++)
-                {
-                    // Create the fake infohash and add the torrent to the tracker.
-                    torrent = new byte[20];
-                    random.NextBytes(torrent);
-                    tracker.Add(new InfoHashTrackable(i.ToString(), torrent));
-                    hashes.Add(torrent);
-
-                    ipAddress = 1;
-                    for (int j = 0; j < pair.Value; j++)
-                        listener.Handle(torrent, new IPAddress(ipAddress++), true);
-                }
-            }
-        }
-
-        private void TestA()
-        {
-            long ipAddress;
-            int peers;
-            byte[] torrent;
+            byte[] infoHash;
 
             for (int i = 0; i < torrents; i++)
             {
                 if (i % 20 == 0)
-                    Console.WriteLine("Loaded {0}/{1}", i, torrents);
-
-                if (i % 250 == 0)
-                    Thread.Sleep(1000);
+                    Console.WriteLine("Loaded {0:0.00}%", (double)i / torrents * 100);
 
                 // Create the fake infohash and add the torrent to the tracker.
-                torrent = new byte[20];
-                random.NextBytes(torrent);
-                tracker.Add(new InfoHashTrackable(i.ToString(), torrent));
-                hashes.Add(torrent);
+                infoHash = new byte[20];
+                random.NextBytes(infoHash);
+                tracker.Add(new InfoHashTrackable(i.ToString(), infoHash));
+                hashes.Add(infoHash);
 
                 ipAddress = 1;
                 peers = averagePeers;// random.Next((int)(averagePeers * 0.5), (int)(averagePeers * 1.5));
                 for (int j = 0; j < peers; j++)
-                    listener.Handle(torrent, new IPAddress(ipAddress++), true);
+                    listener.Handle(infoHash, new IPAddress(ipAddress++), true);
             }
-        }
-        public void StartThreadedStress(int count)
-        {
-            for (int i = 0; i < count; i++)
-                new Thread(StartTest).Start();
 
+            threadSleepTime = (int)(30000.0 / requests);
+            threadSleepTime = Math.Max(1, threadSleepTime);
+            threads = new Thread[20];
+        }
+        private int threadSleepTime = 0;
+
+        public void StartThreadedStress()
+        {
+            for (int i = 0; i < threads.Length; i++)
+            {
+                threads[i] = new Thread(StartTest);
+                threads[i].Start();
+            }
             StartTime = Environment.TickCount;
         }
 
@@ -150,7 +121,7 @@ namespace TrackerApp
                 int ipaddress = random.Next(0, averagePeers);
                 listener.Handle(hashes[torrent], new IPAddress(ipaddress), false);
                 TotalRequests++;
-                System.Threading.Thread.Sleep(100);
+                //System.Threading.Thread.Sleep(threadSleepTime);
             }
         }
     }

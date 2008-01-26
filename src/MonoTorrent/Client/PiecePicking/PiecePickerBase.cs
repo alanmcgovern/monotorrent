@@ -76,22 +76,9 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal static int GetBlockIndex(Block[] blocks, int blockStartOffset, int blockLength)
+        internal static int GetBlockIndex(Block[] blocks, int startOffset, int blockLength)
         {
-            for (int i = 0; i < blocks.Length; i++)
-                if (blocks[i].StartOffset == blockStartOffset && blocks[i].RequestLength == blockLength)
-                    return i;
-
-            return -1;
-        } 
-
-        internal static Piece GetPieceFromIndex(MonoTorrentCollection<Piece> pieces, int pieceIndex)
-        {
-            for (int i = 0; i < pieces.Count; i++)
-                if (pieces[i].Index == pieceIndex)
-                    return pieces[i];
-
-            return null;
+            return Array.FindIndex<Block>(blocks, delegate(Block b) { return b.RequestLength == blockLength && b.StartOffset == startOffset; });
         }
 
         #endregion Methods

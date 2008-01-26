@@ -60,8 +60,9 @@ namespace MonoTorrent.Tracker
     {
         #region Member Variables
 
-        private int complete;
-        private int downloaded;
+        private BEncodedNumber complete;
+        private BEncodedNumber incomplete;
+        private BEncodedNumber downloaded;
         private Dictionary<IPAddress, Peer> peers;
         private Random random;
         private ITrackable trackable;
@@ -74,11 +75,19 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The number of active seeds
         /// </summary>
-        public int Complete
+        public BEncodedNumber Complete
         {
             get { return complete; }
         }
 
+        public BEncodedNumber Incomplete
+        {
+            get
+            {
+                incomplete.Number = Count - complete.Number;
+                return incomplete;
+            }
+        }
 
         /// <summary>
         /// The total number of peers being tracked
@@ -92,7 +101,7 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The total number of times the torrent has been fully downloaded
         /// </summary>
-        public int Downloaded
+        public BEncodedNumber Downloaded
         {
             get { return downloaded; }
         }
@@ -130,6 +139,9 @@ namespace MonoTorrent.Tracker
         public SimpleTorrentManager(ITrackable trackable)//, IEqualityComparer<Peer> comparer)
         {
             this.trackable = trackable;
+            complete = new BEncodedNumber(0);
+            downloaded = new BEncodedNumber(0);
+            incomplete = new BEncodedNumber(0);
             peers = new Dictionary<IPAddress, Peer>();
             random = new Random();
         }
@@ -152,7 +164,7 @@ namespace MonoTorrent.Tracker
             peers.Add(peer.ClientAddress.Address, peer);
 
             if (peer.HasCompleted)
-                System.Threading.Interlocked.Increment(ref complete);
+                System.Threading.Interlocked.Increment(ref complete.number);
         }
 
         /// <summary>
@@ -162,6 +174,7 @@ namespace MonoTorrent.Tracker
         /// <param name="count">The number of peers to add</param>
         /// <param name="compact">True if the peers should be in compact form</param>
         /// <param name="exlude">The peer to exclude from the list</param>
+        List<Peer> buffer = new List<Peer>();
         internal void GetPeers(BEncodedDictionary response, int count, bool compact, IPEndPoint exlude)
         {
             byte[] compactResponse = null;
@@ -176,7 +189,11 @@ namespace MonoTorrent.Tracker
                 nonCompactResponse = new BEncodedList(total);
 
             int start = random.Next(0, peers.Count);
-            List<Peer> p = new List<Peer>(peers.Values);
+
+            if (buffer.Count != peers.Values.Count)
+                buffer = new List<Peer>(peers.Values);
+            List<Peer> p = buffer;
+
             while (total > 0)
             {
                 Peer current = p[(start++) % p.Count];
@@ -192,9 +209,9 @@ namespace MonoTorrent.Tracker
             }
 
             if (compact)
-                response.Add("peers", (BEncodedString)compactResponse);
+                response.Add(Tracker.peers, (BEncodedString)compactResponse);
             else
-                response.Add("peers", nonCompactResponse);
+                response.Add(Tracker.peers, nonCompactResponse);
         }
 
 
@@ -211,7 +228,7 @@ namespace MonoTorrent.Tracker
             peers.Remove(peer.ClientAddress.Address);
 
             if (peer.HasCompleted)
-                System.Threading.Interlocked.Decrement(ref complete);
+                System.Threading.Interlocked.Decrement(ref complete.number);
         }
 
         /// <summary>
@@ -231,8 +248,8 @@ namespace MonoTorrent.Tracker
             switch (par.Event)
             {
                 case TorrentEvent.Completed:
-                    System.Threading.Interlocked.Increment(ref complete);
-                    System.Threading.Interlocked.Increment(ref downloaded);
+                    System.Threading.Interlocked.Increment(ref complete.number);
+                    System.Threading.Interlocked.Increment(ref downloaded.number);
                     break;
 
                 case TorrentEvent.Stopped:

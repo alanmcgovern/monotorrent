@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Threading;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent
 {
@@ -144,9 +145,13 @@ namespace MonoTorrent
 
                 // Every time the tracker's state changes, this is fired
                 foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)
-                    foreach(MonoTorrent.Client.Tracker t in tier.Trackers)
+                    foreach (MonoTorrent.Client.Tracker t in tier.Trackers)
+                    {
+                        t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
+                            Console.WriteLine("{0}: {1}", e.Successful, e.Tracker.ToString());
+                        };
                         t.StateChanged += new EventHandler<TrackerStateChangedEventArgs>(TrackerManager_OnTrackerStateChange);
-
+                    }
 
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 manager.Start();
@@ -372,11 +377,13 @@ namespace MonoTorrent
 
 		static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
 		{
+			Console.WriteLine("Unhandled exception: {0}", e.ExceptionObject);
 			shutdown();
 		}
 
 		static void UnhandledException(object sender, UnhandledExceptionEventArgs e)
 		{
+			Console.WriteLine("Unhandled exception: {0}", e.ExceptionObject);
 			shutdown();
 		}
 
