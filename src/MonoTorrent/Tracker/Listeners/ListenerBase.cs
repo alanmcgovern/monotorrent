@@ -87,12 +87,12 @@ namespace MonoTorrent.Tracker
             
         }
         */
-        public virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
+        protected virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
             return Handle(ParseQuery(queryString), remoteAddress, isScrape);
         }
-        
-        public virtual BEncodedValue Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
+
+        protected virtual BEncodedValue Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
         {
             RequestParameters parameters;
             if (isScrape)
