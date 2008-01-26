@@ -168,5 +168,10 @@ namespace MonoTorrent
         {
             return ((IEnumerable)list).GetEnumerator();
         }
+
+        internal T Find(Predicate<T> match)
+        {
+            return list.Find(match);
+        }
     }
 }
