@@ -96,8 +96,7 @@ namespace TrackerApp
                     listener.Handle(infoHash, new IPAddress(ipAddress++), true);
             }
 
-            threadSleepTime = (int)(30000.0 / requests);
-            threadSleepTime = Math.Max(1, threadSleepTime);
+            threadSleepTime = (int)(20000.0 / requests + 0.5);
             threads = new Thread[20];
         }
         private int threadSleepTime = 0;
@@ -121,7 +120,7 @@ namespace TrackerApp
                 int ipaddress = random.Next(0, averagePeers);
                 listener.Handle(hashes[torrent], new IPAddress(ipaddress), false);
                 TotalRequests++;
-                //System.Threading.Thread.Sleep(threadSleepTime);
+                System.Threading.Thread.Sleep(threadSleepTime);
             }
         }
     }
