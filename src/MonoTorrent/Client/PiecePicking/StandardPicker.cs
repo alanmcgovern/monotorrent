@@ -591,14 +591,7 @@ namespace MonoTorrent.Client
         {
             lock (this.requests)
             {
-                Piece piece = null;
-                foreach(Piece p in requests)
-                    if(message.PieceIndex == p.Index)
-                    {
-                        piece = p;
-                        break;
-                    }
-
+                Piece piece = requests.Find(delegate(Piece p) { return p.Index == message.PieceIndex; });
                 if (piece == null)
                 {
                     Logger.Log("Received block from a piece we aren't requesting");
