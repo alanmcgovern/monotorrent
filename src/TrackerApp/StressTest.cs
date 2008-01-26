@@ -73,7 +73,41 @@ namespace TrackerApp
             tracker.RegisterListener(listener);
         }
 
-        internal void Initialise()
+        internal void Initialise(bool testA)
+        {
+            if (testA)
+                TestA();
+            else
+                TestB();
+        }
+        private void TestB()
+        {
+            long ipAddress;
+            byte[] torrent;
+
+            List<KeyValuePair<int, int>> list = new List<KeyValuePair<int, int>>();
+            list.Add(new KeyValuePair<int, int>(50, 1000));
+            list.Add(new KeyValuePair<int, int>(100, 500));
+            list.Add(new KeyValuePair<int, int>(250, 50));
+            list.Add(new KeyValuePair<int, int>(200, 60));
+            foreach (KeyValuePair<int, int> pair in list)
+            {
+                for (int i = 0; i < pair.Key; i++)
+                {
+                    // Create the fake infohash and add the torrent to the tracker.
+                    torrent = new byte[20];
+                    random.NextBytes(torrent);
+                    tracker.Add(new InfoHashTrackable(i.ToString(), torrent));
+                    hashes.Add(torrent);
+
+                    ipAddress = 1;
+                    for (int j = 0; j < pair.Value; j++)
+                        listener.Handle(torrent, new IPAddress(ipAddress++), true);
+                }
+            }
+        }
+
+        private void TestA()
         {
             long ipAddress;
             int peers;
@@ -94,12 +128,11 @@ namespace TrackerApp
                 hashes.Add(torrent);
 
                 ipAddress = 1;
-                peers = random.Next((int)(averagePeers * 0.5), (int)(averagePeers * 1.5));
+                peers = averagePeers;// random.Next((int)(averagePeers * 0.5), (int)(averagePeers * 1.5));
                 for (int j = 0; j < peers; j++)
                     listener.Handle(torrent, new IPAddress(ipAddress++), true);
             }
         }
-
         public void StartThreadedStress(int count)
         {
             for (int i = 0; i < count; i++)
@@ -114,7 +147,7 @@ namespace TrackerApp
             while (true)
             {
                 int torrent = random.Next(0, hashes.Count - 1);
-                int ipaddress = random.Next(0, 300);
+                int ipaddress = random.Next(0, averagePeers);
                 listener.Handle(hashes[torrent], new IPAddress(ipaddress), false);
                 TotalRequests++;
                 System.Threading.Thread.Sleep(100);
