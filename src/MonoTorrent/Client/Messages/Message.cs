@@ -16,6 +16,13 @@ namespace MonoTorrent.Client.Messages
             Decode(buffer.Array, buffer.Offset + offset, length);
         }
 
+        public byte[] Encode()
+        {
+            byte[] buffer = new byte[ByteLength];
+            Encode(buffer, 0);
+            return buffer;
+        }
+
         public abstract int Encode(byte[] buffer, int offset);
 
         public int Encode(ArraySegment<byte> buffer, int offset)
@@ -48,6 +55,11 @@ namespace MonoTorrent.Client.Messages
         {
             Buffer.BlockCopy(value, 0, buffer, offset, value.Length);
             return value.Length;
+        }
+
+        protected int Write(byte[] buffer, int offset, ushort value)
+        {
+            return Write(buffer, offset, (short)value);
         }
 
         protected int Write(byte[] buffer, int offset, short value)

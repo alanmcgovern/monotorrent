@@ -8,6 +8,7 @@ namespace MonoTorrent.Client
     {
         int ByteLength { get;}
 
+        byte[] Encode();
         int Encode(byte[] buffer, int offset);
         int Encode(ArraySegment<byte> buffer, int offset);
 
