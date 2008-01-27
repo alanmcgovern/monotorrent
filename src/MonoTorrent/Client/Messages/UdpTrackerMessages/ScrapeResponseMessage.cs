@@ -5,7 +5,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class ScrapeResponseMessage : Message
+    class ScrapeResponseMessage : UdpTrackerMessage
     {
         int action;
         int transactionId;

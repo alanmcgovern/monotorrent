@@ -5,12 +5,25 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class ErrorMessage : Message
+    class ErrorMessage : UdpTrackerMessage
     {
         int action;
         int transactionId;
         string errorMessage;
 
+        public ErrorMessage()
+        {
+        }
+
+        public ErrorMessage(string error)
+        {
+            this.errorMessage = errorMessage;
+        }
+
+        public string Error
+        {
+            get { return errorMessage; }
+        }
 
         public override int ByteLength
         {

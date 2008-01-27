@@ -5,7 +5,7 @@ using System.Net;
 using MonoTorrent.Client.Messages;
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class ConnectResponseMessage : Message
+    class ConnectResponseMessage : UdpTrackerMessage
     {
         int action;
         long connectionId;

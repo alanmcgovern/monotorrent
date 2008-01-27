@@ -6,7 +6,7 @@ using System.Net;
 
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class AnnounceResponseMessage : Message
+    class AnnounceResponseMessage : UdpTrackerMessage
     {
         int action;
         int transactionId;

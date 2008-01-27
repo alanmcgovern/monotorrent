@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class AnnounceMessage : Message
+    class AnnounceMessage : UdpTrackerMessage
     {
         private long connectionId;
         private int action;

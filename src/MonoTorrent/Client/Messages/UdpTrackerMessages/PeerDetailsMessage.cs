@@ -5,7 +5,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class PeerDetailsMessage : Message
+    class PeerDetailsMessage : UdpTrackerMessage
     {
         public override int ByteLength
         {

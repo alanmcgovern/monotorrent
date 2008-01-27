@@ -5,10 +5,11 @@ using System.Threading;
 using MonoTorrent.Client.Tracker.UdpTrackerMessages;
 using System.Net.Sockets;
 using System.Net;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Tracker
 {
-    class UdpTracker : Tracker
+    public class UdpTracker : Tracker
     {
         private AnnounceParameters storedParams;
         private long connectionId;
@@ -20,8 +21,8 @@ namespace MonoTorrent.Client.Tracker
 
         public UdpTracker(Uri announceUrl)
         {
-            base.CanScrape = false;
             this.announceUrl = announceUrl;
+            CanScrape = false;
             endpoint = new IPEndPoint(IPAddress.Parse(announceUrl.Host), announceUrl.Port);
             tracker = new UdpClient(announceUrl.Host, announceUrl.Port);
         }
@@ -42,19 +43,30 @@ namespace MonoTorrent.Client.Tracker
             AnnounceMessage m = new AnnounceMessage(connectionId, parameters);
             tracker.Send(m.Encode(), m.ByteLength);
             byte[] data = tracker.Receive(ref endpoint);
-            AnnounceResponseMessage response = new AnnounceResponseMessage();
-            response.Decode(data, 0, data.Length);
-            CompleteAnnounce(response.Peers);
+            UdpTrackerMessage message = UdpTrackerMessage.DecodeMessage(data, 0, data.Length);
+
+            CompleteAnnounce(message);
 
             return null;
         }
 
-        private void CompleteAnnounce(List<Peer> list)
+        private void CompleteAnnounce(UdpTrackerMessage message)
         {
             TrackerConnectionID id = new TrackerConnectionID(this, false, MonoTorrent.Common.TorrentEvent.None, null);
             AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
-            e.Successful = true;
-            e.Peers.AddRange(list);
+            ErrorMessage error = message as ErrorMessage;
+            if (error != null)
+            {
+                e.Successful = false;
+                FailureMessage = error.Error;
+            }
+            else
+            {
+                AnnounceResponseMessage response = (AnnounceResponseMessage)message;
+                e.Successful = true;
+                e.Peers.AddRange(response.Peers);
+            }
+
             RaiseAnnounceComplete(e);
         }
 
@@ -64,8 +76,7 @@ namespace MonoTorrent.Client.Tracker
             tracker.Connect(announceUrl.Host, announceUrl.Port);
             tracker.Send(message.Encode(), message.ByteLength);
             byte[] response = tracker.Receive(ref endpoint);
-            ConnectResponseMessage m = new ConnectResponseMessage();
-            m.Decode(response, 0, response.Length);
+            ConnectResponseMessage m = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(response, 0, response.Length);// new ConnectResponseMessage();
 
             connectionId = m.ConnectionId;
             hasConnected = true;
