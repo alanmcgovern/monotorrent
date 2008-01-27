@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier : IEnumerable<Tracker>
     {

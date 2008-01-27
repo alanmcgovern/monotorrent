@@ -39,6 +39,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Diagnostics;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client
 {
@@ -839,7 +840,7 @@ namespace MonoTorrent.Client
         ///// <param name="id"></param>
         //private void RejectPendingRequests(PeerIdInternal id)
         //{
-        //    IPeerMessageInternal message;
+        //    PeerMessage message;
         //    PieceMessage pieceMessage;
         //    int length = id.Connection.QueueLength;
 

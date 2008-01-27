@@ -37,9 +37,9 @@ namespace MonoTorrent.Client.PeerMessages
     /// <summary>
     /// 
     /// </summary>
-    public class BitfieldMessage : IPeerMessageInternal, IPeerMessage
+    public class BitfieldMessage : MonoTorrent.Client.Messages.PeerMessage
     {
-        public const int MessageId = 5;
+        public const byte MessageId = 5;
 
         #region Member Variables
         /// <summary>
@@ -76,40 +76,26 @@ namespace MonoTorrent.Client.PeerMessages
 
 
         #region Methods
-        /// <summary>
-        /// Encodes the BitfieldMessage into the supplied buffer
-        /// </summary>
-        /// <param name="id">The peer who we are about to send the message to</param>
-        /// <param name="buffer">The buffer to encode the message to</param>
-        /// <param name="offset">The offset at which to start encoding the data to</param>
-        /// <returns>The number of bytes encoded into the buffer</returns>
-        internal int Encode(ArraySegment<byte> buffer, int offset)
-        {
-            buffer.Array[buffer.Offset + offset + 4] = (byte)MessageId;
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(bitField.LengthInBytes + 1)), 0, buffer.Array, buffer.Offset + offset, 4);
-            this.bitField.ToByteArray(buffer.Array, buffer.Offset + offset + 5);
 
-            return (this.BitField.LengthInBytes + 5);
+        public override void Decode(byte[] buffer, int offset, int length)
+        {
+            this.bitField.FromArray(buffer, offset, length);
         }
 
-
-        /// <summary>
-        /// Decodes a RequestMessage from the supplied buffer
-        /// </summary>
-        /// <param name="id">The peer to decode the message from</param>
-        /// <param name="buffer">The buffer to decode the message from</param>
-        /// <param name="offset">The offset thats the message starts at</param>
-        /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
+        public override int Encode(byte[] buffer, int offset)
         {
-            this.bitField.FromArray(buffer.Array, buffer.Offset + offset, length);
+            Write(buffer, offset, bitField.LengthInBytes + 1);
+            Write(buffer, offset + 4, MessageId);
+            bitField.ToByteArray(buffer, offset + 5);
+
+            return (this.BitField.LengthInBytes + 5);
         }
 
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal void Handle(PeerIdInternal id)
+        internal override void Handle(PeerIdInternal id)
         {
             id.Connection.BitField = this.bitField;
             id.Peer.IsSeeder = (id.Connection.BitField.AllTrue);
@@ -121,7 +107,7 @@ namespace MonoTorrent.Client.PeerMessages
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public int ByteLength
+        public override int ByteLength
         {
             get { return (this.bitField.LengthInBytes + 5); }
         }
@@ -151,31 +137,6 @@ namespace MonoTorrent.Client.PeerMessages
         {
             return this.bitField.GetHashCode();
         }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerIdInternal id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

@@ -1,5 +1,5 @@
 //
-// UnknownMessage.cs
+// ExtendedListMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -30,63 +30,58 @@
 
 using System;
 using System.Text;
+using MonoTorrent.Common;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    public class UnknownMessage : IPeerMessageInternal, IPeerMessage
+    /// <summary>
+    /// This class represents the BT_EXTENDED_LST as listed by the Azurues Extended Messaging Protocol
+    /// </summary>
+    public class ExtendedListMessage : MonoTorrent.Client.Messages.PeerMessage
     {
+        public const byte MessageId = (byte)20;
+
+        #region Member Variables
+        public BEncodedDictionary Dictionary
+        {
+            get { return this.dictionary; }
+        }
+        private BEncodedDictionary dictionary;
+        #endregion
+
+
         #region Constructors
-        public UnknownMessage()
+        public ExtendedListMessage()
+        {
+        }
+        public ExtendedListMessage(BEncodedDictionary supportedMessages)
         {
         }
         #endregion
 
 
         #region Methods
-        internal int Encode(ArraySegment<byte> buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
-            return 0;
+            throw new ProtocolException("The method or operation is not implemented.");
+            
+        }
+        public override void Decode(byte[] buffer, int offset, int length)
+        {
+            throw new ProtocolException("The method or operation is not implemented.");
         }
 
-        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
+        internal override void Handle(PeerIdInternal id)
         {
-            throw new ProtocolException("Unknown message received");
+            throw new ProtocolException("The method or operation is not implemented.");
         }
 
-        internal void Handle(PeerIdInternal id)
+        public override int ByteLength
         {
-            throw new ProtocolException("Unknown message");
+
+            get { throw new ProtocolException("The method or operation is not implemented."); }
         }
-
-        public int ByteLength
-        {
-            get { return 0; }
-        }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerIdInternal id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

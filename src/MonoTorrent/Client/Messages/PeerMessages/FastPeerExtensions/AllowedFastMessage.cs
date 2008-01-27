@@ -1,5 +1,5 @@
 //
-// HaveAllMessage.cs
+// AllowedFastMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -31,53 +31,67 @@
 using System;
 using System.Text;
 using System.Net;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    public class HaveAllMessage : IPeerMessageInternal, IPeerMessage
+    public class AllowedFastMessage : MonoTorrent.Client.Messages.PeerMessage
     {
-        public const byte MessageId = 0x0E;
-        private readonly int messageLength = 1;
+        public const byte MessageId = 0x11;
+        private readonly int messageLength = 5;
+
+        #region Member Variables
+        public int PieceIndex
+        {
+            get { return this.pieceIndex; }
+        }
+        private int pieceIndex;
+        #endregion
 
 
         #region Constructors
-        public HaveAllMessage()
+        internal AllowedFastMessage()
         {
+        }
+
+        internal AllowedFastMessage(int pieceIndex)
+        {
+            this.pieceIndex = pieceIndex;
         }
         #endregion
 
 
         #region Methods
-        internal int Encode(ArraySegment<byte> buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.messageLength)), 0, buffer.Array, buffer.Offset + offset, 4);
-            buffer.Array[buffer.Offset + offset + 4] = MessageId;
+            Write(buffer, offset, messageLength);
+            Write(buffer, offset + 4, MessageId);
+            Write(buffer, offset + 5, pieceIndex);
+
             return this.messageLength + 4;
         }
 
-
-        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
+        public override void Decode(byte[] buffer, int offset, int length)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
+
+            this.pieceIndex = ReadInt(buffer, offset);
         }
 
-
-        internal void Handle(PeerIdInternal id)
+        internal override void Handle(PeerIdInternal id)
         {
             if (!id.Connection.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.Connection.BitField.SetAll(true);
-            id.Peer.IsSeeder = true;
-            id.TorrentManager.SetAmInterestedStatus(id, id.TorrentManager.PieceManager.IsInteresting(id));
+            id.Connection.IsAllowedFastPieces.Add(this.pieceIndex);
         }
 
 
-        public int ByteLength
+        public override int ByteLength
         {
             get { return this.messageLength + 4; }
         }
@@ -87,43 +101,28 @@ namespace MonoTorrent.Client.PeerMessages
         #region Overidden Methods
         public override bool Equals(object obj)
         {
-            return obj is HaveAllMessage;
+            AllowedFastMessage msg = obj as AllowedFastMessage;
+            if (msg == null)
+                return false;
+
+            return this.pieceIndex == msg.pieceIndex;
         }
+
 
         public override int GetHashCode()
         {
-            return this.ToString().GetHashCode();
+            return this.pieceIndex.GetHashCode();
         }
+
 
         public override string ToString()
         {
-            return "HaveAllMessage";
+            StringBuilder sb = new StringBuilder(24);
+            sb.Append("AllowedFast");
+            sb.Append(" Index: ");
+            sb.Append(this.pieceIndex);
+            return sb.ToString();
         }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerIdInternal id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

@@ -1,5 +1,5 @@
 //
-// KeepAliveMessage.cs
+// UnchokeMessage.sc
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -27,76 +27,78 @@
 //
 
 
+
 using System;
+using System.Net;
 
 namespace MonoTorrent.Client.PeerMessages
 {
     /// <summary>
-    /// Represents a "KeepAlive" message
+    /// 
     /// </summary>
-    public class KeepAliveMessage : IPeerMessageInternal, IPeerMessage
+    public class UnchokeMessage : MonoTorrent.Client.Messages.PeerMessage
     {
-        private const int messageLength = -1;   // has no payload
-        public const int MessageId = -1;       // Has no messageId
+        public const byte MessageId = 1;
+        private const int messageLength = 1;
 
 
         #region Constructors
         /// <summary>
-        /// Creates a new KeepAliveMessage
+        /// Creates a new UnchokeMessage
         /// </summary>
-        public KeepAliveMessage()
+        public UnchokeMessage()
         {
         }
         #endregion
 
 
         #region Methods
-        /// <summary>
-        /// Encodes the KeepAliveMessage into the supplied buffer
-        /// </summary>
-        /// <param name="id">The peer who we are about to send the message to</param>
-        /// <param name="buffer">The buffer to encode the message to</param>
-        /// <param name="offset">The offset at which to start encoding the data to</param>
-        /// <returns>The number of bytes encoded into the buffer</returns>
-        internal int Encode(ArraySegment<byte> buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
-            buffer.Array[buffer.Offset + offset] = 0;
-            buffer.Array[buffer.Offset + offset + 1] = 0;
-            buffer.Array[buffer.Offset + offset + 2] = 0;
-            buffer.Array[buffer.Offset + offset + 3] = 0;
+            Write(buffer, offset, messageLength);
+            Write(buffer, offset + 4, MessageId);
 
-            return 4;
+            return (messageLength + 4);
         }
 
 
         /// <summary>
-        /// Decodes a KeepAliveMessage from the supplied buffer
+        /// Decodes an UnchokeMessage from the supplied buffer
         /// </summary>
         /// <param name="buffer">The buffer to decode the message from</param>
         /// <param name="offset">The offset thats the message starts at</param>
         /// <param name="length">The maximum number of bytes to read from the buffer</param>
-        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
+        public override void Decode(byte[] buffer, int offset, int length)
         {
             // No decoding needed
         }
-
 
         /// <summary>
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal void Handle(PeerIdInternal id)
+        internal override void Handle(PeerIdInternal id)
         {
-            // No handling needed
+            id.Connection.IsChoking = false;
+
+            // Add requests to the peers message queue
+            while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
+
+            // If we're not already processing the send queue, start processing it now
+            if (!id.Connection.ProcessingQueue)
+            {
+                id.Connection.ProcessingQueue = true;
+                id.ConnectionManager.MessageHandler.EnqueueSend(id);
+            }
         }
 
 
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
-        public int ByteLength
+        public override int ByteLength
         {
-            get { return (4); }
+            get { return (messageLength + 4); }
         }
         #endregion
 
@@ -108,44 +110,18 @@ namespace MonoTorrent.Client.PeerMessages
         /// <returns></returns>
         public override string ToString()
         {
-            return "KeepAliveMessage";
+            return "UnChokeMessage";
         }
 
         public override bool Equals(object obj)
         {
-            return (obj is KeepAliveMessage);
+            return (obj is UnchokeMessage);
         }
-
 
         public override int GetHashCode()
         {
             return this.ToString().GetHashCode();
         }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerIdInternal id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.Common;
 using System.Threading;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -13,7 +14,7 @@ namespace MonoTorrent.Client
         
         public ArraySegment<byte> Buffer;
         public PeerIdInternal Id;
-        public IPeerMessageInternal Message;
+        public PeerMessage Message;
         public Piece Piece;
         public ManualResetEvent WaitHandle;
 
@@ -22,13 +23,13 @@ namespace MonoTorrent.Client
 
 		#region Constructors
 
-        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece)
+        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece)
             : this(id, buffer, message, piece, null)
         {
      
         }
 
-        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, IPeerMessageInternal message, Piece piece, ManualResetEvent handle)
+        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece, ManualResetEvent handle)
         {
             this.Id = id;
             this.Buffer = buffer;

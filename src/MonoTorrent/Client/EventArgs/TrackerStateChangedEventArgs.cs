@@ -31,7 +31,7 @@
 using System;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
     /// Provides the data needed to handle a TrackerUpdate event

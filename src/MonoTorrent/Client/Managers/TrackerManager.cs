@@ -39,7 +39,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
     /// Represents the connection to a tracker that an TorrentManager has

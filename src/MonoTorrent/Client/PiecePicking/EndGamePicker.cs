@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
                 else
                 {
                     // Cleanly remove any pending request messages from the send queue as there's no point in sending them
-                    IPeerMessageInternal message;
+                    PeerMessage message;
                     int length = id.Connection.QueueLength;
                     for (int i = 0; i < length; i++)
                         if ((message = id.Connection.Dequeue()) is RequestMessage)

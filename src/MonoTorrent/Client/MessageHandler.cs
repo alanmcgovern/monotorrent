@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -142,10 +143,10 @@ namespace MonoTorrent.Client
 
                         try
                         {
-                            IPeerMessageInternal message = PeerwireEncoder.Decode(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
+                            PeerMessage message = PeerwireEncoder.Decode(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
 
                             // Fire the event to say we recieved a new message
-                            PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (IPeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
+                            PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
                             id.ConnectionManager.RaisePeerMessageTransferred(e);
 
                             message.Handle(id);

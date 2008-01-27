@@ -35,7 +35,7 @@ using MonoTorrent.BEncoding;
 using System.Text;
 using System.Web;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
     /// Class representing an instance of a Tracker

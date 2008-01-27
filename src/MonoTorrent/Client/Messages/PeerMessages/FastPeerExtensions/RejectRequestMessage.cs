@@ -1,5 +1,5 @@
 //
-// AllowedFastMessage.cs
+// RejectRequestMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -31,68 +31,101 @@
 using System;
 using System.Text;
 using System.Net;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    public class AllowedFastMessage : IPeerMessageInternal, IPeerMessage
+    public class RejectRequestMessage : MonoTorrent.Client.Messages.PeerMessage
     {
-        public const int MessageId = 0x11;
-        private readonly int messageLength = 5;
+        public const byte MessageId = 0x10;
+        public readonly int messageLength = 13;
 
         #region Member Variables
+        /// <summary>
+        /// The offset in bytes of the block of data
+        /// </summary>
+        public int StartOffset
+        {
+            get { return this.startOffset; }
+        }
+        private int startOffset;
+
+        /// <summary>
+        /// The index of the piece
+        /// </summary>
         public int PieceIndex
         {
             get { return this.pieceIndex; }
         }
         private int pieceIndex;
+
+        /// <summary>
+        /// The length of the block of data
+        /// </summary>
+        public int RequestLength
+        {
+            get { return this.requestLength; }
+        }
+        private int requestLength;
         #endregion
 
 
         #region Constructors
-        internal AllowedFastMessage()
+        public RejectRequestMessage()
         {
         }
 
-        internal AllowedFastMessage(int pieceIndex)
+
+        public RejectRequestMessage(PieceMessage message)
+            :this(message.PieceIndex, message.StartOffset, message.RequestLength)
+        {
+        }
+
+
+        public RejectRequestMessage(int pieceIndex, int startOffset, int requestLength)
         {
             this.pieceIndex = pieceIndex;
+            this.startOffset = startOffset;
+            this.requestLength = requestLength;
         }
         #endregion
 
-
+        
         #region Methods
-        internal int Encode(ArraySegment<byte> buffer, int offset)
+        public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-            buffer.Array[buffer.Offset + offset + 4] = MessageId;
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(messageLength)), 0, buffer.Array, buffer.Offset + offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.pieceIndex)), 0, buffer.Array, buffer.Offset + offset+5, 4);
-            return this.messageLength + 4;
+            Write(buffer, offset, messageLength);
+            Write(buffer, offset + 4, MessageId);
+            Write(buffer, offset + 5, pieceIndex);
+            Write(buffer, offset + 9, startOffset);
+            Write(buffer, offset + 13, requestLength);
+
+            return messageLength + 4;
         }
 
 
-        internal void Decode(ArraySegment<byte> buffer, int offset, int length)
+        public override void Decode(byte[] buffer, int offset, int length)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + offset));
+            this.pieceIndex = ReadInt(buffer, offset);
+            this.startOffset = ReadInt(buffer, offset + 4);
+            this.requestLength = ReadInt(buffer, offset + 8);
         }
 
-
-        internal void Handle(PeerIdInternal id)
+        internal override void Handle(PeerIdInternal id)
         {
             if (!id.Connection.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.Connection.IsAllowedFastPieces.Add(this.pieceIndex);
+            id.TorrentManager.PieceManager.ReceivedRejectRequest(id, this);
         }
 
 
-        public int ByteLength
+        public override int ByteLength
         {
             get { return this.messageLength + 4; }
         }
@@ -102,53 +135,36 @@ namespace MonoTorrent.Client.PeerMessages
         #region Overidden Methods
         public override bool Equals(object obj)
         {
-            AllowedFastMessage msg = obj as AllowedFastMessage;
+            RejectRequestMessage msg = obj as RejectRequestMessage;
             if (msg == null)
                 return false;
 
-            return this.pieceIndex == msg.pieceIndex;
+            return (this.pieceIndex == msg.pieceIndex
+                && this.startOffset == msg.startOffset
+                && this.requestLength == msg.requestLength);
         }
 
 
         public override int GetHashCode()
         {
-            return this.pieceIndex.GetHashCode();
+            return (this.pieceIndex.GetHashCode()
+                    ^ this.requestLength.GetHashCode()
+                    ^ this.startOffset.GetHashCode());
         }
 
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(24);
-            sb.Append("AllowedFast");
+            sb.Append("Reject Request");
             sb.Append(" Index: ");
             sb.Append(this.pieceIndex);
+            sb.Append(" Offset: ");
+            sb.Append(this.startOffset);
+            sb.Append(" Length " );
+            sb.Append(this.requestLength);
             return sb.ToString();
         }
-        #endregion
-
-
-        #region IPeerMessageInternal Explicit Calls
-
-        int IPeerMessageInternal.Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return this.Encode(buffer, offset);
-        }
-
-        void IPeerMessageInternal.Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            this.Decode(buffer, offset, length);
-        }
-
-        void IPeerMessageInternal.Handle(PeerIdInternal id)
-        {
-            this.Handle(id);
-        }
-
-        int IPeerMessageInternal.ByteLength
-        {
-            get { return this.ByteLength; }
-        }
-
         #endregion
     }
 }

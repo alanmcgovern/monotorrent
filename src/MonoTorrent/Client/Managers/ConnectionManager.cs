@@ -37,6 +37,7 @@ using MonoTorrent.Client.Encryption;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Net;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -521,7 +522,7 @@ namespace MonoTorrent.Client
         {
             string reason = null;
             bool cleanUp = false;
-            IPeerMessageInternal msg;
+            PeerMessage msg;
 
             try
             {
@@ -710,7 +711,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // Fire the event to let the user know a message was sent
-                RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, (IPeerMessage)id.Connection.CurrentlySendingMessage, Direction.Outgoing, id));
+                RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)id.Connection.CurrentlySendingMessage, Direction.Outgoing, id));
 
                 //ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
                 Logger.Log(id, "Sent message: " + id.Connection.CurrentlySendingMessage.ToString());
@@ -796,7 +797,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer to send the message to</param>
         /// <param name="message">The  message to send</param>
         /// <param name="callback">The callback to invoke when the message has been sent</param>
-        private void SendMessage(PeerIdInternal id, IPeerMessageInternal message, MessagingCallback callback)
+        private void SendMessage(PeerIdInternal id, PeerMessage message, MessagingCallback callback)
         {
             bool cleanup = false;
 
@@ -1091,7 +1092,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            IPeerMessageInternal msg = id.Connection.Dequeue();
+            PeerMessage msg = id.Connection.Dequeue();
             if (msg is PieceMessage)
                 id.Connection.PiecesSent++;
 

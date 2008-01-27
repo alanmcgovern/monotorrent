@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public class AnnounceParameters
     {

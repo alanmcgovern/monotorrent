@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -56,7 +57,7 @@ namespace MonoTorrent.Client
         private int bytesToRecieve;
         private int bytesToSend;
         private Software clientApp;
-        private IPeerMessageInternal currentlySendingMessage;
+        private PeerMessage currentlySendingMessage;
         private IEncryptorInternal encryptor;
         private MonoTorrentCollection<int> isAllowedFastPieces;
         private bool isChoking;
@@ -72,7 +73,7 @@ namespace MonoTorrent.Client
         private bool processingQueue;
         internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
         internal ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
-        private Queue<IPeerMessageInternal> sendQueue;                  // This holds the peermessages waiting to be sent
+        private Queue<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
 
@@ -200,7 +201,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This is the message we're currently sending to a peer
         /// </summary>
-        internal IPeerMessageInternal CurrentlySendingMessage
+        internal PeerMessage CurrentlySendingMessage
         {
             get { return this.currentlySendingMessage; }
             set { this.currentlySendingMessage = value; }
@@ -427,7 +428,7 @@ namespace MonoTorrent.Client
             this.isChoking = true;
             this.bitField = new BitField(bitfieldLength);
             this.monitor = new ConnectionMonitor();
-            this.sendQueue = new Queue<IPeerMessageInternal>(12);
+            this.sendQueue = new Queue<PeerMessage>(12);
             this.isAllowedFastPieces = new MonoTorrentCollection<int>();
             this.amAllowedFastPieces = new MonoTorrentCollection<int>();
         }
@@ -441,7 +442,7 @@ namespace MonoTorrent.Client
         /// Returns the PeerMessage at the head of the queue
         /// </summary>
         /// <returns></returns>
-        internal IPeerMessageInternal Dequeue()
+        internal PeerMessage Dequeue()
         {
             return sendQueue.Dequeue();
         }
@@ -451,7 +452,7 @@ namespace MonoTorrent.Client
         /// Queues a PeerMessage up to be sent to the remote host
         /// </summary>
         /// <param name="msg"></param>
-        internal void Enqueue(IPeerMessageInternal msg)
+        internal void Enqueue(PeerMessage msg)
         {
             sendQueue.Enqueue(msg);
         }
@@ -462,7 +463,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message"></param>
         /// <param name="index"></param>
-        internal void EnqueueAt(IPeerMessageInternal message, int index)
+        internal void EnqueueAt(PeerMessage message, int index)
         {
             int length = this.sendQueue.Count;
 

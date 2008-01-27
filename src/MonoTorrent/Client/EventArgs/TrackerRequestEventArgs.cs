@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public abstract class TrackerResponseEventArgs : EventArgs
     {

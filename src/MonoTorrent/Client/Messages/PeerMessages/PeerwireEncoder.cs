@@ -30,10 +30,11 @@
 
 using System;
 using System.Net;
+using MonoTorrent.Client.Messages;
 namespace MonoTorrent.Client.PeerMessages
 {
     /// <summary>
-    /// Class used for decoding an IPeerMessage
+    /// Class used for decoding an PeerMessage
     /// </summary>
     internal class PeerwireEncoder
     {
@@ -42,9 +43,9 @@ namespace MonoTorrent.Client.PeerMessages
         /// </summary>
         /// <param name="id">The peer to decode a message from</param>
         /// <returns>The PeerMessage decoded from the recieve buffer</returns>
-        public static IPeerMessageInternal Decode(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
+        public static PeerMessage Decode(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
         {
-            IPeerMessageInternal message;
+            PeerMessage message;
 
             // The first byte tells us what kind of message it is
             switch (buffer.Array[buffer.Offset + offset])

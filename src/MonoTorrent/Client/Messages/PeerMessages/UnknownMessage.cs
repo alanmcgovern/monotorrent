@@ -1,5 +1,5 @@
 //
-// IPeerMessage.cs
+// UnknownMessage.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -30,17 +30,35 @@
 
 using System;
 using System.Text;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.PeerMessages
 {
-    /// <summary>
-    /// The public interface for IPeerMessages so PeerMessages can be exposed without exposing internal methods
-    /// </summary>
-    public interface IPeerMessage
+    public class UnknownMessage : MonoTorrent.Client.Messages.PeerMessage
     {
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
-        int ByteLength { get; }
+        public UnknownMessage()
+        {
+
+        }
+
+        public override int Encode(byte[] buffer, int offset)
+        {
+            throw new ProtocolException("Unknown message received");
+        }
+
+        public override void Decode(byte[] buffer, int offset, int length)
+        {
+            throw new ProtocolException("Unknown message received");
+        }
+
+        public override int ByteLength
+        {
+            get { return 0; }
+        }
+
+        internal override void Handle(PeerIdInternal id)
+        {
+            throw new ProtocolException("Unknown message received");
+        }
     }
 }

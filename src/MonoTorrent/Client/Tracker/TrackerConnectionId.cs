@@ -32,7 +32,7 @@ using MonoTorrent.Common;
 using System.Net;
 
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
     /// Provides a method of keeping a TrackerConnection linked with its TorrentManager during an AsyncRequest

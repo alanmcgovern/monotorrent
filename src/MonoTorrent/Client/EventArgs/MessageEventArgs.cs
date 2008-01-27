@@ -32,6 +32,7 @@ using System;
 using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.PeerMessages;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -45,11 +46,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The Peer message that was just sent/Received
         /// </summary>
-        public IPeerMessage Message
+        public PeerMessage Message
         {
             get { return this.message; }
         }
-        private IPeerMessage message;
+        private PeerMessage message;
 
         /// <summary>
         /// The direction of the message (outgoing/incoming)
@@ -76,7 +77,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="message">The peer message involved</param>
         /// <param name="direction">The direction of the message</param>
-        internal PeerMessageEventArgs(TorrentManager manager, IPeerMessage message, Direction direction, PeerId id)
+        internal PeerMessageEventArgs(TorrentManager manager, PeerMessage message, Direction direction, PeerId id)
             :base(manager)
         {
             this.direction = direction;
@@ -84,7 +85,7 @@ namespace MonoTorrent.Client
             this.message = message;
         }
 
-        internal PeerMessageEventArgs(TorrentManager manager, IPeerMessage message, Direction direction, PeerIdInternal id)
+        internal PeerMessageEventArgs(TorrentManager manager, PeerMessage message, Direction direction, PeerIdInternal id)
             : this(manager, message, direction, id.PublicId)
         {
         }

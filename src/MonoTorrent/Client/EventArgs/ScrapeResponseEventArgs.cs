@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Client.Tracker;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public class ScrapeResponseEventArgs : TrackerResponseEventArgs
     {

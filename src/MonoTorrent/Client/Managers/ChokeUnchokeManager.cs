@@ -4,6 +4,7 @@ using System.Text;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.Common;
 using System.IO;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -448,7 +449,7 @@ namespace MonoTorrent.Client
         /// <param name="Peer"></param>
         private void RejectPendingRequests(PeerIdInternal Peer)
         {
-            IPeerMessageInternal message;
+            PeerMessage message;
             PieceMessage pieceMessage;
             int length = Peer.Connection.QueueLength;
 

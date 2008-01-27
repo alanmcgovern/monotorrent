@@ -32,7 +32,7 @@ using System.Threading;
 using MonoTorrent.Common;
 using System.Collections.Generic;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public static class TrackerFactory
     {
