@@ -11,6 +11,20 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
         long connectionId;
         int transactionId;
 
+        public int Action
+        {
+            get { return action; }
+        }
+
+        public long ConnectionId
+        {
+            get { return connectionId; }
+        }
+        public int TransactionId
+        {
+            get { return transactionId; }
+        }
+
         public ConnectResponseMessage()
         {
 
@@ -25,7 +39,7 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
         {
             action = ReadInt(buffer, offset);
             transactionId = ReadInt(buffer, offset + 4);
-            connectionId = ReadInt(buffer, offset + 8);
+            connectionId = ReadLong(buffer, offset + 8);
         }
 
         public override int Encode(byte[] buffer, int offset)
