@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
 
                         try
                         {
-                            PeerMessage message = PeerwireEncoder.Decode(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
+                            PeerMessage message = PeerMessage.DecodeMessage(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
 
                             // Fire the event to say we recieved a new message
                             PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
