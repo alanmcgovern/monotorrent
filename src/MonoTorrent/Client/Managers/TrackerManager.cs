@@ -165,6 +165,7 @@ namespace MonoTorrent.Client.Tracker
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
                                                 clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
                                                 null, manager.Engine.Settings.ListenPort);
+            tracker.LastUpdated = DateTime.Now;
             WaitHandle handle = tracker.Announce(p);
             return handle;
         }

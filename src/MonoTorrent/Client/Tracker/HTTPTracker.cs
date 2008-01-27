@@ -48,37 +48,37 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// The announce URL for this tracker
         /// </summary>
-        private string announceUrl;
+        private Uri announceUrl;
 
         /// <summary>
         /// The Scrape URL for this tracker
         /// </summary>
-        private string scrapeUrl;
+        private Uri scrapeUrl;
 
-        public HTTPTracker(string announceUrl)
+        public HTTPTracker(Uri announceUrl)
             : base()
         {
             this.announceUrl = announceUrl;
-            int index = announceUrl.LastIndexOf('/');
-            string part = (index + 9 <= announceUrl.Length) ? announceUrl.Substring(index + 1, 8) : "";
+            int index = announceUrl.OriginalString.LastIndexOf('/');
+            string part = (index + 9 <= announceUrl.OriginalString.Length) ? announceUrl.OriginalString.Substring(index + 1, 8) : "";
             if (part.Equals("announce", StringComparison.OrdinalIgnoreCase))
             {
                 CanScrape = true;
                 Regex r = new Regex("announce");
-                this.scrapeUrl = r.Replace(announceUrl, "scrape", 1, index);
+                this.scrapeUrl = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
             }
         }
 
         public override WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
         {
             HttpWebRequest request;
-            string url = scrapeUrl;
+            string url = scrapeUrl.OriginalString;
 
             // If set to false, you could retrieve scrape data for *all* torrents hosted by the tracker. I see no practical use
             // at the moment, so i've removed the ability to set this to false.
             if (true)
             {
-                if (scrapeUrl.IndexOf('?') == -1)
+                if (url.IndexOf('?') == -1)
                     url += "?info_hash=" + infohash;
                 else
                     url += "&info_hash=" + infohash;
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client.Tracker
             //base.LastUpdated = DateTime.Now;
             // FIXME: This method should be tidied up. I don't like the way it current works
             sb.Append(this.announceUrl);
-            sb.Append((this.announceUrl.IndexOf('?') == -1) ? '?' : '&');
+            sb.Append((this.announceUrl.OriginalString.IndexOf('?') == -1) ? '?' : '&');
             sb.Append("info_hash=");
             sb.Append(HttpUtility.UrlEncode(parameters.Infohash));
             sb.Append("&peer_id=");
@@ -393,7 +393,7 @@ namespace MonoTorrent.Client.Tracker
 
         public override string ToString()
         {
-            return this.announceUrl;
+            return this.announceUrl.OriginalString;
         }
     }
 }

@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Tracker
                 trackerTypes.Add(protocol, trackerType);
         }
 
-        public static Tracker CreateForProtocol(string protocol, string announceUrl)
+        public static Tracker CreateForProtocol(string protocol, Uri announceUrl)
         {
             Type type;
             lock (locker)

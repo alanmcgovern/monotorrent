@@ -47,22 +47,15 @@ namespace MonoTorrent.Client.Tracker
 
             for (int i = 0; i < trackerUrls.Count; i++)
             {
-                if (Uri.TryCreate(trackerUrls[i], UriKind.Absolute, out result))
-                {
-                    Tracker tracker = TrackerFactory.CreateForProtocol(result.Scheme, trackerUrls[i]);
-                    if (tracker != null)
-                    {
-                        trackerList.Add(tracker);
-                    }
-                    else
-                    {
-                        Console.Error.WriteLine("Unsupported protocol {0}", result);
-                    }
-                }
+                // FIXME: Debug spew?
+                if (!Uri.TryCreate(trackerUrls[i], UriKind.Absolute, out result))
+                    continue;
+
+                Tracker tracker = TrackerFactory.CreateForProtocol(result.Scheme, result);
+                if (tracker != null)
+                    trackerList.Add(tracker);
                 else
-                {
-                    Console.Error.WriteLine("Ignoring bad uri: {0}", trackerUrls[i]);
-                }
+                    Console.Error.WriteLine("Unsupported protocol {0}", result);
             }
 
             this.trackers = trackerList.ToArray();

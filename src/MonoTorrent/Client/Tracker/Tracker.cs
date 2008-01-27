@@ -141,6 +141,7 @@ namespace MonoTorrent.Client.Tracker
         public DateTime LastUpdated
         {
             get { return lastUpdated; }
+            protected internal set { lastUpdated = value; }
         }
 
 
