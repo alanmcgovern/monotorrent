@@ -48,7 +48,6 @@ namespace MonoTorrent.Tracker
         private int uploadSpeed;
         private DateTime lastAnnounceTime;
         private string peerId;
-        //private AnnounceParameters parameters;
 
 
         internal Peer(AnnounceParameters par)
