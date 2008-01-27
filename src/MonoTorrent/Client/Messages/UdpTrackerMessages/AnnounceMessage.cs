@@ -28,6 +28,29 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
             get { return 8 + 4 + 4 + 20 + 20 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 2 + 2; }
         }
 
+        public AnnounceMessage()
+        {
+
+        }
+
+        public AnnounceMessage(long connectionId, AnnounceParameters parameters)
+        {
+            this.action = 1;
+            this.connectionId = connectionId;
+            this.downloaded = parameters.BytesDownloaded;
+            this.extensions = 0;
+            this.infoHash = parameters.Infohash;
+            this.ip = 0;
+            this.key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
+            this.left = parameters.BytesLeft;
+            this.numWanted = 50;
+            this.peerId = parameters.PeerId;
+            this.port = (ushort)parameters.Port;
+            this.torrentEvent = parameters.ClientEvent;
+            this.transactionId = DateTime.Now.GetHashCode();
+            this.uploaded = parameters.BytesUploaded;
+        }
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
             connectionId = ReadLong(buffer, offset);
@@ -66,8 +89,11 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
             int origOffset = offset;
             offset += Write(buffer, offset, connectionId);
             offset += Write(buffer, offset, action);
+            offset += Write(buffer, offset, transactionId);
             offset += Write(buffer, offset, infoHash);
-            offset += Write(buffer, offset, Encoding.ASCII.GetBytes(peerId));
+            byte[] b = new byte[20];
+            Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, b, 0);
+            offset += Write(buffer, offset, b);
             offset += Write(buffer, offset, downloaded);
             offset += Write(buffer, offset, left);
             offset += Write(buffer, offset, uploaded);
