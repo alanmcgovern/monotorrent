@@ -152,7 +152,7 @@ namespace MonoTorrent.Client
                 peerSocket = listener.EndAccept(result);
 
                 IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
-                Uri uri = new Uri("tcp://" + endpoint.Address.ToString() + endpoint.Port);
+                Uri uri = new Uri("tcp://" + endpoint.Address.ToString() + ':' + endpoint.Port);
                 Peer peer = new Peer("", uri, new NoEncryption());
 				IConnection connection = new TCPConnection(peerSocket, true);
 
