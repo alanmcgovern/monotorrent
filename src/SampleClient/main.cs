@@ -11,6 +11,7 @@ using System.Threading;
 using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent
 {
@@ -145,7 +146,7 @@ namespace MonoTorrent
 
                 // Every time the tracker's state changes, this is fired
                 foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)
-                    foreach (MonoTorrent.Client.Tracker t in tier.Trackers)
+                    foreach (MonoTorrent.Client.Tracker.Tracker t in tier.Trackers)
                     {
                         t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
                             Console.WriteLine("{0}: {1}", e.Successful, e.Tracker.ToString());
