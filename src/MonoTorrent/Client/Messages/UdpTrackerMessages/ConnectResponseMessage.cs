@@ -5,8 +5,17 @@ using System.Net;
 using MonoTorrent.Client.Messages;
 namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
-    class ConnectResponseMessage : MonoTorrent.Client.Messages.Message
+    class ConnectResponseMessage : Message
     {
+        int action;
+        long connectionId;
+        int transactionId;
+
+        public ConnectResponseMessage()
+        {
+
+        }
+
         public override int ByteLength
         {
             get { return 8 + 4 + 4; }
@@ -14,11 +23,18 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
+            action = ReadInt(buffer, offset);
+            transactionId = ReadInt(buffer, offset + 4);
+            connectionId = ReadInt(buffer, offset + 8);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            throw new NotImplementedException();
+            Write(buffer, offset, action);
+            Write(buffer, offset + 4, transactionId);
+            Write(buffer, offset + 8, connectionId);
+            
+            return ByteLength;
         }
     }
 }

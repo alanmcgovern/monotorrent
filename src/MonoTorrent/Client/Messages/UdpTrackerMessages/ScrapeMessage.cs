@@ -7,19 +7,35 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 {
     class ScrapeMessage : Message
     {
+        long connectionId;
+        int action;
+        int transactionId;
+        short numberOfHashes;
+        ushort extensions;
+
         public override int ByteLength
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { return 8 + 4 + 4 + 2 + 2; }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            throw new Exception("The method or operation is not implemented.");
+            connectionId = ReadLong(buffer, offset); offset += 8;
+            action = ReadInt(buffer, offset); offset += 4;
+            transactionId = ReadInt(buffer, offset); offset += 4;
+            numberOfHashes = ReadShort(buffer, offset); offset += 2;
+            extensions = (ushort)ReadShort(buffer, offset); offset += 2;
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            throw new Exception("The method or operation is not implemented.");
+            offset += Write(buffer, offset, connectionId);
+            offset += Write(buffer, offset, action);
+            offset += Write(buffer, offset, transactionId);
+            offset += Write(buffer, offset, numberOfHashes);
+            offset += Write(buffer, offset, extensions);
+
+            return ByteLength;
         }
     }
 }

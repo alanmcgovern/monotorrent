@@ -8,20 +8,30 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages.Extensions
 {
     class AuthenticationMessage : Message
     {
+        byte usernameLength;
+        string username;
+        byte[] password;
 
         public override int ByteLength
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { return 4 + usernameLength + 8;  }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            throw new Exception("The method or operation is not implemented.");
+            usernameLength = buffer[offset]; offset++;
+            username = Encoding.ASCII.GetString(buffer, offset, usernameLength); offset += usernameLength;
+            password = new byte[8];
+            Buffer.BlockCopy(buffer, offset, password, 0, password.Length);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            throw new Exception("The method or operation is not implemented.");
+            offset += Write(buffer, offset, usernameLength);
+            offset += Write(buffer, offset, Encoding.ASCII.GetBytes(username));
+            offset += Write(buffer, offset, password);
+            
+            return ByteLength;
         }
     }
 }

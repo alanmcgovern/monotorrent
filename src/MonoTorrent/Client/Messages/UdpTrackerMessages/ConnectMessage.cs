@@ -48,10 +48,11 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int count = Write(buffer, offset, connectionId);
-            count += Write(buffer, offset, action);
-            count += Write(buffer, offset, transactionId);
-            return count;
+            Write(buffer, offset, connectionId);
+            Write(buffer, offset + 8, action);
+            Write(buffer, offset + 12, transactionId);
+
+            return ByteLength;
         }
     }
 }

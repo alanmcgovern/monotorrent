@@ -44,6 +44,12 @@ namespace MonoTorrent.Client.Messages
             return 1;
         }
 
+        protected int Write(byte[] buffer, int offset, byte[] value)
+        {
+            Buffer.BlockCopy(value, 0, buffer, offset, value.Length);
+            return value.Length;
+        }
+
         protected int Write(byte[] buffer, int offset, short value)
         {
             byte[] temp = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value));
@@ -58,11 +64,21 @@ namespace MonoTorrent.Client.Messages
             return temp.Length;
         }
 
+        protected int Write(byte[] buffer, int offset, uint value)
+        {
+            return Write(buffer, offset, (int)value);
+        }
+
         protected int Write(byte[] buffer, int offset, long value)
         {
             byte[] temp = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value));
             Buffer.BlockCopy(temp, 0, buffer, offset, temp.Length);
             return temp.Length;
+        }
+
+        protected int Write(byte[] buffer, int offset, ulong value)
+        {
+            return Write(buffer, offset, (long)value);
         }
     }
 }
