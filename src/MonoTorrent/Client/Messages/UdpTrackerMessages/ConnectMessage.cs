@@ -29,9 +29,9 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 
         public ConnectMessage()
         {
-            action = 0;                                 // Connect message
-            connectionId = 0x41727101980;               // Init connectionId as per spec
-            transactionId = DateTime.Now.GetHashCode(); // Random ID created from current datetime
+            action = 0;                                                 // Connect message
+            connectionId = IPAddress.NetworkToHostOrder(0x41727101980); // Init connectionId as per spec
+            transactionId = DateTime.Now.GetHashCode();                 // Random ID created from current datetime
         }
 
         public override int ByteLength
