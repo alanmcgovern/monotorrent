@@ -140,15 +140,17 @@ namespace MonoTorrent.Client.PeerMessages
         #region Methods
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            pieceIndex = ReadInt(buffer, offset);
-            startOffset = ReadInt(buffer, offset + 4);
-            dataOffset = 8;
-            requestLength = length - dataOffset;
+            this.pieceIndex = ReadInt(buffer, offset);
+            offset += 4;
+            this.startOffset = ReadInt(buffer, offset);
+            offset += 4;
+            this.requestLength = length - 9;
 
+            this.dataOffset = offset;
 
-            data = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref this.data, buffer.Length);
-            Buffer.BlockCopy(buffer, offset, data.Array, data.Offset, length);
+            this.data = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref this.data, requestLength);
+            Buffer.BlockCopy(buffer, offset, this.data.Array, this.data.Offset, requestLength);
         }
 
 

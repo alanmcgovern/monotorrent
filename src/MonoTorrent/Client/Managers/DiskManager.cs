@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Managers
             {
                 // Calculate the index where we will start to write the data
                 long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                Write(bufferedFileIO, recieveBuffer.Array, recieveBuffer.Offset + message.DataOffset, writeIndex, message.RequestLength);
+                Write(bufferedFileIO, recieveBuffer.Array, recieveBuffer.Offset, writeIndex, message.RequestLength);
             }
 
             piece.Blocks[index].Written = true;
