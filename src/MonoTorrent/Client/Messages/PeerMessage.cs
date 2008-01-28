@@ -12,7 +12,7 @@ namespace MonoTorrent.Client.Messages
 
         public static PeerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
         {
-            return DecodeMessage(buffer.Array, offset + offset, count, manager);
+            return DecodeMessage(buffer.Array, buffer.Offset + offset, count, manager);
         }
 
         public static PeerMessage DecodeMessage(byte[] buffer, int offset, int count, TorrentManager manager)
