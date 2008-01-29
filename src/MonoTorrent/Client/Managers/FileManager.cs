@@ -177,7 +177,7 @@ namespace MonoTorrent.Client
             path = Path.Combine(savePath, baseDirectory);
             path = Path.Combine(path, file.Path);
 
-            if (!Directory.Exists(Path.GetDirectoryName(path)))
+            if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             return path;
