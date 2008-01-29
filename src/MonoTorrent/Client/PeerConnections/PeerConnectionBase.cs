@@ -431,6 +431,8 @@ namespace MonoTorrent.Client
             this.sendQueue = new Queue<PeerMessage>(12);
             this.isAllowedFastPieces = new MonoTorrentCollection<int>();
             this.amAllowedFastPieces = new MonoTorrentCollection<int>();
+            this.lastMessageReceived = DateTime.Now;
+            this.lastMessageSent = DateTime.Now;
         }
 
         #endregion
