@@ -7,12 +7,16 @@ namespace MonoTorrent.Client
     public class NewConnectionEventArgs : TorrentEventArgs
     {
         private IConnection connection;
-        private TorrentManager manager;
         private Peer peer;
-
+        private bool overridePeerId;
         public IConnection Connection
         {
             get { return connection; }
+        }
+
+        public bool OverridePeerId
+        {
+            get { return overridePeerId; }
         }
 
         public Peer Peer
@@ -20,22 +24,13 @@ namespace MonoTorrent.Client
             get { return peer; }
         }
 
-        public TorrentManager Manager
-        {
-            get { return manager; }
-        }
-
-        public NewConnectionEventArgs(Peer peer, IConnection connection)
-            : this(peer, connection, null)
-        {
-        }
-
-        public NewConnectionEventArgs(Peer peer, IConnection connection, TorrentManager manager)
-            : base(null)
+        public NewConnectionEventArgs(Peer peer, IConnection connection, TorrentManager manager, bool overridePeerId)
+            : base(manager)
         {
             if (!connection.IsIncoming && manager == null)
                 throw new InvalidOperationException("An outgoing connection must specify the torrent manager it belongs to");
 
+            this.overridePeerId = overridePeerId;
             this.connection = connection;
             this.peer = peer;
         }

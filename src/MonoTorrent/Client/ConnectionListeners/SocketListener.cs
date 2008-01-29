@@ -157,7 +157,7 @@ namespace MonoTorrent.Client
 				IConnection connection = new TCPConnection(peerSocket, true);
 
 
-                RaiseConnectionReceived(peer, connection);
+                RaiseConnectionReceived(peer, connection, null, false);
             }
             catch (SocketException)
             {

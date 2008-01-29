@@ -55,9 +55,9 @@ namespace MonoTorrent.Client
         public abstract void Start();
         public abstract void Stop();
 
-        protected internal virtual void RaiseConnectionReceived(Peer peer, IConnection connection)
+        protected internal virtual void RaiseConnectionReceived(Peer peer, IConnection connection, TorrentManager manager, bool overridePeerId)
         {
-            ConnectionReceived(this, new NewConnectionEventArgs(peer, connection));
+            ConnectionReceived(this, new NewConnectionEventArgs(peer, connection, manager, overridePeerId));
         }
     }
 }
