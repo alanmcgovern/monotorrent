@@ -12,15 +12,19 @@ namespace SampleClient
 {
     public class CustomConnection : IConnection
     {
-        #region IConnection Members
+        private string name;
         private Socket s;
         private bool incoming;
-        public CustomConnection(Socket s, bool incoming)
+        public CustomConnection(Socket s, bool incoming, string name)
         {
+            this.name = name;
             this.s = s;
             this.incoming = incoming;
         }
-
+        public override string ToString()
+        {
+            return name;
+        }
         public byte[] AddressBytes
         {
             get { return ((IPEndPoint)s.RemoteEndPoint).Address.GetAddressBytes(); }
@@ -63,6 +67,7 @@ namespace SampleClient
 
         public int EndReceive(IAsyncResult result)
         {
+            Console.WriteLine("{0} - {1}", name, "received");
             return s.EndReceive(result);
         }
 
@@ -73,22 +78,17 @@ namespace SampleClient
 
         public int EndSend(IAsyncResult result)
         {
+            Console.WriteLine("{0} - {1}", name, "sent");
             return s.EndSend(result);
         }
-
-        #endregion
-
-        #region IDisposable Members
 
         public void Dispose()
         {
             s.Close();
         }
-
-        #endregion
     }
 
-    public class CustomListner : ConnectionListenerBase
+    public class CustomListener : ConnectionListenerBase
     {
         public override void Dispose()
         {
@@ -108,36 +108,77 @@ namespace SampleClient
         public void Add(TorrentManager manager, IConnection connection)
         {
             MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), new NoEncryption());
-            base.RaiseConnectionReceived(p, connection, manager, true);
+            base.RaiseConnectionReceived(p, connection, manager);
         }
     }
 
 
     class TestManualConnection
     {
+        ClientEngine engine1;
+        ClientEngine engine2;
+        TorrentManager manager1;
+        TorrentManager manager2;
+        IConnection connection1a;
+        IConnection connection1b;
+        //IConnection connection2a;
+        //IConnection connection2b;
+        CustomListener listener1;
+        CustomListener listener2;
+        Torrent torrent;
+
+        Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        Socket s1b = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+        //Socket s2a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        //Socket s2b = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
         public TestManualConnection()
         {
-            CustomListner listener = new CustomListner();
-            ClientEngine engine = new ClientEngine(EngineSettings.DefaultSettings(), listener);
-            Torrent t = Torrent.Load(CreateTorrent());
-            TorrentManager m = new TorrentManager(t, "", TorrentSettings.DefaultSettings());
-            engine.Register(m);
-            engine.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs e) { Console.WriteLine(e.Message.ToString()); };
-            m.Start();
+            listener1 = new CustomListener();
+            listener2 = new CustomListener();
+
+            engine1 = new ClientEngine(EngineSettings.DefaultSettings(), listener1);
+            engine2 = new ClientEngine(EngineSettings.DefaultSettings(), listener2);
+
+            torrent = Torrent.Load("Torrents/untitled.bmp.torrent");
+            manager1 = new TorrentManager(torrent, "Downloads", TorrentSettings.DefaultSettings());
+            manager2 = new TorrentManager(torrent, "Downloads2", TorrentSettings.DefaultSettings());
+
+            engine1.Register(manager1);
+            engine2.Register(manager2);
+
+            //engine1.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs e) { Console.WriteLine(e.Message.ToString()); };
+            //engine2.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs e) { Console.WriteLine(e.Message.ToString()); };
+
+            manager1.Start();
+            manager2.Start();
 
             TcpListener socketListener = new TcpListener(1220);
             socketListener.Start();
-            s1.Connect(IPAddress.Loopback, 1220);
-            s2 = socketListener.AcceptSocket();
+            s1a.Connect(IPAddress.Loopback, 1220);
+            s1b = socketListener.AcceptSocket();
 
-            CustomConnection c1 = new CustomConnection(s1, true);
-            CustomConnection c2 = new CustomConnection(s2, false);
-            listener.Add(m, c1);
-            listener.Add(m, c2);
+            //s2a.Connect(IPAddress.Loopback, 1220);
+            //s2b = socketListener.AcceptSocket();
+
+            connection1a = new CustomConnection(s1a, true, "1A");
+            connection1b = new CustomConnection(s1b, false, "1B");
+
+            //connection2a = new CustomConnection(s2a, true, "2A");
+            //connection2b = new CustomConnection(s2b, false, "2B");
+
+            listener1.Add(manager1, connection1a);
+            //listener1.Add(manager1, connection2a);
+            listener2.Add(manager2, connection1b);
+            //listener2.Add(manager2, connection2b);
+
             while (true)
             {
-                Console.WriteLine("c1 active: {0}", c1.Connected);
-                Console.WriteLine("c2 active: {0}", c2.Connected);
+                Console.WriteLine("Connection 1A active: {0}", connection1a.Connected);
+                //Console.WriteLine("Connection 1B active: {0}", connection2a.Connected);
+                Console.WriteLine("Connection 2A active: {0}", connection1b.Connected);
+                //Console.WriteLine("Connection 2B active: {0}", connection2b.Connected);
                 System.Threading.Thread.Sleep(1000);
             }
         }
@@ -162,8 +203,7 @@ namespace SampleClient
             return dict;
         }
 
-        Socket s1 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        Socket s2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
     }
 
 }

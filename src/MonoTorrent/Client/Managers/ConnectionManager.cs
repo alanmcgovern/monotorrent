@@ -296,7 +296,7 @@ namespace MonoTorrent.Client
                 System.Threading.Interlocked.Increment(ref this.openConnections);
 
                 // Create a handshake message to send to the peer
-                HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, id.Peer.PeerId ?? engine.PeerId, VersionInfo.ProtocolStringV100);
+                HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
                 if (id.Connection.Encryptor is NoEncryption || !ClientEngine.SupportsEncryption)
                 {

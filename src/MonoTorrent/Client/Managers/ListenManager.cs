@@ -123,9 +123,6 @@ namespace MonoTorrent.Client
             id.Connection = new PeerConnectionBase(0, new NoEncryption());
             id.Connection.Connection = e.Connection;
 
-            if (!e.OverridePeerId)
-                e.Peer.PeerId = null;
-
             Logger.Log(id, "CE Peer incoming connection accepted");
 
             if (id.Connection.Connection.IsIncoming)
@@ -215,7 +212,7 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
             id.Connection.ClientApp = new Software(handshake.PeerId);
 
-            handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, id.Peer.PeerId ?? engine.PeerId, VersionInfo.ProtocolStringV100);
+            handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
             BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
 
             ClientEngine.BufferManager.GetBuffer(ref id.Connection.sendBuffer, handshake.ByteLength + bf.ByteLength);

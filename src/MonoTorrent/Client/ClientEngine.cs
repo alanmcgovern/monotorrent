@@ -50,6 +50,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
+        private static Random random = new Random();
         #region Global Constants
 
         public static readonly bool SupportsFastPeer = true;
@@ -276,11 +277,11 @@ namespace MonoTorrent.Client
         private static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
-            Random rand = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds);
 
             sb.Append(Common.VersionInfo.ClientVersion);
-            for (int i = 0; i < 12; i++)
-                sb.Append(rand.Next(0, 9));
+            lock (random)
+                for (int i = 0; i < 12; i++)
+                    sb.Append(random.Next(0, 9));
 
             return sb.ToString();
         }
