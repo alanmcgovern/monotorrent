@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.PeerMessages
             System.Text.Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, buffer, i);
             i += System.Text.Encoding.ASCII.GetByteCount(peerId);
 
-            return i;
+            return ByteLength;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
