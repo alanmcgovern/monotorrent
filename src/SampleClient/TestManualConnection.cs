@@ -45,7 +45,7 @@ namespace SampleClient
             get { return incoming; }
         }
 
-        public System.Net.EndPoint EndPoint
+        public EndPoint EndPoint
         {
             get { return s.RemoteEndPoint; }
         }
