@@ -115,7 +115,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// <summary>
         /// Creates a new piece message
         /// </summary>
-        internal PieceMessage(TorrentManager manager)
+        public PieceMessage(TorrentManager manager)
         {
             this.manager = manager;
         }
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// <param name="pieceIndex">The index of the piece</param>
         /// <param name="startOffset">The start offset in bytes of the block of data</param>
         /// <param name="blockLength">The length in bytes of the data</param>
-        internal PieceMessage(TorrentManager manager, int pieceIndex, int startOffset, int blockLength)
+        public PieceMessage(TorrentManager manager, int pieceIndex, int startOffset, int blockLength)
         {
             this.manager = manager;
             this.pieceIndex = pieceIndex;

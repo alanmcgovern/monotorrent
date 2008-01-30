@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// <summary>
         /// Creates a new PortMessage
         /// </summary>
-        internal PortMessage()
+        public PortMessage()
         {
         }
 
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// Creates a new Port Message
         /// </summary>
         /// <param name="port">The port to use</param>
-        internal PortMessage(ushort port)
+        public PortMessage(ushort port)
         {
             this.port = port;
         }
