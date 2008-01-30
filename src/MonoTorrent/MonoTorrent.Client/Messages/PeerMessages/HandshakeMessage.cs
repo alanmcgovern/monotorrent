@@ -100,6 +100,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// </summary>
         public HandshakeMessage()
         {
+            this.supportsFastPeer = ClientEngine.SupportsFastPeer;
         }
 
 
@@ -116,6 +117,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             this.peerId = peerId;
             this.protocolString = protocolString;
             this.protocolStringLength = protocolString.Length;
+            this.supportsFastPeer = ClientEngine.SupportsFastPeer;
         }
         #endregion
 
@@ -148,12 +150,12 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             System.Text.Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, buffer, i);
             i += System.Text.Encoding.ASCII.GetByteCount(peerId);
 
-            return ByteLength;
+            return i - offset;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            int i = 0;
+            int i = offset;
             protocolStringLength = (int)buffer[i];                  // First byte is length
 
             // #warning Fix this hack - is there a better way of verifying the protocol string? Hack
@@ -273,7 +275,8 @@ namespace MonoTorrent.Client.Messages.PeerMessages
                 return false;
 
             return (this.peerId == msg.peerId
-                    && this.protocolString == msg.protocolString);
+                    && this.protocolString == msg.protocolString
+                    && this.supportsFastPeer == msg.supportsFastPeer);
         }
 
 
