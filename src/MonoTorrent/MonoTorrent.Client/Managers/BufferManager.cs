@@ -108,6 +108,8 @@ namespace MonoTorrent.Client
         /// <param name="type">The type of buffer that is needed</param>
         private void GetBuffer(ref ArraySegment<byte> buffer, BufferType type)
         {
+            buffer = new ArraySegment<byte>(new byte[LargeMessageBufferSize], 0, LargeMessageBufferSize);
+            return;
             // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
             // a buffer leak somewhere and the buffers aren't being freed properly.
             if (buffer != EmptyBuffer)
@@ -153,6 +155,8 @@ namespace MonoTorrent.Client
         /// <param name="type">The type of buffer that is needed</param>
         public void GetBuffer(ref ArraySegment<byte> buffer, int minCapacity)
         {
+            buffer = new ArraySegment<byte>(new byte[minCapacity], 0, minCapacity);
+            return;
             if (buffer != EmptyBuffer)
                 throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
 
@@ -189,6 +193,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public void FreeBuffer(ref ArraySegment<byte> buffer)
         {
+            return;
             // If true, the buffer has already been freed, so we just return
             if (buffer == EmptyBuffer)
                 return;
@@ -220,6 +225,7 @@ namespace MonoTorrent.Client
 
         private void AllocateBuffers(int number, BufferType type)
         {
+            return;
             Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
             if (type == BufferType.LargeMessageBuffer)
                 while (number > 0)
