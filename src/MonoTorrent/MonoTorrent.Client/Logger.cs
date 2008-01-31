@@ -49,8 +49,25 @@ namespace MonoTorrent.Client
             Log(connection, message, null);
         }
 
+        private static StringBuilder sb = new StringBuilder();
         internal static void Log(IConnection connection, string message, params string[] formatting)
         {
+            lock (listeners)
+            {
+                sb.Remove(0, sb.Length);
+                sb.Append(Environment.TickCount);
+                sb.Append(": ");
+
+                if (connection != null)
+                    sb.Append(connection.EndPoint.ToString());
+
+                if (formatting != null)
+                    sb.Append(string.Format(message, formatting));
+                else
+                    sb.Append(message);
+
+                listeners.ForEach(delegate(TraceListener l) { l.WriteLine(sb.ToString()); });
+            }
         }
     }
 }
