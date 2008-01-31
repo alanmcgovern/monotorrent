@@ -37,6 +37,7 @@ using System.Web;
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using TrackerApp;
+using MonoTorrent.TorrentWatcher;
 
 namespace SampleTracker
 {
@@ -154,7 +155,7 @@ namespace SampleTracker
                 }
             };
 
-            watcher.StartWatching();
+            watcher.Start();
             watcher.ForceScan();
         }
 

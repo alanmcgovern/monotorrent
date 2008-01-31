@@ -8,10 +8,10 @@ using MonoTorrent.Client;
 using System.Net;
 using System.Diagnostics;
 using System.Threading;
-using MonoTorrent.Client.PeerMessages;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Client.Messages.PeerMessages;
 
 namespace MonoTorrent
 {
@@ -27,7 +27,7 @@ namespace MonoTorrent
 
         static void Main(string[] args)
         {
-            new SampleClient.TestManualConnection();
+            //new SampleClient.TestManualConnection();
 			/* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
