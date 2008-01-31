@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
         }
 
         private static StringBuilder sb = new StringBuilder();
-        internal static void Log(IConnection connection, string message, params string[] formatting)
+        internal static void Log(IConnection connection, string message, params object[] formatting)
         {
             lock (listeners)
             {

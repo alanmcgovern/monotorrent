@@ -220,6 +220,7 @@ namespace MonoTorrent.Client
 
         private void AllocateBuffers(int number, BufferType type)
         {
+            Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
             if (type == BufferType.LargeMessageBuffer)
                 while (number > 0)
 				{
