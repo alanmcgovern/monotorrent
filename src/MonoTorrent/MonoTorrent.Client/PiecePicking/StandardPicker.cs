@@ -595,7 +595,7 @@ namespace MonoTorrent.Client
                 Piece piece = requests.Find(delegate(Piece p) { return p.Index == message.PieceIndex; });
                 if (piece == null)
                 {
-                    Logger.Log("Received block from a piece we aren't requesting");
+                    Logger.Log(id.Connection.Connection, "Received block from unrequested piece");
                     return PieceEvent.BlockNotRequested;
                 }
 
@@ -603,20 +603,20 @@ namespace MonoTorrent.Client
                 int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
                 if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
                 {
-                    Logger.Log(id, "Invalid block start offset returned");
+                    Logger.Log(id.Connection.Connection, "Invalid block start offset returned");
                     return PieceEvent.BlockNotRequested;
                 }
 
                 if (piece.Blocks[blockIndex].Received)
                 {
-                    Logger.Log("Block already received");
+                    Logger.Log(id.Connection.Connection, "Block already received");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block already received");
 
                 if (!piece.Blocks[blockIndex].Requested)
                 {
-                    Logger.Log("Block was not requested");
+                    Logger.Log(id.Connection.Connection, "Block was not requested");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block was not requested");

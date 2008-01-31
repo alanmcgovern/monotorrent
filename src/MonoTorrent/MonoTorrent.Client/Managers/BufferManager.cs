@@ -167,7 +167,7 @@ namespace MonoTorrent.Client
 
             else
             {
-                Logger.Log("Allocating a massive buffer: " + minCapacity.ToString());
+                Logger.Log(null, "Allocating a massive buffer: " + minCapacity.ToString());
                 lock (this.massiveBuffers)
                 {
                     for (int i = 0; i < massiveBuffers.Count; i++)

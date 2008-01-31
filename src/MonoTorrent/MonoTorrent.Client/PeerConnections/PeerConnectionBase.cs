@@ -537,9 +537,6 @@ namespace MonoTorrent.Client
 
         internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
 		{
-            if(!(this.Encryptor is NoEncryption))
-                Console.WriteLine("ENCRYPTED: {0}", encryptor.GetType().Name);
-
 			errorCode = SocketError.Success;
 			
             try

@@ -203,7 +203,7 @@ namespace MonoTorrent.Client
             owningTorrent.UploadingTo--;
             RejectPendingRequests(peer);
             peer.Connection.EnqueueAt(new ChokeMessage(), 0);
-            Logger.Log("Choking: " + owningTorrent.UploadingTo);
+            Logger.Log(peer.Connection.Connection, "Choking");
             //			Send2Log("Choking: " + PeerToChoke.Location);
         }
 
@@ -504,7 +504,7 @@ namespace MonoTorrent.Client
             PeerToUnchoke.Connection.EnqueueAt(new UnchokeMessage(), 0);
             PeerToUnchoke.Connection.LastUnchoked = DateTime.Now;
             PeerToUnchoke.Connection.FirstReviewPeriod = true;
-            Logger.Log("Unchoking: " + owningTorrent.UploadingTo);
+            Logger.Log(PeerToUnchoke.Connection.Connection, "Unchoking");
             //			Send2Log("Unchoking: " + PeerToUnchoke.Location);
         }
 

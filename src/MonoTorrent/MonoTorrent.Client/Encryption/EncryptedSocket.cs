@@ -281,13 +281,10 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to read</param>
         public void AddInitialData(byte[] buffer, int offset, int count)
         {
-            Logger.Log(id, "Adding " + count + " bytes to " + InitialPayload.Length + " byte initial payload for a total of ");
-            
             byte[] newInitialPayload = new byte[InitialPayload.Length + count];
             Array.Copy(InitialPayload, newInitialPayload, InitialPayload.Length);
             Array.Copy(buffer, offset, newInitialPayload, InitialPayload.Length, count);
             InitialPayload = newInitialPayload;
-            Logger.Log(id, InitialPayload.Length.ToString());
         }
 
         /// <summary>

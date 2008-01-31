@@ -55,7 +55,6 @@ namespace MonoTorrent.Client.Encryption
 
         public override void Start(IConnection socket)
         {
-            Logger.Log(id, " A: Encryption started");
             base.Start(socket);
         }
 
@@ -68,8 +67,6 @@ namespace MonoTorrent.Client.Encryption
 
         private void StepThree()
         {
-            Logger.Log(id, "A: Step three");
-
             CreateCryptors("keyA", "keyB");
 
             // 3 A->B: HASH('req1', S)
@@ -96,7 +93,6 @@ namespace MonoTorrent.Client.Encryption
             SendMessage(DoEncrypt(padC));
 
             // ... PadC, len(IA)), ENCRYPT(IA)
-            Logger.Log(id, " A: Initial Payload - " + InitialPayload.Length);
             SendMessage(DoEncrypt(Len(InitialPayload)));
             SendMessage(DoEncrypt(InitialPayload));
 
@@ -108,8 +104,6 @@ namespace MonoTorrent.Client.Encryption
         protected override void doneSynchronize(IAsyncResult result)
         {
             base.doneSynchronize(result); // 4 B->A: ENCRYPT(VC, ...
-
-            Logger.Log(id, " A: Step five");
 
             VerifyBytes = new byte[4 + 2];
             ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback); // crypto_select, len(padD) ...

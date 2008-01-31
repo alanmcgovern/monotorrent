@@ -66,8 +66,6 @@ namespace MonoTorrent.Client.Encryption
         {
             base.doneReceiveY(result); // 1 A->B: Diffie Hellman Ya, PadA
 
-            Logger.Log(id, "B: Step two");
-
             byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
             Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
         }
@@ -77,7 +75,6 @@ namespace MonoTorrent.Client.Encryption
         {
             base.doneSynchronize(result);
 
-            Logger.Log(id, " B: Synchronize");
             VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
             ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback);
@@ -86,8 +83,6 @@ namespace MonoTorrent.Client.Encryption
 
         private void gotVerification(IAsyncResult result)
         {
-            Logger.Log(id, " B: Verification");
-
             byte[] torrentHash = new byte[20];
 
             byte[] myVC = new byte[8];
@@ -127,7 +122,6 @@ namespace MonoTorrent.Client.Encryption
 
         private void gotPadC(IAsyncResult result)
         {
-            Logger.Log(id, "B: Pad"); // padC
             DoDecrypt(PadC, 0, PadC.Length);
 
             byte[] lenInitialPayload = new byte[2]; // ... len(IA))
@@ -139,7 +133,6 @@ namespace MonoTorrent.Client.Encryption
 
         private void gotInitialPayload(IAsyncResult result)
         {
-            Logger.Log(id, "B: Payload");
             DoDecrypt(RemoteInitialPayload, 0, RemoteInitialPayload.Length); // ... ENCRYPT(IA)
             StepFour();
         }
@@ -155,7 +148,6 @@ namespace MonoTorrent.Client.Encryption
             SendMessage(DoEncrypt(padD));
 
             Ready();
-            Logger.Log(id, "B: Ready");
         }
 
 

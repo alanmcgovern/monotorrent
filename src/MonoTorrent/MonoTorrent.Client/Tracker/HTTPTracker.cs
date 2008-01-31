@@ -306,7 +306,7 @@ namespace MonoTorrent.Client.Tracker
                         break;
 
                     default:
-                        Logger.Log("Key: " + keypair.Key.ToString() + " Value: " + keypair.Value.ToString());
+                        Logger.Log(null, "HttpTracker - Unknown announce tag received: Key {0}  Value: {1}", keypair.Key.ToString(), keypair.Value.ToString());
                         break;
                 }
             }
@@ -361,7 +361,7 @@ namespace MonoTorrent.Client.Tracker
                                 break;
 
                             default:
-                                Logger.Log("Key: " + kp.Key.ToString() + " Value: " + kp.Value.ToString());
+                                Logger.Log(null, "HttpTracker - Unknown scrape tag received: Key {0}  Value {1}", kp.Key.ToString(), kp.Value.ToString());
                                 break;
                         }
                     }

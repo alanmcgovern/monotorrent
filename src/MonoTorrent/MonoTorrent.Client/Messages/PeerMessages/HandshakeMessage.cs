@@ -206,7 +206,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         {
             if (!this.protocolString.Equals(VersionInfo.ProtocolStringV100))
             {
-                Logger.Log(id, "Invalid protocol string: " + this.protocolString);
+                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid protocol in handshake: {0}", this.protocolString);
                 throw new ProtocolException("Invalid protocol string");
             }
 
@@ -218,14 +218,14 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             // If the infohash doesn't match, dump the connection
             if (!Toolbox.ByteMatch(this.infoHash, id.TorrentManager.Torrent.InfoHash))
             {
-                Logger.Log(id, "Invalid infohash");
+                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid infohash");
                 throw new TorrentException("Invalid infohash. Not tracking this torrent");
             }
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
             if (id.Peer.PeerId != this.peerId)
             {
-                Logger.Log(id, "Invalid peerid");
+                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid peerid");
                 throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");
             }
 

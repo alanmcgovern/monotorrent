@@ -65,7 +65,6 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         public override int Encode(byte[] buffer, int offset)
         {
             throw new ProtocolException("The method or operation is not implemented.");
-            
         }
         public override void Decode(byte[] buffer, int offset, int length)
         {
