@@ -130,8 +130,6 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            //if(this.peerSocket.Connected)
-            //    this.peerSocket.Shutdown(SocketShutdown.Both);
             this.socket.Close();
         }
 
