@@ -7,6 +7,7 @@ using System.Net;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Connections;
 
 namespace SampleClient
 {
