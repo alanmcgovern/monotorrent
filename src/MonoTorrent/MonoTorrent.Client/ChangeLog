@@ -1,5 +1,9 @@
 2008-02-01  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* MessageHandler.cs: Added logging for exceptions handling messages
+
+2008-02-01  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* Messages/UdpTrackerMessages/ErrorMessage.cs: Fixed assignment to self bug.
 
 2008-01-22  Alan McGovern <alan.mcgovern@gmail.com> 

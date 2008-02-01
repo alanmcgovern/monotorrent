@@ -150,10 +150,10 @@ namespace MonoTorrent.Client
 
                             message.Handle(id);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            //FIXME: #warning Do this in a better way so as to not hide an important exception!
-                            return;
+                            // Should i nuke the peer with the dodgy message too?
+                            Logger.Log (null, "*CRITICAL EXCEPTION* - Error decoding message: {0}", ex);
                         }
                     }
                 }
