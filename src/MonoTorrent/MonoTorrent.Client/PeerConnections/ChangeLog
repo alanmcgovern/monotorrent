@@ -1,3 +1,7 @@
+2008-02-01  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* PeerId.cs: Added close connection method.
+
 2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* TCPConnection.cs: Now using the 'out ErrorCode' overloads for the sockets.

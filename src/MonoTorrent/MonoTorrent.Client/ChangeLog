@@ -1,3 +1,7 @@
+2008-02-01  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* Messages/UdpTrackerMessages/ErrorMessage.cs: Fixed assignment to self bug.
+
 2008-01-22  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Tracker/HTTPTracker.cs: Cosmetic

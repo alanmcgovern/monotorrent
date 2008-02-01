@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Connections;
 using System.Net;
 
 namespace MonoTorrent.Client
@@ -15,6 +16,7 @@ namespace MonoTorrent.Client
         private bool amInterested;
         private int amRequestingPiecesCount;
         private BitField bitField;
+		private PeerIdInternal id;
         private Software clientApp;
         private IEncryptorInternal encryptor;
         private int hashFails;
@@ -146,9 +148,16 @@ namespace MonoTorrent.Client
 
 
         #region Methods
-
+        public void CloseConnection ()
+        {
+			lock (id)
+				if (id.Connection.Connection != null)
+					id.Connection.Connection.Dispose ();
+        }
+		
         internal void UpdateStats(PeerIdInternal id)
         {
+			this.id = id;
             amChoking = id.Connection.AmChoking;
             amInterested = id.Connection.AmInterested;
             amRequestingPiecesCount = id.Connection.AmRequestingPiecesCount;
@@ -168,7 +177,7 @@ namespace MonoTorrent.Client
             supportsFastPeer = id.Connection.SupportsFastPeer;
             manager = id.TorrentManager;
         }
-
+        
         #endregion
     }
 }

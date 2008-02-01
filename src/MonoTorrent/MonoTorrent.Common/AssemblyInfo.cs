@@ -15,4 +15,4 @@ using System;
 [assembly: ComVisible(false)]
 [assembly: AssemblyVersion("0.2.0.0")]
 [assembly: AssemblyFileVersion("0.2.0.0")]
-[assembly: CLSCompliant(true)]
+[assembly: CLSCompliant(false)]

@@ -17,7 +17,7 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 
         public ErrorMessage(string error)
         {
-            this.errorMessage = errorMessage;
+            this.errorMessage = error;
         }
 
         public string Error
