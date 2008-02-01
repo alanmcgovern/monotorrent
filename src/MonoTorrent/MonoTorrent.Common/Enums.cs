@@ -65,10 +65,8 @@ namespace MonoTorrent.Common
     {
         Stopped,
         Paused,
-        Queued,
         Downloading,
         Seeding,
-        SuperSeeding,
         Hashing
     }
 
