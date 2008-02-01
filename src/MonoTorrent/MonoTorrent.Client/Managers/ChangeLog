@@ -1,5 +1,9 @@
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* TorrentManager.cs: Cleaned up some of my method firing goodness
+
+2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	
 
 2008-01-12  Alan McGovern <alan.mcgovern@gmail.com> 

@@ -295,8 +295,7 @@ namespace MonoTorrent.Client
                 using (new ReaderLock(this.torrentsLock))
                     for (int i = 0; i < torrents.Count; i++)
                         if (torrents[i].State == TorrentState.Downloading ||
-                            torrents[i].State == TorrentState.Seeding ||
-                            torrents[i].State == TorrentState.SuperSeeding)
+                            torrents[i].State == TorrentState.Seeding)
                             torrents[i].Pause();
         }
 
@@ -440,10 +439,6 @@ namespace MonoTorrent.Client
 
                     case (TorrentState.Seeding):
                         this.torrents[i].SeedingLogic(tickCount);
-                        break;
-
-                    case (TorrentState.SuperSeeding):
-                        this.torrents[i].SuperSeedingLogic(tickCount);
                         break;
 
                     default:

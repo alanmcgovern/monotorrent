@@ -426,7 +426,7 @@ namespace MonoTorrent.Client
                 }
 
 
-                if (this.state == TorrentState.Seeding || this.state == TorrentState.SuperSeeding || this.state == TorrentState.Downloading)
+                if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
                     throw new TorrentException("Torrent is already running");
 
                 if (TrackerManager.CurrentTracker.CanScrape)
@@ -678,54 +678,56 @@ namespace MonoTorrent.Client
             RaisePieceHashed(pieceHashedEventArgs);
         }
         
-        private void AsyncPeerConnected(object args)
-        {
-            if (this.PeerConnected != null)
-                this.PeerConnected(null, (PeerConnectionEventArgs)args);
-        }
-        private void AsyncPeerDisconnected(object args)
-        {
-            if (this.PeerDisconnected != null)
-                PeerDisconnected(null, (PeerConnectionEventArgs)args);
-        }
-        
         internal void RaisePeerConnected(PeerConnectionEventArgs args)
         {
-            if (this.PeerConnected != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerConnected), args);
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<PeerConnectionEventArgs> h = PeerConnected;
+                if (h != null)
+                    h (this, args);
+            });
         }
-        internal void RaisePeerDisconnected(PeerConnectionEventArgs peerConnectionEventArgs)
+        
+        internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
         {
-            if (this.PeerDisconnected != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerDisconnected), peerConnectionEventArgs);
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<PeerConnectionEventArgs> h = PeerDisconnected;
+                if (h != null)
+                    h (this, args);
+            });
         }
 
-        internal void RaisePeersFound(PeersAddedEventArgs peersAddedEventArgs)
+        internal void RaisePeersFound(PeersAddedEventArgs args)
         {
-            if (this.PeersFound != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeersFound), peersAddedEventArgs);
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<PeersAddedEventArgs> h = PeersFound;
+                if (h != null)
+                    h (this, args);
+            });
         }
 
         internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
         {
             int index = pieceHashedEventArgs.PieceIndex;
-            for (int i = 0; i < this.torrent.Files.Length; i++)
-            {
-                if (index >= this.torrent.Files[i].StartPieceIndex && index <= this.torrent.Files[i].EndPieceIndex)
-                {
-                    this.torrent.Files[i].BitField[index - this.torrent.Files[i].StartPieceIndex] = pieceHashedEventArgs.HashPassed;
-                    break;
-                }
-            }
-
-            if (this.PieceHashed != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPieceHashed), pieceHashedEventArgs);
+			TorrentFile[] files = this.torrent.Files;
+			
+            for (int i = 0; i < files.Length; i++)
+                if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
+                    files[i].BitField[index - files[i].StartPieceIndex] = pieceHashedEventArgs.HashPassed;
+            
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<PieceHashedEventArgs> h = PieceHashed;
+                if (h != null)
+                    h (this, pieceHashedEventArgs);
+            });
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
         {
-            if (this.TorrentStateChanged != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncTorrentStateChanged), e);
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<TorrentStateChangedEventArgs> h = TorrentStateChanged;
+                if (h != null)
+                    h (this, e);
+            });
         }
 
         /// <summary>
@@ -779,24 +781,6 @@ namespace MonoTorrent.Client
 
 
         #region Private Methods
-
-        private void AsyncPeersFound(object args)
-        {
-            if (this.PeersFound != null)
-                this.PeersFound(this, (PeersAddedEventArgs)args);
-        }
-
-        private void AsyncPieceHashed(object args)
-        {
-            if (this.PieceHashed != null)
-                this.PieceHashed(this, (PieceHashedEventArgs)args);
-        }
-
-        private void AsyncTorrentStateChanged(object args)
-        {
-            if (this.TorrentStateChanged != null)
-                this.TorrentStateChanged(this, (TorrentStateChangedEventArgs)args);
-        }
 
         /// <summary>
         /// Hash checks the supplied torrent
