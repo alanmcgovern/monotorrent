@@ -51,11 +51,6 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        public event EventHandler<PeerConnectionEventArgs> PeerConnected;
-
-
-        public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
-
         /// <summary>
         /// Event that's fired every time a message is sent or Received from a Peer
         /// </summary>
@@ -346,7 +341,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if (fireConnected)
-                    RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
+                    id.TorrentManager.RaisePeerConnected (new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
 
                 // Decrement the half open connections
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
@@ -898,17 +893,13 @@ namespace MonoTorrent.Client
 
             finally
             {
-                RaisePeerDisconnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
+                id.TorrentManager.RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
                 TryConnect();
             }
         }
 
 
-        private void AsyncPeerConnected(object args)
-        {
-            if (this.PeerConnected != null)
-                this.PeerConnected(null, (PeerConnectionEventArgs)args);
-        }
+
 
 
         private void AsyncPeerMessageTransferred(object args)
@@ -918,11 +909,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void AsyncPeerDisconnected(object args)
-        {
-            if (this.PeerDisconnected != null)
-                PeerDisconnected(null, (PeerConnectionEventArgs)args);
-        }
+
 
 
         /// <summary>
@@ -999,7 +986,7 @@ namespace MonoTorrent.Client
 
                         id.PublicId = new PeerId();
                         id.UpdatePublicStats();
-                        RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Incoming));
+                        id.TorrentManager.RaisePeerConnected (new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Incoming));
 
                         if (this.openConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
                         {
@@ -1108,18 +1095,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void RaisePeerDisconnected(PeerConnectionEventArgs peerConnectionEventArgs)
-        {
-            if (this.PeerDisconnected != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerDisconnected), peerConnectionEventArgs);
-        }
 
-
-        private void RaisePeerConnected(PeerConnectionEventArgs args)
-        {
-            if (this.PeerConnected != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerConnected), args);
-        }
 
 
         internal void RaisePeerMessageTransferred(PeerMessageEventArgs peerMessageEventArgs)

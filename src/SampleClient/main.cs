@@ -126,6 +126,9 @@ namespace MonoTorrent
                 return;
             }
 
+			// Every time a message is transferred from us to a peer, or from a peer to us, this is fired
+			engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
+			
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach (TorrentManager manager in torrents)
@@ -136,14 +139,11 @@ namespace MonoTorrent
                 // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                 manager.TorrentStateChanged += new EventHandler<TorrentStateChangedEventArgs>(main_OnTorrentStateChanged);
 
-                // Every time a message is transferred from us to a peer, or from a peer to us, this is fired
-                engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(ConnectionManager_PeerMessageTransferred);
-
                 // Every time a peer connects, this is fired
-                engine.ConnectionManager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
+                manager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerConnected);
 
                 // Every time a peer disconnects, this is fired.
-                engine.ConnectionManager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
+                manager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(ConnectionManager_PeerDisconnected);
 
                 // Every time the tracker's state changes, this is fired
                 foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)

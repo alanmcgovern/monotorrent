@@ -55,6 +55,11 @@ namespace MonoTorrent.Client
 
         #region Events
 
+        
+        public event EventHandler<PeerConnectionEventArgs> PeerConnected;
+
+
+        public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
         /// <summary>
         /// Event that's fired every time new peers are added from a tracker update
         /// </summary>
@@ -310,7 +315,7 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-			// FIXME: Dispose of the streams when this is reached
+            // FIXME: Dispose of the streams when this is reached
             //this.fileManager.Dispose();
         }
 
@@ -672,7 +677,28 @@ namespace MonoTorrent.Client
 
             RaisePieceHashed(pieceHashedEventArgs);
         }
-
+        
+        private void AsyncPeerConnected(object args)
+        {
+            if (this.PeerConnected != null)
+                this.PeerConnected(null, (PeerConnectionEventArgs)args);
+        }
+        private void AsyncPeerDisconnected(object args)
+        {
+            if (this.PeerDisconnected != null)
+                PeerDisconnected(null, (PeerConnectionEventArgs)args);
+        }
+        
+        internal void RaisePeerConnected(PeerConnectionEventArgs args)
+        {
+            if (this.PeerConnected != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerConnected), args);
+        }
+        internal void RaisePeerDisconnected(PeerConnectionEventArgs peerConnectionEventArgs)
+        {
+            if (this.PeerDisconnected != null)
+                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerDisconnected), peerConnectionEventArgs);
+        }
 
         internal void RaisePeersFound(PeersAddedEventArgs peersAddedEventArgs)
         {
