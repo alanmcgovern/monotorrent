@@ -1,5 +1,12 @@
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* ConnectionManager.cs: Never try to download more data than we are
+	  expecting - slight performance hit, but fixes issue when integrating
+	  with other programs which expect to be able to receive *exactly* the
+	  data i request.
+
+2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* TorrentManager.cs: Cleaned up some of my method firing goodness
 
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
