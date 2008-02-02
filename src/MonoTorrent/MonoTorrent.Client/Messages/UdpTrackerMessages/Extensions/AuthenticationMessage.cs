@@ -26,11 +26,13 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
 
         public override int Encode(byte[] buffer, int offset)
         {
-            offset += Write(buffer, offset, usernameLength);
-            offset += Write(buffer, offset, Encoding.ASCII.GetBytes(username));
-            offset += Write(buffer, offset, password);
-            
-            return ByteLength;
+            int written = Write(buffer, offset, usernameLength);
+            byte[] name = Encoding.ASCII.GetBytes(username);
+            written += Write(buffer, offset, name, 0, name.Length);
+            written += Write(buffer, offset, password, 0, password.Length);
+
+            CheckWritten(written);
+            return written;
         }
     }
 }

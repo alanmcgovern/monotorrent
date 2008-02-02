@@ -90,10 +90,10 @@ namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
             offset += Write(buffer, offset, connectionId);
             offset += Write(buffer, offset, action);
             offset += Write(buffer, offset, transactionId);
-            offset += Write(buffer, offset, infoHash);
+            offset += Write(buffer, offset, infoHash, 0, infoHash.Length);
             byte[] b = new byte[20];
             Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, b, 0);
-            offset += Write(buffer, offset, b);
+            offset += Write(buffer, offset, b, 0, b.Length);
             offset += Write(buffer, offset, downloaded);
             offset += Write(buffer, offset, left);
             offset += Write(buffer, offset, uploaded);
