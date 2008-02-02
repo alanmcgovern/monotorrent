@@ -95,29 +95,33 @@ namespace MonoTorrent.Client.Messages.PeerMessages
 
 
         #region Constructors
+        public HandshakeMessage()
+            : this(true)
+        {
+
+        }
         /// <summary>
         /// Creates a new HandshakeMessage
         /// </summary>
-        public HandshakeMessage()
+        public HandshakeMessage(bool enableFastPeer)
+            : this(null, null, null, enableFastPeer)
         {
-            this.supportsFastPeer = ClientEngine.SupportsFastPeer;
+            
         }
 
-
-        /// <summary>
-        /// Creates a new HandshakeMessage
-        /// </summary>
-        /// <param name="infoHash">The infohash of the torrent</param>
-        /// <param name="peerId">The ID of the peer</param>
-        /// <param name="protocolString">The protocol string to send</param>
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString)
-            : this()
+            : this(infoHash, peerId, protocolString, true)
+        {
+
+        }
+
+        public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer)
         {
             this.infoHash = infoHash;
             this.peerId = peerId;
             this.protocolString = protocolString;
             this.protocolStringLength = protocolString.Length;
-            this.supportsFastPeer = ClientEngine.SupportsFastPeer;
+            this.supportsFastPeer = enableFastPeer;
         }
         #endregion
 
@@ -136,9 +140,9 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             i += protocolString.Length;
 
             // The 8 reserved bits are here. Make sure they are zeroed.
-            for (int j = 20; j < 28; j++)
+            for (int j = i; j < i + 20; j++)
                 buffer[j] = 0;
-            if (ClientEngine.SupportsFastPeer)
+            if (supportsFastPeer)
                 buffer[i + 7] |= FastPeersFlag;
             i += 8;
 
