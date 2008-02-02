@@ -259,6 +259,11 @@ namespace MonoTorrent.Client
                     }
                 }
             }
+            finally
+            {
+                // Try to connect to another peer
+                TryConnect();
+            }
         }
 
         internal void ProcessFreshConnection(PeerIdInternal id)
@@ -347,9 +352,6 @@ namespace MonoTorrent.Client
                 System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 if (cleanUp)
                     CleanupSocket(id, reason);
-
-                // Try to connect to another peer
-                TryConnect();
             }
         }
 
