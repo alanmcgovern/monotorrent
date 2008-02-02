@@ -900,18 +900,6 @@ namespace MonoTorrent.Client
 
 
 
-
-
-        private void AsyncPeerMessageTransferred(object args)
-        {
-            if (this.PeerMessageTransferred != null)
-                this.PeerMessageTransferred(null, (PeerMessageEventArgs)args);
-        }
-
-
-
-
-
         /// <summary>
         /// This method is called when a connection needs to be closed and the resources for it released.
         /// </summary>
@@ -1098,10 +1086,13 @@ namespace MonoTorrent.Client
 
 
 
-        internal void RaisePeerMessageTransferred(PeerMessageEventArgs peerMessageEventArgs)
+        internal void RaisePeerMessageTransferred(PeerMessageEventArgs e)
         {
-            if (this.PeerMessageTransferred != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncPeerMessageTransferred), peerMessageEventArgs);
+            ThreadPool.QueueUserWorkItem(delegate {
+                EventHandler<PeerMessageEventArgs> h = PeerMessageTransferred;
+                if (h != null)
+                    h(e.TorrentManager, e);
+            });
         }
 
 

@@ -408,13 +408,6 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-        private void AsyncStatsUpdate(object args)
-        {
-            if (StatsUpdate != null)
-                StatsUpdate(this, (StatsUpdateEventArgs)args);
-        }
-
-
         private void LogicTick(object sender, ElapsedEventArgs e)
         {
             tickCount++;
@@ -453,8 +446,12 @@ namespace MonoTorrent.Client
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {
-            if (StatsUpdate != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncStatsUpdate), args);
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                EventHandler<StatsUpdateEventArgs> h = StatsUpdate;
+                if (h != null)
+                    h(this, args);
+            });
         }
 
 
