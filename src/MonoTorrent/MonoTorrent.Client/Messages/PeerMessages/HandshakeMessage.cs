@@ -39,6 +39,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
     /// </summary>
     public class HandshakeMessage : MonoTorrent.Client.Messages.PeerMessage
     {
+        private readonly static byte[] ZeroedBits = new byte[8];
         private const byte FastPeersFlag = 0x04;
 
 
@@ -129,32 +130,25 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
-            int i = offset;
-
-            // Copy in the length of the protocol string
-            buffer[i] = (byte)protocolString.Length;
-            i++;
-
+            int written = Write(buffer, offset, (byte)protocolString.Length);
+            
             // Copy in the protocol string
-            System.Text.Encoding.ASCII.GetBytes(protocolString, 0, protocolString.Length, buffer, i);
-            i += protocolString.Length;
+            written += System.Text.Encoding.ASCII.GetBytes(protocolString, 0, protocolString.Length, buffer, offset + written);
 
             // The 8 reserved bits are here. Make sure they are zeroed.
-            for (int j = i; j < i + 20; j++)
-                buffer[j] = 0;
+            written += Write(buffer, offset + written, ZeroedBits, 0, ZeroedBits.Length);
+            
             if (supportsFastPeer)
-                buffer[i + 7] |= FastPeersFlag;
-            i += 8;
+                buffer[offset + written - 1] |= FastPeersFlag;
 
             // Copy in the infohash
-            Buffer.BlockCopy(infoHash, 0, buffer, i, infoHash.Length);
-            i += infoHash.Length;
+            written += Write(buffer, offset + written, infoHash, 0, infoHash.Length); 
 
             // Copy in the peerId
-            System.Text.Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, buffer, i);
-            i += System.Text.Encoding.ASCII.GetByteCount(peerId);
+            written += System.Text.Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, buffer, offset + written);
 
-            return i - offset;
+            CheckWritten(written);
+            return written;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
