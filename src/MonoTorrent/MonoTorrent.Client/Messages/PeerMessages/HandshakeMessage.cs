@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         /// Creates a new HandshakeMessage
         /// </summary>
         public HandshakeMessage(bool enableFastPeer)
-            : this(null, null, null, enableFastPeer)
+            : this(new byte[20], "", VersionInfo.ProtocolStringV100, enableFastPeer)
         {
             
         }
