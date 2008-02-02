@@ -212,9 +212,10 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void HandshakeEncoding()
         {
-            byte[] infohash = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
+            byte[] infohash = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52 };
             int length = new HandshakeMessage(infohash, "12312312345645645678", VersionInfo.ProtocolStringV100, false).Encode(buffer, offset);
 
+            Console.WriteLine(BitConverter.ToString(buffer, offset, length));
             byte[] peerId = Encoding.ASCII.GetBytes("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes(VersionInfo.ProtocolStringV100);
             Assert.AreEqual(19, buffer[offset], "1");
@@ -223,7 +224,11 @@ namespace MonoTorrent.Client.Tests
             Assert.IsTrue(Toolbox.ByteMatch(infohash, 0, buffer, offset + 28, 20), "4");
             Assert.IsTrue(Toolbox.ByteMatch(peerId, 0, buffer, offset + 48, 20), "5");
             Assert.AreEqual(length, 68, "6");
+
+            length = new HandshakeMessage(infohash, "12312312345645645678", VersionInfo.ProtocolStringV100, true).Encode(buffer, offset);
+            Assert.AreEqual(BitConverter.ToString(buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38", "#7");
         }
+
         [Test]
         public void HandshakeDecoding()
         {
