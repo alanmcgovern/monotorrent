@@ -24,6 +24,12 @@ namespace MonoTorrent.Client
             lock (listeners)
                 listeners.Add(listener);
         }
+		
+		public static void Flush()
+		{
+			lock (listeners)
+				listeners.ForEach (delegate (TraceListener l) { l.Flush(); } );
+		}
         /*
         internal static void Log(PeerIdInternal id, string message)
         {

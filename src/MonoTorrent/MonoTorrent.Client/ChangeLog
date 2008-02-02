@@ -1,5 +1,9 @@
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* Logger.cs: Add a 'Flush' method
+
+2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* ClientEngine.cs: Cleaned up some of my method firing goodness
 
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
