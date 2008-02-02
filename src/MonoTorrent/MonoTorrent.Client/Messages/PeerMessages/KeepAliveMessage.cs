@@ -53,11 +53,13 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
-            Write(buffer, offset, (byte)0);
-            Write(buffer, offset + 1, (byte)0);
-            Write(buffer, offset + 2, (byte)0);
-            Write(buffer, offset + 3, (byte)0);
-            return 4;
+            int written = Write(buffer, offset, (byte)0);
+            written += Write(buffer, offset + 1, (byte)0);
+            written += Write(buffer, offset + 2, (byte)0);
+            written += Write(buffer, offset + 3, (byte)0);
+
+            CheckWritten(written);
+            return written;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)

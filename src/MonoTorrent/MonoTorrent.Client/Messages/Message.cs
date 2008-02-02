@@ -9,6 +9,12 @@ namespace MonoTorrent.Client.Messages
     {
         public abstract int ByteLength { get; }
 
+        protected virtual void CheckWritten(int written)
+        {
+            if (written != ByteLength)
+                throw new MessageException("Message encoded incorrectly. Correct number of bytes not written");
+        }
+
         public abstract void Decode(byte[] buffer, int offset, int length);
 
         public void Decode(ArraySegment<byte> buffer, int offset, int length)

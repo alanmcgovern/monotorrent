@@ -157,18 +157,20 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         public override int Encode(byte[] buffer, int offset)
         {
             int bytesRead = 0;
-            Write(buffer, offset, messageLength + requestLength);
-            Write(buffer, offset + 4, MessageId);
-            Write(buffer, offset + 5, pieceIndex);
-            Write(buffer, offset + 9, startOffset);
+            int written = Write(buffer, offset, messageLength + requestLength);
+            written += Write(buffer, offset + 4, MessageId);
+            written += Write(buffer, offset + 5, pieceIndex);
+            written += Write(buffer, offset + 9, startOffset);
 
             long pieceOffset = (long)this.PieceIndex * this.manager.FileManager.PieceLength + this.startOffset;
             bytesRead = this.manager.FileManager.Read(buffer, offset + 13, pieceOffset, this.RequestLength);
 
             if (bytesRead != this.RequestLength)
                 throw new MessageException("Could not read required data");
+            written += bytesRead;
 
-            return (messageLength + bytesRead + 4);
+            CheckWritten(written);
+            return written;
         }
 
         /// <summary>

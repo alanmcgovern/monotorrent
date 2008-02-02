@@ -53,10 +53,11 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-            Write(buffer, offset, messageLength);
-            Write(buffer, offset + 4, MessageId);
+            int written = Write(buffer, offset, messageLength);
+            written += Write(buffer, offset + 4, MessageId);
 
-            return this.messageLength + 4;
+            CheckWritten(written);
+            return written;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)

@@ -97,11 +97,12 @@ namespace MonoTorrent.Client.Messages.PeerMessages
 
         public override int Encode(byte[] buffer, int offset)
         {
-            Write(buffer, offset, messageLength);
-            Write(buffer, offset + 4, MessageId);
-            Write(buffer, offset + 5, port);
+            int written = Write(buffer, offset, messageLength);
+            written += Write(buffer, offset + 4, MessageId);
+            written += Write(buffer, offset + 5, port);
 
-            return (messageLength + 4);
+            CheckWritten(written);
+            return written;
         }
 
         /// <summary>
