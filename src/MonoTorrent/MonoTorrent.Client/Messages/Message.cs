@@ -57,10 +57,10 @@ namespace MonoTorrent.Client.Messages
             return 1;
         }
 
-        static protected int Write(byte[] buffer, int offset, byte[] value)
+        static protected int Write(byte[] buffer, int offset, byte[] value, int valueOffset, int count)
         {
-            Buffer.BlockCopy(value, 0, buffer, offset, value.Length);
-            return value.Length;
+            Buffer.BlockCopy(value, valueOffset, buffer, offset, count);
+            return count;
         }
 
         static protected int Write(byte[] buffer, int offset, ushort value)
@@ -68,18 +68,18 @@ namespace MonoTorrent.Client.Messages
             return Write(buffer, offset, (short)value);
         }
 
+        private static int Write(byte[] buffer, int offset, byte[] value)
+        {
+            return Write(buffer, offset, value, 0, value.Length);
+        }
         static protected int Write(byte[] buffer, int offset, short value)
         {
-            byte[] temp = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value));
-            Buffer.BlockCopy(temp, 0, buffer, offset, temp.Length);
-            return temp.Length;
+            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
         static protected int Write(byte[] buffer, int offset, int value)
         {
-            byte[] temp = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value));
-            Buffer.BlockCopy(temp, 0, buffer, offset, temp.Length);
-            return temp.Length;
+            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
         static protected int Write(byte[] buffer, int offset, uint value)
@@ -89,9 +89,7 @@ namespace MonoTorrent.Client.Messages
 
         static protected int Write(byte[] buffer, int offset, long value)
         {
-            byte[] temp = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value));
-            Buffer.BlockCopy(temp, 0, buffer, offset, temp.Length);
-            return temp.Length;
+            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
         static protected int Write(byte[] buffer, int offset, ulong value)
