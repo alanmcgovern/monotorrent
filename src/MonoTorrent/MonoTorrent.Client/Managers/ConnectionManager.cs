@@ -893,7 +893,7 @@ namespace MonoTorrent.Client
 
             finally
             {
-                id.TorrentManager.RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
+                id.TorrentManager.RaisePeerDisconnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
                 TryConnect();
             }
         }
