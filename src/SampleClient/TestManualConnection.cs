@@ -113,75 +113,46 @@ namespace SampleClient
         }
     }
 
-
-    class TestManualConnection
+    public class EngineTestRig
     {
-        ClientEngine engine1;
-        ClientEngine engine2;
-        TorrentManager manager1;
-        TorrentManager manager2;
-        IConnection connection1a;
-        IConnection connection1b;
-        //IConnection connection2a;
-        //IConnection connection2b;
-        CustomListener listener1;
-        CustomListener listener2;
-        Torrent torrent;
+        private ClientEngine engine;
+        private CustomListener listener;
+        private TorrentManager manager;
+        private Torrent torrent;
 
-        Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        Socket s1b = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-        //Socket s2a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        //Socket s2b = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-        public TestManualConnection()
+        public ClientEngine Engine
         {
-            listener1 = new CustomListener();
-            listener2 = new CustomListener();
+            get { return engine; }
+        }
 
-            engine1 = new ClientEngine(EngineSettings.DefaultSettings(), listener1);
-            engine2 = new ClientEngine(EngineSettings.DefaultSettings(), listener2);
+        public CustomListener Listener
+        {
+            get { return listener; }
+        }
 
-            torrent = Torrent.Load("Torrents/untitled.bmp.torrent");
-            manager1 = new TorrentManager(torrent, "Downloads", TorrentSettings.DefaultSettings());
-            manager2 = new TorrentManager(torrent, "Downloads2", TorrentSettings.DefaultSettings());
+        public TorrentManager Manager
+        {
+            get { return manager; }
+        }
 
-            engine1.Register(manager1);
-            engine2.Register(manager2);
+        public Torrent Torrent
+        {
+            get { return torrent; }
+        }
 
-            //engine1.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs e) { Console.WriteLine(e.Message.ToString()); };
-            //engine2.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs e) { Console.WriteLine(e.Message.ToString()); };
+        public EngineTestRig(string savePath)
+        {
+            listener = new CustomListener();
+            engine = new ClientEngine(EngineSettings.DefaultSettings(), listener);
+            torrent = Torrent.Load(CreateTorrent());
+            manager = new TorrentManager(torrent, savePath, TorrentSettings.DefaultSettings());
+            engine.Register(manager);
+            manager.Start();
+        }
 
-            manager1.Start();
-            manager2.Start();
-
-            TcpListener socketListener = new TcpListener(1220);
-            socketListener.Start();
-            s1a.Connect(IPAddress.Loopback, 1220);
-            s1b = socketListener.AcceptSocket();
-
-            //s2a.Connect(IPAddress.Loopback, 1220);
-            //s2b = socketListener.AcceptSocket();
-
-            connection1a = new CustomConnection(s1a, true, "1A");
-            connection1b = new CustomConnection(s1b, false, "1B");
-
-            //connection2a = new CustomConnection(s2a, true, "2A");
-            //connection2b = new CustomConnection(s2b, false, "2B");
-
-            listener1.Add(manager1, connection1a);
-            //listener1.Add(manager1, connection2a);
-            listener2.Add(manager2, connection1b);
-            //listener2.Add(manager2, connection2b);
-
-            while (true)
-            {
-                Console.WriteLine("Connection 1A active: {0}", connection1a.Connected);
-                //Console.WriteLine("Connection 1B active: {0}", connection2a.Connected);
-                Console.WriteLine("Connection 2A active: {0}", connection1b.Connected);
-                //Console.WriteLine("Connection 2B active: {0}", connection2b.Connected);
-                System.Threading.Thread.Sleep(1000);
-            }
+        public void AddConnection(IConnection connection)
+        {
+            listener.Add(manager, connection);
         }
 
         private static BEncodedDictionary CreateTorrent()
@@ -204,7 +175,39 @@ namespace SampleClient
             return dict;
         }
 
-
     }
 
+    class TestManualConnection
+    {
+        EngineTestRig rig1;
+        EngineTestRig rig2;
+        IConnection connection1a;
+        IConnection connection1b;
+
+        public TestManualConnection()
+        {
+            rig1 = new EngineTestRig("Downloads1");
+            rig2 = new EngineTestRig("Downloads2");
+
+            TcpListener socketListener = new TcpListener(1220);
+            socketListener.Start();
+
+            Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            s1a.Connect(IPAddress.Loopback, 1220);
+            Socket s1b = socketListener.AcceptSocket();
+
+            connection1a = new CustomConnection(s1a, true, "1A");
+            connection1b = new CustomConnection(s1b, false, "1B");
+
+            rig1.AddConnection(connection1a);
+            rig2.AddConnection(connection1b);
+
+            while (true)
+            {
+                Console.WriteLine("Connection 1A active: {0}", connection1a.Connected);
+                Console.WriteLine("Connection 2A active: {0}", connection1b.Connected);
+                System.Threading.Thread.Sleep(1000);
+            }
+        }
+    }
 }
