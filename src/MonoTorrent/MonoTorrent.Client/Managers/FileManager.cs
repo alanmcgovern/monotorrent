@@ -141,11 +141,9 @@ namespace MonoTorrent.Client
 
         internal bool CheckFilesExist()
         {
-            foreach (TorrentFile file in files)
-                if(File.Exists(GenerateFilePath(file, BaseDirectory, savePath)))
-                    return true;
-
-            return false;
+            return Array.Exists<TorrentFile>(files, delegate(TorrentFile f) {
+                return File.Exists(GenerateFilePath(f, BaseDirectory, savePath));
+            });
         }
 
         #endregion

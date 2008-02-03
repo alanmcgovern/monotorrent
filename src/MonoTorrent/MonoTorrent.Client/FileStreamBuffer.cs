@@ -73,8 +73,7 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            foreach (Stream s in list)
-                s.Dispose();
+            list.ForEach(delegate (TorrentFileStream s) { s.Dispose(); }); 
         }
 
         #endregion
@@ -91,9 +90,9 @@ namespace MonoTorrent.Client
         private void CloseAndRemove(TorrentFileStream s)
         {
             Console.WriteLine("Closing and removing: {0}", s.File.Path);
-            int index = list.FindIndex(delegate(TorrentFileStream stream) {
-                return stream == s;
-            });
+            int index = list.FindIndex(delegate(TorrentFileStream stream) { return stream == s; });
+            if (index == -1)
+                return;
 
             list[index].Dispose();
             list.RemoveAt(index);

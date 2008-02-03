@@ -173,5 +173,10 @@ namespace MonoTorrent
         {
             return list.Find(match);
         }
+
+        internal bool Exists(Predicate<T> match)
+        {
+            return list.Exists(match);
+        }
     }
 }

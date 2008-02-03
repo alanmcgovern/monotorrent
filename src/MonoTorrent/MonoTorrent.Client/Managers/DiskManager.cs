@@ -101,8 +101,7 @@ namespace MonoTorrent.Client.Managers
 
         internal void CloseFileStreams(TorrentManager manager)
         {
-            foreach (TorrentFile file in manager.Torrent.Files)
-                streamsBuffer.CloseStream(file);
+            Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
         }
 
 
