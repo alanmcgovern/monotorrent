@@ -891,7 +891,7 @@ namespace MonoTorrent.Client
         private void SaveFastResume()
         {
             // Do not create fast-resume data if we do not support it for this TorrentManager object
-            if (!Settings.FastResumeEnabled)
+            if (!Settings.FastResumeEnabled || string.IsNullOrEmpty(this.torrent.TorrentPath))
                 return;
 
             XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
