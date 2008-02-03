@@ -86,6 +86,15 @@ namespace MonoTorrent.Common
             this.length = length;
             this.array = new int[(length + 31) / 32];
         }
+
+        public BitField(bool[] array)
+        {
+            this.length = array.Length;
+            this.array = new int[(array.Length + 31) / 32];
+            for (int i = 0; i < array.Length; i++)
+                Set(i, array[i]);
+        }
+
         #endregion
 
 
@@ -262,7 +271,6 @@ namespace MonoTorrent.Common
                 if ((this.array[index >> 5] & (1 << (index & 31))) == 0)// If it's not already true
                     trueCount++;                                        // Increase true count
                 this.array[index >> 5] |= (1 << (index & 31));
-
             }
             else
             {
@@ -432,7 +440,7 @@ namespace MonoTorrent.Common
             }
 
             // Make sure all extra bits are set to zero
-            for (int i = this.length; i < this.length + this.length % 8; i++)
+            for (int i = this.length; i < this.length + (8 - this.length % 8); i++)
             {
                 temp = ((buffer[offset] & p) != 0);
                 if (temp)
