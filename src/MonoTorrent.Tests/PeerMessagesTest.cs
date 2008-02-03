@@ -41,6 +41,7 @@ namespace MonoTorrent.Client.Tests
     [TestFixture]
     public class PeerMessagesTest
     {
+        SampleClient.EngineTestRig testRig;
         byte[] buffer = new byte[100000];
         int offset = 2362;
 
@@ -50,133 +51,46 @@ namespace MonoTorrent.Client.Tests
             buffer = new byte[100000];
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
-        }
-        [Test]
-        [Ignore]
-        public void IPeerMessageDecoding()
-        {
-            PeerMessage msg;
-            PeerMessage result;
-            TorrentManager manager = null;
-            byte[] buffer = new byte[1000];
-            /*
-                       
-
-                        BitField bf = new BitField(307);
-                        for (int i = 0; i < bf.Length; i++)
-                            if (i % 5 == 0 || i % 13 == 0)
-                                bf[i] = true;
-                      */
-            //msg = new BitfieldMessage(bf);
-            //msg.Encode(buffer, 0);
-            //result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            //Assert.AreEqual(msg, result, msg.ToString() + " decoding failed. 1");
-
-
-            msg = new CancelMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed. 2");
-
-
-            msg = new ChokeMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed. 3");
-
-
-            //msg = new HandshakeMessage();
-            //msg.Encode(buffer, 0);
-            //result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            //Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new HaveMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new InterestedMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new KeepAliveMessage();
-            msg.Encode(buffer, 0);
-            Assert.IsTrue(buffer[0] == 0
-                          && buffer[1] == 0
-                          && buffer[2] == 0
-                          && buffer[3] == 0);
-
-
-            msg = new NotInterestedMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            //msg = new PieceMessage();
-            //msg.Encode(buffer, 0);
-            //result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            //Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new PortMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new RequestMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
-
-
-            msg = new UnchokeMessage();
-            msg.Encode(buffer, 0);
-            result = PeerMessage.DecodeMessage(buffer, 4, msg.ByteLength, manager);
-            Assert.AreEqual(msg, result, msg.ToString() + " decoding failed");
+            testRig = new SampleClient.EngineTestRig("Downloads");
         }
 
+
         [Test]
-        [Ignore]
         public void BitFieldEncoding()
-        {/*
-            byte[] buffer = new byte[0];
-            BitField bf = new BitField(100);
-            for (int i = 0; i < 100; i++)
-                if (i % 5 == 0)
-                    bf[i] = true;
+        {
+            bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false };
+            byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            BitfieldMessage msg = new BitfieldMessage(bf);
-            byte[] result = new byte[msg.ByteLength];
-            msg.Encode(result, 0);
-
-            Assert.AreEqual(System.Web.HttpUtility.UrlEncode(buffer), System.Web.HttpUtility.UrlEncode(result), "Encoded bitfield incorrectly");
-            throw new NotImplementedException();*/
+            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 4, encoded.Length, testRig.Manager);
         }
         [Test]
-        [Ignore]
         public void BitFieldDecoding()
-        {/*
-            BitField bf = new BitField(100);
-            for (int i = 0; i < 100; i++)
-                if (i % 5 == 0)
-                    bf[i] = true;
+        {
+            byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08 };
+            Console.WriteLine("Pieces: " + testRig.Manager.Torrent.Pieces.Count);
+            BitfieldMessage msg = (BitfieldMessage)PeerMessage.DecodeMessage(buffer, 4, 4, this.testRig.Manager);
+            Console.WriteLine(msg.BitField.Length);
+            for (int i = 0; i < msg.BitField.Length; i++)
+                Console.WriteLine(msg.BitField[i] + " " + i);
 
-            byte[] bfBytes = new byte[] { 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 0, 0 };
-            bf.FromArray(bfBytes, 0, bfBytes.Length);
+            for (int i = 0; i < 8; i++)
+                Assert.IsTrue(msg.BitField[i], i.ToString());
 
-            for (int i = 0; i < bf.Length; i++)
-                if (i % 5 == 0)
-                    Assert.AreEqual(true, bf[i], "Bitfield " + i.ToString() + " is incorrect");
-                else
-                    Assert.AreEqual(false, bf[i], "Bitfield " + i.ToString() + " is incorrect");
+            for (int i = 8; i < 12; i++)
+                Assert.IsFalse(msg.BitField[i], i.ToString());
 
-            throw new NotImplementedException();*/
+            Assert.IsTrue(msg.BitField[12], 12.ToString());
+            for (int i = 13; i < 15; i++)
+                Assert.IsFalse(msg.BitField[i], i.ToString());
+        }
+        [Test]
+        [ExpectedException(typeof(MessageException))]
+        public void BitfieldCorrupt()
+        {
+            bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
+            byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
+
+            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 4, encoded.Length, testRig.Manager);
         }
 
 
@@ -302,17 +216,14 @@ namespace MonoTorrent.Client.Tests
 
 
         [Test]
-        [Ignore]
         public void PieceEncoding()
         {
-            int length = new PieceMessage(null, 15, 1024, 16384).Encode(buffer, offset);
-            throw new NotImplementedException();
+            int length = new PieceMessage(testRig.Manager, 15, 1024, 16384).Encode(buffer, offset);
         }
         [Test]
-        [Ignore]
         public void PieceDecoding()
         {
-            EncodeDecode(new PieceMessage(null, 123, 456, 789));
+            EncodeDecode(new PieceMessage(testRig.Manager, 123, 456, 789));
         }
 
 
