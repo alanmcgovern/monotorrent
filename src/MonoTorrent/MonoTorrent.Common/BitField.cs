@@ -524,6 +524,13 @@ namespace MonoTorrent.Common
                 buffer[byteindex] = temp;
         }
 
+        internal byte[] ToByteArray()
+        {
+            byte[] data = new byte[LengthInBytes];
+            ToByteArray(data, 0);
+            return data;
+        }
+
         
         /// <summary>
         /// Updates the truecount after the bitfield has been altered through And(), Or() etc
