@@ -316,15 +316,14 @@ namespace MonoTorrent.Client
                     handleHandshake(id);
                 }
             }
-
-            catch (SocketException)
-            {
-                Logger.Log(id.Connection.Connection, "ListenManager - Socket exception receiving handshake");
-                CleanupSocket(id);
-            }
             catch (NullReferenceException)
             {
                 Logger.Log(id.Connection.Connection, "ListenManager - Null ref receiving handshake");
+                CleanupSocket(id);
+            }
+            catch (Exception)
+            {
+                Logger.Log(id.Connection.Connection, "ListenManager - Socket exception receiving handshake");
                 CleanupSocket(id);
             }
         }
