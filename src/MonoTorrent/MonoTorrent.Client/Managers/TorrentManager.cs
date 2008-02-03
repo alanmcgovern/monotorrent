@@ -271,11 +271,21 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
-            : this(torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name)
+            : this(torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name, null)
         {
 
         }
 
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, FastResume fastResumeData)
+            : this(torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name, fastResumeData)
+        {
+
+        }
+
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
+            : this(torrent, savePath, settings, baseDirectory, null)
+        {
+        }
         /// <summary>
         /// Creates a new TorrentManager instance.
         /// </summary>
@@ -283,7 +293,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         /// <param name="baseDirectory">In the case of a multi-file torrent, the name of the base directory containing the files. Defaults to Torrent.Name</param>
-        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory, FastResume fastResumeData)
         {
             if (torrent == null)
                 throw new ArgumentNullException("torrent");
@@ -306,7 +316,11 @@ namespace MonoTorrent.Client
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this);
+
+            if (fastResumeData != null)
+                LoadFastResume(fastResumeData);
         }
+
 
         #endregion
 
@@ -315,8 +329,7 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            // FIXME: Dispose of the streams when this is reached
-            //this.fileManager.Dispose();
+            // Do nothing?
         }
 
 
@@ -802,7 +815,9 @@ namespace MonoTorrent.Client
                 bool filesExist = fileManager.CheckFilesExist();
 
                 // We only load fast resume if one (or more) of the files exist on disk.
-                bool loadedFastResume = filesExist && FileManager.LoadFastResume(this);
+                // FIXME: We now never load fastresume from the disk as it's passed into the constructor
+                //bool loadedFastResume = filesExist && FileManager.LoadFastResume(this);
+                bool loadedFastResume = filesExist && false;
 
                 // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
                 // perform a full scan.
@@ -885,19 +900,28 @@ namespace MonoTorrent.Client
         //}
 
 
+        private void LoadFastResume(FastResume fastResumeData)
+        {
+            if (fastResumeData == null)
+                throw new ArgumentNullException ("fastResumeData");
+            if (!Toolbox.ByteMatch(torrent.infoHash, fastResumeData.InfoHash) || torrent.Pieces.Count != fastResumeData.Bitfield.Length)
+                throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
+
+            this.bitfield = fastResumeData.Bitfield;
+            this.hashChecked = true;
+        }
+
+
         /// <summary>
         /// Saves data to allow fastresumes to the disk
         /// </summary>
-        private void SaveFastResume()
+        private FastResume SaveFastResume()
         {
             // Do not create fast-resume data if we do not support it for this TorrentManager object
             if (!Settings.FastResumeEnabled || string.IsNullOrEmpty(this.torrent.TorrentPath))
-                return;
+                return null;
 
-            XmlSerializer fastResume = new XmlSerializer(typeof(int[]));
-
-            using (FileStream file = File.Open(this.torrent.TorrentPath + ".fresume", FileMode.Create))
-                fastResume.Serialize(file, this.pieceManager.MyBitField.Array);
+            return new FastResume(this.torrent.infoHash, this.bitfield, new List<Peer>());
         }
 
 

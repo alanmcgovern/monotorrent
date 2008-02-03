@@ -47,6 +47,10 @@
       <Project>{F48B95BE-0C36-48A3-838F-83FB0E4D0936}</Project>
       <Name>MonoTorrent</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SampleClient\SampleClient.csproj">
+      <Project>{6842B47D-8D85-4B56-BFBF-F97DD6D4D0B6}</Project>
+      <Name>SampleClient</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

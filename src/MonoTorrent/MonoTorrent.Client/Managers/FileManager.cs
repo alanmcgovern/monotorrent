@@ -247,7 +247,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="manager">The manager to load fastresume data for</param>
         /// <returns></returns>
-        internal static bool LoadFastResume(TorrentManager manager)
+        /*internal static bool LoadFastResume(TorrentManager manager)
         {
             try
             {
@@ -276,7 +276,7 @@ namespace MonoTorrent.Client
                 manager.PieceManager.MyBitField.SetAll(false);
                 return false;
             }
-        }
+        }*/
 
 
         /// <summary>
