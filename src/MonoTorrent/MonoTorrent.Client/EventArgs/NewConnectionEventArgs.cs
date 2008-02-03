@@ -9,7 +9,6 @@ namespace MonoTorrent.Client
     {
         private IConnection connection;
         private Peer peer;
-        private bool overridePeerId;
         public IConnection Connection
         {
             get { return connection; }
