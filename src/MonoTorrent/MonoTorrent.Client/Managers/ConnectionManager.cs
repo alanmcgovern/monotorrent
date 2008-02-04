@@ -529,8 +529,6 @@ namespace MonoTorrent.Client
                     msg.Handle(id);
 
                     Logger.Log(id.Connection.Connection, "ConnectionManager - Handshake recieved");
-                    //HandshakeMessage handshake = msg as HandshakeMessage;
-
                     if (id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                     {
                         if (id.TorrentManager.Bitfield.AllFalse)
@@ -545,6 +543,14 @@ namespace MonoTorrent.Client
                     else
                     {
                         msg = new BitfieldMessage(id.TorrentManager.Bitfield);
+                    }
+
+                    if (id.Connection.SupportsLTMessages)
+                    {
+                        MessageBundle bundle = new MessageBundle();
+                        bundle.Messages.Add(new ExtendedHandshakeMessage());
+                        bundle.Messages.Add(msg);
+                        msg = bundle;
                     }
 
                     //ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);

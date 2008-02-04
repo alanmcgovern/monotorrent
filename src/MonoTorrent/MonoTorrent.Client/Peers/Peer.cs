@@ -59,6 +59,7 @@ namespace MonoTorrent.Client
         private int cleanedUpCount;
         private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
         private int failedConnectionAttempts;
+        private int localPort;
         private int totalHashFails;
         private bool isSeeder;
         private string peerId;
@@ -127,6 +128,13 @@ namespace MonoTorrent.Client
         {
             get { return this.failedConnectionAttempts; }
             set { this.failedConnectionAttempts = value; }
+        }
+
+
+        internal int LocalPort
+        {
+            get { return localPort; }
+            set { localPort = value; }
         }
 
 

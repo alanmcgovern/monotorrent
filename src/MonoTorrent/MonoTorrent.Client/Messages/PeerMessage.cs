@@ -38,10 +38,6 @@ namespace MonoTorrent.Client.Messages
                     message = new ChokeMessage();
                     break;
 
-                case ExtendedListMessage.MessageId:
-                    message = new ExtendedListMessage();
-                    break;
-
                 case HaveAllMessage.MessageId:
                     message = new HaveAllMessage();
                     break;
@@ -86,13 +82,8 @@ namespace MonoTorrent.Client.Messages
                     message = new UnchokeMessage();
                     break;
 
-
-                case 21:                            // An "extended" message
-                    switch (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset + 1)))
-                    {
-                        default:
-                            throw new NotSupportedException();
-                    }
+                case LibtorrentMessage.MessageId:
+                    return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count, manager);
 
                 default:
                     message = new UnknownMessage();

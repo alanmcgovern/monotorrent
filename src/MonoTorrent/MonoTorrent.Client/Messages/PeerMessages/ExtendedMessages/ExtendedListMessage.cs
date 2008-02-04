@@ -32,55 +32,138 @@ using System;
 using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Messages.PeerMessages
 {
     /// <summary>
-    /// This class represents the BT_EXTENDED_LST as listed by the Azurues Extended Messaging Protocol
+    /// This class represents the BT_EXTENDED_LST as listed by the LibTorrent Extended Messaging Protocol
     /// </summary>
-    public class ExtendedListMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class ExtendedHandshakeMessage : LibtorrentMessage
     {
-        public const byte MessageId = (byte)20;
+        private static readonly BEncodedString MaxRequestKey = "reqq";
+        private static readonly BEncodedString PortKey = "p";
+        private static readonly BEncodedString SupportsKey = "m";
+        private static readonly BEncodedString VersionKey = "v";
 
-        #region Member Variables
-        public BEncodedDictionary Dictionary
+        public const byte MessageId = (byte)0;
+
+        private int localPort;
+        private int maxRequests;
+        private MonoTorrentCollection<LTSupport> supports;
+        private string version;
+
+        public override int ByteLength
         {
-            get { return this.dictionary; }
+            get
+            {
+                // FIXME Implement this properly
+                
+                // The length of the payload, 4 byte length prefix, 1 byte BT message id, 1 byte LT message id
+                return Create().LengthInBytes() + 4 + 1 + 1;
+            }
         }
-        private BEncodedDictionary dictionary;
-        #endregion
+        
+        public int MaxRequests
+        {
+            get { return maxRequests; }
+        }
+
+        public int LocalPort
+        {
+            get { return localPort; }
+        }
+
+        public MonoTorrentCollection<LTSupport> Supports
+        {
+            get { return supports; }
+        }
+
+        public string Version
+        {
+            get { return version ?? ""; }
+        }
+
 
 
         #region Constructors
-        public ExtendedListMessage()
+        public ExtendedHandshakeMessage()
         {
+            supports = new MonoTorrentCollection<LTSupport>();
         }
-        public ExtendedListMessage(BEncodedDictionary supportedMessages)
+
+        public ExtendedHandshakeMessage(BEncodedDictionary supportedMessages)
+            : this()
         {
         }
         #endregion
 
 
         #region Methods
-        public override int Encode(byte[] buffer, int offset)
-        {
-            throw new ProtocolException("The method or operation is not implemented.");
-        }
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            throw new ProtocolException("The method or operation is not implemented.");
+            BEncodedValue val;
+            BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(buffer, offset, length);
+
+            if (d.TryGetValue(MaxRequestKey, out val))
+                maxRequests = (int)((BEncodedNumber)val).Number;
+            if (d.TryGetValue(VersionKey, out val))
+                version = ((BEncodedString)val).Text;
+            if (d.TryGetValue(PortKey, out val))
+                localPort = (int)((BEncodedNumber)val).Number;
+
+            LoadSupports((BEncodedDictionary)d[SupportsKey]);
         }
+
+        private void LoadSupports(BEncodedDictionary supports)
+        {
+            MonoTorrentCollection<LTSupport> list = new MonoTorrentCollection<LTSupport>();
+            foreach (KeyValuePair<BEncodedString, BEncodedValue> k in supports)
+                list.Add(new LTSupport(k.Key.Text, (byte)((BEncodedNumber)k.Value).Number));
+
+            this.supports = list;
+        }
+
+        public override int Encode(byte[] buffer, int offset)
+        {
+            int written = offset;
+            BEncodedDictionary dict = Create();
+
+            written += Write(buffer, written, dict.LengthInBytes() + 1 + 1);
+            written += Write(buffer, written, LibtorrentMessage.MessageId);
+            written += Write(buffer, written, ExtendedHandshakeMessage.MessageId);
+            written += dict.Encode(buffer, written);
+
+            CheckWritten(written - offset);
+            return written - offset;
+        }
+
+        private BEncodedDictionary Create()
+        {
+            BEncodedDictionary mainDict = new BEncodedDictionary();
+            BEncodedDictionary supportsDict = new BEncodedDictionary();
+
+            mainDict.Add(MaxRequestKey, (BEncodedNumber)maxRequests);
+            mainDict.Add(VersionKey, (BEncodedString)Version);
+            mainDict.Add(PortKey, (BEncodedNumber)localPort);
+
+            supports.ForEach(delegate(LTSupport s) { supportsDict.Add(s.Name, (BEncodedNumber)s.MessageId); });
+            mainDict.Add(SupportsKey, supportsDict);
+            return mainDict;
+        }
+
 
         internal override void Handle(PeerIdInternal id)
         {
-            throw new ProtocolException("The method or operation is not implemented.");
+            // FIXME: Use the 'version' information
+            // FIXME: Recreate the uri? Give warning?
+            if (localPort > 0)
+                id.Peer.LocalPort = localPort;
+            id.Connection.MaxPendingRequests = maxRequests;
+            id.Connection.LTSupports = supports;
         }
 
-        public override int ByteLength
-        {
-
-            get { throw new ProtocolException("The method or operation is not implemented."); }
-        }
         #endregion
     }
 }

@@ -40,6 +40,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
     public class HandshakeMessage : MonoTorrent.Client.Messages.PeerMessage
     {
         private readonly static byte[] ZeroedBits = new byte[8];
+        private const byte ExtendedMessagingFlag = 0x10;
         private const byte FastPeersFlag = 0x04;
 
 
@@ -83,6 +84,11 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         }
         private string peerId;
 
+        public bool SupportsExtendedMessaging
+        {
+            get { return extended; }
+        }
+        private bool extended;
 
         /// <summary>
         /// True if the peer supports the Bittorrent FastPeerExtensions
@@ -111,18 +117,22 @@ namespace MonoTorrent.Client.Messages.PeerMessages
         }
 
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString)
-            : this(infoHash, peerId, protocolString, true)
+            : this(infoHash, peerId, protocolString, ClientEngine.SupportsFastPeer)
         {
 
         }
 
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer)
         {
+            if (!ClientEngine.SupportsFastPeer && enableFastPeer)
+                throw new ProtocolException("The engine does not support fast peer, but fast peer was requested");
+
             this.infoHash = infoHash;
             this.peerId = peerId;
             this.protocolString = protocolString;
             this.protocolStringLength = protocolString.Length;
             this.supportsFastPeer = enableFastPeer;
+            this.extended = true;
         }
         #endregion
 
@@ -138,8 +148,11 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             // The 8 reserved bits are here. Make sure they are zeroed.
             written += Write(buffer, offset + written, ZeroedBits, 0, ZeroedBits.Length);
             
-            if (supportsFastPeer)
+            if (SupportsFastPeer)
                 buffer[offset + written - 1] |= FastPeersFlag;
+
+            if (SupportsExtendedMessaging)
+                buffer[offset + written - 3] |= ExtendedMessagingFlag;
 
             // Copy in the infohash
             written += Write(buffer, offset + written, infoHash, 0, infoHash.Length); 
@@ -178,7 +191,9 @@ namespace MonoTorrent.Client.Messages.PeerMessages
 
         private void CheckForSupports(byte[] buffer, int reservedBytesStartIndex)
         {
+            this.extended = (ExtendedMessagingFlag & buffer[reservedBytesStartIndex + 5]) != 0;
             this.supportsFastPeer = (FastPeersFlag & buffer[reservedBytesStartIndex + 7]) != 0;
+
             //int bitNumber = 0;
             //for (int i = reservedBytesStartIndex; i < reservedBytesStartIndex + 8; i++)
             //{
@@ -230,6 +245,7 @@ namespace MonoTorrent.Client.Messages.PeerMessages
             // Attempt to parse the application that the peer is using
             id.Connection.ClientApp = new Software(this.peerId);
             id.Connection.SupportsFastPeer = this.supportsFastPeer;
+            id.Connection.SupportsLTMessages = this.extended;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (this.supportsFastPeer && id.TorrentManager != null)

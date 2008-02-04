@@ -36,6 +36,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages.PeerMessages;
 
 namespace MonoTorrent.Client
 {
@@ -65,6 +66,8 @@ namespace MonoTorrent.Client
         private int isRequestingPiecesCount;
         private DateTime lastMessageReceived;
         private DateTime lastMessageSent;
+        private MonoTorrentCollection<LTSupport> ltSupports;
+        private int maxPendingRequests;
         private MessagingCallback messageReceivedCallback;
         private MessagingCallback messageSentCallback;
         private ConnectionMonitor monitor;
@@ -76,6 +79,7 @@ namespace MonoTorrent.Client
         private Queue<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
+        private bool supportsLTMessages;
 
 
         private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
@@ -277,6 +281,17 @@ namespace MonoTorrent.Client
             set { this.lastMessageSent = value; }
         }
 
+        internal MonoTorrentCollection<LTSupport> LTSupports
+        {
+            get { return ltSupports; }
+            set { ltSupports = value; }
+        }
+
+        internal int MaxPendingRequests
+        {
+            get { return maxPendingRequests; }
+            set { maxPendingRequests = value; }
+        }
 
         internal MessagingCallback MessageSentCallback
         {
@@ -338,6 +353,12 @@ namespace MonoTorrent.Client
         {
             get { return this.supportsFastPeer; }
             internal set { this.supportsFastPeer = value; }
+        }
+
+        public bool SupportsLTMessages
+        {
+            get { return this.supportsLTMessages; }
+            internal set { this.supportsLTMessages = value; }
         }
 
 

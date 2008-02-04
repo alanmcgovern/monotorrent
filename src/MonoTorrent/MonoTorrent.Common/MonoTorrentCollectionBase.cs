@@ -44,6 +44,11 @@ namespace MonoTorrent
             return result;
         }
 
+        public void ForEach(Action<T> action)
+        {
+            list.ForEach(action);
+        }
+
         public int IndexOf(T item)
         {
             return list.IndexOf(item);
