@@ -50,12 +50,14 @@ namespace MonoTorrent.Client
                     listeners[i].WriteLine(p);
         }*/
 
+        [Conditional("DO_NOT_ENABLE")]
         internal static void Log(IConnection connection, string message)
         {
             Log(connection, message, null);
         }
 
         private static StringBuilder sb = new StringBuilder();
+        [Conditional("DO_NOT_ENABLE")]
         internal static void Log(IConnection connection, string message, params object[] formatting)
         {
             lock (listeners)
