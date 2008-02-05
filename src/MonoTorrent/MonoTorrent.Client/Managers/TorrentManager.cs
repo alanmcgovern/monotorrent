@@ -40,6 +40,7 @@ using System.Diagnostics;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -566,8 +567,8 @@ namespace MonoTorrent.Client
                 if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                     this.monitor.TimePeriodPassed();
 
-                while (this.finishedPieces.Count > 0)
-                    this.SendHaveMessageToAll(this.finishedPieces.Dequeue());
+                if (this.finishedPieces.Count > 16 || (this.finishedPieces.Count > 0 && state == TorrentState.Seeding))
+                    SendHaveMessagesToAll();
 
                 for (int i = 0; i < this.ConnectedPeers.Count; i++)
                 {
@@ -929,9 +930,15 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="p"></param>
-        private void SendHaveMessageToAll(int pieceIndex)
+        private void SendHaveMessagesToAll()
         {
             // This is "Have Suppression" as defined in the spec.
+            List<int> pieces;
+            lock (finishedPieces)
+            {
+                pieces = new List<int>(finishedPieces);
+                finishedPieces.Clear();
+            }
 
             lock (this.listLock)
             {
@@ -942,17 +949,24 @@ namespace MonoTorrent.Client
                         if (this.ConnectedPeers[i].Connection == null)
                             continue;
 
-                        // If the peer has the piece already, we need to recalculate his "interesting" status.
-                        bool hasPiece = this.ConnectedPeers[i].Connection.BitField[pieceIndex];
-                        if (hasPiece)
+                        MessageBundle bundle = new MessageBundle();
+
+                        foreach (int pieceIndex in pieces)
                         {
-                            bool isInteresting = this.pieceManager.IsInteresting(this.ConnectedPeers[i]);
-                            SetAmInterestedStatus(this.ConnectedPeers[i], isInteresting);
+                            // If the peer has the piece already, we need to recalculate his "interesting" status.
+                            bool hasPiece = this.ConnectedPeers[i].Connection.BitField[pieceIndex];
+                            if (hasPiece)
+                            {
+                                bool isInteresting = this.pieceManager.IsInteresting(this.ConnectedPeers[i]);
+                                SetAmInterestedStatus(this.ConnectedPeers[i], isInteresting);
+                            }
+
+                            // Check to see if have supression is enabled and send the have message accordingly
+                            if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
+                                bundle.Messages.Add(new HaveMessage(pieceIndex));
                         }
 
-                        // Check to see if have supression is enabled and send the have message accordingly
-                        if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
-                            this.ConnectedPeers[i].Connection.Enqueue(new HaveMessage(pieceIndex));
+                        this.ConnectedPeers[i].Connection.Enqueue(bundle);
                     }
                 }
             }
