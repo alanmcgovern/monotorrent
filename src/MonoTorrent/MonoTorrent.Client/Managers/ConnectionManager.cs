@@ -1090,10 +1090,25 @@ namespace MonoTorrent.Client
 
         internal void RaisePeerMessageTransferred(PeerMessageEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(delegate {
+            ThreadPool.QueueUserWorkItem(delegate
+            {
                 EventHandler<PeerMessageEventArgs> h = PeerMessageTransferred;
-                if (h != null)
-                    h(e.TorrentManager, e);
+
+                if (!(e.Message is MessageBundle))
+                {
+                    if (h != null)
+                        h(e.TorrentManager, e);
+                    return;
+                }
+
+                // Message bundles are only a convience for internal usage!
+                MessageBundle b = (MessageBundle)e.Message;
+                foreach (PeerMessage message in b.Messages)
+                {
+                    PeerMessageEventArgs args = new PeerMessageEventArgs(e.TorrentManager, message, e.Direction, e.ID);
+                    if (h != null)
+                        h(args.TorrentManager, args);
+                }
             });
         }
 
