@@ -70,9 +70,9 @@ namespace MonoTorrent.Client
             this.smallMessageBuffers = new Queue<ArraySegment<byte>>();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
-            this.AllocateBuffers(20, BufferType.LargeMessageBuffer);
-            this.AllocateBuffers(10, BufferType.MediumMessageBuffer);
-            this.AllocateBuffers(20, BufferType.SmallMessageBuffer);
+            this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
+            this.AllocateBuffers(4, BufferType.MediumMessageBuffer);
+            this.AllocateBuffers(4, BufferType.SmallMessageBuffer);
         }
 
         internal BitField GetBitfield(int length)
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
                 lock (this.smallMessageBuffers)
                 {
                     if (this.smallMessageBuffers.Count == 0)
-                        this.AllocateBuffers(8, BufferType.SmallMessageBuffer);
+                        this.AllocateBuffers(5, BufferType.SmallMessageBuffer);
                     buffer = this.smallMessageBuffers.Dequeue();
                 }
 
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
                 lock (this.mediumMessageBuffers)
                 {
                     if (this.mediumMessageBuffers.Count == 0)
-                        this.AllocateBuffers(8, BufferType.MediumMessageBuffer);
+                        this.AllocateBuffers(5, BufferType.MediumMessageBuffer);
                     buffer = this.mediumMessageBuffers.Dequeue();
                 }
            
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
                 lock (this.largeMessageBuffers)
                 {
                     if (this.largeMessageBuffers.Count == 0)
-                        this.AllocateBuffers(8, BufferType.LargeMessageBuffer);
+                        this.AllocateBuffers(5, BufferType.LargeMessageBuffer);
                     buffer = this.largeMessageBuffers.Dequeue();
                 }
 
