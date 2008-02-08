@@ -1,0 +1,4 @@
+2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* HandshakeMessage.cs: Instantiate with proper values
+
