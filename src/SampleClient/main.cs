@@ -11,7 +11,6 @@ using System.Threading;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.Messages.PeerMessages;
 
 namespace MonoTorrent
 {
@@ -331,13 +330,15 @@ namespace MonoTorrent
         static int messageCount = 0;
         static void ConnectionManager_PeerMessageTransferred(object sender, PeerMessageEventArgs e)
         {
-            if (DateTime.Now - last > new TimeSpan(0, 0, 3))
+            //if(e.Message is HaveMessage)
+            //Console.WriteLine("{2} - {0}: {1}", e.Direction, e.Message.GetType().Name, Environment.TickCount);
+            /*if (DateTime.Now - last > new TimeSpan(0, 0, 3))
             {
                // messageCount = 0;
                 last = DateTime.Now;
             }
             if(e.Message is RequestMessage && e.Direction == Direction.Outgoing)
-            messageCount++;
+            messageCount++;*/
         }
 
 		static void main_OnTorrentStateChanged(object sender, TorrentStateChangedEventArgs e)
@@ -348,10 +349,10 @@ namespace MonoTorrent
 		static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
 		{
 			TorrentManager manager = (TorrentManager)sender;
-			if (e.HashPassed)
-				Console.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
-			else
-                Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+			//if (e.HashPassed)
+			//	Console.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
+			//else
+           //     Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
 		}
 
 		#endregion Handlers for the torrentmanager events
