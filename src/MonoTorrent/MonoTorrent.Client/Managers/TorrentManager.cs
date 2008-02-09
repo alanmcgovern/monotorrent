@@ -39,8 +39,8 @@ using System.Xml.Serialization;
 using System.Diagnostics;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.Messages.PeerMessages;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {

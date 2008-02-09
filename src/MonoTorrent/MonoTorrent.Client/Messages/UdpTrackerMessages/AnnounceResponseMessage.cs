@@ -4,7 +4,7 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using System.Net;
 
-namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
+namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class AnnounceResponseMessage : UdpTrackerMessage
     {

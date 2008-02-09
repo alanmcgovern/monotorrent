@@ -32,9 +32,9 @@ using System;
 using System.Text;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages
 {
-    public class UnknownMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class UnknownMessage : PeerMessage
     {
         public UnknownMessage()
         {

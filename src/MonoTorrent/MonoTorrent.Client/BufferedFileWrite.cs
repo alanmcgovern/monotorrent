@@ -7,12 +7,12 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    internal class BufferedIO
+    public class BufferedIO
     {
         #region Fields
         
         public ArraySegment<byte> Buffer;
-        public PeerIdInternal Id;
+        internal PeerIdInternal Id;
         public PeerMessage Message;
         public Piece Piece;
         public ManualResetEvent WaitHandle;
@@ -22,13 +22,13 @@ namespace MonoTorrent.Client
 
 		#region Constructors
 
-        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece)
+        internal BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece)
             : this(id, buffer, message, piece, null)
         {
      
         }
 
-        public BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece, ManualResetEvent handle)
+        internal BufferedIO(PeerIdInternal id, ArraySegment<byte> buffer, PeerMessage message, Piece piece, ManualResetEvent handle)
         {
             this.Id = id;
             this.Buffer = buffer;

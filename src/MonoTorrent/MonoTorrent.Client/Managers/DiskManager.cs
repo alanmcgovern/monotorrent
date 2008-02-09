@@ -5,7 +5,7 @@ using System.Threading;
 using System.Security.Cryptography;
 using System.IO;
 using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Managers
 {

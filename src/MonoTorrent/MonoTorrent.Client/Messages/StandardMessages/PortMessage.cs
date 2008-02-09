@@ -31,12 +31,12 @@
 using System;
 using System.Net;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "Port" message
     /// </summary>
-    public class PortMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class PortMessage : PeerMessage
     {
         private const int messageLength = 3;
         public const byte MessageId = 9;

@@ -32,12 +32,12 @@ using System;
 using System.Net;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class PieceMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class PieceMessage : PeerMessage
     {
         public const byte MessageId = 7;
         private const int messageLength = 9;

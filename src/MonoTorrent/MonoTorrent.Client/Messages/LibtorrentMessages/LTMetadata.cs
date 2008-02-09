@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.Messages.PeerMessages;
 
-namespace MonoTorrent.Client.Messages.LibtorrentMessages
+namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public class LTMetadata : LibtorrentMessage
     {

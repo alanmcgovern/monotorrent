@@ -37,8 +37,10 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Net;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.PeerMessages;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {

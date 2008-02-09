@@ -36,7 +36,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {

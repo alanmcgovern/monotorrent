@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.Messages.PeerMessages;
-using MonoTorrent.Client.Messages.LibtorrentMessages;
+using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client.Messages
+namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public abstract class LibtorrentMessage : PeerMessage
     {

@@ -12,7 +12,7 @@ namespace MonoTorrent.Client.Messages
         protected virtual void CheckWritten(int written)
         {
             if (written != ByteLength)
-                throw new MessageException("Message encoded incorrectly. Correct number of bytes not written");
+                throw new MessageException("Message encoded incorrectly. Incorrect number of bytes written");
         }
 
         public abstract void Decode(byte[] buffer, int offset, int length);
@@ -68,10 +68,6 @@ namespace MonoTorrent.Client.Messages
             return Write(buffer, offset, (short)value);
         }
 
-        private static int Write(byte[] buffer, int offset, byte[] value)
-        {
-            return Write(buffer, offset, value, 0, value.Length);
-        }
         static protected int Write(byte[] buffer, int offset, short value)
         {
             return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
@@ -95,6 +91,11 @@ namespace MonoTorrent.Client.Messages
         static protected int Write(byte[] buffer, int offset, ulong value)
         {
             return Write(buffer, offset, (long)value);
+        }
+
+        static private int Write(byte[] buffer, int offset, byte[] value)
+        {
+            return Write(buffer, offset, value, 0, value.Length);
         }
     }
 }

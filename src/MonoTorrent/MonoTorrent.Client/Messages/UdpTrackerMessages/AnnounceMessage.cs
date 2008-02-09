@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Tracker;
 
-namespace MonoTorrent.Client.Tracker.UdpTrackerMessages
+namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class AnnounceMessage : UdpTrackerMessage
     {

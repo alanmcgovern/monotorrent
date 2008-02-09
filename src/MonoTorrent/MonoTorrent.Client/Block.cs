@@ -29,7 +29,7 @@
 
 
 
-using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages.Standard;
 namespace MonoTorrent.Client
 {
     /// <summary>

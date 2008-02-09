@@ -31,10 +31,11 @@
 using System;
 using System.Text;
 using System.Net;
+using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class RejectRequestMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class RejectRequestMessage : PeerMessage
     {
         public const byte MessageId = 0x10;
         public readonly int messageLength = 13;

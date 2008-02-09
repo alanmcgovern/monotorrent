@@ -33,9 +33,9 @@ using System.Text;
 using System.Net;
 using MonoTorrent.Client.Encryption;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class AllowedFastMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class AllowedFastMessage : PeerMessage
     {
         public const byte MessageId = 0x11;
         private readonly int messageLength = 5;

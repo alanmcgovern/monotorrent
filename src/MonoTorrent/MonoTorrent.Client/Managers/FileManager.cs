@@ -35,7 +35,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Threading;
 using System.Xml.Serialization;
-using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {

@@ -30,12 +30,12 @@
 
 using System;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "KeepAlive" message
     /// </summary>
-    public class KeepAliveMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class KeepAliveMessage : PeerMessage
     {
         private const int messageLength = 0;   // has no payload
         public const byte MessageId = 0;

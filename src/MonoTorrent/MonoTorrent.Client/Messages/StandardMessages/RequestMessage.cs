@@ -30,13 +30,14 @@
 
 using System;
 using System.Net;
+using MonoTorrent.Client.Messages.FastPeer;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "Request" message
     /// </summary>
-    public class RequestMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class RequestMessage : PeerMessage
     {
         public const byte MessageId = 6;
         private const int messageLength = 13;

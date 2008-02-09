@@ -32,12 +32,12 @@ using System;
 using System.Net;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class CancelMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class CancelMessage : PeerMessage
     {
         private const int messageLength = 13;
         public const byte MessageId = 8;

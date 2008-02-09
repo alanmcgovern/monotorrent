@@ -31,12 +31,12 @@
 using System;
 using System.Net;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// 
     /// </summary>
-    public class UnchokeMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class UnchokeMessage : PeerMessage
     {
         public const byte MessageId = 1;
         private const int messageLength = 1;

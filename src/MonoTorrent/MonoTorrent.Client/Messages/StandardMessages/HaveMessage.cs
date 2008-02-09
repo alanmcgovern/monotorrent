@@ -31,12 +31,12 @@
 using System;
 using System.Net;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.Standard
 {
     /// <summary>
     /// Represents a "Have" message
     /// </summary>
-    public class HaveMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class HaveMessage : PeerMessage
     {
         public const byte MessageId = 4;
         private const int messageLength = 5;

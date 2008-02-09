@@ -32,9 +32,9 @@ using System;
 using System.Text;
 using System.Net;
 
-namespace MonoTorrent.Client.Messages.PeerMessages
+namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class HaveAllMessage : MonoTorrent.Client.Messages.PeerMessage
+    public class HaveAllMessage : PeerMessage
     {
         public const byte MessageId = 0x0E;
         private readonly int messageLength = 1;

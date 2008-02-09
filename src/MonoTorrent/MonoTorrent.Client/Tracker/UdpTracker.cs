@@ -6,6 +6,7 @@ using MonoTorrent.Client.Tracker.UdpTrackerMessages;
 using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Client.Tracker
 {
