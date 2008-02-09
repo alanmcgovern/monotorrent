@@ -737,6 +737,7 @@ namespace MonoTorrent.Client
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
         {
+            engine.DiskManager.Flush(this);
             ThreadPool.QueueUserWorkItem(delegate {
                 EventHandler<TorrentStateChangedEventArgs> h = TorrentStateChanged;
                 if (h != null)

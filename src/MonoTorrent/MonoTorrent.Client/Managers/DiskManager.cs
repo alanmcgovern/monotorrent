@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.IO;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.PieceWriter;
 
 namespace MonoTorrent.Client.Managers
 {
@@ -19,8 +20,7 @@ namespace MonoTorrent.Client.Managers
 
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
-        private FileStreamBuffer streamsBuffer;
-
+        private IPieceWriter writer;
 
         #endregion Member Variables
 
@@ -41,11 +41,6 @@ namespace MonoTorrent.Client.Managers
         internal ConnectionMonitor Monitor
         {
             get { return monitor; }
-        }
-
-        public int OpenFiles
-        {
-            get { return streamsBuffer.Count; }
         }
 
         public int QueuedWrites
@@ -78,7 +73,7 @@ namespace MonoTorrent.Client.Managers
 
         #region Constructors
 
-        public DiskManager(ClientEngine engine)
+        internal DiskManager(ClientEngine engine, IPieceWriter writer)
         {
             this.bufferedReads = new Queue<BufferedFileRead>();
             this.bufferedWrites = new Queue<BufferedIO>();
@@ -88,9 +83,9 @@ namespace MonoTorrent.Client.Managers
             this.monitor = new ConnectionMonitor();
             this.queueLock = new object();
             this.rateLimiter = new RateLimiter();
-            this.streamsBuffer = new FileStreamBuffer(engine.Settings.MaxOpenFiles);
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
+            this.writer = writer;
             this.ioThread.Start();
         }
 
@@ -101,39 +96,16 @@ namespace MonoTorrent.Client.Managers
 
         internal void CloseFileStreams(TorrentManager manager)
         {
-            Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
+            writer.CloseFileStreams(manager);
         }
 
 
-        /// <summary>
-        /// Generates the full path to the supplied TorrentFile
-        /// </summary>
-        /// <param name="file">The TorrentFile to generate the full path to</param>
-        /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
-        /// <param name="savePath">The path to the directory that contains the BaseDirectory</param>
-        /// <returns>The full path to the TorrentFile</returns>
-        private static string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
+        public void Dispose()
         {
-            string path;
-
-            path = Path.Combine(savePath, baseDirectory);
-            path = Path.Combine(path, file.Path);
-
-            if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-
-            return path;
-        }
-
-
-        /// <summary>
-        /// Opens all the filestreams with the specified file access
-        /// </summary>
-        /// <param name="fileAccess"></param>
-        internal TorrentFileStream GetStream(FileManager manager, TorrentFile file, FileAccess access)
-        {
-            string filePath = GenerateFilePath(file, manager.BaseDirectory, manager.SavePath);
-            return streamsBuffer.GetStream(file, filePath, access);
+            ioActive = false;
+            this.threadWait.Set();
+            this.ioThread.Join();
+            this.writer.Dispose();
         }
 
 
@@ -156,14 +128,15 @@ namespace MonoTorrent.Client.Managers
             {
                 // Calculate the index where we will start to write the data
                 long writeIndex = (long)message.PieceIndex * message.PieceLength + message.StartOffset;
-                Write(bufferedFileIO, recieveBuffer.Array, recieveBuffer.Offset, writeIndex, message.RequestLength);
+                writer.Write(bufferedFileIO, recieveBuffer.Array, recieveBuffer.Offset, writeIndex, message.RequestLength);
             }
 
             piece.Blocks[index].Written = true;
             id.TorrentManager.FileManager.RaiseBlockWritten(new BlockEventArgs(id.TorrentManager, piece.Blocks[index], piece, id));
 
             // Release the buffer back into the buffer manager.
-            ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
+            //ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
+#warning FIX THIS - don't free the buffer here anymore
 
             // If we haven't written all the pieces to disk, there's no point in hash checking
             if (!piece.AllBlocksWritten)
@@ -199,8 +172,14 @@ namespace MonoTorrent.Client.Managers
         /// <param name="bufferedFileIO"></param>
         private void PerformRead(BufferedFileRead io)
         {
-            io.BytesRead = Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
+            io.BytesRead = writer.Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
             io.WaitHandle.Set();
+        }
+
+
+        internal int Read(FileManager fileManager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
+        {
+            return writer.Read(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
         }
 
 
@@ -235,55 +214,6 @@ namespace MonoTorrent.Client.Managers
                 bufferedReads.Enqueue(io);
                 SetHandleState(true);
             }
-        }
-
-
-        /// <summary>
-        /// This method reads 'count' number of bytes from the filestream starting at index 'offset'.
-        /// The bytes are read into the buffer starting at index 'bufferOffset'.
-        /// </summary>
-        /// <param name="buffer">The byte[] containing the bytes to write</param>
-        /// <param name="bufferOffset">The offset in the byte[] at which to save the data</param>
-        /// <param name="offset">The offset in the file at which to start reading the data</param>
-        /// <param name="count">The number of bytes to read</param>
-        /// <returns>The number of bytes successfully read</returns>
-        internal int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > manager.FileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            int bytesRead = 0;
-            int totalRead = 0;
-
-            for (i = 0; i < manager.Files.Length; i++)       // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < manager.Files[i].Length)              // the start of the data we want to read
-                    break;
-
-                offset -= manager.Files[i].Length;           // Offset now contains the index of the data we want
-            }                                                   // to read from fileStream[i].
-
-            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
-            {
-                if (i == manager.Files.Length)
-                    break;
-
-                lock (manager.Files[i])
-                {
-                    TorrentFileStream s = GetStream(manager, manager.Files[i], FileAccess.Read);
-                    s.Seek(offset, SeekOrigin.Begin);
-                    offset = 0; // Any further files need to be read from the beginning
-                    bytesRead = s.Read(buffer, bufferOffset + totalRead, count - totalRead);
-                    totalRead += bytesRead;
-                    i++;
-                }
-            }
-            monitor.BytesSent(totalRead, TransferType.Data);
-            return totalRead;
         }
 
 
@@ -345,74 +275,11 @@ namespace MonoTorrent.Client.Managers
                 this.threadWait.Reset();
         }
 
-
-        /// <summary>
-        /// This method reads 'count' number of bytes starting at the position 'offset' into the
-        /// byte[] 'buffer'. The data gets written in the buffer starting at index 'bufferOffset'
-        /// </summary>
-        /// <param name="buffer">The byte[] to read the data into</param>
-        /// <param name="bufferOffset">The offset within the array to save the data</param>
-        /// <param name="offset">The offset in the file from which to read the data</param>
-        /// <param name="count">The number of bytes to read</param>
-        private void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            FileManager manager = io.Id.TorrentManager.FileManager;
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > manager.FileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            long bytesWritten = 0;
-            long totalWritten = 0;
-            long bytesWeCanWrite = 0;
-
-            for (i = 0; i < manager.Files.Length; i++)          // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < manager.Files[i].Length)           // the start of the data we want to write
-                    break;
-
-                offset -= manager.Files[i].Length;              // Offset now contains the index of the data we want
-            }                                                   // to write to fileStream[i].
-
-            while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
-            {
-                lock (manager.Files[i])
-                {
-                    TorrentFileStream stream = GetStream(manager, manager.Files[i], FileAccess.ReadWrite);
-                    stream.Seek(offset, SeekOrigin.Begin);
-
-                    // Find the maximum number of bytes we can write before we reach the end of the file
-                    bytesWeCanWrite = manager.Files[i].Length - offset;
-
-                    // Any further files need to be written from the beginning of the file
-                    offset = 0;
-
-                    // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
-                    // amount and let the rest of the data be written with the next filestream
-                    bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
-
-                    // Write the data
-                    stream.Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
-
-                    // Any further data should be written to the next available file
-                    totalWritten += bytesWritten;
-                    i++;
-                }
-            }
-
-            monitor.BytesReceived((int)totalWritten, TransferType.Data);
-        }
-
         #endregion
 
-        public void Dispose()
+        internal void Flush(TorrentManager manager)
         {
-            ioActive = false;
-            this.threadWait.Set();
-            this.ioThread.Join();
-            this.streamsBuffer.Dispose();
+            writer.Flush(manager);
         }
     }
 }

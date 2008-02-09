@@ -6,120 +6,142 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.PieceWriter
 {
+    internal class MemIO
+    {
+        public FileManager manager;
+        public byte[] buffer;
+        public int bufferOffset;
+        public long offset;
+        public int count;
+        public BufferedIO io;
+
+        public MemIO(FileManager manager, BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count)
+        {
+            this.manager = manager;
+            this.io = io;
+            this.buffer = buffer;
+            this.bufferOffset = bufferOffset;
+            this.offset = offset;
+            this.count = count;
+        }
+    }
     public class MemoryWriter : IPieceWriter
     {
-        public void Dispose()
+        private int capacity;
+        private List<MemIO> memoryBuffer;
+        private IPieceWriter writer;
+
+
+        public int Capacity
         {
+            get { return capacity; }
         }
-        private int bufferSize;
-        private List <BufferedIO> memoryBuffer;
-        public int BufferSize = 8 * 1024 * 1024;
 
         public int Used
         {
             get
             {
                 int count = 0;
-                memoryBuffer.ForEach(delegate(BufferedIO i) { count += i.Buffer.Count; });
+                memoryBuffer.ForEach(delegate(MemIO i) { count += i.count; });
                 return count;
             }
         }
 
-        public MemoryWriter()
+        internal MemoryWriter(IPieceWriter writer)
+            : this(writer, 8 * 1024 * 1024)
         {
-            memoryBuffer = new List<BufferedIO>();
+
+        }
+
+        internal MemoryWriter(IPieceWriter writer, int capacity)
+        {
+            if (writer == null)
+                throw new ArgumentNullException("writer");
+
+            if (capacity < 0)
+                throw new ArgumentOutOfRangeException("capacity");
+
+            memoryBuffer = new List<MemIO>();
+            this.capacity = capacity;
+            this.writer = writer;
+        }
+
+        public void Dispose()
+        {
+
         }
 
 
         public int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
-        {/*
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            if (offset < 0 || offset + count > manager.FileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            int bytesRead = 0;
-            int totalRead = 0;
-
-            for (i = 0; i < manager.Files.Length; i++)       // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < manager.Files[i].Length)              // the start of the data we want to read
-                    break;
-
-                offset -= manager.Files[i].Length;           // Offset now contains the index of the data we want
-            }                                                   // to read from fileStream[i].
-
-            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
+        {
+            int origCount = count;
+            while (count != 0)
             {
-                if (i == manager.Files.Length)
-                    break;
-
-                lock (manager.Files[i])
+                memoryBuffer.Sort(delegate(MemIO left, MemIO right) { return left.offset.CompareTo(right.offset); });
+                MemIO io = memoryBuffer.Find(delegate(MemIO m) { return ((offset >= m.offset) && (offset < (m.offset + m.count))); });
+                if (io != null)
                 {
-                    TorrentFileStream s = GetStream(manager, manager.Files[i], FileAccess.Read);
-                    s.Seek(offset, SeekOrigin.Begin);
-                    offset = 0; // Any further files need to be read from the beginning
-                    bytesRead = s.Read(buffer, bufferOffset + totalRead, count - totalRead);
-                    totalRead += bytesRead;
-                    i++;
+                    int toCopy = Math.Min(count, io.count + (int)(io.offset - offset));
+                    Buffer.BlockCopy(io.buffer, io.bufferOffset + (int)(io.offset - offset), buffer, bufferOffset + (origCount - count), toCopy);
+                    offset += toCopy;
+                    count -= toCopy;
                 }
+                else
+                    break;
             }
-            monitor.BytesSent(totalRead, TransferType.Data);
-            return totalRead;*/
-            return 1;
+            if(count == 0)
+                return origCount;
+
+            return writer.Read(manager, buffer, bufferOffset, offset, count) + (origCount - count);
         }
 
+        private void Write(MemIO m)
+        {
+            Write(m.io, m.buffer, m.bufferOffset, m.offset, m.count, true);
+        }
+
+
         public void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count)
-        {/*
-            FileManager manager = io.Id.TorrentManager.FileManager;
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
+        {
+            Write(io, buffer, bufferOffset, offset, count, false);
+        }
 
-            if (offset < 0 || offset + count > manager.FileSize)
-                throw new ArgumentOutOfRangeException("offset");
-
-            int i = 0;
-            long bytesWritten = 0;
-            long totalWritten = 0;
-            long bytesWeCanWrite = 0;
-
-            for (i = 0; i < manager.Files.Length; i++)          // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < manager.Files[i].Length)           // the start of the data we want to write
-                    break;
-
-                offset -= manager.Files[i].Length;              // Offset now contains the index of the data we want
-            }                                                   // to write to fileStream[i].
-
-            while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
+        public void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count, bool forceWrite)
+        {
+            if (forceWrite)
             {
-                lock (manager.Files[i])
-                {
-                    TorrentFileStream stream = GetStream(manager, manager.Files[i], FileAccess.ReadWrite);
-                    stream.Seek(offset, SeekOrigin.Begin);
-
-                    // Find the maximum number of bytes we can write before we reach the end of the file
-                    bytesWeCanWrite = manager.Files[i].Length - offset;
-
-                    // Any further files need to be written from the beginning of the file
-                    offset = 0;
-
-                    // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
-                    // amount and let the rest of the data be written with the next filestream
-                    bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
-
-                    // Write the data
-                    stream.Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
-
-                    // Any further data should be written to the next available file
-                    totalWritten += bytesWritten;
-                    i++;
-                }
+                writer.Write(io, buffer, bufferOffset, offset, count);
+                return;
             }
 
-            monitor.BytesReceived((int)totalWritten, TransferType.Data);*/
+            if (Used >= (Capacity - count))
+                FlushSome();
+
+            memoryBuffer.Add(new MemIO(io.Id.TorrentManager.FileManager, io, buffer, bufferOffset, offset, count));
+        }
+
+        private void FlushSome()
+        {
+            int count = Math.Min(5, memoryBuffer.Count);
+            for (int i = 0; i < count; i++)
+                Write(memoryBuffer[i]);
+
+            memoryBuffer.RemoveRange(0, count);
+        }
+
+
+
+        public void CloseFileStreams(TorrentManager manager)
+        {
+            Flush(manager);
+            writer.CloseFileStreams(manager);
+        }
+
+
+        public void Flush(TorrentManager manager)
+        {
+            memoryBuffer.ForEach(delegate(MemIO io) { if (io.manager == manager.FileManager) Write(io); });
+            memoryBuffer.RemoveAll(delegate(MemIO io) { return io.manager == manager.FileManager; });
         }
     }
 }

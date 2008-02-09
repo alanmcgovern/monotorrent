@@ -8,31 +8,28 @@ namespace MonoTorrent.Client.PieceWriter
 {
     public class DiskWriter : IPieceWriter
     {
-        public void Dispose()
-        {
-        }
-
-        public DiskWriter()
-        {
-            //this.streamsBuffer = new FileStreamBuffer(engine.Settings.MaxOpenFiles);
-        }
-        internal void CloseFileStreams(TorrentManager manager)
-        {
-            Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
-        }
         private FileStreamBuffer streamsBuffer;
 
         public int OpenFiles
         {
             get { return streamsBuffer.Count; }
         }
-        /// <summary>
-        /// Generates the full path to the supplied TorrentFile
-        /// </summary>
-        /// <param name="file">The TorrentFile to generate the full path to</param>
-        /// <param name="baseDirectory">The name of the directory that the files are contained in</param>
-        /// <param name="savePath">The path to the directory that contains the BaseDirectory</param>
-        /// <returns>The full path to the TorrentFile</returns>
+
+        public DiskWriter(int maxOpenFiles)
+        {
+            this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
+        }
+
+        public void CloseFileStreams(TorrentManager manager)
+        {
+            Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
+        }
+
+        public void Dispose()
+        {
+            streamsBuffer.Dispose();
+        }
+
         private static string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
         {
             string path;
@@ -46,17 +43,11 @@ namespace MonoTorrent.Client.PieceWriter
             return path;
         }
 
-
-        /// <summary>
-        /// Opens all the filestreams with the specified file access
-        /// </summary>
-        /// <param name="fileAccess"></param>
         internal TorrentFileStream GetStream(FileManager manager, TorrentFile file, FileAccess access)
         {
             string filePath = GenerateFilePath(file, manager.BaseDirectory, manager.SavePath);
             return streamsBuffer.GetStream(file, filePath, access);
         }
-
 
         public int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
         {
@@ -70,12 +61,12 @@ namespace MonoTorrent.Client.PieceWriter
             int bytesRead = 0;
             int totalRead = 0;
 
-            for (i = 0; i < manager.Files.Length; i++)       // This section loops through all the available
+            for (i = 0; i < manager.Files.Length; i++)          // This section loops through all the available
             {                                                   // files until we find the file which contains
-                if (offset < manager.Files[i].Length)              // the start of the data we want to read
+                if (offset < manager.Files[i].Length)           // the start of the data we want to read
                     break;
 
-                offset -= manager.Files[i].Length;           // Offset now contains the index of the data we want
+                offset -= manager.Files[i].Length;              // Offset now contains the index of the data we want
             }                                                   // to read from fileStream[i].
 
             while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
@@ -138,6 +129,7 @@ namespace MonoTorrent.Client.PieceWriter
 
                     // Write the data
                     stream.Write(buffer, bufferOffset + (int)totalWritten, (int)bytesWritten);
+                    stream.Flush();
 
                     // Any further data should be written to the next available file
                     totalWritten += bytesWritten;
@@ -146,6 +138,11 @@ namespace MonoTorrent.Client.PieceWriter
             }
 
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
+        }
+
+        public void Flush(TorrentManager manager)
+        {
+            // No buffering done here
         }
     }
 }

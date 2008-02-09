@@ -41,6 +41,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Managers;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Client.PieceWriter;
 
 namespace MonoTorrent.Client
 {
@@ -187,11 +188,15 @@ namespace MonoTorrent.Client
             if (listener == null && !createListener)
                 throw new ArgumentNullException("listener");
 
+            // Wrap a memory buffer around the disk writer
+            IPieceWriter writer = new DiskWriter(engineSettings.MaxOpenFiles);
+            //writer = new MemoryWriter(writer);
+
             this.settings = engineSettings;
 
             this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
-            this.diskManager = new DiskManager(this);
+            this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
