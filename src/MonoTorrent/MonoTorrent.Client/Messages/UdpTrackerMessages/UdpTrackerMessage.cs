@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.Tracker.UdpTrackerMessages;
 using MonoTorrent.Client.Tracker;
 
 namespace MonoTorrent.Client.Messages.UdpTracker

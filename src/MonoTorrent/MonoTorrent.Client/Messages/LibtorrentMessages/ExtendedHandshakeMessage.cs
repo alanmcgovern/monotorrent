@@ -36,9 +36,6 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    /// <summary>
-    /// This class represents the BT_EXTENDED_LST as listed by the LibTorrent Extended Messaging Protocol
-    /// </summary>
     public class ExtendedHandshakeMessage : LibtorrentMessage
     {
         private static readonly BEncodedString MaxRequestKey = "reqq";
