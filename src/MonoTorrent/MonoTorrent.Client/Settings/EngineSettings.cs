@@ -283,14 +283,7 @@ namespace MonoTorrent.Client
 
         public EngineSettings Clone()
         {
-            return new EngineSettings(this.savePath,
-                          this.listenPort,
-                          this.globalMaxConnections,
-                          this.globalMaxHalfOpenConnections,
-                          this.globalMaxDownloadSpeed,
-                          this.globalMaxUploadSpeed,
-                          this.minEncryptionLevel,
-                          this.allowLegacyConnections);
+            return (EngineSettings)MemberwiseClone();
         }
 
         public override bool Equals(object obj)

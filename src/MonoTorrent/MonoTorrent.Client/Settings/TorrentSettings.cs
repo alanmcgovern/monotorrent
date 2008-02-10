@@ -205,11 +205,7 @@ namespace MonoTorrent.Client
 
         public TorrentSettings Clone()
         {
-            return new TorrentSettings(this.uploadSlots,
-                           this.maxConnections,
-                           this.MaxDownloadSpeed,
-                           this.maxUploadSpeed,
-                           this.fastResumeEnabled);
+            return (TorrentSettings)this.MemberwiseClone();
         }
 
         public override bool Equals(object obj)
