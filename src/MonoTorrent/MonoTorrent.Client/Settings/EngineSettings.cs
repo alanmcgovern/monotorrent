@@ -202,7 +202,10 @@ namespace MonoTorrent.Client
         #region Constructors
 
         public EngineSettings()
+            : this(DefaultSavePath, DefaultListenPort, DefaultMaxConnections, DefaultMaxHalfOpenConnections,
+                  DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultMinLevel, DefaultAllowLegacyConnections)
         {
+
         }
 
 
@@ -273,29 +276,21 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public object Clone()
+        object ICloneable.Clone()
         {
-            return new EngineSettings(this.savePath,
-                                      this.listenPort,
-                                      this.globalMaxConnections,
-                                      this.globalMaxHalfOpenConnections,
-                                      this.globalMaxDownloadSpeed,
-                                      this.globalMaxUploadSpeed,
-                                      this.minEncryptionLevel,
-                                      this.allowLegacyConnections);
+            return Clone();
         }
 
-        public void CopyFrom(EngineSettings other)
+        public EngineSettings Clone()
         {
-            this.allowLegacyConnections = other.allowLegacyConnections;
-            this.globalMaxConnections = other.globalMaxConnections;
-            this.globalMaxDownloadSpeed = other.globalMaxDownloadSpeed;
-            this.globalMaxHalfOpenConnections = other.globalMaxHalfOpenConnections;
-            this.globalMaxUploadSpeed = other.globalMaxUploadSpeed;
-            this.haveSupressionEnabled = other.haveSupressionEnabled;
-            this.listenPort = other.listenPort;
-            this.minEncryptionLevel = other.minEncryptionLevel;
-            this.savePath = other.savePath;
+            return new EngineSettings(this.savePath,
+                          this.listenPort,
+                          this.globalMaxConnections,
+                          this.globalMaxHalfOpenConnections,
+                          this.globalMaxDownloadSpeed,
+                          this.globalMaxUploadSpeed,
+                          this.minEncryptionLevel,
+                          this.allowLegacyConnections);
         }
 
         public override bool Equals(object obj)
@@ -325,25 +320,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion Methods
-
-
-        #region Default Settings
-
-        /// <summary>
-        /// Returns a new copy of the default settings for the engine
-        /// </summary>
-        public static EngineSettings DefaultSettings()
-        {
-            return new EngineSettings(DefaultSavePath,
-                                     DefaultListenPort,
-                                     DefaultMaxConnections,
-                                     DefaultMaxHalfOpenConnections,
-                                     DefaultMaxDownloadSpeed,
-                                     DefaultMaxUploadSpeed,
-                                     DefaultMinLevel,
-                                     DefaultAllowLegacyConnections);
-        }
-
-        #endregion
     }
 }
