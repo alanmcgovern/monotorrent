@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             set
             {
                 if (value < 2)
-                    throw new ArgumentNullException("You must use at least 2 upload slots");
+                    throw new ArgumentOutOfRangeException("You must use at least 2 upload slots");
                 this.uploadSlots = value;
             }
         }
@@ -145,6 +145,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
         public TorrentSettings()
+            : this(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled)
         {
         }
 
@@ -195,33 +196,20 @@ namespace MonoTorrent.Client
         }
         #endregion
 
-
-        #region Default Settings
-
-        /// <summary>
-        /// Creates a new instance of the Default settings. 
-        /// </summary>
-        public static TorrentSettings DefaultSettings()
-        {
-            return new TorrentSettings(DefaultUploadSlots,
-                                       DefaultMaxConnections,
-                                       DefaultDownloadSpeed,
-                                       DefaultUploadSpeed,
-                                       DefaultFastResumeEnabled);
-        }
-
-        #endregion
-        
-
         #region Methods
 
-        public object Clone()
+        object ICloneable.Clone()
         {
-            return new TorrentSettings(this.uploadSlots, 
-                                       this.maxConnections,
-                                       this.MaxDownloadSpeed,
-                                       this.maxUploadSpeed,
-                                       this.fastResumeEnabled);
+            return Clone();
+        }
+
+        public TorrentSettings Clone()
+        {
+            return new TorrentSettings(this.uploadSlots,
+                           this.maxConnections,
+                           this.MaxDownloadSpeed,
+                           this.maxUploadSpeed,
+                           this.fastResumeEnabled);
         }
 
         public override bool Equals(object obj)
