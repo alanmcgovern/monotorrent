@@ -143,9 +143,9 @@ namespace SampleClient
         public EngineTestRig(string savePath)
         {
             listener = new CustomListener();
-            engine = new ClientEngine(EngineSettings.DefaultSettings(), listener);
+            engine = new ClientEngine(new EngineSettings(), listener);
             torrent = Torrent.Load(CreateTorrent());
-            manager = new TorrentManager(torrent, savePath, TorrentSettings.DefaultSettings());
+            manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
             manager.Start();
         }

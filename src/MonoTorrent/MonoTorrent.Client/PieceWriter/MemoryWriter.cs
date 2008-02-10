@@ -6,29 +6,10 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.PieceWriter
 {
-    internal class MemIO
-    {
-        public FileManager manager;
-        public byte[] buffer;
-        public int bufferOffset;
-        public long offset;
-        public int count;
-        public BufferedIO io;
-
-        public MemIO(FileManager manager, BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            this.manager = manager;
-            this.io = io;
-            this.buffer = buffer;
-            this.bufferOffset = bufferOffset;
-            this.offset = offset;
-            this.count = count;
-        }
-    }
     public class MemoryWriter : IPieceWriter
     {
         private int capacity;
-        private List<MemIO> memoryBuffer;
+        private List<PieceData> memoryBuffer;
         private IPieceWriter writer;
 
 
@@ -42,7 +23,7 @@ namespace MonoTorrent.Client.PieceWriter
             get
             {
                 int count = 0;
-                memoryBuffer.ForEach(delegate(MemIO i) { count += i.count; });
+                memoryBuffer.ForEach(delegate(PieceData i) { count += i.Count; });
                 return count;
             }
         }
@@ -61,7 +42,7 @@ namespace MonoTorrent.Client.PieceWriter
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException("capacity");
 
-            memoryBuffer = new List<MemIO>();
+            memoryBuffer = new List<PieceData>();
             this.capacity = capacity;
             this.writer = writer;
         }
@@ -77,12 +58,12 @@ namespace MonoTorrent.Client.PieceWriter
             int origCount = count;
             while (count != 0)
             {
-                memoryBuffer.Sort(delegate(MemIO left, MemIO right) { return left.offset.CompareTo(right.offset); });
-                MemIO io = memoryBuffer.Find(delegate(MemIO m) { return ((offset >= m.offset) && (offset < (m.offset + m.count))); });
+                memoryBuffer.Sort(delegate(PieceData left, PieceData right) { return left.WriteOffset.CompareTo(right.WriteOffset); });
+                PieceData io = memoryBuffer.Find(delegate(PieceData m) { return ((offset >= m.WriteOffset) && (offset < (m.WriteOffset + m.Count))); });
                 if (io != null)
                 {
-                    int toCopy = Math.Min(count, io.count + (int)(io.offset - offset));
-                    Buffer.BlockCopy(io.buffer, io.bufferOffset + (int)(io.offset - offset), buffer, bufferOffset + (origCount - count), toCopy);
+                    int toCopy = Math.Min(count, io.Count + (int)(io.WriteOffset - offset));
+                    Buffer.BlockCopy(io.Buffer.Array, io.Buffer.Offset + (int)(io.WriteOffset - offset), buffer, io.Buffer.Offset + (origCount - count), toCopy);
                     offset += toCopy;
                     count -= toCopy;
                 }
@@ -95,37 +76,34 @@ namespace MonoTorrent.Client.PieceWriter
             return writer.Read(manager, buffer, bufferOffset, offset, count) + (origCount - count);
         }
 
-        private void Write(MemIO m)
+
+        public void Write(PieceData data)
         {
-            Write(m.io, m.buffer, m.bufferOffset, m.offset, m.count, true);
+            Write(data, false);
         }
 
-
-        public void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count)
-        {
-            Write(io, buffer, bufferOffset, offset, count, false);
-        }
-
-        public void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count, bool forceWrite)
+        public void Write(PieceData data, bool forceWrite)
         {
             if (forceWrite)
             {
-                writer.Write(io, buffer, bufferOffset, offset, count);
+                writer.Write(data);
                 return;
             }
 
-            if (Used >= (Capacity - count))
+            if (Used >= (Capacity - data.Count))
                 FlushSome();
 
-            memoryBuffer.Add(new MemIO(io.Id.TorrentManager.FileManager, io, buffer, bufferOffset, offset, count));
+            memoryBuffer.Add(data);
         }
 
         private void FlushSome()
         {
             int count = Math.Min(5, memoryBuffer.Count);
             for (int i = 0; i < count; i++)
-                Write(memoryBuffer[i]);
-
+            {
+                Write(memoryBuffer[i], true);
+                ClientEngine.BufferManager.FreeBuffer(ref memoryBuffer[i].Buffer);
+            }
             memoryBuffer.RemoveRange(0, count);
         }
 
@@ -140,8 +118,15 @@ namespace MonoTorrent.Client.PieceWriter
 
         public void Flush(TorrentManager manager)
         {
-            memoryBuffer.ForEach(delegate(MemIO io) { if (io.manager == manager.FileManager) Write(io); });
-            memoryBuffer.RemoveAll(delegate(MemIO io) { return io.manager == manager.FileManager; });
+            memoryBuffer.ForEach(delegate(PieceData io)
+            {
+                if (io.Manager != manager.FileManager)
+                    return;
+
+                Write(io, true);
+                ClientEngine.BufferManager.FreeBuffer(ref io.Buffer);
+            });
+            memoryBuffer.RemoveAll(delegate(PieceData io) { return io.Manager == manager.FileManager; });
         }
     }
 }

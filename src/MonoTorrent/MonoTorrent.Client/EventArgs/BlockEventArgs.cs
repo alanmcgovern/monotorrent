@@ -56,14 +56,26 @@ namespace MonoTorrent.Client
         internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerId id)
             : base(manager)
         {
+            Init(block, piece, id);
+        }
+
+        internal BlockEventArgs(PieceData data)
+            : base(data.Id.TorrentManager)
+        {
+            Block b = data.Piece[PiecePickerBase.GetBlockIndex(data.Piece.Blocks, data.StartOffset, data.Count)];
+            Init(b, data.Piece, data.Id.PublicId);
+        }
+        internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerIdInternal id)
+            : base(manager)
+        {
+            Init(block, piece, id.PublicId);
+        }
+
+        private void Init(Block block, Piece piece, PeerId id)
+        {
             this.block = block;
             this.id = id;
             this.piece = piece;
-        }
-
-        internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerIdInternal id)
-            :this(manager, block, piece, id.PublicId)
-        {
         }
 
         #endregion

@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
         public abstract RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers);
         public abstract void ReceivedChokeMessage(PeerIdInternal id);
         public abstract void ReceivedRejectRequest(PeerIdInternal id, RejectRequestMessage message);
-        public abstract PieceEvent ReceivedPieceMessage(PeerIdInternal id, ArraySegment<byte> buffer, PieceMessage message);
+        public abstract PieceEvent ReceivedPieceMessage(PieceData data);
         public abstract void RemoveRequests(PeerIdInternal id);
         public abstract void Reset();
 

@@ -319,9 +319,9 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(PeerIdInternal id, ArraySegment<byte> recieveBuffer, PieceMessage message, Piece piece)
+        internal void QueueWrite(PieceData data)
         {
-            manager.Engine.DiskManager.QueueWrite(id, recieveBuffer, message, piece);
+            manager.Engine.DiskManager.QueueWrite(data);
         }
 
 

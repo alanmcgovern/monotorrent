@@ -9,7 +9,7 @@ namespace MonoTorrent.Client.PieceWriter
     {
         int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count);
         
-        void Write(BufferedIO io, byte[] buffer, int bufferOffset, long offset, int count);
+        void Write(PieceData data);
 
         void CloseFileStreams(TorrentManager manager);
 

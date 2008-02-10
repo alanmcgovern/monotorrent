@@ -588,19 +588,21 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        public override PieceEvent ReceivedPieceMessage(PeerIdInternal id, ArraySegment<byte> recieveBuffer, PieceMessage message)
+        public override PieceEvent ReceivedPieceMessage(PieceData data)
         {
+            PeerIdInternal id = data.Id;
             lock (this.requests)
             {
-                Piece piece = requests.Find(delegate(Piece p) { return p.Index == message.PieceIndex; });
+                Piece piece = requests.Find(delegate(Piece p) { return p.Index == data.PieceIndex; });
+                data.Piece = piece;
                 if (piece == null)
                 {
-                    Logger.Log(id.Connection.Connection, "Received block from unrequested piece");
+                    Logger.Log(data.Id.Connection.Connection, "Received block from unrequested piece");
                     return PieceEvent.BlockNotRequested;
                 }
 
                 // Pick out the block that this piece message belongs to
-                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, message.StartOffset, message.RequestLength);
+                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, data.StartOffset, data.Count);
                 if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
                 {
                     Logger.Log(id.Connection.Connection, "Invalid block start offset returned");
@@ -623,8 +625,8 @@ namespace MonoTorrent.Client
 
                 piece.Blocks[blockIndex].Received = true;
                 id.Connection.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(id.TorrentManager, piece.Blocks[blockIndex], piece, id));
-                id.TorrentManager.FileManager.QueueWrite(id, recieveBuffer, message, piece);
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
+                id.TorrentManager.FileManager.QueueWrite(data);
 
                 if (piece.AllBlocksReceived)
                 {

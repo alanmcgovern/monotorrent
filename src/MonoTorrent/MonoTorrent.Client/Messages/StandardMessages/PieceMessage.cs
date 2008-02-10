@@ -34,9 +34,6 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public class PieceMessage : PeerMessage
     {
         public const byte MessageId = 7;
@@ -148,6 +145,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
             this.dataOffset = offset;
 
+            // This buffer will be freed after the PieceWriter has finished with it
             this.data = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref this.data, requestLength);
             Buffer.BlockCopy(buffer, offset, this.data.Array, this.data.Offset, requestLength);
@@ -209,22 +207,16 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerIdInternal id)
         {
-            try
-            {
-                id.TorrentManager.PieceManager.ReceivedPieceMessage(id, this.data, this);
+            PieceData d = new PieceData(data, pieceIndex, startOffset, requestLength, id);
+            id.TorrentManager.PieceManager.ReceivedPieceMessage(d);
 
-                // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-                while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
+            // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
+            while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
-                if (!id.Connection.ProcessingQueue)
-                {
-                    id.Connection.ProcessingQueue = true;
-                    id.ConnectionManager.MessageHandler.EnqueueSend(id);
-                }
-            }
-            finally
+            if (!id.Connection.ProcessingQueue)
             {
-                ClientEngine.BufferManager.FreeBuffer(ref this.data);
+                id.Connection.ProcessingQueue = true;
+                id.ConnectionManager.MessageHandler.EnqueueSend(id);
             }
         }
 
