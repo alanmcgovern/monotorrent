@@ -28,13 +28,13 @@ namespace MonoTorrent.Client.PieceWriter
             }
         }
 
-        internal MemoryWriter(IPieceWriter writer)
-            : this(writer, 8 * 1024 * 1024)
+        public MemoryWriter(IPieceWriter writer)
+            : this(writer, 1 * 1024 * 1024)
         {
 
         }
 
-        internal MemoryWriter(IPieceWriter writer, int capacity)
+		public MemoryWriter(IPieceWriter writer, int capacity)
         {
             if (writer == null)
                 throw new ArgumentNullException("writer");
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.PieceWriter
                 if (io != null)
                 {
                     int toCopy = Math.Min(count, io.Count + (int)(io.WriteOffset - offset));
-                    Buffer.BlockCopy(io.Buffer.Array, io.Buffer.Offset + (int)(io.WriteOffset - offset), buffer, io.Buffer.Offset + (origCount - count), toCopy);
+                    Buffer.BlockCopy(io.Buffer.Array, io.Buffer.Offset + (int)(io.WriteOffset - offset), buffer, bufferOffset + (origCount - count), toCopy);
                     offset += toCopy;
                     count -= toCopy;
                 }
