@@ -174,50 +174,24 @@ namespace MonoTorrent
                         if (manager.State != TorrentState.Stopped)
                             running = true;
                         sb.Remove(0, sb.Length);
-                        //sb.Append("Torrent:          "); sb.Append(manager.Torrent.Name);
-                        //sb.Append(Environment.NewLine);
-                        sb.Append("Progress:         "); sb.AppendFormat("{0:0.00}", manager.Progress);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Download Speed:   "); sb.AppendFormat("{0:0.00}", manager.Monitor.DownloadSpeed);
-                        sb.Append(" kB/s");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Upload Speed:     "); sb.AppendFormat("{0:0.00}", manager.Monitor.UploadSpeed);
-                        sb.Append(" kB/s");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Read Rate:        "); sb.AppendFormat("{0:0.00}", engine.DiskManager.ReadRate);
-                        sb.AppendFormat(" kB/s");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Write Rate:       "); sb.AppendFormat("{0:0.00}", engine.DiskManager.WriteRate);
-                        sb.AppendFormat(" kB/s");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Total Read:       "); sb.AppendFormat("{0:0.00}", engine.DiskManager.TotalRead);
-                        sb.AppendFormat(" kB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Total Written:    "); sb.AppendFormat("{0:0.00}", engine.DiskManager.TotalWritten);
-                        sb.AppendFormat(" kB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Torrent State:    "); sb.Append(manager.State);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Number of seeds:  "); sb.Append(manager.Peers.Seeds);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Number of leechs: "); sb.Append(manager.Peers.Leechs);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Total available:  "); sb.Append(manager.Peers.Available);
-                        sb.AppendLine();
-                        sb.Append("Actively connected to: "); sb.Append(manager.OpenConnections);
-                        sb.AppendLine();
-                        sb.Append("Downloaded:       "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesDownloaded / (1024.0));
-                        sb.Append(" MB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Uploaded:         "); sb.AppendFormat("{0:0.00}", manager.Monitor.DataBytesUploaded / (1024.0));
-                        sb.Append(" MB");
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Tracker Status:   "); sb.Append(manager.TrackerManager.CurrentTracker.State.ToString());
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Warning Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
-                        sb.Append(Environment.NewLine);
-                        sb.Append("Failure Message:  "); sb.Append(manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
-                        sb.Append(Environment.NewLine);
+						AppendFormat(sb, "Torrent:            {0}", manager.Torrent.Name);
+                        AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
+						AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed);
+						AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed);
+						AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0));
+						AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0));
+						AppendFormat(sb, "Read Rate:          {0:0.00} kB/s", engine.DiskManager.ReadRate);
+						AppendFormat(sb, "Write Rate:         {0:0.00} kB/s", engine.DiskManager.WriteRate);
+						AppendFormat(sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead);
+						AppendFormat(sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten);
+						AppendFormat(sb, "Torrent State:      {0}", manager.State);
+						AppendFormat(sb, "Number of seeds:    {0}", manager.Peers.Seeds);
+						AppendFormat(sb, "Number of leechs:   {0}", manager.Peers.Leechs);
+						AppendFormat(sb, "Total available:    {0}", manager.Peers.Available);
+						AppendFormat(sb, "Actively connected: {0}", manager.OpenConnections);
+						AppendFormat(sb, "Tracker Status:     {0}", manager.TrackerManager.CurrentTracker.State);
+						AppendFormat(sb, "Warning Message:    {0}", manager.TrackerManager.TrackerTiers[0].Trackers[0].WarningMessage);
+						AppendFormat(sb, "Failure Message:    {0}", manager.TrackerManager.TrackerTiers[0].Trackers[0].FailureMessage);
 
 
                         //int areSeeders=0;
@@ -307,6 +281,11 @@ namespace MonoTorrent
             engine.Dispose();
         }
 
+		private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
+		{
+			sb.AppendFormat(str, formatting);
+			sb.AppendLine();
+		}
 
 		#region Handlers for the torrentmanager events
 
@@ -346,14 +325,20 @@ namespace MonoTorrent
 			listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
 		}
 
-		static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
-		{
-			TorrentManager manager = (TorrentManager)sender;
-			//if (e.HashPassed)
-			//	Console.WriteLine("Hash Passed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
-			//else
-           //     Console.WriteLine("Hash Failed: " + manager.Torrent.Name + " " + e.PieceIndex + "/" + manager.Torrent.Pieces.Count);
-		}
+		private static object writeLock = new object();
+        static void main_OnPieceHashed(object sender, PieceHashedEventArgs e)
+        {
+			lock (writeLock)
+			{
+				TorrentManager manager = (TorrentManager)sender;
+				if (e.HashPassed)
+					Console.ForegroundColor = ConsoleColor.Green;
+				else
+					Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail");
+				Console.ResetColor();
+			}
+        }
 
 		#endregion Handlers for the torrentmanager events
 
