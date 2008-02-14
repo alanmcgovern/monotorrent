@@ -123,7 +123,7 @@ namespace MonoTorrent.Client.Managers
             int index = data.BlockIndex;
 
             // Perform the actual write
-            using (new ReaderLock(this.streamsLock))
+            lock (writer)
                 writer.Write(data);
 
             piece.Blocks[index].Written = true;
@@ -167,14 +167,16 @@ namespace MonoTorrent.Client.Managers
         /// <param name="bufferedFileIO"></param>
         private void PerformRead(BufferedFileRead io)
         {
-            io.BytesRead = writer.Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
+            lock (writer)
+                io.BytesRead = writer.Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
             io.WaitHandle.Set();
         }
 
 
         internal int Read(FileManager fileManager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
         {
-            return writer.Read(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
+            lock (writer)
+                return writer.Read(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
         }
 
         /// <summary>
