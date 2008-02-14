@@ -12,6 +12,7 @@ namespace MonoTorrent.Client
         private Piece piece;
         private int pieceIndex;
         private int startOffset;
+		private FileManager fileManager;
 
 
         public int BlockIndex
@@ -31,7 +32,7 @@ namespace MonoTorrent.Client
 
         public FileManager Manager
         {
-            get { return id.TorrentManager.FileManager; }
+			get { return fileManager; }
         }
 
         public Piece Piece
@@ -52,7 +53,7 @@ namespace MonoTorrent.Client
 
         public long WriteOffset
         {
-            get { return (long)id.TorrentManager.Torrent.PieceLength * pieceIndex + startOffset; }
+            get { return (long)fileManager.PieceLength * pieceIndex + startOffset; }
         }
 
 
@@ -64,5 +65,11 @@ namespace MonoTorrent.Client
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
         }
+
+		public PieceData(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, FileManager manager)
+			: this(buffer, pieceIndex, startOffset, count, (PeerIdInternal)null)
+		{
+			fileManager = manager;
+		}
     }
 }
