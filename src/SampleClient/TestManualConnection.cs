@@ -141,10 +141,16 @@ namespace SampleClient
         }
 
         public EngineTestRig(string savePath)
+            : this(savePath, 256 * 1024)
+        {
+
+        }
+
+        public EngineTestRig(string savePath, int piecelength)
         {
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener);
-            torrent = Torrent.Load(CreateTorrent());
+            torrent = Torrent.Load(CreateTorrent(piecelength));
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
             manager.Start();
@@ -155,10 +161,10 @@ namespace SampleClient
             listener.Add(manager, connection);
         }
 
-        private static BEncodedDictionary CreateTorrent()
+        private static BEncodedDictionary CreateTorrent(int pieceLength)
         {
             BEncodedDictionary infoDict = new BEncodedDictionary();
-            infoDict[new BEncodedString("piece length")] = new BEncodedNumber(256 * 1024);
+            infoDict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
             infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 15]);
             infoDict[new BEncodedString("length")] = new BEncodedNumber(15 * 256 * 1024 - 1);
             infoDict[new BEncodedString("name")] = new BEncodedString("test.files");
