@@ -143,13 +143,13 @@ namespace MonoTorrent.Tests
 
 			for (int i = 0; i < 1000; i++)
 				Assert.AreEqual(buffer.Array[buffer.Offset + i], 0, "#0");
-			for (int i = 0; i < 1000; i++)
+			for (int i = 1000; i < 2000; i++)
 				Assert.AreEqual(buffer.Array[buffer.Offset + i], 1, "#1");
-			for (int i = 0; i < 1000; i++)
+			for (int i = 2000; i < 3000; i++)
 				Assert.AreEqual(buffer.Array[buffer.Offset + i], 2, "#2");
-			for (int i = 0; i < 1000; i++)
+			for (int i = 3000; i < 4000; i++)
 				Assert.AreEqual(buffer.Array[buffer.Offset + i], 3, "#3");
-			for (int i = 0; i < 1000; i++)
+			for (int i = 4000; i < 5000; i++)
 				Assert.AreEqual(buffer.Array[buffer.Offset + i], 4, "#4");
 		}
 
