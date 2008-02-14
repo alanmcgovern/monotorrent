@@ -34,7 +34,7 @@ using NUnit.Framework;
 using MonoTorrent.Common;
 using System.Net;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.PeerMessages;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Tests
 {
