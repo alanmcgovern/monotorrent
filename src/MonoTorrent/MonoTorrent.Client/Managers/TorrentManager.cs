@@ -465,14 +465,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
+			WaitHandle handle;
             lock (this.engine.asyncCompletionLock)
             {
-                if (this.state == TorrentState.Stopped)
-                    throw new TorrentException("Torrent already stopped");
+				if (this.state == TorrentState.Stopped)
+					return new ManualResetEvent(true);
 
-                WaitHandle handle;
-
-                UpdateState(TorrentState.Stopped);
+				UpdateState(TorrentState.Stopped);
 
                 handle = this.trackerManager.Announce(TorrentEvent.Stopped);
                 lock (this.listLock)
