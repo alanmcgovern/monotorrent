@@ -64,6 +64,7 @@ namespace MonoTorrent.Client
             this.id = id;
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
+			this.fileManager = id.TorrentManager.FileManager;
         }
 
 		public PieceData(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, FileManager manager)
