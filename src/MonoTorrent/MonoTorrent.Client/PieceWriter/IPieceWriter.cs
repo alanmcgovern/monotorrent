@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.PieceWriter
 {
-    interface IPieceWriter : IDisposable
+    public interface IPieceWriter : IDisposable
     {
         int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count);
         
