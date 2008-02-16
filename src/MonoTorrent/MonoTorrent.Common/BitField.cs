@@ -389,7 +389,9 @@ namespace MonoTorrent.Common
             int end;
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
+            // For the case when endIndex == 0, we need to ensure we don't go negative
             int loopEnd = (endIndex / 32) - ((endIndex % 32 == 0) ? 1 : 0);
+			loopEnd = Math.Max(loopEnd, 0);
             for (int i = (startIndex / 32); i <= loopEnd; i++)
             {
                 if (this.array[i] == 0)        // This one has no true values
@@ -401,7 +403,7 @@ namespace MonoTorrent.Common
                 end = (end > this.length) ? this.length : end;
                 end = (end > endIndex) ? endIndex : end;
 
-                for (int j = start; j < end; j++)
+                for (int j = start; j <= end; j++)
                     if (Get(j))     // This piece is true
                         return j;
             }
