@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using MonoTorrent.Client;
-using MonoTorrent.Client.PieceWriter;
+using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Tests
 {
-	public class NullWriter : IPieceWriter
+	public class NullWriter : PieceWriter
 	{
 		PieceWriterTests tester;
 		public NullWriter(PieceWriterTests tests)
@@ -16,29 +16,30 @@ namespace MonoTorrent.Tests
 			tester = tests;
 		}
 
-		public int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
+		public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
 		{
+			Console.WriteLine("Attempting to read - returning zero");
 			return 0;
 		}
 
-		public void Write(PieceData data)
+		public override void Write(PieceData data)
 		{
+			Console.WriteLine("Flushed {0}:{1} to disk", data.PieceIndex, data.StartOffset / 1000);
 			tester.blocks.Remove(data);
-			Console.WriteLine("Flushed through to the null");
 			PieceWriterTests.Buffer.FreeBuffer(ref data.Buffer);
 		}
 
-		public void CloseFileStreams(TorrentManager manager)
+		public override void CloseFileStreams(TorrentManager manager)
 		{
 
 		}
 
-		public void Flush(TorrentManager manager)
+		public override void Flush(TorrentManager manager)
 		{
 
 		}
 
-		public void Dispose()
+		public override void Dispose()
 		{
 
 		}
@@ -47,6 +48,11 @@ namespace MonoTorrent.Tests
 	[TestFixture]
 	public class PieceWriterTests
 	{
+		public const int PieceCount = 2;
+		public const int BlockCount = 10;
+		public const int BlockSize = 1000;
+		public const int PieceSize = BlockCount * BlockSize;
+
 		public static BufferManager Buffer = new BufferManager();
 		SampleClient.EngineTestRig rig;
 
@@ -54,103 +60,104 @@ namespace MonoTorrent.Tests
 		MemoryWriter level2;
 		public List<PieceData> blocks;
 
+		[TestFixtureSetUp]
+		public void GlobalSetup()
+		{
+			rig = new SampleClient.EngineTestRig("Downloads", PieceSize);
+		}
+
+		[TestFixtureTearDown]
+		public void GlobalTearDown()
+		{
+			rig.Engine.Dispose();
+		}
+
 		[SetUp]
 		public void Setup()
 		{
-			rig = new SampleClient.EngineTestRig("Downloads", 10000);
 
 			blocks = new List<PieceData>();
-			level2 = new MemoryWriter(new NullWriter(this), 50000);
-			level1 = new MemoryWriter(level2, 50000);
+			level2 = new MemoryWriter(new NullWriter(this), (int)(PieceSize * 1.7));
+			level1 = new MemoryWriter(level2, (int)(PieceSize * 0.7));
 
-			for (int piece = 0; piece < 2; piece++)
-			{
-				for (int block = 0; block < 5; block++)
-				{
-					PieceData d = CreateBlock(piece, block);
-					blocks.Add(d);
-					level1.Write(d);
-				}
-			}
+			for (int piece = 0; piece < PieceCount; piece++)
+				for (int block = 0; block < BlockCount; block++)
+					blocks.Add(CreateBlock(piece, block));
 		}
 
 		private PieceData CreateBlock(int piece, int block)
 		{
 			ArraySegment<byte> b = BufferManager.EmptyBuffer;
-			Buffer.GetBuffer(ref b, 1000);
+			Buffer.GetBuffer(ref b, BlockSize);
 			for (int i = 0; i < b.Count; i++)
-				b.Array[b.Offset + i] = (byte)(piece * 10 + block);
-			return new PieceData(b, piece, block * 1000, 1000, rig.Manager.FileManager);
+				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
+			return new PieceData(b, piece, block * BlockSize, BlockSize, rig.Manager.FileManager);
 		}
 
 		[Test]
 		public void TestMemoryWrites()
 		{
-			// Generate a load of pieces and flush them through the double buffer
-			for (int piece = 0; piece < 6; piece++)
-			{
-				for (int block = 0; block < 10; block++)
-				{
-					PieceData d = CreateBlock(piece, block);
-					blocks.Add(d);
-					level1.Write(d);
-				}
-			}
+			for (int i = 2; i < 5; i++)
+				for (int j = 0; j < BlockCount; j++)
+					blocks.Add(CreateBlock(i, j));
 
-			// For the pieces which weren't flushed to the null buffer, make sure they weren't overwritten incorrectly
+			blocks.ForEach(delegate(PieceData d) { level1.Write(d); });
+
+			// For the pieces which weren't flushed to the null buffer, make sure they are still accessible
 			for (int i = 0; i < blocks.Count; i++)
 			{
 				ArraySegment<byte> b = blocks[i].Buffer;
 				PieceData data = blocks[i];
 				for (int j = 0; j < b.Count; j++)
-					Assert.AreEqual(b.Array[b.Offset + j], data.PieceIndex * 10 + data.StartOffset / data.Count, "#1");
+					Assert.AreEqual(b.Array[b.Offset + j], data.PieceIndex * BlockCount + data.StartOffset / data.Count, "#1");
 			}
 		}
 
 		[Test]
 		public void TestMemoryStandardReads()
 		{
-
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
 			Buffer.GetBuffer(ref buffer, 1000);
 			Initialise(buffer);
-			for (int piece=0; piece < 2; piece++)
-			{
-				for(int block = 0; block < 5; block++)
-				{
-					long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * 1000;
-					level1.Read(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, 1000);
+			foreach (PieceData data in this.blocks.ToArray())
+				level1.Write(data);
 
-					for (int i = 0; i < 1000; i++)
-						Assert.AreEqual(buffer.Array[buffer.Offset + i], piece * 10 + block, "#1");
+			for (int piece=0; piece < PieceCount; piece++)
+			{
+				for(int block = 0; block < BlockCount; block++)
+				{
+					long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
+					level1.ReadChunk(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, BlockSize);
+
+					for (int i = 0; i < BlockSize; i++)
+						Assert.AreEqual(buffer.Array[buffer.Offset + i], piece * BlockCount + block, "#1");
 				}
 			}
 		}
 
-
 		[Test]
 		public void TestMemoryOffsetReads()
 		{
+			level1.Write(blocks[0]);
+			level2.Write(blocks[1]);
+			level1.Write(blocks[2]);
+			level2.Write(blocks[3]);
+			level2.Write(blocks[4]);
 
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-			Buffer.GetBuffer(ref buffer, 10000);
+			Buffer.GetBuffer(ref buffer, PieceSize);
 			Initialise(buffer);
-			int piece = 0;
-			int block = 0;
 
-			long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * 1000;
-			level1.Read(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, 10000);
+			long piece = 0;
+			long block = 0;
+			long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
 
-			for (int i = 0; i < 1000; i++)
-				Assert.AreEqual(buffer.Array[buffer.Offset + i], 0, "#0");
-			for (int i = 1000; i < 2000; i++)
-				Assert.AreEqual(buffer.Array[buffer.Offset + i], 1, "#1");
-			for (int i = 2000; i < 3000; i++)
-				Assert.AreEqual(buffer.Array[buffer.Offset + i], 2, "#2");
-			for (int i = 3000; i < 4000; i++)
-				Assert.AreEqual(buffer.Array[buffer.Offset + i], 3, "#3");
-			for (int i = 4000; i < 5000; i++)
-				Assert.AreEqual(buffer.Array[buffer.Offset + i], 4, "#4");
+			level1.ReadChunk(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, PieceSize);
+			for (block = 0; block < 5; block++)
+			{
+				for (int i = 0; i < BlockSize; i++)
+					Assert.AreEqual(block, buffer.Array[buffer.Offset + i + block * BlockSize], "Piece 0. Block " + i);
+			}
 		}
 
 		private void Initialise(ArraySegment<byte> buffer)
@@ -162,8 +169,14 @@ namespace MonoTorrent.Tests
 		public static void Main(string[] args)
 		{
 			PieceWriterTests t = new PieceWriterTests();
+			t.GlobalSetup();
+			t.Setup();
+			t.TestMemoryWrites();
+			t.Setup();
+			t.TestMemoryStandardReads();
 			t.Setup();
 			t.TestMemoryOffsetReads();
+			t.GlobalTearDown();
 		}
 	}
 }

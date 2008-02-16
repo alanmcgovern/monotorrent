@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.IO;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.PieceWriter;
+using MonoTorrent.Client.PieceWriters;
 
 namespace MonoTorrent.Client.Managers
 {
@@ -20,7 +20,7 @@ namespace MonoTorrent.Client.Managers
 
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
-        private IPieceWriter writer;
+		private PieceWriter writer;
 
         #endregion Member Variables
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.Managers
 
         #region Constructors
 
-        internal DiskManager(ClientEngine engine, IPieceWriter writer)
+		internal DiskManager(ClientEngine engine, PieceWriter writer)
         {
             this.bufferedReads = new Queue<BufferedFileRead>();
             this.bufferedWrites = new Queue<PieceData>();
@@ -168,7 +168,7 @@ namespace MonoTorrent.Client.Managers
         private void PerformRead(BufferedFileRead io)
         {
             lock (writer)
-                io.BytesRead = writer.Read(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
+                io.BytesRead = writer.ReadChunk(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
             io.WaitHandle.Set();
         }
 
@@ -176,7 +176,7 @@ namespace MonoTorrent.Client.Managers
         internal int Read(FileManager fileManager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
         {
             lock (writer)
-                return writer.Read(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
+                return writer.ReadChunk(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
         }
 
         /// <summary>

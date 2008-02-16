@@ -41,10 +41,11 @@
     <Compile Include="BitFieldTest.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="PeerMessagesTest.cs" />
+    <Compile Include="PieceWriterTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
-      <Project>{F48B95BE-0C36-48A3-838F-83FB0E4D0936}</Project>
+      <Project>{3F17418C-30C3-42DC-B245-403AB53B4F31}</Project>
       <Name>MonoTorrent</Name>
     </ProjectReference>
     <ProjectReference Include="..\SampleClient\SampleClient.csproj">

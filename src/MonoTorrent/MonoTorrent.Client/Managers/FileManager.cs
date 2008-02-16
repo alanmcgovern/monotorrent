@@ -208,13 +208,14 @@ namespace MonoTorrent.Client
                     do
                     {
                         bytesToRead = (PieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (PieceLength - totalRead);
+						bytesToRead = Math.Min(bytesToRead, Piece.BlockSize);
 
-                        if ((pieceStartIndex + bytesToRead) > this.fileSize)
-                            bytesToRead -= (int)((pieceStartIndex + bytesToRead) - fileSize);
+                        if ((pieceStartIndex + bytesToRead + totalRead) > this.fileSize)
+							bytesToRead = (int)(fileSize - (pieceStartIndex + totalRead));
 
                         if (asynchronous)
                         {
-                            BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                            BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
                             manager.Engine.DiskManager.QueueRead(read);
                             read.WaitHandle.WaitOne();
                             read.WaitHandle.Close();
@@ -222,12 +223,11 @@ namespace MonoTorrent.Client
                         }
                         else
                         {
-                            bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex, bytesToRead);
+                            bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
                         }
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
-                        pieceStartIndex += bytesToRead;
-                    } while (bytesRead != 0 && totalRead != bytesToRead);
+                    } while (bytesRead != 0 && totalRead != PieceLength);
 
 
                     // Compute the hash of the piece

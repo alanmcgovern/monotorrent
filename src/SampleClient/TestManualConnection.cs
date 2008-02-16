@@ -153,7 +153,7 @@ namespace SampleClient
             torrent = Torrent.Load(CreateTorrent(piecelength));
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
-            manager.Start();
+            //manager.Start();
         }
 
         public void AddConnection(IConnection connection)
@@ -193,7 +193,9 @@ namespace SampleClient
         public TestManualConnection()
         {
             rig1 = new EngineTestRig("Downloads1");
+            rig1.Manager.Start();
             rig2 = new EngineTestRig("Downloads2");
+            rig2.Manager.Start();
 
             TcpListener socketListener = new TcpListener(1220);
             socketListener.Start();
