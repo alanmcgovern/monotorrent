@@ -36,6 +36,9 @@ namespace MonoTorrent.Client.Messages
 
         public static void Register(byte identifier, CreateMessage creator)
         {
+            if (creator == null || creator() == null)
+                throw new ArgumentNullException("creator");
+
             lock (messageDict)
                 messageDict.Add(identifier, creator);
         }
