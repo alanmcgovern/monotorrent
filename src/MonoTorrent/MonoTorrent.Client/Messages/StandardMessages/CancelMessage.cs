@@ -102,14 +102,16 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, messageLength);
+			int written = offset;
+			
+			written += Write(buffer, offset, messageLength);
             written += Write(buffer, offset + 4, MessageId);
             written += Write(buffer, offset + 5, pieceIndex);
             written += Write(buffer, offset + 9, startOffset);
             written += Write(buffer, offset + 13, requestLength);
 
-            CheckWritten(written);
-            return written;
+            CheckWritten(written - offset);
+            return written - offset;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)

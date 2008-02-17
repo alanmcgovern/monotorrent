@@ -84,13 +84,15 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, bitField.LengthInBytes + 1);
-            written += Write(buffer, offset + 4, MessageId);
-            bitField.ToByteArray(buffer, offset + 5);
+			int written = offset;
+
+			written += Write(buffer, written, bitField.LengthInBytes + 1);
+			written += Write(buffer, written, MessageId);
+			bitField.ToByteArray(buffer, written);
             written += (bitField.LengthInBytes);
 
-            CheckWritten(written);
-            return written;
+            CheckWritten(written - offset);
+            return written - offset;
         }
 
         /// <summary>

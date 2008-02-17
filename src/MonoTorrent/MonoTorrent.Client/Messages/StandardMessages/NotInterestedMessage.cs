@@ -55,11 +55,13 @@ namespace MonoTorrent.Client.Messages.Standard
         
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, messageLength);
+			int written = offset;
+			
+			written += Write(buffer, offset, messageLength);
             written += Write(buffer, offset + 4, MessageId);
 
-            CheckWritten(written);
-            return written;
+            CheckWritten(written - offset);
+            return written - offset;
         }
 
 

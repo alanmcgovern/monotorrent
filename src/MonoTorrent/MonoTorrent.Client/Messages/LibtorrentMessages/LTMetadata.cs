@@ -48,6 +48,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write(buffer, written, expectedId);
             written += Write(buffer, written, 2); // FIXME: We always say we have no metadata
 
+			//CheckWritten(written - offset);
             return written - offset;
         }
     }
