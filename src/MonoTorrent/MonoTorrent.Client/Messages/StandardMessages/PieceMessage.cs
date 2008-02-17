@@ -155,20 +155,21 @@ namespace MonoTorrent.Client.Messages.Standard
         public override int Encode(byte[] buffer, int offset)
         {
             int bytesRead = 0;
-            int written = Write(buffer, offset, messageLength + requestLength);
-            written += Write(buffer, offset + 4, MessageId);
-            written += Write(buffer, offset + 5, pieceIndex);
-            written += Write(buffer, offset + 9, startOffset);
+            int written = offset;
+            written += Write(buffer, written, messageLength + requestLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, startOffset);
 
             long pieceOffset = (long)this.PieceIndex * this.manager.FileManager.PieceLength + this.startOffset;
-            bytesRead = this.manager.FileManager.Read(buffer, offset + 13, pieceOffset, this.RequestLength);
+            bytesRead = this.manager.FileManager.Read(buffer, written, pieceOffset, this.RequestLength);
 
             if (bytesRead != this.RequestLength)
                 throw new MessageException("Could not read required data");
             written += bytesRead;
 
-            CheckWritten(written);
-            return written;
+            CheckWritten(written - offset);
+            return written - offset;
         }
 
         /// <summary>
@@ -181,9 +182,7 @@ namespace MonoTorrent.Client.Messages.Standard
             PieceMessage msg = obj as PieceMessage;
             return (msg == null) ? false : (this.pieceIndex == msg.pieceIndex
                                             && this.startOffset == msg.startOffset
-                                            && this.requestLength == msg.requestLength
-                                            && this.dataOffset == msg.dataOffset
-                                            && this.manager == msg.manager);
+                                            && this.requestLength == msg.requestLength);
         }
 
 
