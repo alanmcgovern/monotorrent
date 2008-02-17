@@ -71,11 +71,7 @@ namespace MonoTorrent.Client.Tracker
 
         internal int IndexOf(Tracker tracker)
         {
-            for (int i = 0; i < this.trackers.Length; i++)
-                if (this.trackers[i].Equals(tracker))
-                    return i;
-
-            return -1;
+			return Array.IndexOf<Tracker>(trackers, tracker);
         }
 
 

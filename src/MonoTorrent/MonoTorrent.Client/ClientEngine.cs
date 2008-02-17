@@ -255,12 +255,9 @@ namespace MonoTorrent.Client
         {
             if (torrent == null)
                 return false;
-            using (new ReaderLock(this.torrentsLock))
-                for (int i = 0; i < this.torrents.Count; i++)
-                    if (Toolbox.ByteMatch(this.torrents[i].Torrent.infoHash, torrent.infoHash))
-                        return true;
 
-            return false;
+            using (new ReaderLock(this.torrentsLock))
+                return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
         }
 
 
@@ -326,10 +323,7 @@ namespace MonoTorrent.Client
         {
             lock (asyncCompletionLock)
                 using (new ReaderLock(this.torrentsLock))
-                    for (int i = 0; i < torrents.Count; i++)
-                        if (torrents[i].State == TorrentState.Downloading ||
-                            torrents[i].State == TorrentState.Seeding)
-                            torrents[i].Pause();
+                    torrents.ForEach(delegate(TorrentManager m) { m.Pause(); });
         }
 
 
@@ -359,9 +353,7 @@ namespace MonoTorrent.Client
         {
             lock (asyncCompletionLock)
                 using (new ReaderLock(this.torrentsLock))
-                    for (int i = 0; i < torrents.Count; i++)
-                        if (torrents[i].State == TorrentState.Stopped || torrents[i].State == TorrentState.Paused)
-                            torrents[i].Start();
+                    torrents.ForEach(delegate(TorrentManager m) { m.Start(); });
         }
 
 
@@ -373,9 +365,7 @@ namespace MonoTorrent.Client
             List<WaitHandle> handles = new List<WaitHandle>();
             lock (asyncCompletionLock)
                 using (new ReaderLock(this.torrentsLock))
-                    for (int i = 0; i < torrents.Count; i++)
-                        if (torrents[i].State != TorrentState.Stopped)
-                            handles.Add(torrents[i].Stop());
+                    torrents.ForEach(delegate(TorrentManager m) { handles.Add(m.Stop()); });
 
             return handles.ToArray();
         }
@@ -388,12 +378,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                double speed = 0;
                 using (new ReaderLock(torrentsLock))
-                    for (int i = 0; i < torrents.Count; i++)
-                        speed += torrents[i].Monitor.DownloadSpeed;
-
-                return speed;
+                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return (int)m.Monitor.DownloadSpeed; });
             }
         }
 
@@ -405,12 +391,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                double speed = 0;
                 using (new ReaderLock(torrentsLock))
-                    for (int i = 0; i < torrents.Count; i++)
-                        speed += torrents[i].Monitor.UploadSpeed;
-
-                return speed;
+                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return (int)m.Monitor.UploadSpeed; });
             }
         }
 
@@ -502,12 +484,9 @@ namespace MonoTorrent.Client
         {
             lock (asyncCompletionLock)
             {
+                // If all the torrents are stopped, stop ticking
                 using (new ReaderLock(this.torrentsLock))
-                    for (int i = 0; i < this.torrents.Count; i++)
-                        if (this.torrents[i].State != TorrentState.Stopped)
-                            return;
-
-                timer.Enabled = false;              // All the torrents are stopped, so stop ticking
+                    timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
             }
         }
 

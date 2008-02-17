@@ -35,9 +35,32 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Common
 {
-    public class Toolbox
+	public delegate int Action<T>(T target);
+
+    public static class Toolbox
     {
         private static Random r = new Random();
+		public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)
+		{
+			int count = 0;
+
+			foreach (T t in enumerable)
+				if (predicate(t))
+					count++;
+
+			return count;
+		}
+
+		public static int Accumulate<T>(IEnumerable<T> enumerable, Action<T> action)
+		{
+			int count = 0;
+
+			foreach (T t in enumerable)
+				count += action(t);
+		
+			return count;
+		}
+
 
         /// <summary>
         /// Randomizes the contents of the array

@@ -404,6 +404,9 @@ namespace MonoTorrent.Client
             lock (this.engine.asyncCompletionLock)
                 lock (this.listLock)
                 {
+                    if (state != TorrentState.Downloading && state != TorrentState.Seeding)
+                        return;
+
                     // By setting the state to "paused", peers will not be dequeued from the either the
                     // sending or receiving queues, so no traffic will be allowed.
                     UpdateState(TorrentState.Paused);
@@ -439,11 +442,10 @@ namespace MonoTorrent.Client
                     return;
                 }
 
-
                 if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
-                    throw new TorrentException("Torrent is already running");
+                    return;
 
-                if (TrackerManager.CurrentTracker.CanScrape)
+                if (TrackerManager.CurrentTracker != null && TrackerManager.CurrentTracker.CanScrape)
                     this.TrackerManager.Scrape();
 
                 this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
@@ -465,13 +467,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-			WaitHandle handle;
+            WaitHandle handle;
             lock (this.engine.asyncCompletionLock)
             {
-				if (this.state == TorrentState.Stopped)
-					return new ManualResetEvent(true);
+                if (this.state == TorrentState.Stopped)
+                    return new ManualResetEvent(true);
 
-				UpdateState(TorrentState.Stopped);
+                UpdateState(TorrentState.Stopped);
 
                 handle = this.trackerManager.Announce(TorrentEvent.Stopped);
                 lock (this.listLock)
@@ -721,8 +723,8 @@ namespace MonoTorrent.Client
         internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
         {
             int index = pieceHashedEventArgs.PieceIndex;
-			TorrentFile[] files = this.torrent.Files;
-			
+            TorrentFile[] files = this.torrent.Files;
+            
             for (int i = 0; i < files.Length; i++)
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
                     files[i].BitField[index - files[i].StartPieceIndex] = pieceHashedEventArgs.HashPassed;

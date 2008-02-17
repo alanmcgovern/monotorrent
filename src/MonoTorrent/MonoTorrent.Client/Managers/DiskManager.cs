@@ -20,7 +20,7 @@ namespace MonoTorrent.Client.Managers
 
         private ConnectionMonitor monitor;
         internal RateLimiter rateLimiter;
-		private PieceWriter writer;
+        private PieceWriter writer;
 
         #endregion Member Variables
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.Managers
 
         #region Constructors
 
-		internal DiskManager(ClientEngine engine, PieceWriter writer)
+        internal DiskManager(ClientEngine engine, PieceWriter writer)
         {
             this.bufferedReads = new Queue<BufferedFileRead>();
             this.bufferedWrites = new Queue<PieceData>();

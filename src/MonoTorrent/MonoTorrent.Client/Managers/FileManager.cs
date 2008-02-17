@@ -208,10 +208,10 @@ namespace MonoTorrent.Client
                     do
                     {
                         bytesToRead = (PieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (PieceLength - totalRead);
-						bytesToRead = Math.Min(bytesToRead, Piece.BlockSize);
+                        bytesToRead = Math.Min(bytesToRead, Piece.BlockSize);
 
                         if ((pieceStartIndex + bytesToRead + totalRead) > this.fileSize)
-							bytesToRead = (int)(fileSize - (pieceStartIndex + totalRead));
+                            bytesToRead = (int)(fileSize - (pieceStartIndex + totalRead));
 
                         if (asynchronous)
                         {

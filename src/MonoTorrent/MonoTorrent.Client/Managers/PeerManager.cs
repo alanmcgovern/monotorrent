@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -60,14 +61,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                int leechs = 0;
                 lock (this.manager.listLock)
-                    for (int i = 0; i < this.activePeers.Count; i++)
-                        lock (this.activePeers[i])
-                            if (!this.activePeers[i].IsSeeder)
-                                leechs++;
-
-                return leechs;
+                    return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return !p.IsSeeder; });
             }
         }
 
@@ -79,13 +74,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                int seeds = 0;
                 lock (this.manager.listLock)
-                    for (int i = 0; i < this.activePeers.Count; i++)
-                        lock (this.activePeers[i])
-                            if (this.activePeers[i].IsSeeder)
-                                seeds++;
-                return seeds;
+                    return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return p.IsSeeder; });
             }
         }
 
