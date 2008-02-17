@@ -101,7 +101,6 @@ namespace MonoTorrent.Client
 		}
 
 
-        // FIXME Use these to request pieces
         /// <summary>
         /// Contains the indexs of all the pieces we will let the peer download even if they are choked
         /// </summary>

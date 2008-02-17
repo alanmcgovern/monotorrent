@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
             {
                 if (id.Connection.Encryptor is NoEncryption && ClientEngine.SupportsEncryption)
                 {
-                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.b
+                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.
                     byte[][] sKeys;
                     using (new ReaderLock(engine.torrentsLock))
                     {
@@ -252,8 +252,6 @@ namespace MonoTorrent.Client
                     return;
                 }
                 
-
-                // FIXME: Where does the connection go now? Is it added to the torrent manager?
                 // The complete handshake was in the initial payload
                 Logger.Log(id.Connection.Connection, "CE Recieved Encrypted handshake");
 
