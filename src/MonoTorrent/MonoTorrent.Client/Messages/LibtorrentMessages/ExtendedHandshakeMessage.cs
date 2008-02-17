@@ -145,7 +145,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             mainDict.Add(VersionKey, (BEncodedString)Version);
             mainDict.Add(PortKey, (BEncodedNumber)localPort);
 
-            LibtorrentMessage.Supports.ForEach(delegate(LTSupport s) { supportsDict.Add(s.Name, (BEncodedNumber)s.MessageId); });
+			SupportedMessages.ForEach(delegate(LTSupport s) { supportsDict.Add(s.Name, (BEncodedNumber)s.MessageId); });
             mainDict.Add(SupportsKey, supportsDict);
             return mainDict;
         }
