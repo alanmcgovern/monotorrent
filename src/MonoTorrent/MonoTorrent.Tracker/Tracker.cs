@@ -64,7 +64,7 @@ namespace MonoTorrent.Tracker
         private bool allowScrape;
         private bool allowNonCompact;
         private Dictionary<byte[], SimpleTorrentManager> torrents;
-        private IIntervalAlgorithm intervalAlgorithm;
+        private StaticIntervalAlgorithm intervalAlgorithm;
 
         #endregion Fields
 
@@ -94,7 +94,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// Get and set the IntervalAlgorithm used by this Tracker
         ///</summary>
-        private IIntervalAlgorithm IntervalAlgorithm
+        public StaticIntervalAlgorithm IntervalAlgorithm
         {
             get { return intervalAlgorithm; }
             set { intervalAlgorithm = value; }

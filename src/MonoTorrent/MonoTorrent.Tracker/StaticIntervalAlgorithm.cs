@@ -61,6 +61,7 @@ namespace MonoTorrent.Tracker
         public int MinInterval 
         {
             get { return min_interval; }
+			set { min_interval = value; }
         }
         
         ///<summary>
@@ -69,6 +70,7 @@ namespace MonoTorrent.Tracker
         public int Interval
         {
             get { return interval;  }
+			set { interval = value; }
         }
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace MonoTorrent.Tracker
         public int PeerTimeout
         {
             get {  return timeout; }
+			set { timeout = value; }
         }
     }
 }
