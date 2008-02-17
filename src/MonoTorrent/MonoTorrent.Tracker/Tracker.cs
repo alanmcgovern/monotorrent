@@ -94,7 +94,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// Get and set the IntervalAlgorithm used by this Tracker
         ///</summary>
-        public StaticIntervalAlgorithm IntervalAlgorithm
+        public StaticIntervalAlgorithm Intervals
         {
             get { return intervalAlgorithm; }
             set { intervalAlgorithm = value; }
@@ -181,15 +181,15 @@ namespace MonoTorrent.Tracker
                 manager.Update(e);
 
                 // Clear any peers who haven't announced within the allowed timespan and may be inactive
-                manager.ClearZombiePeers(DateTime.Now.AddSeconds(-this.IntervalAlgorithm.PeerTimeout));
+                manager.ClearZombiePeers(DateTime.Now.AddSeconds(-this.Intervals.PeerTimeout));
 
                 // Fulfill the announce request
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
             }
 
             // Make sure the values are updated
-            Tracker.interval_value.Number = IntervalAlgorithm.Interval;
-            Tracker.min_interval_value.Number = IntervalAlgorithm.MinInterval;
+            Tracker.interval_value.Number = Intervals.Interval;
+            Tracker.min_interval_value.Number = Intervals.MinInterval;
 
             e.Response.Add(Tracker.interval, Tracker.interval_value);
             e.Response.Add(Tracker.min_interval, Tracker.min_interval_value);
