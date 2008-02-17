@@ -17,6 +17,8 @@ namespace MonoTorrent.Client.Messages
         {
             messageDict = new Dictionary<byte, CreateMessage>();
 
+            // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
+            //      - Handshake messages aren't registered as they are always the first message sent/received
             Register(AllowedFastMessage.MessageId,   delegate (TorrentManager manager) { return new AllowedFastMessage(); });
             Register(BitfieldMessage.MessageId,      delegate (TorrentManager manager) { return new BitfieldMessage(manager.Torrent.Pieces.Count); });
             Register(CancelMessage.MessageId,        delegate (TorrentManager manager) { return new CancelMessage(); });
@@ -52,17 +54,16 @@ namespace MonoTorrent.Client.Messages
         {
             PeerMessage message;
             CreateMessage creator;
+
             if (buffer[offset] == LibtorrentMessage.MessageId)
                 return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count, manager);
 
-
-            if (messageDict.TryGetValue(buffer[offset], out creator))
-                message = creator(manager);
-            else
-                message = new UnknownMessage();
+            if (!messageDict.TryGetValue(buffer[offset], out creator))
+                return new UnknownMessage();
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
+            message = creator(manager);
             message.Decode(buffer, offset + 1, count);
             return message;
         }

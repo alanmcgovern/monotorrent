@@ -52,12 +52,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             CreateMessage creator;
             PeerMessage message;
 
-            byte id = buffer[offset];
-            if (messageDict.TryGetValue(buffer[offset], out creator))
-                message = creator(manager);
-            else
-                message = new UnknownMessage();
+            if (!messageDict.TryGetValue(buffer[offset], out creator))
+                return new UnknownMessage();
 
+            message = creator(manager);
             message.Decode(buffer, offset + 1, count);
             return message;
         }
