@@ -28,6 +28,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 			SupportedMessages.Add(new LTSupport("LT_metadata", nextId++));
         }
 
+		public new static void Register(byte identifier, CreateMessage creator)
+		{
+			if (creator == null || creator() == null)
+				throw new ArgumentNullException("creator");
+
+			lock (messageDict)
+				messageDict.Add(identifier, creator);
+		}
+
         protected static LTSupport CreateSupport(string name)
         {
 			return SupportedMessages.Find(delegate(LTSupport s) { return s.Name == name; });
