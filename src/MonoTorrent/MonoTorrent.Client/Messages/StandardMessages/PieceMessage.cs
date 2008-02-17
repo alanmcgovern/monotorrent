@@ -141,7 +141,7 @@ namespace MonoTorrent.Client.Messages.Standard
             offset += 4;
             this.startOffset = ReadInt(buffer, offset);
             offset += 4;
-            this.requestLength = length - 9;
+            this.requestLength = length - 8;
 
             this.dataOffset = offset;
 
@@ -156,6 +156,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             int bytesRead = 0;
             int written = offset;
+
             written += Write(buffer, written, messageLength + requestLength);
             written += Write(buffer, written, MessageId);
             written += Write(buffer, written, pieceIndex);

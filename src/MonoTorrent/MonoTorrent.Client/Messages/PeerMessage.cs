@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Messages
             CreateMessage creator;
 
             if (buffer[offset] == LibtorrentMessage.MessageId)
-                return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count, manager);
+                return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count - 1, manager);
 
             if (!messageDict.TryGetValue(buffer[offset], out creator))
                 return new UnknownMessage();
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Messages
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
             message = creator(manager);
-            message.Decode(buffer, offset + 1, count);
+            message.Decode(buffer, offset + 1, count - 1);
             return message;
         }
 
