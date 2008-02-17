@@ -8,9 +8,30 @@ using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.PieceWriters;
 
 namespace SampleClient
 {
+    public class NullWriter : PieceWriter
+    {
+        public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
+        {
+            return count;
+        }
+
+        public override void Write(PieceData data)
+        {
+        }
+
+        public override void CloseFileStreams(TorrentManager manager)
+        {
+        }
+
+        public override void Flush(TorrentManager manager)
+        {
+        }
+    }
+
     public class CustomConnection : IConnection
     {
         private string name;
@@ -148,8 +169,9 @@ namespace SampleClient
 
         public EngineTestRig(string savePath, int piecelength)
         {
+            PieceWriter writer = new MemoryWriter(new NullWriter());
             listener = new CustomListener();
-            engine = new ClientEngine(new EngineSettings(), listener);
+            engine = new ClientEngine(new EngineSettings(), listener, writer);
             torrent = Torrent.Load(CreateTorrent(piecelength));
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);

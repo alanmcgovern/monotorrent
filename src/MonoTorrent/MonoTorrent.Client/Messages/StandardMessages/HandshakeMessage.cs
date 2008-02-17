@@ -117,22 +117,31 @@ namespace MonoTorrent.Client.Messages.Standard
         }
 
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString)
-            : this(infoHash, peerId, protocolString, ClientEngine.SupportsFastPeer)
+            : this(infoHash, peerId, protocolString, ClientEngine.SupportsFastPeer, ClientEngine.SupportsExtended)
         {
 
         }
 
         public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer)
+            : this(infoHash, peerId, protocolString, enableFastPeer, ClientEngine.SupportsExtended)
+        {
+
+        }
+
+        public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer, bool enableExtended)
         {
             if (!ClientEngine.SupportsFastPeer && enableFastPeer)
                 throw new ProtocolException("The engine does not support fast peer, but fast peer was requested");
+
+            if (!ClientEngine.SupportsExtended && enableExtended)
+                throw new ProtocolException("The engine does not support extended, but extended was requested");
 
             this.infoHash = infoHash;
             this.peerId = peerId;
             this.protocolString = protocolString;
             this.protocolStringLength = protocolString.Length;
             this.supportsFastPeer = enableFastPeer;
-            this.extended = true;
+            this.extended = enableExtended;
         }
         #endregion
 

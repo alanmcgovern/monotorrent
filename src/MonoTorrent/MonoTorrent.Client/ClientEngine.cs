@@ -53,6 +53,7 @@ namespace MonoTorrent.Client
         private static Random random = new Random();
         #region Global Constants
 
+        public static readonly bool SupportsExtended = true;
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = false;
@@ -166,8 +167,18 @@ namespace MonoTorrent.Client
         /// <param name="engineSettings">The engine settings to use</param>
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings engineSettings)
-            : this(engineSettings, null, true)
         {
+            Initialise(engineSettings, null, null);
+            this.peerId = GeneratePeerId();
+        }
+
+        public ClientEngine(EngineSettings settings, PieceWriter writer)
+        {
+            if (writer == null)
+                throw new ArgumentNullException("writer");
+
+            Initialise(settings, null, writer);
+            this.peerId = GeneratePeerId();
         }
 
         /// <summary>
@@ -176,43 +187,60 @@ namespace MonoTorrent.Client
         /// <param name="engineSettings">The engine settings to use</param>
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener)
-            : this(engineSettings, listener, false)
         {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+
+            Initialise(engineSettings, listener, null);
+            this.peerId = GeneratePeerId();
         }
 
-        private ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener, bool createListener)
+        public ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener, PieceWriter writer)
+        {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+            if (writer == null)
+                throw new ArgumentNullException("writer");
+            
+            Initialise(engineSettings, listener, writer);
+            this.peerId = GeneratePeerId();
+        }
+
+        private void Initialise(EngineSettings engineSettings, ConnectionListenerBase listener, PieceWriter writer)
         {
             if (engineSettings == null)
                 throw new ArgumentNullException("engineSettings");
 
-            if (listener == null && !createListener)
-                throw new ArgumentNullException("listener");
+            this.settings = engineSettings;
 
             // Wrap a memory buffer around the disk writer
-            PieceWriter writer = new DiskWriter(engineSettings.MaxOpenFiles);
-            writer = new MemoryWriter(writer);
+            if (writer == null)
+            {
+                writer = new DiskWriter(engineSettings.MaxOpenFiles);
+                writer = new MemoryWriter(writer);
+            }
 
-            this.settings = engineSettings;
 
             this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
-            this.peerId = GeneratePeerId();
             this.timer = new System.Timers.Timer(TickLength);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
             this.torrentsLock = new ReaderWriterLock();
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
 
-            if (createListener)
+            if (listener == null)
+            {
                 listener = new SocketListener(new IPEndPoint(IPAddress.Any, engineSettings.ListenPort));
-
-            listenManager.Register(listener);
-
-            if (createListener)
+                listenManager.Register(listener);
                 listener.Start();
+            }
+            else
+            {
+                listenManager.Register(listener);
+            }
         }
-
         #endregion
 
 
