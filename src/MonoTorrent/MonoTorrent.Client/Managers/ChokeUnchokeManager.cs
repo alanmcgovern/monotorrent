@@ -196,10 +196,6 @@ namespace MonoTorrent.Client
                 //We're already choking this peer, nothing to do
                 return;
 
-            // FIXME: This doesn't need to be done anymore. This was a horrible hack
-            // so i could implement a 'stupid' choke/unchoke algorithm. The new algorithm doesn't
-            // use this, so don't reset down to zero :)
-            peer.Connection.PiecesSent = 0;
             peer.Connection.AmChoking = true;
             owningTorrent.UploadingTo--;
             RejectPendingRequests(peer);
@@ -499,7 +495,6 @@ namespace MonoTorrent.Client
                 //We're already unchoking this peer, nothing to do
                 return;
 
-            PeerToUnchoke.Connection.PiecesSent = 0;
             PeerToUnchoke.Connection.AmChoking = false;
             owningTorrent.UploadingTo++;
             PeerToUnchoke.Connection.EnqueueAt(new UnchokeMessage(), 0);
