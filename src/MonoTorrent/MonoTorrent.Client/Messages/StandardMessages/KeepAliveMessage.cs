@@ -39,6 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
     {
         private const int messageLength = 0;   // has no payload
         public const byte MessageId = 0;
+		private static readonly byte[] payload = new byte[] { 0, 0, 0, 0 };
 
         #region Constructors
         /// <summary>
@@ -53,13 +54,12 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, (byte)0);
-            written += Write(buffer, offset + 1, (byte)0);
-            written += Write(buffer, offset + 2, (byte)0);
-            written += Write(buffer, offset + 3, (byte)0);
+			int written = offset;
 
-            CheckWritten(written);
-            return written;
+			written += Write(buffer, offset, payload, 0, payload.Length);
+
+            CheckWritten(written - offset);
+            return written - offset;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
