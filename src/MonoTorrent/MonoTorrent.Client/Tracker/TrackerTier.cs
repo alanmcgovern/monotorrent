@@ -53,7 +53,10 @@ namespace MonoTorrent.Client.Tracker
 
                 Tracker tracker = TrackerFactory.CreateForProtocol(result.Scheme, result);
                 if (tracker != null)
+                {
+                    tracker.Tier = this;
                     trackerList.Add(tracker);
+                }
                 else
                     Console.Error.WriteLine("Unsupported protocol {0}", result);
             }

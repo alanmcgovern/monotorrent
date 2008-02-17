@@ -118,7 +118,6 @@ namespace MonoTorrent.Client.Tracker
             {
                 foreach (Tracker tracker in tier)
                 {
-                    tracker.Tier = tier;
                     tracker.AnnounceComplete += new EventHandler<AnnounceResponseEventArgs>(OnAnnounceComplete);
                     tracker.ScrapeComplete += new EventHandler<ScrapeResponseEventArgs>(OnScrapeComplete);
                 }
