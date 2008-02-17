@@ -194,8 +194,8 @@ namespace MonoTorrent.Tracker
             e.Response.Add(Tracker.interval, Tracker.interval_value);
             e.Response.Add(Tracker.min_interval, Tracker.min_interval_value);
             e.Response.Add(Tracker.tracker_id, Tracker.tracker_id_value); // FIXME: Is this right?
-            e.Response.Add(Tracker.complete, manager.Complete);
-            e.Response.Add(Tracker.incomplete, manager.Incomplete);
+            e.Response.Add(Tracker.complete, new BEncodedNumber(manager.Complete));
+            e.Response.Add(Tracker.incomplete, new BEncodedNumber(manager.Incomplete));
 
             //FIXME is this the right behaivour 
             //if (par.TrackerId == null)
@@ -231,9 +231,9 @@ namespace MonoTorrent.Tracker
                     continue;
 
                 BEncodedDictionary dict = new BEncodedDictionary();
-                dict.Add("complete", manager.Complete);
-                dict.Add("downloaded", manager.Downloaded);
-                dict.Add("incomplete", manager.Incomplete);
+                dict.Add("complete",new BEncodedNumber( manager.Complete));
+                dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
+                dict.Add("incomplete", new BEncodedNumber(manager.Incomplete));
                 dict.Add("name", new BEncodedString(manager.Trackable.Name));
                 files.Add(key, dict);
             }

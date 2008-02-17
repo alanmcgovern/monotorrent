@@ -75,17 +75,16 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The number of active seeds
         /// </summary>
-        public BEncodedNumber Complete
+        public long Complete
         {
-            get { return complete; }
+            get { return complete.Number; }
         }
 
-        public BEncodedNumber Incomplete
+        public long Incomplete
         {
             get
             {
-                incomplete.Number = Count - complete.Number;
-                return incomplete;
+                return incomplete.Number;
             }
         }
 
@@ -101,9 +100,9 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The total number of times the torrent has been fully downloaded
         /// </summary>
-        public BEncodedNumber Downloaded
+        public long Downloaded
         {
-            get { return downloaded; }
+            get { return downloaded.Number; }
         }
 
 
