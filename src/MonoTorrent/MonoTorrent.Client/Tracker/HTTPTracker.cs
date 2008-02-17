@@ -79,9 +79,9 @@ namespace MonoTorrent.Client.Tracker
             if (true)
             {
                 if (url.IndexOf('?') == -1)
-                    url += "?info_hash=" + infohash;
+                    url += "?info_hash=" + HttpUtility.UrlEncode(infohash);
                 else
-                    url += "&info_hash=" + infohash;
+                    url += "&info_hash=" + HttpUtility.UrlEncode(infohash);
             }
             request = (HttpWebRequest)HttpWebRequest.Create(url);
             id.Request = request;
