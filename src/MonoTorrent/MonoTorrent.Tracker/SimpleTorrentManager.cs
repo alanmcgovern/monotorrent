@@ -163,8 +163,7 @@ namespace MonoTorrent.Tracker
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
             peers.Add(peer.ClientAddress.Address, peer);
 
-            if (peer.HasCompleted)
-                System.Threading.Interlocked.Increment(ref complete.number);
+            UpdateCounts();
         }
 
         /// <summary>
@@ -214,6 +213,15 @@ namespace MonoTorrent.Tracker
                 response.Add(Tracker.peers, nonCompactResponse);
         }
 
+        public void ClearZombiePeers(DateTime cutoff)
+        {
+            IPAddress[] keys = new IPAddress[peers.Keys.Count];
+            peers.Keys.CopyTo(keys, 0);
+            foreach (IPAddress ip in keys)
+                if (peers[ip].LastAnnounceTime < cutoff)
+                    peers.Remove(ip);
+        }
+
 
         /// <summary>
         /// Removes the peer from the tracker
@@ -227,8 +235,24 @@ namespace MonoTorrent.Tracker
             Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
             peers.Remove(peer.ClientAddress.Address);
 
-            if (peer.HasCompleted)
-                System.Threading.Interlocked.Decrement(ref complete.number);
+            UpdateCounts();
+        }
+
+        private void UpdateCounts()
+        {
+            int complete = 0;
+            int incomplete = 0;
+
+            foreach (Peer p in peers.Values)
+            {
+                if (p.HasCompleted)
+                    complete++;
+                else
+                    incomplete++;
+            }
+
+            this.complete.number = complete;
+            this.incomplete.number = incomplete;
         }
 
         /// <summary>
@@ -245,25 +269,15 @@ namespace MonoTorrent.Tracker
             }
 
             Debug.WriteLine(string.Format("Updating: {0}", peer.ClientAddress));
-            switch (par.Event)
-            {
-                case TorrentEvent.Completed:
-                    System.Threading.Interlocked.Increment(ref complete.number);
-                    System.Threading.Interlocked.Increment(ref downloaded.number);
-                    break;
-
-                case TorrentEvent.Stopped:
-                    Remove(peer);
-                    break;
-
-                case TorrentEvent.None:
-                case TorrentEvent.Started:
-                    // Do nothing
-                    break;
-
-            }
-
             peer.Update(par);
+
+            if (par.Event == TorrentEvent.Completed)
+                System.Threading.Interlocked.Increment(ref downloaded.number);
+
+            else if (par.Event == TorrentEvent.Stopped)
+                Remove(peer);
+
+            UpdateCounts();
         }
 
         #endregion Methods

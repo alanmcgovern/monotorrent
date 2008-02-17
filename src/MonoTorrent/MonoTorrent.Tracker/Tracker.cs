@@ -180,6 +180,9 @@ namespace MonoTorrent.Tracker
                 // updates it's information or removes it depending on the context
                 manager.Update(e);
 
+                // Clear any peers who haven't announced within the allowed timespan and may be inactive
+                manager.ClearZombiePeers(DateTime.Now.AddSeconds(-this.IntervalAlgorithm.PeerTimeout));
+
                 // Fulfill the announce request
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
             }
