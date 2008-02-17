@@ -8,7 +8,7 @@ using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client.Messages
 {
-    public delegate PeerMessage CreateMessage();
+    public delegate PeerMessage CreateMessage(TorrentManager manager);
     public abstract class PeerMessage : Message
     {
         private static Dictionary<byte, CreateMessage> messageDict;
@@ -17,26 +17,26 @@ namespace MonoTorrent.Client.Messages
         {
             messageDict = new Dictionary<byte, CreateMessage>();
 
-            Register(AllowedFastMessage.MessageId,        delegate { return new AllowedFastMessage(); });
-            //Register(BitfieldMessage.MessageId,        delegate { return new BitfieldMessage(); });
-            Register(CancelMessage.MessageId,            delegate { return new CancelMessage(); });
-            Register(ChokeMessage.MessageId,            delegate { return new ChokeMessage(); });
-            Register(HaveAllMessage.MessageId,            delegate { return new HaveAllMessage(); });
-            Register(HaveMessage.MessageId,                delegate { return new HaveMessage(); });
-            Register(HaveNoneMessage.MessageId,            delegate { return new HaveNoneMessage(); });
-            Register(InterestedMessage.MessageId,        delegate { return new InterestedMessage(); });
-            Register(NotInterestedMessage.MessageId,    delegate { return new NotInterestedMessage(); });
-            //Register(PieceMessage.MessageId,            delegate { return new PieceMessage(); });
-            Register(PortMessage.MessageId,                delegate { return new PortMessage(); });
-            Register(RejectRequestMessage.MessageId,    delegate { return new RejectRequestMessage(); });
-            Register(RequestMessage.MessageId,            delegate { return new RequestMessage(); });
-            Register(SuggestPieceMessage.MessageId,        delegate { return new SuggestPieceMessage(); });
-            Register(UnchokeMessage.MessageId,            delegate { return new UnchokeMessage(); });
+            Register(AllowedFastMessage.MessageId,   delegate (TorrentManager manager) { return new AllowedFastMessage(); });
+            Register(BitfieldMessage.MessageId,      delegate (TorrentManager manager) { return new BitfieldMessage(manager.Torrent.Pieces.Count); });
+            Register(CancelMessage.MessageId,        delegate (TorrentManager manager) { return new CancelMessage(); });
+            Register(ChokeMessage.MessageId,         delegate (TorrentManager manager) { return new ChokeMessage(); });
+            Register(HaveAllMessage.MessageId,       delegate (TorrentManager manager) { return new HaveAllMessage(); });
+            Register(HaveMessage.MessageId,          delegate (TorrentManager manager) { return new HaveMessage(); });
+            Register(HaveNoneMessage.MessageId,      delegate (TorrentManager manager) { return new HaveNoneMessage(); });
+            Register(InterestedMessage.MessageId,    delegate (TorrentManager manager) { return new InterestedMessage(); });
+            Register(NotInterestedMessage.MessageId, delegate (TorrentManager manager) { return new NotInterestedMessage(); });
+            Register(PieceMessage.MessageId,         delegate (TorrentManager manager) { return new PieceMessage(manager); });
+            Register(PortMessage.MessageId,          delegate (TorrentManager manager) { return new PortMessage(); });
+            Register(RejectRequestMessage.MessageId, delegate (TorrentManager manager) { return new RejectRequestMessage(); });
+            Register(RequestMessage.MessageId,       delegate (TorrentManager manager) { return new RequestMessage(); });
+            Register(SuggestPieceMessage.MessageId,  delegate (TorrentManager manager) { return new SuggestPieceMessage(); });
+            Register(UnchokeMessage.MessageId,       delegate (TorrentManager manager) { return new UnchokeMessage(); });
         }
 
         public static void Register(byte identifier, CreateMessage creator)
         {
-            if (creator == null || creator() == null)
+            if (creator == null)
                 throw new ArgumentNullException("creator");
 
             lock (messageDict)
@@ -52,27 +52,14 @@ namespace MonoTorrent.Client.Messages
         {
             PeerMessage message;
             CreateMessage creator;
+            if (buffer[offset] == LibtorrentMessage.MessageId)
+                return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count, manager);
 
-            switch (buffer[offset])
-            {
-                case LibtorrentMessage.MessageId:
-                    return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count, manager);
 
-                case BitfieldMessage.MessageId:
-                    message = new BitfieldMessage(manager.Torrent.Pieces.Count);
-                    break;
-
-                case PieceMessage.MessageId:
-                    message = new PieceMessage(manager);
-                    break;
-
-                default:
-                    if (!messageDict.TryGetValue(buffer[offset], out creator))
-                        message = new UnknownMessage();
-                    else
-                        message = creator();
-                    break;
-            }
+            if (messageDict.TryGetValue(buffer[offset], out creator))
+                message = creator(manager);
+            else
+                message = new UnknownMessage();
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
