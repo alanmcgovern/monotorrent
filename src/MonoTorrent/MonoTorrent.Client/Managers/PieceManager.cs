@@ -107,8 +107,8 @@ namespace MonoTorrent.Client
             RequestMessage msg;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Connection.Monitor.DownloadSpeed / BonusRequestPerKb);
-            maxRequests = maxRequests > 100 ? 100 : maxRequests;
+            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Connection.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
+			maxRequests = maxRequests > 50 ? 50 : maxRequests;
 
             if (id.Connection.AmRequestingPiecesCount >= maxRequests)
                 return false;

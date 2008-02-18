@@ -372,27 +372,27 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Returns the combined download speed of all active torrents
+        /// Returns the combined download speed of all active torrents in bytes/sec
         /// </summary>
-        public double TotalDownloadSpeed
+        public int TotalDownloadSpeed
         {
             get
             {
                 using (new ReaderLock(torrentsLock))
-                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return (int)m.Monitor.DownloadSpeed; });
+                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
             }
         }
 
 
         /// <summary>
-        /// Returns the combined upload speed of all active torrents
+        /// Returns the combined upload speed of all active torrents in bytes/sec
         /// </summary>
-        public double TotalUploadSpeed
+        public int TotalUploadSpeed
         {
             get
             {
                 using (new ReaderLock(torrentsLock))
-                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return (int)m.Monitor.UploadSpeed; });
+                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
             }
         }
 

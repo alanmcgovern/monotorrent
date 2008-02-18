@@ -45,17 +45,17 @@ namespace MonoTorrent.Client
 
         private long dataBytesDownloaded;
         private long dataBytesUploaded;
-        private double downloadSpeed;
+        private int downloadSpeed;
         private int downloadSpeedIndex;
-        private double[] downloadSpeeds;
+        private int[] downloadSpeeds;
         private int lastUpdateTime;
         private long protocolBytesDownloaded;
         private long protocolBytesUploaded;
         private int tempSentCount;
         private int tempRecvCount;
-        private double uploadSpeed;
+		private int uploadSpeed;
         private int uploadSpeedIndex;
-        private double[] uploadSpeeds;
+		private int[] uploadSpeeds;
 
         #endregion Member Variables
 
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public long DataBytesDownloaded
         {
-            get { return this.dataBytesDownloaded / 1024; }
+            get { return this.dataBytesDownloaded; }
         }
 
 
@@ -76,17 +76,17 @@ namespace MonoTorrent.Client
         /// </summary>
         public long DataBytesUploaded
         {
-            get { return this.dataBytesUploaded / 1024; }
+            get { return this.dataBytesUploaded; }
         }
 
 
         /// <summary>
-        /// The current average download speed in kB/sec
+        /// The current average download speed in bytes/sec
         /// </summary>
         /// <returns></returns>
-        public double DownloadSpeed
+        public int DownloadSpeed
         {
-            get { return this.downloadSpeed / 1024.0; }
+            get { return this.downloadSpeed; }
         }
 
 
@@ -109,12 +109,12 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The current average upload speed in kB/sec
+        /// The current average upload speed in bytes/sec
         /// </summary>
         /// <returns></returns>
-        public double UploadSpeed
+		public int UploadSpeed
         {
-            get { return this.uploadSpeed / 1024.0; }
+            get { return this.uploadSpeed; }
         }
 
         #endregion Public Properties
@@ -127,8 +127,8 @@ namespace MonoTorrent.Client
         internal ConnectionMonitor()
         {
             this.lastUpdateTime = Environment.TickCount;
-            this.uploadSpeeds = new double[ArraySize];
-            this.downloadSpeeds = new double[ArraySize];
+            this.uploadSpeeds = new int[ArraySize];
+			this.downloadSpeeds = new int[ArraySize];
         }
         #endregion
 
@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
                 lock (this.uploadSpeeds)
                 {
                     int count = 0;
-                    double total = 0;
+                    int total = 0;
                     int currentTime = Environment.TickCount;
 
                     // Find how many miliseconds have passed since the last update and the current tick count
@@ -231,8 +231,8 @@ namespace MonoTorrent.Client
                     // Take the amount of bytes sent since the last tick and divide it by the number of seconds
                     // since the last tick. This gives the calculated bytes/second transfer rate.
                     // difference is in miliseconds, so divide by 1000 to get it in seconds
-                    this.downloadSpeeds[this.downloadSpeedIndex++] = tempRecvCount / (difference / 1000.0);
-                    this.uploadSpeeds[this.uploadSpeedIndex++] = tempSentCount / (difference / 1000.0);
+                    this.downloadSpeeds[this.downloadSpeedIndex++] = (int)(tempRecvCount / (difference / 1000.0));
+                    this.uploadSpeeds[this.uploadSpeedIndex++] = (int)(tempSentCount / (difference / 1000.0));
 
                     // If we've gone over the array bounds, reset to the first index
                     // to start overwriting the old values

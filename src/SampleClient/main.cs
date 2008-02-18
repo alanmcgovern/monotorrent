@@ -176,10 +176,10 @@ namespace MonoTorrent
                         sb.Remove(0, sb.Length);
 						AppendFormat(sb, "Torrent:            {0}", manager.Torrent.Name);
                         AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-						AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed);
-						AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed);
-						AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0));
-						AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0));
+						AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
+						AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
+						AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+						AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
 						AppendFormat(sb, "Read Rate:          {0:0.00} kB/s", engine.DiskManager.ReadRate);
 						AppendFormat(sb, "Write Rate:         {0:0.00} kB/s", engine.DiskManager.WriteRate);
 						AppendFormat(sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead);

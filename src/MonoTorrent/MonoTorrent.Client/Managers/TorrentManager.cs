@@ -655,10 +655,10 @@ namespace MonoTorrent.Client
             }
 
             if (counter % (1000 / ClientEngine.TickLength) == 0)
-                this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1024 * 1.1),
-                                                      (int)(this.settings.MaxUploadSpeed * 1024 * 1.1),
-                                                      (int)(this.monitor.DownloadSpeed * 1024),
-                                                      (int)(this.monitor.UploadSpeed * 1024));
+                this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1.1),
+                                                      (int)(this.settings.MaxUploadSpeed * 1.1),
+                                                      (this.monitor.DownloadSpeed),
+                                                      (this.monitor.UploadSpeed));
         }
 
 

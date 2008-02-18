@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The maximum download speed for the torrent in kB/sec
+        /// The maximum download speed for the torrent in bytes/sec
         /// </summary>
         public int MaxDownloadSpeed
         {
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// The maximum upload speed for the torrent in kB/sec
+        /// The maximum upload speed for the torrent in bytes/sec
         /// </summary>
         public int MaxUploadSpeed
         {
