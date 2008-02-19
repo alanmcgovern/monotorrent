@@ -41,18 +41,27 @@ namespace MonoTorrent.Client.Tracker
 
         public static void Register(string protocol, Type trackerType)
         {
+            if (string.IsNullOrEmpty(protocol))
+                throw new ArgumentException("cannot be null or empty", protocol);
+            if (trackerType == null)
+                throw new ArgumentNullException("trackerType");
+
             lock (locker)
                 trackerTypes.Add(protocol, trackerType);
         }
 
         public static Tracker Create(string protocol, Uri announceUrl)
         {
-            Type type;
-            lock (locker)
-                if (!trackerTypes.TryGetValue(protocol, out type))
-                    return null;
+            if (string.IsNullOrEmpty(protocol))
+                throw new ArgumentException("cannot be null or empty", "protocol");
 
-            return (Tracker)Activator.CreateInstance(type, announceUrl);
+            if (announceUrl == null)
+                throw new ArgumentNullException("announceUrl");
+
+            if (!trackerTypes.ContainsKey(protocol))
+                return null;
+
+            return (Tracker)Activator.CreateInstance(trackerTypes[protocol], announceUrl);
         }
     }
 }
