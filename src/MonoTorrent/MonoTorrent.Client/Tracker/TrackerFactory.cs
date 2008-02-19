@@ -39,13 +39,13 @@ namespace MonoTorrent.Client.Tracker
         private static object locker = new object();
         static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
 
-        public static void RegisterTypeForProtocol(string protocol, Type trackerType)
+        public static void Register(string protocol, Type trackerType)
         {
             lock (locker)
                 trackerTypes.Add(protocol, trackerType);
         }
 
-        public static Tracker CreateForProtocol(string protocol, Uri announceUrl)
+        public static Tracker Create(string protocol, Uri announceUrl)
         {
             Type type;
             lock (locker)

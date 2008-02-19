@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.TorrentWatcher
 {

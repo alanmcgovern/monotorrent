@@ -35,7 +35,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Common
 {
-	public delegate int Action<T>(T target);
+	public delegate int Operation<T>(T target);
 
     public static class Toolbox
     {
@@ -51,7 +51,7 @@ namespace MonoTorrent.Common
 			return count;
 		}
 
-		public static int Accumulate<T>(IEnumerable<T> enumerable, Action<T> action)
+		public static int Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
 		{
 			int count = 0;
 

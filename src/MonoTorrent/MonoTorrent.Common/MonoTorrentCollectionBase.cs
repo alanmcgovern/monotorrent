@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     public class MonoTorrentCollection<T> : IList<T>
     {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -40,25 +41,30 @@ namespace MonoTorrent.Client.Tracker
 
         #region Constructors
 
-        internal TrackerTier(MonoTorrentCollection<string> trackerUrls)
+        internal TrackerTier(IEnumerable<string> trackerUrls)
         {
             Uri result;
-            List<Tracker> trackerList = new List<Tracker>(trackerUrls.Count);
+            List<Tracker> trackerList = new List<Tracker>();
 
-            for (int i = 0; i < trackerUrls.Count; i++)
+            foreach (string trackerUrl in trackerUrls)
             {
                 // FIXME: Debug spew?
-                if (!Uri.TryCreate(trackerUrls[i], UriKind.Absolute, out result))
+                if (!Uri.TryCreate(trackerUrl, UriKind.Absolute, out result))
+                {
+                    Logger.Log(null, "TrackerTier - Invalid tracker Url specified: {0}", trackerUrl);
                     continue;
+                }
 
-                Tracker tracker = TrackerFactory.CreateForProtocol(result.Scheme, result);
+                Tracker tracker = TrackerFactory.Create(result.Scheme, result);
                 if (tracker != null)
                 {
                     tracker.Tier = this;
                     trackerList.Add(tracker);
                 }
                 else
-                    Console.Error.WriteLine("Unsupported protocol {0}", result);
+                {
+                    Console.Error.WriteLine("Unsupported protocol {0}", result);                // FIXME: Debug spew?
+                }
             }
 
             this.trackers = trackerList.ToArray();
@@ -71,7 +77,7 @@ namespace MonoTorrent.Client.Tracker
 
         internal int IndexOf(Tracker tracker)
         {
-			return Array.IndexOf<Tracker>(trackers, tracker);
+            return Array.IndexOf<Tracker>(trackers, tracker);
         }
 
 
