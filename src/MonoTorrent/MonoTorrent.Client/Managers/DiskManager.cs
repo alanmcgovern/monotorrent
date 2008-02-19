@@ -68,6 +68,11 @@ namespace MonoTorrent.Client.Managers
             get { return monitor.DataBytesDownloaded; }
         }
 
+        internal PieceWriter Writer
+        {
+            get { return writer; }
+        }
+
         #endregion Properties
 
 

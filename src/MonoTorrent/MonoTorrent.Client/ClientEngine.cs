@@ -343,6 +343,15 @@ namespace MonoTorrent.Client
                 this.torrents.Add(manager);
 
             manager.Engine = this;
+/*
+            manager.PieceHashed += delegate (object sender, PieceHashedEventArgs e) {
+                diskManager.Writer.RemovePressure(e.TorrentManager, e.PieceIndex);
+            };
+
+            manager.PieceManager.BlockRequested += delegate(object sender, BlockEventArgs e) {
+                diskManager.Writer.AddPressure(e.TorrentManager, e.Piece.Index, e.Block.StartOffset / Piece.BlockSize);
+            };
+*/
         }
 
 

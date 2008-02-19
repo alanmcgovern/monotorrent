@@ -78,13 +78,35 @@ namespace MonoTorrent.Client.PieceWriters
 
             memoryBuffer.Add(data);
         }
-        private Random r = new Random(5);
+        
         private void FlushSome()
         {
-            int count = Math.Min(1, memoryBuffer.Count);
-            int index = r.Next(0, memoryBuffer.Count);
-            Write(memoryBuffer[index], true);
-            memoryBuffer.RemoveAt(index);
+            if (memoryBuffer.Count == 0)
+                return;
+
+            memoryBuffer.Sort(delegate(PieceData left, PieceData right)
+            {
+                Pressure lp = FindPressure(left.Manager, left.PieceIndex, left.BlockIndex);
+                Pressure rp = FindPressure(right.Manager, right.PieceIndex, right.BlockIndex);
+                // If there are no pressures associated with this piece, then return 0
+                if (lp == null && rp == null || lp == rp)
+                    return 0;
+
+                // If only one of the pressures is null, we pretend that its pressure is 0
+                // and compare the other pressure with that
+                if (lp == null)
+                    return rp.Value.CompareTo(0);
+
+                if (rp == null)
+                    return lp.Value.CompareTo(0);
+
+                return lp.Value.CompareTo(rp.Value);
+            });
+
+            PieceData data = memoryBuffer[0];
+            Write(data, true);
+            memoryBuffer.RemoveAt(0);
+            pressures.Remove(FindPressure(data.Manager, data.PieceIndex, data.BlockIndex));
         }
 
         public override void CloseFileStreams(TorrentManager manager)
@@ -104,6 +126,34 @@ namespace MonoTorrent.Client.PieceWriters
                 ClientEngine.BufferManager.FreeBuffer(ref io.Buffer);
             });
             memoryBuffer.RemoveAll(delegate(PieceData io) { return io.Manager == manager.FileManager; });
+        }
+
+        public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
+        {
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
+            Pressure p = FindPressure(manager.FileManager, pieceIndex, blockIndex);
+            if (p != null)
+                p.Value++;
+            else
+                pressures.Add(new Pressure(manager, pieceIndex, blockIndex, 1));
+
+            writer.AddPressure(manager, pieceIndex, blockIndex);
+        }
+
+        public override void RemovePressure(TorrentManager manager, int pieceIndex, int blockIndex)
+        {
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
+            Pressure p = FindPressure(manager.FileManager, pieceIndex, blockIndex);
+            if (p != null)
+                p.Value--;
+            else
+                pressures.Add(new Pressure(manager, pieceIndex, blockIndex, -1));
+
+            writer.RemovePressure(manager, pieceIndex, blockIndex);
         }
     }
 }
