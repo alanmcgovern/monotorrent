@@ -402,6 +402,8 @@ namespace MonoTorrent.Common
                 start = (start < startIndex) ? startIndex : start;
                 end = (end > this.length) ? this.length : end;
                 end = (end > endIndex) ? endIndex : end;
+				if (end == Length && end > 0)
+					end--;
 
                 for (int j = start; j <= end; j++)
                     if (Get(j))     // This piece is true
