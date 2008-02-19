@@ -6,49 +6,8 @@ using System.Collections.Specialized;
 using System.Net;
 using System.Threading;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tracker.Listeners
 {
-    internal class RequestAsyncResult : IAsyncResult
-    {
-        private object asyncState;
-        private bool isComplete;
-        private AsyncCallback callback;
-        private ManualResetEvent waitHandle;
-        private BEncodedDictionary response;
-
-        public RequestAsyncResult(AsyncCallback callback, object asyncState)
-        {
-            this.asyncState = asyncState;
-            this.callback = callback;
-        }
-
-        public object AsyncState
-        {
-            get { throw new Exception("The method or operation is not implemented."); }
-        }
-
-        public WaitHandle AsyncWaitHandle
-        {
-            get { return waitHandle; }
-        }
-
-        public bool CompletedSynchronously
-        {
-            get { return false; }
-        }
-
-        public bool IsCompleted
-        {
-            get { return isComplete; }
-            internal set { isComplete = value; }
-        }
-
-        public BEncodedDictionary Response
-        {
-            get { return response; }
-        }
-    }
-
     public abstract class ListenerBase
     {
         private delegate void HandleDelegate(NameValueCollection collection, IPAddress remoteAddress);
@@ -87,13 +46,21 @@ namespace MonoTorrent.Tracker
             
         }
         */
-        protected virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
+            if (queryString == null)
+                throw new ArgumentNullException("queryString");
+
             return Handle(ParseQuery(queryString), remoteAddress, isScrape);
         }
 
-        protected virtual BEncodedValue Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedValue Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
         {
+            if (collection == null)
+                throw new ArgumentNullException("collection");
+            if (remoteAddress == null)
+                throw new ArgumentNullException("remoteAddress");
+
             RequestParameters parameters;
             if (isScrape)
                 parameters = new ScrapeParameters(collection, remoteAddress);
@@ -102,17 +69,14 @@ namespace MonoTorrent.Tracker
 
             // If the parameters are invalid, the failure reason will be added to the response dictionary
             if (!parameters.IsValid)
-            {
                 return parameters.Response;
-            }
+
+            // Fire the necessary event so the request will be handled and response filled inin
+            if (isScrape)
+                RaiseScrapeReceived((ScrapeParameters)parameters);
             else
-            {
-                // Otherwise, fire the necessary event and the request will be handled and the response filled in
-                if (isScrape)
-                    RaiseScrapeReceived((ScrapeParameters)parameters);
-                else
-                    RaiseAnnounceReceived((AnnounceParameters)parameters);
-            }
+                RaiseAnnounceReceived((AnnounceParameters)parameters);
+
             // Return the response now that the connection has been handled correctly.
             return parameters.Response;
         }

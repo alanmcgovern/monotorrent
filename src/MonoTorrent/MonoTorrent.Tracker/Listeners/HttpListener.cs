@@ -37,13 +37,13 @@ using System.Diagnostics;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tracker.Listeners
 {
     public class HttpListener : ListenerBase
     {
         #region Fields
 
-        private IPEndPoint endpoint;
+        private string prefix;
         private System.Net.HttpListener listener;
 
         #endregion Fields
@@ -65,18 +65,25 @@ namespace MonoTorrent.Tracker
         #region Constructors
 
         public HttpListener(IPAddress address, int port)
-            : this(new IPEndPoint(address, port))
+            : this(string.Format("http://{0}:{1}/", address, port))
         {
 
         }
 
         public HttpListener(IPEndPoint endpoint)
+            : this(endpoint.Address, endpoint.Port)
         {
-            if (endpoint == null)
-                throw new ArgumentNullException("endpoint");
+
+        }
+
+        public HttpListener(string httpPrefix)
+        {
+            if (string.IsNullOrEmpty(httpPrefix))
+                throw new ArgumentNullException("httpPrefix");
 
             listener = new System.Net.HttpListener();
-            this.endpoint = endpoint;
+            listener.Prefixes.Add(httpPrefix);
+            this.prefix = httpPrefix;
         }
 
         #endregion Constructors
@@ -89,7 +96,6 @@ namespace MonoTorrent.Tracker
         /// </summary>
         public override void Start()
         {
-            listener.Prefixes.Add(string.Format("http://{0}:{1}/", endpoint.Address.ToString(), endpoint.Port));
             listener.Start();
             listener.BeginGetContext(EndGetRequest, null);
 
@@ -105,11 +111,24 @@ namespace MonoTorrent.Tracker
 
         private void EndGetRequest(IAsyncResult result)
         {
-            HttpListenerContext context;
-            context = listener.EndGetContext(result);
-            HandleRequest(context);
-            context.Response.Close();
-            listener.BeginGetContext(EndGetRequest, null);
+            HttpListenerContext context = null;
+            try
+            {
+                context = listener.EndGetContext(result);
+                HandleRequest(context);
+            }
+            catch(Exception ex)
+            {
+                Console.Write("Exception in listener: {0}{1}", Environment.NewLine, ex);
+            }
+            finally
+            {
+                if (context != null)
+                    context.Response.Close();
+
+                if (listener.IsListening)
+                    listener.BeginGetContext(EndGetRequest, null);
+            }
         }
 
         private void HandleRequest(HttpListenerContext context)
@@ -121,6 +140,7 @@ namespace MonoTorrent.Tracker
             byte[] response = responseData.Encode();
             context.Response.ContentType = "text/plain";
             context.Response.StatusCode = 200;
+            context.Response.ContentLength64 = response.LongLength;
             context.Response.OutputStream.Write(response, 0, response.Length);
         }
 

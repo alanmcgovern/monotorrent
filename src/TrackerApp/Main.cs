@@ -38,6 +38,7 @@ using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using TrackerApp;
 using MonoTorrent.TorrentWatcher;
+using MonoTorrent.Tracker.Listeners;
 
 namespace SampleTracker
 {
