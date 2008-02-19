@@ -60,6 +60,7 @@ namespace MonoTorrent.Tracker
     {
         #region Member Variables
 
+        private List<Peer> buffer = new List<Peer>();
         private BEncodedNumber complete;
         private BEncodedNumber incomplete;
         private BEncodedNumber downloaded;
@@ -154,14 +155,14 @@ namespace MonoTorrent.Tracker
         /// Adds the peer to the tracker
         /// </summary>
         /// <param name="peer"></param>
-        public void Add(Peer peer)
+        internal void Add(Peer peer)
         {
             if (peer == null)
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
             peers.Add(peer.ClientAddress.Address, peer);
-
+            buffer.Clear();
             UpdateCounts();
         }
 
@@ -172,7 +173,6 @@ namespace MonoTorrent.Tracker
         /// <param name="count">The number of peers to add</param>
         /// <param name="compact">True if the peers should be in compact form</param>
         /// <param name="exlude">The peer to exclude from the list</param>
-        List<Peer> buffer = new List<Peer>();
         internal void GetPeers(BEncodedDictionary response, int count, bool compact, IPEndPoint exlude)
         {
             byte[] compactResponse = null;
@@ -212,7 +212,7 @@ namespace MonoTorrent.Tracker
                 response.Add(Tracker.peers, nonCompactResponse);
         }
 
-        public void ClearZombiePeers(DateTime cutoff)
+        internal void ClearZombiePeers(DateTime cutoff)
         {
             IPAddress[] keys = new IPAddress[peers.Keys.Count];
             peers.Keys.CopyTo(keys, 0);
@@ -226,14 +226,14 @@ namespace MonoTorrent.Tracker
         /// Removes the peer from the tracker
         /// </summary>
         /// <param name="peer">The peer to remove</param>
-        public void Remove(Peer peer)
+        internal void Remove(Peer peer)
         {
             if(peer == null)
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
             peers.Remove(peer.ClientAddress.Address);
-
+            buffer.Clear();
             UpdateCounts();
         }
 
