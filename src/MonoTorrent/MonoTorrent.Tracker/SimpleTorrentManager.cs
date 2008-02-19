@@ -106,16 +106,6 @@ namespace MonoTorrent.Tracker
             get { return downloaded.Number; }
         }
 
-
-        /// <summary>
-        /// The list of all peers being monitored by this manager
-        /// </summary>
-        public ICollection<Peer> Peers
-        {
-            get { return peers.Values; }
-        }
-
-
         /// <summary>
         /// The torrent being tracked
         /// </summary>
@@ -162,8 +152,15 @@ namespace MonoTorrent.Tracker
 
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
             peers.Add(peer.ClientAddress.Address, peer);
-            buffer.Clear();
+            lock (buffer)
+                buffer.Clear();
             UpdateCounts();
+        }
+
+        public List<Peer> GetPeers()
+        {
+            lock (buffer)
+                return new List<Peer>(buffer);
         }
 
         /// <summary>
@@ -188,8 +185,11 @@ namespace MonoTorrent.Tracker
 
             int start = random.Next(0, peers.Count);
 
-            if (buffer.Count != peers.Values.Count)
-                buffer = new List<Peer>(peers.Values);
+            lock (buffer)
+            {
+                if (buffer.Count != peers.Values.Count)
+                    buffer = new List<Peer>(peers.Values);
+            }
             List<Peer> p = buffer;
 
             while (total > 0)
@@ -214,11 +214,11 @@ namespace MonoTorrent.Tracker
 
         internal void ClearZombiePeers(DateTime cutoff)
         {
-            IPAddress[] keys = new IPAddress[peers.Keys.Count];
-            peers.Keys.CopyTo(keys, 0);
-            foreach (IPAddress ip in keys)
-                if (peers[ip].LastAnnounceTime < cutoff)
-                    peers.Remove(ip);
+            lock (buffer)
+            {
+                buffer.ForEach(delegate(Peer p) { if (p.LastAnnounceTime < cutoff) peers.Remove(p.ClientAddress.Address); });
+                buffer.Clear();
+            }
         }
 
 
@@ -228,12 +228,13 @@ namespace MonoTorrent.Tracker
         /// <param name="peer">The peer to remove</param>
         internal void Remove(Peer peer)
         {
-            if(peer == null)
+            if (peer == null)
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
             peers.Remove(peer.ClientAddress.Address);
-            buffer.Clear();
+            lock (buffer)
+                buffer.Clear();
             UpdateCounts();
         }
 
@@ -242,7 +243,7 @@ namespace MonoTorrent.Tracker
             int complete = 0;
             int incomplete = 0;
 
-            foreach (Peer p in peers.Values)
+            foreach (Peer p in buffer)
             {
                 if (p.HasCompleted)
                     complete++;
