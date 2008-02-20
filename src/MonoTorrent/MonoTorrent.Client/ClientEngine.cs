@@ -217,7 +217,7 @@ namespace MonoTorrent.Client
             if (writer == null)
             {
                 writer = new DiskWriter(engineSettings.MaxOpenFiles);
-                writer = new MemoryWriter(writer);
+                //writer = new MemoryWriter(writer);
             }
 
 
