@@ -30,154 +30,171 @@
 
 using System;
 using NUnit.Framework;
+using MonoTorrent.Client;
+using System.Collections.Generic;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Common.Tests
 {
-    /*
     [TestFixture]
     public class BitFieldTest
     {
-
-        private BitField bf;
-        private int length;
+        BitField bf;
+        bool[] initalValues;
+        byte[] initialByteValues;
+        bool[] secondValues;
 
         [SetUp]
         public void SetUp()
         {
-            this.length = 10;
-            bf = new BitField(length);
+            // The bool[] must be kept in sync with the byte[] constructor. They represent exactly the same thing.
+            initalValues = new bool[] { true, false, true, false, true, false, true, true, true, false, false, true };
+            secondValues = new bool[] { true, true, false, false, true, false, true, false, true, false, false, true };
+            initialByteValues = new byte[] { 171, 144 };
+            bf = new BitField(initalValues);
         }
 
         [Test]
-        public void GetterSetter()
+        public void ConstructorIntTest()
         {
-            bf[0] = true;
-            bf[1] = true;
-            bf[3] = true;
-            bf[5] = true;
+            BitField bf2 = new BitField(initialByteValues, initalValues.Length);
+            Assert.AreEqual(bf, bf2, "#1");
+            Assert.AreEqual(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf2.TrueCount, "#1");
+        }
 
-            Assert.IsTrue(bf[0]);
-            Assert.IsTrue(bf[1]);
-            Assert.IsTrue(!bf[2]);
-            Assert.IsTrue(bf[3]);
-            Assert.IsTrue(!bf[4]);
-            Assert.IsTrue(bf[5]);
-            Assert.IsTrue(!bf[6]);
-            Assert.IsTrue(!bf[7]);
-            Assert.IsTrue(!bf[8]);
-            Assert.IsTrue(!bf[9]);
+        [Test]
+        public void ConstructorBoolTest()
+        {
+            for (int i = 0; i < initalValues.Length; i++)
+                Assert.AreEqual(initalValues[i], bf[i], "#1:{0}", i);
+
+            Assert.AreEqual(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf.TrueCount, "#1");
+        }
+
+        [Test]
+        public void InvalidBitfieldTest()
+        {
+            // Set each of the 4 trailing bits to 1 to force a decode error
+            for (byte i = 8; i > 0; i /= 2)
+            {
+                try
+                {
+                    initialByteValues[1] += i;
+                    bf = new BitField(initialByteValues, initalValues.Length);
+                    Assert.Fail("The bitfield was corrupt but decoded correctly: Loop {0}", i);
+                }
+                catch (MessageException) { initialByteValues[1] -= i; }
+            }
+        }
+
+        [Test]
+        public void FirstTrue()
+        {
+            Assert.AreEqual(0, bf.FirstTrue(0, bf.Length));
+            Assert.AreEqual(0, bf.FirstTrue(0, 0));
+            Assert.AreEqual(-1, bf.FirstTrue(bf.Length, bf.Length));
+            Assert.AreEqual(11, bf.FirstTrue(bf.Length - 1, bf.Length - 1));
+            Assert.AreEqual(11, bf.FirstTrue(bf.Length - 1, bf.Length));
+            Assert.AreEqual(11, bf.FirstTrue(9, bf.Length));
+        }
+
+        [Test]
+        public void LongByteArrayTest()
+        {
+            List<byte> list = new List<byte>(initialByteValues);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+            list.Add(byte.MaxValue);
+
+            BitField b = new BitField(list.ToArray(), initalValues.Length);
+            Assert.AreEqual(b, bf, "#1");
         }
 
         [Test]
         public void Clone()
         {
-            BitField bf2 = (BitField)bf.Clone();
-
-            Assert.AreEqual(bf.AllFalse(), bf2.AllFalse(), "AllFalse wrong");
-            Assert.AreEqual(bf.FirstTrue(), bf2.FirstTrue(), "FirstTrue wrong");
-            Assert.AreEqual(bf.Length, bf2.Length, "Length wrong");
-            Assert.AreEqual(bf.LengthInBytes, bf2.LengthInBytes, "Length in bytes wrong");
-
-            bf[4] = true;
-            bf[7] = true;
-
-            Assert.IsTrue(!bf2[4], "Clone changed1");
-            Assert.IsTrue(!bf2[7], "Clone changed");
+            BitField clone = bf.Clone();
+            Assert.AreEqual(bf, clone);
         }
 
         [Test]
         public void Length()
         {
-            Assert.AreEqual(length, bf.Length);
+            Assert.AreEqual(initalValues.Length, bf.Length);
         }
 
         [Test]
         public void LengthInBytes()
         {
-            Assert.AreEqual((int)Math.Ceiling(this.length / 8.0), bf.LengthInBytes);
+            Assert.AreEqual((int)Math.Ceiling(initalValues.Length / 8.0), bf.LengthInBytes);
         }
 
         [Test]
         public void And()
         {
-            BitField bf1 = new BitField(5);
-            BitField bf2 = new BitField(5);
+            BitField bf2 = new BitField(secondValues);
+            bf.And(bf2);
 
-            bf1[0] = true; bf2[0] = true;
-            bf1[4] = true; bf2[4] = true;
+            Assert.AreEqual(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            for (int i = 0; i < bf.Length; i++)
+                Assert.AreEqual(initalValues[i] && secondValues[i], bf[i], "#2");
 
-            bf1[3] = true;
-            bf2[2] = true;
+            int count = 0;
+            for (int i = 0; i < initalValues.Length; i++)
+                if (initalValues[i] && secondValues[i])
+                    count++;
 
-            bf1.And(bf2);
-
-            Assert.IsTrue(bf1[0]);
-            Assert.IsTrue(!bf1[1]);
-            Assert.IsTrue(!bf1[2]);
-            Assert.IsTrue(!bf1[3]);
-            Assert.IsTrue(bf1[4]);
-
-            Assert.IsTrue(bf2[0]);
-            Assert.IsTrue(!bf2[1]);
-            Assert.IsTrue(bf2[2]);
-            Assert.IsTrue(!bf2[3]);
-            Assert.IsTrue(bf2[4]);
+            Assert.AreEqual(count, bf.TrueCount, "#3");
         }
 
         [Test]
         public void Or()
         {
-            BitField bf1 = new BitField(10);
-            BitField bf2 = new BitField(10);
-            bf1[0] = true;
-            bf1[4] = true;
-            bf2[3] = true;
-            bf2[5] = true;
-            bf2[7] = true;
+            BitField bf2 = new BitField(secondValues);
+            bf.Or(bf2);
 
-            bf1.Or(bf2);
+            Assert.AreEqual(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            for (int i = 0; i < bf.Length; i++)
+                Assert.AreEqual(initalValues[i] || secondValues[i], bf[i], "#2");
 
-            Assert.IsTrue(bf1[0], "a");
-            Assert.IsTrue(!bf1[1], "b");
-            Assert.IsTrue(!bf1[2], "c");
-            Assert.IsTrue(bf1[3], "d");
-            Assert.IsTrue(bf1[4], "e");
-            Assert.IsTrue(bf1[5], "f");
-            Assert.IsTrue(!bf1[6], "g");
-            Assert.IsTrue(bf1[7], "h");
-            Assert.IsTrue(!bf1[8], "i");
-            Assert.IsTrue(!bf1[9], "j");
+            int count = 0;
+            for (int i = 0; i < initalValues.Length; i++)
+                if (initalValues[i] || secondValues[i])
+                    count++;
 
-
-            Assert.IsTrue(!bf2[0], "k");
-            Assert.IsTrue(!bf2[1], "l");
-            Assert.IsTrue(!bf2[2], "m");
-            Assert.IsTrue(bf2[3], "n");
-            Assert.IsTrue(!bf2[4], "o");
-            Assert.IsTrue(bf2[5], "p");
-            Assert.IsTrue(!bf2[6], "q");
-            Assert.IsTrue(bf2[7], "r");
-            Assert.IsTrue(!bf2[8], "s");
-            Assert.IsTrue(!bf2[9], "t");
+            Assert.AreEqual(count, bf.TrueCount, "#3");
         }
 
         [Test]
         public void Not()
         {
-            BitField bf1 = new BitField(5);
+            bf.Not();
+            for (int i = 0; i < bf.Length; i++)
+                Assert.AreEqual(!initalValues[i], bf[i], "#1");
 
-            bf1[0] = true;
-            bf1[3] = true;
-            bf1[4] = true;
+            Assert.AreEqual(Toolbox.Count<bool>(initalValues, delegate(bool b) { return !b; }), bf.TrueCount, "#2");
+        }
 
-            bf1.Not();
+        [Test]
+        public void Xor()
+        {
+            BitField bf2 = new BitField(secondValues);
+            bf.Xor(bf2);
 
-            Assert.IsTrue(!bf1[0], "a");
-            Assert.IsTrue(bf1[1], "b");
-            Assert.IsTrue(bf1[2], "c");
-            Assert.IsTrue(!bf1[3], "d");
-            Assert.IsTrue(!bf1[4], "e");
+            Assert.AreEqual(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            for (int i = 0; i < bf.Length; i++)
+                Assert.AreEqual((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]), bf[i], "#2");
+
+            int count = 0;
+            for (int i = 0; i < initalValues.Length; i++)
+                if ((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]))
+                    count++;
+
+            Assert.AreEqual(count, bf.TrueCount, "#3");
         }
     }
-     */
 }

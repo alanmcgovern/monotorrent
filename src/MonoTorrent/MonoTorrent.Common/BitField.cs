@@ -74,6 +74,12 @@ namespace MonoTorrent.Common
 
 
         #region Constructors
+        public BitField(byte[] array, int length)
+            : this(length)
+        {
+            FromArray(array, 0, array.Length);
+        }
+
         /// <summary>
         /// Creates a new BitField
         /// </summary>
@@ -115,7 +121,16 @@ namespace MonoTorrent.Common
         /// Clones the BitField
         /// </summary>
         /// <returns></returns>
-        public object Clone()
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        /// <summary>
+        /// Clones the BitField
+        /// </summary>
+        /// <returns></returns>
+        public BitField Clone()
         {
             BitField b = new BitField(this.length);
             for (int i = 0; i < this.array.Length; i++)
@@ -129,12 +144,11 @@ namespace MonoTorrent.Common
         /// Performs binary NOT on all the elements of the bitarray
         /// </summary>
         /// <returns>Itself</returns>
-        internal BitField Not()
+        public BitField Not()
         {
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
-            this.SetLastBitsFalse();
             this.trueCount = this.length - this.trueCount;
             return this;
         }
@@ -145,7 +159,7 @@ namespace MonoTorrent.Common
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        internal BitField And(BitField value)
+        public BitField And(BitField value)
         {
             AndFast(value);
             UpdateTrueCount();
@@ -205,7 +219,7 @@ namespace MonoTorrent.Common
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        internal BitField Or(BitField value)
+        public BitField Or(BitField value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -226,7 +240,7 @@ namespace MonoTorrent.Common
         /// </summary>
         /// <param name="value">The BitField with which to perform the operation against</param>
         /// <returns>Itself</returns>
-        internal BitField Xor(BitField value)
+        public BitField Xor(BitField value)
         {
             if (value == null)
                 throw new ArgumentNullException("value");
@@ -371,7 +385,7 @@ namespace MonoTorrent.Common
         /// Returns the first index of the BitField that is true. If no elements are true, returns -1
         /// </summary>
         /// <returns></returns>
-        internal int FirstTrue()
+        public int FirstTrue()
         {
             return this.FirstTrue(0, this.length);
         }
@@ -383,7 +397,7 @@ namespace MonoTorrent.Common
         /// <param name="startIndex"></param>
         /// <param name="endIndex"></param>
         /// <returns></returns>
-        internal int FirstTrue(int startIndex, int endIndex)
+        public int FirstTrue(int startIndex, int endIndex)
         {
             int start;
             int end;
@@ -391,7 +405,7 @@ namespace MonoTorrent.Common
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
             int loopEnd = (endIndex / 32) - ((endIndex % 32 == 0) ? 1 : 0);
-			loopEnd = Math.Max(loopEnd, 0);
+            loopEnd = Math.Max(loopEnd, 0);
             for (int i = (startIndex / 32); i <= loopEnd; i++)
             {
                 if (this.array[i] == 0)        // This one has no true values
@@ -402,8 +416,8 @@ namespace MonoTorrent.Common
                 start = (start < startIndex) ? startIndex : start;
                 end = (end > this.length) ? this.length : end;
                 end = (end > endIndex) ? endIndex : end;
-				if (end == Length && end > 0)
-					end--;
+                if (end == Length && end > 0)
+                    end--;
 
                 for (int j = start; j <= end; j++)
                     if (Get(j))     // This piece is true
@@ -611,7 +625,7 @@ namespace MonoTorrent.Common
             StringBuilder sb = new StringBuilder(this.array.Length * 16);
             for (int i = 0; i < this.array.Length; i++)
             {
-                sb.Append(array[i].ToString());
+                sb.Append(array[i]);
                 sb.Append(',');
             }
 
