@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
 
         public int BlockIndex
         {
-            get { return PiecePickerBase.GetBlockIndex(piece.Blocks, startOffset, count); }
+            get { return startOffset / Client.Piece.BlockSize; }// PiecePickerBase.GetBlockIndex(piece.Blocks, startOffset, count); }
         }
 
         public int Count
