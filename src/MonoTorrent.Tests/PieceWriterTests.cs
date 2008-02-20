@@ -6,7 +6,7 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Tests
+namespace MonoTorrent.Client.Tests
 {
 	public class NullWriter : PieceWriter
 	{
