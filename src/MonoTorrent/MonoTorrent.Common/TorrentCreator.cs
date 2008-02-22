@@ -38,6 +38,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
 using System.Threading;
+using MonoTorrent.Client;
 
 
 namespace MonoTorrent.Common
@@ -384,7 +385,7 @@ namespace MonoTorrent.Common
         ///</summary>
         private void AddCommonStuff(BEncodedDictionary torrent)
         {
-            Debug.WriteLine(announces[0][0]);
+            Logger.Log(null, announces[0][0]);
             torrent.Add("announce", new BEncodedString(announces[0][0]));
 
             // If there is more than one tier or the first tier has more than 1 tracker
@@ -406,7 +407,7 @@ namespace MonoTorrent.Common
 
             DateTime epocheStart = new DateTime(1970, 1, 1);
             TimeSpan span = DateTime.Now - epocheStart;
-            Debug.WriteLine("creation date: " + DateTime.Now.ToString() + " - " + epocheStart.ToString() + " = " + span.ToString() + " : " + (long)span.TotalSeconds);
+			Logger.Log(null, "creation date: {0} - {1} = {2}:{3}", DateTime.Now, epocheStart, span, span.TotalSeconds);
             torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
         }
 
@@ -427,7 +428,7 @@ namespace MonoTorrent.Common
                     hex = hex.Length > 1 ? hex : "0" + hex;
                     sb.Append(hex);
                 }
-                Console.WriteLine("sum for file " + fileName + " = " + sb.ToString());
+				Logger.Log(null, "Sum for: '{0}' = {1}", fileName, sb.ToString());
             }
             dict.Add("md5sum", new BEncodedString(sb.ToString()));
         }
@@ -472,13 +473,13 @@ namespace MonoTorrent.Common
         {
             if (Directory.Exists(Path))
             {
-                Debug.WriteLine("creating multi torrent from " + Path);
+				Logger.Log(null, "Creating multifile torrent from: {0}", Path);
                 CreateMultiFileTorrent();
                 return;
             }
             if (File.Exists(Path))
             {
-                Debug.WriteLine("creating single torrent from " + Path);
+				Logger.Log(null, "Creating singlefile torrent from: {0}", Path);
                 CreateSingleFileTorrent();
                 return;
             }
@@ -505,7 +506,7 @@ namespace MonoTorrent.Common
 
             string name = GetDirName(Path);
 
-            Debug.WriteLine("topmost dir: " + name);
+			Logger.Log(null, "Topmost directory: {0}", name);
             info.Add("name", new BEncodedString(name));
 
             info.Add("pieces", new BEncodedString(CalcPiecesHash(fullPaths)));
@@ -526,7 +527,7 @@ namespace MonoTorrent.Common
                 AddMD5(infoDict, Path);
 
             infoDict.Add("name", new BEncodedString(System.IO.Path.GetFileName(Path)));
-            Console.WriteLine("name == " + System.IO.Path.GetFileName(Path));
+			Logger.Log(null, "name == {0}", System.IO.Path.GetFileName(Path));
             MonoTorrentCollection<string> files = new MonoTorrentCollection<string>();
             files.Add(Path);
             infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(files)));
@@ -592,7 +593,7 @@ namespace MonoTorrent.Common
                 AddMD5(fileDict, file);
 
             file = file.Remove(0, Path.Length);
-            Debug.WriteLine("ohne base[" + basePath + "] " + file);
+			Logger.Log(null, "Without base[{0}]: {1}", basePath, file);
             BEncodedList path = new BEncodedList();
             string[] splittetPath = file.Split(System.IO.Path.DirectorySeparatorChar);
 
@@ -615,7 +616,7 @@ namespace MonoTorrent.Common
 
             //double count = (double)size/PieceLength;
             long pieceCount = size / PieceLength + (((size % PieceLength) != 0) ? 1 : 0);
-            Console.WriteLine("piece count: " + pieceCount);
+			Logger.Log(null, "Piece Count: {0}", pieceCount);
             return pieceCount;
         }
 
