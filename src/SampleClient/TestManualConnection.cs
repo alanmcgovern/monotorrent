@@ -133,7 +133,32 @@ namespace SampleClient
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }
+	public class ConnectionPair : IDisposable
+	{
+		TcpListener socketListener;
+		public IConnection Incoming;
+		public IConnection Outgoing;
 
+		public ConnectionPair(int port)
+		{
+			socketListener = new TcpListener(port);
+			socketListener.Start();
+
+			Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+			s1a.Connect(IPAddress.Loopback, port);
+			Socket s1b = socketListener.AcceptSocket();
+
+			Incoming = new CustomConnection(s1a, true, "1A");
+			Outgoing = new CustomConnection(s1b, false, "1B");
+		}
+
+		public void Dispose()
+		{
+			Incoming.Dispose();
+			Outgoing.Dispose();
+			socketListener.Stop();
+		}
+	}
     public class EngineTestRig
     {
         private ClientEngine engine;
@@ -209,8 +234,6 @@ namespace SampleClient
     {
         EngineTestRig rig1;
         EngineTestRig rig2;
-        IConnection connection1a;
-        IConnection connection1b;
 
         public TestManualConnection()
         {
@@ -219,23 +242,15 @@ namespace SampleClient
             rig2 = new EngineTestRig("Downloads2");
             rig2.Manager.Start();
 
-            TcpListener socketListener = new TcpListener(1220);
-            socketListener.Start();
+            ConnectionPair p = new ConnectionPair(5151);
 
-            Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            s1a.Connect(IPAddress.Loopback, 1220);
-            Socket s1b = socketListener.AcceptSocket();
-
-            connection1a = new CustomConnection(s1a, true, "1A");
-            connection1b = new CustomConnection(s1b, false, "1B");
-
-            rig1.AddConnection(connection1a);
-            rig2.AddConnection(connection1b);
+            rig1.AddConnection(p.Incoming);
+            rig2.AddConnection(p.Outgoing);
 
             while (true)
             {
-                Console.WriteLine("Connection 1A active: {0}", connection1a.Connected);
-                Console.WriteLine("Connection 2A active: {0}", connection1b.Connected);
+                Console.WriteLine("Connection 1A active: {0}", p.Incoming.Connected);
+                Console.WriteLine("Connection 2A active: {0}", p.Outgoing.Connected);
                 System.Threading.Thread.Sleep(1000);
             }
         }
