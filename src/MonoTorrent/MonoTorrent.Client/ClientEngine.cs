@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
         private static Random random = new Random();
         #region Global Constants
 
-        public static readonly bool SupportsExtended = true;
+        public static readonly bool SupportsExtended = false;
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = false;
