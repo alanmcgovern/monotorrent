@@ -174,12 +174,12 @@ namespace MonoTorrent.Common
             return ((IEnumerable)list).GetEnumerator();
         }
 
-        internal T Find(Predicate<T> match)
+        public T Find(Predicate<T> match)
         {
             return list.Find(match);
         }
 
-        internal bool Exists(Predicate<T> match)
+        public bool Exists(Predicate<T> match)
         {
             return list.Exists(match);
         }
