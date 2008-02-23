@@ -73,8 +73,8 @@ namespace MonoTorrent.Client
                     sb.Append(string.Format(message, formatting));
                 else
                     sb.Append(message);
-
-                listeners.ForEach(delegate(TraceListener l) { l.WriteLine(sb.ToString()); });
+				string s = sb.ToString();
+                listeners.ForEach(delegate(TraceListener l) { l.WriteLine(s); });
             }
         }
     }
