@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Messages
 {
-    class MessageBundle : PeerMessage
+    public class MessageBundle : PeerMessage
     {
         private List<PeerMessage> messages;
 
