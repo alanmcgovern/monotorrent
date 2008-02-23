@@ -188,12 +188,18 @@ namespace MonoTorrent.Client
                         man = engine.Torrents[i];
 
             //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
-            if (man == null || man.State == TorrentState.Stopped)        // We're not hosting that torrent
+            if (man == null)        // We're not hosting that torrent
             {
                 Logger.Log(id.Connection.Connection, "ListenManager - Handshake requested nonexistant torrent");
                 CleanupSocket(id);
                 return;
             }
+			if (man.State == TorrentState.Stopped)
+			{
+				Logger.Log(id.Connection.Connection, "ListenManager - Handshake requested for torrent which is not running");
+				CleanupSocket(id);
+				return;
+			}
 
             id.Peer.PeerId = handshake.PeerId;
             id.TorrentManager = man;
