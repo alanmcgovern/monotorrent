@@ -40,6 +40,7 @@
     <Compile Include="AllowedFastAlgorithmTest.cs" />
     <Compile Include="BitFieldTest.cs" />
     <Compile Include="FileManager.cs" />
+    <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="PeerMessagesTest.cs" />
     <Compile Include="PieceWriterTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />

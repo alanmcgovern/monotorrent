@@ -11,6 +11,7 @@ namespace MonoTorrent.Client.Messages
     public delegate PeerMessage CreateMessage(TorrentManager manager);
     public abstract class PeerMessage : Message
     {
+        internal const byte LibTorrentMessageId = 20;
         private static Dictionary<byte, CreateMessage> messageDict;
 
         static PeerMessage()
@@ -34,6 +35,10 @@ namespace MonoTorrent.Client.Messages
             Register(RequestMessage.MessageId,       delegate (TorrentManager manager) { return new RequestMessage(); });
             Register(SuggestPieceMessage.MessageId,  delegate (TorrentManager manager) { return new SuggestPieceMessage(); });
             Register(UnchokeMessage.MessageId,       delegate (TorrentManager manager) { return new UnchokeMessage(); });
+            
+            // We register this solely so that the user cannot register their own message with this ID.
+            // Actual decoding is handled with manual detection
+            Register(LibTorrentMessageId, delegate(TorrentManager manager) { return new UnknownMessage(); });
         }
 
         public static void Register(byte identifier, CreateMessage creator)
@@ -55,7 +60,7 @@ namespace MonoTorrent.Client.Messages
             PeerMessage message;
             CreateMessage creator;
 
-            if (buffer[offset] == LibtorrentMessage.MessageId)
+            if (buffer[offset] == LibTorrentMessageId)
                 return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count - 1, manager);
 
             if (!messageDict.TryGetValue(buffer[offset], out creator))

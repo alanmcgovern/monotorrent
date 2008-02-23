@@ -6,7 +6,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public class LTMetadata : LibtorrentMessage
     {
-        internal static readonly LTSupport Support = CreateSupport("LT_metadata");
+        public static readonly LTSupport Support = CreateSupport("LT_metadata");
 
         private byte messageType;
         private byte start;
@@ -44,11 +44,11 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         {
             int written = offset;
 
-            written += Write(buffer, written, LibtorrentMessage.MessageId);
+            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
             written += Write(buffer, written, expectedId);
             written += Write(buffer, written, 2); // FIXME: We always say we have no metadata
 
-			//CheckWritten(written - offset);
+            //CheckWritten(written - offset);
             return written - offset;
         }
     }

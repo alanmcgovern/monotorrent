@@ -7,15 +7,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public class LTChat : LibtorrentMessage
     {
-        internal static readonly LTSupport Support = CreateSupport("LT_chat");
+        public static readonly LTSupport Support = CreateSupport("LT_chat");
 
         private static readonly BEncodedString MessageKey = "msg";
-        private string message;
-
+        private BEncodedDictionary messageDict = new BEncodedDictionary();
         public string Message
         {
-            set { message = value ?? ""; }
-            get { return message; }
+            set { messageDict[MessageKey] = (BEncodedString)(value ?? ""); }
+            get { return ((BEncodedString)messageDict[MessageKey]).Text; }
         }
 
         internal override void Handle(PeerIdInternal id)
@@ -25,21 +24,25 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override int ByteLength
         {
-            get { return 4 + 1 + 1 + Encoding.UTF8.GetByteCount(message); }
+            get { return 4 + 1 + 1 + messageDict.LengthInBytes(); }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            BEncodedDictionary d = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length);
-            message = d[MessageKey].ToString();
+            messageDict = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            BEncodedDictionary d = new BEncodedDictionary();
-            d.Add(MessageKey, (BEncodedString)message);
-            CheckWritten(d.Encode(buffer, offset));
-            return ByteLength;
+            int written = offset;
+
+            written += Write(buffer, offset, ByteLength);
+            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
+            written += Write(buffer, written, Support.MessageId);
+            written += messageDict.Encode(buffer, written);
+            
+            CheckWritten(written - offset);
+            return written - offset; ;
         }
     }
 }

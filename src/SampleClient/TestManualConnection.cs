@@ -133,32 +133,32 @@ namespace SampleClient
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }
-	public class ConnectionPair : IDisposable
-	{
-		TcpListener socketListener;
-		public IConnection Incoming;
-		public IConnection Outgoing;
+    public class ConnectionPair : IDisposable
+    {
+        TcpListener socketListener;
+        public IConnection Incoming;
+        public IConnection Outgoing;
 
-		public ConnectionPair(int port)
-		{
-			socketListener = new TcpListener(port);
-			socketListener.Start();
+        public ConnectionPair(int port)
+        {
+            socketListener = new TcpListener(port);
+            socketListener.Start();
 
-			Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-			s1a.Connect(IPAddress.Loopback, port);
-			Socket s1b = socketListener.AcceptSocket();
+            Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            s1a.Connect(IPAddress.Loopback, port);
+            Socket s1b = socketListener.AcceptSocket();
 
-			Incoming = new CustomConnection(s1a, true, "1A");
-			Outgoing = new CustomConnection(s1b, false, "1B");
-		}
+            Incoming = new CustomConnection(s1a, true, "1A");
+            Outgoing = new CustomConnection(s1b, false, "1B");
+        }
 
-		public void Dispose()
-		{
-			Incoming.Dispose();
-			Outgoing.Dispose();
-			socketListener.Stop();
-		}
-	}
+        public void Dispose()
+        {
+            Incoming.Dispose();
+            Outgoing.Dispose();
+            socketListener.Stop();
+        }
+    }
     public class EngineTestRig
     {
         private ClientEngine engine;

@@ -86,13 +86,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         #region Constructors
         public ExtendedHandshakeMessage()
         {
-            supports = new MonoTorrentCollection<LTSupport>();
+            supports = new MonoTorrentCollection<LTSupport>(LibtorrentMessage.SupportedMessages);
         }
 
-        public ExtendedHandshakeMessage(BEncodedDictionary supportedMessages)
-            : this()
-        {
-        }
         #endregion
 
 
@@ -128,7 +124,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             BEncodedDictionary dict = Create();
 
             written += Write(buffer, written, dict.LengthInBytes() + 1 + 1);
-            written += Write(buffer, written, LibtorrentMessage.MessageId);
+            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
             written += Write(buffer, written, ExtendedHandshakeMessage.Support.MessageId);
             written += dict.Encode(buffer, written);
 
@@ -145,7 +141,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             mainDict.Add(VersionKey, (BEncodedString)Version);
             mainDict.Add(PortKey, (BEncodedNumber)localPort);
 
-			SupportedMessages.ForEach(delegate(LTSupport s) { supportsDict.Add(s.Name, (BEncodedNumber)s.MessageId); });
+            SupportedMessages.ForEach(delegate(LTSupport s) { supportsDict.Add(s.Name, (BEncodedNumber)s.MessageId); });
             mainDict.Add(SupportsKey, supportsDict);
             return mainDict;
         }

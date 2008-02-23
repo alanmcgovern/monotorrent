@@ -7,19 +7,21 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public abstract class LibtorrentMessage : PeerMessage
     {
+        private static readonly byte HandshakeMessageId = 0;
         private static Dictionary<byte, CreateMessage> messageDict;
 
         internal static readonly List<LTSupport> SupportedMessages = new List<LTSupport>();
 
-        protected static byte nextId;
-        public const byte MessageId = 20;
+        private static byte nextId;
 
         static LibtorrentMessage()
         {
-            messageDict = new Dictionary<byte, CreateMessage>();
+            HandshakeMessageId = 0;
             nextId = 1;
 
-            Register(ExtendedHandshakeMessage.MessageId, delegate { return new ExtendedHandshakeMessage(); });
+            messageDict = new Dictionary<byte, CreateMessage>();
+
+            Register(HandshakeMessageId, delegate { return new ExtendedHandshakeMessage(); });
 
             Register(nextId, delegate { return new LTChat(); });
             SupportedMessages.Add(new LTSupport("LT_chat", nextId++));
@@ -56,7 +58,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 return new UnknownMessage();
 
             message = creator(manager);
-            message.Decode(buffer, offset + 1, count);
+            message.Decode(buffer, offset + 1, count - 1);
             return message;
         }
     }
