@@ -167,7 +167,6 @@ namespace MonoTorrent.Client
             {
                 manager.Peers.AddPeer(id.Peer, PeerType.Active);
                 id.TorrentManager.ConnectingToPeers.Add(id);
-                System.Threading.Interlocked.Increment(ref this.halfOpenConnections);
 
                 IEncryptorInternal encryptor;
                 if(!ClientEngine.SupportsEncryption || id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption)
@@ -189,6 +188,7 @@ namespace MonoTorrent.Client
                 try
                 {
                     id.Connection.BeginConnect(this.endCreateConnectionCallback, id);
+                    Interlocked.Increment(ref this.halfOpenConnections);
                 }
                 catch (Exception)
                 {
@@ -196,7 +196,6 @@ namespace MonoTorrent.Client
                     // as they must be invalid.
                     manager.Peers.RemovePeer(id.Peer, PeerType.Active);
                     id.TorrentManager.ConnectingToPeers.Remove(id);
-                    System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 }
             }
 
@@ -226,6 +225,7 @@ namespace MonoTorrent.Client
                             return;
                         }
 
+                        Interlocked.Decrement(ref this.halfOpenConnections);
                         id.Connection.EndConnect(result);
                         Logger.Log(id.Connection.Connection, "ConnectionManager - Connection opened");
 
@@ -351,7 +351,6 @@ namespace MonoTorrent.Client
                     id.TorrentManager.RaisePeerConnected (new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
 
                 // Decrement the half open connections
-                System.Threading.Interlocked.Decrement(ref this.halfOpenConnections);
                 if (cleanUp)
                     CleanupSocket(id, reason);
             }
