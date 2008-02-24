@@ -35,9 +35,9 @@ using System.Net;
 
 namespace MonoTorrent.Common
 {
-    public abstract class Peer
+    /*public abstract class Peer
     {
-        /*public IPEndPoint PeerEndpoint
+        public IPEndPoint PeerEndpoint
         {
             get { return this.peerEndpoint; }
         }
@@ -75,6 +75,6 @@ namespace MonoTorrent.Common
         {
             this.peerEndpoint = peerEndpoint;
             this.peerId = peerId;
-        }*/
-    }
+        }
+    } */
 }
