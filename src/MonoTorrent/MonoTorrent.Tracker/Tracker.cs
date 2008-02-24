@@ -92,6 +92,12 @@ namespace MonoTorrent.Tracker
         }
 
 
+        public int Count
+        {
+            get { return torrents.Count; }
+        }
+
+
         ///<summary>
         /// Get and set the IntervalAlgorithm used by this Tracker
         ///</summary>
@@ -140,6 +146,26 @@ namespace MonoTorrent.Tracker
             return true;
         }
 
+
+        public bool Contains(ITrackable trackable)
+        {
+            if(trackable == null)
+                throw new ArgumentNullException("trackable");
+
+            return torrents.ContainsKey(trackable.InfoHash);
+        }
+
+        public SimpleTorrentManager GetManager(ITrackable trackable)
+        {
+            if(trackable == null)
+                throw new ArgumentNullException("trackable");
+
+            SimpleTorrentManager value;
+            if (torrents.TryGetValue(trackable.InfoHash, out value))
+                return value;
+
+            return null;
+        }
 
         /// <summary>
         /// Gets an enumerator which iterates through all torrents which are being tracked
