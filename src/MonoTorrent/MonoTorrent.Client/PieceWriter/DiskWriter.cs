@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.PieceWriters
                     i++;
                 }
             }
-
+            ClientEngine.BufferManager.FreeBuffer(ref data.Buffer);
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
         }
 
