@@ -67,7 +67,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// A byte[] containing the peer's IPEndpoint in compact form
         ///</summary>
-        public byte[] CompactEntry
+        internal byte[] CompactEntry
         {
             get
             {
@@ -111,7 +111,7 @@ namespace MonoTorrent.Tracker
         }
 
         ///<summary>The peer entry in non compact format.</summary> 
-        public BEncodedDictionary NonCompactEntry
+        internal BEncodedDictionary NonCompactEntry
         {
             get
             {
@@ -139,6 +139,14 @@ namespace MonoTorrent.Tracker
         }
 
         /// <summary>
+        /// The amount of data the peer has uploaded this session
+        /// </summary>
+        public long Uploaded
+        {
+            get { return uploaded; }
+        }
+
+        /// <summary>
         /// The estimated upload speed of the peer in bytes/second
         /// </summary>
         public int UploadSpeed
@@ -148,7 +156,7 @@ namespace MonoTorrent.Tracker
 
 
         ///<summary>Update internal datas and reset Timers</summary>
-        public void Update(AnnounceParameters parameters)
+        internal void Update(AnnounceParameters parameters)
         {
             DateTime now = DateTime.Now;
             double elapsedTime = (now - lastAnnounceTime).TotalSeconds;
