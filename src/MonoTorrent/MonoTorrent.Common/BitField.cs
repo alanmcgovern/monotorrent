@@ -456,13 +456,13 @@ namespace MonoTorrent.Common
                 p = 128;
                 offset++;
             }
-
+            
             // Make sure all extra bits are set to zero
             for (int i = this.length; i < this.length + (8 - this.length % 8); i++)
             {
                 temp = ((buffer[offset] & p) != 0);
                 if (temp)
-                    throw new MessageException("Invalid bitfield received");
+                    Logger.Log(null, "BitField - Invalid bitfield received, high bits not set to zero. Attempting to continue...");
 
                 p >>= 1;
 
