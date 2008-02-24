@@ -44,6 +44,8 @@
     <Compile Include="PeerMessagesTest.cs" />
     <Compile Include="PieceWriterTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />
+    <Compile Include="Tracker\TrackerTest.cs" />
+    <Compile Include="Tracker\TrackerTestRig.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
