@@ -9,9 +9,37 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.Tracker;
 
 namespace SampleClient
 {
+    public class CustomTracker : Tracker
+    {
+        public CustomTracker(Uri uri)
+        {
+            this.CanScrape = false;
+        }
+
+        public override System.Threading.WaitHandle Announce(AnnounceParameters parameters)
+        {
+            return new System.Threading.ManualResetEvent(true);
+        }
+
+        public override System.Threading.WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
+        {
+            return new System.Threading.ManualResetEvent(true);
+        }
+
+        public void AddPeer(Peer p)
+        {
+            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            e.Peers.Add(p);
+            e.Successful = true;
+            RaiseAnnounceComplete(e);
+        }
+    }
+
     public class NullWriter : PieceWriter
     {
         public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
@@ -186,6 +214,11 @@ namespace SampleClient
             get { return torrent; }
         }
 
+        public CustomTracker Tracker
+        {
+            get { return (CustomTracker)this.manager.TrackerManager.CurrentTracker; }
+        }
+
         public EngineTestRig(string savePath)
             : this(savePath, 256 * 1024)
         {
@@ -194,6 +227,15 @@ namespace SampleClient
 
         public EngineTestRig(string savePath, int piecelength)
         {
+            try
+            {
+                TrackerFactory.Register("custom", typeof(CustomTracker));
+            }
+            catch
+            {
+                // it was already registered 
+            }
+
             PieceWriter writer = new MemoryWriter(new NullWriter());
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
@@ -220,7 +262,7 @@ namespace SampleClient
             dict[new BEncodedString("info")] = infoDict;
 
             BEncodedList announceTier = new BEncodedList();
-            announceTier.Add(new BEncodedString(String.Format("http://transfers/{0}", new byte[20])));
+            announceTier.Add(new BEncodedString(string.Format("custom://transfers/{0}", "tester")));
             BEncodedList announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;

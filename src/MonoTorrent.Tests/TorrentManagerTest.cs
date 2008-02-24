@@ -59,5 +59,12 @@ namespace MonoTorrent.Client.Managers.Tests
 			Assert.IsFalse(conn.Incoming.Connected, "#1");
 			Assert.IsFalse(conn.Outgoing.Connected, "#2");
 		}
+
+		[Test]
+		public void UnregisteredAnnounce()
+		{
+			rig.Engine.Unregister(rig.Manager);
+			rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+		}
 	}
 }

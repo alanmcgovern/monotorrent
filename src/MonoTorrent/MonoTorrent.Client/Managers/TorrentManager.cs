@@ -539,7 +539,9 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                engine.ConnectionManager.TryConnect();
+                ClientEngine e = this.engine;
+                if (e != null)
+                    e.ConnectionManager.TryConnect();
             }
         }
 
