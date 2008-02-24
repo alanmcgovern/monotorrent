@@ -327,6 +327,23 @@ namespace MonoTorrent.Common
             return size;
         }
 
+        public int RecommendedPieceSize()
+        {
+            long totalSize = GetSize();
+            
+            // Check all piece sizes that are multiples of 32kB 
+            for (int i = 32768; i < 4 * 1024 * 1024; i *= 2)
+            {
+                int pieces = (int)(totalSize / i) + 1;
+                if ((pieces * 20) < (60 * 1024))
+                    return i;
+            }
+
+            // If we get here, we're hashing a massive file, so lets limit
+            // to a max of 4MB pieces.
+            return 4 * 1024 * 1024;
+        }
+
         /// <summary>
         /// Removes a custom value from the main bencoded dictionary.
         /// </summary>
