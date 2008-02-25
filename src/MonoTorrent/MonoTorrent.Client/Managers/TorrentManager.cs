@@ -657,10 +657,35 @@ namespace MonoTorrent.Client
             }
 
             if (counter % (1000 / ClientEngine.TickLength) == 0)
-                this.rateLimiter.UpdateDownloadChunks((int)(this.settings.MaxDownloadSpeed * 1.1),
-                                                      (int)(this.settings.MaxUploadSpeed * 1.1),
-                                                      (this.monitor.DownloadSpeed),
-                                                      (this.monitor.UploadSpeed));
+            {
+                int activeCount;
+                using(new ReaderLock(engine.torrentsLock))
+                activeCount = Toolbox.Accumulate<TorrentManager>(engine.Torrents, delegate(TorrentManager m) {
+                    return m.State == TorrentState.Downloading || m.state == TorrentState.Seeding ? 1 : 0;
+                });
+
+                int maxDownload = this.engine.Settings.GlobalMaxDownloadSpeed / activeCount;
+                int maxUpload = this.engine.Settings.GlobalMaxUploadSpeed / activeCount;
+                int currentDownload = this.engine.TotalDownloadSpeed / activeCount;
+                int currentUpload = this.engine.TotalUploadSpeed / activeCount;
+
+                if (maxDownload == 0)
+                {
+                    maxDownload = settings.MaxDownloadSpeed;
+                    currentDownload = monitor.DownloadSpeed;
+                }
+
+                if (maxUpload == 0)
+                {
+                    maxUpload = settings.MaxUploadSpeed;
+                    currentUpload = monitor.UploadSpeed;
+                }
+
+                this.rateLimiter.UpdateDownloadChunks((int)(maxDownload * 1.1),
+                                                      (int)(maxUpload * 1.1),
+                                                      currentDownload,
+                                                      currentUpload);
+            }
         }
 
 
@@ -759,14 +784,22 @@ namespace MonoTorrent.Client
 
             // While there are peers queued in the list and i haven't used my download allowance, resume downloading
             // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
+            int downloadSpeed = this.engine.Settings.GlobalMaxDownloadSpeed;
+            int uploadSpeed = this.engine.Settings.GlobalMaxUploadSpeed;
+
+            if (downloadSpeed == 0)
+                downloadSpeed = settings.MaxDownloadSpeed;
+            if (uploadSpeed == 0)
+                uploadSpeed = settings.MaxUploadSpeed;
+
             while (this.downloadQueue.Count > 0 &&
                     this.engine.DiskManager.QueuedWrites < 20 &&
-                    ((this.rateLimiter.DownloadChunks > 0) || this.settings.MaxDownloadSpeed == 0))
+                    ((this.rateLimiter.DownloadChunks > 0) || downloadSpeed == 0))
             {
                 if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
             }
-            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || this.settings.MaxUploadSpeed == 0))
+            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || uploadSpeed == 0))
                 if (engine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
                     Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
 
