@@ -16,6 +16,7 @@ namespace MonoTorrent.Client
         private bool amInterested;
         private int amRequestingPiecesCount;
         private BitField bitField;
+        private IConnection connection;
 		private PeerIdInternal id;
         private Software clientApp;
         private IEncryptorInternal encryptor;
@@ -61,6 +62,11 @@ namespace MonoTorrent.Client
         public Software ClientSoftware
         {
             get { return this.clientApp; }
+        }
+		
+        public IConnection Connection
+        {
+            get { return this.connection; }
         }
 
         public IEncryptor Encryptor
@@ -158,6 +164,10 @@ namespace MonoTorrent.Client
         internal void UpdateStats(PeerIdInternal id)
         {
 			this.id = id;
+			
+            if (connection == null)
+               connection = id.Connection.Connection;
+				
             amChoking = id.Connection.AmChoking;
             amInterested = id.Connection.AmInterested;
             amRequestingPiecesCount = id.Connection.AmRequestingPiecesCount;

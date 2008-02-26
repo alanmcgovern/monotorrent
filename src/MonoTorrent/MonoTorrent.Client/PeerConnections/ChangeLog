@@ -1,3 +1,8 @@
+2008-02-26   <> 
+
+	* PeerId.cs: Expose the IConnection through the PeerId so custom connections
+	  can match a PeerId to an IConnection
+
 2008-02-01  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* PeerId.cs: Added close connection method.
