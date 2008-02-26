@@ -519,43 +519,46 @@ namespace MonoTorrent.Client.Encryption
 
         private void doneReceive(IAsyncResult result)
         {
-            lastActivity = DateTime.Now;
-
-            object[] receiveData = (object[])result.AsyncState;
-
-            AsyncCallback callback = (AsyncCallback)receiveData[0];
-            byte[] buffer = (byte[])receiveData[1];
-            int start = (int)receiveData[2];
-            int length = (int)receiveData[3];
-
-            int received;
-
             try
             {
+                lastActivity = DateTime.Now;
+
+                object[] receiveData = (object[])result.AsyncState;
+
+                AsyncCallback callback = (AsyncCallback)receiveData[0];
+                byte[] buffer = (byte[])receiveData[1];
+                int start = (int)receiveData[2];
+                int length = (int)receiveData[3];
+
+                int received;
+
+
                 received = socket.EndReceive(result);
                 bytesReceived += received;
+
+
+                if (received == 0 || !socket.Connected)
+                {
+                    IOError();
+                    return;
+                }
+
+                if (received < length)
+                {
+                    receiveData[2] = start + received;
+                    receiveData[3] = length - received;
+                    socket.BeginReceive(buffer, start + received, length - received, doneReceiveCallback, receiveData);
+                }
+                else
+                {
+                    callback(result);
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Log(null, "Encrypted Socket - Failed to complete encrypted handshake: {0}", ex.Message);
                 IOError();
                 return;
-            }
-
-            if (received == 0 || !socket.Connected)
-            {
-                IOError();
-                return;
-            }
-
-            if (received < length)
-            {
-                receiveData[2] = start + received;
-                receiveData[3] = length - received;
-                socket.BeginReceive(buffer, start + received, length - received, doneReceiveCallback, receiveData);
-            }
-            else
-            {
-                callback(result);
             }
         }
 
