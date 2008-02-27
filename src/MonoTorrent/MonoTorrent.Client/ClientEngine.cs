@@ -340,8 +340,11 @@ namespace MonoTorrent.Client
                 throw new TorrentException("This manager has already been registered");
 
             using (new WriterLock(torrentsLock))
+            {
+                if (Contains(manager.Torrent))
+                    throw new TorrentException("A manager for this torrent has already been registered");
                 this.torrents.Add(manager);
-
+            }
             manager.Engine = this;
 /*
             manager.PieceHashed += delegate (object sender, PieceHashedEventArgs e) {
