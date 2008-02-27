@@ -18,9 +18,9 @@ namespace MonoTorrent.Client
             cookie = default(LockCookie);
 
             if (upgraded)
-                cookie = locker.UpgradeToWriterLock(1000);
+                cookie = locker.UpgradeToWriterLock(5000);
             else
-                locker.AcquireWriterLock(1000);
+                locker.AcquireWriterLock(5000);
         }
 
         public void Dispose()

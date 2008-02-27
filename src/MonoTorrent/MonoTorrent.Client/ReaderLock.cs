@@ -12,7 +12,7 @@ namespace MonoTorrent.Client
         public ReaderLock(ReaderWriterLock locker)
         {
             Locker = locker;
-            locker.AcquireReaderLock(1000);
+            locker.AcquireReaderLock(5000);
         }
 
         public void Dispose()
