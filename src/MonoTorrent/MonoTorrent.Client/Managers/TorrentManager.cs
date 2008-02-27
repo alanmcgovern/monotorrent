@@ -451,7 +451,7 @@ namespace MonoTorrent.Client
                 this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 this.startTime = DateTime.Now;
 
-                if (this.Progress == 100.0)
+                if (this.Complete)
                     UpdateState(TorrentState.Seeding);
                 else
                     UpdateState(TorrentState.Downloading);
