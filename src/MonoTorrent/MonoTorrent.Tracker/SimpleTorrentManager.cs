@@ -243,7 +243,7 @@ namespace MonoTorrent.Tracker
             int complete = 0;
             int incomplete = 0;
 
-            foreach (Peer p in buffer)
+            foreach (Peer p in this.peers.Values)
             {
                 if (p.HasCompleted)
                     complete++;
