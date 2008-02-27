@@ -118,7 +118,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 BEncodedDictionary d = new BEncodedDictionary();
                 d.Add(CustomErrorKey, (BEncodedString)("Could not initiate announce request: " + ex.Message));
-                HandleAnnounce(d, new AnnounceResponseEventArgs(parameters.Id));
+                ProcessResponse(d, parameters.Id);
 
                 h = new ManualResetEvent(true);
             }
