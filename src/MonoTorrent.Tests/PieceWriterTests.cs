@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Tests
 		[TestFixtureSetUp]
 		public void GlobalSetup()
 		{
-			rig = new SampleClient.EngineTestRig("Downloads", PieceSize);
+			rig = new SampleClient.EngineTestRig("Downloads", PieceSize, null);
 		}
 
 		[TestFixtureTearDown]

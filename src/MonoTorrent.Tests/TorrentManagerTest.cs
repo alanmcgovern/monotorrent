@@ -7,64 +7,164 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
+using System.Threading;
 
 namespace MonoTorrent.Client.Managers.Tests
 {
-	[TestFixture]
-	public class TorrentManagerTest
-	{
-		EngineTestRig rig;
-		ConnectionPair conn;
+    public class TestWriter : PieceWriters.PieceWriter
+    {
+        private enum Access
+        {
+            Free,
+            Open
+        }
 
-		[TestFixtureSetUp]
-		public void FixtureSetup()
-		{
-			rig = new EngineTestRig("");
-		}
-		[TestFixtureTearDown]
-		public void FixtureTeardown()
-		{
-			rig.Engine.Dispose();
-		}
+        public TestWriter()
+        {
 
-		[SetUp]
-		public void Setup()
-		{
-			conn = new ConnectionPair(51515);
-		}
-		[TearDown]
-		public void Teardown()
-		{
-			conn.Dispose();
-		}
+        }
 
-		[Test]
-		public void AddConnectionToStoppedManager()
-		{
-			MessageBundle bundle = new MessageBundle();
-			
-			// Create the handshake and bitfield message
-			bundle.Messages.Add(new HandshakeMessage(rig.Manager.Torrent.InfoHash, "11112222333344445555", VersionInfo.ProtocolStringV100));
-			bundle.Messages.Add(new BitfieldMessage(rig.Torrent.Pieces.Count));
-			byte[] data = bundle.Encode();
+        private TorrentFile[] files;
+        private KeyValuePair<FileManager, Access>[] access;
+        public override void CloseFileStreams(TorrentManager manager)
+        {
+            if (access == null) return;
+            for (int i = 0; i < access.Length; i++)
+                if (access[i].Key == manager.FileManager)
+                    access[i] = new KeyValuePair<FileManager, Access>(access[i].Key, Access.Free);
+        }
 
-			// Add the 'incoming' connection to the engine and send our payload
-			rig.Listener.Add(rig.Manager, conn.Incoming);
-			conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
+        public override void Flush(TorrentManager manager)
+        {
+            if (files == null)
+            {
+                this.files = manager.Torrent.Files;
+                access = new KeyValuePair<FileManager, Access>[files.Length];
+            }
+        }
 
-			try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
-			catch { }
+        public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
+        {
+            if (files == null)
+            {
+                this.files = manager.Files;
+                access = new KeyValuePair<FileManager, Access>[files.Length];
+            }
+            GetStream(manager, offset);
+            return count;
+        }
 
-			System.Threading.Thread.Sleep(100);
-			Assert.IsFalse(conn.Incoming.Connected, "#1");
-			Assert.IsFalse(conn.Outgoing.Connected, "#2");
-		}
+        public override void Write(PieceData data)
+        {
+            if (files == null)
+            {
+                this.files = data.Manager.Files;
+                access = new KeyValuePair<FileManager, Access>[files.Length];
+            }
+            GetStream(data.Manager, data.WriteOffset);
+        }
 
-		[Test]
-		public void UnregisteredAnnounce()
-		{
-			rig.Engine.Unregister(rig.Manager);
-			rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
-		}
-	}
+        private void GetStream(FileManager manager, long offset)
+        {
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (offset > files[i].Length)
+                {
+                    offset -= files[i].Length;
+                }
+                else
+                {
+                    if (access[i].Key != manager && access[i].Value == Access.Open)
+                        Assert.Fail("The file is still open!");
+
+                    access[i] = new KeyValuePair<FileManager, Access>(manager, Access.Open);
+                    break;
+                }
+            }
+        }
+    }
+    [TestFixture]
+    public class TorrentManagerTest
+    {
+        EngineTestRig rig;
+        ConnectionPair conn;
+
+        [TestFixtureSetUp]
+        public void FixtureSetup()
+        {
+            rig = new EngineTestRig("", new TestWriter());
+        }
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
+        {
+            rig.Engine.Dispose();
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            conn = new ConnectionPair(51515);
+        }
+        [TearDown]
+        public void Teardown()
+        {
+            conn.Dispose();
+        }
+
+        [Test]
+        public void AddConnectionToStoppedManager()
+        {
+            MessageBundle bundle = new MessageBundle();
+
+            // Create the handshake and bitfield message
+            bundle.Messages.Add(new HandshakeMessage(rig.Manager.Torrent.InfoHash, "11112222333344445555", VersionInfo.ProtocolStringV100));
+            bundle.Messages.Add(new BitfieldMessage(rig.Torrent.Pieces.Count));
+            byte[] data = bundle.Encode();
+
+            // Add the 'incoming' connection to the engine and send our payload
+            rig.Listener.Add(rig.Manager, conn.Incoming);
+            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
+
+            try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
+            catch { }
+
+            System.Threading.Thread.Sleep(100);
+            Assert.IsFalse(conn.Incoming.Connected, "#1");
+            Assert.IsFalse(conn.Outgoing.Connected, "#2");
+        }
+
+        [Test]
+        public void UnregisteredAnnounce()
+        {
+            rig.Engine.Unregister(rig.Manager);
+            rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+        }
+
+        [Test]
+        public void ReregisterManager()
+        {
+            ManualResetEvent handle = new ManualResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
+            {
+                if (e.OldState == TorrentState.Hashing)
+                    handle.Set();
+            };
+            rig.Manager.HashCheck(true);
+
+            handle.WaitOne();
+            handle.Reset();
+
+            rig.Engine.Unregister(rig.Manager);
+            EngineTestRig rig2 = new EngineTestRig("", new TestWriter());
+            rig2.Engine.Unregister(rig2.Manager);
+            rig.Engine.Register(rig2.Manager);
+            rig.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
+            {
+                if (e.OldState == TorrentState.Hashing)
+                    handle.Set();
+            };
+            rig2.Manager.HashCheck(true);
+            handle.WaitOne();
+        }
+    }
 }

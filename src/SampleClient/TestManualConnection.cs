@@ -220,12 +220,18 @@ namespace SampleClient
         }
 
         public EngineTestRig(string savePath)
-            : this(savePath, 256 * 1024)
+            : this(savePath, 256 * 1024, null)
         {
 
         }
 
-        public EngineTestRig(string savePath, int piecelength)
+        public EngineTestRig(string savePath, PieceWriter writer)
+            : this(savePath, 256 * 1024, writer)
+        {
+
+        }
+
+        public EngineTestRig(string savePath, int piecelength, PieceWriter writer)
         {
             try
             {
@@ -236,7 +242,8 @@ namespace SampleClient
                 // it was already registered 
             }
 
-            PieceWriter writer = new MemoryWriter(new NullWriter());
+            if(writer == null)
+                writer = new MemoryWriter(new NullWriter());
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
             torrent = Torrent.Load(CreateTorrent(piecelength));
