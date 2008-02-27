@@ -46,7 +46,8 @@ namespace MonoTorrent.Client.PieceWriters
         internal TorrentFileStream GetStream(FileManager manager, TorrentFile file, FileAccess access)
         {
             string filePath = GenerateFilePath(file, manager.BaseDirectory, manager.SavePath);
-            return streamsBuffer.GetStream(file, filePath, access);
+            lock (streamsBuffer)
+                return streamsBuffer.GetStream(file, filePath, access);
         }
 
 		public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)

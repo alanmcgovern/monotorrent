@@ -90,12 +90,8 @@ namespace MonoTorrent.Client
         private void CloseAndRemove(TorrentFileStream s)
         {
             Console.WriteLine("Closing and removing: {0}", s.File.Path);
-            int index = list.FindIndex(delegate(TorrentFileStream stream) { return stream == s; });
-            if (index == -1)
-                return;
-
-            list[index].Dispose();
-            list.RemoveAt(index);
+            list.Remove(s);
+            s.Dispose();
         }
     }
 }
