@@ -45,6 +45,8 @@ namespace MonoTorrent.Client.Tracker
     /// </summary>
     public class HTTPTracker : Tracker
     {
+        private static readonly BEncodedString CustomErrorKey = (BEncodedString)"custom error";
+
         /// <summary>
         /// The announce URL for this tracker
         /// </summary>
@@ -71,6 +73,7 @@ namespace MonoTorrent.Client.Tracker
 
         public override WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
         {
+            WaitHandle h = null;
             HttpWebRequest request;
             string url = scrapeUrl.OriginalString;
 
@@ -86,18 +89,40 @@ namespace MonoTorrent.Client.Tracker
             request = (HttpWebRequest)HttpWebRequest.Create(url);
             id.Request = request;
             UpdateState(TrackerState.Scraping);
-            return request.BeginGetResponse(ScrapeReceived, id).AsyncWaitHandle;
+            try
+            {
+                h = request.BeginGetResponse(ScrapeReceived, id).AsyncWaitHandle;
+            }
+            catch (Exception ex)
+            {
+                h = new ManualResetEvent(true);
+                Logger.Log(null, "Httptracker - Could not initiate scrape: {0}", ex);
+            }
+            return h;
         }
 
         public override WaitHandle Announce(AnnounceParameters parameters)
         {
+            WaitHandle h = null;
             string announceString = CreateAnnounceString(parameters);
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
             parameters.Id.Request = request;
 
             UpdateState(TrackerState.Announcing);
-            return request.BeginGetResponse(AnnounceReceived, parameters.Id).AsyncWaitHandle;
+            try
+            {
+                h = request.BeginGetResponse(AnnounceReceived, parameters.Id).AsyncWaitHandle;
+            }
+            catch (Exception ex)
+            {
+                BEncodedDictionary d = new BEncodedDictionary();
+                d.Add(CustomErrorKey, (BEncodedString)("Could not initiate announce request: " + ex.Message));
+                HandleAnnounce(d, new AnnounceResponseEventArgs(parameters.Id));
+
+                h = new ManualResetEvent(true);
+            }
+            return h;
         }
 
 
@@ -231,13 +256,17 @@ namespace MonoTorrent.Client.Tracker
         {
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
             BEncodedDictionary dict = DecodeResponse(result);
+            ProcessResponse(dict, id);
+        }
+
+        private void ProcessResponse(BEncodedDictionary dict, TrackerConnectionID id)
+        {
             AnnounceResponseEventArgs args = new AnnounceResponseEventArgs(id);
 
-
-            UpdateSucceeded = !dict.ContainsKey("custom error");
+            UpdateSucceeded = !dict.ContainsKey(CustomErrorKey);
             if (!UpdateSucceeded)
             {
-                FailureMessage = dict["custom error"].ToString();
+                FailureMessage = dict[CustomErrorKey].ToString();
                 UpdateState(TrackerState.AnnouncingFailed);
             }
             else
