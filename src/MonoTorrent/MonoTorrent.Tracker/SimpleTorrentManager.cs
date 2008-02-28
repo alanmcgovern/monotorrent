@@ -170,7 +170,7 @@ namespace MonoTorrent.Tracker
         /// <param name="count">The number of peers to add</param>
         /// <param name="compact">True if the peers should be in compact form</param>
         /// <param name="exlude">The peer to exclude from the list</param>
-        internal void GetPeers(BEncodedDictionary response, int count, bool compact, IPEndPoint exlude)
+        internal void GetPeers(BEncodedDictionary response, int count, bool compact)
         {
             byte[] compactResponse = null;
             BEncodedList nonCompactResponse = null;

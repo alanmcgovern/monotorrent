@@ -211,7 +211,7 @@ namespace MonoTorrent.Tracker
                 manager.ClearZombiePeers(DateTime.Now.AddSeconds(-this.Intervals.PeerTimeout));
 
                 // Fulfill the announce request
-                manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact, e.ClientAddress);
+                manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact);
             }
 
             // Make sure the values are updated
