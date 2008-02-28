@@ -85,6 +85,7 @@ namespace MonoTorrent.Client.Tests
         }
         [Test]
         [ExpectedException(typeof(MessageException))]
+        [Ignore("Deliberately broken to work around bugs in azureus")]
         public void BitfieldCorrupt()
         {
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };

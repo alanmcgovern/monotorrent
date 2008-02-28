@@ -71,6 +71,7 @@ namespace MonoTorrent.Common.Tests
         }
 
         [Test]
+        [Ignore("This is deliberately broken to work around bugs in azureus")]
         public void InvalidBitfieldTest()
         {
             // Set each of the 4 trailing bits to 1 to force a decode error
