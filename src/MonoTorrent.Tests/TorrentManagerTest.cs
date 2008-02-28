@@ -157,7 +157,7 @@ namespace MonoTorrent.Client.Managers.Tests
             EngineTestRig rig2 = new EngineTestRig("", new TestWriter());
             rig2.Engine.Unregister(rig2.Manager);
             rig.Engine.Register(rig2.Manager);
-            rig.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
+            rig2.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
             {
                 if (e.OldState == TorrentState.Hashing)
                     handle.Set();
