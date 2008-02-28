@@ -102,6 +102,7 @@ namespace MonoTorrent.Client.Managers.Tests
         [SetUp]
         public void Setup()
         {
+            rig = new EngineTestRig("", new TestWriter());
             conn = new ConnectionPair(51515);
         }
         [TearDown]
