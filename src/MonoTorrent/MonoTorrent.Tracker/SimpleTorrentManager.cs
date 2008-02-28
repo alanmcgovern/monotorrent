@@ -39,19 +39,6 @@ using System.Net;
 
 namespace MonoTorrent.Tracker
 {
-    public class IPAddressComparer : IEqualityComparer<Peer>
-    {
-        public bool Equals(Peer left, Peer right)
-        {
-            return left.ClientAddress.Equals(right.ClientAddress);
-        }
-
-        public int GetHashCode(Peer peer)
-        {
-            return peer.ClientAddress.GetHashCode();
-        }
-    }
-
     ///<summary>
     ///This class is a TorrentManager which uses .Net Generics datastructures, such 
     ///as Dictionary and List to manage Peers from a Torrent.
@@ -60,11 +47,12 @@ namespace MonoTorrent.Tracker
     {
         #region Member Variables
 
+        private IPeerComparer comparer;
         private List<Peer> buffer = new List<Peer>();
         private BEncodedNumber complete;
         private BEncodedNumber incomplete;
         private BEncodedNumber downloaded;
-        private Dictionary<IPAddress, Peer> peers;
+        private Dictionary<object, Peer> peers;
         private Random random;
         private ITrackable trackable;
 
@@ -119,20 +107,14 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        //public SimpleTorrentManager(ITrackable trackable)
-        //    : this(trackable, new IPAddressComparer())
-        //{
-
-        //}
-
-        // FIXME: Use the comparer
-        public SimpleTorrentManager(ITrackable trackable)//, IEqualityComparer<Peer> comparer)
+        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer)
         {
+            this.comparer = comparer;
             this.trackable = trackable;
             complete = new BEncodedNumber(0);
             downloaded = new BEncodedNumber(0);
             incomplete = new BEncodedNumber(0);
-            peers = new Dictionary<IPAddress, Peer>();
+            peers = new Dictionary<object, Peer>(comparer);
             random = new Random();
         }
 
@@ -145,13 +127,13 @@ namespace MonoTorrent.Tracker
         /// Adds the peer to the tracker
         /// </summary>
         /// <param name="peer"></param>
-        internal void Add(Peer peer)
+        internal void Add(object key, Peer peer)
         {
             if (peer == null)
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
-            peers.Add(peer.ClientAddress.Address, peer);
+            peers.Add(key, peer);
             lock (buffer)
                 buffer.Clear();
             UpdateCounts();
@@ -265,7 +247,7 @@ namespace MonoTorrent.Tracker
             if (!peers.TryGetValue(par.ClientAddress.Address, out peer))
             {
                 peer = new Peer(par);
-                Add(peer);
+                Add(comparer.GetKey(par), peer);
             }
 
             Debug.WriteLine(string.Format("Updating: {0}", peer.ClientAddress));

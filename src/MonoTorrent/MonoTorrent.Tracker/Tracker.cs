@@ -135,6 +135,11 @@ namespace MonoTorrent.Tracker
         /// <returns>True if the trackable was added, false if it was already being tracked</returns>
         public bool Add(ITrackable trackable)
         {
+            return Add(trackable, new IPAddressComparer());
+        }
+
+        public bool Add(ITrackable trackable, IPeerComparer comparer)
+        {
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
@@ -142,7 +147,7 @@ namespace MonoTorrent.Tracker
                 return false;
 
             Debug.WriteLine(string.Format("Tracking Torrent: {0}", trackable.Name));
-            torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable));
+            torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable, comparer));
             return true;
         }
 
