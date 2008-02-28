@@ -59,10 +59,10 @@ namespace MonoTorrent.Client
             Init(block, piece, id);
         }
 
-        internal BlockEventArgs(PieceData data)
+        internal BlockEventArgs(BufferedIO data)
             : base(data.Id.TorrentManager)
         {
-            Block b = data.Piece[PiecePickerBase.GetBlockIndex(data.Piece.Blocks, data.StartOffset, data.Count)];
+            Block b = data.Piece[PiecePickerBase.GetBlockIndex(data.Piece.Blocks, data.PieceOffset, data.Count)];
             Init(b, data.Piece, data.Id.PublicId);
         }
         internal BlockEventArgs(TorrentManager manager, Block block, Piece piece, PeerIdInternal id)

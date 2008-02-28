@@ -588,7 +588,7 @@ namespace MonoTorrent.Client
         /// <param name="offset"></param>
         /// <param name="writeIndex"></param>
         /// <param name="p"></param>
-        public override PieceEvent ReceivedPieceMessage(PieceData data)
+        public override PieceEvent ReceivedPieceMessage(BufferedIO data)
         {
             PeerIdInternal id = data.Id;
             lock (this.requests)
@@ -602,7 +602,7 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, data.StartOffset, data.Count);
+                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, data.PieceOffset, data.Count);
                 if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
                 {
                     Logger.Log(id.Connection.Connection, "Invalid block start offset returned");

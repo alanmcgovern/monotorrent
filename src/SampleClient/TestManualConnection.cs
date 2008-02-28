@@ -42,12 +42,13 @@ namespace SampleClient
 
     public class NullWriter : PieceWriter
     {
-        public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
+        public override int Read(BufferedIO data)
         {
-            return count;
+            data.ActualCount = data.Count;
+            return data.Count;
         }
 
-        public override void Write(PieceData data)
+        public override void Write(BufferedIO data)
         {
         }
 

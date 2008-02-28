@@ -1,84 +1,93 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    public class PieceData
+    public class BufferedIO : ICloneable
     {
-        public ArraySegment<byte> Buffer;
+        internal ArraySegment<byte> buffer;
+        private TorrentManager manager;
+        private int actualCount;
         private int count;
-        private PeerIdInternal id;
-        private Piece piece;
         private int pieceIndex;
-        private int startOffset;
-        private FileManager fileManager;
-        private int pressure;
+        private int pieceOffset;
+        private PeerIdInternal peerId;
+        private ManualResetEvent waitHandle;
 
-        public int BlockIndex
+        public int ActualCount
         {
-            get { return startOffset / Client.Piece.BlockSize; }// PiecePickerBase.GetBlockIndex(piece.Blocks, startOffset, count); }
+            get { return actualCount; }
+            set { actualCount = value; }
         }
-
+        public ArraySegment<byte> Buffer
+        {
+            get { return buffer; }
+        }
         public int Count
         {
-           get { return count; }
+            get { return count; }
+            set { count = value; }
         }
-
         internal PeerIdInternal Id
         {
-            get { return id; }
+            get { return peerId; }
+            set { peerId = value; }
         }
-
-        public FileManager Manager
-        {
-            get { return fileManager; }
-        }
-
-        public Piece Piece
-        {
-            get { return piece; }
-            set { piece = value; }
-        }
-
         public int PieceIndex
         {
             get { return pieceIndex; }
         }
-
-        public int Pressure
+        public int PieceOffset
         {
-            get { return pressure; }
-            set { pressure = value; }
+            get { return pieceOffset; }
+            set { pieceOffset = value; }
+        }
+        internal Piece Piece;
+        public long Offset
+        {
+            get { return (long)pieceIndex * manager.Torrent.PieceLength + pieceOffset; }
+        }
+        public TorrentManager Manager
+        {
+            get { return manager; }
         }
 
-        public int StartOffset
+        public ManualResetEvent WaitHandle
         {
-            get { return startOffset; }
+            get { return waitHandle; }
         }
 
-        public long WriteOffset
+        public BufferedIO(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
         {
-            get { return (long)fileManager.PieceLength * pieceIndex + startOffset; }
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
+            Initialise(buffer, offset, count, manager);
         }
 
-
-        internal PieceData(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, PeerIdInternal id)
+        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, TorrentManager manager)
         {
-            this.Buffer = buffer;
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
+            Initialise(buffer, (long)pieceIndex * manager.Torrent.PieceLength + startOffset, count, manager);
+        }
+
+        private void Initialise(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
+        {
+            this.buffer = buffer;
             this.count = count;
-            this.id = id;
-            this.pieceIndex = pieceIndex;
-            this.startOffset = startOffset;
-            // FIXME: This is a bit of a hack - Merge the two constructors properly
-            if (id != null)
-                this.fileManager = id.TorrentManager.FileManager;
+            this.manager = manager;
+            pieceIndex = (int)(offset / manager.Torrent.PieceLength);
+            pieceOffset = (int)(offset % manager.Torrent.PieceLength);
+            waitHandle = new ManualResetEvent(false);
         }
 
-        public PieceData(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, FileManager manager)
-            : this(buffer, pieceIndex, startOffset, count, (PeerIdInternal)null)
+        object ICloneable.Clone()
         {
-            fileManager = manager;
+            return MemberwiseClone();
         }
     }
 }
