@@ -15,6 +15,12 @@ namespace MonoTorrent.Client.PieceWriters
             get { return streamsBuffer.Count; }
         }
 
+        public DiskWriter()
+            : this(10)
+        {
+
+        }
+
         public DiskWriter(int maxOpenFiles)
         {
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
