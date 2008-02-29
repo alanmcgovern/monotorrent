@@ -213,16 +213,17 @@ namespace MonoTorrent.Client
                         if ((pieceStartIndex + bytesToRead + totalRead) > this.fileSize)
                             bytesToRead = (int)(fileSize - (pieceStartIndex + totalRead));
 
-                        BufferedIO read = new BufferedIO(hashBuffer, pieceStartIndex + totalRead, bytesToRead, manager);
                         if (asynchronous)
                         {
+                            BufferedFileRead read = new BufferedFileRead(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
                             manager.Engine.DiskManager.QueueRead(read);
                             read.WaitHandle.WaitOne();
-                            bytesRead = read.ActualCount;
+                            read.WaitHandle.Close();
+                            bytesRead = read.BytesRead;
                         }
                         else
                         {
-                            bytesRead = manager.Engine.DiskManager.Read(this.manager, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
+                            bytesRead = manager.Engine.DiskManager.Read(this, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
                         }
                         hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
                         totalRead += bytesRead;
@@ -318,7 +319,7 @@ namespace MonoTorrent.Client
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(BufferedIO data)
+        internal void QueueWrite(PieceData data)
         {
             manager.Engine.DiskManager.QueueWrite(data);
         }
@@ -342,7 +343,7 @@ namespace MonoTorrent.Client
         /// <returns>The number of bytes successfully read</returns>
         internal int Read(byte[] buffer, int bufferOffset, long offset, int count)
         {
-            return manager.Engine.DiskManager.Read(this.manager, buffer, bufferOffset, offset, count);
+            return manager.Engine.DiskManager.Read(this, buffer, bufferOffset, offset, count);
         }
 
         #endregion

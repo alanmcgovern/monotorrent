@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.PieceWriters
             streamsBuffer.Dispose();
         }
 
-        protected virtual string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
+        private static string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
         {
             string path;
 
@@ -56,14 +56,11 @@ namespace MonoTorrent.Client.PieceWriters
                 return streamsBuffer.GetStream(file, filePath, access);
         }
 
-		public override int Read(BufferedIO data)
+		public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
         {
-            if (data == null)
+            if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
-            long offset = data.Offset;
-            int count = data.Count;
-            FileManager manager = data.Manager.FileManager;
             if (offset < 0 || offset + count > manager.FileSize)
                 throw new ArgumentOutOfRangeException("offset");
 
@@ -89,20 +86,19 @@ namespace MonoTorrent.Client.PieceWriters
                     TorrentFileStream s = GetStream(manager, manager.Files[i], FileAccess.Read);
                     s.Seek(offset, SeekOrigin.Begin);
                     offset = 0; // Any further files need to be read from the beginning
-                    bytesRead = s.Read(data.buffer.Array, data.buffer.Offset + totalRead, count - totalRead);
+                    bytesRead = s.Read(buffer, bufferOffset + totalRead, count - totalRead);
                     totalRead += bytesRead;
                     i++;
                 }
             }
             //monitor.BytesSent(totalRead, TransferType.Data);
-            data.ActualCount += totalRead;
             return totalRead;
         }
 
-		public override void Write(BufferedIO data)
+		public override void Write(PieceData data)
         {
-            byte[] buffer = data.buffer.Array;
-            long offset = data.Offset;
+            byte[] buffer = data.Buffer.Array;
+            long offset = data.WriteOffset;
             int count = data.Count;
 
             FileManager manager = data.Id.TorrentManager.FileManager;
@@ -143,7 +139,7 @@ namespace MonoTorrent.Client.PieceWriters
                     bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
 
                     // Write the data
-                    stream.Write(buffer, data.buffer.Offset + (int)totalWritten, (int)bytesWritten);
+                    stream.Write(buffer, data.Buffer.Offset + (int)totalWritten, (int)bytesWritten);
                     stream.Flush();
 
                     // Any further data should be written to the next available file
@@ -151,7 +147,7 @@ namespace MonoTorrent.Client.PieceWriters
                     i++;
                 }
             }
-            ClientEngine.BufferManager.FreeBuffer(ref data.buffer);
+            ClientEngine.BufferManager.FreeBuffer(ref data.Buffer);
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
         }
 

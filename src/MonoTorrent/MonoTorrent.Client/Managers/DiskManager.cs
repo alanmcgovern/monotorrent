@@ -14,8 +14,8 @@ namespace MonoTorrent.Client.Managers
     {
         #region Member Variables
 
-        Queue<BufferedIO> bufferedReads;
-        Queue<BufferedIO> bufferedWrites;
+        Queue<BufferedFileRead> bufferedReads;
+        Queue<PieceData> bufferedWrites;
         private ClientEngine engine;
 
         private ConnectionMonitor monitor;
@@ -80,8 +80,8 @@ namespace MonoTorrent.Client.Managers
 
         internal DiskManager(ClientEngine engine, PieceWriter writer)
         {
-            this.bufferedReads = new Queue<BufferedIO>();
-            this.bufferedWrites = new Queue<BufferedIO>();
+            this.bufferedReads = new Queue<BufferedFileRead>();
+            this.bufferedWrites = new Queue<PieceData>();
             this.engine = engine;
             this.ioActive = true;
             this.ioThread = new Thread(new ThreadStart(RunIO));
@@ -118,14 +118,14 @@ namespace MonoTorrent.Client.Managers
         /// Performs the buffered write
         /// </summary>
         /// <param name="bufferedFileIO"></param>
-        private void PerformWrite(BufferedIO data)
+        private void PerformWrite(PieceData data)
         {
             PeerIdInternal id = data.Id;
-            ArraySegment<byte> recieveBuffer = data.buffer;
+            ArraySegment<byte> recieveBuffer = data.Buffer;
             Piece piece = data.Piece;
 
             // Find the block that this data belongs to and set it's state to "Written"
-            int index = data.PieceOffset / Piece.BlockSize;
+            int index = data.BlockIndex;
 
             // Perform the actual write
             lock (writer)
@@ -170,21 +170,18 @@ namespace MonoTorrent.Client.Managers
         /// Performs the buffered read
         /// </summary>
         /// <param name="bufferedFileIO"></param>
-        private void PerformRead(BufferedIO io)
+        private void PerformRead(BufferedFileRead io)
         {
             lock (writer)
-                io.ActualCount = writer.ReadChunk(io);
+                io.BytesRead = writer.ReadChunk(io.Manager, io.Buffer, io.BufferOffset, io.PieceStartIndex, io.Count);
             io.WaitHandle.Set();
         }
 
 
-        internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
+        internal int Read(FileManager fileManager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
         {
             lock (writer)
-            {
-                ArraySegment<byte> b = new ArraySegment<byte>(buffer);
-                return writer.ReadChunk(new BufferedIO(b, pieceStartIndex, bytesToRead, manager));
-            }
+                return writer.ReadChunk(fileManager, buffer, bufferOffset, pieceStartIndex, bytesToRead);
         }
 
         /// <summary>
@@ -194,7 +191,7 @@ namespace MonoTorrent.Client.Managers
         /// <param name="recieveBuffer">The array containing the block</param>
         /// <param name="message">The PieceMessage</param>
         /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(BufferedIO data)
+        internal void QueueWrite(PieceData data)
         {
             lock (this.queueLock)
             {
@@ -204,7 +201,7 @@ namespace MonoTorrent.Client.Managers
         }
 
 
-        internal void QueueRead(BufferedIO io)
+        internal void QueueRead(BufferedFileRead io)
         {
             lock (this.queueLock)
             {
@@ -219,8 +216,8 @@ namespace MonoTorrent.Client.Managers
         /// </summary>
         private void RunIO()
         {
-            BufferedIO write;
-            BufferedIO read;
+            PieceData write;
+            BufferedFileRead read;
             while (ioActive)
             {
                 write = null;
@@ -233,7 +230,7 @@ namespace MonoTorrent.Client.Managers
                     if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || rateLimiter.DownloadChunks > 0))
                     {
                         write = this.bufferedWrites.Dequeue();
-                        Interlocked.Add(ref rateLimiter.DownloadChunks, -write.buffer.Count / ConnectionManager.ChunkLength);
+                        Interlocked.Add(ref rateLimiter.DownloadChunks, -write.Buffer.Count / ConnectionManager.ChunkLength);
                     }
 
                     if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || rateLimiter.UploadChunks > 0))

@@ -15,18 +15,18 @@ namespace MonoTorrent.Client.Tests
 		{
 			tester = tests;
 		}
-        public override int Read(BufferedIO data)
+
+		public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
 		{
 			Console.WriteLine("Attempting to read - returning zero");
 			return 0;
 		}
 
-		public override void Write(BufferedIO data)
+		public override void Write(PieceData data)
 		{
-			Console.WriteLine("Flushed {0}:{1} to disk", data.PieceIndex, data.PieceOffset / 1000);
+			Console.WriteLine("Flushed {0}:{1} to disk", data.PieceIndex, data.StartOffset / 1000);
 			tester.blocks.Remove(data);
-            ArraySegment<byte> buffer = data.Buffer;
-			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
+			PieceWriterTests.Buffer.FreeBuffer(ref data.Buffer);
 		}
 
 		public override void CloseFileStreams(TorrentManager manager)
@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Tests
 
 		MemoryWriter level1;
 		MemoryWriter level2;
-        public List<BufferedIO> blocks;
+		public List<PieceData> blocks;
 
 		[TestFixtureSetUp]
 		public void GlobalSetup()
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.Tests
 		public void Setup()
 		{
 
-			blocks = new List<BufferedIO>();
+			blocks = new List<PieceData>();
 			level2 = new MemoryWriter(new NullWriter(this), (int)(PieceSize * 1.7));
 			level1 = new MemoryWriter(level2, (int)(PieceSize * 0.7));
 
@@ -85,13 +85,13 @@ namespace MonoTorrent.Client.Tests
 					blocks.Add(CreateBlock(piece, block));
 		}
 
-		private BufferedIO CreateBlock(int piece, int block)
+		private PieceData CreateBlock(int piece, int block)
 		{
 			ArraySegment<byte> b = BufferManager.EmptyBuffer;
 			Buffer.GetBuffer(ref b, BlockSize);
 			for (int i = 0; i < b.Count; i++)
 				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
-			return new BufferedIO(b, piece, block * BlockSize, BlockSize, rig.Manager);
+			return new PieceData(b, piece, block * BlockSize, BlockSize, rig.Manager.FileManager);
 		}
 
 		[Test]
@@ -101,15 +101,15 @@ namespace MonoTorrent.Client.Tests
 				for (int j = 0; j < BlockCount; j++)
 					blocks.Add(CreateBlock(i, j));
 
-			blocks.ForEach(delegate(BufferedIO d) { level1.Write(d); });
+			blocks.ForEach(delegate(PieceData d) { level1.Write(d); });
 
 			// For the pieces which weren't flushed to the null buffer, make sure they are still accessible
 			for (int i = 0; i < blocks.Count; i++)
 			{
 				ArraySegment<byte> b = blocks[i].Buffer;
-				BufferedIO data = blocks[i];
+				PieceData data = blocks[i];
 				for (int j = 0; j < b.Count; j++)
-					Assert.AreEqual(b.Array[b.Offset + j], data.PieceIndex * BlockCount + data.PieceOffset / data.Count, "#1");
+					Assert.AreEqual(b.Array[b.Offset + j], data.PieceIndex * BlockCount + data.StartOffset / data.Count, "#1");
 			}
 		}
 
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.Tests
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
 			Buffer.GetBuffer(ref buffer, 1000);
 			Initialise(buffer);
-			foreach (BufferedIO data in this.blocks.ToArray())
+			foreach (PieceData data in this.blocks.ToArray())
 				level1.Write(data);
 
 			for (int piece=0; piece < PieceCount; piece++)
@@ -127,8 +127,7 @@ namespace MonoTorrent.Client.Tests
 				for(int block = 0; block < BlockCount; block++)
 				{
 					long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
-					BufferedIO io = new BufferedIO(buffer, readIndex, BlockSize, rig.Manager);
-					level1.ReadChunk(io);
+					level1.ReadChunk(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, BlockSize);
 
 					for (int i = 0; i < BlockSize; i++)
 						Assert.AreEqual(buffer.Array[buffer.Offset + i], piece * BlockCount + block, "#1");
@@ -153,8 +152,7 @@ namespace MonoTorrent.Client.Tests
 			long block = 0;
 			long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
 
-			BufferedIO io = new BufferedIO(buffer, readIndex, PieceSize, rig.Manager);
-			level1.ReadChunk(io);
+			level1.ReadChunk(rig.Manager.FileManager, buffer.Array, buffer.Offset, readIndex, PieceSize);
 			for (block = 0; block < 5; block++)
 			{
 				for (int i = 0; i < BlockSize; i++)

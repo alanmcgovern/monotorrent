@@ -49,27 +49,22 @@ namespace MonoTorrent.Client.PieceWriters
             });
         }
 
-        public abstract int Read(BufferedIO data);
+        public abstract int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count);
 
-        public int ReadChunk(BufferedIO data)
+        public int ReadChunk(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
         {
-            BufferedIO clone = (BufferedIO)((ICloneable)data).Clone();
             int read = 0;
             int totalRead = 0;
 
-            while (totalRead != data.Count)
+            while (totalRead != count)
             {
-                read = Read(clone);
-                clone.buffer = new ArraySegment<byte>(clone.buffer.Array, clone.buffer.Offset + read, clone.buffer.Count - read);
-                clone.PieceOffset += read;
-                clone.Count -= read;
+                read = Read(manager, buffer, bufferOffset + totalRead, offset + totalRead, count - totalRead);
                 totalRead += read;
 
                 if (read == 0)
-                    break;
+                    return totalRead;
             }
 
-            data.ActualCount = totalRead;
             return totalRead;
         }
 
@@ -84,6 +79,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        public abstract void Write(BufferedIO data);
+        public abstract void Write(PieceData data);
     }
 }

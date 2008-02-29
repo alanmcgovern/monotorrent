@@ -186,7 +186,7 @@ namespace MonoTorrent.Client
             this.piecePicker.RemoveRequests(id);
         }
 
-        internal PieceEvent ReceivedPieceMessage(BufferedIO data)
+        internal PieceEvent ReceivedPieceMessage(PieceData data)
         {
             return this.piecePicker.ReceivedPieceMessage(data);
         }

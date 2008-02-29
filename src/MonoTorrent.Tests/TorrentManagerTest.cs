@@ -42,25 +42,26 @@ namespace MonoTorrent.Client.Managers.Tests
                 access = new KeyValuePair<FileManager, Access>[files.Length];
             }
         }
-        public override int Read(BufferedIO data)
+
+        public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
         {
             if (files == null)
             {
-                this.files = data.Manager.FileManager.Files;
+                this.files = manager.Files;
                 access = new KeyValuePair<FileManager, Access>[files.Length];
             }
-            GetStream(data.Manager.FileManager, data.Offset);
-            return data.Count;
+            GetStream(manager, offset);
+            return count;
         }
 
-        public override void Write(BufferedIO data)
+        public override void Write(PieceData data)
         {
             if (files == null)
             {
-                this.files = data.Manager.FileManager.Files;
+                this.files = data.Manager.Files;
                 access = new KeyValuePair<FileManager, Access>[files.Length];
             }
-            GetStream(data.Manager.FileManager, data.Offset);
+            GetStream(data.Manager, data.WriteOffset);
         }
 
         private void GetStream(FileManager manager, long offset)
