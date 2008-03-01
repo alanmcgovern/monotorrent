@@ -60,10 +60,13 @@ namespace MonoTorrent.Tracker
         internal static readonly BEncodedNumber min_interval_value = new BEncodedNumber(0);
 
         #endregion Static BEncodedStrings
+
+
         #region Fields
 
         private bool allowScrape;
         private bool allowNonCompact;
+        private RequestMonitor monitor;
         private Dictionary<byte[], SimpleTorrentManager> torrents;
         private StaticIntervalAlgorithm intervalAlgorithm;
 
@@ -107,6 +110,11 @@ namespace MonoTorrent.Tracker
             set { intervalAlgorithm = value; }
         }
 
+        public RequestMonitor Requests
+        {
+            get { return monitor; }
+        }
+
         #endregion Properties
 
 
@@ -120,6 +128,7 @@ namespace MonoTorrent.Tracker
             allowNonCompact = true;
             allowScrape = true;
             intervalAlgorithm = new StaticIntervalAlgorithm();
+            monitor = new RequestMonitor();
             torrents = new Dictionary<byte[], SimpleTorrentManager>(new ByteComparer());
         }
 
@@ -189,6 +198,7 @@ namespace MonoTorrent.Tracker
         /// <param name="e"></param>
         private void OnAnnounceReceived(object sender, AnnounceParameters e)
         {
+            monitor.AnnounceReceived();
             SimpleTorrentManager manager;
 
             // Check to see if we're monitoring the requested torrent
@@ -242,6 +252,7 @@ namespace MonoTorrent.Tracker
         /// <param name="e"></param>
         private void OnScrapeReceived(object sender, ScrapeParameters e)
         {
+            monitor.ScrapeReceived();
             if (!AllowScrape)
             {
                 e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not allow scraping");

@@ -38,7 +38,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionMonitor
     {
-        private const int ArraySize = 12;
+        private const int DefaultAveragePeriod = 12;
 
 
         #region Member Variables
@@ -125,10 +125,16 @@ namespace MonoTorrent.Client
         /// Creates a new ConnectionMonitor
         /// </summary>
         internal ConnectionMonitor()
+            : this(DefaultAveragePeriod)
+        {
+
+        }
+
+        internal ConnectionMonitor(int averagingPeriod)
         {
             this.lastUpdateTime = Environment.TickCount;
-            this.uploadSpeeds = new int[ArraySize];
-			this.downloadSpeeds = new int[ArraySize];
+            this.uploadSpeeds = new int[averagingPeriod];
+			this.downloadSpeeds = new int[averagingPeriod];
         }
         #endregion
 
@@ -236,10 +242,10 @@ namespace MonoTorrent.Client
 
                     // If we've gone over the array bounds, reset to the first index
                     // to start overwriting the old values
-                    if (this.downloadSpeedIndex == ArraySize)
+                    if (this.downloadSpeedIndex == downloadSpeeds.Length)
                         this.downloadSpeedIndex = 0;
 
-                    if (this.uploadSpeedIndex == ArraySize)
+                    if (this.uploadSpeedIndex == downloadSpeeds.Length)
                         this.uploadSpeedIndex = 0;
 
 
@@ -254,10 +260,10 @@ namespace MonoTorrent.Client
 
                         total += this.downloadSpeeds[i];
                     }
-                    if (count == ArraySize)
+                    if (count == downloadSpeeds.Length)
                         count--;
 
-                    this.downloadSpeed = (total / (ArraySize - count));
+                    this.downloadSpeed = (total / (downloadSpeeds.Length - count));
 
 
                     count = 0;
@@ -272,7 +278,7 @@ namespace MonoTorrent.Client
                     if (count == this.uploadSpeeds.Length)
                         count--;
 
-                    this.uploadSpeed = (total / (ArraySize - count));
+                    this.uploadSpeed = (total / (downloadSpeeds.Length - count));
 
                     this.tempRecvCount = 0;
                     this.tempSentCount = 0;

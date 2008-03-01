@@ -62,6 +62,16 @@ namespace TrackerApp
         private int averagePeers;
         private int torrents;
 
+        public int TotalTrackerRequests
+        {
+            get { return tracker.Requests.TotalAnnounces; }
+        }
+
+        public int RequestRate
+        {
+            get { return tracker.Requests.AnnounceRate; }
+        }
+
         private Thread[] threads;
         public StressTest()
         {

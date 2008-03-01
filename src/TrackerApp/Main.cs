@@ -235,8 +235,10 @@ namespace SampleTracker
 
                 while (true)
                 {
-
-                    Console.WriteLine("Requests/Second: {0:0.00}", test.TotalRequests);
+                    Console.WriteLine("Measured announces/sec:  {0:0.00}", test.RequestRate);
+                    Console.WriteLine("Total Annoucne Requests: {0:0.00}", test.TotalTrackerRequests);
+                    Console.WriteLine("Actual announces/sec:    {0:0.00}", test.TotalRequests);
+                    Console.WriteLine(Environment.NewLine);
                     test.TotalRequests = 0;
                     System.Threading.Thread.Sleep(1000);
                 }
