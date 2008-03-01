@@ -9,7 +9,7 @@ namespace MonoTorrent.Client.PieceWriters
     public class MemoryWriter : PieceWriter
     {
         private int capacity;
-        private List<PieceData> memoryBuffer;
+        private List<BufferedIO> memoryBuffer;
         private PieceWriter writer;
 
 
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client.PieceWriters
             get
             {
                 int count = 0;
-                memoryBuffer.ForEach(delegate(PieceData i) { count += i.Count; });
+                memoryBuffer.ForEach(delegate(BufferedIO i) { count += i.Count; });
                 return count;
             }
         }
@@ -42,30 +42,33 @@ namespace MonoTorrent.Client.PieceWriters
             if (capacity < 0)
                 throw new ArgumentOutOfRangeException("capacity");
 
-            memoryBuffer = new List<PieceData>();
+            memoryBuffer = new List<BufferedIO>();
             this.capacity = capacity;
             this.writer = writer;
         }
 
-        public override int Read(FileManager manager, byte[] buffer, int bufferOffset, long offset, int count)
+        public override int Read(BufferedIO data)
         {
-            memoryBuffer.Sort(delegate(PieceData left, PieceData right) { return left.WriteOffset.CompareTo(right.WriteOffset); });
-            PieceData io = memoryBuffer.Find(delegate(PieceData m) { return ((offset >= m.WriteOffset) && (offset < (m.WriteOffset + m.Count))); });
+            int count = data.Count;
+            long offset = data.Offset;
+            memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right) { return left.Offset.CompareTo(right.Offset); });
+            BufferedIO io = memoryBuffer.Find(delegate(BufferedIO m) { return ((offset >= m.Offset) && (offset < (m.Offset + m.Count))); });
 
             if (io == null)
-                return writer.Read(manager, buffer, bufferOffset, offset, count);
+                return writer.Read(data);
 
-            int toCopy = Math.Min(count, io.Count + (int)(io.WriteOffset - offset));
-            Buffer.BlockCopy(io.Buffer.Array, io.Buffer.Offset + (int)(io.WriteOffset - offset), buffer, bufferOffset, toCopy);
+            int toCopy = Math.Min(count, io.Count + (int)(io.Offset - offset));
+            Buffer.BlockCopy(io.buffer.Array, io.buffer.Offset + (int)(io.Offset - offset), data.buffer.Array, data.buffer.Offset, toCopy);
+            data.ActualCount += toCopy;
             return toCopy;
         }
 
-        public override void Write(PieceData data)
+        public override void Write(BufferedIO data)
         {
             Write(data, false);
         }
 
-        public void Write(PieceData data, bool forceWrite)
+        public void Write(BufferedIO data, bool forceWrite)
         {
             if (forceWrite)
             {
@@ -84,10 +87,10 @@ namespace MonoTorrent.Client.PieceWriters
             if (memoryBuffer.Count == 0)
                 return;
 
-            memoryBuffer.Sort(delegate(PieceData left, PieceData right)
+            memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right)
             {
-                Pressure lp = FindPressure(left.Manager, left.PieceIndex, left.BlockIndex);
-                Pressure rp = FindPressure(right.Manager, right.PieceIndex, right.BlockIndex);
+                Pressure lp = FindPressure(left.Manager.FileManager, left.PieceIndex, left.PieceOffset / Piece.BlockSize);
+                Pressure rp = FindPressure(right.Manager.FileManager, right.PieceIndex, left.PieceOffset / Piece.BlockSize);
                 // If there are no pressures associated with this piece, then return 0
                 if (lp == null && rp == null || lp == rp)
                     return 0;
@@ -103,10 +106,10 @@ namespace MonoTorrent.Client.PieceWriters
                 return lp.Value.CompareTo(rp.Value);
             });
 
-            PieceData data = memoryBuffer[0];
+            BufferedIO data = memoryBuffer[0];
             Write(data, true);
             memoryBuffer.RemoveAt(0);
-            pressures.Remove(FindPressure(data.Manager, data.PieceIndex, data.BlockIndex));
+            pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
         }
 
         public override void CloseFileStreams(TorrentManager manager)
@@ -117,15 +120,15 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override void Flush(TorrentManager manager)
         {
-            memoryBuffer.ForEach(delegate(PieceData io)
+            memoryBuffer.ForEach(delegate(BufferedIO io)
             {
-                if (io.Manager != manager.FileManager)
+                if (io.Manager != manager)
                     return;
 
                 Write(io, true);
-                ClientEngine.BufferManager.FreeBuffer(ref io.Buffer);
+                ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
             });
-            memoryBuffer.RemoveAll(delegate(PieceData io) { return io.Manager == manager.FileManager; });
+            memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager; });
         }
 
         public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
