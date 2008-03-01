@@ -151,16 +151,6 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        private void AsyncBlockWritten(object args)
-        {
-            if (this.BlockWritten == null)
-                return;
-
-            BlockEventArgs e = (BlockEventArgs)args;
-            this.BlockWritten(e.ID, e);
-        }
-
-
         /// <summary>
         /// Generates the full path to the supplied TorrentFile
         /// </summary>
@@ -326,8 +316,7 @@ namespace MonoTorrent.Client
 
         internal void RaiseBlockWritten(BlockEventArgs args)
         {
-            if (this.BlockWritten != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockWritten), args);
+            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockWritten, this.manager, args);
         }
 
 

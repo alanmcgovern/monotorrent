@@ -473,12 +473,7 @@ namespace MonoTorrent.Client
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<StatsUpdateEventArgs> h = StatsUpdate;
-                if (h != null)
-                    h(this, args);
-            });
+            Toolbox.RaiseAsyncEvent<StatsUpdateEventArgs>(StatsUpdate, this, args);
         }
 
 

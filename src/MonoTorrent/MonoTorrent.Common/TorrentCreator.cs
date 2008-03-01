@@ -391,12 +391,6 @@ namespace MonoTorrent.Common
                 result.Callback(this.result);
         }
 
-        private void AsyncRaiseHashed(object e)
-        {
-            if (Hashed != null)
-                Hashed(this, (TorrentCreatorEventArgs)e);
-        }
-
         ///<summary>
         ///this adds stuff common to single and multi file torrents
         ///</summary>
@@ -639,7 +633,7 @@ namespace MonoTorrent.Common
 
         private void RaiseHashed(TorrentCreatorEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(AsyncRaiseHashed, e);
+            Toolbox.RaiseAsyncEvent<TorrentCreatorEventArgs>(Hashed, this, e);
         }
 
         private void Reset()

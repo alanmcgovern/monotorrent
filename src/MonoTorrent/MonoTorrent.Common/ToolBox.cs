@@ -32,6 +32,7 @@ using System;
 using System.Collections;
 using System.Text;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace MonoTorrent.Common
 {
@@ -61,7 +62,14 @@ namespace MonoTorrent.Common
 			return count;
 		}
 
-
+        public static void RaiseAsyncEvent<T>(EventHandler<T> e, object o, T args)
+            where T : EventArgs
+        {
+            ThreadPool.QueueUserWorkItem(delegate {
+                if (e != null)
+                    e(o, args);
+            });
+        }
         /// <summary>
         /// Randomizes the contents of the array
         /// </summary>

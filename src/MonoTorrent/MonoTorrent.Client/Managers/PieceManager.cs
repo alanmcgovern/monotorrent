@@ -206,49 +206,19 @@ namespace MonoTorrent.Client
 
         #region Event Firing Code
 
-        private void AsyncBlockReceived(object args)
-        {
-            if (this.BlockReceived == null)
-                return;
-
-            BlockEventArgs e = (BlockEventArgs)args;
-            this.BlockReceived(e.ID, e);
-        }
-
-        private void AsyncBlockRequested(object args)
-        {
-            if (this.BlockRequested == null)
-                return;
-
-            BlockEventArgs e = (BlockEventArgs)args;
-            this.BlockRequested(e.ID, e);
-        }
-
-        private void AsyncBlockRequestCancelled(object args)
-        {
-            if (this.BlockRequestCancelled == null)
-                return;
-
-            BlockEventArgs e = (BlockEventArgs)args;
-            this.BlockRequestCancelled(e.ID, e);
-        }
-
         internal void RaiseBlockReceived(BlockEventArgs args)
         {
-            if (this.BlockReceived != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockReceived), args);
+            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockReceived, args.TorrentManager, args);
         }
 
         internal void RaiseBlockRequested(BlockEventArgs args)
         {
-            if (this.BlockRequested != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockRequested), args);
+            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequested, args.TorrentManager, args);
         }
 
         internal void RaiseBlockRequestCancelled(BlockEventArgs args)
         {
-            if (this.BlockRequestCancelled != null)
-                ThreadPool.QueueUserWorkItem(new WaitCallback(AsyncBlockRequestCancelled), args);
+            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequestCancelled, args.TorrentManager, args);
         }
 
         #endregion Event Firing Code

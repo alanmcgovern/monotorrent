@@ -722,55 +722,38 @@ namespace MonoTorrent.Client
         
         internal void RaisePeerConnected(PeerConnectionEventArgs args)
         {
-            ThreadPool.QueueUserWorkItem(delegate {
-                EventHandler<PeerConnectionEventArgs> h = PeerConnected;
-                if (h != null)
-                    h (this, args);
-            });
+            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerConnected, this, args);
         }
         
         internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
         {
-            ThreadPool.QueueUserWorkItem(delegate {
-                EventHandler<PeerConnectionEventArgs> h = PeerDisconnected;
-                if (h != null)
-                    h (this, args);
-            });
+            Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerDisconnected, this, args);
         }
 
         internal void RaisePeersFound(PeersAddedEventArgs args)
         {
-            ThreadPool.QueueUserWorkItem(delegate {
-                EventHandler<PeersAddedEventArgs> h = PeersFound;
-                if (h != null)
-                    h (this, args);
-            });
+            Toolbox.RaiseAsyncEvent<PeersAddedEventArgs>(PeersFound, this, args);
         }
 
-        internal void RaisePieceHashed(PieceHashedEventArgs pieceHashedEventArgs)
+        internal void RaisePieceHashed(PieceHashedEventArgs args)
         {
-            int index = pieceHashedEventArgs.PieceIndex;
+            int index = args.PieceIndex;
             TorrentFile[] files = this.torrent.Files;
             
             for (int i = 0; i < files.Length; i++)
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
-                    files[i].BitField[index - files[i].StartPieceIndex] = pieceHashedEventArgs.HashPassed;
-            
-            ThreadPool.QueueUserWorkItem(delegate {
-                EventHandler<PieceHashedEventArgs> h = PieceHashed;
-                if (h != null)
-                    h (this, pieceHashedEventArgs);
-            });
+                    files[i].BitField[index - files[i].StartPieceIndex] = args.HashPassed;
+
+            Toolbox.RaiseAsyncEvent<PieceHashedEventArgs>(PieceHashed, this, args);
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
         {
+            // Whenever we have a state change, we need to make sure that we flush the buffers.
+            // For example, Started->Paused, Started->Stopped, Downloading->Seeding etc should all
+            // flush to disk.
             engine.DiskManager.Flush(this);
-            ThreadPool.QueueUserWorkItem(delegate {
-                EventHandler<TorrentStateChangedEventArgs> h = TorrentStateChanged;
-                if (h != null)
-                    h (this, e);
-            });
+            Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
         }
 
         /// <summary>

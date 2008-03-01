@@ -260,32 +260,17 @@ namespace MonoTorrent.Client.Tracker
         // FIXME: Don't send null. Send torrentmanager
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<AnnounceResponseEventArgs> h = AnnounceComplete;
-                if (h != null)
-                    h(null, e);
-            });
+            Toolbox.RaiseAsyncEvent<AnnounceResponseEventArgs>(AnnounceComplete, null, e);
         }
 
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<ScrapeResponseEventArgs> h = ScrapeComplete;
-                if (h != null)
-                    h(null, e);
-            });
+            Toolbox.RaiseAsyncEvent<ScrapeResponseEventArgs>(ScrapeComplete, null, e);
         }
 
         private void RaiseStateChanged(TrackerStateChangedEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                EventHandler<TrackerStateChangedEventArgs> h = StateChanged;
-                if (h != null)
-                    h(null, e);
-            });
+            Toolbox.RaiseAsyncEvent<TrackerStateChangedEventArgs>(StateChanged, null, e);
         }
 
         #endregion
