@@ -467,15 +467,15 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-            WaitHandle handle;
+            ManagerWaitHandle handle = new ManagerWaitHandle();
             lock (this.engine.asyncCompletionLock)
             {
                 if (this.state == TorrentState.Stopped)
-                    return new ManualResetEvent(true);
+                    return handle;
 
                 UpdateState(TorrentState.Stopped);
 
-                handle = this.trackerManager.Announce(TorrentEvent.Stopped);
+                handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
                 lock (this.listLock)
                 {
                     while (this.ConnectingToPeers.Count > 0)
@@ -497,7 +497,7 @@ namespace MonoTorrent.Client
                         }
                 }
 
-                engine.DiskManager.CloseFileStreams(this);
+                handle.AddHandle(engine.DiskManager.CloseFileStreams(this));
 
                 if (this.hashChecked)
                     this.SaveFastResume();
@@ -663,6 +663,7 @@ namespace MonoTorrent.Client
                 activeCount = Toolbox.Accumulate<TorrentManager>(engine.Torrents, delegate(TorrentManager m) {
                     return m.State == TorrentState.Downloading || m.state == TorrentState.Seeding ? 1 : 0;
                 });
+                activeCount = Math.Max(1, activeCount);
 
                 int maxDownload = this.engine.Settings.GlobalMaxDownloadSpeed / activeCount;
                 int maxUpload = this.engine.Settings.GlobalMaxUploadSpeed / activeCount;

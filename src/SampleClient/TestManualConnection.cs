@@ -10,6 +10,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;
+using System.Threading;
 
 namespace SampleClient
 {
@@ -22,12 +23,14 @@ namespace SampleClient
 
         public override System.Threading.WaitHandle Announce(AnnounceParameters parameters)
         {
-            return new System.Threading.ManualResetEvent(true);
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(parameters.Id));
+            return parameters.Id.WaitHandle;
         }
 
         public override System.Threading.WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
         {
-            return new System.Threading.ManualResetEvent(true);
+            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
+            return id.WaitHandle;
         }
 
         public void AddPeer(Peer p)
@@ -61,8 +64,9 @@ namespace SampleClient
         {
         }
 
-        public override void CloseFileStreams(TorrentManager manager)
+        public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
+            return new ManualResetEvent(true);
         }
 
         public override void Flush(TorrentManager manager)
@@ -281,7 +285,7 @@ namespace SampleClient
             BEncodedList announceTier = new BEncodedList();
             announceTier.Add(new BEncodedString("custom://transfers1/announce"));
             announceTier.Add(new BEncodedString("custom://transfers2/announce"));
-            announceTier.Add(new BEncodedString("custom://transfers3/announce"));
+            announceTier.Add(new BEncodedString("http://transfers3/announce"));
             BEncodedList announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;

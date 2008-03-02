@@ -97,9 +97,9 @@ namespace MonoTorrent.Client.Managers
 
         #region Methods
 
-        internal void CloseFileStreams(TorrentManager manager)
+        internal WaitHandle CloseFileStreams(TorrentManager manager)
         {
-            writer.CloseFileStreams(manager);
+            return writer.CloseFileStreams(manager);
         }
 
 

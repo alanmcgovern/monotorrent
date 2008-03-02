@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
+using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -112,10 +113,10 @@ namespace MonoTorrent.Client.PieceWriters
             pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
         }
 
-        public override void CloseFileStreams(TorrentManager manager)
+        public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
             Flush(manager);
-            writer.CloseFileStreams(manager);
+            return writer.CloseFileStreams(manager);
         }
 
         public override void Flush(TorrentManager manager)

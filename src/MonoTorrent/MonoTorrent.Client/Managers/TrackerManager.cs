@@ -153,13 +153,21 @@ namespace MonoTorrent.Client.Tracker
 
         private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
         {
+            return Announce(tracker, clientEvent, trySubsequent, new ManualResetEvent(false));
+        }
+
+        private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent, ManualResetEvent waitHandle)
+        {
             ClientEngine engine = manager.Engine;
             
             // If the engine is null, we have been unregistered
             if (engine == null)
-                return new ManualResetEvent(true);
+            {
+                waitHandle.Set();
+                return waitHandle;
+            }
 
-            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, null);
+            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, null, waitHandle);
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             
@@ -171,8 +179,8 @@ namespace MonoTorrent.Client.Tracker
                                                 clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
                                                 null, manager.Engine.Settings.ListenPort);
             tracker.LastUpdated = DateTime.Now;
-            WaitHandle handle = tracker.Announce(p);
-            return handle;
+            tracker.Announce(p);
+            return id.WaitHandle;
         }
 
         private void GetNextTracker(Tracker tracker, out TrackerTier trackerTier, out Tracker trackerReturn)
@@ -220,23 +228,23 @@ namespace MonoTorrent.Client.Tracker
 
             if (e.Successful)
             {
+                e.TrackerId.WaitHandle.Set();
                 // FIXME: Figure out why manually firing the event throws an exception here
                 Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
                 manager.AddPeers(e.Peers);
             }
             else
             {
-                if (!e.TrackerId.TrySubsequent)
-                    return;
-
-                TrackerTier tier = e.Tracker.Tier;
-                Tracker tracker = e.Tracker;
-
+                TrackerTier tier;
+                Tracker tracker;
                 GetNextTracker(e.TrackerId.Tracker, out tier, out tracker);
-                if (tier == null || tracker == null)
-                    return;
 
-                Announce(tracker, e.TrackerId.TorrentEvent, true);
+                if (!e.TrackerId.TrySubsequent || tier == null || tracker == null)
+                {
+                    e.TrackerId.WaitHandle.Set();
+                    return;
+                }
+                Announce(tracker, e.TrackerId.TorrentEvent, true, e.TrackerId.WaitHandle);
             }
         }
 

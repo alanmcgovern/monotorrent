@@ -30,6 +30,7 @@
 
 using MonoTorrent.Common;
 using System.Net;
+using System.Threading;
 
 
 namespace MonoTorrent.Client.Tracker
@@ -39,6 +40,7 @@ namespace MonoTorrent.Client.Tracker
     /// </summary>
     public class TrackerConnectionID
     {
+        private ManualResetEvent handle;
         internal TorrentEvent TorrentEvent;
 
         /// <summary>
@@ -52,6 +54,11 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public Tracker Tracker;
 
+        public ManualResetEvent WaitHandle
+        {
+            get { return handle; }
+        }
+
 
 
         internal bool TrySubsequent;
@@ -64,7 +71,14 @@ namespace MonoTorrent.Client.Tracker
         /// <param name="request">Object containing information about the Async Request</param>
         /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
         public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
+            : this(tracker, trySubsequent, torrentEvent, request, new ManualResetEvent(false))
         {
+
+        }
+
+        public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request, ManualResetEvent waitHandle)
+        {
+            handle = waitHandle;
             this.Tracker = tracker;
             this.TrySubsequent = trySubsequent;
             this.TorrentEvent = torrentEvent;

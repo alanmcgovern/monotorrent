@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using System.IO;
+using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -26,9 +27,10 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-		public override void CloseFileStreams(TorrentManager manager)
+		public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
             Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
+            return new ManualResetEvent(true);
         }
 
 		public override void Dispose()

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
+using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -30,7 +31,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
         }
 
-        public abstract void CloseFileStreams(TorrentManager manager);
+        public abstract WaitHandle CloseFileStreams(TorrentManager manager);
 
         public virtual void Dispose()
         {

@@ -5,6 +5,8 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
+using System.Threading;
+using MonoTorrent.Client.Managers.Tests;
 
 namespace MonoTorrent.Client.Tests
 {
@@ -29,9 +31,9 @@ namespace MonoTorrent.Client.Tests
 			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
 		}
 
-		public override void CloseFileStreams(TorrentManager manager)
+		public override WaitHandle CloseFileStreams(TorrentManager manager)
 		{
-
+            return new ManualResetEvent(true);
 		}
 
 		public override void Flush(TorrentManager manager)

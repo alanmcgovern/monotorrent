@@ -26,12 +26,13 @@ namespace MonoTorrent.Client.Managers.Tests
 
         private TorrentFile[] files;
         private KeyValuePair<FileManager, Access>[] access;
-        public override void CloseFileStreams(TorrentManager manager)
+        public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
-            if (access == null) return;
+            if (access == null) return new ManualResetEvent(true) ;
             for (int i = 0; i < access.Length; i++)
                 if (access[i].Key == manager.FileManager)
                     access[i] = new KeyValuePair<FileManager, Access>(access[i].Key, Access.Free);
+            return new ManualResetEvent(true);
         }
 
         public override void Flush(TorrentManager manager)
@@ -166,6 +167,22 @@ namespace MonoTorrent.Client.Managers.Tests
             };
             rig2.Manager.HashCheck(true);
             handle.WaitOne();
+        }
+
+        [Test]
+        public void StopTest()
+        {
+            ManualResetEvent h = new ManualResetEvent(false);
+
+            rig.Manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
+            {
+                if (e.OldState == TorrentState.Hashing)
+                    h.Set();
+            };
+
+            rig.Manager.Start();
+            h.WaitOne();
+            Assert.IsTrue(rig.Manager.Stop().WaitOne(15000, false));
         }
     }
 }
