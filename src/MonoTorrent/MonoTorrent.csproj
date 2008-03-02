@@ -1,0 +1,591 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>
+    </AppDesignerFolder>
+    <RootNamespace>MonoTorrent</RootNamespace>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>True</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <RemoveIntegerChecks>False</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>
+    </NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>False</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <RemoveIntegerChecks>False</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>
+    </NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <HintPath>\System.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web">
+      <HintPath>\System.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml">
+      <HintPath>\System.Xml.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="MonoTorrent.BEncoding\BEncodedDictionary.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.BEncoding\BEncodedList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.BEncoding\BEncodedNumber.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.BEncoding\BEncodedString.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.BEncoding\BEncodingException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.BEncoding\IBEncodedValue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\AllowedFastAlgorithm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Block.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\BufferedFileRead.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\ClientEngine.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Logger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
+    <Compile Include="MonoTorrent.Client\MessageHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Piece.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\RateLimiter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\ReaderLock.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\TorrentFileStream.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\TransferType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\WriterLock.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\ConnectionListeners\ConnectionListenerBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\ConnectionListeners\SocketListener.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\EncryptedSocket.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryptor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\ModuloCalculator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\NoEncryption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\NullEncryption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\PeerAEncryption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\PeerBEncryption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\RC4.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\BigInteger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\ConfidenceFactor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\NextPrimeFinder.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\PrimalityTests.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\PrimeGeneratorBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\SequentialSearch.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\AnnounceResponseEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\BlockEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\MessageEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\NewConnectionEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\PeerConnectionEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\PeersAddedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\PieceEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\PieceHashedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\ScrapeResponseEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\StateUpdateEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\TorrentEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\TorrentStateChangedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\TrackerRequestEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\TrackerStateChangedEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Exceptions\ConnectionException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Exceptions\ListenerException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Exceptions\MessageException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Exceptions\ProtocolException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Exceptions\TorrentLoadException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\FastResume\FastResume.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\BufferManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\ChokeUnchokeManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\ConnectionManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\ConnectionMonitor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\DiskManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\FileManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\ListenManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\PeerManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\PieceManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\TorrentManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Managers\TrackerManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\IMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\Message.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\MessageBundle.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\PeerMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UnknownMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\AllowedFastMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\HaveAllMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\HaveNoneMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\RejectRequestMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\SuggestPieceMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\ExtendedHandshakeMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\LibtorrentMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\LTChat.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\LTMetadata.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\LTSupport.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\BitfieldMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\CancelMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\ChokeMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\HandshakeMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\HaveMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\InterestedMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\KeepAliveMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\NotInterestedMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\PieceMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\PortMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\RequestMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\StandardMessages\UnchokeMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\AnnounceMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\AnnounceResponseMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ConnectMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ConnectResponseMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ErrorMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\PeerDetailsMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeDetails.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeResponseMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\UdpTrackerMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\Extensions\AuthenticationMessage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\ConnectionFactory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\HTTPConnection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\IConnection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\PeerConnectionBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\PeerId.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\PeerIdInternal.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\TCPConnection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Peers\Peer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Peers\PeerList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PieceWriter\DiskWriter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PieceWriter\IPieceWriter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PieceWriter\MemoryWriter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PieceWriter\PieceData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\PieceWriter\Pressure.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Settings\EngineSettings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Settings\TorrentSettings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\AnnounceParameters.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\HTTPTracker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\Tracker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\TrackerConnectionId.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\TrackerFactory.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\TrackerTier.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\UdpTracker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\BitField.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\Enums.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\Hashes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\Peer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\PeerID.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\SpeedMonitor.cs" />
+    <Compile Include="MonoTorrent.Common\ToolBox.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\Torrent.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\TorrentCreator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\TorrentCreatorAsyncResult.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\TorrentException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\TorrentFile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\VersionInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\ByteComparer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\IIntervalAlgorithm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\InfoHashTrackable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\IPAddressComparer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\ITrackable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Peer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\RequestMonitor.cs" />
+    <Compile Include="MonoTorrent.Tracker\RequestParameters.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\SimpleTorrentManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\StaticIntervalAlgorithm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Tracker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Exceptions\TrackerException.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Frontend\AnnounceParameters.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Frontend\ScrapeParameters.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Listeners\HttpListener.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Listeners\ListenerBase.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.Tracker\Listeners\ManualListener.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.TorrentWatchers\ITorrentWatcher.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.TorrentWatchers\TorrentFolderWatcher.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatcherEventArgs.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatchers.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
