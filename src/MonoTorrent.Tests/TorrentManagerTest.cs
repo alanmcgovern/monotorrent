@@ -184,5 +184,20 @@ namespace MonoTorrent.Client.Managers.Tests
             h.WaitOne();
             Assert.IsTrue(rig.Manager.Stop().WaitOne(15000, false));
         }
+
+        [Test]
+        public void NoAnnouncesTest()
+        {
+            rig.TorrentDict.Remove("announce-list");
+            Torrent t = Torrent.Load(rig.TorrentDict);
+            rig.Engine.Unregister(rig.Manager);
+            TorrentManager manager = new TorrentManager(t, "", new TorrentSettings());
+            rig.Engine.Register(manager);
+            manager.Start();
+            System.Threading.Thread.Sleep(500);
+
+            Assert.IsTrue(manager.Stop().WaitOne(10000, true), "#1");
+            Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
+        }
     }
 }

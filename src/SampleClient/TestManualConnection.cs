@@ -203,6 +203,7 @@ namespace SampleClient
     }
     public class EngineTestRig
     {
+        private BEncodedDictionary torrentDict;
         private ClientEngine engine;
         private CustomListener listener;
         private TorrentManager manager;
@@ -228,9 +229,20 @@ namespace SampleClient
             get { return torrent; }
         }
 
+        public BEncodedDictionary TorrentDict
+        {
+            get { return torrentDict; }
+        }
+
         public CustomTracker Tracker
         {
             get { return (CustomTracker)this.manager.TrackerManager.CurrentTracker; }
+        }
+
+
+        static EngineTestRig()
+        {
+            TrackerFactory.Register("custom", typeof(CustomTracker));
         }
 
         public EngineTestRig(string savePath)
@@ -247,20 +259,12 @@ namespace SampleClient
 
         public EngineTestRig(string savePath, int piecelength, PieceWriter writer)
         {
-            try
-            {
-                TrackerFactory.Register("custom", typeof(CustomTracker));
-            }
-            catch
-            {
-                // it was already registered 
-            }
-
             if(writer == null)
                 writer = new MemoryWriter(new NullWriter());
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
-            torrent = Torrent.Load(CreateTorrent(piecelength));
+            torrentDict = CreateTorrent(piecelength);
+            torrent = Torrent.Load(torrentDict);
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
             //manager.Start();
@@ -289,7 +293,6 @@ namespace SampleClient
             BEncodedList announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;
-
             return dict;
         }
 
