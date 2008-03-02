@@ -12,7 +12,7 @@ namespace MonoTorrent.Client.Tracker
 
         private bool sendingStartedEvent;
         private bool sentStartedEvent;
-        private Tracker[] trackers;
+        private List<Tracker> trackers;
 
         #endregion Private Fields
 
@@ -31,7 +31,7 @@ namespace MonoTorrent.Client.Tracker
             set { this.sentStartedEvent = value; }
         }
 
-        public Tracker[] Trackers
+        public List<Tracker> Trackers
         {
             get { return this.trackers; }
         }
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            this.trackers = trackerList.ToArray();
+            this.trackers = trackerList;
         }
 
         #endregion Constructors
@@ -77,14 +77,12 @@ namespace MonoTorrent.Client.Tracker
 
         internal int IndexOf(Tracker tracker)
         {
-            return Array.IndexOf<Tracker>(trackers, tracker);
+            return trackers.IndexOf(tracker);
         }
-
 
         public IEnumerator<Tracker> GetEnumerator()
         {
-            for (int i = 0; i < trackers.Length; i++)
-                yield return trackers[i];
+            return trackers.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

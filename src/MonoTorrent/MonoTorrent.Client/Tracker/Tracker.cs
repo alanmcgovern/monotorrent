@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.Tracker
         public bool CanScrape
         {
             get { return this.canScrape; }
-            protected internal set { canScrape = value; }
+            protected set { canScrape = value; }
         }
 
 
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client.Tracker
         public int Complete
         {
             get { return this.complete; }
-            protected internal set { this.complete = value; }
+            protected set { this.complete = value; }
         }
 
 
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.Tracker
         public int Downloaded
         {
             get { return this.downloaded; }
-            protected internal set { this.downloaded = value; }
+            protected set { this.downloaded = value; }
         }
 
 
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Tracker
         public string FailureMessage
         {
             get { return this.failureMessage; }
-            protected internal set { this.failureMessage = value; }
+            protected set { this.failureMessage = value; }
         }
 
 
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client.Tracker
         public int Incomplete
         {
             get { return this.inComplete; }
-            protected internal set { this.inComplete = value; }
+            protected set { this.inComplete = value; }
         }
 
 
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client.Tracker
         public DateTime LastUpdated
         {
             get { return lastUpdated; }
-            protected internal set { lastUpdated = value; }
+            protected set { lastUpdated = value; }
         }
 
 
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client.Tracker
         public int MinUpdateInterval
         {
             get { return this.minUpdateInterval; }
-            protected internal set { this.minUpdateInterval = value; }
+            protected set { this.minUpdateInterval = value; }
         }
 
 
@@ -163,11 +163,16 @@ namespace MonoTorrent.Client.Tracker
             get { return this.state; }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         internal TrackerTier Tier
         {
             get { return tier; }
             set { tier = value; }
         }
+
 
         /// <summary>
         /// The ID for the current tracker
@@ -175,7 +180,7 @@ namespace MonoTorrent.Client.Tracker
         public string TrackerId
         {
             get { return this.trackerId; }
-            protected internal set { this.trackerId = value; }
+            protected set { this.trackerId = value; }
         }
 
 
@@ -185,7 +190,7 @@ namespace MonoTorrent.Client.Tracker
         public int UpdateInterval
         {
             get { return updateInterval; }
-            protected internal set { updateInterval = value; }
+            protected set { updateInterval = value; }
         }
 
 
@@ -195,7 +200,7 @@ namespace MonoTorrent.Client.Tracker
         public bool UpdateSucceeded
         {
             get { return this.updateSucceeded; }
-            protected internal set { this.updateSucceeded = value; }
+            protected set { this.updateSucceeded = value; }
         }
 
 
@@ -205,7 +210,7 @@ namespace MonoTorrent.Client.Tracker
         public string WarningMessage
         {
             get { return this.warningMessage; }
-            protected internal set { this.warningMessage = value; }
+            protected set { this.warningMessage = value; }
         }
 
         #endregion Properties
@@ -237,13 +242,6 @@ namespace MonoTorrent.Client.Tracker
 
         public abstract WaitHandle Scrape(byte[] infohash, TrackerConnectionID id);
 
-
-
-        /// <summary>
-        /// Wrapper method to call the OnStateChanged event correctly
-        /// </summary>
-        /// 
-        /// <param name="newState"></param>
         protected void UpdateState(TrackerState newState)
         {
             if (state == newState)
@@ -256,21 +254,20 @@ namespace MonoTorrent.Client.Tracker
             RaiseStateChanged(e);
         }
 
-
         // FIXME: Don't send null. Send torrentmanager
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<AnnounceResponseEventArgs>(AnnounceComplete, null, e);
+            Toolbox.RaiseAsyncEvent<AnnounceResponseEventArgs>(AnnounceComplete, this, e);
         }
 
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<ScrapeResponseEventArgs>(ScrapeComplete, null, e);
+            Toolbox.RaiseAsyncEvent<ScrapeResponseEventArgs>(ScrapeComplete, this, e);
         }
 
         private void RaiseStateChanged(TrackerStateChangedEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<TrackerStateChangedEventArgs>(StateChanged, null, e);
+            Toolbox.RaiseAsyncEvent<TrackerStateChangedEventArgs>(StateChanged, this, e);
         }
 
         #endregion

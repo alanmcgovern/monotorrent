@@ -95,7 +95,7 @@ namespace MonoTorrent.Common
         /// <param name="array"></param>
         /// <param name="first"></param>
         /// <param name="second"></param>
-        public static void Switch<T>(T[] array, int first, int second)
+        public static void Switch<T>(IList<T> array, int first, int second)
         {
             T obj = array[first];
             array[first] = array[second];

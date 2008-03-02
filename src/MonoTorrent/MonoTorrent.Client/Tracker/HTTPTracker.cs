@@ -105,6 +105,7 @@ namespace MonoTorrent.Client.Tracker
         {
             WaitHandle h = null;
             string announceString = CreateAnnounceString(parameters);
+            LastUpdated = DateTime.Now;
             HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
             request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
             parameters.Id.Request = request;

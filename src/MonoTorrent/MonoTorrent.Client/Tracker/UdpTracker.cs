@@ -29,6 +29,7 @@ namespace MonoTorrent.Client.Tracker
 
         public override WaitHandle Announce(AnnounceParameters parameters)
         {
+            LastUpdated = DateTime.Now;
             if (!hasConnected && amConnecting)
                 return null;
 

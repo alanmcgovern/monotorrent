@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Tracker
         {
             get
             {
-                if (this.trackerTiers.Length == 0 || this.trackerTiers[0].Trackers.Length == 0)
+                if (this.trackerTiers.Length == 0 || this.trackerTiers[0].Trackers.Count == 0)
                     return null;
 
                 return this.trackerTiers[0].Trackers[0];
@@ -177,7 +177,6 @@ namespace MonoTorrent.Client.Tracker
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
                                                 clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
                                                 null, manager.Engine.Settings.ListenPort);
-            tracker.LastUpdated = DateTime.Now;
             tracker.Announce(p);
             return id.WaitHandle;
         }
@@ -186,13 +185,13 @@ namespace MonoTorrent.Client.Tracker
         {
             for (int i = 0; i < this.trackerTiers.Length; i++)
             {
-                for (int j = 0; j < this.trackerTiers[i].Trackers.Length; j++)
+                for (int j = 0; j < this.trackerTiers[i].Trackers.Count; j++)
                 {
                     if (this.trackerTiers[i].Trackers[j] != tracker)
                         continue;
 
                     // If we are on the last tracker of this tier, check to see if there are more tiers
-                    if (j == (this.trackerTiers[i].Trackers.Length - 1))
+                    if (j == (this.trackerTiers[i].Trackers.Count - 1))
                     {
                         if (i == (this.trackerTiers.Length - 1))
                         {
