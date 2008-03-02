@@ -1118,11 +1118,11 @@ namespace MonoTorrent.Client
         {
             lock (this.torrents)
             {
-                if (!this.messageHandler.IsActive)
-                    this.messageHandler.Start();
-
                 if (this.torrents.Contains(torrentManager))
                     throw new TorrentException("TorrentManager is already registered in the connection manager");
+
+                if (!this.messageHandler.IsActive)
+                    this.messageHandler.Start();
 
                 this.torrents.Add(torrentManager);
             }
