@@ -450,10 +450,13 @@ namespace MonoTorrent.Client
                 else
                     UpdateState(TorrentState.Downloading);
 
-                if (TrackerManager.CurrentTracker != null && TrackerManager.CurrentTracker.CanScrape)
-                    this.TrackerManager.Scrape();
+                if (TrackerManager.CurrentTracker != null)
+                {
+                    if(this.trackerManager.CurrentTracker.CanScrape)
+                        this.TrackerManager.Scrape();
+                    this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+                }
 
-                this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 this.startTime = DateTime.Now;
                 if (engine.ConnectionManager.IsRegistered(this))
                     Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
