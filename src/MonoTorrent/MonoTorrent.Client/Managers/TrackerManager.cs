@@ -140,13 +140,6 @@ namespace MonoTorrent.Client.Tracker
             return Announce(TorrentEvent.None);
         }
 
-        /// <summary>
-        /// Sends a status update to the tracker
-        /// </summary>
-        /// <param name="bytesDownloaded">The number of bytes downloaded since the last update</param>
-        /// <param name="bytesUploaded">The number of bytes uploaded since the last update</param>
-        /// <param name="bytesLeft">The number of bytes left to download</param>
-        /// <param name="clientEvent">The Event (if any) that represents this update</param>
         internal WaitHandle Announce(TorrentEvent clientEvent)
         {
             return Announce(CurrentTracker, clientEvent, true);
@@ -254,21 +247,11 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        /// <summary>
-        /// Scrapes the first tracker for peer information.
-        /// </summary>
-        /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
-        /// <returns></returns>
         public WaitHandle Scrape()
         {
-            return Scrape(this.trackerTiers[0].Trackers[0], true);
+            return Scrape(CurrentTracker, true);
         }
 
-        /// <summary>
-        /// Scrapes the specified tracker for peer information.
-        /// </summary>
-        /// <param name="requestSingle">True if you want scrape information for just the torrent in the TorrentManager. False if you want everything on the tracker</param>
-        /// <returns></returns>
         public WaitHandle Scrape(Tracker tracker)
         {
             return Scrape(tracker, false);
@@ -276,6 +259,9 @@ namespace MonoTorrent.Client.Tracker
 
         private WaitHandle Scrape(Tracker tracker, bool trySubsequent)
         {
+            if (tracker == null)
+                throw new ArgumentNullException("tracker");
+
             if (!tracker.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
 
