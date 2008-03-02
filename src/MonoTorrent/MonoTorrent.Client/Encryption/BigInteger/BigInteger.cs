@@ -46,7 +46,7 @@ namespace Mono.Math
 #if INSIDE_CORLIB
 	internal
 #else
-    public
+    internal
 #endif
  class BigInteger
     {

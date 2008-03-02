@@ -36,14 +36,14 @@ namespace Mono.Math.Prime
 #if INSIDE_CORLIB
 	internal
 #else
-    public
+    internal
 #endif
  delegate bool PrimalityTest(BigInteger bi, ConfidenceFactor confidence);
 
 #if INSIDE_CORLIB
 	internal
 #else
-    public
+    internal
 #endif
  sealed class PrimalityTests
     {

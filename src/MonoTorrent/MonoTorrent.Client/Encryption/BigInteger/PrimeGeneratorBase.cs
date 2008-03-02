@@ -36,7 +36,7 @@ namespace Mono.Math.Prime.Generator
 #if INSIDE_CORLIB
 	internal
 #else
-    public
+    internal
 #endif
  abstract class PrimeGeneratorBase
     {
