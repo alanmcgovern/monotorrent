@@ -23,21 +23,36 @@ namespace MonoTorrent.Client
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray());
+
+            for (int i = 0; i < handles.Count; i++)
+                handles[i].WaitOne();
+
+            return true;
         }
 
         public override bool WaitOne(int millisecondsTimeout, bool exitContext)
         {
-            if (handles.Count == 0)
-                return true;
-            return WaitHandle.WaitAll(handles.ToArray(), millisecondsTimeout, exitContext);
+            return WaitOne(TimeSpan.FromMilliseconds(millisecondsTimeout), exitContext);
         }
 
         public override bool WaitOne(TimeSpan timeout, bool exitContext)
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray(), timeout, exitContext);
+
+            for (int i = 0; i < handles.Count; i++)
+            {
+                int startTime = Environment.TickCount;
+
+                if (!handles[i].WaitOne(timeout, exitContext))
+                    return false;
+                
+                timeout.Subtract(TimeSpan.FromMilliseconds(Environment.TickCount - startTime));
+                if (timeout.TotalMilliseconds <= 0)
+                    return false;
+            }
+
+            return true;
         }
     }
 }
