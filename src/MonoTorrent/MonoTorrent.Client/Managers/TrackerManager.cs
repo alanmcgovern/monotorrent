@@ -55,7 +55,13 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public Tracker CurrentTracker
         {
-            get { return this.trackerTiers[0].Trackers[0]; }
+            get
+            {
+                if (this.trackerTiers.Length == 0 || this.trackerTiers[0].Trackers.Length == 0)
+                    return null;
+
+                return this.trackerTiers[0].Trackers[0];
+            }
         }
 
 
@@ -143,7 +149,7 @@ namespace MonoTorrent.Client.Tracker
         /// <param name="clientEvent">The Event (if any) that represents this update</param>
         internal WaitHandle Announce(TorrentEvent clientEvent)
         {
-            return Announce(this.trackerTiers[0].Trackers[0], clientEvent, true);
+            return Announce(CurrentTracker, clientEvent, true);
         }
 
         public WaitHandle Announce(TrackerTier tier, Tracker tracker)
