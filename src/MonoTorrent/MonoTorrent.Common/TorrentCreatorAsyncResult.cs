@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Common
 {
@@ -12,6 +13,7 @@ namespace MonoTorrent.Common
         private bool aborted;
         private object asyncState;
         private AsyncCallback callback;
+        private BEncodedDictionary dictionary;
         private bool isCompleted;
         private Exception savedException;
         private ManualResetEvent waitHandle;
@@ -44,6 +46,12 @@ namespace MonoTorrent.Common
         public bool CompletedSynchronously
         {
             get { return false; }
+        }
+
+        internal BEncodedDictionary Dictionary
+        {
+            get { return dictionary; }
+            set { dictionary = value; }
         }
 
         public bool IsCompleted
