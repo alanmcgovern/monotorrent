@@ -2,82 +2,53 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
     public class RequestMonitor
     {
-        private long lastUpdated;
-        private ConnectionMonitor monitor;
+        private SpeedMonitor announces;
+        private SpeedMonitor scrapes;
 
 
         public int AnnounceRate
         {
-            get
-            {
-                CheckUpdate();
-                return monitor.DownloadSpeed;
-            }
+            get { return announces.Rate; }
+        }
+
+        public int ScrapeRate
+        {
+            get { return scrapes.Rate; }
         }
 
         public int TotalAnnounces
         {
-            get { return (int)monitor.DataBytesDownloaded; }
+            get { return (int)announces.Total; }
         }
 
         public int TotalScrapes
         {
-            get { return (int)monitor.DataBytesUploaded; }
+            get { return (int)scrapes.Total; }
         }
 
 
         public RequestMonitor()
         {
-            lastUpdated = 0;
-            monitor = new ConnectionMonitor();
+            announces = new SpeedMonitor();
+            scrapes = new SpeedMonitor();
         }
 
 
         internal void AnnounceReceived()
         {
-            CheckUpdate();
-            monitor.BytesReceived(1, TransferType.Data);
+            announces.AddDelta(1);
         }
 
-        private void CheckUpdate()
-        {
-            // In the general case, we skip taking the lock
-            long difference = Environment.TickCount - lastUpdated;
-            if (difference < 1000)
-                return;
-
-            lock (monitor)
-            {
-                // If two threads make it past the block above,
-                // make sure that the second thread doesn't update
-                // the monitor
-                difference = Environment.TickCount - lastUpdated;
-                if (difference < 1000)
-                    return;
-
-                lastUpdated = Environment.TickCount;
-                monitor.TimePeriodPassed();
-            }
-        }
-
-        public int ScrapeRate
-        {
-            get
-            {
-                CheckUpdate();
-                return monitor.UploadSpeed;
-            }
-        }
 
         internal void ScrapeReceived()
         {
-            CheckUpdate();
-            monitor.BytesSent(1, TransferType.Data);
+            scrapes.AddDelta(1);
         }
     }
 }

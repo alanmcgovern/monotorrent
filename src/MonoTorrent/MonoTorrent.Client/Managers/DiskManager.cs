@@ -18,7 +18,9 @@ namespace MonoTorrent.Client.Managers
         Queue<BufferedIO> bufferedWrites;
         private ClientEngine engine;
 
-        private ConnectionMonitor monitor;
+        private SpeedMonitor readMonitor;
+        private SpeedMonitor writeMonitor;
+
         internal RateLimiter rateLimiter;
         private PieceWriter writer;
 
@@ -38,11 +40,6 @@ namespace MonoTorrent.Client.Managers
 
         #region Properties
 
-        internal ConnectionMonitor Monitor
-        {
-            get { return monitor; }
-        }
-
         public int QueuedWrites
         {
             get { return this.bufferedWrites.Count; }
@@ -50,22 +47,22 @@ namespace MonoTorrent.Client.Managers
 
         public double ReadRate
         {
-            get { return monitor.UploadSpeed; }
+            get { return readMonitor.Rate; }
         }
 
         public double WriteRate
         {
-            get { return monitor.DownloadSpeed; }
+            get { return writeMonitor.Rate; }
         }
 
         public long TotalRead
         {
-            get { return monitor.DataBytesUploaded; }
+            get { return readMonitor.Total; }
         }
 
         public long TotalWritten
         {
-            get { return monitor.DataBytesDownloaded; }
+            get { return writeMonitor.Total; }
         }
 
         internal PieceWriter Writer
@@ -85,11 +82,12 @@ namespace MonoTorrent.Client.Managers
             this.engine = engine;
             this.ioActive = true;
             this.ioThread = new Thread(new ThreadStart(RunIO));
-            this.monitor = new ConnectionMonitor();
             this.queueLock = new object();
             this.rateLimiter = new RateLimiter();
+            this.readMonitor = new SpeedMonitor();
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
+            this.writeMonitor = new SpeedMonitor();
             this.writer = writer;
             this.ioThread.Start();
         }
@@ -129,8 +127,10 @@ namespace MonoTorrent.Client.Managers
 
             // Perform the actual write
             lock (writer)
+            {
                 writer.Write(data);
-
+                writeMonitor.AddDelta(data.Count);
+            }
             piece.Blocks[index].Written = true;
             id.TorrentManager.FileManager.RaiseBlockWritten(new BlockEventArgs(data));
 
@@ -173,7 +173,10 @@ namespace MonoTorrent.Client.Managers
         private void PerformRead(BufferedIO io)
         {
             lock (writer)
+            {
                 io.ActualCount = writer.ReadChunk(io);
+                readMonitor.AddDelta(io.ActualCount);
+            }
             io.WaitHandle.Set();
         }
 
@@ -182,6 +185,7 @@ namespace MonoTorrent.Client.Managers
         {
             lock (writer)
             {
+                readMonitor.AddDelta(bytesToRead);
                 ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
                 return writer.ReadChunk(new BufferedIO(b, pieceStartIndex, bytesToRead, manager));
             }
@@ -270,6 +274,12 @@ namespace MonoTorrent.Client.Managers
                 this.threadWait.Set();
             else
                 this.threadWait.Reset();
+        }
+
+        internal void TickMonitors()
+        {
+            readMonitor.Tick();
+            writeMonitor.Tick();
         }
 
         #endregion

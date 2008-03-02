@@ -30,6 +30,7 @@
 
 using System;
 using System.Net.Sockets;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -38,253 +39,102 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ConnectionMonitor
     {
-        private const int DefaultAveragePeriod = 12;
-
-
         #region Member Variables
 
-        private long dataBytesDownloaded;
-        private long dataBytesUploaded;
-        private int downloadSpeed;
-        private int downloadSpeedIndex;
-        private int[] downloadSpeeds;
-        private int lastUpdateTime;
-        private long protocolBytesDownloaded;
-        private long protocolBytesUploaded;
-        private int tempSentCount;
-        private int tempRecvCount;
-		private int uploadSpeed;
-        private int uploadSpeedIndex;
-		private int[] uploadSpeeds;
+        private SpeedMonitor dataDown;
+        private SpeedMonitor dataUp;
+        private SpeedMonitor protocolDown;
+        private SpeedMonitor protocolUp;
 
         #endregion Member Variables
 
 
         #region Public Properties
 
-        /// <summary>
-        /// Returns the total bytes downloaded from this peer
-        /// </summary>
         public long DataBytesDownloaded
         {
-            get { return this.dataBytesDownloaded; }
+            get { return dataDown.Total; }
         }
 
-
-        /// <summary>
-        /// Returns the total bytes uploaded to this peer
-        /// </summary>
         public long DataBytesUploaded
         {
-            get { return this.dataBytesUploaded; }
+            get { return dataUp.Total; }
         }
 
-
-        /// <summary>
-        /// The current average download speed in bytes/sec
-        /// </summary>
-        /// <returns></returns>
         public int DownloadSpeed
         {
-            get { return this.downloadSpeed; }
+            get { return dataDown.Rate + protocolDown.Rate; }
         }
 
-
-        /// <summary>
-        /// Returns the total bytes downloaded from this peer
-        /// </summary>
         public long ProtocolBytesDownloaded
         {
-            get { return this.protocolBytesDownloaded / 1024; }
+            get { return protocolDown.Rate; }
         }
 
-
-        /// <summary>
-        /// Returns the total bytes uploaded to this peer
-        /// </summary>
         public long ProtocolBytesUploaded
         {
-            get { return this.protocolBytesUploaded / 1024; }
+            get { return protocolUp.Rate; }
         }
 
-
-        /// <summary>
-        /// The current average upload speed in bytes/sec
-        /// </summary>
-        /// <returns></returns>
-		public int UploadSpeed
+        public int UploadSpeed
         {
-            get { return this.uploadSpeed; }
+            get { return dataUp.Rate + protocolUp.Rate; }
         }
 
         #endregion Public Properties
 
 
         #region Constructors
-        /// <summary>
-        /// Creates a new ConnectionMonitor
-        /// </summary>
+
         internal ConnectionMonitor()
-            : this(DefaultAveragePeriod)
+            : this(12)
         {
 
         }
 
         internal ConnectionMonitor(int averagingPeriod)
         {
-            this.lastUpdateTime = Environment.TickCount;
-            this.uploadSpeeds = new int[averagingPeriod];
-			this.downloadSpeeds = new int[averagingPeriod];
+            dataDown = new SpeedMonitor(averagingPeriod);
+            dataUp = new SpeedMonitor(averagingPeriod);
+            protocolDown = new SpeedMonitor(averagingPeriod);
+            protocolUp = new SpeedMonitor(averagingPeriod);
         }
+
         #endregion
 
 
         #region Methods
 
-        /// <summary>
-        /// Update the ConnectionManager with bytes uploaded
-        /// </summary>
-        /// <param name="bytesUploaded">Bytes uploaded in the last time period</param>
         internal void BytesSent(int bytesUploaded, TransferType type)
         {
-            lock (this.uploadSpeeds)
-            {
-                switch (type)
-                {
-                    case TransferType.Data:
-                        this.dataBytesUploaded += bytesUploaded;
-                        break;
-
-                    case TransferType.Protocol:
-                        this.protocolBytesUploaded += bytesUploaded;
-                        break;
-
-                    default:
-                        throw new NotSupportedException();
-                }
-
-                this.tempSentCount += bytesUploaded;
-            }
+            if (type == TransferType.Data)
+                dataUp.AddDelta(bytesUploaded);
+            else
+                protocolUp.AddDelta(bytesUploaded);
         }
 
-
-        /// <summary>
-        /// Update the ConnectionManager with bytes downloaded
-        /// </summary>
-        /// <param name="bytesDownloaded">Bytes downloaded in the last time period</param>
         internal void BytesReceived(int bytesDownloaded, TransferType type)
         {
-            lock (this.downloadSpeeds)
-            {
-                switch (type)
-                {
-                    case TransferType.Data:
-                        this.dataBytesDownloaded += bytesDownloaded;
-                        break;
-
-                    case TransferType.Protocol:
-                        this.protocolBytesDownloaded += bytesDownloaded;
-                        break;
-
-                    default:
-                        throw new NotSupportedException();
-                }
-
-                this.tempRecvCount += bytesDownloaded;
-            }
+            if (type == TransferType.Data)
+                dataDown.AddDelta(bytesDownloaded);
+            else
+                protocolDown.AddDelta(bytesDownloaded);
         }
-
 
         internal void Reset()
         {
-            this.dataBytesDownloaded = 0;
-            this.dataBytesUploaded = 0;
-            this.downloadSpeed = 0;
-            this.downloadSpeedIndex = 0;
-            this.protocolBytesDownloaded = 0;
-            this.protocolBytesUploaded = 0;
-            this.tempRecvCount = 0;
-            this.tempSentCount = 0;
-            this.uploadSpeed = 0;
-            this.uploadSpeedIndex = 0;
+            dataDown.Reset();
+            dataUp.Reset();
+            protocolDown.Reset();
+            protocolUp.Reset();
         }
 
-        /// <summary>
-        /// Called every time you want the stats to update. Ideally between every 0.5 and 2 seconds
-        /// </summary>
-        internal void TimePeriodPassed()
+        internal void TickMonitors()
         {
-            lock (this.downloadSpeeds)
-            {
-                lock (this.uploadSpeeds)
-                {
-                    int count = 0;
-                    int total = 0;
-                    int currentTime = Environment.TickCount;
-
-                    // Find how many miliseconds have passed since the last update and the current tick count
-                    int difference = currentTime - this.lastUpdateTime;
-
-                    // If we have a negative value, we'll just assume 1 second (1000ms). We may get a negative value
-                    // when Env.TickCount rolls over.
-                    if (difference <= 0)
-                        difference = 1000;
-
-                    // Horrible hack to fix NaN
-                    if (difference < 850)
-                        return;
-
-                    // Take the amount of bytes sent since the last tick and divide it by the number of seconds
-                    // since the last tick. This gives the calculated bytes/second transfer rate.
-                    // difference is in miliseconds, so divide by 1000 to get it in seconds
-                    this.downloadSpeeds[this.downloadSpeedIndex++] = (int)(tempRecvCount / (difference / 1000.0));
-                    this.uploadSpeeds[this.uploadSpeedIndex++] = (int)(tempSentCount / (difference / 1000.0));
-
-                    // If we've gone over the array bounds, reset to the first index
-                    // to start overwriting the old values
-                    if (this.downloadSpeedIndex == downloadSpeeds.Length)
-                        this.downloadSpeedIndex = 0;
-
-                    if (this.uploadSpeedIndex == downloadSpeeds.Length)
-                        this.uploadSpeedIndex = 0;
-
-
-                    // What we do here is add up all the bytes/second readings held in each array
-                    // and divide that by the number of non-zero entries. The number of non-zero entries
-                    // is given by ArraySize - count. This is to avoid the problem where a connection which
-                    // is just starting would have a lot of zero entries making the speed estimate inaccurate.
-                    for (int i = 0; i < this.downloadSpeeds.Length; i++)
-                    {
-                        if (this.downloadSpeeds[i] == 0)
-                            count++;
-
-                        total += this.downloadSpeeds[i];
-                    }
-                    if (count == downloadSpeeds.Length)
-                        count--;
-
-                    this.downloadSpeed = (total / (downloadSpeeds.Length - count));
-
-
-                    count = 0;
-                    total = 0;
-                    for (int i = 0; i < this.uploadSpeeds.Length; i++)
-                    {
-                        if (this.uploadSpeeds[i] == 0)
-                            count++;
-
-                        total += this.uploadSpeeds[i];
-                    }
-                    if (count == this.uploadSpeeds.Length)
-                        count--;
-
-                    this.uploadSpeed = (total / (downloadSpeeds.Length - count));
-
-                    this.tempRecvCount = 0;
-                    this.tempSentCount = 0;
-                    this.lastUpdateTime = currentTime;
-                }
-            }
+            dataDown.Tick();
+            dataUp.Tick();
+            protocolDown.Tick();
+            protocolUp.Tick();
         }
 
         #endregion

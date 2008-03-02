@@ -568,7 +568,7 @@ namespace MonoTorrent.Client
             lock (this.listLock)
             {
                 if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
-                    this.monitor.TimePeriodPassed();
+                    this.monitor.TickMonitors();
 
                 if (this.finishedPieces.Count > 0 || (this.finishedPieces.Count > 0 && state == TorrentState.Seeding))
                     SendHaveMessagesToAll();
@@ -587,7 +587,7 @@ namespace MonoTorrent.Client
                         id.UpdatePublicStats();
 
                         if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
-                            id.Connection.Monitor.TimePeriodPassed();
+                            id.Connection.Monitor.TickMonitors();
 
                     }
                 }
