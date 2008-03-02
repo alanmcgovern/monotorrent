@@ -36,17 +36,17 @@ namespace MonoTorrent.Client.Tracker
 {
     public static class TrackerFactory
     {
-        private static object locker = new object();
         static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
 
         public static void Register(string protocol, Type trackerType)
         {
             if (string.IsNullOrEmpty(protocol))
                 throw new ArgumentException("cannot be null or empty", protocol);
+
             if (trackerType == null)
                 throw new ArgumentNullException("trackerType");
 
-            lock (locker)
+            lock (trackerTypes)
                 trackerTypes.Add(protocol, trackerType);
         }
 
