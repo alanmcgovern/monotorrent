@@ -38,6 +38,15 @@ namespace SampleClient
             e.Successful = true;
             RaiseAnnounceComplete(e);
         }
+
+        public void AddFailedPeer(Peer p)
+        {
+            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            e.Peers.Add(p);
+            e.Successful = false;
+            RaiseAnnounceComplete(e);
+        }
     }
 
     public class NullWriter : PieceWriter
@@ -270,7 +279,9 @@ namespace SampleClient
             dict[new BEncodedString("info")] = infoDict;
 
             BEncodedList announceTier = new BEncodedList();
-            announceTier.Add(new BEncodedString(string.Format("custom://transfers/{0}", "tester")));
+            announceTier.Add(new BEncodedString("custom://transfers1/announce"));
+            announceTier.Add(new BEncodedString("custom://transfers2/announce"));
+            announceTier.Add(new BEncodedString("custom://transfers3/announce"));
             BEncodedList announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;

@@ -138,6 +138,7 @@ namespace MonoTorrent.Client.Managers.Tests
         {
             rig.Engine.Unregister(rig.Manager);
             rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+            rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
         }
 
         [Test]
