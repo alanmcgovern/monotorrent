@@ -153,11 +153,17 @@ namespace MonoTorrent.Client.Tracker
 
         private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
         {
+            ClientEngine engine = manager.Engine;
+            
+            // If the engine is null, we have been unregistered
+            if (engine == null)
+                return new ManualResetEvent(true);
+
             TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, null);
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             
-            bool supportsEncryption = ClientEngine.SupportsEncryption && manager.Engine.Settings.MinEncryptionLevel != EncryptionType.None;
+            bool supportsEncryption = ClientEngine.SupportsEncryption && engine.Settings.MinEncryptionLevel != EncryptionType.None;
 
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
@@ -215,7 +221,7 @@ namespace MonoTorrent.Client.Tracker
             if (e.Successful)
             {
                 // FIXME: Figure out why manually firing the event throws an exception here
-                try {Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));}catch{}
+                Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
                 manager.AddPeers(e.Peers);
             }
             else
