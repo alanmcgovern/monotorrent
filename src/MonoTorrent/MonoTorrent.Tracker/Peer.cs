@@ -69,13 +69,7 @@ namespace MonoTorrent.Tracker
         ///</summary>
         internal byte[] CompactEntry
         {
-            get
-            {
-                // This is 100% threadsafe - worst case scenario means we generate the listing N times and GC N-1 of them
-                //if (compactEntry == null)
-                    return GenerateCompactPeersEntry();
-                //return compactEntry;
-            }
+            get { return GenerateCompactPeersEntry(); }
         }
 
         /// <summary>
@@ -113,13 +107,7 @@ namespace MonoTorrent.Tracker
         ///<summary>The peer entry in non compact format.</summary> 
         internal BEncodedDictionary NonCompactEntry
         {
-            get
-            {
-                // This is 100% threadsafe - worst case scenario means we generate the listing N times and GC N-1 of them
-                //if (noncompactEntry == null)
-                    return GeneratePeersEntry();
-                //return noncompactEntry;
-            }
+            get { return GeneratePeersEntry(); }
         }
 
         ///<summary>
@@ -155,7 +143,6 @@ namespace MonoTorrent.Tracker
         }
 
 
-        ///<summary>Update internal datas and reset Timers</summary>
         internal void Update(AnnounceParameters parameters)
         {
             DateTime now = DateTime.Now;
@@ -164,13 +151,13 @@ namespace MonoTorrent.Tracker
                 elapsedTime = 1;
 
             clientAddress = parameters.ClientAddress;
+            downloadSpeed = (int)((parameters.Downloaded - downloaded) / elapsedTime);
+            uploadSpeed = (int)((parameters.Uploaded - uploaded) / elapsedTime);
             downloaded = parameters.Downloaded;
             uploaded = parameters.Uploaded;
             left = parameters.Left;
             peerId = parameters.PeerId;
-            downloadSpeed = (int)((parameters.Downloaded - parameters.Downloaded) / elapsedTime);
             lastAnnounceTime = now;
-            uploadSpeed = (int)((parameters.Uploaded - parameters.Uploaded) / elapsedTime);
         }
 
 
@@ -185,7 +172,6 @@ namespace MonoTorrent.Tracker
             dictionary.Add(Tracker.ip, encAddress);
             dictionary.Add(Tracker.port, encPort);
             return dictionary;
-            //noncompactEntry = dictionary;
         }
         private byte[] GenerateCompactPeersEntry()
         {
@@ -196,7 +182,6 @@ namespace MonoTorrent.Tracker
             Array.Copy(addr, entry, addr.Length);
             Array.Copy(port, 0, entry, addr.Length, port.Length);
             return entry;
-            //compactEntry = entry;
         }
     }
 }
