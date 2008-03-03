@@ -8,9 +8,15 @@ namespace MonoTorrent.Tracker
 {
     public class RequestMonitor
     {
+        #region Member Variables
+
         private SpeedMonitor announces;
         private SpeedMonitor scrapes;
 
+        #endregion Member Variables
+
+
+        #region Properties
 
         public int AnnounceRate
         {
@@ -33,22 +39,32 @@ namespace MonoTorrent.Tracker
         }
 
 
+        #endregion Properties
+
+
+        #region Constructors
+
         public RequestMonitor()
         {
             announces = new SpeedMonitor();
             scrapes = new SpeedMonitor();
         }
 
+        #endregion Constructors
+
+
+        #region Methods
 
         internal void AnnounceReceived()
         {
             announces.AddDelta(1);
         }
 
-
         internal void ScrapeReceived()
         {
             scrapes.AddDelta(1);
         }
+
+        #endregion Methods
     }
 }
