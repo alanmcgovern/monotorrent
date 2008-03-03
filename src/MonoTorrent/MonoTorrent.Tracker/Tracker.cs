@@ -279,13 +279,6 @@ namespace MonoTorrent.Tracker
             torrents.Remove(trackable.InfoHash);
         }
 
-        public void Reset()
-        {
-            Debug.WriteLine("Resetting tracker... ");
-            Debug.WriteLine("Flushing data from memory... COMPLETE");
-            torrents.Clear();
-        }
-
         public void UnregisterListener(ListenerBase listener)
         {
             if (listener == null)
