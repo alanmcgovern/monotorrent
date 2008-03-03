@@ -53,6 +53,8 @@ namespace MonoTorrent.Client
         internal MonoTorrentCollection<PeerIdInternal> uploadQueue = new MonoTorrentCollection<PeerIdInternal>();
         internal List<PeerIdInternal> ConnectedPeers;
         internal List<PeerIdInternal> ConnectingToPeers;
+        private bool abortHashing;
+        private ManualResetEvent hashingWaitHandle;
 
         #region Events
 
@@ -311,6 +313,7 @@ namespace MonoTorrent.Client
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, baseDirectory);
             this.finishedPieces = new Queue<int>();
             this.listLock = new object();
+            this.hashingWaitHandle = new ManualResetEvent(false);
             this.monitor = new ConnectionMonitor();
             this.settings = settings;
             this.peers = new PeerManager(engine, this);
@@ -374,6 +377,7 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool forceFullScan)
         {
+            CheckRegistered();
             lock (this.engine.asyncCompletionLock)
                 HashCheck(forceFullScan, false);
         }
@@ -401,6 +405,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
+            CheckRegistered();
             lock (this.engine.asyncCompletionLock)
                 lock (this.listLock)
                 {
@@ -420,6 +425,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
+            CheckRegistered();
+
             this.engine.Start();
             lock (this.engine.asyncCompletionLock)
             {
@@ -472,11 +479,20 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
+            CheckRegistered();
+
             ManagerWaitHandle handle = new ManagerWaitHandle();
             lock (this.engine.asyncCompletionLock)
             {
                 if (this.state == TorrentState.Stopped)
                     return handle;
+
+                if (this.state == TorrentState.Hashing)
+                {
+                    hashingWaitHandle = new ManualResetEvent(false);
+                    handle.AddHandle(hashingWaitHandle);
+                    abortHashing = true;
+                }
 
                 UpdateState(TorrentState.Stopped);
 
@@ -822,6 +838,12 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
+        private void CheckRegistered()
+        {
+            if (engine == null)
+                throw new TorrentException("This manager has not been registed with an Engine");
+        }
+
         /// <summary>
         /// Hash checks the supplied torrent
         /// </summary>
@@ -860,7 +882,7 @@ namespace MonoTorrent.Client
                         enterCount++;
 
                         // This happens if the user cancels the hash by stopping the torrent.
-                        if (State != TorrentState.Hashing)
+                        if (abortHashing)
                             return;
                     }
                 }
@@ -883,6 +905,10 @@ namespace MonoTorrent.Client
                 engine.DiskManager.Writer.CloseFileStreams(this);
                 while (enterCount-- > 0)
                     System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
+
+                if (abortHashing)
+                    this.hashingWaitHandle.Set();
+                abortHashing = false;
             }
         }
 
