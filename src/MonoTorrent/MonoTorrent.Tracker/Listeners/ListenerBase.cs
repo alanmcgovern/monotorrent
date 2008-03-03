@@ -10,42 +10,34 @@ namespace MonoTorrent.Tracker.Listeners
 {
     public abstract class ListenerBase
     {
-        private delegate void HandleDelegate(NameValueCollection collection, IPAddress remoteAddress);
+        #region Events
 
         public event EventHandler<ScrapeParameters> ScrapeReceived;
         public event EventHandler<AnnounceParameters> AnnounceReceived;
 
-        /// <summary>
-        /// True if the listener is actively listening for incoming connections
-        /// </summary>
+        #endregion Events
+
+        #region Member Variables
+        
+        private Tracker tracker;
+
+        #endregion Member Variables
+
+        #region Properties
+
         public abstract bool Running { get; }
 
-        /// <summary>
-        /// Starts listening for incoming connections
-        /// </summary>
-        public abstract void Start();
-
-        /// <summary>
-        /// Stops listening for incoming connections
-        /// </summary>
-        public abstract void Stop();
-
-        /*
-        public virtual IAsyncResult BeginHandle(string queryString, IPAddress remoteAddress, AsyncCallback callback, object asyncData)
+        internal Tracker Tracker
         {
-            return BeginHandle(ParseQuery(queryString), remoteAddress, callback, asyncData);
+            get { return tracker; }
+            set { tracker = value; }
         }
 
-        public virtual IAsyncResult BeginHandle(NameValueCollection collection, IPAddress remoteAddres, AsyncCallback callback, object asyncData)
-        {
+        #endregion Properties
 
-        }
 
-        public virtual BEncodedDictionary EndHandle(IAsyncResult result)
-        {
-            
-        }
-        */
+        #region Methods
+
         public virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
             if (queryString == null)
@@ -71,7 +63,7 @@ namespace MonoTorrent.Tracker.Listeners
             if (!parameters.IsValid)
                 return parameters.Response;
 
-            // Fire the necessary event so the request will be handled and response filled inin
+            // Fire the necessary event so the request will be handled and response filled in
             if (isScrape)
                 RaiseScrapeReceived((ScrapeParameters)parameters);
             else
@@ -110,5 +102,12 @@ namespace MonoTorrent.Tracker.Listeners
             if (h != null)
                 h(this, e);
         }
+
+        public abstract void Start();
+
+        public abstract void Stop();
+
+        #endregion Methods
+
     }
 }

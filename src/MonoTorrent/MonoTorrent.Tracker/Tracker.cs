@@ -75,35 +75,23 @@ namespace MonoTorrent.Tracker
 
         #region Properties
 
-        ///<summary>
-        /// True if non-compact responses are enabled
-        ///</summary>
         public bool AllowNonCompact
         {
             get { return allowNonCompact; }
             set { allowNonCompact = value; }
         }
 
-
-        /// <summary>
-        /// True if scrape requests should be handled
-        /// </summary>
         public bool AllowScrape
         {
             get { return allowScrape; }
             set { allowScrape = value; }
         }
 
-
         public int Count
         {
             get { return torrents.Count; }
         }
 
-
-        ///<summary>
-        /// Get and set the IntervalAlgorithm used by this Tracker
-        ///</summary>
         public StaticIntervalAlgorithm Intervals
         {
             get { return intervalAlgorithm; }
@@ -137,11 +125,6 @@ namespace MonoTorrent.Tracker
 
         #region Methods
 
-        /// <summary>
-        /// Adds the trackable to the tracker so that the tracker will monitor peers for that torrent
-        /// </summary>
-        /// <param name="torrent">The trackable to add to the tracker</param>
-        /// <returns>True if the trackable was added, false if it was already being tracked</returns>
         public bool Add(ITrackable trackable)
         {
             return Add(trackable, new IPAddressComparer());
@@ -159,7 +142,6 @@ namespace MonoTorrent.Tracker
             torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable, comparer));
             return true;
         }
-
 
         public bool Contains(ITrackable trackable)
         {
@@ -181,21 +163,19 @@ namespace MonoTorrent.Tracker
             return null;
         }
 
-        /// <summary>
-        /// Gets an enumerator which iterates through all torrents which are being tracked
-        /// </summary>
-        /// <returns></returns>
         public IEnumerator<SimpleTorrentManager> GetEnumerator()
         {
             return this.torrents.Values.GetEnumerator();
         }
 
+        public bool IsRegistered(ListenerBase listener)
+        {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+            
+            return listener.Tracker == this;
+        }
 
-        /// <summary>
-        /// This method has been hooked up to the AnnounceReceived event on registered listeners
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void OnAnnounceReceived(object sender, AnnounceParameters e)
         {
             monitor.AnnounceReceived();
@@ -244,12 +224,6 @@ namespace MonoTorrent.Tracker
             //    par.TrackerId = "monotorrent-tracker";
         }
 
-
-        /// <summary>
-        /// This method has been hooked up to the ScrapeReceived event on registered listeners
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void OnScrapeReceived(object sender, ScrapeParameters e)
         {
             monitor.ScrapeReceived();
@@ -284,27 +258,19 @@ namespace MonoTorrent.Tracker
             e.Response.Add("files", files);
         }
 
-
-        /// <summary>
-        /// Registers a listener with the tracker so any incoming connections can be processed
-        /// by the tracker. A listener can be registered with multiple trackers.
-        /// </summary>
-        /// <param name="listener">The listener to register with the tracker</param>
         public void RegisterListener(ListenerBase listener)
         {
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
+            if (listener.Tracker != null)
+                throw new TorrentException("The listener is registered to a different Tracker");
+
+            listener.Tracker = this;
             listener.AnnounceReceived += new EventHandler<AnnounceParameters>(OnAnnounceReceived);
             listener.ScrapeReceived += new EventHandler<ScrapeParameters>(OnScrapeReceived);
         }
 
-
-        /// <summary>
-        /// Removes the specified torrent from the tracker and drops all peer information
-        /// related to that torrent
-        /// </summary>
-        /// <param name="torrent">The torrent to remove</param>
         public void Remove(ITrackable trackable)
         {
             if (trackable == null)
@@ -313,10 +279,6 @@ namespace MonoTorrent.Tracker
             torrents.Remove(trackable.InfoHash);
         }
 
-
-        /// <summary>
-        /// Drops all peer information from memory and unloads all loaded torrents
-        /// </summary>
         public void Reset()
         {
             Debug.WriteLine("Resetting tracker... ");
@@ -324,17 +286,15 @@ namespace MonoTorrent.Tracker
             torrents.Clear();
         }
 
-
-        /// <summary>
-        /// Unregisters a listener with the tracker so the tracker does not try to process incoming
-        /// requests from that listener
-        /// </summary>
-        /// <param name="listener">The listener to unregister</param>
         public void UnregisterListener(ListenerBase listener)
         {
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
+            if (listener.Tracker != this)
+                throw new TorrentException("The listener is not registered with this tracker");
+
+            listener.Tracker = null;
             listener.AnnounceReceived -= new EventHandler<AnnounceParameters>(OnAnnounceReceived);
             listener.ScrapeReceived -= new EventHandler<ScrapeParameters>(OnScrapeReceived);
         }
