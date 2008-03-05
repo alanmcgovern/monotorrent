@@ -482,55 +482,61 @@ namespace MonoTorrent.Client
             CheckRegistered();
 
             ManagerWaitHandle handle = new ManagerWaitHandle();
-            lock (this.engine.asyncCompletionLock)
+            try
             {
-                if (this.state == TorrentState.Stopped)
-                    return handle;
-
-                if (this.state == TorrentState.Hashing)
+                lock (this.engine.asyncCompletionLock)
                 {
-                    hashingWaitHandle = new ManualResetEvent(false);
-                    handle.AddHandle(hashingWaitHandle);
-                    abortHashing = true;
+                    if (this.state == TorrentState.Stopped)
+                        return handle;
+
+                    if (this.state == TorrentState.Hashing)
+                    {
+                        hashingWaitHandle = new ManualResetEvent(false);
+                        handle.AddHandle(hashingWaitHandle);
+                        abortHashing = true;
+                        return handle;
+                    }
+
+                    handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
+                    lock (this.listLock)
+                    {
+                        while (this.ConnectingToPeers.Count > 0)
+                            lock (this.ConnectingToPeers[0])
+                            {
+                                if (this.ConnectingToPeers[0].Connection == null)
+                                    this.ConnectingToPeers.RemoveAt(0);
+                                else
+                                    engine.ConnectionManager.AsyncCleanupSocket(this.ConnectingToPeers[0], true, "Called stop");
+                            }
+
+                        while (this.ConnectedPeers.Count > 0)
+                            lock (this.ConnectedPeers[0])
+                            {
+                                if (this.ConnectedPeers[0].Connection == null)
+                                    this.ConnectedPeers.RemoveAt(0);
+                                else
+                                    engine.ConnectionManager.AsyncCleanupSocket(this.ConnectedPeers[0], true, "Called stop");
+                            }
+                    }
+
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this));
+
+                    if (this.hashChecked)
+                        this.SaveFastResume();
+                    this.peers.ClearAll();
+                    this.monitor.Reset();
+                    this.pieceManager.Reset();
+                    if (this.engine.ConnectionManager.IsRegistered(this))
+                        this.engine.ConnectionManager.UnregisterManager(this);
+                    this.engine.Stop();
                 }
-
-                UpdateState(TorrentState.Stopped);
-
-                handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
-                lock (this.listLock)
-                {
-                    while (this.ConnectingToPeers.Count > 0)
-                        lock (this.ConnectingToPeers[0])
-                        {
-                            if (this.ConnectingToPeers[0].Connection == null)
-                                this.ConnectingToPeers.RemoveAt(0);
-                            else
-                                engine.ConnectionManager.AsyncCleanupSocket(this.ConnectingToPeers[0], true, "Called stop");
-                        }
-
-                    while (this.ConnectedPeers.Count > 0)
-                        lock (this.ConnectedPeers[0])
-                        {
-                            if (this.ConnectedPeers[0].Connection == null)
-                                this.ConnectedPeers.RemoveAt(0);
-                            else
-                                engine.ConnectionManager.AsyncCleanupSocket(this.ConnectedPeers[0], true, "Called stop");
-                        }
-                }
-
-                handle.AddHandle(engine.DiskManager.CloseFileStreams(this));
-
-                if (this.hashChecked)
-                    this.SaveFastResume();
-                this.peers.ClearAll();
-                this.monitor.Reset();
-                this.pieceManager.Reset();
-                if (this.engine.ConnectionManager.IsRegistered(this))
-                    this.engine.ConnectionManager.UnregisterManager(this);
-                this.engine.Stop();
-
-                return handle;
             }
+            finally
+            {
+                UpdateState(TorrentState.Stopped);
+            }
+
+            return handle;
         }
 
         #endregion
