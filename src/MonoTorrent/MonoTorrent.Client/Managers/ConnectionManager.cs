@@ -218,6 +218,8 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
+                        id.TorrentManager.ConnectingToPeers.Remove(id);
+                        Interlocked.Decrement(ref this.halfOpenConnections);
                         // If the peer has been cleaned up, then don't continue processing the peer
                         if (id.Connection == null)
                         {
@@ -225,7 +227,6 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        Interlocked.Decrement(ref this.halfOpenConnections);
                         id.Connection.EndConnect(result);
                         Logger.Log(id.Connection.Connection, "ConnectionManager - Connection opened");
 
