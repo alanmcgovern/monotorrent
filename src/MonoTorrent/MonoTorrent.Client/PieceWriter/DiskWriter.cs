@@ -29,7 +29,10 @@ namespace MonoTorrent.Client.PieceWriters
 
 		public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
-            Array.ForEach<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) { streamsBuffer.CloseStream(f); });
+            for (int i = 0; i < manager.Torrent.Files.Length; i++)
+                lock (manager.Torrent.Files[i])
+                    streamsBuffer.CloseStream(manager.Torrent.Files[i]);
+
             return new ManualResetEvent(true);
         }
 
