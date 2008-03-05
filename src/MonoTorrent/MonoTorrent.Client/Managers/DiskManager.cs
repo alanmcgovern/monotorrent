@@ -12,8 +12,20 @@ namespace MonoTorrent.Client.Managers
 {
     public class DiskManager : IDisposable
     {
+        private class StreamClose
+        {
+            public ManualResetEvent Handle;
+            public TorrentManager Manager;
+
+            public StreamClose(ManualResetEvent handle, TorrentManager manager)
+            {
+                Handle = handle;
+                Manager = manager;
+            }
+        }
         #region Member Variables
 
+        Queue<StreamClose> closeStreams;
         Queue<BufferedIO> bufferedReads;
         Queue<BufferedIO> bufferedWrites;
         private ClientEngine engine;
@@ -79,6 +91,7 @@ namespace MonoTorrent.Client.Managers
         {
             this.bufferedReads = new Queue<BufferedIO>();
             this.bufferedWrites = new Queue<BufferedIO>();
+            this.closeStreams = new Queue<StreamClose>();
             this.engine = engine;
             this.ioActive = true;
             this.ioThread = new Thread(new ThreadStart(RunIO));
@@ -99,7 +112,12 @@ namespace MonoTorrent.Client.Managers
 
         internal WaitHandle CloseFileStreams(TorrentManager manager)
         {
-            return writer.CloseFileStreams(manager);
+            lock (queueLock)
+            {
+                ManualResetEvent handle = new ManualResetEvent(false);
+                closeStreams.Enqueue(new StreamClose(handle, manager));
+                return handle;
+            }
         }
 
 
@@ -225,7 +243,8 @@ namespace MonoTorrent.Client.Managers
         {
             BufferedIO write;
             BufferedIO read;
-            while (ioActive)
+
+            while (ioActive || this.bufferedWrites.Count > 0 || this.closeStreams.Count > 0)
             {
                 write = null;
                 read = null;
@@ -234,6 +253,31 @@ namespace MonoTorrent.Client.Managers
                 // performing the actual read/write to avoid blocking other threads
                 lock (this.queueLock)
                 {
+                    if (this.closeStreams.Count > 0)
+                    {
+                        StreamClose close = closeStreams.Dequeue();
+
+                        try
+                        {
+                            // Dump all buffered reads for the manager we're closing the streams for
+                            List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
+                            list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
+                            bufferedReads = new Queue<BufferedIO>(list);
+
+                            // Process all remaining reads
+                            list = new List<BufferedIO>(bufferedWrites);
+                            foreach (BufferedIO io in list)
+                                if (io.Manager == close.Manager)
+                                    PerformWrite(io);
+                            list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
+                            bufferedWrites = new Queue<BufferedIO>(list);
+                        }
+                        finally
+                        {
+                            close.Handle.Set();
+                        }
+                    }
+
                     if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || rateLimiter.DownloadChunks > 0))
                     {
                         write = this.bufferedWrites.Dequeue();
