@@ -907,8 +907,10 @@ namespace MonoTorrent.Client
                     System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
 
                 if (abortHashing)
+                {
+                    abortHashing = false;
                     this.hashingWaitHandle.Set();
-                abortHashing = false;
+                }
             }
         }
 
