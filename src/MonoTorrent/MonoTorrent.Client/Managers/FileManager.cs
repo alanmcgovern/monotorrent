@@ -277,7 +277,7 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move the files when the torrent is active");
 
-            manager.Engine.DiskManager.CloseFileStreams(this.manager);
+            manager.Engine.DiskManager.CloseFileStreams(this.manager).WaitOne();
 
             for (int i = 0; i < this.files.Length; i++)
             {
