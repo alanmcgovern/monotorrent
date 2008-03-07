@@ -107,6 +107,9 @@ namespace MonoTorrent.Client
             if (IsActive)
                 throw new InvalidOperationException("Message loop already started");
 
+            this.cleanUpQueue.Clear();
+            this.queue.Clear();
+            this.sendQueue.Clear();
             this.messageLoopActive = true;
             this.waitHandle.Reset();
             this.messageLoopThread = new Thread(new ThreadStart(MessageLoop));
@@ -166,41 +169,49 @@ namespace MonoTorrent.Client
 
         private void MessageLoop()
         {
-            PeerIdInternal sendMessageToId;
-            PeerIdInternal cleanupId;
-            Nullable<KeyValuePair<PeerIdInternal, AsyncMessageDetails>> receivedMessage;
-
-            while (this.messageLoopActive)
+            try
             {
-                receivedMessage = null;
-                cleanupId = null;
-                sendMessageToId = null;
+                PeerIdInternal sendMessageToId;
+                PeerIdInternal cleanupId;
+                Nullable<KeyValuePair<PeerIdInternal, AsyncMessageDetails>> receivedMessage;
 
-                lock (this.queuelock)
+                while (this.messageLoopActive)
                 {
-                    if (this.queue.Count > 0)
-                        receivedMessage = this.queue.Dequeue();
+                    receivedMessage = null;
+                    cleanupId = null;
+                    sendMessageToId = null;
 
-                    if (this.sendQueue.Count > 0)
-                        sendMessageToId = this.sendQueue.Dequeue();
+                    lock (this.queuelock)
+                    {
+                        if (this.queue.Count > 0)
+                            receivedMessage = this.queue.Dequeue();
 
-                    if (this.cleanUpQueue.Count > 0)
-                        cleanupId = this.cleanUpQueue.Dequeue();
+                        if (this.sendQueue.Count > 0)
+                            sendMessageToId = this.sendQueue.Dequeue();
 
-                    if (this.queue.Count == 0 && this.sendQueue.Count == 0 && this.cleanUpQueue.Count == 0)
-                        this.waitHandle.Reset();
+                        if (this.cleanUpQueue.Count > 0)
+                            cleanupId = this.cleanUpQueue.Dequeue();
+
+                        if (this.queue.Count == 0 && this.sendQueue.Count == 0 && this.cleanUpQueue.Count == 0)
+                            this.waitHandle.Reset();
+                    }
+
+                    if (receivedMessage.HasValue)
+                        HandleMessage(receivedMessage.Value.Key, receivedMessage.Value.Value);
+
+                    if (sendMessageToId != null)
+                        SendMessage(sendMessageToId);
+
+                    if (cleanupId != null)
+                        cleanupId.ConnectionManager.AsyncCleanupSocket(cleanupId, true, "Async Cleanup");
+
+                    this.waitHandle.WaitOne();
                 }
-
-                if (receivedMessage.HasValue)
-                    HandleMessage(receivedMessage.Value.Key, receivedMessage.Value.Value);
-
-                if (sendMessageToId != null)
-                    SendMessage(sendMessageToId);
-
-                if (cleanupId != null)
-                    cleanupId.ConnectionManager.AsyncCleanupSocket(cleanupId, true, "Async Cleanup");
-
-                this.waitHandle.WaitOne();
+            }
+            catch(Exception ex)
+            {
+                // Lets continue no matter what
+                Logger.Log(null, "MessageHandler: {0}", ex);
             }
         }
 
