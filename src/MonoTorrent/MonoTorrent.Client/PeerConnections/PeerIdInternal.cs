@@ -45,6 +45,7 @@ namespace MonoTorrent.Client
         private PeerId peerId;
         private Peer peer;
         private PeerConnectionBase connection;
+        private ClientEngine engine;
         private TorrentManager torrentManager;
 
         #endregion Member Variables
@@ -63,7 +64,7 @@ namespace MonoTorrent.Client
 
         public ConnectionManager ConnectionManager
         {
-            get { return this.torrentManager.Engine.ConnectionManager; }
+            get { return this.engine.ConnectionManager; }
         }
 
         public ClientEngine Engine
@@ -125,6 +126,7 @@ namespace MonoTorrent.Client
         {
             this.peer = peer;
             this.torrentManager = manager;
+            this.engine = manager.Engine;
         }
         #endregion
 
