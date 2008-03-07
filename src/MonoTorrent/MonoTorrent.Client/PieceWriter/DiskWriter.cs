@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-	public class DiskWriter : PieceWriter
+    public class DiskWriter : PieceWriter
     {
         private FileStreamBuffer streamsBuffer;
 
@@ -27,16 +27,16 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-		public override WaitHandle CloseFileStreams(TorrentManager manager)
+        public override WaitHandle CloseFileStreams(TorrentManager manager)
         {
             for (int i = 0; i < manager.Torrent.Files.Length; i++)
                 lock (manager.Torrent.Files[i])
-                    streamsBuffer.CloseStream(manager.Torrent.Files[i]);
+                    streamsBuffer.CloseStream(GenerateFilePath(manager.Torrent.Files[i], manager.FileManager.BaseDirectory, manager.SavePath));
 
             return new ManualResetEvent(true);
         }
 
-		public override void Dispose()
+        public override void Dispose()
         {
             streamsBuffer.Dispose();
         }
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.PieceWriters
                 return streamsBuffer.GetStream(file, filePath, access);
         }
 
-		public override int Read(BufferedIO data)
+        public override int Read(BufferedIO data)
         {
             if (data == null)
                 throw new ArgumentNullException("buffer");
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.PieceWriters
             return totalRead;
         }
 
-		public override void Write(BufferedIO data)
+        public override void Write(BufferedIO data)
         {
             byte[] buffer = data.buffer.Array;
             long offset = data.Offset;
@@ -160,7 +160,7 @@ namespace MonoTorrent.Client.PieceWriters
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
         }
 
-		public override void Flush(TorrentManager manager)
+        public override void Flush(TorrentManager manager)
         {
             // No buffering done here
         }

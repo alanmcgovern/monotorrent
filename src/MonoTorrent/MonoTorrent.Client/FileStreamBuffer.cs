@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
 
         private void Add(TorrentFileStream stream)
         {
-            Console.WriteLine("Opening filestream: {0}", stream.File.Path);
+            Console.WriteLine("Opening filestream: {0}", stream.Path);
 
             // If we have our maximum number of streams open, just dispose and dump the least recently used one
             if (maxStreams != 0 && list.Count >= list.Capacity)
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         internal TorrentFileStream GetStream(TorrentFile file, string filePath, FileAccess access)
         {
             TorrentFileStream s = list.Find(delegate(TorrentFileStream stream) {
-                return stream.File == file;
+                return stream.Path == filePath;
             });
 
             if (s != null)
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
 
             if (s == null)
             {
-                s = new TorrentFileStream(file, filePath, FileMode.OpenOrCreate, access, FileShare.Read);
+                s = new TorrentFileStream(filePath, FileMode.OpenOrCreate, access, FileShare.Read);
                 Add(s);
             }
 
@@ -78,9 +78,9 @@ namespace MonoTorrent.Client
 
         #endregion
 
-        internal bool CloseStream(TorrentFile file)
+        internal bool CloseStream(string path)
         {
-            TorrentFileStream s = list.Find(delegate(TorrentFileStream stream) { return stream.File == file; });
+            TorrentFileStream s = list.Find(delegate(TorrentFileStream stream) { return stream.Path == path; });
             if (s != null)
                 CloseAndRemove(s);
 
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
 
         private void CloseAndRemove(TorrentFileStream s)
         {
-            Console.WriteLine("Closing and removing: {0}", s.File.Path);
+            Console.WriteLine("Closing and removing: {0}", s.Path);
             list.Remove(s);
             s.Dispose();
         }
