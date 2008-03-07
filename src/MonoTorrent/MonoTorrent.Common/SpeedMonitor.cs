@@ -107,9 +107,15 @@ namespace MonoTorrent.Common
         internal void Tick()
         {
             // Make sure we handle the case where the clock rolls over
-            long difference = (long)Environment.TickCount - lastUpdated;
-            if (difference >= 800 || difference < 0)
-                TimePeriodPassed();
+            // Ensure that TimePeriodPassed doesn't get executed by multiple threads
+            // This can happen if the UI triggers an update at the same time that
+            // the internals trigger an update.
+            lock (speeds)
+            {
+                long difference = (long)Environment.TickCount - lastUpdated;
+                if (difference >= 800 || difference < 0)
+                    TimePeriodPassed();
+            }
         }
     }
 }
