@@ -59,7 +59,12 @@ namespace MonoTorrent.Client
         public PeerConnectionBase Connection
         {
             get { return this.connection; }
-            set { this.connection = value; }
+            set
+            {
+                if (value != null && torrentManager != null)
+                    value.BitField = new BitField(torrentManager.Torrent.Pieces.Count);
+                this.connection = value;
+            }
         }
 
         public ConnectionManager ConnectionManager
@@ -97,9 +102,11 @@ namespace MonoTorrent.Client
             get { return this.torrentManager; }
             set
             {
-                this.engine = value.Engine;
                 this.torrentManager = value;
-                this.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
+                if (value != null)
+                    this.engine = value.Engine;
+                if (connection != null)
+                    this.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
         }
 
@@ -119,12 +126,8 @@ namespace MonoTorrent.Client
             if (peer == null)
                 throw new ArgumentNullException("peer");
 
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
             this.peer = peer;
-            this.torrentManager = manager;
-            this.engine = manager.Engine;
+            TorrentManager = manager;
         }
         #endregion
 
