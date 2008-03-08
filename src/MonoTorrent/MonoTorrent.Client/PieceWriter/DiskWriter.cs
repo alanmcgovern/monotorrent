@@ -27,13 +27,11 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-        public override WaitHandle CloseFileStreams(TorrentManager manager)
+        public override void CloseFileStreams(TorrentManager manager)
         {
             for (int i = 0; i < manager.Torrent.Files.Length; i++)
                 lock (manager.Torrent.Files[i])
                     streamsBuffer.CloseStream(GenerateFilePath(manager.Torrent.Files[i], manager.FileManager.BaseDirectory, manager.SavePath));
-
-            return new ManualResetEvent(true);
         }
 
         public override void Dispose()

@@ -26,13 +26,14 @@ namespace MonoTorrent.Client.Managers.Tests
 
         private TorrentFile[] files;
         private KeyValuePair<FileManager, Access>[] access;
-        public override WaitHandle CloseFileStreams(TorrentManager manager)
+        public override void CloseFileStreams(TorrentManager manager)
         {
-            if (access == null) return new ManualResetEvent(true) ;
+            if (access == null)
+                return;
+
             for (int i = 0; i < access.Length; i++)
                 if (access[i].Key == manager.FileManager)
                     access[i] = new KeyValuePair<FileManager, Access>(access[i].Key, Access.Free);
-            return new ManualResetEvent(true);
         }
 
         public override void Flush(TorrentManager manager)

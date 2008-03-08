@@ -8,11 +8,9 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public abstract class PieceWriter
     {
-        protected List<Pressure> pressures;
-
         protected PieceWriter()
         {
-            pressures = new List<Pressure>();
+            //pressures = new List<Pressure>();
         }
 
         private IEnumerable<int> AllBlocks(TorrentManager manager)
@@ -21,17 +19,7 @@ namespace MonoTorrent.Client.PieceWriters
                 yield return i;
         }
 
-        public void AddPressure(TorrentManager manager, int pieceIndex)
-        {
-            foreach (int i in AllBlocks(manager))
-                AddPressure(manager, pieceIndex, i);
-        }
-
-        public virtual void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
-        {
-        }
-
-        public abstract WaitHandle CloseFileStreams(TorrentManager manager);
+        public abstract void CloseFileStreams(TorrentManager manager);
 
         public virtual void Dispose()
         {
@@ -39,16 +27,6 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         public abstract void Flush(TorrentManager manager);
-
-        protected Pressure FindPressure(FileManager manager, int pieceIndex, int blockIndex)
-        {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            return pressures.Find(delegate (Pressure p) {
-                return p.PieceIndex == pieceIndex && p.BlockIndex == blockIndex && p.Manager.FileManager == manager;
-            });
-        }
 
         public abstract int Read(BufferedIO data);
 
@@ -74,17 +52,37 @@ namespace MonoTorrent.Client.PieceWriters
             return totalRead;
         }
 
+        public abstract void Write(BufferedIO data);
+
+        /*
+        protected List<Pressure> pressures;
+        public void AddPressure(TorrentManager manager, int pieceIndex)
+        {
+            foreach (int i in AllBlocks(manager))
+                AddPressure(manager, pieceIndex, i);
+        }
+        public virtual void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
+        {
+        }
         public void RemovePressure(TorrentManager manager, int pieceIndex)
         {
             foreach (int i in AllBlocks(manager))
                 RemovePressure(manager, pieceIndex, i);
         }
-
         public virtual void RemovePressure(TorrentManager manager, int pieceIndex, int blockIndex)
         {
 
         }
+        protected Pressure FindPressure(FileManager manager, int pieceIndex, int blockIndex)
+        {
+            if (manager == null)
+                throw new ArgumentNullException("manager");
 
-        public abstract void Write(BufferedIO data);
+            return pressures.Find(delegate(Pressure p)
+            {
+                return p.PieceIndex == pieceIndex && p.BlockIndex == blockIndex && p.Manager.FileManager == manager;
+            });
+        }
+        */
     }
 }

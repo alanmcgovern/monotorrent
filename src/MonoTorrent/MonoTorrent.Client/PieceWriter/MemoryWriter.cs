@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.PieceWriters
             if (memoryBuffer.Count == 0)
                 return;
 
-            memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right)
+            /*memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right)
             {
                 Pressure lp = FindPressure(left.Manager.FileManager, left.PieceIndex, left.PieceOffset / Piece.BlockSize);
                 Pressure rp = FindPressure(right.Manager.FileManager, right.PieceIndex, left.PieceOffset / Piece.BlockSize);
@@ -105,18 +105,18 @@ namespace MonoTorrent.Client.PieceWriters
                     return lp.Value.CompareTo(0);
 
                 return lp.Value.CompareTo(rp.Value);
-            });
+            });*/
 
             BufferedIO data = memoryBuffer[0];
             Write(data, true);
             memoryBuffer.RemoveAt(0);
-            pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
+            //pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
         }
 
-        public override WaitHandle CloseFileStreams(TorrentManager manager)
+        public override void CloseFileStreams(TorrentManager manager)
         {
             Flush(manager);
-            return writer.CloseFileStreams(manager);
+            writer.CloseFileStreams(manager);
         }
 
         public override void Flush(TorrentManager manager)
@@ -132,6 +132,7 @@ namespace MonoTorrent.Client.PieceWriters
             memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager; });
         }
 
+        /*
         public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
         {
             if (manager == null)
@@ -145,7 +146,6 @@ namespace MonoTorrent.Client.PieceWriters
 
             writer.AddPressure(manager, pieceIndex, blockIndex);
         }
-
         public override void RemovePressure(TorrentManager manager, int pieceIndex, int blockIndex)
         {
             if (manager == null)
@@ -159,5 +159,6 @@ namespace MonoTorrent.Client.PieceWriters
 
             writer.RemovePressure(manager, pieceIndex, blockIndex);
         }
+       */
     }
 }

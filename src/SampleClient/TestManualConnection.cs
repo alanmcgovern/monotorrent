@@ -64,9 +64,9 @@ namespace SampleClient
         {
         }
 
-        public override WaitHandle CloseFileStreams(TorrentManager manager)
+        public override void CloseFileStreams(TorrentManager manager)
         {
-            return new ManualResetEvent(true);
+
         }
 
         public override void Flush(TorrentManager manager)
