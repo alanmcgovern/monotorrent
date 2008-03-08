@@ -97,6 +97,7 @@ namespace MonoTorrent.Client
             get { return this.torrentManager; }
             set
             {
+                this.engine = value.Engine;
                 this.torrentManager = value;
                 this.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
