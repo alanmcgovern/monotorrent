@@ -64,7 +64,7 @@ namespace SampleClient
         {
         }
 
-        public override void CloseFileStreams(TorrentManager manager)
+        public override void Close(TorrentManager manager)
         {
 
         }

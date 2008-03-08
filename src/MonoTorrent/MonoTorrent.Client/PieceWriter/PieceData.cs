@@ -21,6 +21,10 @@ namespace MonoTorrent.Client
             get { return actualCount; }
             set { actualCount = value; }
         }
+        public int BlockIndex
+        {
+            get { return pieceOffset / MonoTorrent.Client.Piece.BlockSize; }
+        }
         public ArraySegment<byte> Buffer
         {
             get { return buffer; }
@@ -59,7 +63,7 @@ namespace MonoTorrent.Client
             get { return waitHandle; }
         }
 
-        public BufferedIO(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
+        internal BufferedIO(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
         {
             if (manager == null)
                 throw new ArgumentNullException("manager");
@@ -67,12 +71,12 @@ namespace MonoTorrent.Client
             Initialise(buffer, offset, count, manager);
         }
 
-        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int startOffset, int count, TorrentManager manager)
+        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, TorrentManager manager)
         {
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
-            Initialise(buffer, (long)pieceIndex * manager.Torrent.PieceLength + startOffset, count, manager);
+            Initialise(buffer, (long)pieceIndex * manager.Torrent.PieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count, manager);
         }
 
         private void Initialise(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
@@ -83,6 +87,11 @@ namespace MonoTorrent.Client
             pieceIndex = (int)(offset / manager.Torrent.PieceLength);
             pieceOffset = (int)(offset % manager.Torrent.PieceLength);
             waitHandle = new ManualResetEvent(false);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Piece: {0} Block: {1} Count: {2}", pieceIndex, BlockIndex, count);
         }
 
         object ICloneable.Clone()

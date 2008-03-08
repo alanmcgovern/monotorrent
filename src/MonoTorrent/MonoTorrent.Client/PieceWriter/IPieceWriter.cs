@@ -19,7 +19,7 @@ namespace MonoTorrent.Client.PieceWriters
                 yield return i;
         }
 
-        public abstract void CloseFileStreams(TorrentManager manager);
+        public abstract void Close(TorrentManager manager);
 
         public virtual void Dispose()
         {

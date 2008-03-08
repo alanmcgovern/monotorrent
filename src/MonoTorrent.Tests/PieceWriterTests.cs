@@ -31,7 +31,7 @@ namespace MonoTorrent.Client.Tests
 			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
 		}
 
-		public override void CloseFileStreams(TorrentManager manager)
+		public override void Close(TorrentManager manager)
 		{
             
 		}
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client.Tests
 			Buffer.GetBuffer(ref b, BlockSize);
 			for (int i = 0; i < b.Count; i++)
 				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
-			return new BufferedIO(b, piece, block * BlockSize, BlockSize, rig.Manager);
+			return new BufferedIO(b, piece, block, BlockSize, rig.Manager);
 		}
 
 		[Test]
@@ -128,8 +128,7 @@ namespace MonoTorrent.Client.Tests
 			{
 				for(int block = 0; block < BlockCount; block++)
 				{
-					long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
-					BufferedIO io = new BufferedIO(buffer, readIndex, BlockSize, rig.Manager);
+					BufferedIO io = new BufferedIO(buffer, piece, block, BlockSize, rig.Manager);
 					level1.ReadChunk(io);
 
 					for (int i = 0; i < BlockSize; i++)
@@ -151,11 +150,10 @@ namespace MonoTorrent.Client.Tests
 			Buffer.GetBuffer(ref buffer, PieceSize);
 			Initialise(buffer);
 
-			long piece = 0;
-			long block = 0;
-			long readIndex = (long)piece * rig.Manager.Torrent.PieceLength + block * BlockSize;
+			int piece = 0;
+            int block = 0;
 
-			BufferedIO io = new BufferedIO(buffer, readIndex, PieceSize, rig.Manager);
+			BufferedIO io = new BufferedIO(buffer, piece, block, PieceSize, rig.Manager);
 			level1.ReadChunk(io);
 			for (block = 0; block < 5; block++)
 			{

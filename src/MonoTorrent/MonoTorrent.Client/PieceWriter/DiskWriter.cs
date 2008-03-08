@@ -27,7 +27,7 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-        public override void CloseFileStreams(TorrentManager manager)
+        public override void Close(TorrentManager manager)
         {
             for (int i = 0; i < manager.Torrent.Files.Length; i++)
                 lock (manager.Torrent.Files[i])

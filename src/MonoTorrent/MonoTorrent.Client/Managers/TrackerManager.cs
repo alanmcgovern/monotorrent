@@ -137,6 +137,9 @@ namespace MonoTorrent.Client.Tracker
 
         public WaitHandle Announce()
         {
+            if (CurrentTracker == null)
+                return new ManualResetEvent(true);
+
             return Announce(TorrentEvent.None);
         }
 

@@ -50,16 +50,19 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override int Read(BufferedIO data)
         {
-            int count = data.Count;
-            long offset = data.Offset;
+            if(data == null)
+                throw new ArgumentNullException("data");
+
             memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right) { return left.Offset.CompareTo(right.Offset); });
-            BufferedIO io = memoryBuffer.Find(delegate(BufferedIO m) { return ((offset >= m.Offset) && (offset < (m.Offset + m.Count))); });
+            BufferedIO io = memoryBuffer.Find(delegate(BufferedIO m) {
+                return (data.PieceIndex == m.PieceIndex && data.BlockIndex == m.BlockIndex && data.Count == m.Count);
+            });
 
             if (io == null)
                 return writer.Read(data);
 
-            int toCopy = Math.Min(count, io.Count + (int)(io.Offset - offset));
-            Buffer.BlockCopy(io.buffer.Array, io.buffer.Offset + (int)(io.Offset - offset), data.buffer.Array, data.buffer.Offset, toCopy);
+            int toCopy = Math.Min(data.Count, io.Count + (int)(io.Offset - data.Offset));
+            Buffer.BlockCopy(io.buffer.Array, io.buffer.Offset + (int)(io.Offset - data.Offset), data.buffer.Array, data.buffer.Offset, toCopy);
             data.ActualCount += toCopy;
             return toCopy;
         }
@@ -113,10 +116,10 @@ namespace MonoTorrent.Client.PieceWriters
             //pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
         }
 
-        public override void CloseFileStreams(TorrentManager manager)
+        public override void Close(TorrentManager manager)
         {
             Flush(manager);
-            writer.CloseFileStreams(manager);
+            writer.Close(manager);
         }
 
         public override void Flush(TorrentManager manager)
@@ -127,7 +130,7 @@ namespace MonoTorrent.Client.PieceWriters
                     return;
 
                 Write(io, true);
-                ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
+                //ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
             });
             memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager; });
         }

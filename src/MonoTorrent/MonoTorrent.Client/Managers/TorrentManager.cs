@@ -910,7 +910,7 @@ namespace MonoTorrent.Client
             finally
             {
                 // Ensure file streams are all closed after hashing
-                engine.DiskManager.Writer.CloseFileStreams(this);
+                engine.DiskManager.Writer.Close(this);
                 while (enterCount-- > 0)
                     System.Threading.Monitor.Exit(this.engine.asyncCompletionLock);
 

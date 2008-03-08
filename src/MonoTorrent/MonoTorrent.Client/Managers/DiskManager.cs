@@ -269,6 +269,7 @@ namespace MonoTorrent.Client.Managers
                             foreach (BufferedIO io in list)
                                 if (io.Manager == close.Manager)
                                     PerformWrite(io);
+                            writer.Close(close.Manager);
                             list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
                             bufferedWrites = new Queue<BufferedIO>(list);
                         }

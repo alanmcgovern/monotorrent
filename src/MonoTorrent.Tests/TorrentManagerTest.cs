@@ -26,7 +26,7 @@ namespace MonoTorrent.Client.Managers.Tests
 
         private TorrentFile[] files;
         private KeyValuePair<FileManager, Access>[] access;
-        public override void CloseFileStreams(TorrentManager manager)
+        public override void Close(TorrentManager manager)
         {
             if (access == null)
                 return;
@@ -110,6 +110,7 @@ namespace MonoTorrent.Client.Managers.Tests
         [TearDown]
         public void Teardown()
         {
+            rig.Engine.Dispose();
             conn.Dispose();
         }
 
