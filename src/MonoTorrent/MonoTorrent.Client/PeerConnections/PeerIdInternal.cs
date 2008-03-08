@@ -107,15 +107,6 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
-        /// <summary>
-        /// Creates a new PeerConnectionID
-        /// </summary>
-        /// <param name="peer"></param>
-        internal PeerIdInternal(Peer peer)
-            : this(peer, null)
-        {
-
-        }
 
 
         /// <summary>
@@ -125,6 +116,12 @@ namespace MonoTorrent.Client
         /// <param name="manager"></param>
         internal PeerIdInternal(Peer peer, TorrentManager manager)
         {
+            if (peer == null)
+                throw new ArgumentNullException("peer");
+
+            if (manager == null)
+                throw new ArgumentNullException("manager");
+
             this.peer = peer;
             this.torrentManager = manager;
             this.engine = manager.Engine;
