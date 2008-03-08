@@ -110,6 +110,15 @@ namespace MonoTorrent.Client.PieceWriters
             memoryBuffer.RemoveAll(flush);
         }
 
+        public override void Dispose()
+        {
+            // Flush everything in memory to disk
+            Flush(delegate { return true; });
+
+            // Dispose the held writer
+            writer.Dispose();
+        }
+
         /*
         public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
         {
