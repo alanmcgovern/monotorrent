@@ -782,7 +782,6 @@ namespace MonoTorrent.Client
             // Whenever we have a state change, we need to make sure that we flush the buffers.
             // For example, Started->Paused, Started->Stopped, Downloading->Seeding etc should all
             // flush to disk.
-            engine.DiskManager.Flush(this);
             Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
         }
 
