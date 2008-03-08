@@ -147,7 +147,6 @@ namespace MonoTorrent.Client.PieceWriters
 
                     // Write the data
                     stream.Write(buffer, data.buffer.Offset + (int)totalWritten, (int)bytesWritten);
-                    stream.Flush();
 
                     // Any further data should be written to the next available file
                     totalWritten += bytesWritten;
