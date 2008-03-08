@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Tests
 	{
 		public const int PieceCount = 2;
 		public const int BlockCount = 10;
-		public const int BlockSize = 1000;
+		public const int BlockSize = Piece.BlockSize;
 		public const int PieceSize = BlockCount * BlockSize;
 
 		public static BufferManager Buffer = new BufferManager();
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client.Tests
 		public void TestMemoryStandardReads()
 		{
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-			Buffer.GetBuffer(ref buffer, 1000);
+			Buffer.GetBuffer(ref buffer, BlockSize);
 			Initialise(buffer);
 			foreach (BufferedIO data in this.blocks.ToArray())
 				level1.Write(data);
