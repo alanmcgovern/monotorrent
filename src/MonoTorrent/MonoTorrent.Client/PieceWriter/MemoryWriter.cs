@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right) { return left.Offset.CompareTo(right.Offset); });
             BufferedIO io = memoryBuffer.Find(delegate(BufferedIO m) {
-                return (data.PieceIndex == m.PieceIndex && data.BlockIndex == m.BlockIndex && data.Count == m.Count);
+                return (data.PieceIndex == m.PieceIndex && data.BlockIndex == m.BlockIndex);
             });
 
             if (io == null)
