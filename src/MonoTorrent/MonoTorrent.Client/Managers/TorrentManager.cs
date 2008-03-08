@@ -519,13 +519,14 @@ namespace MonoTorrent.Client
                                 else
                                     engine.ConnectionManager.AsyncCleanupSocket(this.ConnectedPeers[0], true, "Called stop");
                             }
+
+                        this.peers.ClearAll();
                     }
 
                     handle.AddHandle(engine.DiskManager.CloseFileStreams(this));
 
                     if (this.hashChecked)
                         this.SaveFastResume();
-                    this.peers.ClearAll();
                     this.monitor.Reset();
                     this.pieceManager.Reset();
                     if (this.engine.ConnectionManager.IsRegistered(this))
