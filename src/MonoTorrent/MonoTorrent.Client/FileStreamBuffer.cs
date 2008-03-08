@@ -74,6 +74,7 @@ namespace MonoTorrent.Client
         public void Dispose()
         {
             list.ForEach(delegate (TorrentFileStream s) { s.Dispose(); }); 
+            list.Clear();
         }
 
         #endregion
