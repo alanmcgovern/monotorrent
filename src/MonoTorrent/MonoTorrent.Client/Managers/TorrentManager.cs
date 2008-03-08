@@ -494,8 +494,11 @@ namespace MonoTorrent.Client
                         hashingWaitHandle = new ManualResetEvent(false);
                         handle.AddHandle(hashingWaitHandle);
                         abortHashing = true;
+						UpdateState(TorrentState.Stopped);
                         return handle;
                     }
+
+                    UpdateState(TorrentState.Stopped);
 
                     if(trackerManager.CurrentTracker != null)
                         handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
@@ -536,7 +539,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                UpdateState(TorrentState.Stopped);
+                
             }
 
             return handle;
