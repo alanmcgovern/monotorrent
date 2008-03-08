@@ -12,6 +12,17 @@ namespace MonoTorrent.Client.Managers
 {
     public class DiskManager : IDisposable
     {
+        private class PieceFlush
+        {
+            public TorrentManager Manager;
+            public int PieceIndex;
+
+            public PieceFlush(TorrentManager manager, int pieceIndex)
+            {
+                Manager = manager;
+                PieceIndex = pieceIndex;
+            }
+        }
         private class StreamClose
         {
             public ManualResetEvent Handle;
@@ -23,8 +34,10 @@ namespace MonoTorrent.Client.Managers
                 Manager = manager;
             }
         }
+
         #region Member Variables
 
+        Queue<PieceFlush> flushQueue;
         Queue<StreamClose> closeStreams;
         Queue<BufferedIO> bufferedReads;
         Queue<BufferedIO> bufferedWrites;
@@ -92,6 +105,7 @@ namespace MonoTorrent.Client.Managers
             this.bufferedReads = new Queue<BufferedIO>();
             this.bufferedWrites = new Queue<BufferedIO>();
             this.closeStreams = new Queue<StreamClose>();
+            this.flushQueue = new Queue<PieceFlush>();
             this.engine = engine;
             this.ioActive = true;
             this.ioThread = new Thread(new ThreadStart(RunIO));
@@ -243,9 +257,11 @@ namespace MonoTorrent.Client.Managers
         {
             BufferedIO write;
             BufferedIO read;
+            PieceFlush flush;
 
             while (ioActive || this.bufferedWrites.Count > 0 || this.closeStreams.Count > 0)
             {
+                flush = null;
                 write = null;
                 read = null;
 
@@ -279,6 +295,9 @@ namespace MonoTorrent.Client.Managers
                         }
                     }
 
+                    if (this.flushQueue.Count > 0)
+                        flush = flushQueue.Dequeue();
+
                     if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || rateLimiter.DownloadChunks > 0))
                     {
                         write = this.bufferedWrites.Dequeue();
@@ -296,6 +315,9 @@ namespace MonoTorrent.Client.Managers
                     if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null && read == null))
                         SetHandleState(false);
                 }
+
+                if (flush != null)
+                    writer.Flush(flush.Manager, flush.PieceIndex);
 
                 if (write != null)
                     PerformWrite(write);
@@ -332,6 +354,12 @@ namespace MonoTorrent.Client.Managers
         internal void Flush(TorrentManager manager)
         {
             writer.Flush(manager);
+        }
+
+        internal void QueueFlush(TorrentManager manager, int index)
+        {
+            lock (queueLock)
+                this.flushQueue.Enqueue(new PieceFlush(manager, index));
         }
     }
 }

@@ -72,6 +72,10 @@ namespace SampleClient
         public override void Flush(TorrentManager manager)
         {
         }
+        public override void Flush(TorrentManager manager, int pieceIndex)
+        {
+            
+        }
     }
 
     public class CustomConnection : IConnection

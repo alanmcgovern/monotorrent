@@ -28,6 +28,8 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Flush(TorrentManager manager);
 
+        public abstract void Flush(TorrentManager manager, int pieceIndex);
+
         public abstract int Read(BufferedIO data);
 
         public int ReadChunk(BufferedIO data)

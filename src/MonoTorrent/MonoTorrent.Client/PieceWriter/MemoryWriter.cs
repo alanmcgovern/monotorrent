@@ -135,6 +135,17 @@ namespace MonoTorrent.Client.PieceWriters
             memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager; });
         }
 
+        public override void Flush(TorrentManager manager, int pieceIndex)
+        {
+            memoryBuffer.ForEach(delegate(BufferedIO io) {
+                if (io.Manager != manager || pieceIndex != io.PieceIndex)
+                    return;
+
+                Write(io, true);
+            });
+            memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager && io.PieceIndex == pieceIndex; });
+        }
+
         /*
         public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
         {

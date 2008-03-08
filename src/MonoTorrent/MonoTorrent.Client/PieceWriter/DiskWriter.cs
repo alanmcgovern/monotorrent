@@ -162,5 +162,9 @@ namespace MonoTorrent.Client.PieceWriters
         {
             // No buffering done here
         }
+        public override void Flush(TorrentManager manager, int pieceIndex)
+        {
+            // No buffering done here
+        }
     }
 }

@@ -44,6 +44,14 @@ namespace MonoTorrent.Client.Managers.Tests
                 access = new KeyValuePair<FileManager, Access>[files.Length];
             }
         }
+        public override void Flush(TorrentManager manager, int pieceIndex)
+        {
+            if (files == null)
+            {
+                this.files = manager.Torrent.Files;
+                access = new KeyValuePair<FileManager, Access>[files.Length];
+            }
+        }
         public override int Read(BufferedIO data)
         {
             if (files == null)

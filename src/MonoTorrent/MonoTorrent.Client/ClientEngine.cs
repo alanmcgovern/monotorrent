@@ -345,6 +345,7 @@ namespace MonoTorrent.Client
                     throw new TorrentException("A manager for this torrent has already been registered");
                 this.torrents.Add(manager);
             }
+            manager.PieceHashed += PieceHashed;
             manager.Engine = this;
 /*
             manager.PieceHashed += delegate (object sender, PieceHashedEventArgs e) {
@@ -427,6 +428,7 @@ namespace MonoTorrent.Client
             using (new WriterLock(torrentsLock))
                 this.torrents.Remove(manager);
 
+            manager.PieceHashed -= PieceHashed;
             manager.Engine = null;
         }
 
@@ -470,6 +472,10 @@ namespace MonoTorrent.Client
             RaiseStatsUpdate(new StatsUpdateEventArgs());
         }
 
+        private void PieceHashed(object sender, PieceHashedEventArgs e)
+        {
+            diskManager.QueueFlush(e.TorrentManager, e.PieceIndex);
+        }
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
         {

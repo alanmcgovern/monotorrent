@@ -40,7 +40,9 @@ namespace MonoTorrent.Client.Tests
 		{
 
 		}
-
+        public override void Flush(TorrentManager manager, int pieceIndex)
+        {
+        }
 		public override void Dispose()
 		{
 
