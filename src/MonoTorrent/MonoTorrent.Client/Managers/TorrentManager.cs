@@ -497,7 +497,9 @@ namespace MonoTorrent.Client
                         return handle;
                     }
 
-                    handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
+                    if(trackerManager.CurrentTracker != null)
+                        handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
+
                     lock (this.listLock)
                     {
                         while (this.ConnectingToPeers.Count > 0)
