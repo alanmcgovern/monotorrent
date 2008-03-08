@@ -21,12 +21,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int Used
         {
-            get
-            {
-                int count = 0;
-                memoryBuffer.ForEach(delegate(BufferedIO i) { count += i.Count; });
-                return count;
-            }
+            get { return this.memoryBuffer.Count * Piece.BlockSize; }
         }
 
         public MemoryWriter(PieceWriter writer)
@@ -81,41 +76,11 @@ namespace MonoTorrent.Client.PieceWriters
             }
 
             if (Used > (Capacity - data.Count))
-                FlushSome();
+                Flush(delegate(BufferedIO io) { return memoryBuffer[0] == io; });
 
             memoryBuffer.Add(data);
         }
         
-        private void FlushSome()
-        {
-            if (memoryBuffer.Count == 0)
-                return;
-
-            /*memoryBuffer.Sort(delegate(BufferedIO left, BufferedIO right)
-            {
-                Pressure lp = FindPressure(left.Manager.FileManager, left.PieceIndex, left.PieceOffset / Piece.BlockSize);
-                Pressure rp = FindPressure(right.Manager.FileManager, right.PieceIndex, left.PieceOffset / Piece.BlockSize);
-                // If there are no pressures associated with this piece, then return 0
-                if (lp == null && rp == null || lp == rp)
-                    return 0;
-
-                // If only one of the pressures is null, we pretend that its pressure is 0
-                // and compare the other pressure with that
-                if (lp == null)
-                    return rp.Value.CompareTo(0);
-
-                if (rp == null)
-                    return lp.Value.CompareTo(0);
-
-                return lp.Value.CompareTo(rp.Value);
-            });*/
-
-            BufferedIO data = memoryBuffer[0];
-            Write(data, true);
-            memoryBuffer.RemoveAt(0);
-            //pressures.Remove(FindPressure(data.Manager.FileManager, data.PieceIndex, data.PieceOffset / Piece.BlockSize));
-        }
-
         public override void Close(TorrentManager manager)
         {
             Flush(manager);
@@ -124,26 +89,25 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override void Flush(TorrentManager manager)
         {
-            memoryBuffer.ForEach(delegate(BufferedIO io)
-            {
-                if (io.Manager != manager)
-                    return;
-
-                Write(io, true);
-                //ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
-            });
-            memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager; });
+            Flush(delegate(BufferedIO io) { return io.Manager == manager; });
         }
 
         public override void Flush(TorrentManager manager, int pieceIndex)
         {
-            memoryBuffer.ForEach(delegate(BufferedIO io) {
-                if (io.Manager != manager || pieceIndex != io.PieceIndex)
+            Flush(delegate(BufferedIO io) { return io.Manager == manager && io.PieceIndex == pieceIndex; });
+        }
+
+        public void Flush(Predicate<BufferedIO> flush)
+        {
+            memoryBuffer.ForEach(delegate(BufferedIO io)
+            {
+                if (!flush(io))
                     return;
 
                 Write(io, true);
             });
-            memoryBuffer.RemoveAll(delegate(BufferedIO io) { return io.Manager == manager && io.PieceIndex == pieceIndex; });
+
+            memoryBuffer.RemoveAll(flush);
         }
 
         /*
