@@ -9,7 +9,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
 
-namespace MonoTorrent.Client.Managers.Tests
+namespace MonoTorrent.Client.TorrentManagerTests
 {
     public class TestWriter : PieceWriters.PieceWriter
     {

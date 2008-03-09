@@ -8,7 +8,7 @@ using System.Net;
 using System.Web;
 using MonoTorrent.BEncoding;
 
-namespace Tests.TrackerTests
+namespace MonoTorrent.TrackerTests
 {
     public class CustomListener : ListenerBase
     {
@@ -80,14 +80,14 @@ namespace Tests.TrackerTests
         private Random r = new Random(1000);
 
         public CustomListener Listener;
-        public Tracker Tracker;
+        public Tracker.Tracker Tracker;
 
         public List<PeerDetails> Peers;
         public List<Trackable> Trackables;
 
         public TrackerTestRig()
         {
-            Tracker = new Tracker();
+            Tracker = new MonoTorrent.Tracker.Tracker();
             Listener = new CustomListener();
             Tracker.RegisterListener(Listener);
 

@@ -4,8 +4,9 @@ using System.Text;
 using NUnit.Framework;
 using SampleClient;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.Messages.Tests
+namespace MonoTorrent.Client.ExtendedMessageTests
 {
     [TestFixture]
     public class LibtorrentMessageTests

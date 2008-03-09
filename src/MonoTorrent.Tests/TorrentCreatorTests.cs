@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Common.TorrentCreatorTests
 {
     [TestFixture]
     public class TorrentCreatorTests
