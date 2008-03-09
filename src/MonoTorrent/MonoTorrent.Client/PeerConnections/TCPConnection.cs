@@ -36,7 +36,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class TCPConnection : IConnection
+    public class IPV4Connection : IConnection
     {
         private bool isIncoming;
         private IPEndPoint endPoint;
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Constructors
 
-        public TCPConnection(Uri uri)
+        public IPV4Connection(Uri uri)
             : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), 
                    new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
                    false)
@@ -82,20 +82,20 @@ namespace MonoTorrent.Client.Connections
 
         }
 
-        public TCPConnection(IPEndPoint endPoint, bool isIncoming)
-            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), endPoint, isIncoming)
+        public IPV4Connection(IPEndPoint endPoint)
+            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), endPoint, false)
         {
 
         }
 
-        public TCPConnection(Socket socket, bool isIncoming)
+        public IPV4Connection(Socket socket, bool isIncoming)
             : this(socket, (IPEndPoint)socket.RemoteEndPoint, isIncoming)
         {
 
         }
 
 
-        private TCPConnection(Socket socket, IPEndPoint endpoint, bool isIncoming)
+        private IPV4Connection(Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
             this.socket = socket;
             this.endPoint = endpoint;

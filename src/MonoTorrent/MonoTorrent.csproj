@@ -119,6 +119,7 @@
     <Compile Include="MonoTorrent.Client\MessageHandler.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
     <Compile Include="MonoTorrent.Client\Piece.cs">
       <SubType>Code</SubType>
     </Compile>
