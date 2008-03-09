@@ -39,10 +39,12 @@ namespace MonoTorrent.Client.ExtendedMessageTests
         public void HandshakeSupportsTest()
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
+            byte[] encoded = m.Encode();
 
-            Assert.AreEqual(2, m.Supports.Count);
-            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTChat.Support); }), "");
-            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTMetadata.Support); }));
+            Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
+            Assert.AreEqual(2, m.Supports.Count, "#2");
+            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTChat.Support); }), "#3");
+            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTMetadata.Support); }), "#4");
         }
 
         [Test]
@@ -52,6 +54,7 @@ namespace MonoTorrent.Client.ExtendedMessageTests
             byte[] data = m.Encode();
             ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage)PeerMessage.DecodeMessage(data, 4, data.Length - 4, rig.Manager);
 
+            Assert.AreEqual(m.ByteLength, data.Length);
             Assert.AreEqual(m.ByteLength, decoded.ByteLength, "#1");
             Assert.AreEqual(m.LocalPort, decoded.LocalPort, "#2");
             Assert.AreEqual(m.MaxRequests, decoded.MaxRequests, "#3");
