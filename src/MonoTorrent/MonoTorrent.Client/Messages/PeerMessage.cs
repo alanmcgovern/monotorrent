@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.Messages
             Register(LibTorrentMessageId, delegate(TorrentManager manager) { return new UnknownMessage(); });
         }
 
-        public static void Register(byte identifier, CreateMessage creator)
+        private static void Register(byte identifier, CreateMessage creator)
         {
             if (creator == null)
                 throw new ArgumentNullException("creator");

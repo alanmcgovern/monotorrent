@@ -30,7 +30,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             SupportedMessages.Add(new LTSupport("LT_metadata", nextId++));
         }
 
-        public new static void Register(byte identifier, CreateMessage creator)
+        public static void Register(byte identifier, CreateMessage creator)
         {
             if (creator == null)
                 throw new ArgumentNullException("creator");
