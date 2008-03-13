@@ -38,6 +38,14 @@ namespace MonoTorrent.Client.Tracker
     {
         static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
 
+        static TrackerFactory()
+        {
+            // Register builtin tracker clients
+            Register("udp", typeof(UdpTracker));
+            Register("http", typeof(HTTPTracker));
+            Register("https", typeof(HTTPTracker));
+        }
+
         public static void Register(string protocol, Type trackerType)
         {
             if (string.IsNullOrEmpty(protocol))
