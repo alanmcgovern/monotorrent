@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.PieceWriters
                 clone.Count -= read;
                 totalRead += read;
 
-                if (read == 0)
+                if (read == 0 || totalRead == data.Count)
                     break;
             }
 
