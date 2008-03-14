@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
             protocolUp.Reset();
         }
 
-        internal void TickMonitors()
+        internal void Tick()
         {
             dataDown.Tick();
             dataUp.Tick();
