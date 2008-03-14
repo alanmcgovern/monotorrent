@@ -132,6 +132,7 @@
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs">
       <SubType>Code</SubType>
     </Compile>

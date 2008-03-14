@@ -268,7 +268,7 @@ namespace MonoTorrent.Client.Tracker
                 throw new TorrentException("This tracker does not support scraping");
 
             TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, TorrentEvent.None, null);
-            WaitHandle handle = tracker.Scrape(this.infoHash, id);
+            WaitHandle handle = tracker.Scrape(new ScrapeParameters(id, this.infoHash));
             
             return handle;
         }

@@ -86,7 +86,7 @@ namespace MonoTorrent.Client.Tracker
             storedParams = null;
         }
 
-        public override WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
+        public override WaitHandle Scrape(ScrapeParameters parameters)
         {
             throw new Exception("The method or operation is not implemented.");
         }

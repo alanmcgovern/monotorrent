@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Tracker
 
         public abstract WaitHandle Announce(AnnounceParameters parameters);
 
-        public abstract WaitHandle Scrape(byte[] infohash, TrackerConnectionID id);
+        public abstract WaitHandle Scrape(ScrapeParameters parameters);
 
         protected void UpdateState(TrackerState newState)
         {

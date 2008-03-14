@@ -27,10 +27,10 @@ namespace SampleClient
             return parameters.Id.WaitHandle;
         }
 
-        public override System.Threading.WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
+        public override System.Threading.WaitHandle Scrape(ScrapeParameters parameters)
         {
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
-            return id.WaitHandle;
+            return parameters.Id.WaitHandle;
         }
 
         public void AddPeer(Peer p)

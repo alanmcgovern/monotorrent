@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        public override WaitHandle Scrape(byte[] infohash, TrackerConnectionID id)
+        public override WaitHandle Scrape(ScrapeParameters parameters)
         {
             WaitHandle h = null;
             HttpWebRequest request;
@@ -82,16 +82,16 @@ namespace MonoTorrent.Client.Tracker
             if (true)
             {
                 if (url.IndexOf('?') == -1)
-                    url += "?info_hash=" + HttpUtility.UrlEncode(infohash);
+                    url += "?info_hash=" + HttpUtility.UrlEncode(parameters.InfoHash);
                 else
-                    url += "&info_hash=" + HttpUtility.UrlEncode(infohash);
+                    url += "&info_hash=" + HttpUtility.UrlEncode(parameters.InfoHash);
             }
             request = (HttpWebRequest)HttpWebRequest.Create(url);
-            id.Request = request;
+            parameters.Id.Request = request;
             UpdateState(TrackerState.Scraping);
             try
             {
-                h = request.BeginGetResponse(ScrapeReceived, id).AsyncWaitHandle;
+                h = request.BeginGetResponse(ScrapeReceived, parameters.Id).AsyncWaitHandle;
             }
             catch (Exception ex)
             {
