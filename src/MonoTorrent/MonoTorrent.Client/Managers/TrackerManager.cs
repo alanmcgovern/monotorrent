@@ -143,14 +143,14 @@ namespace MonoTorrent.Client.Tracker
             return Announce(TorrentEvent.None);
         }
 
+        public WaitHandle Announce(Tracker tracker)
+        {
+            return Announce(tracker, TorrentEvent.None, false);
+        }
+
         internal WaitHandle Announce(TorrentEvent clientEvent)
         {
             return Announce(CurrentTracker, clientEvent, true);
-        }
-
-        public WaitHandle Announce(TrackerTier tier, Tracker tracker)
-        {
-            return Announce(tracker, TorrentEvent.None, false);
         }
 
         private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent)
@@ -214,7 +214,7 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            trackerTier= null;
+            trackerTier = null;
             trackerReturn = null;
         }
 
@@ -251,7 +251,7 @@ namespace MonoTorrent.Client.Tracker
 
         public WaitHandle Scrape()
         {
-            return Scrape(CurrentTracker, true);
+            return Scrape(CurrentTracker, false);
         }
 
         public WaitHandle Scrape(Tracker tracker)
