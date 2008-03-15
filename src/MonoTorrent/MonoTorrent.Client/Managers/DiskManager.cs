@@ -46,7 +46,8 @@ namespace MonoTorrent.Client.Managers
         private SpeedMonitor readMonitor;
         private SpeedMonitor writeMonitor;
 
-        internal RateLimiter rateLimiter;
+        internal RateLimiter readLimiter;
+        internal RateLimiter writeLimiter;
         private PieceWriter writer;
 
         #endregion Member Variables
@@ -70,12 +71,12 @@ namespace MonoTorrent.Client.Managers
             get { return this.bufferedWrites.Count; }
         }
 
-        public double ReadRate
+        public int ReadRate
         {
             get { return readMonitor.Rate; }
         }
 
-        public double WriteRate
+        public int WriteRate
         {
             get { return writeMonitor.Rate; }
         }
@@ -110,11 +111,12 @@ namespace MonoTorrent.Client.Managers
             this.ioActive = true;
             this.ioThread = new Thread(new ThreadStart(RunIO));
             this.queueLock = new object();
-            this.rateLimiter = new RateLimiter();
+            this.readLimiter = new RateLimiter();
             this.readMonitor = new SpeedMonitor();
             this.streamsLock = new ReaderWriterLock();
             this.threadWait = new ManualResetEvent(false);
             this.writeMonitor = new SpeedMonitor();
+            this.writeLimiter = new RateLimiter();
             this.writer = writer;
             this.ioThread.Start();
         }
@@ -298,16 +300,16 @@ namespace MonoTorrent.Client.Managers
                     if (this.flushQueue.Count > 0)
                         flush = flushQueue.Dequeue();
 
-                    if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || rateLimiter.DownloadChunks > 0))
+                    if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
                     {
                         write = this.bufferedWrites.Dequeue();
-                        Interlocked.Add(ref rateLimiter.DownloadChunks, -write.buffer.Count / ConnectionManager.ChunkLength);
+                        Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
                     }
 
-                    if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || rateLimiter.UploadChunks > 0))
+                    if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
                     {
                         read = this.bufferedReads.Dequeue();
-                        Interlocked.Add(ref rateLimiter.UploadChunks, -read.Count / ConnectionManager.ChunkLength);
+                        Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
                     }
 
                     // If both the read queue and write queue are empty, then we unset the handle.

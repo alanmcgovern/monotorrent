@@ -37,51 +37,36 @@ namespace MonoTorrent.Client
     internal struct RateLimiter
     {
         #region Member Variables
-        public int SavedErrorDownload;
-        public int SavedErrorUpload;
-        public int DownloadChunks;
-        public int UploadChunks;
+        private int savedError;
+        public int Chunks;
         #endregion
 
 
         #region Methods
+
         /// <summary>
         /// Method which calculates how many chunks of data we are able to send to allow for rate limiting (if enabled)
         /// </summary>
-        public void UpdateDownloadChunks(int maxDownloadSpeed, int maxUploadSpeed, int actualDownloadSpeed, int actualUploadSpeed)
+        public void UpdateChunks(int maxRate, int actualRate)
         {
-            maxDownloadSpeed = (int)(maxDownloadSpeed * 1.05);
-            maxUploadSpeed = (int)(maxUploadSpeed * 1.05);
-            int errorRateDown = maxDownloadSpeed - actualDownloadSpeed;
-            int changeAmountDown = (int)(0.4 * errorRateDown + 0.6 * this.SavedErrorDownload);
-            this.SavedErrorDownload = errorRateDown;
-
-            int errorRateUp = maxUploadSpeed - actualUploadSpeed;
-            int changeAmountUp = (int)(0.4 * errorRateUp + 0.6 * this.SavedErrorUpload);
-            this.SavedErrorUpload = errorRateUp;
+            maxRate = (int)(maxRate * 1.05);
+            int errorRateDown = maxRate - actualRate;
+            int delta = (int)(0.4 * errorRateDown + 0.6 * this.savedError);
+            this.savedError = errorRateDown;
 
 
-            int increaseAmount = (int)((maxDownloadSpeed + changeAmountDown) / ConnectionManager.ChunkLength);
-            Interlocked.Add(ref this.DownloadChunks, increaseAmount);
-            if (this.DownloadChunks > (maxDownloadSpeed * 1.2 / ConnectionManager.ChunkLength))
-                Interlocked.Exchange(ref this.DownloadChunks, (int)(maxDownloadSpeed * 1.2 / ConnectionManager.ChunkLength));
+            int increaseAmount = (int)((maxRate + delta) / ConnectionManager.ChunkLength);
+            Interlocked.Add(ref this.Chunks, increaseAmount);
+            if (this.Chunks > (maxRate * 1.2 / ConnectionManager.ChunkLength))
+                Interlocked.Exchange(ref this.Chunks, (int)(maxRate * 1.2 / ConnectionManager.ChunkLength));
 
-            increaseAmount = (int)((maxUploadSpeed + changeAmountUp) / ConnectionManager.ChunkLength);
-            Interlocked.Add(ref this.UploadChunks, increaseAmount);
-            if (this.UploadChunks > (maxUploadSpeed * 1.2 / ConnectionManager.ChunkLength))
-                Interlocked.Exchange(ref this.UploadChunks, (int)(maxUploadSpeed * 1.2 / ConnectionManager.ChunkLength));
+            if (this.Chunks < (maxRate / ConnectionManager.ChunkLength / 2))
+                Interlocked.Exchange(ref this.Chunks, (maxRate / ConnectionManager.ChunkLength / 2));
 
-            if (this.UploadChunks < (maxUploadSpeed / ConnectionManager.ChunkLength) / 2)
-                Interlocked.Exchange(ref this.UploadChunks, (maxUploadSpeed / ConnectionManager.ChunkLength / 2));
-
-            if (this.DownloadChunks < (maxDownloadSpeed / ConnectionManager.ChunkLength / 2))
-                Interlocked.Exchange(ref this.DownloadChunks, (maxDownloadSpeed / ConnectionManager.ChunkLength / 2));
-
-            if (maxDownloadSpeed == 0)
-                DownloadChunks = 0;
-            if (maxUploadSpeed == 0)
-                UploadChunks = 0;
+            if (maxRate == 0)
+                Chunks = 0;
         }
+
         #endregion
     }
 }

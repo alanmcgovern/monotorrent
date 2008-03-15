@@ -93,7 +93,8 @@ namespace MonoTorrent.Client
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
-        private RateLimiter rateLimiter;        // Contains the logic to decide how many chunks we can download
+        private RateLimiter uploadLimiter;        // Contains the logic to decide how many chunks we can download
+        private RateLimiter downloadLimiter;        // Contains the logic to decide how many chunks we can download
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
@@ -715,10 +716,8 @@ namespace MonoTorrent.Client
                     currentUpload = monitor.UploadSpeed;
                 }
 
-                this.rateLimiter.UpdateDownloadChunks((int)(maxDownload),
-                                                      (int)(maxUpload),
-                                                      currentDownload,
-                                                      currentUpload);
+                this.downloadLimiter.UpdateChunks(maxDownload, currentDownload);
+                this.uploadLimiter.UpdateChunks(maxUpload, currentUpload);
             }
         }
 
@@ -810,15 +809,14 @@ namespace MonoTorrent.Client
 
             while (this.downloadQueue.Count > 0 &&
                     this.engine.DiskManager.QueuedWrites < 20 &&
-                    ((this.rateLimiter.DownloadChunks > 0) || downloadSpeed == 0))
+                    ((this.downloadLimiter.Chunks > 0) || downloadSpeed == 0))
             {
                 if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.rateLimiter.DownloadChunks);
+                    Interlocked.Decrement(ref this.downloadLimiter.Chunks);
             }
-            while (this.uploadQueue.Count > 0 && ((this.rateLimiter.UploadChunks > 0) || uploadSpeed == 0))
+            while (this.uploadQueue.Count > 0 && ((this.uploadLimiter.Chunks > 0) || uploadSpeed == 0))
                 if (engine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.rateLimiter.UploadChunks);
-
+                    Interlocked.Decrement(ref this.uploadLimiter.Chunks);
         }
 
         /// <summary>

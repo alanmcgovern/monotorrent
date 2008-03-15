@@ -435,10 +435,8 @@ namespace MonoTorrent.Client
             if (tickCount % (1000 / TickLength) == 0)
             {
                 diskManager.TickMonitors();
-                diskManager.rateLimiter.UpdateDownloadChunks((int)(settings.MaxWriteRate * 1024),
-                                                             (int)(settings.MaxReadRate * 1024),
-                                                             (int)(diskManager.WriteRate * 1024),
-                                                             (int)(diskManager.ReadRate * 1024));
+                diskManager.writeLimiter.UpdateChunks(settings.MaxWriteRate, diskManager.WriteRate);
+                diskManager.readLimiter.UpdateChunks(settings.MaxReadRate, diskManager.ReadRate);
             }
             using(new ReaderLock(this.torrentsLock))
             for (int i = 0; i < this.torrents.Count; i++)
