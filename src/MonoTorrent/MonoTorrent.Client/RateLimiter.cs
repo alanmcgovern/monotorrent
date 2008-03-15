@@ -50,6 +50,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public void UpdateDownloadChunks(int maxDownloadSpeed, int maxUploadSpeed, int actualDownloadSpeed, int actualUploadSpeed)
         {
+            maxDownloadSpeed = (int)(maxDownloadSpeed * 1.05);
+            maxUploadSpeed = (int)(maxUploadSpeed * 1.05);
             int errorRateDown = maxDownloadSpeed - actualDownloadSpeed;
             int changeAmountDown = (int)(0.4 * errorRateDown + 0.6 * this.SavedErrorDownload);
             this.SavedErrorDownload = errorRateDown;
@@ -61,19 +63,24 @@ namespace MonoTorrent.Client
 
             int increaseAmount = (int)((maxDownloadSpeed + changeAmountDown) / ConnectionManager.ChunkLength);
             Interlocked.Add(ref this.DownloadChunks, increaseAmount);
-            if (this.DownloadChunks > (maxDownloadSpeed * 1.1 / ConnectionManager.ChunkLength))
-                Interlocked.Exchange(ref this.DownloadChunks, (int)(maxDownloadSpeed * 1.1 / ConnectionManager.ChunkLength));
+            if (this.DownloadChunks > (maxDownloadSpeed * 1.2 / ConnectionManager.ChunkLength))
+                Interlocked.Exchange(ref this.DownloadChunks, (int)(maxDownloadSpeed * 1.2 / ConnectionManager.ChunkLength));
 
             increaseAmount = (int)((maxUploadSpeed + changeAmountUp) / ConnectionManager.ChunkLength);
             Interlocked.Add(ref this.UploadChunks, increaseAmount);
-            if (this.UploadChunks > (maxUploadSpeed * 1.1 / ConnectionManager.ChunkLength))
-                Interlocked.Exchange(ref this.UploadChunks, (int)(maxUploadSpeed * 1.1 / ConnectionManager.ChunkLength));
+            if (this.UploadChunks > (maxUploadSpeed * 1.2 / ConnectionManager.ChunkLength))
+                Interlocked.Exchange(ref this.UploadChunks, (int)(maxUploadSpeed * 1.2 / ConnectionManager.ChunkLength));
 
             if (this.UploadChunks < (maxUploadSpeed / ConnectionManager.ChunkLength) / 2)
                 Interlocked.Exchange(ref this.UploadChunks, (maxUploadSpeed / ConnectionManager.ChunkLength / 2));
 
             if (this.DownloadChunks < (maxDownloadSpeed / ConnectionManager.ChunkLength / 2))
                 Interlocked.Exchange(ref this.DownloadChunks, (maxDownloadSpeed / ConnectionManager.ChunkLength / 2));
+
+            if (maxDownloadSpeed == 0)
+                DownloadChunks = 0;
+            if (maxUploadSpeed == 0)
+                UploadChunks = 0;
         }
         #endregion
     }
