@@ -675,7 +675,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            if (counter % 100 == 0)
+            if (counter % 100 == 0 && (state == TorrentState.Seeding || state == TorrentState.Downloading))
             {
                 // If the last connection succeeded, then update at the regular interval
                 if (this.trackerManager.UpdateSucceeded)
