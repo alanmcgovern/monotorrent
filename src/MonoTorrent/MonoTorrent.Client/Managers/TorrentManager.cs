@@ -396,7 +396,7 @@ namespace MonoTorrent.Client
 
             this.startTime = DateTime.Now;
             UpdateState(TorrentState.Hashing);
-            ThreadPool.QueueUserWorkItem(new WaitCallback(PerformHashCheck), new bool[] { forceFullScan, autoStart });
+            ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(forceFullScan, autoStart); });
         }
 
 
@@ -715,8 +715,8 @@ namespace MonoTorrent.Client
                     currentUpload = monitor.UploadSpeed;
                 }
 
-                this.rateLimiter.UpdateDownloadChunks((int)(maxDownload * 1.1),
-                                                      (int)(maxUpload * 1.1),
+                this.rateLimiter.UpdateDownloadChunks((int)(maxDownload),
+                                                      (int)(maxUpload),
                                                       currentDownload,
                                                       currentUpload);
             }
@@ -859,7 +859,7 @@ namespace MonoTorrent.Client
         /// Hash checks the supplied torrent
         /// </summary>
         /// <param name="state">The TorrentManager to hashcheck</param>
-        private void PerformHashCheck(object state)
+        private void PerformHashCheck(bool forceCheck, bool autoStart)
         {
             int enterCount = 0;
             try
@@ -868,8 +868,6 @@ namespace MonoTorrent.Client
                 enterCount++;
                 // Store the value for whether the streams are open or not
                 // If they are initially closed, we need to close them again after we hashcheck
-                bool forceCheck = ((bool[])state)[0];
-                bool autoStart = ((bool[])state)[1];
 
                 // We only need to hashcheck if at least one file already exists on the disk
                 bool filesExist = fileManager.CheckFilesExist();
