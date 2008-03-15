@@ -32,6 +32,7 @@ namespace MonoTorrent.Tracker.Listeners
 			if (remoteAddress == null)
 				throw new ArgumentOutOfRangeException("remoteAddress");
 
+            rawUrl = rawUrl.Substring(rawUrl.LastIndexOf('/'));
 			bool isScrape = rawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
 			return Handle(rawUrl, remoteAddress, isScrape);
 		}
