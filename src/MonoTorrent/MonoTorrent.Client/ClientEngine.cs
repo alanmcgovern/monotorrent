@@ -83,6 +83,8 @@ namespace MonoTorrent.Client
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
         internal ReaderWriterLock torrentsLock;
+        internal RateLimiter uploadLimiter;
+        internal RateLimiter downloadLimiter;
 
         #endregion
 
@@ -220,6 +222,8 @@ namespace MonoTorrent.Client
             this.torrents = new MonoTorrentCollection<TorrentManager>();
             this.torrentsLock = new ReaderWriterLock();
             this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
+            this.downloadLimiter = new RateLimiter();
+            this.uploadLimiter = new RateLimiter();
 
             if (listener == null)
             {
@@ -437,6 +441,8 @@ namespace MonoTorrent.Client
                 diskManager.TickMonitors();
                 diskManager.writeLimiter.UpdateChunks(settings.MaxWriteRate, diskManager.WriteRate);
                 diskManager.readLimiter.UpdateChunks(settings.MaxReadRate, diskManager.ReadRate);
+                downloadLimiter.UpdateChunks(settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
+                uploadLimiter.UpdateChunks(settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
             }
             using(new ReaderLock(this.torrentsLock))
             for (int i = 0; i < this.torrents.Count; i++)

@@ -34,19 +34,18 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    internal struct RateLimiter
+    public class RateLimiter
     {
         #region Member Variables
+
         private int savedError;
         public int Chunks;
+
         #endregion
 
 
         #region Methods
 
-        /// <summary>
-        /// Method which calculates how many chunks of data we are able to send to allow for rate limiting (if enabled)
-        /// </summary>
         public void UpdateChunks(int maxRate, int actualRate)
         {
             maxRate = (int)(maxRate * 1.05);

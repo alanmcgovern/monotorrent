@@ -321,6 +321,8 @@ namespace MonoTorrent.Client
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this);
+            this.downloadLimiter = new RateLimiter();
+            this.uploadLimiter = new RateLimiter();
 
             if (fastResumeData != null)
                 LoadFastResume(fastResumeData);
@@ -692,32 +694,8 @@ namespace MonoTorrent.Client
 
             if (counter % (1000 / ClientEngine.TickLength) == 0)
             {
-                int activeCount;
-                using(new ReaderLock(engine.torrentsLock))
-                activeCount = Toolbox.Accumulate<TorrentManager>(engine.Torrents, delegate(TorrentManager m) {
-                    return m.State == TorrentState.Downloading || m.state == TorrentState.Seeding ? 1 : 0;
-                });
-                activeCount = Math.Max(1, activeCount);
-
-                int maxDownload = this.engine.Settings.GlobalMaxDownloadSpeed / activeCount;
-                int maxUpload = this.engine.Settings.GlobalMaxUploadSpeed / activeCount;
-                int currentDownload = this.engine.TotalDownloadSpeed / activeCount;
-                int currentUpload = this.engine.TotalUploadSpeed / activeCount;
-
-                if (maxDownload == 0)
-                {
-                    maxDownload = settings.MaxDownloadSpeed;
-                    currentDownload = monitor.DownloadSpeed;
-                }
-
-                if (maxUpload == 0)
-                {
-                    maxUpload = settings.MaxUploadSpeed;
-                    currentUpload = monitor.UploadSpeed;
-                }
-
-                this.downloadLimiter.UpdateChunks(maxDownload, currentDownload);
-                this.uploadLimiter.UpdateChunks(maxUpload, currentUpload);
+                this.downloadLimiter.UpdateChunks(settings.MaxDownloadSpeed, monitor.DownloadSpeed);
+                this.uploadLimiter.UpdateChunks(settings.MaxUploadSpeed, monitor.UploadSpeed);
             }
         }
 
@@ -794,29 +772,47 @@ namespace MonoTorrent.Client
         /// <param name="downloading"></param>
         internal void ResumePeers()
         {
+            int downSpeed;
+            int upSpeed;
+            RateLimiter downloader;
+            RateLimiter uploader;
+
             if (this.state == TorrentState.Paused)
                 return;
 
+            // If the global limit is zero, use the local speed limit and ratelimiters
+            // otherwise use the global speed limits and ratelimiters
+            if (engine.Settings.GlobalMaxDownloadSpeed == 0)
+            {
+                downSpeed = settings.MaxDownloadSpeed;
+                downloader = downloadLimiter;
+            }
+            else
+            {
+                downSpeed = engine.Settings.GlobalMaxDownloadSpeed;
+                downloader = engine.downloadLimiter;
+            }
+            if (engine.Settings.GlobalMaxUploadSpeed == 0)
+            {
+                upSpeed = settings.MaxUploadSpeed;
+                uploader = uploadLimiter;
+            }
+            else
+            {
+                upSpeed = engine.Settings.GlobalMaxUploadSpeed;
+                uploader = engine.uploadLimiter;
+            }
+
             // While there are peers queued in the list and i haven't used my download allowance, resume downloading
             // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
-            int downloadSpeed = this.engine.Settings.GlobalMaxDownloadSpeed;
-            int uploadSpeed = this.engine.Settings.GlobalMaxUploadSpeed;
-
-            if (downloadSpeed == 0)
-                downloadSpeed = settings.MaxDownloadSpeed;
-            if (uploadSpeed == 0)
-                uploadSpeed = settings.MaxUploadSpeed;
-
-            while (this.downloadQueue.Count > 0 &&
-                    this.engine.DiskManager.QueuedWrites < 20 &&
-                    ((this.downloadLimiter.Chunks > 0) || downloadSpeed == 0))
+            while (this.downloadQueue.Count > 0 && ((downloader.Chunks > 0) || downSpeed == 0) && this.engine.DiskManager.QueuedWrites < 20)
             {
                 if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.downloadLimiter.Chunks);
+                    Interlocked.Decrement(ref downloader.Chunks);
             }
-            while (this.uploadQueue.Count > 0 && ((this.uploadLimiter.Chunks > 0) || uploadSpeed == 0))
+            while (this.uploadQueue.Count > 0 && ((uploader.Chunks > 0) || upSpeed == 0))
                 if (engine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref this.uploadLimiter.Chunks);
+                    Interlocked.Decrement(ref uploader.Chunks);
         }
 
         /// <summary>
