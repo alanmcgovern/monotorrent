@@ -48,6 +48,8 @@ namespace MonoTorrent.Client
 
         public void UpdateChunks(int maxRate, int actualRate)
         {
+            // From experimentation, i found that increasing by 5% gives more accuate rate limiting
+            // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
             maxRate = (int)(maxRate * 1.05);
             int errorRateDown = maxRate - actualRate;
             int delta = (int)(0.4 * errorRateDown + 0.6 * this.savedError);
