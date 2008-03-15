@@ -134,6 +134,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private BEncodedDictionary Create()
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new MessageException("Libtorrent extension messages not supported");
+
             BEncodedDictionary mainDict = new BEncodedDictionary();
             BEncodedDictionary supportsDict = new BEncodedDictionary();
 
@@ -149,6 +152,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         internal override void Handle(PeerIdInternal id)
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new MessageException("Libtorrent extension messages not supported");
+
             // FIXME: Use the 'version' information
             // FIXME: Recreate the uri? Give warning?
             if (localPort > 0)

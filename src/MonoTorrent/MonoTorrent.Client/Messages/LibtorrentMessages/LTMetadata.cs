@@ -19,6 +19,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         private byte expectedId;
         internal override void Handle(PeerIdInternal id)
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new MessageException("Libtorrent extension messages not supported");
+
             if (messageType == 0)
             {
                 expectedId = id.Connection.LTSupports.Find(delegate(LTSupport l) { return l.Name == Support.Name; }).MessageId;
@@ -42,6 +45,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override int Encode(byte[] buffer, int offset)
         {
+            if (!ClientEngine.SupportsFastPeer)
+                throw new MessageException("Libtorrent extension messages not supported");
+
             int written = offset;
 
             written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
