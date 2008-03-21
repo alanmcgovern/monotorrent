@@ -236,8 +236,15 @@ namespace MonoTorrent.Client.Managers
         {
             lock (this.queueLock)
             {
-                bufferedWrites.Enqueue(data);
-                SetHandleState(true);
+                if (Thread.CurrentThread == this.ioThread)
+                {
+                    PerformWrite(data);
+                }
+                else
+                {
+                    bufferedWrites.Enqueue(data);
+                    SetHandleState(true);
+                }
             }
         }
 
@@ -246,8 +253,15 @@ namespace MonoTorrent.Client.Managers
         {
             lock (this.queueLock)
             {
-                bufferedReads.Enqueue(io);
-                SetHandleState(true);
+                if (Thread.CurrentThread == this.ioThread)
+                {
+                    PerformRead(io);
+                }
+                else
+                {
+                    bufferedReads.Enqueue(io);
+                    SetHandleState(true);
+                }
             }
         }
 

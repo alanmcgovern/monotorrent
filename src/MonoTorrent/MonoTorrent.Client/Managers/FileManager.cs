@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
         /// <returns>The 20 byte SHA1 hash of the supplied piece</returns>
         internal byte[] GetHash(int pieceIndex, bool asynchronous)
         {
-            int bytesRead = 0;
+            /*int bytesRead = 0;
             int totalRead = 0;
             int bytesToRead = 0;
             long pieceStartIndex = (long)this.pieceLength * pieceIndex;
@@ -228,7 +228,7 @@ namespace MonoTorrent.Client
             {
                 ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
             }
-            /*
+            */
             int bytesToRead = 0;
             long pieceStartIndex = (long)this.pieceLength * pieceIndex;
             BufferedIO io = null;
@@ -265,7 +265,6 @@ namespace MonoTorrent.Client
 
             hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
             return hasher.Hash;
-            */
         }
 
 
