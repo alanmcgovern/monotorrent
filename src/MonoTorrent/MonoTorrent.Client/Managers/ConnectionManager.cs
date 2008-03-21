@@ -165,22 +165,25 @@ namespace MonoTorrent.Client
             // Connect to the peer.
             lock (id)
             {
-                manager.Peers.AddPeer(id.Peer, PeerType.Active);
-                id.TorrentManager.ConnectingToPeers.Add(id);
-
                 IEncryptorInternal encryptor;
                 if(!ClientEngine.SupportsEncryption || id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption)
                     encryptor = new NoEncryption();
                 else
                     encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.engine.Settings.MinEncryptionLevel);
 
+                id.Connection = new PeerConnectionBase(id.TorrentManager.Torrent.Pieces.Count, encryptor);
+                id.Connection.Connection = ConnectionFactory.Create(id.Peer.ConnectionUri);
+                if (id.Connection.Connection == null)
+                    return;
+
+                manager.Peers.AddPeer(id.Peer, PeerType.Active);
+                id.TorrentManager.ConnectingToPeers.Add(id);
+
                 encryptor.SetPeerConnectionID(id);
                 encryptor.EncryptorReady += onEncryptorReadyHandler;
                 encryptor.EncryptorIOError += onEncryptorIOErrorHandler;
                 encryptor.EncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
                 
-                id.Connection = new PeerConnectionBase(id.TorrentManager.Torrent.Pieces.Count, encryptor);
-                id.Connection.Connection = ConnectionFactory.Create(id.Peer.ConnectionUri);
                 id.Connection.ProcessingQueue = true;
                 id.Peer.LastConnectionAttempt = DateTime.Now;
                 id.Connection.LastMessageSent = DateTime.Now;
