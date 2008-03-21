@@ -37,7 +37,14 @@ namespace MonoTorrent.Client.Connections
                 if (!trackerTypes.TryGetValue(connectionUri.Scheme, out type))
                     return null;
 
-            return (IConnection)Activator.CreateInstance(type, connectionUri);
+            try
+            {
+                return (IConnection)Activator.CreateInstance(type, connectionUri);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
