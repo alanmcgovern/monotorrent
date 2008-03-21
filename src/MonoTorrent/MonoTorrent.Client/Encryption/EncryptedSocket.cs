@@ -440,7 +440,15 @@ namespace MonoTorrent.Client.Encryption
                     }
 
                     // fill the rest of the window
-                    socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
+                    try
+                    {
+                        socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
+                    }
+                    catch(Exception)
+                    {
+                        IOError();
+                        return;
+                    }
                 }
                 else // there's no match in this window
                 {
