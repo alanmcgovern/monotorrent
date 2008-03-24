@@ -18,6 +18,7 @@ namespace MonoTorrent
     {
         static string basePath;
         static string downloadsPath;
+        static string fastResumeFile;
         static string torrentsPath;
         static ClientEngine engine;				// The engine used for downloading
         static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
@@ -29,6 +30,7 @@ namespace MonoTorrent
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
             downloadsPath = Path.Combine(basePath, "Downloads");			// This is the directory we will save downloads to
+            fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
             torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
             listener = new Top10Listener(10);
 
@@ -56,9 +58,9 @@ namespace MonoTorrent
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
-            engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
-            engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
-            engineSettings.MaxReadRate = 1 * 1024 * 1024;
+            //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
+            //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
+            //engineSettings.MaxReadRate = 1 * 1024 * 1024;
 
 
             // Create the default settings which a torrent will have.
@@ -79,6 +81,15 @@ namespace MonoTorrent
             if (!Directory.Exists(torrentsPath))
                 Directory.CreateDirectory(torrentsPath);
 
+            BEncodedDictionary fastResume;
+            try
+            {
+                fastResume = BEncodedValue.Decode<BEncodedDictionary>(File.ReadAllBytes(fastResumeFile));
+            }
+            catch
+            {
+                fastResume = new BEncodedDictionary();
+            }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach (string file in Directory.GetFiles(torrentsPath))
@@ -99,7 +110,11 @@ namespace MonoTorrent
                     }
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    TorrentManager manager;
+                    if (fastResume.ContainsKey(torrent.InfoHash))
+                        manager = new TorrentManager(torrent, downloadsPath, torrentDefaults, new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash]));
+                    else
+                        manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -189,10 +204,6 @@ namespace MonoTorrent
 
                 System.Threading.Thread.Sleep(500);
             }
-
-            for (int l = 0; l < torrents.Count; l++)
-                torrents[l].Stop().WaitOne();
-            engine.Dispose();
         }
 
         private static void AppendSeperator(StringBuilder sb)
@@ -212,9 +223,18 @@ namespace MonoTorrent
 
 		private static void shutdown()
 		{
+            BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
-                if (torrents[i].State != TorrentState.Stopped)
-                    torrents[i].Stop().WaitOne();
+            {
+                WaitHandle handle = torrents[i].Stop();
+                while (!handle.WaitOne(10, true))
+                    Console.WriteLine(handle.ToString());
+
+                fastResume.Add(torrents[i].Torrent.InfoHash, torrents[i].SaveFastResume().Encode());
+            }
+
+            File.WriteAllBytes(fastResumeFile, fastResume.Encode());
+            engine.Dispose();
 
 			foreach (TraceListener lst in Debug.Listeners)
 			{
