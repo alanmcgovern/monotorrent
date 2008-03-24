@@ -457,6 +457,10 @@ namespace MonoTorrent.Common
                 offset++;
             }
             
+            // If true, there are no extra bits
+            if (this.length % 8 == 0)
+                return;
+
             // Make sure all extra bits are set to zero
             for (int i = this.length; i < this.length + (8 - this.length % 8); i++)
             {
