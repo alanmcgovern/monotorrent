@@ -5,17 +5,26 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    internal class ManagerWaitHandle : WaitHandle
+    public class ManagerWaitHandle : WaitHandle
     {
         private List<WaitHandle> handles;
+        private string name;
 
-        public ManagerWaitHandle()
+        public string Name
         {
+            get { return name; }
+        }
+
+        public ManagerWaitHandle(string name)
+        {
+            this.name = name;
             handles = new List<WaitHandle>();
         }
 
-        public void AddHandle(WaitHandle handle)
+        public void AddHandle(WaitHandle handle, string name)
         {
+            ManagerWaitHandle h = new ManagerWaitHandle(name);
+            h.handles.Add(handle);
             handles.Add(handle);
         }
 
@@ -53,6 +62,20 @@ namespace MonoTorrent.Client
             }
 
             return true;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (WaitHandle h in handles)
+            {
+                sb.Append("WaitHandle from: ");
+                sb.Append(name);
+                sb.Append(". State: ");
+                sb.Append(h.WaitOne(0, false) ? "Signalled" : "Unsignalled");
+                sb.AppendLine();
+            }
+            return sb.ToString();
         }
     }
 }

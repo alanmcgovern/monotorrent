@@ -484,7 +484,7 @@ namespace MonoTorrent.Client
         {
             CheckRegistered();
 
-            ManagerWaitHandle handle = new ManagerWaitHandle();
+            ManagerWaitHandle handle = new ManagerWaitHandle("Global");
             try
             {
                 lock (this.engine.asyncCompletionLock)
@@ -495,7 +495,7 @@ namespace MonoTorrent.Client
                     if (this.state == TorrentState.Hashing)
                     {
                         hashingWaitHandle = new ManualResetEvent(false);
-                        handle.AddHandle(hashingWaitHandle);
+                        handle.AddHandle(hashingWaitHandle, "Hashing");
                         abortHashing = true;
 						UpdateState(TorrentState.Stopped);
                         return handle;
@@ -504,7 +504,7 @@ namespace MonoTorrent.Client
                     UpdateState(TorrentState.Stopped);
 
                     if(trackerManager.CurrentTracker != null)
-                        handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped));
+                        handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
 
                     lock (this.listLock)
                     {
@@ -529,7 +529,7 @@ namespace MonoTorrent.Client
                         this.peers.ClearAll();
                     }
 
-                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this));
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this), "DiskManager");
 
                     if (this.hashChecked)
                         this.SaveFastResume();
@@ -975,7 +975,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Saves data to allow fastresumes to the disk
         /// </summary>
-        private FastResume SaveFastResume()
+        public FastResume SaveFastResume()
         {
             // Do not create fast-resume data if we do not support it for this TorrentManager object
             if (!Settings.FastResumeEnabled || string.IsNullOrEmpty(this.torrent.TorrentPath))
