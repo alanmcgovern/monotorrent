@@ -25,7 +25,7 @@ namespace MonoTorrent.Client
         {
             ManagerWaitHandle h = new ManagerWaitHandle(name);
             h.handles.Add(handle);
-            handles.Add(handle);
+            handles.Add(h);
         }
 
         public override bool WaitOne()
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
                     return false;
                 
                 timeout.Subtract(TimeSpan.FromMilliseconds(Environment.TickCount - startTime));
-                if (timeout.TotalMilliseconds <= 0)
+                if (timeout.TotalMilliseconds < 0)
                     return false;
             }
 
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
             foreach (WaitHandle h in handles)
             {
                 sb.Append("WaitHandle from: ");
-                sb.Append(name);
+                sb.Append(((ManagerWaitHandle)h).name);
                 sb.Append(". State: ");
                 sb.Append(h.WaitOne(0, false) ? "Signalled" : "Unsignalled");
                 sb.AppendLine();
