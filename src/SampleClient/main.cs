@@ -230,6 +230,7 @@ namespace MonoTorrent
                 while (!handle.WaitOne(10, true))
                     Console.WriteLine(handle.ToString());
 
+                Console.WriteLine(handle.ToString());
                 fastResume.Add(torrents[i].Torrent.InfoHash, torrents[i].SaveFastResume().Encode());
             }
 
@@ -241,6 +242,8 @@ namespace MonoTorrent
 				lst.Flush();
 				lst.Close();
 			}
+
+            System.Threading.Thread.Sleep(2000);
 		}
 	}
 }
