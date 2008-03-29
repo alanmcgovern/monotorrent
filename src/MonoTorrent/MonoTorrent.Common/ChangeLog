@@ -1,3 +1,7 @@
+2008-03-29  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* SpeedMonitor.cs: Fixed bug where speeds weren't being reset.
+
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Enums.cs: Removed useless enums

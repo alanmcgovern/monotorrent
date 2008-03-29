@@ -62,6 +62,9 @@ namespace MonoTorrent.Common
             this.speed = 0;
             this.speedIndex = 0;
             this.tempRecvCount = 0;
+            this.lastUpdated = Environment.TickCount;
+            for (int i = 0; i < this.speeds.Length; i++)
+                speeds[i] = 0;
         }
 
 
