@@ -1,3 +1,8 @@
+2008-03-29  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* Tracker/TrackerFactory.cs: Added try/catch to prevent an invalid address
+	  exploding the engine
+
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Logger.cs: Add a 'Flush' method

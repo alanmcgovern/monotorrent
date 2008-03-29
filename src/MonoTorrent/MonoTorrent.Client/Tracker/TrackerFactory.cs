@@ -68,8 +68,15 @@ namespace MonoTorrent.Client.Tracker
 
             if (!trackerTypes.ContainsKey(protocol))
                 return null;
-
-            return (Tracker)Activator.CreateInstance(trackerTypes[protocol], announceUrl);
+			
+            try
+            {
+                return (Tracker)Activator.CreateInstance(trackerTypes[protocol], announceUrl);
+            }
+            catch
+            {
+                return null; // Invalid tracker
+            }
         }
     }
 }
