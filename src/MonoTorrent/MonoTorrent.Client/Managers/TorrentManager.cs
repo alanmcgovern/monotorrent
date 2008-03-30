@@ -968,6 +968,10 @@ namespace MonoTorrent.Client
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
             this.bitfield = fastResumeData.Bitfield;
+
+            for (int i = 0; i < torrent.Pieces.Count; i++)
+                RaisePieceHashed (new PieceHashedEventArgs (this, i, bitfield[i]));
+
             this.hashChecked = true;
         }
 

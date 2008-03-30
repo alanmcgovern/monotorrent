@@ -1,3 +1,8 @@
+2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TorrentManager.cs: Bugfix: When loading fast resume, trigger the
+	  PieceHashed event to update per-file progress.
+
 2008-02-02  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* ConnectionManager.cs: Never try to download more data than we are
