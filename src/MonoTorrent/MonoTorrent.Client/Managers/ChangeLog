@@ -1,5 +1,9 @@
 2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* PieceManager.cs: This wasn't supposed to hit svn...
+
+2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* TorrentManager.cs: Bugfix: When loading fast resume, trigger the
 	  PieceHashed event to update per-file progress.
 

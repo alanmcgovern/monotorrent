@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool LinearPickingEnabled
         {
-            get { return true;}// piecePicker.LinearPickingEnabled; }
+            get { return piecePicker.LinearPickingEnabled; }
             set { piecePicker.LinearPickingEnabled = value; }
         }
 
