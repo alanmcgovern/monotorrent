@@ -331,7 +331,7 @@ namespace MonoTorrent.Client
 
         private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, List<PeerIdInternal> otherPeers)
         {
-            Priority highestPriority = Priority.Low;
+            Priority highestPriority = Priority.DoNotDownload;
             Stack<BitField> bitfields = new Stack<BitField>();
             BitField current = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
 
@@ -341,6 +341,23 @@ namespace MonoTorrent.Client
                 Buffer.BlockCopy(myBitfield.Array, 0, current.Array, 0, current.Array.Length * 4);
                 current.Not();
 
+                // For every file set to DoNotDownload, set it's indices to 'false'
+                foreach (TorrentFile file in torrentFiles)
+                    if (file.Priority == Priority.DoNotDownload)
+                        for (int i = file.StartPieceIndex; i <= file.EndPieceIndex; i++)
+                            current[i] = false;
+				
+                // If a 'DoNotDownload' file shares a piece with a file we're supposed to download
+                // ensure the index remains set correctly
+                foreach (TorrentFile file in torrentFiles)
+                {
+                    if (file.Priority != Priority.DoNotDownload)
+                    {
+                        current [file.StartPieceIndex] = !myBitfield[file.StartPieceIndex];
+                        current [file.EndPieceIndex] = !myBitfield[file.EndPieceIndex];
+                    }
+                }
+				
                 // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
                 if (!id.Peer.IsSeeder)
                     current.AndFast(id.Connection.BitField);

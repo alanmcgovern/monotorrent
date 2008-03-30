@@ -1,0 +1,5 @@
+2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* StandardPicker.cs: If priority is set to 'Do Not Download', ensure all
+	  indices for that file are set to false so we don't request it
+
