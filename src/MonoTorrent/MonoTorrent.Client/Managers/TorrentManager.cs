@@ -967,7 +967,8 @@ namespace MonoTorrent.Client
             if (!Toolbox.ByteMatch(torrent.infoHash, fastResumeData.InfoHash) || torrent.Pieces.Count != fastResumeData.Bitfield.Length)
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
-            this.bitfield = fastResumeData.Bitfield;
+            for (int i = 0; I < this.bitfield.Length; i++)
+                this.bitfield[i] = fastResumeData.Bitfield[i];
 
             for (int i = 0; i < torrent.Pieces.Count; i++)
                 RaisePieceHashed (new PieceHashedEventArgs (this, i, bitfield[i]));

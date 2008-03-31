@@ -1,3 +1,8 @@
+2008-03-31  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TorrentManager.cs: Fixes #375377 - FastResume data correctly reloaded from
+	  disk
+
 2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* PieceManager.cs: This wasn't supposed to hit svn...
