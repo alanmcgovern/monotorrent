@@ -866,14 +866,8 @@ namespace MonoTorrent.Client
                 // We only need to hashcheck if at least one file already exists on the disk
                 bool filesExist = fileManager.CheckFilesExist();
 
-                // We only load fast resume if one (or more) of the files exist on disk.
-                // FIXME: We now never load fastresume from the disk as it's passed into the constructor
-                //bool loadedFastResume = filesExist && FileManager.LoadFastResume(this);
-                bool loadedFastResume = filesExist && false;
-
-                // If we are performing a forced scan OR we aren't forcing a full scan but can't load the fast resume data
-                // perform a full scan.
-                if (forceCheck || !loadedFastResume)
+                // A hashcheck should only be performed if some/all of the files exist on disk
+                if (forceCheck && filesExist)
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
@@ -889,12 +883,7 @@ namespace MonoTorrent.Client
                             return;
                     }
                 }
-
-                // If we loaded fastresume data then we need to fire the piece hashed events
-                if (loadedFastResume)
-                    for (int i = 0; i < bitfield.Length; i++)
-                        RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
-
+				
                 this.hashChecked = true;
 
                 if (autoStart)
@@ -967,7 +956,7 @@ namespace MonoTorrent.Client
             if (!Toolbox.ByteMatch(torrent.infoHash, fastResumeData.InfoHash) || torrent.Pieces.Count != fastResumeData.Bitfield.Length)
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
-            for (int i = 0; I < this.bitfield.Length; i++)
+            for (int i = 0; i < this.bitfield.Length; i++)
                 this.bitfield[i] = fastResumeData.Bitfield[i];
 
             for (int i = 0; i < torrent.Pieces.Count; i++)
