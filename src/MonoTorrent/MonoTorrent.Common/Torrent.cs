@@ -413,7 +413,7 @@ namespace MonoTorrent.Common
 
                 startIndex = j;
                 totalSize += length;
-                endIndex = (int)((totalSize + pieceLength / 2) / this.pieceLength);
+                endIndex = Math.Min(this.Pieces.Count - 1, (int)((totalSize + pieceLength / 2) / this.pieceLength));
                 j = endIndex;
 
                 this.torrentFiles[i++] = new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1);
@@ -510,7 +510,8 @@ namespace MonoTorrent.Common
                 byte[] sha1 = (dictionary.ContainsKey("sha1")) ? ((BEncodedString)dictionary["sha1"]).TextBytes : null;
 
                 this.torrentFiles = new TorrentFile[1];
-                this.torrentFiles[0] = new TorrentFile(path, length, 0, (int)((size + (pieceLength / 2)) / pieceLength), md5, ed2k, sha1);
+                int endPiece = Math.Min(Pieces.Count - 1, (int)((size + (pieceLength / 2)) / pieceLength));
+                this.torrentFiles[0] = new TorrentFile(path, length, 0, endPiece, md5, ed2k, sha1);
             }
         }
 
