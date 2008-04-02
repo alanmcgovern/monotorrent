@@ -109,6 +109,7 @@
     <Compile Include="MonoTorrent.Client\ClientEngine.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Client\EventArgs\CriticalExceptionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs">
       <SubType>Code</SubType>
     </Compile>

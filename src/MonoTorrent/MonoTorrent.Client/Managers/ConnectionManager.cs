@@ -1184,61 +1184,68 @@ namespace MonoTorrent.Client
 
         internal void TryConnect()
         {
-            int i;
-            PeerIdInternal id;
-            TorrentManager m = null;
-
-            // If we have already reached our max connections globally, don't try to connect to a new peer
-            if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
-                return;
-
-            // Check each torrent manager in turn to see if they have any peers we want to connect to
-            lock (this.torrents)
+            try
             {
-                foreach (TorrentManager manager in this.torrents)
-                {
-                    // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
-                    if (manager.ConnectedPeers.Count >= manager.Settings.MaxConnections)
-                        continue;
+                int i;
+                PeerIdInternal id;
+                TorrentManager m = null;
 
-                    // If the torrent isn't active, don't connect to a peer for it
-                    if (manager.State != TorrentState.Downloading && manager.State != TorrentState.Seeding)
-                        continue;
-
-                    // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
-                    // if they are not a seeder.
-                    lock (manager.listLock)
-                    {
-                        for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
-                            if ((manager.State != TorrentState.Seeding ||
-                               (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder))
-                                && (!manager.Peers.AvailablePeers[i].ActiveReceive)
-                                && (!manager.Peers.AvailablePeers[i].ActiveSend))
-                                break;
-
-                        // If this is true, there were no peers in the available list to connect to.
-                        if (i == manager.Peers.AvailablePeers.Count)
-                            continue;
-
-                        // Remove the peer from the lists so we can start connecting to him
-                        id = new PeerIdInternal(manager.Peers.AvailablePeers[i], manager);
-                        manager.Peers.AvailablePeers.RemoveAt(i);
-
-                        // Save the manager we're using so we can place it to the end of the list
-                        m = manager;
-
-                        // Connect to the peer
-                        ConnectToPeer(manager, id);
-                        break;
-                    }
-                }
-
-                if (m == null)
+                // If we have already reached our max connections globally, don't try to connect to a new peer
+                if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
                     return;
 
-                // Put the manager at the end of the list so we try the other ones next
-                this.torrents.Remove(m);
-                this.torrents.Add(m);
+                // Check each torrent manager in turn to see if they have any peers we want to connect to
+                lock (this.torrents)
+                {
+                    foreach (TorrentManager manager in this.torrents)
+                    {
+                        // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
+                        if (manager.ConnectedPeers.Count >= manager.Settings.MaxConnections)
+                            continue;
+
+                        // If the torrent isn't active, don't connect to a peer for it
+                        if (manager.State != TorrentState.Downloading && manager.State != TorrentState.Seeding)
+                            continue;
+
+                        // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
+                        // if they are not a seeder.
+                        lock (manager.listLock)
+                        {
+                            for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
+                                if ((manager.State != TorrentState.Seeding ||
+                                   (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder))
+                                    && (!manager.Peers.AvailablePeers[i].ActiveReceive)
+                                    && (!manager.Peers.AvailablePeers[i].ActiveSend))
+                                    break;
+
+                            // If this is true, there were no peers in the available list to connect to.
+                            if (i == manager.Peers.AvailablePeers.Count)
+                                continue;
+
+                            // Remove the peer from the lists so we can start connecting to him
+                            id = new PeerIdInternal(manager.Peers.AvailablePeers[i], manager);
+                            manager.Peers.AvailablePeers.RemoveAt(i);
+
+                            // Save the manager we're using so we can place it to the end of the list
+                            m = manager;
+
+                            // Connect to the peer
+                            ConnectToPeer(manager, id);
+                            break;
+                        }
+                    }
+
+                    if (m == null)
+                        return;
+
+                    // Put the manager at the end of the list so we try the other ones next
+                    this.torrents.Remove(m);
+                    this.torrents.Add(m);
+                }
+            }
+            catch (Exception ex)
+            {
+                engine.RaiseCriticalException(new CriticalExceptionEventArgs(ex, engine));
             }
         }
 

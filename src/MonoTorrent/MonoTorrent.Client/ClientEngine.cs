@@ -66,6 +66,7 @@ namespace MonoTorrent.Client
         #region Events
 
         public event EventHandler<StatsUpdateEventArgs> StatsUpdate;
+        public event EventHandler<CriticalExceptionEventArgs> CriticalException;
 
         #endregion
 
@@ -465,6 +466,11 @@ namespace MonoTorrent.Client
             }
 
             RaiseStatsUpdate(new StatsUpdateEventArgs());
+        }
+
+        internal void RaiseCriticalException(CriticalExceptionEventArgs e)
+        {
+            Toolbox.RaiseAsyncEvent<CriticalExceptionEventArgs>(CriticalException, this, e); 
         }
 
         private void PieceHashed(object sender, PieceHashedEventArgs e)

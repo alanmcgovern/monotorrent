@@ -271,78 +271,85 @@ namespace MonoTorrent.Client.Managers
         /// </summary>
         private void RunIO()
         {
-            BufferedIO write;
-            BufferedIO read;
-            PieceFlush flush;
-
-            while (ioActive || this.bufferedWrites.Count > 0 || this.closeStreams.Count > 0)
+            try
             {
-                flush = null;
-                write = null;
-                read = null;
+                BufferedIO write;
+                BufferedIO read;
+                PieceFlush flush;
 
-                // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
-                // performing the actual read/write to avoid blocking other threads
-                lock (this.queueLock)
+                while (ioActive || this.bufferedWrites.Count > 0 || this.closeStreams.Count > 0)
                 {
-                    if (this.closeStreams.Count > 0)
-                    {
-                        StreamClose close = closeStreams.Dequeue();
+                    flush = null;
+                    write = null;
+                    read = null;
 
-                        try
+                    // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
+                    // performing the actual read/write to avoid blocking other threads
+                    lock (this.queueLock)
+                    {
+                        if (this.closeStreams.Count > 0)
                         {
-                            // Dump all buffered reads for the manager we're closing the streams for
-                            List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
-                            list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
-                            bufferedReads = new Queue<BufferedIO>(list);
+                            StreamClose close = closeStreams.Dequeue();
 
-                            // Process all remaining reads
-                            list = new List<BufferedIO>(bufferedWrites);
-                            foreach (BufferedIO io in list)
-                                if (io.Manager == close.Manager)
-                                    PerformWrite(io);
-                            writer.Close(close.Manager);
-                            list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
-                            bufferedWrites = new Queue<BufferedIO>(list);
+                            try
+                            {
+                                // Dump all buffered reads for the manager we're closing the streams for
+                                List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
+                                list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
+                                bufferedReads = new Queue<BufferedIO>(list);
+
+                                // Process all remaining reads
+                                list = new List<BufferedIO>(bufferedWrites);
+                                foreach (BufferedIO io in list)
+                                    if (io.Manager == close.Manager)
+                                        PerformWrite(io);
+                                writer.Close(close.Manager);
+                                list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
+                                bufferedWrites = new Queue<BufferedIO>(list);
+                            }
+                            finally
+                            {
+                                close.Handle.Set();
+                            }
                         }
-                        finally
+
+                        if (this.flushQueue.Count > 0)
+                            flush = flushQueue.Dequeue();
+
+                        if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
                         {
-                            close.Handle.Set();
+                            write = this.bufferedWrites.Dequeue();
+                            Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
                         }
+
+                        if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
+                        {
+                            read = this.bufferedReads.Dequeue();
+                            Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
+                        }
+
+                        // If both the read queue and write queue are empty, then we unset the handle.
+                        // Or if we have reached the max read/write rate and can't dequeue something, we unset the handle
+                        if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null && read == null))
+                            SetHandleState(false);
                     }
 
-                    if (this.flushQueue.Count > 0)
-                        flush = flushQueue.Dequeue();
+                    if (flush != null)
+                        writer.Flush(flush.Manager, flush.PieceIndex);
 
-                    if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
-                    {
-                        write = this.bufferedWrites.Dequeue();
-                        Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
-                    }
+                    if (write != null)
+                        PerformWrite(write);
 
-                    if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
-                    {
-                        read = this.bufferedReads.Dequeue();
-                        Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
-                    }
+                    if (read != null)
+                        PerformRead(read);
 
-                    // If both the read queue and write queue are empty, then we unset the handle.
-                    // Or if we have reached the max read/write rate and can't dequeue something, we unset the handle
-                    if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null && read == null))
-                        SetHandleState(false);
+                    // Wait ~100 ms before trying to read/write something again to give the rate limiting a chance to recover
+                    this.threadWait.WaitOne(100, false);
                 }
-
-                if (flush != null)
-                    writer.Flush(flush.Manager, flush.PieceIndex);
-
-                if (write != null)
-                    PerformWrite(write);
-
-                if (read != null)
-                    PerformRead(read);
-
-                // Wait ~100 ms before trying to read/write something again to give the rate limiting a chance to recover
-                this.threadWait.WaitOne(100, false);
+            }
+            catch (Exception ex)
+            {
+                engine.RaiseCriticalException(new CriticalExceptionEventArgs(ex, engine));
             }
         }
 
