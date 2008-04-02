@@ -65,6 +65,9 @@ namespace MonoTorrent.Common
         public static void RaiseAsyncEvent<T>(EventHandler<T> e, object o, T args)
             where T : EventArgs
         {
+            if (e == null)
+                return;
+
             ThreadPool.QueueUserWorkItem(delegate {
                 if (e != null)
                     e(o, args);
