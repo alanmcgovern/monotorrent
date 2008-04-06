@@ -430,6 +430,7 @@ namespace MonoTorrent.Common
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
             this.pieceLength = int.Parse(dictionary["piece length"].ToString());
+            LoadHashPieces(((BEncodedString)dictionary["pieces"]).TextBytes);
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
             {
@@ -482,10 +483,6 @@ namespace MonoTorrent.Common
                         break;
 
                     case ("piece length"):  // Already handled
-                        break;
-
-                    case ("pieces"):
-                        LoadHashPieces(((BEncodedString)keypair.Value).TextBytes);
                         break;
 
                     case ("length"):
