@@ -378,28 +378,18 @@ namespace MonoTorrent.Client
         /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
         /// </summary>
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
-        public void HashCheck(bool forceFullScan)
-        {
-            CheckRegistered();
-            lock (this.engine.asyncCompletionLock)
-                HashCheck(forceFullScan, false);
-        }
-
-
-        /// <summary>
-        /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
-        /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
-        /// </summary>
-        /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
-        /// <param name="autoStart">True if the manager should start downloading immediately after hash checking is complete</param>
-        internal void HashCheck(bool forceFullScan, bool autoStart)
+        public void HashCheck(bool autoStart)
         {
             if (this.state != TorrentState.Stopped)
                 throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
 
-            this.startTime = DateTime.Now;
-            UpdateState(TorrentState.Hashing);
-            ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(forceFullScan, autoStart); });
+            CheckRegistered();
+            lock (this.engine.asyncCompletionLock)
+            {
+                this.startTime = DateTime.Now;
+                UpdateState(TorrentState.Hashing);
+                ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); });
+            }
         }
 
 
@@ -448,7 +438,7 @@ namespace MonoTorrent.Client
                 if (!hashChecked)
                 {
                     if (state != TorrentState.Hashing)
-                        HashCheck(false, true);
+                        HashCheck(true);
                     return;
                 }
 
@@ -853,7 +843,7 @@ namespace MonoTorrent.Client
         /// Hash checks the supplied torrent
         /// </summary>
         /// <param name="state">The TorrentManager to hashcheck</param>
-        private void PerformHashCheck(bool forceCheck, bool autoStart)
+        private void PerformHashCheck(bool autoStart)
         {
             int enterCount = 0;
             try
@@ -867,7 +857,7 @@ namespace MonoTorrent.Client
                 bool filesExist = fileManager.CheckFilesExist();
 
                 // A hashcheck should only be performed if some/all of the files exist on disk
-                if (forceCheck && filesExist)
+                if (filesExist)
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
