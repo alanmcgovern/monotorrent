@@ -857,7 +857,6 @@ namespace MonoTorrent.Client
                             return;
 
                         bool canResuse = id.Connection.Connection.CanReconnect;
-                        Console.WriteLine("Cleaned Up: " + id.Peer.ConnectionUri.ToString());
                         Logger.Log(id.Connection.Connection, "Cleanup Reason : " + message);
   
                         Logger.Log(id.Connection.Connection, "*******Cleaning up*******");
@@ -878,7 +877,6 @@ namespace MonoTorrent.Client
                         id.Connection.Dispose();
                         id.Connection = null;
                         id.NulledAt = "3";
-                        Console.WriteLine("Nulling: " + id.Peer.ConnectionUri.ToString());
 
                         id.TorrentManager.uploadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
                         id.TorrentManager.downloadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
