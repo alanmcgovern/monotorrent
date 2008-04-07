@@ -41,6 +41,7 @@ RESGEN=resgen2
 all: $(ASSEMBLY) $(LINUX_PKGCONFIG) 
 
 FILES =  \
+	AssemblyInfo.cs \
 	MonoTorrent.BEncoding/BEncodedDictionary.cs \
 	MonoTorrent.BEncoding/BEncodedList.cs \
 	MonoTorrent.BEncoding/BEncodedNumber.cs \
@@ -176,7 +177,6 @@ FILES =  \
 	MonoTorrent.Client/Tracker/UdpTracker.cs \
 	MonoTorrent.Client/TransferType.cs \
 	MonoTorrent.Client/WriterLock.cs \
-	MonoTorrent.Common/AssemblyInfo.cs \
 	MonoTorrent.Common/BitField.cs \
 	MonoTorrent.Common/Enums.cs \
 	MonoTorrent.Common/EventArgs/TorrentCreatorEventArgs.cs \
