@@ -191,6 +191,7 @@ namespace MonoTorrent.Client
                 try
                 {
                     id.Connection.BeginConnect(this.endCreateConnectionCallback, id);
+                    id.ConnectTime = Environment.TickCount;
                     Interlocked.Increment(ref this.halfOpenConnections);
                 }
                 catch (Exception)
@@ -214,7 +215,7 @@ namespace MonoTorrent.Client
         private void EndCreateConnection(IAsyncResult result)
         {
             PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-
+            //Console.WriteLine ("{0}ms: {1}", Environment.TickCount - id.ConnectTime, id.Peer.ConnectionUri.Host);
             try
             {
                 lock (id.TorrentManager.listLock)
@@ -1179,11 +1180,30 @@ namespace MonoTorrent.Client
             return 0;
         }
 
+        private void ClosePendingConnections ()
+        {
+            lock (this.torrents)
+            {
+                foreach (TorrentManager manager in this.torrents)
+                {
+                    lock (manager.listLock)
+                    {
+                        foreach (PeerIdInternal peer in manager.ConnectingToPeers)
+                        {
+                            // If we haven't connected after 10 seconds, abort
+                            if ((Environment.TickCount - peer.ConnectTime) > 10000)
+                                peer.Connection.Connection.Dispose ();
+                        }
+                    }
+                }
+            }
+        }
 
         internal void TryConnect()
         {
             try
             {
+                ClosePendingConnections ();
                 int i;
                 PeerIdInternal id;
                 TorrentManager m = null;

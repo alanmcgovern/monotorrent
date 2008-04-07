@@ -1,3 +1,10 @@
+2008-04-07  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* ConnectionManager.cs: Hack-fix: In some cases it can take up to 190
+	  seconds for a pending connection request to time out. Force the
+	  connection attempt to abort after 10 seconds if it is not
+	  successful.
+
 2008-03-31  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	
