@@ -31,9 +31,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/monotorrent.pc.in $(top_srcdir)/Makefile.include \
-	ChangeLog
+DIST_COMMON = $(srcdir)/AssemblyInfo.cs.in $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/monotorrent.pc.in \
+	$(top_srcdir)/Makefile.include ChangeLog
 subdir = MonoTorrent
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/expansions.m4 \
@@ -41,7 +41,7 @@ am__aclocal_m4_deps = $(top_srcdir)/expansions.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES = monotorrent.pc
+CONFIG_CLEAN_FILES = monotorrent.pc AssemblyInfo.cs
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkglibdir)" \
 	"$(DESTDIR)$(linuxpkgconfigdir)" \
 	"$(DESTDIR)$(programfilesdir)"
@@ -450,6 +450,8 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 monotorrent.pc: $(top_builddir)/config.status $(srcdir)/monotorrent.pc.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+AssemblyInfo.cs: $(top_builddir)/config.status $(srcdir)/AssemblyInfo.cs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)

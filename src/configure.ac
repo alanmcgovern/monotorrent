@@ -61,5 +61,5 @@ MonoTorrent/monotorrent.pc
 ])
 
 AC_OUTPUT([
-	AssemblyInfo.cs.in
+	MonoTorrent/AssemblyInfo.cs
 ])

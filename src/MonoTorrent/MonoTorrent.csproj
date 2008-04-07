@@ -587,6 +587,7 @@
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatchers.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <PropertyGroup>
