@@ -596,7 +596,7 @@ namespace MonoTorrent.Client
                 if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                     this.monitor.Tick();
 
-                if (this.finishedPieces.Count > 0 || (this.finishedPieces.Count > 0 && state == TorrentState.Seeding))
+                if (this.finishedPieces.Count > 0)
                     SendHaveMessagesToAll();
 
                 for (int i = 0; i < this.ConnectedPeers.Count; i++)
