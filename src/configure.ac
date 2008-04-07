@@ -1,7 +1,7 @@
 dnl Warning: This is an automatically generated file, do not edit!
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.54])
-AC_INIT([MonoTorrent], [0.1])
+AC_INIT([MonoTorrent], [0.3])
 AM_INIT_AUTOMAKE([foreign])
 
 dnl pkg-config
@@ -60,4 +60,6 @@ MonoTorrent/monotorrent.pc
 
 ])
 
-AC_OUTPUT
+AC_OUTPUT([
+	AssemblyInfo.cs.in
+])
