@@ -606,7 +606,7 @@ namespace MonoTorrent.Client
                     {
                         if (id.Connection == null)
                         {
-                            Console.WriteLine("Nulled out: " + id.Peer.ConnectionUri.ToString());
+                            //Console.WriteLine("Nulled out: " + id.Peer.ConnectionUri.ToString());
                             continue;
                         }
 
