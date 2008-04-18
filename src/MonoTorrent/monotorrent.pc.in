@@ -1,0 +1,8 @@
+Name: MonoTorrent
+Description: MonoTorrent
+Version: @VERSION@
+
+Requires: 
+Libraries=@expanded_libdir@/@PACKAGE@/MonoTorrent.dll
+Libs: -r:MonoTorrent.dll
+
