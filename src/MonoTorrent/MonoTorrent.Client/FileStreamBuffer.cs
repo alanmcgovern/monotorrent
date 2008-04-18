@@ -26,12 +26,12 @@ namespace MonoTorrent.Client
 
         private void Add(TorrentFileStream stream)
         {
-            Console.WriteLine("Opening filestream: {0}", stream.Path);
+            Logger.Log (null, "Opening filestream: {0}", stream.Path);
 
             // If we have our maximum number of streams open, just dispose and dump the least recently used one
             if (maxStreams != 0 && list.Count >= list.Capacity)
             {
-                Console.WriteLine("We've reached capacity: {0}", list.Count);
+                Logger.Log (null, "We've reached capacity: {0}", list.Count);
                 CloseAndRemove(list[0]);
             }
             list.Add(stream);
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
                 // If we are requesting write access and the current stream does not have it
                 if (((access & FileAccess.Write) == FileAccess.Write) && !s.CanWrite)
                 {
-                    Console.WriteLine("Didn't have write permission - reopening");
+                    Logger.Log (null, "Didn't have write permission - reopening");
                     CloseAndRemove(s);
                     s = null;
                 }
@@ -90,7 +90,7 @@ namespace MonoTorrent.Client
 
         private void CloseAndRemove(TorrentFileStream s)
         {
-            Console.WriteLine("Closing and removing: {0}", s.Path);
+            Logger.Log (null, "Closing and removing: {0}", s.Path);
             list.Remove(s);
             s.Dispose();
         }

@@ -1,3 +1,7 @@
+2008-04-18  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* AssemblyInfo.cs: Updated the makefiles and removed console.writelines
+
 2008-03-29  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* SpeedMonitor.cs: Fixed bug where speeds weren't being reset.
