@@ -738,7 +738,7 @@ namespace MonoTorrent.Common
                         break;
 
                     case ("info"):
-                        t.infoHash = new SHA1Managed().ComputeHash(keypair.Value.Encode());
+                        t.infoHash = new SHA1Fast().ComputeHash(keypair.Value.Encode());
                         t.ProcessInfo(((BEncodedDictionary)keypair.Value));
                         break;
 

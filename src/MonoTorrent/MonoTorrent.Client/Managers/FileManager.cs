@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
 
         private string baseDirectory;                           // The base directory into which all the files will be put
         private long fileSize;                                  // The combined length of all the files
-        private SHA1Managed hasher;                             // The SHA1 hasher used to calculate the hash of a piece
+        private SHA1 hasher;                             // The SHA1 hasher used to calculate the hash of a piece
         private string savePath;                                // The path where the base directory will be put
         private TorrentManager manager;
         private TorrentFile[] files;
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
         internal FileManager(TorrentManager manager, TorrentFile[] files, int pieceLength, string savePath, string baseDirectory)
         {
             this.baseDirectory = baseDirectory;
-            this.hasher = new SHA1Managed();
+            this.hasher = new SHA1Fast();
             this.manager = manager;
             this.savePath = savePath;
             this.files = files;

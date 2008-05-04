@@ -184,6 +184,7 @@ FILES =  \
 	MonoTorrent.Common/MonoTorrentCollectionBase.cs \
 	MonoTorrent.Common/Peer.cs \
 	MonoTorrent.Common/PeerID.cs \
+	MonoTorrent.Common/SHA1Fast.cs \
 	MonoTorrent.Common/SpeedMonitor.cs \
 	MonoTorrent.Common/ToolBox.cs \
 	MonoTorrent.Common/Torrent.cs \

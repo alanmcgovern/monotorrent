@@ -153,7 +153,7 @@ namespace MonoTorrent.Client.Encryption
         public EncryptedSocket(EncryptionType minCryptoAllowed)
         {
             random = RandomNumberGenerator.Create();
-            hasher = new SHA1Managed();
+            hasher = new SHA1Fast();
 
             GenerateX();
             GenerateY();

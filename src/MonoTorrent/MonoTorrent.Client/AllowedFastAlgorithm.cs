@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
     public static class AllowedFastAlgorithm
     {
         public const int AllowedFastPieceCount = 10;
-        private static SHA1Managed hasher = new SHA1Managed();
+        private static SHA1 hasher = new SHA1Fast();
 
         /// <summary>
         /// Calculates the pieces a peer can request even if they're choked
