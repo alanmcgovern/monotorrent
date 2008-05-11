@@ -1,3 +1,8 @@
+2008-05-11  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* SHA1Fast.cs: Updated the SHA1 code to mirror the recent changes in
+	  the mono implementation.
+
 2008-03-29  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* SpeedMonitor.cs: Fixed bug where speeds weren't being reset.
