@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
 
         private string baseDirectory;                           // The base directory into which all the files will be put
         private long fileSize;                                  // The combined length of all the files
-        private SHA1 hasher;                             // The SHA1 hasher used to calculate the hash of a piece
+        private SHA1 hasher;                                    // The SHA1 hasher used to calculate the hash of a piece
         private string savePath;                                // The path where the base directory will be put
         private TorrentManager manager;
         private TorrentFile[] files;
@@ -179,56 +179,6 @@ namespace MonoTorrent.Client
         /// <returns>The 20 byte SHA1 hash of the supplied piece</returns>
         internal byte[] GetHash(int pieceIndex, bool asynchronous)
         {
-            /*int bytesRead = 0;
-            int totalRead = 0;
-            int bytesToRead = 0;
-            long pieceStartIndex = (long)this.pieceLength * pieceIndex;
-
-            ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, PieceLength);
-
-            try
-            {
-                lock (this.hasher)
-                {
-                    // Calculate the start index of the piece
-                    hasher.Initialize();
-
-                    // Read in the entire piece
-                    do
-                    {
-                        bytesToRead = (PieceLength - totalRead) > hashBuffer.Count ? hashBuffer.Count : (PieceLength - totalRead);
-                        bytesToRead = Math.Min(bytesToRead, Piece.BlockSize);
-
-                        if ((pieceStartIndex + bytesToRead + totalRead) > this.fileSize)
-                            bytesToRead = (int)(fileSize - (pieceStartIndex + totalRead));
-
-                        BufferedIO read = new BufferedIO(hashBuffer, pieceStartIndex + totalRead, bytesToRead, manager);
-                        if (asynchronous)
-                        {
-                            manager.Engine.DiskManager.QueueRead(read);
-                            read.WaitHandle.WaitOne();
-                            bytesRead = read.ActualCount;
-                        }
-                        else
-                        {
-                            bytesRead = manager.Engine.DiskManager.Read(this.manager, hashBuffer.Array, hashBuffer.Offset, pieceStartIndex + totalRead, bytesToRead);
-                        }
-                        hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, bytesRead, hashBuffer.Array, hashBuffer.Offset);
-                        totalRead += bytesRead;
-                    } while (bytesRead != 0 && totalRead != PieceLength);
-
-
-                    // Compute the hash of the piece
-                    hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
-                    return hasher.Hash;
-                }
-            }
-            finally
-            {
-                ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
-            }
-            */
             int bytesToRead = 0;
             long pieceStartIndex = (long)this.pieceLength * pieceIndex;
             BufferedIO io = null;
