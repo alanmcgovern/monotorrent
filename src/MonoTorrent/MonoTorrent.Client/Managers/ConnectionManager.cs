@@ -78,10 +78,6 @@ namespace MonoTorrent.Client
         private AsyncCallback onEndReceiveMessageCallback;
         private AsyncCallback onEndSendMessageCallback;
 
-        private EncryptorReadyHandler onEncryptorReadyHandler;
-        private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
-        private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
-
         private MonoTorrentCollection<TorrentManager> torrents;
 
         internal MessageHandler MessageHandler
@@ -149,9 +145,6 @@ namespace MonoTorrent.Client
             this.messageReceivedCallback = new MessagingCallback(this.onPeerMessageReceived);
             this.messageSentCallback = new MessagingCallback(this.onPeerMessageSent);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
-            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
-            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
             this.messageHandler = new MessageHandler();
         }
 
@@ -178,11 +171,6 @@ namespace MonoTorrent.Client
 
                 manager.Peers.AddPeer(id.Peer, PeerType.Active);
                 id.TorrentManager.ConnectingToPeers.Add(id);
-
-                encryptor.SetPeerConnectionID(id);
-                encryptor.EncryptorReady += onEncryptorReadyHandler;
-                encryptor.EncryptorIOError += onEncryptorIOErrorHandler;
-                encryptor.EncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
                 
                 id.Connection.ProcessingQueue = true;
                 id.Peer.LastConnectionAttempt = DateTime.Now;
@@ -305,22 +293,7 @@ namespace MonoTorrent.Client
                 // Create a handshake message to send to the peer
                 HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
-                if (id.Connection.Encryptor is NoEncryption || !ClientEngine.SupportsEncryption)
-                {
-                    SendMessage(id, handshake, this.handshakeSentCallback);
-                }
-                else
-                {
-                    ClientEngine.BufferManager.GetBuffer(ref id.Connection.sendBuffer, handshake.ByteLength);
-
-                    id.Connection.BytesSent = 0;
-                    id.Connection.BytesToSend += handshake.Encode(id.Connection.sendBuffer, 0);
-
-                    // Get a buffer to encode the handshake into, encode the message and send it
-
-                    id.Connection.Encryptor.AddInitialData(id.Connection.sendBuffer.Array, id.Connection.sendBuffer.Offset, id.Connection.BytesToSend);
-                    id.Connection.StartEncryption();
-                }
+                SendMessage(id, handshake, this.handshakeSentCallback);
             }
             catch (Exception ex)
             {
@@ -1155,11 +1128,21 @@ namespace MonoTorrent.Client
                     }
                     if (downloading)
                     {
+                        if (!id.Connection.Encryptor.IsReady)
+                        {
+                            id.Connection.Encryptor.Start(id.Connection.Connection, onEndReceiveMessageCallback, id);
+                            return 0;
+                        }
                         byteCount = (id.Connection.BytesToRecieve - id.Connection.BytesReceived) > ChunkLength ? ChunkLength : id.Connection.BytesToRecieve - id.Connection.BytesReceived;
                         id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, SocketFlags.None, this.onEndReceiveMessageCallback, id, out id.ErrorCode);
                     }
                     else
                     {
+                        if (!id.Connection.Encryptor.IsReady)
+                        {
+                            id.Connection.Encryptor.Start(id.Connection.Connection, onEndSendMessageCallback, id);
+                            return 0;
+                        }
                         byteCount = (id.Connection.BytesToSend - id.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Connection.BytesToSend - id.Connection.BytesSent);
                         id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, SocketFlags.None, this.onEndSendMessageCallback, id, out id.ErrorCode);
                     }

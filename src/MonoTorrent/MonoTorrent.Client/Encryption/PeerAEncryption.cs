@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Class to handle message stream encryption for initiating connections
     /// </summary>
-    internal class PeerAEncryption : EncryptedSocket
+    public class PeerAEncryption : EncryptedSocket
     {
         private byte[] VerifyBytes;
 
@@ -51,11 +51,6 @@ namespace MonoTorrent.Client.Encryption
             gotPadDCallback = new AsyncCallback(gotPadD);
 
             SKEY = InfoHash;
-        }
-
-        public override void Start(IConnection socket)
-        {
-            base.Start(socket);
         }
 
         protected override void doneReceiveY(IAsyncResult result)
@@ -120,7 +115,7 @@ namespace MonoTorrent.Client.Encryption
 
             if (SelectCrypto(myCS) == 0)
             {
-                EncryptionError();
+                Complete(true);
                 return;
             }
 

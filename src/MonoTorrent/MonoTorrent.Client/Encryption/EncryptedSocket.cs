@@ -45,47 +45,13 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    internal class EncryptedSocket : IEncryptorInternal
+    public class EncryptedSocket : IEncryptorInternal
     {
-        #region Events
-
-        private EncryptorReadyHandler encryptorReady;
-        private EncryptorIOErrorHandler encryptorIOError;
-        private EncryptorEncryptionErrorHandler encryptorEncryptionError;
-
-
-        /// <summary>
-        /// Invoked when handshaking is complete and the Encrypt() and Decrypt() methods are ready to be used
-        /// </summary>
-        event EncryptorReadyHandler IEncryptorInternal.EncryptorReady
-        {
-            add { encryptorReady += value; }
-            remove { encryptorReady -= value; }
-        }
-
-        /// <summary>
-        /// Invoked when a socket error has occured
-        /// </summary>
-        event EncryptorIOErrorHandler IEncryptorInternal.EncryptorIOError
-        {
-            add { encryptorIOError += value; }
-            remove { encryptorIOError -= value; }
-        }
-
-        /// <summary>
-        /// Invoked when encryption handshaking could not be completed due to something other than a socket error
-        /// </summary>
-        event EncryptorEncryptionErrorHandler IEncryptorInternal.EncryptorEncryptionError
-        {
-            add { encryptorEncryptionError += value; }
-            remove { encryptorEncryptionError -= value; }
-        }
-        #endregion
-
         #region Private members
+        object state;
         private bool isReady = false;
 
-        private RandomNumberGenerator random;
+        private Random random;
         private SHA1 hasher;
 
         // Cryptors for the handshaking
@@ -114,6 +80,7 @@ namespace MonoTorrent.Client.Encryption
         private int bytesReceived;
 
         // Callbacks
+        private AsyncCallback completeCallback;
         private AsyncCallback doneSendCallback;
         private AsyncCallback doneReceiveCallback;
         private AsyncCallback doneReceiveYCallback;
@@ -147,17 +114,17 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] CryptoSelect;
 
-        protected PeerIdInternal id;
         #endregion
 
         public EncryptedSocket(EncryptionType minCryptoAllowed)
         {
-            random = RandomNumberGenerator.Create();
+            random = new Random();
             hasher = new SHA1Fast();
 
             GenerateX();
             GenerateY();
 
+            initialBuffer = new byte[0];
             InitialPayload = new byte[0];
             RemoteInitialPayload = new byte[0];
 
@@ -170,10 +137,6 @@ namespace MonoTorrent.Client.Encryption
             lastActivity = DateTime.Now;
             bytesReceived = 0;
 
-            initialBuffer = null;
-            initialBufferOffset = 0;
-            initialBufferCount = 0;
-
             SetMinCryptoAllowed(minCryptoAllowed);
         }
 
@@ -183,8 +146,10 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual void Start(IConnection socket)
+        public virtual void Start(IConnection socket, AsyncCallback callback, object state)
         {
+            this.state = state;
+            this.completeCallback = callback;
             this.socket = socket;
 
             // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
@@ -201,20 +166,22 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual void Start(IConnection socket, byte[] initialBuffer, int offset, int count)
+        public virtual void Start(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
         {
+            this.state = state;
+            this.completeCallback = callback;
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
             this.initialBufferCount = count;
-            Start(socket);
+            Start(socket, callback, state);
         }
 
         /// <summary>
         /// Returns true if the remote client has transmitted some initial payload data
         /// </summary>
-        public bool IsInitialDataAvailable()
+        public bool InitialDataAvailable
         {
-            return RemoteInitialPayload.Length > 0;
+            get { return RemoteInitialPayload.Length > 0; }
         }
 
         /// <summary>
@@ -240,15 +207,6 @@ namespace MonoTorrent.Client.Encryption
             RemoteInitialPayload = newRemoteInitialPayload;
 
             return toCopy;
-        }
-
-        /// <summary>
-        /// Sets the PeerConnectionID associated with this connection
-        /// </summary>
-        /// <param name="id">The PeerConnectionID associated with this connection</param>
-        public void SetPeerConnectionID(PeerIdInternal id)
-        {
-            this.id = id;
         }
 
         /// <summary>
@@ -281,6 +239,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to read</param>
         public void AddInitialData(byte[] buffer, int offset, int count)
         {
+
             byte[] newInitialPayload = new byte[InitialPayload.Length + count];
             Array.Copy(InitialPayload, newInitialPayload, InitialPayload.Length);
             Array.Copy(buffer, offset, newInitialPayload, InitialPayload.Length, count);
@@ -290,9 +249,9 @@ namespace MonoTorrent.Client.Encryption
         /// <summary>
         /// Returns true if the cryptor is ready to encrypt and decrypt
         /// </summary>
-        public bool IsReady()
+        public bool IsReady
         {
-            return isReady;
+            get { return isReady; }
         }
         #endregion
 
@@ -304,11 +263,8 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void SendY()
         {
-            byte[] padLengthBytes = new byte[4];
-            random.GetBytes(padLengthBytes);
-
-            byte[] toSend = new byte[96 + (BitConverter.ToInt32(padLengthBytes, 0) & 0x1ff)];
-            random.GetBytes(toSend);
+            byte[] toSend = new byte[96 + (random.Next() & 0x1ff)];
+            random.NextBytes(toSend);
 
             Array.Copy(Y, toSend, 96);
 
@@ -349,13 +305,13 @@ namespace MonoTorrent.Client.Encryption
 
             if (bytesReceived > syncStopPoint)
             {
-                EncryptionError();
+                Complete(true);
                 return;
             }
 
             if (socket == null)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
@@ -365,7 +321,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception)
             {
-                IOError();
+                Complete(true);
                 return;
             }
         }
@@ -376,7 +332,7 @@ namespace MonoTorrent.Client.Encryption
 
             if (socket == null)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
@@ -387,15 +343,15 @@ namespace MonoTorrent.Client.Encryption
                 read = socket.EndReceive(result);
                 bytesReceived += read;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
             if (read == 0 || !socket.Connected)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
@@ -427,7 +383,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 if (bytesReceived > syncStopPoint)
                 {
-                    EncryptionError();
+                    Complete(true);
                     return;
                 }
 
@@ -446,7 +402,7 @@ namespace MonoTorrent.Client.Encryption
                     }
                     catch(Exception)
                     {
-                        IOError();
+                        Complete(true);
                         return;
                     }
                 }
@@ -458,7 +414,7 @@ namespace MonoTorrent.Client.Encryption
                     }
                     catch (Exception)
                     {
-                        IOError();
+                        Complete(true);
                         return;
                     }
                 }
@@ -482,7 +438,7 @@ namespace MonoTorrent.Client.Encryption
                     Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
 
                     if (toCopy == initialBufferCount)
-                        initialBuffer = null;
+                        initialBuffer = new byte[0];
                     else
                     {
                         initialBufferOffset += toCopy;
@@ -501,7 +457,7 @@ namespace MonoTorrent.Client.Encryption
                         }
                         catch (Exception)
                         {
-                            IOError();
+                            Complete(true);
                             return;
                         }
                     }
@@ -514,7 +470,7 @@ namespace MonoTorrent.Client.Encryption
                     }
                     catch (Exception)
                     {
-                        IOError();
+                        Complete(true);
                         return;
                     }
                 }
@@ -547,7 +503,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (received == 0 || !socket.Connected)
                 {
-                    IOError();
+                    Complete(true);
                     return;
                 }
 
@@ -565,7 +521,7 @@ namespace MonoTorrent.Client.Encryption
             catch (Exception ex)
             {
                 Logger.Log(null, "Encrypted Socket - Failed to complete encrypted handshake: {0}", ex.Message);
-                IOError();
+                Complete(true);
                 return;
             }
         }
@@ -580,7 +536,7 @@ namespace MonoTorrent.Client.Encryption
                 }
                 catch (Exception ex)
                 {
-                    IOError();
+                    Complete(true);
                     return;
                 }
             }
@@ -602,13 +558,13 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
             if (sent == 0 || !socket.Connected)
             {
-                IOError();
+                Complete(true);
                 return;
             }
 
@@ -620,15 +576,6 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        protected void IOError()
-        {
-            encryptorIOError(id);
-        }
-
-        protected void EncryptionError()
-        {
-            encryptorEncryptionError(id);
-        }
         #endregion
 
         #region Cryptography Setup
@@ -639,7 +586,7 @@ namespace MonoTorrent.Client.Encryption
         {
             X = new byte[96];
 
-            random.GetNonZeroBytes(X);
+            random.NextBytes(X);
 
             for (int i = 0; i < 76; i++)
                 X[i] = 0;
@@ -734,7 +681,7 @@ namespace MonoTorrent.Client.Encryption
         {
             int cursor = 0;
             int totalLength = 0;
-            byte[] combined = new byte[totalLength];
+            byte[] combined;
 
             foreach (byte[] datum in data)
             {
@@ -788,21 +735,17 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected byte[] GeneratePad()
         {
-            byte[] padLengthBytes = new byte[4];
-            random.GetBytes(padLengthBytes);
-
-            byte[] pad = new byte[BitConverter.ToInt32(padLengthBytes, 0) & 0x1ff];
-
-            for (int i = 0; i < pad.Length; i++)
-            {
-                pad[i] = 0;
-            }
-
-            return pad;
+            return new byte[random.Next() & 0x1ff];
         }
         #endregion
 
         #region Miscellaneous
+
+        protected byte[] DoEncrypt(byte[] data)
+        {
+            return encryptor.DoCrypt(data);
+        }
+
         /// <summary>
         /// Encrypts some data with the RC4 encryptor used in handshaking
         /// </summary>
@@ -812,6 +755,16 @@ namespace MonoTorrent.Client.Encryption
         protected void DoEncrypt(byte[] data, int offset, int length)
         {
             encryptor.InPlaceCrypt(data, offset, length);
+        }
+
+        /// <summary>
+        /// Decrypts some data with the RC4 encryptor used in handshaking
+        /// </summary>
+        /// <param name="data">Buffers with the data to decrypt</param>
+        /// <returns>Buffer with decrypted data</returns>
+        protected byte[] DoDecrypt(byte[] data)
+        {
+            return decryptor.DoCrypt(data);
         }
 
         /// <summary>
@@ -826,26 +779,6 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Encrypts some data with the RC4 encryptor used in handshaking
-        /// </summary>
-        /// <param name="data...">Buffers with the data to encrypt</param>
-        /// <returns>Buffer with encrypted data</returns>
-        protected byte[] DoEncrypt(params byte[][] data)
-        {
-            return encryptor.DoCrypt(Combine(data));
-        }
-
-        /// <summary>
-        /// Decrypts some data with the RC4 encryptor used in handshaking
-        /// </summary>
-        /// <param name="data">Buffers with the data to decrypt</param>
-        /// <returns>Buffer with decrypted data</returns>
-        protected byte[] DoDecrypt(byte[] data)
-        {
-            return decryptor.DoCrypt(data);
-        }
-
-        /// <summary>
         /// Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
         /// </summary>
         protected void Ready()
@@ -856,7 +789,7 @@ namespace MonoTorrent.Client.Encryption
 
             isReady = true;
 
-            encryptorReady(id);
+            Complete(false);
         }
 
         protected void SetMinCryptoAllowed(EncryptionType minCryptoAllowed)
@@ -874,6 +807,20 @@ namespace MonoTorrent.Client.Encryption
                     CryptoProvide[i] = 0;
 
                 CryptoProvide[mByte] &= (byte)(0xff << mBit);
+            }
+        }
+
+        protected void Complete(bool closeConnection)
+        {
+            if (closeConnection)
+            {
+                this.socket.Dispose();
+                completeCallback(null);
+            }
+            else
+            {
+                // I think we'll always be *sending* data first, never trying to receive
+                socket.BeginSend(initialBuffer, initialBufferOffset, initialBufferCount, completeCallback, state);
             }
         }
         #endregion

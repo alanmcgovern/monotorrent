@@ -15,9 +15,6 @@ namespace MonoTorrent.Client
     {
         #region old members
 
-        private EncryptorReadyHandler onEncryptorReadyHandler;
-        private EncryptorIOErrorHandler onEncryptorIOErrorHandler;
-        private EncryptorEncryptionErrorHandler onEncryptorEncryptionErrorHandler;
         private AsyncCallback peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
 
         #endregion old members
@@ -63,10 +60,6 @@ namespace MonoTorrent.Client
             listeners = new MonoTorrentCollection<ConnectionListenerBase>();
             listeners.IsReadOnly = true;
             peerHandshakeReceived = new AsyncCallback(onPeerHandshakeReceived);
-            this.onEncryptorReadyHandler = new EncryptorReadyHandler(onEncryptorReady);
-            this.onEncryptorIOErrorHandler = new EncryptorIOErrorHandler(onEncryptorError);
-            this.onEncryptorEncryptionErrorHandler = new EncryptorEncryptionErrorHandler(onEncryptorError);
-            this.peerHandshakeReceived = new AsyncCallback(this.onPeerHandshakeReceived);
         }
 
         #endregion Constructors
@@ -167,11 +160,7 @@ namespace MonoTorrent.Client
                             sKeys[i] = engine.Torrents[i].Torrent.infoHash;
                     }
                     id.Connection.Encryptor = new PeerBEncryption(sKeys, engine.Settings.MinEncryptionLevel);
-                    id.Connection.Encryptor.SetPeerConnectionID(id);
-                    id.Connection.Encryptor.EncryptorReady += onEncryptorReadyHandler;
-                    id.Connection.Encryptor.EncryptorIOError += onEncryptorIOErrorHandler;
-                    id.Connection.Encryptor.EncryptorEncryptionError += onEncryptorEncryptionErrorHandler;
-                    id.Connection.StartEncryption(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                    id.Connection.StartEncryption(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve, delegate { onEncryptorReady(id); }, id);
                     return;
                 }
                 else
@@ -248,7 +237,7 @@ namespace MonoTorrent.Client
                 int bytesReceived = 0;
 
                 // Handshake was probably delivered as initial payload. Retrieve it if its' vailable
-                if (id.Connection.Encryptor.IsInitialDataAvailable())
+                if (id.Connection.Encryptor.InitialDataAvailable)
                     bytesReceived = id.Connection.Encryptor.GetInitialData(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
 
                 id.Connection.BytesReceived += bytesReceived;
@@ -280,14 +269,6 @@ namespace MonoTorrent.Client
                 CleanupSocket(id);
             }
         }
-
-
-        private void onEncryptorError(PeerIdInternal id)
-        {
-            Logger.Log(id.Connection.Connection, "ListenManager - Encryptor Error");
-            CleanupSocket(id);
-        }
-
 
         /// <summary>
         /// 

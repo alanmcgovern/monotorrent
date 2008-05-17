@@ -35,36 +35,26 @@ using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal delegate void EncryptorReadyHandler(PeerIdInternal id);
-    internal delegate void EncryptorIOErrorHandler(PeerIdInternal id);
-    internal delegate void EncryptorEncryptionErrorHandler(PeerIdInternal id);
-
     public interface IEncryptor
     {
     }
 
     internal interface IEncryptorInternal : IEncryptor
     {
-        event EncryptorReadyHandler EncryptorReady;
-        event EncryptorIOErrorHandler EncryptorIOError;
-        event EncryptorEncryptionErrorHandler EncryptorEncryptionError;
+        bool IsReady {  get; }
 
-        void Encrypt(byte[] buffer, int offset, int count);
-
-        void Decrypt(byte[] buffer, int offset, int count);
+        bool InitialDataAvailable {  get; }
 
         void AddInitialData(byte[] buffer, int offset, int count);
 
-        void Start(IConnection socket);
+        void Decrypt(byte[] buffer, int offset, int count);
 
-        void Start(IConnection socket, byte[] initialBuffer, int offset, int count);
-
-        bool IsReady();
-
-        bool IsInitialDataAvailable();
-
+        void Encrypt(byte[] buffer, int offset, int count);
+     
         int GetInitialData(byte[] buffer, int offset, int count);
 
-        void SetPeerConnectionID(PeerIdInternal id);
+        void Start(IConnection socket, AsyncCallback callback, object state);
+
+        void Start(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
     }
 }

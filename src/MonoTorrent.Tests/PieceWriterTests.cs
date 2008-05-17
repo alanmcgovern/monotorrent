@@ -169,17 +169,17 @@ namespace MonoTorrent.Client.PieceWriterTests
 				buffer.Array[buffer.Offset + i] = 0;
 		}
 
-		public static void Main(string[] args)
-		{
-			PieceWriterTests t = new PieceWriterTests();
-			t.GlobalSetup();
-			t.Setup();
-			t.TestMemoryWrites();
-			t.Setup();
-			t.TestMemoryStandardReads();
-			t.Setup();
-			t.TestMemoryOffsetReads();
-			t.GlobalTearDown();
-		}
+        //public static void Main(string[] args)
+        //{
+        //    PieceWriterTests t = new PieceWriterTests();
+        //    t.GlobalSetup();
+        //    t.Setup();
+        //    t.TestMemoryWrites();
+        //    t.Setup();
+        //    t.TestMemoryStandardReads();
+        //    t.Setup();
+        //    t.TestMemoryOffsetReads();
+        //    t.GlobalTearDown();
+        //}
 	}
 }

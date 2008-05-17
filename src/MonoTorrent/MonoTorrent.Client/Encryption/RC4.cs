@@ -99,7 +99,7 @@ namespace MonoTorrent.Client.Encryption
                 buffer[i] ^= S[(S[x] + S[y]) & 0xFF];
             }
         }
-
+#warning Duplicate logic, wtf!? Merge InPlaceCrypt and DoCrypt
         internal byte[] DoCrypt(byte[] buffer)
         {
             byte c;

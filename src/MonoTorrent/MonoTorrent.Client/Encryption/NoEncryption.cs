@@ -39,29 +39,6 @@ namespace MonoTorrent.Client.Encryption
     {
         PeerIdInternal id;
 
-        private EncryptorReadyHandler encryptorReady;
-        private EncryptorIOErrorHandler encryptorIOError;
-        private EncryptorEncryptionErrorHandler encryptorEncryptionError;
-
-
-        event EncryptorReadyHandler IEncryptorInternal.EncryptorReady
-        {
-            add { encryptorReady += value; }
-            remove { encryptorReady -= value; }
-        }
-
-        event EncryptorIOErrorHandler IEncryptorInternal.EncryptorIOError
-        {
-            add { encryptorIOError += value; }
-            remove { encryptorIOError -= value; }
-        }
-
-        event EncryptorEncryptionErrorHandler IEncryptorInternal.EncryptorEncryptionError
-        {
-            add { encryptorEncryptionError += value; }
-            remove { encryptorEncryptionError -= value; }
-        }
-
         public NoEncryption()
         {
 
@@ -82,39 +59,35 @@ namespace MonoTorrent.Client.Encryption
 
         }
 
-        void IEncryptorInternal.Start(IConnection socket)
+        void IEncryptorInternal.Start(IConnection socket, AsyncCallback callback, object state)
         {
-            Start(socket);
+            Start(socket, callback, state);
         }
 
-        void IEncryptorInternal.Start(IConnection socket, byte[] initialBuffer, int offset, int count)
+        void IEncryptorInternal.Start(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
         {
-            Start(socket);
+            Start(socket, callback, state);
         }
 
-        private void Start(IConnection s)
+        private void Start(IConnection s, AsyncCallback callback, object state)
         {
-            encryptorReady(id);
+            // FIXME FIX THIS! Return the PeerId maybe
+            callback(null);
         }
 
-        bool IEncryptorInternal.IsReady()
+        bool IEncryptorInternal.IsReady
         {
-            return true;
+            get { return true; }
         }
 
-        bool IEncryptorInternal.IsInitialDataAvailable()
+        bool IEncryptorInternal.InitialDataAvailable
         {
-            return false;
+            get { return false; }
         }
 
         int IEncryptorInternal.GetInitialData(byte[] buffer, int offset, int count)
         {
             return 0;
-        }
-
-        void IEncryptorInternal.SetPeerConnectionID(PeerIdInternal id)
-        {
-            this.id = id;
         }
     }
 }

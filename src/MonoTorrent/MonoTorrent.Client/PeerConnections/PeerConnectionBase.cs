@@ -535,14 +535,14 @@ namespace MonoTorrent.Client
         }
 
 		
-		internal void StartEncryption()
+		internal void StartEncryption(AsyncCallback callback, object state)
         {
-            Encryptor.Start(Connection);
+            Encryptor.Start(Connection, callback, state);
         }
 
-        internal void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count)
+        internal void StartEncryption(ArraySegment<byte> initialBuffer, int offset, int count, AsyncCallback callback, object state)
         {
-            Encryptor.Start(Connection, initialBuffer.Array, initialBuffer.Offset + offset, count);
+            Encryptor.Start(Connection, initialBuffer.Array, initialBuffer.Offset + offset, count, callback, state);
         }
 
         #endregion
@@ -550,7 +550,7 @@ namespace MonoTorrent.Client
 
         #region Async Methods
 
-        internal void BeginConnect(System.AsyncCallback peerEndCreateConnection, PeerIdInternal id)
+        internal void BeginConnect(AsyncCallback peerEndCreateConnection, PeerIdInternal id)
 		{
 			Connection.BeginConnect(peerEndCreateConnection, id);
 		}
