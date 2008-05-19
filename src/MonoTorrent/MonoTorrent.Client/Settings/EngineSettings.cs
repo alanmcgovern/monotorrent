@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
         private bool allowLegacyConnections;            // True if you want to allowing non-encrypted incoming connections. Returns true if encrytion is off
         private bool haveSupressionEnabled;             // True if you want to enable have surpression
-        private EncryptionType minEncryptionLevel;      // The minimum encryption level to use. "None" corresponds to no encryption.
+        private EncryptionTypes minEncryptionLevel;      // The minimum encryption level to use. "None" corresponds to no encryption.
         private int listenPort;                         // The port to listen to incoming connections on
         private int globalMaxConnections;               // The maximum number of connections that can be opened
         private int globalMaxHalfOpenConnections;       // The maximum number of simultaenous 1/2 open connections
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool AllowLegacyConnections
         {
-            get { return (this.allowLegacyConnections) || (this.minEncryptionLevel == EncryptionType.None); }
+            get { return (this.allowLegacyConnections) || (this.minEncryptionLevel == EncryptionTypes.None); }
             set { this.allowLegacyConnections = value; }
         }
 
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Specifies the minimum encryption level to use for outgoing connections.
         /// </summary>
-        public EncryptionType MinEncryptionLevel
+        public EncryptionTypes MinEncryptionLevel
         {
             get { return this.minEncryptionLevel; }
             set { this.minEncryptionLevel = value; }
@@ -193,7 +193,7 @@ namespace MonoTorrent.Client
         private const int DefaultMaxDownloadSpeed = 0;
         private const int DefaultMaxUploadSpeed = 0;
         private const int DefaultMaxHalfOpenConnections = 5;
-        private const EncryptionType DefaultMinLevel = EncryptionType.None;
+        private const EncryptionTypes DefaultMinLevel = EncryptionTypes.None;
         private const int DefaultListenPort = 52138;
 
         #endregion
@@ -259,7 +259,7 @@ namespace MonoTorrent.Client
         /// <param name="listenPort">The port to listen for incoming connections on</param>
         /// <param name="allowLegacyConnections">True if incoming connections without encryption should be accepted when encryption is enabled</param>
         /// <param name="minEncryption">The minimum level of encryption to use for outgoing connections</param>
-        public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections, int globalMaxDownloadSpeed, int globalMaxUploadSpeed, EncryptionType minEncryption, bool allowLegacyConnections)
+        public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections, int globalMaxDownloadSpeed, int globalMaxUploadSpeed, EncryptionTypes minEncryption, bool allowLegacyConnections)
         {
             this.allowLegacyConnections = allowLegacyConnections;
             this.globalMaxConnections = globalMaxConnections;

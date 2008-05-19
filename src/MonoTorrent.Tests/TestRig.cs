@@ -84,6 +84,7 @@ namespace MonoTorrentTests
 
     public class CustomConnection : IConnection
     {
+        public string Name;
         public event EventHandler BeginReceiveStarted;
         public event EventHandler EndReceiveStarted;
 
@@ -187,7 +188,7 @@ namespace MonoTorrentTests
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), new PeerAEncryption(manager.Torrent.InfoHash, EncryptionType.RC4Header));
+            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.RC4Header);
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }

@@ -113,6 +113,7 @@
     <Compile Include="MonoTorrent.Client\ClientEngine.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Client\Encryption\EncryptorFactory.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\CriticalExceptionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs">
       <SubType>Code</SubType>
@@ -153,19 +154,16 @@
     <Compile Include="MonoTorrent.Client\Encryption\EncryptedSocket.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\IEncryption.cs">
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryption\IEncryption.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\IEncryptor.cs">
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryptor\IEncryptor.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\Encryption\ModuloCalculator.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\NoEncryption.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\NullEncryption.cs">
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryption\NullEncryption.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\Encryption\PeerAEncryption.cs">
@@ -174,7 +172,7 @@
     <Compile Include="MonoTorrent.Client\Encryption\PeerBEncryption.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\RC4.cs">
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryption\RC4.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\Encryption\BigInteger\BigInteger.cs">
@@ -429,13 +427,13 @@
     <Compile Include="MonoTorrent.Client\Peers\PeerList.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs">
+    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\EndGamePicker.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs">
+    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\PiecePickerBase.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs">
+    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\StandardPicker.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\PieceWriter\DiskWriter.cs">
@@ -480,6 +478,7 @@
     <Compile Include="MonoTorrent.Client\Tracker\UdpTracker.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Common\AsyncResult.cs" />
     <Compile Include="MonoTorrent.Common\BitField.cs">
       <SubType>Code</SubType>
     </Compile>

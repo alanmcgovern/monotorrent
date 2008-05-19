@@ -178,5 +178,10 @@ namespace MonoTorrent.Common
 
             return result;
         }
+
+        internal static bool HasEncryption(EncryptionTypes available, EncryptionTypes check)
+        {
+            return (available & check) == check;
+        }
     }
 }

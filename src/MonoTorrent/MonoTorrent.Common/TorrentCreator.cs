@@ -206,7 +206,7 @@ namespace MonoTorrent.Common
             if (result != null)
                 throw new TorrentException("You must call EndCreate before calling BeginCreate again");
 
-            result = new TorrentCreatorAsyncResult(asyncState, callback);
+            result = new TorrentCreatorAsyncResult(callback, asyncState);
 
             // Start the processing in a seperate thread, a user thread.
             new Thread(new ThreadStart(AsyncCreate)).Start();
@@ -405,7 +405,7 @@ namespace MonoTorrent.Common
             }
 
             result.IsCompleted = true;
-            ((ManualResetEvent)result.AsyncWaitHandle).Set();
+            result.AsyncWaitHandle.Set();
 
             if (result.Callback != null)
                 result.Callback(this.result);

@@ -173,7 +173,7 @@ namespace MonoTorrent.Client.Tracker
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
             
-            bool supportsEncryption = ClientEngine.SupportsEncryption && engine.Settings.MinEncryptionLevel != EncryptionType.None;
+            bool supportsEncryption = ClientEngine.SupportsEncryption && engine.Settings.MinEncryptionLevel != EncryptionTypes.None;
 
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,

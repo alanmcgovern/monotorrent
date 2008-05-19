@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.Encryption
         private AsyncCallback gotVerificationCallback;
         private AsyncCallback gotPadDCallback;
 
-        public PeerAEncryption(byte[] InfoHash, EncryptionType minCryptoAllowed)
+        public PeerAEncryption(byte[] InfoHash, EncryptionTypes minCryptoAllowed)
             : base(minCryptoAllowed)
         {
             gotVerificationCallback = new AsyncCallback(gotVerification);
@@ -55,82 +55,117 @@ namespace MonoTorrent.Client.Encryption
 
         protected override void doneReceiveY(IAsyncResult result)
         {
-            base.doneReceiveY(result); // 2 B->A: Diffie Hellman Yb, PadB
+            try
+            {
+                base.doneReceiveY(result); // 2 B->A: Diffie Hellman Yb, PadB
 
-            StepThree();
+                StepThree();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         private void StepThree()
         {
-            CreateCryptors("keyA", "keyB");
+            try
+            {
+                CreateCryptors("keyA", "keyB");
 
-            // 3 A->B: HASH('req1', S)
-            byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+                // 3 A->B: HASH('req1', S)
+                byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
 
-            // ... HASH('req2', SKEY)
-            byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY);
+                // ... HASH('req2', SKEY)
+                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY);
 
-            // ... HASH('req3', S)
-            byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+                // ... HASH('req3', S)
+                byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
 
-            // HASH('req2', SKEY) xor HASH('req3', S)
-            for (int i = 0; i < req2.Length; i++)
-                req2[i] ^= req3[i];
+                // HASH('req2', SKEY) xor HASH('req3', S)
+                for (int i = 0; i < req2.Length; i++)
+                    req2[i] ^= req3[i];
 
-            byte[] padC = GeneratePad();
+                byte[] padC = GeneratePad();
 
-            // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
-            SendMessage(req1);
-            SendMessage(req2);
-            SendMessage(DoEncrypt(VerificationConstant));
-            SendMessage(DoEncrypt(CryptoProvide));
-            SendMessage(DoEncrypt(Len(padC)));
-            SendMessage(DoEncrypt(padC));
+                // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
+                SendMessage(req1);
+                SendMessage(req2);
+                SendMessage(DoEncrypt(VerificationConstant));
+                SendMessage(DoEncrypt(CryptoProvide));
+                SendMessage(DoEncrypt(Len(padC)));
+                SendMessage(DoEncrypt(padC));
 
-            // ... PadC, len(IA)), ENCRYPT(IA)
-            SendMessage(DoEncrypt(Len(InitialPayload)));
-            SendMessage(DoEncrypt(InitialPayload));
+                // ... PadC, len(IA)), ENCRYPT(IA)
+                SendMessage(DoEncrypt(Len(InitialPayload)));
+                SendMessage(DoEncrypt(InitialPayload));
 
-            InitialPayload = new byte[0];
+                InitialPayload = new byte[0];
 
-            Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
+                Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         protected override void doneSynchronize(IAsyncResult result)
         {
-            base.doneSynchronize(result); // 4 B->A: ENCRYPT(VC, ...
+            try
+            {
+                base.doneSynchronize(result); // 4 B->A: ENCRYPT(VC, ...
 
-            VerifyBytes = new byte[4 + 2];
-            ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback); // crypto_select, len(padD) ...
+                VerifyBytes = new byte[4 + 2];
+                ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback); // crypto_select, len(padD) ...
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         private void gotVerification(IAsyncResult result)
         {
-            byte[] myCS = new byte[4];
-            byte[] lenPadD = new byte[2];
-
-            DoDecrypt(VerifyBytes, 0, VerifyBytes.Length);
-
-            Array.Copy(VerifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
-
-            if (SelectCrypto(myCS) == 0)
+            try
             {
-                Complete(true);
-                return;
+                byte[] myCS = new byte[4];
+                byte[] lenPadD = new byte[2];
+
+                DoDecrypt(VerifyBytes, 0, VerifyBytes.Length);
+
+                Array.Copy(VerifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
+
+                if (SelectCrypto(myCS) == 0)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                Array.Copy(VerifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
+
+                PadD = new byte[DeLen(lenPadD)];
+
+                ReceiveMessage(PadD, PadD.Length, gotPadDCallback);
             }
-
-            Array.Copy(VerifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
-
-            PadD = new byte[DeLen(lenPadD)];
-
-            ReceiveMessage(PadD, PadD.Length, gotPadDCallback);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         private void gotPadD(IAsyncResult result)
         {
-            DoDecrypt(PadD, 0, PadD.Length); // padD
+            try
+            {
+                DoDecrypt(PadD, 0, PadD.Length); // padD
 
-            Ready();
+                Ready();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }

@@ -6,46 +6,21 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Common
 {
-    public class TorrentCreatorAsyncResult : IAsyncResult
+    public class TorrentCreatorAsyncResult : AsyncResult
     {
         #region Member Variables
 
         private bool aborted;
-        private object asyncState;
-        private AsyncCallback callback;
         private BEncodedDictionary dictionary;
-        private bool isCompleted;
-        private Exception savedException;
-        private ManualResetEvent waitHandle;
 
         #endregion Member Variables
 
 
         #region Properties
 
-        public object AsyncState
-        {
-            get { return asyncState; }
-        }
-
         public bool Aborted
         {
             get { return this.aborted; }
-        }
-
-        public WaitHandle AsyncWaitHandle
-        {
-            get { return waitHandle; }
-        }
-
-        internal AsyncCallback Callback
-        {
-            get { return callback; }
-        }
-
-        public bool CompletedSynchronously
-        {
-            get { return false; }
         }
 
         internal BEncodedDictionary Dictionary
@@ -54,28 +29,15 @@ namespace MonoTorrent.Common
             set { dictionary = value; }
         }
 
-        public bool IsCompleted
-        {
-            get { return isCompleted; }
-            internal set { isCompleted = value; }
-        }
-
-        internal Exception SavedException
-        {
-            get { return this.savedException; }
-            set { this.savedException = value; }
-        }
-
         #endregion Properties
 
 
         #region Constructors
 
-        public TorrentCreatorAsyncResult(object asyncState, AsyncCallback callback)
+        public TorrentCreatorAsyncResult(AsyncCallback callback, object asyncState)
+            : base(callback, asyncState)
         {
-            this.asyncState = asyncState;
-            this.callback = callback;
-            this.waitHandle = new ManualResetEvent(false);
+
         }
 
         #endregion Constructors

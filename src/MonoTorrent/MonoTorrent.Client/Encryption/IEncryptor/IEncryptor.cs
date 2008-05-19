@@ -37,24 +37,16 @@ namespace MonoTorrent.Client.Encryption
 {
     public interface IEncryptor
     {
-    }
-
-    internal interface IEncryptorInternal : IEncryptor
-    {
         bool IsReady {  get; }
 
         bool InitialDataAvailable {  get; }
 
         void AddInitialData(byte[] buffer, int offset, int count);
-
-        void Decrypt(byte[] buffer, int offset, int count);
-
-        void Encrypt(byte[] buffer, int offset, int count);
      
         int GetInitialData(byte[] buffer, int offset, int count);
 
-        void Start(IConnection socket, AsyncCallback callback, object state);
+        void BeginHandshake(IConnection socket, AsyncCallback callback, object state);
 
-        void Start(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
+        void BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
     }
 }

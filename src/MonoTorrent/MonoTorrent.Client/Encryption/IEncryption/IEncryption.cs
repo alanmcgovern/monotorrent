@@ -1,10 +1,10 @@
 //
-// NullEncryption.cs
+// IEncryption.cs
 //
 // Authors:
-//   Yiduo Wang planetbeing@gmail.com
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2007 Yiduo Wang
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -31,36 +31,12 @@ using System.Text;
 
 namespace MonoTorrent.Client.Encryption
 {
-    /// <summary>
-    /// Plaintext "encryption"
-    /// </summary>
-    public class NullEncryption : IEncryption
+    public interface IEncryption
     {
-        public static NullEncryption NullEncryptor = new NullEncryption();
+        void Decrypt(byte[] buffer);
+        void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count);
 
-        
-        internal byte[] DoCrypt(byte[] buffer)
-        {
-            return buffer;
-        }
-
-        internal void InPlaceCrypt(byte[] buffer, int offset, int length)
-        {
-            return;
-        }
-
-        #region IEncryption Members
-
-        byte[] IEncryption.DoCrypt(byte[] buffer)
-        {
-            return DoCrypt(buffer);
-        }
-
-        void IEncryption.InPlaceCrypt(byte[] buffer, int offset, int length)
-        {
-            InPlaceCrypt(buffer, offset, length);
-        }
-
-        #endregion
+        void Encrypt(byte[] buffer);
+        void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count);
     }
 }

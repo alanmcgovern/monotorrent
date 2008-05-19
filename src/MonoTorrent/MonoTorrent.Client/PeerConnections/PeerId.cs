@@ -19,7 +19,7 @@ namespace MonoTorrent.Client
         private IConnection connection;
 		private PeerIdInternal id;
         private Software clientApp;
-        private IEncryptorInternal encryptor;
+        private IEncryption encryptor;
         private int hashFails;
         private bool isChoking;
         private bool isInterested;
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client
             get { return this.connection; }
         }
 
-        public IEncryptor Encryptor
+        public IEncryption Encryptor
         {
             get { return this.encryptor; }
         }

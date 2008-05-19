@@ -3,6 +3,7 @@
 //
 // Authors:
 //   Yiduo Wang planetbeing@gmail.com
+//   Alan McGovern alan.mcgovern@gmail.com
 //
 // Copyright (C) 2007 Yiduo Wang
 //
@@ -41,20 +42,15 @@ namespace MonoTorrent.Client.Encryption
     {
         static RandomNumberGenerator random = RandomNumberGenerator.Create();
 
-        //byte[] key;
-
-        byte[] S = new byte[256];
+        byte[] S;
         int x;
         int y;
 
-        internal RC4(byte[] key)
+        public RC4(byte[] key)
         {
-            //this.key = key;
-
-            for (int i = 0; i <= 255; i++)
+            S = new byte[256];
+            for (int i = 0; i < S.Length; i++)
                 S[i] = (byte)i;
-
-            x = y = 0;
 
             byte c;
 
@@ -70,24 +66,28 @@ namespace MonoTorrent.Client.Encryption
 
             byte[] wasteBuffer = new byte[1024];
             random.GetBytes(wasteBuffer);
-            DoCrypt(wasteBuffer);
+            Encrypt(wasteBuffer);
         }
 
-        byte[] IEncryption.DoCrypt(byte[] buffer)
+        public void Decrypt(byte[] buffer)
         {
-            return DoCrypt(buffer);
+            Encrypt(buffer, 0, buffer, 0, buffer.Length);
         }
 
-        void IEncryption.InPlaceCrypt(byte[] buffer, int offset, int length)
+        public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            InPlaceCrypt(buffer, offset, length);
+            Encrypt(src, srcOffset, dest, destOffset, count);
         }
 
-        internal void InPlaceCrypt(byte[] buffer, int offset, int length)
+        public void Encrypt(byte[] buffer)
+        {
+            Encrypt(buffer, 0, buffer, 0, buffer.Length);
+        }
+
+        public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             byte c;
-
-            for (int i = offset; i < (offset + length); i++)
+            for (int i = 0; i < count; i++)
             {
                 x = (x + 1) & 0xFF;
                 y = (y + S[x]) & 0xFF;
@@ -96,28 +96,8 @@ namespace MonoTorrent.Client.Encryption
                 S[y] = S[x];
                 S[x] = c;
 
-                buffer[i] ^= S[(S[x] + S[y]) & 0xFF];
+                dest[i + destOffset] = (byte)(src[i + srcOffset] ^ (S[(S[x] + S[y]) & 0xFF]));
             }
-        }
-#warning Duplicate logic, wtf!? Merge InPlaceCrypt and DoCrypt
-        internal byte[] DoCrypt(byte[] buffer)
-        {
-            byte c;
-
-            byte[] outBuffer = new byte[buffer.Length];
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                x = (x + 1) & 0xFF;
-                y = (y + S[x]) & 0xFF;
-
-                c = S[y];
-                S[y] = S[x];
-                S[x] = c;
-
-                outBuffer[i] = (byte)(buffer[i] ^ S[(S[x] + S[y]) & 0xFF]);
-            }
-
-            return outBuffer;
         }
     }
 }

@@ -39,25 +39,13 @@ namespace MonoTorrent.Client
 {
     public class Peer
     {
-        Uri connectionUri;
-        IEncryptor encryptor;
-
-        public Uri ConnectionUri
-        {
-            get { return connectionUri; }
-        }
-
-        public IEncryptor Encryptor
-        {
-            get { return encryptor; }
-        }
-
         #region Private Fields
 
         private bool activeReceive;
         private bool activeSend;
         private int cleanedUpCount;
-        private EncryptionMethods encryptionSupported = EncryptionMethods.RC4Encryption;
+        private Uri connectionUri;
+        private EncryptionTypes encryption;
         private int failedConnectionAttempts;
         private int localPort;
         private int totalHashFails;
@@ -83,7 +71,10 @@ namespace MonoTorrent.Client
             set { this.activeSend = value; }
         }
 
-
+        public Uri ConnectionUri
+        {
+            get { return connectionUri; }
+        }
 
         internal int CleanedUpCount
         {
@@ -91,6 +82,10 @@ namespace MonoTorrent.Client
             set { this.cleanedUpCount = value; }
         }
 
+        public EncryptionTypes Encryption
+        {
+            get { return encryption; }
+        }
 
         /// <summary>
         /// Returns the number of times the peer has sent us a piece which failed a hashcheck
@@ -145,15 +140,6 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// The highest level of encryption that should be attempted with this peer
-        /// </summary>
-        internal EncryptionMethods EncryptionSupported
-        {
-            get { return this.encryptionSupported; }
-            set { this.encryptionSupported = value; }
-        }
-
         internal int RepeatedHashFails
         {
             get { return this.repeatedHashFails; }
@@ -164,22 +150,20 @@ namespace MonoTorrent.Client
 
         #region Constructors
         public Peer(string peerId, Uri connectionUri)
-            : this (peerId, connectionUri, new NoEncryption())
+            : this (peerId, connectionUri, EncryptionTypes.Auto)
         {
 
         }
 
-        public Peer(string peerId, Uri connectionUri, IEncryptor encryptor)
+        public Peer(string peerId, Uri connectionUri, EncryptionTypes encryption)
         {
             if (peerId == null)
                 throw new ArgumentNullException("peerId");
             if (connectionUri == null)
                 throw new ArgumentNullException("connectionUri");
-            if (encryptor == null)
-                throw new ArgumentNullException("encryptor");
 
             this.connectionUri = connectionUri;
-            this.encryptor = encryptor;
+            this.encryption = encryption;
             this.peerId = peerId;
         }
 
@@ -248,7 +232,7 @@ namespace MonoTorrent.Client
                     peerId = string.Empty;
 
                 Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
-                list.Add(new Peer(peerId, connectionUri, new NoEncryption()));
+                list.Add(new Peer(peerId, connectionUri, EncryptionTypes.Auto));
             }
 
             return list;
@@ -282,7 +266,7 @@ namespace MonoTorrent.Client
                 sb.Append(port);
 
                 Uri uri = new Uri("tcp://" + sb.ToString());
-                list.Add(new Peer("", uri, new NoEncryption()));
+                list.Add(new Peer("", uri, EncryptionTypes.Auto));
             }
 
             return list;

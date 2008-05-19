@@ -41,12 +41,21 @@ using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client.Encryption
 {
-
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    public class EncryptedSocket : IEncryptorInternal
+    public class EncryptedSocket : IEncryptor
     {
+        private AsyncResult asyncResult;
+        public IEncryption Encryptor
+        {
+            get { return streamEncryptor; }
+        }
+        public IEncryption Decryptor
+        {
+            get { return streamDecryptor; }
+        }
+
         #region Private members
         object state;
         private bool isReady = false;
@@ -62,7 +71,7 @@ namespace MonoTorrent.Client.Encryption
         private IEncryption streamEncryptor;
         private IEncryption streamDecryptor;
 
-        private EncryptionType minCryptoAllowed;
+        private EncryptionTypes minCryptoAllowed;
 
         private byte[] X; // A 160 bit random integer
         private byte[] Y; // 2^X mod P
@@ -116,7 +125,7 @@ namespace MonoTorrent.Client.Encryption
 
         #endregion
 
-        public EncryptedSocket(EncryptionType minCryptoAllowed)
+        public EncryptedSocket(EncryptionTypes minCryptoAllowed)
         {
             random = new Random();
             hasher = new SHA1Fast();
@@ -146,16 +155,39 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual void Start(IConnection socket, AsyncCallback callback, object state)
+        public virtual void BeginHandshake(IConnection socket, AsyncCallback callback, object state)
         {
-            this.state = state;
-            this.completeCallback = callback;
-            this.socket = socket;
+            if (asyncResult != null)
+                throw new ArgumentException("BeginHandshake has already been called");
 
-            // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
-            // These two steps will be done simultaneously to save time due to latency
-            SendY();
-            ReceiveY();
+            asyncResult = new AsyncResult(callback, state);
+
+            try
+            {
+                this.state = state;
+                this.completeCallback = callback;
+                this.socket = socket;
+
+                // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
+                // These two steps will be done simultaneously to save time due to latency
+                SendY();
+                ReceiveY();
+            }
+            catch (Exception ex)
+            {
+                asyncResult.Complete(ex);
+            }
+        }
+
+        internal void EndHandshake(IAsyncResult result)
+        {
+            if (result != this.asyncResult)
+                throw new ArgumentException("Wrong IAsyncResult supplied");
+
+            if (asyncResult.SavedException != null)
+                throw asyncResult.SavedException;
+
+            asyncResult = null;
         }
 
         /// <summary>
@@ -166,14 +198,14 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual void Start(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
+        public virtual void BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
         {
             this.state = state;
             this.completeCallback = callback;
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
             this.initialBufferCount = count;
-            Start(socket, callback, state);
+            BeginHandshake(socket, callback, state);
         }
 
         /// <summary>
@@ -217,7 +249,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to encrypt</param>
         public void Encrypt(byte[] data, int offset, int length)
         {
-            streamEncryptor.InPlaceCrypt(data, offset, length);
+            streamEncryptor.Encrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -228,7 +260,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to decrypt</param>
         public void Decrypt(byte[] data, int offset, int length)
         {
-            streamDecryptor.InPlaceCrypt(data, offset, length);
+            streamDecryptor.Decrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -239,7 +271,6 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to read</param>
         public void AddInitialData(byte[] buffer, int offset, int count)
         {
-
             byte[] newInitialPayload = new byte[InitialPayload.Length + count];
             Array.Copy(InitialPayload, newInitialPayload, InitialPayload.Length);
             Array.Copy(buffer, offset, newInitialPayload, InitialPayload.Length, count);
@@ -298,126 +329,140 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
         protected void Synchronize(byte[] syncData, int syncStopPoint)
         {
-            // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
-            synchronizeData = syncData;
-            synchronizeWindow = new byte[syncData.Length];
-            this.syncStopPoint = syncStopPoint;
-
-            if (bytesReceived > syncStopPoint)
-            {
-                Complete(true);
-                return;
-            }
-
-            if (socket == null)
-            {
-                Complete(true);
-                return;
-            }
-
             try
             {
-                socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
-            }
-            catch (Exception)
-            {
-                Complete(true);
-                return;
-            }
-        }
+                // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
+                synchronizeData = syncData;
+                synchronizeWindow = new byte[syncData.Length];
+                this.syncStopPoint = syncStopPoint;
 
-        protected void fillSynchronizeBytes(IAsyncResult result)
-        {
-            lastActivity = DateTime.Now;
-
-            if (socket == null)
-            {
-                Complete(true);
-                return;
-            }
-
-            int read;
-
-            try
-            {
-                read = socket.EndReceive(result);
-                bytesReceived += read;
-            }
-            catch (Exception ex)
-            {
-                Complete(true);
-                return;
-            }
-
-            if (read == 0 || !socket.Connected)
-            {
-                Complete(true);
-                return;
-            }
-
-            int matchStart = -1; // offset of the beginning of the current match
-            int filled = (int)result.AsyncState + read; // count of the bytes currently in synchronizeWindow
-            int syncDataPtr = 0; // offset of the byte in synchronizeData we are currently matching
-
-            for (int i = 0; i < filled; i++)
-            {
-                if (synchronizeData[syncDataPtr] != synchronizeWindow[i])
-                {
-                    matchStart = -1;
-                    syncDataPtr = 0;
-                }
-                else
-                {
-                    if (matchStart == -1)
-                        matchStart = i;
-
-                    syncDataPtr++;
-                }
-            }
-
-            if (matchStart == 0) // the match started in the beginning of the window, so it must be a full match
-            {
-                doneSynchronizeCallback(result);
-            }
-            else
-            {
                 if (bytesReceived > syncStopPoint)
                 {
                     Complete(true);
                     return;
                 }
 
-                if (matchStart != -1) // there's a partial match beginning in the middle of the window
+                if (socket == null)
                 {
-                    // move the partial match to the beginning of the window
-                    for (int i = matchStart; i < synchronizeWindow.Length; i++)
+                    Complete(true);
+                    return;
+                }
+
+                try
+                {
+                    socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                }
+                catch (Exception)
+                {
+                    Complete(true);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        protected void fillSynchronizeBytes(IAsyncResult result)
+        {
+            try
+            {
+                lastActivity = DateTime.Now;
+
+                if (socket == null)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                int read;
+
+                try
+                {
+                    read = socket.EndReceive(result);
+                    bytesReceived += read;
+                }
+                catch (Exception ex)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                if (read == 0 || !socket.Connected)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                int matchStart = -1; // offset of the beginning of the current match
+                int filled = (int)result.AsyncState + read; // count of the bytes currently in synchronizeWindow
+                int syncDataPtr = 0; // offset of the byte in synchronizeData we are currently matching
+
+                for (int i = 0; i < filled; i++)
+                {
+                    if (synchronizeData[syncDataPtr] != synchronizeWindow[i])
                     {
-                        synchronizeWindow[i - matchStart] = synchronizeWindow[i];
+                        matchStart = -1;
+                        syncDataPtr = 0;
+                    }
+                    else
+                    {
+                        if (matchStart == -1)
+                            matchStart = i;
+
+                        syncDataPtr++;
+                    }
+                }
+
+                if (matchStart == 0) // the match started in the beginning of the window, so it must be a full match
+                {
+                    doneSynchronizeCallback(result);
+                }
+                else
+                {
+                    if (bytesReceived > syncStopPoint)
+                    {
+                        Complete(true);
+                        return;
                     }
 
-                    // fill the rest of the window
-                    try
+                    if (matchStart != -1) // there's a partial match beginning in the middle of the window
                     {
-                        socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
+                        // move the partial match to the beginning of the window
+                        for (int i = matchStart; i < synchronizeWindow.Length; i++)
+                        {
+                            synchronizeWindow[i - matchStart] = synchronizeWindow[i];
+                        }
+
+                        // fill the rest of the window
+                        try
+                        {
+                            socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
+                        }
+                        catch (Exception)
+                        {
+                            Complete(true);
+                            return;
+                        }
                     }
-                    catch(Exception)
+                    else // there's no match in this window
                     {
-                        Complete(true);
-                        return;
+                        try
+                        {
+                            socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                        }
+                        catch (Exception)
+                        {
+                            Complete(true);
+                            return;
+                        }
                     }
                 }
-                else // there's no match in this window
-                {
-                    try
-                    {
-                        socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
-                    }
-                    catch (Exception)
-                    {
-                        Complete(true);
-                        return;
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
             }
         }
 
@@ -430,30 +475,45 @@ namespace MonoTorrent.Client.Encryption
         #region I/O Functions
         protected void ReceiveMessage(byte[] buffer, int length, AsyncCallback callback)
         {
-            if (length > 0)
+            try
             {
-                if (initialBuffer != null)
+                if (length > 0)
                 {
-                    int toCopy = Math.Min(initialBufferCount, length);
-                    Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
-
-                    if (toCopy == initialBufferCount)
-                        initialBuffer = new byte[0];
-                    else
+                    if (initialBuffer != null)
                     {
-                        initialBufferOffset += toCopy;
-                        initialBufferCount -= toCopy;
-                    }
+                        int toCopy = Math.Min(initialBufferCount, length);
+                        Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
 
-                    if (toCopy == length)
-                    {
-                        callback(null);
+                        if (toCopy == initialBufferCount)
+                            initialBuffer = new byte[0];
+                        else
+                        {
+                            initialBufferOffset += toCopy;
+                            initialBufferCount -= toCopy;
+                        }
+
+                        if (toCopy == length)
+                        {
+                            callback(null);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
+                            }
+                            catch (Exception)
+                            {
+                                Complete(true);
+                                return;
+                            }
+                        }
                     }
                     else
                     {
                         try
                         {
-                            socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
+                            socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
                         }
                         catch (Exception)
                         {
@@ -464,20 +524,13 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    try
-                    {
-                        socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
-                    }
-                    catch (Exception)
-                    {
-                        Complete(true);
-                        return;
-                    }
+                    callback(null);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                callback(null);
+                Console.WriteLine(ex);
+                Complete(true);
             }
         }
 
@@ -544,35 +597,42 @@ namespace MonoTorrent.Client.Encryption
 
         private void doneSend(IAsyncResult result)
         {
-            object[] sendData = (object[])result.AsyncState;
-
-            byte[] toSend = (byte[])sendData[0];
-            int start = (int)sendData[1];
-            int length = (int)sendData[2];
-
-            int sent;
-
             try
             {
-                sent = socket.EndSend(result);
-            }
-            catch (Exception)
-            {
-                Complete(true);
-                return;
-            }
+                object[] sendData = (object[])result.AsyncState;
 
-            if (sent == 0 || !socket.Connected)
-            {
-                Complete(true);
-                return;
-            }
+                byte[] toSend = (byte[])sendData[0];
+                int start = (int)sendData[1];
+                int length = (int)sendData[2];
 
-            if (sent < length)
+                int sent;
+
+                try
+                {
+                    sent = socket.EndSend(result);
+                }
+                catch (Exception)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                if (sent == 0 || !socket.Connected)
+                {
+                    Complete(true);
+                    return;
+                }
+
+                if (sent < length)
+                {
+                    sendData[1] = start + sent;
+                    sendData[2] = length - sent;
+                    socket.BeginSend(toSend, start + sent, length - sent, doneSendCallback, sendData);
+                }
+            }
+            catch (Exception ex)
             {
-                sendData[1] = start + sent;
-                sendData[2] = length - sent;
-                socket.BeginSend(toSend, start + sent, length - sent, doneSendCallback, sendData);
+                Console.WriteLine(ex);
             }
         }
 
@@ -651,18 +711,21 @@ namespace MonoTorrent.Client.Encryption
                     break;
             }
 
-            if (selected >= (int)minCryptoAllowed)
+#warning FIX THIS DETECTION! IT ALWAYS CHOOSES FULL ENCRYPTION
+            if ( true || selected == 0 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.None))
             {
-                switch ((EncryptionType)selected)
+                switch ((EncryptionTypes)selected)
                 {
-                    case EncryptionType.RC4Header:
-                        streamEncryptor = NullEncryption.NullEncryptor;
-                        streamDecryptor = NullEncryption.NullEncryptor;
+                    case EncryptionTypes.RC4Header:
+                        streamEncryptor = new PlainTextEncryption();
+                        streamDecryptor = new PlainTextEncryption();
                         break;
-                    case EncryptionType.RC4Full:
+                     
+                    case EncryptionTypes.RC4Full:
+                    default:
                         streamEncryptor = encryptor;
                         streamDecryptor = decryptor;
-                        break;
+                        return 1;
                 }
             }
 
@@ -743,7 +806,9 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] DoEncrypt(byte[] data)
         {
-            return encryptor.DoCrypt(data);
+            byte[] d = (byte[])data.Clone();
+            encryptor.Encrypt(d);
+            return d;
         }
 
         /// <summary>
@@ -754,7 +819,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to encrypt</param>
         protected void DoEncrypt(byte[] data, int offset, int length)
         {
-            encryptor.InPlaceCrypt(data, offset, length);
+            encryptor.Encrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -764,7 +829,9 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>Buffer with decrypted data</returns>
         protected byte[] DoDecrypt(byte[] data)
         {
-            return decryptor.DoCrypt(data);
+            byte[] d = (byte[])data.Clone();
+            decryptor.Decrypt(d);
+            return d;
         }
 
         /// <summary>
@@ -775,7 +842,7 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="count">Number of bytes to decrypt</param>
         protected void DoDecrypt(byte[] data, int offset, int length)
         {
-            decryptor.InPlaceCrypt(data, offset, length);
+            decryptor.Decrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
@@ -783,16 +850,23 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void Ready()
         {
-            // Send any remaining initial payload data that we hadn't gotten a chance to send
-            Encrypt(InitialPayload, 0, InitialPayload.Length);
-            SendMessage(InitialPayload);
+            try
+            {
+                // Send any remaining initial payload data that we hadn't gotten a chance to send
+                Encrypt(InitialPayload, 0, InitialPayload.Length);
+                SendMessage(InitialPayload);
 
-            isReady = true;
+                isReady = true;
 
-            Complete(false);
+                Complete(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
-        protected void SetMinCryptoAllowed(EncryptionType minCryptoAllowed)
+        protected void SetMinCryptoAllowed(EncryptionTypes minCryptoAllowed)
         {
             this.minCryptoAllowed = minCryptoAllowed;
 

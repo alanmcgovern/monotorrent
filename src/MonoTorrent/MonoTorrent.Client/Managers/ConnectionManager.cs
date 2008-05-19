@@ -158,13 +158,7 @@ namespace MonoTorrent.Client
             // Connect to the peer.
             lock (id)
             {
-                IEncryptorInternal encryptor;
-                if(!ClientEngine.SupportsEncryption || id.Peer.EncryptionSupported == EncryptionMethods.NoEncryption)
-                    encryptor = new NoEncryption();
-                else
-                    encryptor = new PeerAEncryption(manager.Torrent.InfoHash, this.engine.Settings.MinEncryptionLevel);
-
-                id.Connection = new PeerConnectionBase(id.TorrentManager.Torrent.Pieces.Count, encryptor);
+                id.Connection = new PeerConnectionBase(id.TorrentManager.Torrent.Pieces.Count);
                 id.Connection.Connection = ConnectionFactory.Create(id.Peer.ConnectionUri);
                 if (id.Connection.Connection == null)
                     return;
@@ -999,39 +993,6 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void onEncryptorError(PeerIdInternal id)
-        {
-            try
-            {
-                //FIXME: #warning Terrible logic actually. I need to fix this.
-                id.Peer.EncryptionSupported = EncryptionMethods.NoEncryption;
-                CleanupSocket(id, "Encryptor error... somewhere");
-                return;
-
-                /*
-                if (id.Connection != null)
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                    id.Connection.Dispose();
-                }
-
-                //id.Connection = null;
-                //id.TorrentManager.Peers.RemovePeer(id, PeerType.Connecting);
-
-                if (this.engine.Settings.MinEncryptionLevel == EncryptionType.None)
-                    id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);*/
-            }
-            catch (NullReferenceException)
-            {
-                CleanupSocket(id, "Null ref encryptor error");
-            }
-            catch (Exception)
-            {
-                CleanupSocket(id, "Encryptor error");
-            }
-        }
-
-
         /// <summary>
         /// This method should be called to begin processing messages stored in the SendQueue
         /// </summary>
@@ -1128,21 +1089,11 @@ namespace MonoTorrent.Client
                     }
                     if (downloading)
                     {
-                        if (!id.Connection.Encryptor.IsReady)
-                        {
-                            id.Connection.Encryptor.Start(id.Connection.Connection, onEndReceiveMessageCallback, id);
-                            return 0;
-                        }
                         byteCount = (id.Connection.BytesToRecieve - id.Connection.BytesReceived) > ChunkLength ? ChunkLength : id.Connection.BytesToRecieve - id.Connection.BytesReceived;
                         id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, SocketFlags.None, this.onEndReceiveMessageCallback, id, out id.ErrorCode);
                     }
                     else
                     {
-                        if (!id.Connection.Encryptor.IsReady)
-                        {
-                            id.Connection.Encryptor.Start(id.Connection.Connection, onEndSendMessageCallback, id);
-                            return 0;
-                        }
                         byteCount = (id.Connection.BytesToSend - id.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Connection.BytesToSend - id.Connection.BytesSent);
                         id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, SocketFlags.None, this.onEndSendMessageCallback, id, out id.ErrorCode);
                     }

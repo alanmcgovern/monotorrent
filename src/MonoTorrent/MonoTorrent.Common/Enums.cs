@@ -47,18 +47,13 @@ namespace MonoTorrent.Common
         Outgoing
     }
 
-
-    public enum EncryptionType
+    [Flags]
+    public enum EncryptionTypes
     {
-        None = 0,
         RC4Header = 1,
-        RC4Full = 2
-    }
-
-    public enum EncryptionMethods
-    {
-        NoEncryption,
-        RC4Encryption
+        RC4Full = 2,
+        None = 4,
+        Auto = RC4Full | RC4Header | None
     }
 
     public enum TorrentState
