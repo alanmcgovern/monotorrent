@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -170,7 +170,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
     }
