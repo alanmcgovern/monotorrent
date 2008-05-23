@@ -105,7 +105,7 @@ namespace MonoTorrent.Common
 
         protected internal void Complete()
         {
-            Complete(null);
+            Complete(savedException);
         }
         protected internal void Complete(Exception ex)
         {
