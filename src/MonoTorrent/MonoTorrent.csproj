@@ -129,6 +129,9 @@
     <Compile Include="MonoTorrent.Client\Piece.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -425,15 +428,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\Peers\PeerList.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\EndGamePicker.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\PiecePickerBase.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\PeerConnections\PiecePicking\StandardPicker.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\PieceWriter\DiskWriter.cs">
