@@ -146,13 +146,21 @@ namespace MonoTorrentTests
         {
             if (EndReceiveStarted != null)
                 EndReceiveStarted(null, EventArgs.Empty);
-            return s.EndReceive(result);
+            try
+            {
+                return s.EndReceive(result);
+            }
+            catch (ObjectDisposedException e)
+            {
+                return 0;
+            }
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             if (BeginSendStarted != null)
                 BeginSendStarted(null, EventArgs.Empty);
+
             return s.BeginSend(buffer, offset, count, SocketFlags.None, callback, state);
         }
 
@@ -160,11 +168,19 @@ namespace MonoTorrentTests
         {
             if (EndSendStarted != null)
                 EndSendStarted(null, EventArgs.Empty);
-            return s.EndSend(result);
+            try
+            {
+                return s.EndSend(result);
+            }
+            catch (ObjectDisposedException e)
+            {
+                return 0;
+            }
         }
-
+        private bool disposed;
         public void Dispose()
         {
+            disposed = true;
             s.Close();
         }
     }

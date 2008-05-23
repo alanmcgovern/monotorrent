@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (!MatchSKEY(torrentHash))
                 {
-                    Complete(true);
+                    asyncResult.Complete(new EncryptionException("No valid SKey found"));
                     return;
                 }
 
@@ -114,14 +114,14 @@ namespace MonoTorrent.Client.Encryption
                 Array.Copy(VerifyBytes, 20, myVC, 0, myVC.Length);
                 if (!Toolbox.ByteMatch(myVC, VerificationConstant))
                 {
-                    Complete(true);
+                    asyncResult.Complete(new EncryptionException("Verification constant was invalid"));
                     return;
                 }
 
                 Array.Copy(VerifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
                 if (SelectCrypto(myCP) == 0)
                 {
-                    Complete(true);
+                    asyncResult.Complete(new EncryptionException("No valid encryption method found"));
                     return;
                 }
 
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -149,7 +149,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -173,17 +173,23 @@ namespace MonoTorrent.Client.Encryption
                 byte[] padD = GeneratePad();
 
                 // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
-                SendMessage(DoEncrypt(VerificationConstant));
-                SendMessage(DoEncrypt(CryptoSelect));
-                SendMessage(DoEncrypt(Len(padD)));
-                SendMessage(DoEncrypt(padD));
+                byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
+                
+                int offset = 0;
+                Buffer.BlockCopy(VerificationConstant, 0, buffer, offset, VerificationConstant.Length); offset += VerificationConstant.Length;
+                Buffer.BlockCopy(CryptoSelect, 0, buffer, offset, CryptoSelect.Length); offset += CryptoSelect.Length;
+                Buffer.BlockCopy(Len(padD), 0, buffer, offset, 2); offset += 2;
+                Buffer.BlockCopy(padD, 0, buffer, offset, padD.Length);
+
+                Encryptor.Encrypt(buffer);
+                SendMessage(buffer);
 
                 Ready();
             }
 
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 
@@ -215,7 +221,7 @@ namespace MonoTorrent.Client.Encryption
                         {
                             match = true;
                         }
-                }
+                    }
 
                     if (match)
                     {
@@ -227,7 +233,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
             return false;
         }

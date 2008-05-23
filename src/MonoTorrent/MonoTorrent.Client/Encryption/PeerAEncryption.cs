@@ -89,17 +89,23 @@ namespace MonoTorrent.Client.Encryption
                 byte[] padC = GeneratePad();
 
                 // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
-                SendMessage(req1);
-                SendMessage(req2);
-                SendMessage(DoEncrypt(VerificationConstant));
-                SendMessage(DoEncrypt(CryptoProvide));
-                SendMessage(DoEncrypt(Len(padC)));
-                SendMessage(DoEncrypt(padC));
+                byte[] buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
+                                        + 2 + padC.Length + 2 + InitialPayload.Length];
+                
+                int offset = 0;
+                Buffer.BlockCopy(req1, 0, buffer, offset, req1.Length); offset += req1.Length;
+                Buffer.BlockCopy(req2, 0, buffer, offset, req2.Length); offset += req2.Length;
+                Buffer.BlockCopy(DoEncrypt(VerificationConstant), 0, buffer, offset, VerificationConstant.Length); offset += VerificationConstant.Length;
+                Buffer.BlockCopy(DoEncrypt(CryptoProvide), 0, buffer, offset, CryptoProvide.Length); offset += CryptoProvide.Length;
+                Buffer.BlockCopy(DoEncrypt(Len(padC)), 0, buffer, offset, 2); offset += 2;
+                Buffer.BlockCopy(DoEncrypt(padC), 0, buffer, offset, padC.Length); offset += padC.Length;
 
                 // ... PadC, len(IA)), ENCRYPT(IA)
-                SendMessage(DoEncrypt(Len(InitialPayload)));
-                SendMessage(DoEncrypt(InitialPayload));
-
+                Buffer.BlockCopy(DoEncrypt(Len(InitialPayload)), 0, buffer, offset, 2); offset += 2;
+                Buffer.BlockCopy(DoEncrypt(InitialPayload), 0, buffer, offset, InitialPayload.Length); offset += InitialPayload.Length;
+                
+                // Send the entire message in one go
+                SendMessage(buffer);
                 InitialPayload = new byte[0];
 
                 Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
@@ -138,7 +144,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (SelectCrypto(myCS) == 0)
                 {
-                    Complete(true);
+                    asyncResult.Complete(new EncryptionException("No compatible encryption method detected"));
                     return;
                 }
 
@@ -150,7 +156,7 @@ namespace MonoTorrent.Client.Encryption
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                asyncResult.Complete(ex);
             }
         }
 

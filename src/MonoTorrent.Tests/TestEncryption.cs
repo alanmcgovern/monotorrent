@@ -57,8 +57,8 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
             b.BeginHandshake(conn.Incoming, delegate(IAsyncResult result)
                 { Console.WriteLine("Incoming{1} - Successful? {0}", result != null, conn.Incoming.Name); handle.Set(); }, null);
 
-            handle.WaitOne();
-            handl2.WaitOne();
+            handle.WaitOne(250, false);
+            handl2.WaitOne(250, false);
             //Console.WriteLine();
 
             HandshakeMessage m = new HandshakeMessage(rig.Torrent.InfoHash, "12345123451234512345", VersionInfo.ProtocolStringV100);
