@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Encryption
                 asyncResult.Complete(ex);
             }
         }
-
+        private byte[] b;
         private void gotVerification(IAsyncResult result)
         {
             try
@@ -142,12 +142,8 @@ namespace MonoTorrent.Client.Encryption
 
                 Array.Copy(VerifyBytes, 0, myCS, 0, myCS.Length); // crypto_select
 
-                if (SelectCrypto(myCS) == 0)
-                {
-                    asyncResult.Complete(new EncryptionException("No compatible encryption method detected"));
-                    return;
-                }
-
+                //SelectCrypto(myCS);
+                b = myCS;
                 Array.Copy(VerifyBytes, myCS.Length, lenPadD, 0, lenPadD.Length); // len(padD)
 
                 PadD = new byte[DeLen(lenPadD)];
@@ -165,7 +161,7 @@ namespace MonoTorrent.Client.Encryption
             try
             {
                 DoDecrypt(PadD, 0, PadD.Length); // padD
-
+                SelectCrypto(b, true);
                 Ready();
             }
             catch (Exception ex)

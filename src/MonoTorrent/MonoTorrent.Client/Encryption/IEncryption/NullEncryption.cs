@@ -44,10 +44,7 @@ namespace MonoTorrent.Client.Encryption
 
         public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            if (src == dest)
-                return;
-
-            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
+            Encrypt(src, srcOffset, dest, destOffset, count);
         }
 
         public void Encrypt(byte[] buffer)
@@ -57,9 +54,6 @@ namespace MonoTorrent.Client.Encryption
 
         public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
-            if (src == dest)
-                return;
-
             Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
         }
     }

@@ -41,12 +41,10 @@ namespace MonoTorrent.Client.Encryption
 
         bool InitialDataAvailable {  get; }
 
-        void AddInitialData(byte[] buffer, int offset, int count);
-     
         int GetInitialData(byte[] buffer, int offset, int count);
 
-        void BeginHandshake(IConnection socket, AsyncCallback callback, object state);
+        IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state);
 
-        void BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
+        IAsyncResult BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
     }
 }

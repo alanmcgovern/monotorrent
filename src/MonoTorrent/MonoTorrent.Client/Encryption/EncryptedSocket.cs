@@ -132,9 +132,7 @@ namespace MonoTorrent.Client.Encryption
             0x00, 0x00, 0x00, 0x00
         };
 
-        protected byte[] CryptoProvide = new byte[] {
-            0x00, 0x00, 0x00, 0x03
-        };
+        protected byte[] CryptoProvide = new byte[] { 0x00, 0x00, 0x00, 0x03 };
 
         protected byte[] InitialPayload;
         protected byte[] RemoteInitialPayload;
@@ -151,7 +149,6 @@ namespace MonoTorrent.Client.Encryption
             GenerateX();
             GenerateY();
 
-            initialBuffer = new byte[0];
             InitialPayload = new byte[0];
             RemoteInitialPayload = new byte[0];
 
@@ -173,7 +170,7 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual void BeginHandshake(IConnection socket, AsyncCallback callback, object state)
+        public virtual IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state)
         {
             if (asyncResult != null)
                 throw new ArgumentException("BeginHandshake has already been called");
@@ -193,9 +190,10 @@ namespace MonoTorrent.Client.Encryption
             {
                 asyncResult.Complete(ex);
             }
+            return asyncResult;
         }
 
-        internal void EndHandshake(IAsyncResult result)
+        public void EndHandshake(IAsyncResult result)
         {
             if (result == null)
                 throw new ArgumentNullException("result");
@@ -203,10 +201,11 @@ namespace MonoTorrent.Client.Encryption
             if (result != this.asyncResult)
                 throw new ArgumentException("Wrong IAsyncResult supplied");
 
+            if (!result.IsCompleted)
+                result.AsyncWaitHandle.WaitOne();
+
             if (asyncResult.SavedException != null)
                 throw asyncResult.SavedException;
-
-            asyncResult = null;
         }
 
         /// <summary>
@@ -217,12 +216,12 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual void BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
+        public virtual IAsyncResult BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
             this.initialBufferCount = count;
-            BeginHandshake(socket, callback, state);
+            return BeginHandshake(socket, callback, state);
         }
 
         /// <summary>
@@ -278,20 +277,6 @@ namespace MonoTorrent.Client.Encryption
         public void Decrypt(byte[] data, int offset, int length)
         {
             streamDecryptor.Decrypt(data, offset, data, offset, length);
-        }
-
-        /// <summary>
-        /// Specifies initial payload data to send to the remote client during handshaking
-        /// </summary>
-        /// <param name="buffer">Buffer with the initial payload data</param>
-        /// <param name="offset">Offset to begin reading from</param>
-        /// <param name="count">Number of bytes to read</param>
-        public void AddInitialData(byte[] buffer, int offset, int count)
-        {
-            byte[] newInitialPayload = new byte[InitialPayload.Length + count];
-            Array.Copy(InitialPayload, newInitialPayload, InitialPayload.Length);
-            Array.Copy(buffer, offset, newInitialPayload, InitialPayload.Length, count);
-            InitialPayload = newInitialPayload;
         }
 
         /// <summary>
@@ -495,7 +480,11 @@ namespace MonoTorrent.Client.Encryption
                         Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
 
                         if (toCopy == initialBufferCount)
+                        {
+                            initialBufferCount = 0;
+                            initialBufferOffset = 0;
                             initialBuffer = new byte[0];
+                        }
                         else
                         {
                             initialBufferOffset += toCopy;
@@ -684,59 +673,35 @@ namespace MonoTorrent.Client.Encryption
         /// Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
         /// </summary>
         /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
-        protected virtual int SelectCrypto(byte[] remoteCryptoBytes)
+        protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
         {
-            int selected = 0;
-
             CryptoSelect = new byte[remoteCryptoBytes.Length];
 
-            for (int i = 0; i < CryptoSelect.Length; i++)
+            // '2' corresponds to RC4Full
+            if ((remoteCryptoBytes[3] & 2) == 2 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Full))
             {
-                CryptoSelect[i] = 0;
-            }
-
-            for (int i = 0; i < remoteCryptoBytes.Length; i++)
-            {
-                byte intersection = (byte)(remoteCryptoBytes[i] & CryptoProvide[i]);
-
-                if (intersection == 0)
-                    continue;
-
-                // Bump off all the rightmost bits, from left to right until we find a non zero one.
-                for (int j = 7; j >= 0; j--)
+                CryptoSelect[3] |= 2;
+                if (replace)
                 {
-                    if ((intersection >> j) != 0)
-                    {
-                        CryptoSelect[i] = (byte)((byte)(intersection >> j) << j);
-                        selected = j + ((remoteCryptoBytes.Length - i - 1) * 8) + 1;
-
-                        break;
-                    }
+                    streamEncryptor = encryptor;
+                    streamDecryptor = decryptor;
                 }
-
-                if (selected > 0)
-                    break;
+                return 2;
             }
-
-#warning FIX THIS DETECTION! IT ALWAYS CHOOSES FULL ENCRYPTION
-            if ( true || selected == 0 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.None))
+            
+            // '1' corresponds to RC4Header
+            if ((remoteCryptoBytes[3] & 1) == 1 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Header))
             {
-                switch ((EncryptionTypes)selected)
+                CryptoSelect[3] |= 1;
+                if (replace)
                 {
-                    case EncryptionTypes.RC4Header:
-                        streamEncryptor = new PlainTextEncryption();
-                        streamDecryptor = new PlainTextEncryption();
-                        break;
-                     
-                    case EncryptionTypes.RC4Full:
-                    default:
-                        streamEncryptor = encryptor;
-                        streamDecryptor = decryptor;
-                        return 1;
+                    streamEncryptor = new RC4Header();
+                    streamDecryptor = new RC4Header();
                 }
+                return 1;
             }
 
-            return selected;
+            throw new EncryptionException("No valid encryption method detected");
         }
         #endregion
 
@@ -867,16 +832,13 @@ namespace MonoTorrent.Client.Encryption
 
             // EncryptionType is basically a bit position starting from the right.
             // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
-            if ((int)minCryptoAllowed > 0)
-            {
-                int mByte = CryptoProvide.Length - 1 - ((int)minCryptoAllowed - 1) / 8;
-                int mBit = ((int)minCryptoAllowed - 1) % 8;
+            CryptoProvide[0] = CryptoProvide[1] = CryptoProvide[2] = CryptoProvide[3] = 0;
 
-                for (int i = (CryptoProvide.Length - 1); i > mByte; i--)
-                    CryptoProvide[i] = 0;
+            if (Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Full))
+                CryptoProvide[3] |= 1 << 1;
 
-                CryptoProvide[mByte] &= (byte)(0xff << mBit);
-            }
+            if (Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Header))
+                CryptoProvide[3] |= 1;
         }
 
         #endregion

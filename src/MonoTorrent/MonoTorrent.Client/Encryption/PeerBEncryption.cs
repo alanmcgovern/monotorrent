@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-
+        byte[] b;
         private void gotVerification(IAsyncResult result)
         {
             try
@@ -119,12 +119,9 @@ namespace MonoTorrent.Client.Encryption
                 }
 
                 Array.Copy(VerifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
-                if (SelectCrypto(myCP) == 0)
-                {
-                    asyncResult.Complete(new EncryptionException("No valid encryption method found"));
-                    return;
-                }
-
+                
+                //SelectCrypto(myCP);
+                b = myCP;
                 Array.Copy(VerifyBytes, 32, lenPadC, 0, lenPadC.Length); // ... len(padC) ...
                 PadC = new byte[DeLen(lenPadC) + 2];
                 ReceiveMessage(PadC, PadC.Length, gotPadCCallback); // padC            
@@ -171,7 +168,7 @@ namespace MonoTorrent.Client.Encryption
             try
             {
                 byte[] padD = GeneratePad();
-
+                SelectCrypto(b, false);
                 // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
                 byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
                 
@@ -181,8 +178,9 @@ namespace MonoTorrent.Client.Encryption
                 Buffer.BlockCopy(Len(padD), 0, buffer, offset, 2); offset += 2;
                 Buffer.BlockCopy(padD, 0, buffer, offset, padD.Length);
 
-                Encryptor.Encrypt(buffer);
-                SendMessage(buffer);
+                SendMessage(DoEncrypt(buffer));
+
+                SelectCrypto(b, true);
 
                 Ready();
             }

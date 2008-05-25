@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);
                 id.Connection.BytesReceived = 0;
                 id.Connection.BytesToRecieve = 68;
-                id.Connection.BeginReceive(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
+                EncryptorFactory.BeginCheckEncryption(id, onPeerHandshakeReceived, id);
             }
             else
                 id.ConnectionManager.ProcessFreshConnection(id);
@@ -132,6 +132,8 @@ namespace MonoTorrent.Client
 
         private void handleHandshake(PeerIdInternal id)
         {
+#warning Eugh, don't use GOTO. It's nasty
+        LABEL:
             TorrentManager man = null;
             bool handshakeFailed = false;
 
@@ -149,6 +151,11 @@ namespace MonoTorrent.Client
 
             if (handshakeFailed)
             {
+
+                SocketError err;
+                id.Connection.Connection.EndReceive(id.Connection.Connection.BeginReceive(
+                    id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve, null, null));
+                goto LABEL;
                 // We should already have detected the necessary encryption. If handshaking fails at this point,
                 // just dump the connection
                 if (false && id.Connection.Encryptor is PlainTextEncryption && ClientEngine.SupportsEncryption)
@@ -284,20 +291,7 @@ namespace MonoTorrent.Client
             {
                 lock (id)
                 {
-                    int bytesReceived = id.Connection.EndReceive(result, out id.ErrorCode);
-                    if (bytesReceived == 0)
-                    {
-                        Logger.Log(id.Connection.Connection, "ListenManager - Recieved 0 for handshake");
-                        CleanupSocket(id);
-                        return;
-                    }
-
-                    id.Connection.BytesReceived += bytesReceived;
-                    if (id.Connection.BytesReceived != id.Connection.BytesToRecieve)
-                    {
-                        id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
-                        return;
-                    }
+                    EncryptorFactory.EndCheckEncryption(result);
                     Logger.Log(id.Connection.Connection, "ListenManager - Recieved handshake. Beginning to handle");
 
                     handleHandshake(id);

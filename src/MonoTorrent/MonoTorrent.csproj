@@ -114,6 +114,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MonoTorrent.Client\Encryption\EncryptorFactory.cs" />
+    <Compile Include="MonoTorrent.Client\Encryption\IEncryption\RC4Header.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\CriticalExceptionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs">
       <SubType>Code</SubType>

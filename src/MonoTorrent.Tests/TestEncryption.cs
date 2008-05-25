@@ -18,88 +18,153 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
             while (true)
             {
                 TestEncryption d = new TestEncryption();
-                d.Setup(i++);
-                d.HandshakeTest();
+                d.Setup();
+                try { d.EncryptorFactoryTestPlainText(); }
+                catch { }
                 d.Teardown();
-                if (i==1000)
+                if (i==100)
                     break;
             }
         }
         
         private TestRig rig;
         private ConnectionPair conn;
+
         [SetUp]
-        public void Setup(int count)
+        public void Setup()
         {
             rig = new TestRig("");
             conn = new ConnectionPair(13253);
-            conn.Incoming.Name = count.ToString();
-            conn.Outgoing.Name = count.ToString();
+            conn.Incoming.Name = "Incoming";
+            conn.Outgoing.Name = "Outgoing";
         }
 
         [Test]
-        public void HandshakeTest()
+        public void Full_FullTest()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            ManualResetEvent handl2 = new ManualResetEvent(false);
-
-            PeerAEncryption a = new PeerAEncryption(rig.Torrent.InfoHash, EncryptionTypes.Auto);
-            PeerBEncryption b = new PeerBEncryption(new byte[][] { rig.Torrent.InfoHash }, EncryptionTypes.Auto);
-
-            conn.Incoming.BeginReceiveStarted += delegate { Receive(true); };
-            conn.Incoming.EndReceiveStarted += delegate { Receive(false); };
-            conn.Incoming.BeginSendStarted += delegate { Send(true); };
-            conn.Incoming.EndSendStarted += delegate { Send(false); };
-
-            a.BeginHandshake(conn.Outgoing, delegate (IAsyncResult result) 
-                { Console.WriteLine("Outgoing{1} - Successful? {0}", result != null, conn.Outgoing.Name); handl2.Set(); 
-                }, null);
-            b.BeginHandshake(conn.Incoming, delegate(IAsyncResult result)
-                { Console.WriteLine("Incoming{1} - Successful? {0}", result != null, conn.Incoming.Name); handle.Set(); }, null);
-
-            handle.WaitOne(250, false);
-            handl2.WaitOne(250, false);
-            //Console.WriteLine();
-
-            HandshakeMessage m = new HandshakeMessage(rig.Torrent.InfoHash, "12345123451234512345", VersionInfo.ProtocolStringV100);
-            byte[] handshake = m.Encode();
-            try
-            {
-                a.Encrypt(handshake, 0, handshake.Length);
-                b.Decrypt(handshake, 0, handshake.Length);
-            }
-            catch
-            {
-                return;
-            }
-            HandshakeMessage d = new HandshakeMessage();
-            d.Decode(handshake, 0, handshake.Length);
-            Assert.AreEqual(m, d);
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full);
         }
 
-        private int sendCount;
-        private int receiveCount;
-
-        private void Send(bool start)
+        [Test]
+        [ExpectedException(typeof(EncryptionException))]
+        public void Full_HeaderTest()
         {
-            if (start)
-                sendCount++;
-            //Console.WriteLine("Send: {0} - {1}", sendCount, start ? "B" : "E");
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header);
         }
 
-        private void Receive(bool start)
+        [Test]
+        public void Full_AutoTest()
         {
-            if (start)
-                receiveCount++;
-            //Console.WriteLine("Receive: {0} - {1}", receiveCount, start ? "B" : "E");
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.Auto);
         }
 
+        [Test]
+        [ExpectedException(typeof(EncryptionException))]
+        public void Full_NoneTest()
+        {
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.None);
+        }
+
+        [Test]
+        public void EncryptorFactoryTestRC4Full()
+        {
+            rig.Engine.StartAll();
+            PeerAEncryption a = new PeerAEncryption(rig.Manager.Torrent.InfoHash, EncryptionTypes.RC4Full);
+
+            rig.AddConnection(conn.Incoming);
+            IAsyncResult result = a.BeginHandshake(conn.Outgoing, null, null);
+            result.AsyncWaitHandle.WaitOne();
+            a.EndHandshake(result);
+
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            byte[] buffer = message.Encode();
+
+            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
+            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+
+            message.Decode(buffer, 0, buffer.Length);
+            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+            Console.WriteLine("Yeah");
+        }
+
+        [Test]
+        public void EncryptorFactoryTestRC4Header()
+        {
+            rig.Engine.StartAll();
+            PeerAEncryption a = new PeerAEncryption(rig.Manager.Torrent.InfoHash, EncryptionTypes.RC4Header);
+
+            rig.AddConnection(conn.Incoming);
+            IAsyncResult result = a.BeginHandshake(conn.Outgoing, null, null);
+            result.AsyncWaitHandle.WaitOne();
+            a.EndHandshake(result);
+
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            byte[] buffer = message.Encode();
+
+            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
+            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+
+            message.Decode(buffer, 0, buffer.Length);
+            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+        }
+
+        [Test]
+        public void EncryptorFactoryTestPlainText()
+        {
+            rig.Engine.StartAll();
+
+            rig.AddConnection(conn.Incoming);
+
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            byte[] buffer = message.Encode();
+
+            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
+            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+
+            message.Decode(buffer, 0, buffer.Length);
+            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+        }
+ 
         [TearDown]
         public void Teardown()
         {
             conn.Dispose();
             rig.Engine.StopAll()[0].WaitOne();
             rig.Engine.Dispose();
+        }
+
+
+        private void Handshake(EncryptionTypes encryptionA, EncryptionTypes encryptionB)
+        {
+            bool doneA = false;
+            bool doneB = false;
+            PeerAEncryption a = new PeerAEncryption(rig.Torrent.InfoHash, encryptionA);
+            PeerBEncryption b = new PeerBEncryption(new byte[][] { rig.Torrent.InfoHash }, encryptionB);
+
+            IAsyncResult resultA = a.BeginHandshake(conn.Outgoing, null, null);
+            IAsyncResult resultB = b.BeginHandshake(conn.Incoming, null, null);
+
+            while (!resultA.AsyncWaitHandle.WaitOne(10, true) || !resultB.AsyncWaitHandle.WaitOne())
+            {
+                if (!doneA && (doneA = resultA.IsCompleted))
+                    a.EndHandshake(resultA);
+                if (!doneB && (doneB = resultB.IsCompleted))
+                    b.EndHandshake(resultB);
+            }
+            if (!doneA)
+                a.EndHandshake(resultA);
+            if (!doneB)
+                b.EndHandshake(resultB);
+
+            HandshakeMessage m = new HandshakeMessage(rig.Torrent.InfoHash, "12345123451234512345", VersionInfo.ProtocolStringV100);
+            byte[] handshake = m.Encode();
+
+            a.Encrypt(handshake, 0, handshake.Length);
+            b.Decrypt(handshake, 0, handshake.Length);
+
+            HandshakeMessage d = new HandshakeMessage();
+            d.Decode(handshake, 0, handshake.Length);
+            Assert.AreEqual(m, d);
         }
     }
 }

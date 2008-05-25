@@ -32,6 +32,8 @@ using System.Text;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 using System.Threading;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -73,7 +75,8 @@ namespace MonoTorrent.Client.Encryption
 
     internal static class EncryptorFactory
     {
-        private static AsyncCallback CompletedPeerACallback = CompletedEncryptedHandshake;
+        private static readonly AsyncCallback CompletedPeerACallback = CompletedEncryptedHandshake;
+        private static readonly AsyncCallback HandshakeReceivedCallback = HandshakeReceived;
 
         private static bool CheckRC4(PeerIdInternal id)
         {
@@ -91,8 +94,65 @@ namespace MonoTorrent.Client.Encryption
         internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state)
         {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
+            try
+            {
+                IConnection c = id.Connection.Connection;
+                ArraySegment<byte> buffer = id.Connection.recieveBuffer;
 
+                c.BeginReceive(buffer.Array, buffer.Offset, id.Connection.BytesToRecieve, HandshakeReceivedCallback, result);
+            }
+            catch(Exception ex)
+            {
+                result.Complete(ex);
+            }
+            return result;
+        }
+
+        private static void HandshakeReceived(IAsyncResult r)
+        {
+            int received = 0;
+            EncryptorAsyncResult result = (EncryptorAsyncResult)r.AsyncState;
+            PeerIdInternal id = result.Id;
+            IConnection c =id.Connection.Connection;
+            ArraySegment<byte> b = id.Connection.recieveBuffer;
+
+            try
+            {
+                received = id.Connection.Connection.EndReceive(r);
+                id.Connection.BytesReceived += received;
+            }
+            catch(Exception ex)
+            {
+                result.Complete(ex);
+                return;
+            }
+            if (received == 0)
+            {
+                result.Complete(new EncryptionException("Socket returned zero"));
+                return;
+            }
+            if (received < id.Connection.BytesToRecieve)
+            {
+                c.BeginReceive(b.Array, b.Offset + id.Connection.BytesReceived, id.Connection.BytesToRecieve - id.Connection.BytesReceived,
+                                HandshakeReceivedCallback, result);
+                return;
+            }
+            HandshakeMessage message = new HandshakeMessage();
+            message.Decode(b, 0, id.Connection.BytesToRecieve);
+            bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
             bool canUseRC4 = CheckRC4(id);
+            
+            // If encryption is disabled and we received an invalid handshake - abort!
+            if (valid)
+            {
+                result.Complete();
+                return;
+            }
+            if (!canUseRC4 && !valid)
+            {
+                result.Complete(new EncryptionException("Invalid handshake received and no decryption works"));
+                return;
+            }
             if (canUseRC4)
             {
                 if (id.Connection.Connection.IsIncoming)
@@ -105,19 +165,14 @@ namespace MonoTorrent.Client.Encryption
                 {
                     result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.Auto);
                 }
-
-                result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedPeerACallback, result);
+                result.EncSocket.BeginHandshake(id.Connection.Connection, b.Array, b.Offset, id.Connection.BytesReceived, CompletedPeerACallback, result);
             }
             else
             {
                 result.Encryptor = new PlainTextEncryption();
                 result.Decryptor = new PlainTextEncryption();
-                result.CompletedSynchronously = true;
-                result.AsyncWaitHandle.Set();
-                callback(result);
+                result.Complete();
             }
-
-            return result;
         }
 
         private static void CompletedEncryptedHandshake(IAsyncResult result)
@@ -132,6 +187,13 @@ namespace MonoTorrent.Client.Encryption
                 r.SavedException = ex;
             }
 
+#warning i should copy over the remote initial data into the appropriate buffer here
+            // I think we can assume that only *incoming* connections will end up here, meaning
+            // we're *receiving* data.
+
+            ArraySegment<byte> buffer = r.Id.Connection.recieveBuffer;
+            r.EncSocket.GetInitialData(buffer.Array, buffer.Offset, buffer.Count);
+            
             r.Decryptor = r.EncSocket.Decryptor;
             r.Encryptor = r.EncSocket.Encryptor;
 
