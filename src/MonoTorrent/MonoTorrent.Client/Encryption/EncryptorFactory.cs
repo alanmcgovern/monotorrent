@@ -98,6 +98,8 @@ namespace MonoTorrent.Client.Encryption
 
             try
             {
+                // If the connection is incoming, receive the handshake before
+                // trying to decide what encryption to use
                 if (id.Connection.Connection.IsIncoming)
                 {
                     IConnection c = id.Connection.Connection;
@@ -107,6 +109,8 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
+                    // If we have an outgoing connection, if RC4 is allowable, negiotiate the encryption method
+                    // otherwise just use PlainText
                     if (supportRC4)
                     {
                         result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.Auto);
@@ -117,9 +121,8 @@ namespace MonoTorrent.Client.Encryption
                         result.Complete();
                     }
                 }
-
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Complete(ex);
             }
