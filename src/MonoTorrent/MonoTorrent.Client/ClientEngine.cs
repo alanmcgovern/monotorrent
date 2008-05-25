@@ -53,6 +53,8 @@ namespace MonoTorrent.Client
         private static Random random = new Random();
         #region Global Constants
 
+        public static readonly bool SupportsInitialSeed = false;
+        public static readonly bool SupportsWebSeed = false;
         public static readonly bool SupportsExtended = false;
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;

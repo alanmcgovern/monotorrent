@@ -67,6 +67,8 @@ namespace MonoTorrent.Common
         private string source;
         private TorrentFile[] torrentFiles;
         private string torrentPath;
+        private List<string> httpSeeds;
+        private List<string> getRightHttpSeeds;
 
         #endregion Private Fields
 
@@ -257,6 +259,22 @@ namespace MonoTorrent.Common
             get { return this.torrentPath; }
         }
 
+        /// <summary>
+        /// This is the http-based seeding (webseed protocole)
+        /// </summary>
+        public List<string> HttpSeeds
+        {
+            get { return this.httpSeeds; }
+        }
+
+        /// <summary>
+        /// This is the http-based seeding (getright protocole)
+        /// </summary>
+        public List<string> GetRightHttpSeeds
+        {
+            get { return this.getRightHttpSeeds; }
+        }
+
         #endregion Properties
 
 
@@ -273,6 +291,8 @@ namespace MonoTorrent.Common
             this.publisher = string.Empty;
             this.publisherUrl = string.Empty;
             this.source = string.Empty;
+            this.httpSeeds = new List<string>();
+            this.getRightHttpSeeds = new List<string> ();
         }
 
         #endregion
@@ -766,6 +786,20 @@ namespace MonoTorrent.Common
                             if (collection.Count != 0)
                                 t.announceUrls.Add(collection);
                         }
+                        break;
+
+                    case ("httpseeds"):
+                        foreach (BEncodedString str in ((BEncodedList)keypair.Value))
+                        {
+                            t.HttpSeeds.Add (str.Text);
+                        }                        
+                        break;
+
+                    case ("url-list"):
+                        foreach (BEncodedString str in ((BEncodedList)keypair.Value))
+                        {
+                            t.GetRightHttpSeeds.Add (str.Text);
+                        }                        
                         break;
 
                     default:

@@ -108,6 +108,17 @@ namespace MonoTorrent.Client.Messages.Standard
             // If the peer just received a piece we don't have, he's interesting. Otherwise his state is unchanged
             if (!id.TorrentManager.Bitfield[this.pieceIndex])
                 id.TorrentManager.SetAmInterestedStatus(id, true);
+
+            if (id.TorrentManager.IsInitialSeeding)
+            {
+                PeerIdInternal originPeer = id.TorrentManager.InitialSeed.GetOriginPeer (this.pieceIndex);
+                if (originPeer != null && originPeer != id) {
+                    id.TorrentManager.InitialSeed.OnNotInitialPeerHaveMessage (this.pieceIndex);
+                    int nextPiece = id.TorrentManager.InitialSeed.GetNextPieceForPeer (originPeer);
+                    if (nextPiece != -1) 
+                        originPeer.Connection.Enqueue(new HaveMessage (nextPiece));
+                }
+            }
         }
 
 

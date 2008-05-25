@@ -502,7 +502,7 @@ namespace MonoTorrent.Client
                     Logger.Log(id.Connection.Connection, "ConnectionManager - Handshake recieved");
                     if (id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
                     {
-                        if (id.TorrentManager.Bitfield.AllFalse)
+                        if (id.TorrentManager.Bitfield.AllFalse || id.TorrentManager.IsInitialSeeding)
                             msg = new HaveNoneMessage();
 
                         else if (id.TorrentManager.Bitfield.AllTrue)
@@ -510,6 +510,12 @@ namespace MonoTorrent.Client
 
                         else
                             msg = new BitfieldMessage(id.TorrentManager.Bitfield);
+                    }
+                    else if (id.TorrentManager.IsInitialSeeding)
+                    {
+                        BitField btfld = new BitField(id.TorrentManager.Bitfield.Length);
+                        btfld.SetAll (false);
+                        msg = new BitfieldMessage(btfld);
                     }
                     else
                     {
@@ -952,6 +958,18 @@ namespace MonoTorrent.Client
                             reason = "Too many peers";
                             cleanUp = true;
                             return;
+                        }
+                        if (id.TorrentManager.IsInitialSeeding)
+                        {
+                            int pieceIndex = id.TorrentManager.InitialSeed.GetNextPieceForPeer (id);
+                            if (pieceIndex != -1) {
+                                // If the peer has the piece already, we need to recalculate his "interesting" status.
+                                bool hasPiece = id.Connection.BitField[pieceIndex];
+                            
+                                // Check to see if have supression is enabled and send the have message accordingly
+                                if (!hasPiece || (hasPiece && !this.engine.Settings.HaveSupressionEnabled))
+                                    id.Connection.Enqueue(new HaveMessage(pieceIndex));
+                            }
                         }
                         Logger.Log(id.Connection.Connection, "ConnectionManager - Recieving message length");
                         ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);

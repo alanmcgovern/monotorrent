@@ -91,6 +91,7 @@ FILES =  \
 	MonoTorrent.Client/Exceptions/TorrentLoadException.cs \
 	MonoTorrent.Client/FastResume/FastResume.cs \
 	MonoTorrent.Client/FileStreamBuffer.cs \
+	MonoTorrent.Client/InitialSeed/InitialSeed.cs \
 	MonoTorrent.Client/Logger.cs \
 	MonoTorrent.Client/Managers/BufferManager.cs \
 	MonoTorrent.Client/Managers/ChokeUnchokeManager.cs \

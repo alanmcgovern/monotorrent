@@ -13,7 +13,7 @@ namespace MonoTorrent.Client.Connections
         {
             RegisterTypeForProtocol("tcp", typeof(IPV4Connection));
             RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
-            //RegisterTypeForProtocol("http", typeof(HttpConnection));
+            RegisterTypeForProtocol("http", typeof(HttpConnection));
         }
 
         public static void RegisterTypeForProtocol(string protocol, Type connectionType)

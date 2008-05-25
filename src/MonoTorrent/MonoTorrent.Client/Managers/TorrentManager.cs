@@ -41,6 +41,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client
 {
@@ -102,6 +103,7 @@ namespace MonoTorrent.Client
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
         private ChokeUnchokeManager chokeUnchoker; //???AGH Used to choke and unchoke peers
+        private InitialSeed initialSeed;	//superseed class manager
 
         #endregion Member Variables
 
@@ -263,6 +265,25 @@ namespace MonoTorrent.Client
             internal set { this.uploadingTo = value; }
         }
 
+        internal InitialSeed InitialSeed
+        {
+            get { 
+                if (InitialSeed == null)
+                    this.initialSeed = new InitialSeed (this);
+                return this.initialSeed;
+            }
+        }
+
+        public bool IsInitialSeeding
+        {
+            get
+            {
+                return settings.InitialSeedingEnabled
+                    && state == TorrentState.Seeding
+                    && ClientEngine.SupportsInitialSeed;
+            }
+        }
+
         #endregion
 
 
@@ -326,6 +347,32 @@ namespace MonoTorrent.Client
 
             if (fastResumeData != null)
                 LoadFastResume(fastResumeData);
+
+            if (ClientEngine.SupportsInitialSeed)
+                this.initialSeed = (settings.InitialSeedingEnabled ? (new InitialSeed(this)) : null);
+
+            if (ClientEngine.SupportsWebSeed)
+            {
+                foreach (string url in torrent.GetRightHttpSeeds)
+                {
+                    Peer peer = new Peer("", new Uri(url), EncryptionTypes.None);
+                    PeerIdInternal id = new PeerIdInternal(peer, this);
+
+                    id.Connection = new PeerConnectionBase(this.Torrent.Pieces.Count);
+                    id.Connection.Connection = ConnectionFactory.Create(peer.ConnectionUri);
+
+                    peer.LastConnectionAttempt = DateTime.Now;
+                    id.Connection.LastMessageSent = DateTime.Now;
+                    id.Connection.LastMessageReceived = DateTime.Now;
+                    id.Connection.AmInterested = true;
+                    id.Connection.IsChoking = false;
+                    id.Connection.BitField.SetAll(true);
+                    
+                    id.PublicId = new PeerId();
+                    //nothing more?
+                    ConnectedPeers.Add(id);
+                }
+            }
         }
 
 
@@ -817,15 +864,6 @@ namespace MonoTorrent.Client
 
             lock (listLock)
                 chokeUnchoker.TimePassed();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="counter"></param>
-        internal void SuperSeedingLogic(int counter)
-        {
-            SeedingLogic(counter);     // Initially just seed as per normal. This could be a V2.0 feature.
         }
 
         #endregion Internal Methods
