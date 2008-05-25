@@ -1124,7 +1124,8 @@ namespace Mono.Math
                 if (k.TestBit(0))
                     b = a;
 
-                for (int i = 1; i < k.BitCount(); i++)
+                int bitCount = k.BitCount();
+                for (int i = 1; i < bitCount; i++)
                 {
                     A = Multiply(A, A);
                     if (k.TestBit(i))
