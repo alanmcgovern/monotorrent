@@ -257,7 +257,6 @@ namespace MonoTorrent.Client
 
         internal void ProcessFreshConnection(PeerIdInternal id)
         {
-            bool fireConnected = true;
             bool cleanUp = false;
             string reason = null;
 
@@ -295,7 +294,6 @@ namespace MonoTorrent.Client
                 {
                     lock (id)
                     {
-                        fireConnected = false;
                         Logger.Log(id.Connection.Connection, "failed to connect2");
                         id.Peer.FailedConnectionAttempts++;
 
@@ -319,9 +317,6 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                if (fireConnected)
-                    id.TorrentManager.RaisePeerConnected (new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
-
                 // Decrement the half open connections
                 if (cleanUp)
                     CleanupSocket(id, reason);
@@ -464,6 +459,8 @@ namespace MonoTorrent.Client
 
         private void onPeerHandshakeSent(PeerIdInternal id)
         {
+            id.TorrentManager.RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
+
             lock (id.TorrentManager.listLock)
             lock (id)
             {
