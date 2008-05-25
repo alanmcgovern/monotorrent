@@ -175,6 +175,9 @@ namespace MonoTorrent.Client.Encryption
             {
                 List<byte[]> skeys = new List<byte[]>();
                 id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
+
+                // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
+                id.Connection.BytesReceived = 0;
                 result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
                 result.EncSocket.BeginHandshake(id.Connection.Connection, b.Array, b.Offset, id.Connection.BytesReceived, CompletedPeerACallback, result);
             }

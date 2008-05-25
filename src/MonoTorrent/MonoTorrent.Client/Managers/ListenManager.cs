@@ -132,51 +132,18 @@ namespace MonoTorrent.Client
 
         private void handleHandshake(PeerIdInternal id)
         {
-#warning Eugh, don't use GOTO. It's nasty
-        LABEL:
             TorrentManager man = null;
-            bool handshakeFailed = false;
-
             HandshakeMessage handshake = new HandshakeMessage();
             try
             {
                 handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
-                    handshakeFailed = true;
+                    throw new ProtocolException("Invalid protocol string in handshake");
             }
-            catch
+            catch(Exception ex)
             {
-                handshakeFailed = true;
-            }
-
-            if (handshakeFailed)
-            {
-
-                SocketError err;
-                id.Connection.Connection.EndReceive(id.Connection.Connection.BeginReceive(
-                    id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve, null, null));
-                goto LABEL;
-                // We should already have detected the necessary encryption. If handshaking fails at this point,
-                // just dump the connection
-                if (false && id.Connection.Encryptor is PlainTextEncryption && ClientEngine.SupportsEncryption)
-                {
-                    // Maybe this was a Message Stream Encryption handshake. Parse it as such.
-                    byte[][] sKeys;
-                    using (new ReaderLock(engine.torrentsLock))
-                    {
-                        sKeys = new byte[engine.Torrents.Count][];
-                        for (int i = 0; i < engine.Torrents.Count; i++)
-                            sKeys[i] = engine.Torrents[i].Torrent.infoHash;
-                    }
-                    //id.Connection.Encryptor = new PeerBEncryption(sKeys, engine.Settings.MinEncryptionLevel);
-                    //id.Connection.StartEncryption(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve, delegate { onEncryptorReady(id); }, id);
-                    return;
-                }
-                else
-                {
-                    Logger.Log(id.Connection.Connection, "ListenManager - Invalid handshake received");
-                    CleanupSocket(id);
-                }
+                Logger.Log(id.Connection.Connection, ex.Message);
+                CleanupSocket(id);
                 return;
             }
 
@@ -203,7 +170,7 @@ namespace MonoTorrent.Client
             id.TorrentManager = man;
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
-            if ((id.Connection.Encryptor is PlainTextEncryption && engine.Settings.MinEncryptionLevel != EncryptionTypes.None) && ClientEngine.SupportsEncryption)
+            if ((id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.MinEncryptionLevel, EncryptionTypes.None)) && ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id.Connection.Connection, "ListenManager - Encryption is required but was not active");
                 CleanupSocket(id);
