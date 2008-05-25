@@ -135,7 +135,6 @@ namespace MonoTorrent.Client.Connections
 
         public void EndConnect(IAsyncResult result)
         {
-            this.isIncoming = true;
             this.socket.EndConnect(result);
         }
 
