@@ -602,7 +602,7 @@ namespace MonoTorrent.Client
 			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
             byte[] buffer = id.Connection.recieveBuffer.Array;
             int offset = id.Connection.recieveBuffer.Offset + id.Connection.bytesReceived;
-            Encryptor.Decrypt(buffer, offset, buffer, offset, received);
+            Decryptor.Decrypt(buffer, offset, buffer, offset, received);
 			return received;
 		}
 
