@@ -198,54 +198,6 @@ namespace MonoTorrent.Client
             id.Connection.ProcessingQueue = false;
         }
 
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="result"></param>
-        //private void onEncryptorReady(PeerIdInternal id)
-        //{
-        //    try
-        //    {
-        //        id.Connection.BytesReceived = 0;
-        //        id.Connection.BytesToRecieve = 68;
-        //        Logger.Log(id.Connection.Connection, "ListenManager - Peer encryption handshake complete");
-        //        int bytesReceived = 0;
-
-        //        // Handshake was probably delivered as initial payload. Retrieve it if its' vailable
-        //        if (id.Connection.Encryptor.InitialDataAvailable)
-        //            bytesReceived = id.Connection.Encryptor.GetInitialData(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
-
-        //        id.Connection.BytesReceived += bytesReceived;
-        //        if (id.Connection.BytesReceived != id.Connection.BytesToRecieve)
-        //        {
-        //            id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, peerHandshakeReceived, id, out id.ErrorCode);
-        //            return;
-        //        }
-                
-        //        // The complete handshake was in the initial payload
-        //        Logger.Log(id.Connection.Connection, "CE Recieved Encrypted handshake");
-
-        //        handleHandshake(id);
-        //    }
-
-        //    catch (SocketException)
-        //    {
-        //        Logger.Log(id.Connection.Connection, "ListenManager - Encrypted handshake failure");
-        //        CleanupSocket(id);
-        //    }
-        //    catch (NullReferenceException)
-        //    {
-        //        Logger.Log(id.Connection.Connection, "ListenManager - Encrypted handshake null ref");
-        //        CleanupSocket(id);
-        //    }
-        //    catch
-        //    {
-        //        Logger.Log(id.Connection.Connection, "ListenManager - Encrypted handshake cataclysmic exception!");
-        //        CleanupSocket(id);
-        //    }
-        //}
-
         /// <summary>
         /// 
         /// </summary>
