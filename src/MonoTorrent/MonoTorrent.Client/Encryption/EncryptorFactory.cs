@@ -58,7 +58,7 @@ namespace MonoTorrent.Client.Encryption
         public IEncryption Encryptor
         {
             get { return encryptor; }
-            set { decrytor = value; }
+            set { encryptor = value; }
         }
 
 
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.Encryption
         {
             bool canUseRC4 = ClientEngine.SupportsEncryption;
 
-            EncryptionTypes t = id.TorrentManager.Engine.Settings.MinEncryptionLevel;
+            EncryptionTypes t = EncryptionTypes.Auto;// id.TorrentManager.Engine.Settings.MinEncryptionLevel;
             canUseRC4 = Toolbox.HasEncryption(t, EncryptionTypes.RC4Header) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Full);
 
             t = id.Peer.Encryption;
@@ -94,12 +94,30 @@ namespace MonoTorrent.Client.Encryption
         internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state)
         {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
+            bool supportRC4 = CheckRC4(id);
+
             try
             {
-                IConnection c = id.Connection.Connection;
-                ArraySegment<byte> buffer = id.Connection.recieveBuffer;
+                if (id.Connection.Connection.IsIncoming)
+                {
+                    IConnection c = id.Connection.Connection;
+                    ArraySegment<byte> buffer = id.Connection.recieveBuffer;
 
-                c.BeginReceive(buffer.Array, buffer.Offset, id.Connection.BytesToRecieve, HandshakeReceivedCallback, result);
+                    c.BeginReceive(buffer.Array, buffer.Offset, id.Connection.BytesToRecieve, HandshakeReceivedCallback, result);
+                }
+                else
+                {
+                    if (supportRC4)
+                    {
+                        result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.Auto);
+                        result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedPeerACallback, result);
+                    }
+                    else
+                    {
+                        result.Complete();
+                    }
+                }
+
             }
             catch(Exception ex)
             {
@@ -155,22 +173,13 @@ namespace MonoTorrent.Client.Encryption
             }
             if (canUseRC4)
             {
-                if (id.Connection.Connection.IsIncoming)
-                {
-                    List<byte[]> skeys = new List<byte[]>();
-                    id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
-                    result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
-                }
-                else
-                {
-                    result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.Auto);
-                }
+                List<byte[]> skeys = new List<byte[]>();
+                id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
+                result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
                 result.EncSocket.BeginHandshake(id.Connection.Connection, b.Array, b.Offset, id.Connection.BytesReceived, CompletedPeerACallback, result);
             }
             else
             {
-                result.Encryptor = new PlainTextEncryption();
-                result.Decryptor = new PlainTextEncryption();
                 result.Complete();
             }
         }
@@ -206,6 +215,10 @@ namespace MonoTorrent.Client.Encryption
         internal static void EndCheckEncryption(IAsyncResult result)
         {
             EncryptorAsyncResult r = result as EncryptorAsyncResult;
+
+            if (!r.IsCompleted)
+                r.AsyncWaitHandle.WaitOne();
+
             if (r == null)
                 throw new ArgumentException("Invalid async result");
 
