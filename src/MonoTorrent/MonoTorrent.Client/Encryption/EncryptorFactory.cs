@@ -196,24 +196,24 @@ namespace MonoTorrent.Client.Encryption
             try
             {
                 r.EncSocket.EndHandshake(result);
+
+#warning i should copy over the remote initial data into the appropriate buffer here
+                // I think we can assume that only *incoming* connections will end up here, meaning
+                // we're *receiving* data.
+
+                ArraySegment<byte> buffer = r.Id.Connection.recieveBuffer;
+                r.EncSocket.GetInitialData(buffer.Array, buffer.Offset, buffer.Count);
+            
+                r.Decryptor = r.EncSocket.Decryptor;
+                r.Encryptor = r.EncSocket.Encryptor;
+
+                r.CompletedSynchronously = false;
+                r.AsyncWaitHandle.Set();
             }
             catch (Exception ex)
             {
                 r.SavedException = ex;
             }
-
-#warning i should copy over the remote initial data into the appropriate buffer here
-            // I think we can assume that only *incoming* connections will end up here, meaning
-            // we're *receiving* data.
-
-            ArraySegment<byte> buffer = r.Id.Connection.recieveBuffer;
-            r.EncSocket.GetInitialData(buffer.Array, buffer.Offset, buffer.Count);
-            
-            r.Decryptor = r.EncSocket.Decryptor;
-            r.Encryptor = r.EncSocket.Encryptor;
-
-            r.CompletedSynchronously = false;
-            r.AsyncWaitHandle.Set();
             if (r.Callback != null)
                 r.Callback(r);
         }
