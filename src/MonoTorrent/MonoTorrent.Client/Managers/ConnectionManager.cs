@@ -459,6 +459,7 @@ namespace MonoTorrent.Client
 
         private void onPeerHandshakeSent(PeerIdInternal id)
         {
+            id.UpdatePublicStats();
             id.TorrentManager.RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Outgoing));
 
             lock (id.TorrentManager.listLock)
