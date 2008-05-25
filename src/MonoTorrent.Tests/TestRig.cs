@@ -183,6 +183,11 @@ namespace MonoTorrentTests
             disposed = true;
             s.Close();
         }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 
     public class CustomListener : ConnectionListenerBase
@@ -204,7 +209,7 @@ namespace MonoTorrentTests
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.RC4Header);
+            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.Auto);
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }
