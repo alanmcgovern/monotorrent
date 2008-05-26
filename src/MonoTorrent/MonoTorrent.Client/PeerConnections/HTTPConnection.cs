@@ -68,6 +68,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
+        private bool writeHeader;
         private Stream dataStream;
         private AsyncCallback getResponseCallback;
         private TorrentManager manager;
@@ -138,6 +139,20 @@ namespace MonoTorrent.Client.Connections
             {
                 if (dataStream != null && requestMessage != null)
                 {
+                    // We have *only* written the messageLength to the stream
+                    // Now we need to write the rest of the PieceMessage header
+                    if (writeHeader)
+                    {
+                        writeHeader = false;
+                        int o = offset;
+                        o += Message.Write(buffer, o, PieceMessage.MessageId);
+                        o += Message.Write(buffer, o, requestMessage.PieceIndex);
+                        o += Message.Write(buffer, o, requestMessage.StartOffset);
+                        count -= o - offset;
+                        receiveResult.BytesTransferred += o - offset;
+                        offset += o - offset;
+                    }
+
                     dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
                 }
             }
@@ -157,12 +172,23 @@ namespace MonoTorrent.Client.Connections
         {
             try
             {
-                receiveResult.Complete(dataStream.EndRead(result));
+                receiveResult.BytesTransferred += dataStream.EndRead(result);
+                receiveResult.Complete();
             }
             catch (Exception ex)
             {
                 receiveResult.Complete(ex);
             }
+            finally
+            {
+                if (receiveResult.BytesTransferred == requestMessage.ByteLength)
+                    RequestCompleted();
+            }
+        }
+
+        private void RequestCompleted()
+        {
+            throw new Exception("The method or operation is not implemented.");
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -251,7 +277,8 @@ namespace MonoTorrent.Client.Connections
 
                 if (receiveResult.Count == 4 && receiveResult.BytesTransferred == 0)
                 {
-                    Message.Write(receiveResult.Buffer, receiveResult.Offset, m.ByteLength);
+                    writeHeader = true;
+                    Message.Write(receiveResult.Buffer, receiveResult.Offset, m.ByteLength - 4);
                     receiveResult.Complete(receiveResult.Count);
                 }
             }
