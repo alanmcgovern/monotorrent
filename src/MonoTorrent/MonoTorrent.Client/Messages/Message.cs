@@ -36,64 +36,64 @@ namespace MonoTorrent.Client.Messages
             return Encode(buffer.Array, buffer.Offset + offset);
         }
 
-        static protected short ReadShort(byte[] buffer, int offset)
+        static public short ReadShort(byte[] buffer, int offset)
         {
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, offset));
         }
 
-        static protected int ReadInt(byte[] buffer, int offset)
+        static public int ReadInt(byte[] buffer, int offset)
         {
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
         }
 
-        static protected long ReadLong(byte[] buffer, int offset)
+        static public long ReadLong(byte[] buffer, int offset)
         {
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, offset));
         }
 
-        static protected int Write(byte[] buffer, int offset, byte value)
+        static public int Write(byte[] buffer, int offset, byte value)
         {
             buffer[offset] = value;
             return 1;
         }
 
-        static protected int Write(byte[] buffer, int offset, byte[] value, int valueOffset, int count)
+        static public int Write(byte[] buffer, int offset, byte[] value, int valueOffset, int count)
         {
             Buffer.BlockCopy(value, valueOffset, buffer, offset, count);
             return count;
         }
 
-        static protected int Write(byte[] buffer, int offset, ushort value)
+        static public int Write(byte[] buffer, int offset, ushort value)
         {
             return Write(buffer, offset, (short)value);
         }
 
-        static protected int Write(byte[] buffer, int offset, short value)
+        static public int Write(byte[] buffer, int offset, short value)
         {
             return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
-        static protected int Write(byte[] buffer, int offset, int value)
+        static public int Write(byte[] buffer, int offset, int value)
         {
             return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
-        static protected int Write(byte[] buffer, int offset, uint value)
+        static public int Write(byte[] buffer, int offset, uint value)
         {
             return Write(buffer, offset, (int)value);
         }
 
-        static protected int Write(byte[] buffer, int offset, long value)
+        static public int Write(byte[] buffer, int offset, long value)
         {
             return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
         }
 
-        static protected int Write(byte[] buffer, int offset, ulong value)
+        static public int Write(byte[] buffer, int offset, ulong value)
         {
             return Write(buffer, offset, (long)value);
         }
 
-        static private int Write(byte[] buffer, int offset, byte[] value)
+        static public int Write(byte[] buffer, int offset, byte[] value)
         {
             return Write(buffer, offset, value, 0, value.Length);
         }
