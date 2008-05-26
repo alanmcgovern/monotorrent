@@ -45,6 +45,7 @@
     <Compile Include="PieceWriterTests.cs" />
     <Compile Include="TestEncryption.cs" />
     <Compile Include="TestRig.cs" />
+    <Compile Include="TestWebSeed.cs" />
     <Compile Include="TorrentCreatorTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />
     <Compile Include="Tracker\TrackerTest.cs" />

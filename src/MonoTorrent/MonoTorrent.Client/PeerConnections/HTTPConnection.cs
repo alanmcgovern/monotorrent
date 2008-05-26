@@ -68,6 +68,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
+        private Stream dataStream;
         private AsyncCallback getResponseCallback;
         private TorrentManager manager;
         private HttpResult receiveResult;
@@ -133,7 +134,35 @@ namespace MonoTorrent.Client.Connections
                 throw new InvalidOperationException("Cannot call BeginReceive twice");
 
             receiveResult = new HttpResult(callback, state, buffer, offset, count);
+            try
+            {
+                if (dataStream != null && requestMessage != null)
+                {
+                    dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (sendResult != null)
+                    sendResult.Complete(ex);
+
+                if (receiveResult != null)
+                    receiveResult.Complete(ex);
+            }
+
             return receiveResult;
+        }
+
+        private void ReceivedChunk(IAsyncResult result)
+        {
+            try
+            {
+                receiveResult.Complete(dataStream.EndRead(result));
+            }
+            catch (Exception ex)
+            {
+                receiveResult.Complete(ex);
+            }
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -217,13 +246,22 @@ namespace MonoTorrent.Client.Connections
             try
             {
                 WebResponse response = r.EndGetResponse(result);
-                Stream s = response.GetResponseStream();
+                dataStream = response.GetResponseStream();
                 PieceMessage m = new PieceMessage(Manager, requestMessage.PieceIndex, requestMessage.StartOffset, requestMessage.RequestLength);
-                
+
+                if (receiveResult.Count == 4 && receiveResult.BytesTransferred == 0)
+                {
+                    Message.Write(receiveResult.Buffer, receiveResult.Offset, m.ByteLength);
+                    receiveResult.Complete(receiveResult.Count);
+                }
             }
             catch (Exception ex)
             {
+                if (sendResult != null)
+                    sendResult.Complete(ex);
 
+                if (receiveResult != null)
+                    receiveResult.Complete(ex);
             }
         }
 
