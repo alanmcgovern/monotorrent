@@ -286,7 +286,7 @@ namespace MonoTorrentTests
         }
 
         public TestRig(string savePath)
-            : this(savePath, 256 * 1024, null)
+            : this(savePath, null)
         {
 
         }
