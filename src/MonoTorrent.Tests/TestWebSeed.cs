@@ -6,12 +6,14 @@ using MonoTorrent.Client.Connections;
 using System.Net;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client;
+using System.Threading;
 
 namespace MonoTorrentTests
 {
     [TestFixture]
     public class TestWebSeed
     {
+        public readonly int Count = 5;
         static void Main(string[] args)
         {
             TestWebSeed s = new TestWebSeed();
@@ -46,39 +48,56 @@ namespace MonoTorrentTests
         [Test]
         public void TestPieceRequest()
         {
+            ThreadPool.QueueUserWorkItem(delegate {RequestPieces(); });
             byte[] buffer = new byte[1024 * 20];
-            m = new RequestMessage(0, 0, Piece.BlockSize);
-            m.Encode(buffer, 0);
-
-            IAsyncResult sendResult = connection.BeginSend(buffer, 0, m.ByteLength, null, null);
-            IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-            int received = connection.EndReceive(receiveResult);
-
-            Assert.AreEqual(4, received, "#1");
-
-            received = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
-
-            int total = 0;
-            while (total != received)
+            for (int j = 0; j < Count; j++)
             {
-                int end = connection.EndReceive(connection.BeginReceive(buffer, total, Math.Min(received - total, 2048), null, null));
-                if (end == 0)
-                    Assert.Fail();
-                total += end;
+                IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+                int received = connection.EndReceive(receiveResult);
+
+                Assert.AreEqual(4, received, "#1");
+
+                int total = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
+
+                received = 0;
+                while (total != received)
+                {
+                    int end = connection.EndReceive(connection.BeginReceive(buffer, received, Math.Min(total - received, 2048), null, null));
+                    if (end == 0)
+                        Assert.Fail();
+                    received += end;
+                }
+                for (int i = 0; i < total - 9; i++)
+                    if (buffer[i + 9] != (byte)((i+1)*(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i)))
+                        Assert.Fail();
             }
-            for(int i=0;i<total-9;i++)
-                if(buffer[i+9] != (byte)(m.PieceIndex*rig.Torrent.PieceLength + m.StartOffset + i))
-                    Assert.Fail();
+        }
+
+        private void RequestPieces()
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                m = new RequestMessage(i, i * Piece.BlockSize, Piece.BlockSize);
+                connection.EndSend(connection.BeginSend(m.Encode(), 0, m.ByteLength, null, null));
+            }
         }
 
         private void GotContext(IAsyncResult result)
         {
-            HttpListenerContext c = listener.EndGetContext(result);
-            byte[] data = new byte[Piece.BlockSize];
-            for (int i = 0; i < data.Length; i++)
-                data[i] = (byte)(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i);
+            try
+            {
+                HttpListenerContext c = listener.EndGetContext(result);
+                Console.WriteLine("Got Context");
+                byte[] data = new byte[Piece.BlockSize];
+                for (int i = 0; i < data.Length; i++)
+                    data[i] = (byte)((i + 1) * (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i));
 
-            c.Response.Close(data, true);
+                c.Response.Close(data, true);
+                listener.BeginGetContext(GotContext, null);
+            }
+            catch
+            {
+            }
         }
     }
 }
