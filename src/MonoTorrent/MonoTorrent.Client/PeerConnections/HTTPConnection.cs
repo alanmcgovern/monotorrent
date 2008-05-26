@@ -68,6 +68,8 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
+        private int totalExpected;
+        private int length;
         private bool writeHeader;
         private Stream dataStream;
         private AsyncCallback getResponseCallback;
@@ -131,12 +133,16 @@ namespace MonoTorrent.Client.Connections
 
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
+            Console.WriteLine("BeginReceive");
             if (receiveResult != null)
                 throw new InvalidOperationException("Cannot call BeginReceive twice");
 
             receiveResult = new HttpResult(callback, state, buffer, offset, count);
             try
             {
+                if (SendLength())
+                    return receiveResult;
+
                 if (dataStream != null && requestMessage != null)
                 {
                     // We have *only* written the messageLength to the stream
@@ -144,13 +150,14 @@ namespace MonoTorrent.Client.Connections
                     if (writeHeader)
                     {
                         writeHeader = false;
-                        int o = offset;
-                        o += Message.Write(buffer, o, PieceMessage.MessageId);
-                        o += Message.Write(buffer, o, requestMessage.PieceIndex);
-                        o += Message.Write(buffer, o, requestMessage.StartOffset);
-                        count -= o - offset;
-                        receiveResult.BytesTransferred += o - offset;
-                        offset += o - offset;
+                        int written = 0;
+                        written += Message.Write(buffer, offset + written, PieceMessage.MessageId);
+                        written += Message.Write(buffer, offset + written, requestMessage.PieceIndex);
+                        written += Message.Write(buffer, offset + written, requestMessage.StartOffset);
+                        count -= written;
+                        offset += written;
+                        //totalExpected -= written;
+                        receiveResult.BytesTransferred += written;
                     }
 
                     dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
@@ -172,7 +179,9 @@ namespace MonoTorrent.Client.Connections
         {
             try
             {
-                receiveResult.BytesTransferred += dataStream.EndRead(result);
+                int received = dataStream.EndRead(result);
+                receiveResult.BytesTransferred += received;
+                totalExpected -= received;
                 receiveResult.Complete();
             }
             catch (Exception ex)
@@ -181,18 +190,24 @@ namespace MonoTorrent.Client.Connections
             }
             finally
             {
-                if (receiveResult.BytesTransferred == requestMessage.ByteLength)
+                if (totalExpected == 0)
                     RequestCompleted();
             }
         }
 
         private void RequestCompleted()
         {
-            throw new Exception("The method or operation is not implemented.");
+            dataStream.Close();
+            dataStream = null;
+            requestMessage = null;
+
+            // Let MonoTorrent know we've finished requesting that piece
+            sendResult.Complete(sendResult.Count);
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
+            Console.WriteLine("BeginSend");
             if (sendResult != null)
                 throw new InvalidOperationException("Cannot call BeginReceive twice");
             sendResult = new HttpResult(callback, state, buffer, offset, count);
@@ -229,6 +244,7 @@ namespace MonoTorrent.Client.Connections
         {
             int r = CompleteTransfer(result, receiveResult);
             receiveResult = null;
+            Console.WriteLine("EndReceive");
             return r;
         }
 
@@ -236,6 +252,7 @@ namespace MonoTorrent.Client.Connections
         {
             int r = CompleteTransfer(result, sendResult);
             sendResult = null;
+            Console.WriteLine("EndSend");
             return r;
         }
 
@@ -274,13 +291,10 @@ namespace MonoTorrent.Client.Connections
                 WebResponse response = r.EndGetResponse(result);
                 dataStream = response.GetResponseStream();
                 PieceMessage m = new PieceMessage(Manager, requestMessage.PieceIndex, requestMessage.StartOffset, requestMessage.RequestLength);
-
-                if (receiveResult.Count == 4 && receiveResult.BytesTransferred == 0)
-                {
-                    writeHeader = true;
-                    Message.Write(receiveResult.Buffer, receiveResult.Offset, m.ByteLength - 4);
-                    receiveResult.Complete(receiveResult.Count);
-                }
+                length = m.ByteLength;
+                // Warning receive and send calls asynchronous. Need better signalling!
+                sendLength = true;
+                SendLength();
             }
             catch (Exception ex)
             {
@@ -290,6 +304,24 @@ namespace MonoTorrent.Client.Connections
                 if (receiveResult != null)
                     receiveResult.Complete(ex);
             }
+        }
+        private bool sendLength;
+
+        private bool SendLength()
+        {
+            lock (this)
+            {
+                if (sendLength && receiveResult != null && requestMessage != null && receiveResult.Count == 4 && receiveResult.BytesTransferred == 0)
+                {
+                    sendLength = false;
+                    writeHeader = true;
+                    Message.Write(receiveResult.Buffer, receiveResult.Offset, length - 4);
+                    receiveResult.Complete(receiveResult.Count);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private WebRequest CreateWebRequest(RequestMessage requestMessage)
@@ -303,6 +335,7 @@ namespace MonoTorrent.Client.Connections
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
             request.AddRange(requestMessage.StartOffset, requestMessage.StartOffset + requestMessage.RequestLength);
+            totalExpected = requestMessage.RequestLength;
             return request;
         }
     }
