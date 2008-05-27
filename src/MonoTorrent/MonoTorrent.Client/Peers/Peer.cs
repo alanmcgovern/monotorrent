@@ -195,12 +195,16 @@ namespace MonoTorrent.Client
         internal byte[] CompactPeer()
         {
             byte[] data = new byte[6];
+            CompactPeer(data, 0);
+            return data;
+        }
+
+        internal void CompactPeer(byte[] data, int offset)
+        {
             // FIXME: This probably isn't right
             string[] peer = this.connectionUri.ToString().Split(':');
-            Buffer.BlockCopy(IPAddress.Parse(peer[0]).GetAddressBytes(), 0, data, 0, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, 4, 2);
-
-            return data;
+            Buffer.BlockCopy(IPAddress.Parse(peer[0]).GetAddressBytes(), 0, data, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, offset + 4, 2);
         }
 
 
