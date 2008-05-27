@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
             int written = offset;
 
-            written += Write(buffer, offset, ByteLength);
+            written += Write(buffer, offset, ByteLength - 4);
             written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
             written += Write(buffer, written, Support.MessageId);
             written += messageDict.Encode(buffer, written);
