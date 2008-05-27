@@ -13,15 +13,16 @@ namespace MonoTorrentTests
     [TestFixture]
     public class TestWebSeed
     {
+    //    static void Main(string[] args)
+    //    {
+    //        TestWebSeed s = new TestWebSeed();
+    //        s.Setup();
+    //        s.TestPartialData();
+    //        s.TearDown();
+    //    }
+
         bool partialData;
         public readonly int Count = 5;
-        static void Main(string[] args)
-        {
-            TestWebSeed s = new TestWebSeed();
-            s.Setup();
-            s.TestPartialData();
-            s.TearDown();
-        }
         TestRig rig;
         HttpConnection connection;
         HttpListener listener;
