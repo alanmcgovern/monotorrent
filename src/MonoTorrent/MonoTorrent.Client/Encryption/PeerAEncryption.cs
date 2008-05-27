@@ -31,6 +31,7 @@ using System.Text;
 using System.Net.Sockets;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -93,16 +94,16 @@ namespace MonoTorrent.Client.Encryption
                                         + 2 + padC.Length + 2 + InitialPayload.Length];
                 
                 int offset = 0;
-                Buffer.BlockCopy(req1, 0, buffer, offset, req1.Length); offset += req1.Length;
-                Buffer.BlockCopy(req2, 0, buffer, offset, req2.Length); offset += req2.Length;
-                Buffer.BlockCopy(DoEncrypt(VerificationConstant), 0, buffer, offset, VerificationConstant.Length); offset += VerificationConstant.Length;
-                Buffer.BlockCopy(DoEncrypt(CryptoProvide), 0, buffer, offset, CryptoProvide.Length); offset += CryptoProvide.Length;
-                Buffer.BlockCopy(DoEncrypt(Len(padC)), 0, buffer, offset, 2); offset += 2;
-                Buffer.BlockCopy(DoEncrypt(padC), 0, buffer, offset, padC.Length); offset += padC.Length;
+                offset += Message.Write(buffer, offset, req1);
+                offset += Message.Write(buffer, offset, req2);
+                offset += Message.Write(buffer, offset, DoEncrypt(VerificationConstant));
+                offset += Message.Write(buffer, offset, DoEncrypt(CryptoProvide));
+                offset += Message.Write(buffer, offset, DoEncrypt(Len(padC)));
+                offset += Message.Write(buffer, offset, DoEncrypt(padC));
 
                 // ... PadC, len(IA)), ENCRYPT(IA)
-                Buffer.BlockCopy(DoEncrypt(Len(InitialPayload)), 0, buffer, offset, 2); offset += 2;
-                Buffer.BlockCopy(DoEncrypt(InitialPayload), 0, buffer, offset, InitialPayload.Length); offset += InitialPayload.Length;
+                offset += Message.Write(buffer, offset, DoEncrypt(Len(InitialPayload)));
+                offset += Message.Write(buffer, offset, DoEncrypt(InitialPayload));
                 
                 // Send the entire message in one go
                 SendMessage(buffer);
