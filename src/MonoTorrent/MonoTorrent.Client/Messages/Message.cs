@@ -57,9 +57,9 @@ namespace MonoTorrent.Client.Messages
             return 1;
         }
 
-        static public int Write(byte[] buffer, int offset, byte[] value, int valueOffset, int count)
+        static public int Write(byte[] dest, int destOffset, byte[] src, int srcOffset, int count)
         {
-            Buffer.BlockCopy(value, valueOffset, buffer, offset, count);
+            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
             return count;
         }
 
