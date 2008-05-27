@@ -18,7 +18,7 @@ namespace MonoTorrentTests
         {
             TestWebSeed s = new TestWebSeed();
             s.Setup();
-            s.TestPieceRequest();
+            s.TestInactiveServer();
             s.TearDown();
         }
         TestRig rig;
@@ -71,6 +71,14 @@ namespace MonoTorrentTests
                     if (buffer[i + 9] != (byte)((i+1)*(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i)))
                         Assert.Fail();
             }
+        }
+
+        [Test]
+        [ExpectedException(typeof(Exception))]
+        public void TestInactiveServer()
+        {
+            listener.Stop();
+            TestPieceRequest();
         }
 
         private void RequestPieces()
