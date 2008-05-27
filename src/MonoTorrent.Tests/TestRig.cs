@@ -328,7 +328,7 @@ namespace MonoTorrentTests
             BEncodedList announceTier = new BEncodedList();
             announceTier.Add(new BEncodedString("custom://transfers1/announce"));
             announceTier.Add(new BEncodedString("custom://transfers2/announce"));
-            announceTier.Add(new BEncodedString("http://transfers3/announce"));
+            //announceTier.Add(new BEncodedString("http://transfers3/announce"));
             BEncodedList announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;
