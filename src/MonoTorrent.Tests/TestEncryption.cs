@@ -19,8 +19,8 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
             {
                 TestEncryption d = new TestEncryption();
                 d.Setup();
-                try { d.EncrytorFactoryPeerAHeader(); }
-                catch { }
+                try { d.Full_AutoTest(); }
+                catch { Console.WriteLine("******** FAILURE ********"); }
                 d.Teardown();
                 if (i == 100)
                     break;
@@ -185,6 +185,7 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
             HandshakeMessage d = new HandshakeMessage();
             d.Decode(handshake, 0, handshake.Length);
             Assert.AreEqual(m, d);
+            Console.WriteLine("Success");
         }
     }
 }

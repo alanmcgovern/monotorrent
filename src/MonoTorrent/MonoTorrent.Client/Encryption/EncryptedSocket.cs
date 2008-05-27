@@ -127,10 +127,7 @@ namespace MonoTorrent.Client.Encryption
         protected byte[] PadC = null;
         protected byte[] PadD = null;
 
-        protected static byte[] VerificationConstant = new byte[] {
-            0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00
-        };
+        protected static byte[] VerificationConstant = new byte[8];
 
         protected byte[] CryptoProvide = new byte[] { 0x00, 0x00, 0x00, 0x03 };
 
@@ -296,7 +293,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void SendY()
         {
-            byte[] toSend = new byte[96 + (random.Next() & 0x1ff)];
+            byte[] toSend = new byte[96 + random.Next(0, 512)];
             random.NextBytes(toSend);
 
             Array.Copy(Y, toSend, 96);
@@ -379,7 +376,7 @@ namespace MonoTorrent.Client.Encryption
                 }
                 catch (Exception ex)
                 {
-                    asyncResult.Complete(new EncryptionException("Null Socket"));
+                    asyncResult.Complete(new EncryptionException("Problem synchronising Socket", ex));
                     return;
                 }
 
@@ -389,63 +386,30 @@ namespace MonoTorrent.Client.Encryption
                     return;
                 }
 
-                int matchStart = -1; // offset of the beginning of the current match
                 int filled = (int)result.AsyncState + read; // count of the bytes currently in synchronizeWindow
-                int syncDataPtr = 0; // offset of the byte in synchronizeData we are currently matching
+                bool matched=true;
+                for (int i = 0; i < filled && matched; i++)
+                    if (synchronizeData[i] != synchronizeWindow[i])
+                        matched = false;
 
-                for (int i = 0; i < filled; i++)
-                {
-                    if (synchronizeData[syncDataPtr] != synchronizeWindow[i])
-                    {
-                        matchStart = -1;
-                        syncDataPtr = 0;
-                    }
-                    else
-                    {
-                        if (matchStart == -1)
-                            matchStart = i;
-
-                        syncDataPtr++;
-                    }
-                }
-
-                if (matchStart == 0) // the match started in the beginning of the window, so it must be a full match
+                if (matched) // the match started in the beginning of the window, so it must be a full match
                 {
                     doneSynchronizeCallback(result);
                 }
                 else
                 {
-                    if (bytesReceived > syncStopPoint)
+                    if (bytesReceived > (syncStopPoint))
                     {
                         asyncResult.Complete(new EncryptionException("Couldn't synchronise 2"));
                         return;
                     }
 
-                    if (matchStart != -1) // there's a partial match beginning in the middle of the window
-                    {
-                        // move the partial match to the beginning of the window
-                        for (int i = matchStart; i < synchronizeWindow.Length; i++)
-                        {
-                            synchronizeWindow[i - matchStart] = synchronizeWindow[i];
-                        }
-
-                        // fill the rest of the window
-                        try
-                        {
-                            socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - matchStart, matchStart, fillSynchronizeBytesCallback, (synchronizeWindow.Length - matchStart));
-                        }
-                        catch (Exception ex)
-                        {
-                            asyncResult.Complete(ex);
-                            return;
-                        }
-                    }
-                    
                     else // there's no match in this window
                     {
                         try
                         {
-                            socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                            Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
+                            socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
                         }
                         catch (Exception)
                         {
@@ -640,12 +604,9 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         private void GenerateX()
         {
-            X = new byte[96];
+            X = new byte[20];
 
             random.NextBytes(X);
-
-            for (int i = 0; i < 76; i++)
-                X[i] = 0;
         }
 
         /// <summary>
@@ -770,7 +731,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected byte[] GeneratePad()
         {
-            return new byte[random.Next() & 0x1ff];
+            return new byte[random.Next(0, 512)];
         }
         #endregion
 
