@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Messages
             CreateMessage creator;
 
             if (buffer[offset] == LibTorrentMessageId)
-                return LibtorrentMessage.DecodeMessage(buffer, offset + 1, count - 1, manager);
+                return ExtensionMessage.DecodeMessage(buffer, offset + 1, count - 1, manager);
 
             if (!messageDict.TryGetValue(buffer[offset], out creator))
                 return new UnknownMessage();

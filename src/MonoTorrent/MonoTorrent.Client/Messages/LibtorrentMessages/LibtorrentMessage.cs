@@ -5,16 +5,16 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public abstract class LibtorrentMessage : PeerMessage
+    public abstract class ExtensionMessage : PeerMessage
     {
         private static readonly byte HandshakeMessageId = 0;
         private static Dictionary<byte, CreateMessage> messageDict;
 
-        internal static readonly List<LTSupport> SupportedMessages = new List<LTSupport>();
+        internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport>();
 
         private static byte nextId;
 
-        static LibtorrentMessage()
+        static ExtensionMessage()
         {
             HandshakeMessageId = 0;
             nextId = 1;
@@ -24,10 +24,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             Register(HandshakeMessageId, delegate { return new ExtendedHandshakeMessage(); });
 
             Register(nextId, delegate { return new LTChat(); });
-            SupportedMessages.Add(new LTSupport("LT_chat", nextId++));
+            SupportedMessages.Add(new ExtensionSupport("LT_chat", nextId++));
 
             Register(nextId, delegate { return new LTMetadata(); });
-            SupportedMessages.Add(new LTSupport("LT_metadata", nextId++));
+            SupportedMessages.Add(new ExtensionSupport("LT_metadata", nextId++));
         }
 
         public static void Register(byte identifier, CreateMessage creator)
@@ -39,9 +39,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 messageDict.Add(identifier, creator);
         }
 
-        protected static LTSupport CreateSupport(string name)
+        protected static ExtensionSupport CreateSupport(string name)
         {
-            return SupportedMessages.Find(delegate(LTSupport s) { return s.Name == name; });
+            return SupportedMessages.Find(delegate(ExtensionSupport s) { return s.Name == name; });
         }
 
         public new static PeerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)

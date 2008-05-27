@@ -5,9 +5,9 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public class LTChat : LibtorrentMessage
+    public class LTChat : ExtensionMessage
     {
-        public static readonly LTSupport Support = CreateSupport("LT_chat");
+        public static readonly ExtensionSupport Support = CreateSupport("LT_chat");
 
         private static readonly BEncodedString MessageKey = "msg";
         private BEncodedDictionary messageDict = new BEncodedDictionary();

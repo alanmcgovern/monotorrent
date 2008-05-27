@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public struct LTSupport
+    public struct ExtensionSupport
     {
         private byte messageId;
         private string name;
@@ -19,7 +19,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get { return name; }
         }
 
-        public LTSupport(string name, byte messageId)
+        public ExtensionSupport(string name, byte messageId)
         {
             this.messageId = messageId;
             this.name = name;

@@ -43,8 +43,8 @@ namespace MonoTorrent.Client.ExtendedMessageTests
 
             Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
             Assert.AreEqual(2, m.Supports.Count, "#2");
-            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTChat.Support); }), "#3");
-            Assert.IsTrue(m.Supports.Exists(delegate(LTSupport s) { return s.Equals(LTMetadata.Support); }), "#4");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Equals(LTChat.Support); }), "#3");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Equals(LTMetadata.Support); }), "#4");
         }
 
         [Test]
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.ExtendedMessageTests
             Assert.AreEqual(m.MaxRequests, decoded.MaxRequests, "#3");
             Assert.AreEqual(m.Version, decoded.Version, "#4");
             Assert.AreEqual(m.Supports.Count, decoded.Supports.Count, "#5");
-            m.Supports.ForEach(delegate(LTSupport s) { Assert.IsTrue(decoded.Supports.Contains(s), "#6:" + s.ToString()); });
+            m.Supports.ForEach(delegate(ExtensionSupport s) { Assert.IsTrue(decoded.Supports.Contains(s), "#6:" + s.ToString()); });
         }
 
         [Test]
