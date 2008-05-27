@@ -13,12 +13,13 @@ namespace MonoTorrentTests
     [TestFixture]
     public class TestWebSeed
     {
+        bool partialData;
         public readonly int Count = 5;
         static void Main(string[] args)
         {
             TestWebSeed s = new TestWebSeed();
             s.Setup();
-            s.TestInactiveServer();
+            s.TestPartialData();
             s.TearDown();
         }
         TestRig rig;
@@ -29,6 +30,7 @@ namespace MonoTorrentTests
         [SetUp]
         public void Setup()
         {
+            partialData = false;
             listener = new HttpListener();
             listener.Prefixes.Add("http://127.0.0.1:16352/announce/");
             listener.Start();
@@ -64,17 +66,25 @@ namespace MonoTorrentTests
                 {
                     int end = connection.EndReceive(connection.BeginReceive(buffer, received, Math.Min(total - received, 2048), null, null));
                     if (end == 0)
-                        Assert.Fail();
+                        throw new Exception("Not enough data received");
                     received += end;
                 }
                 for (int i = 0; i < total - 9; i++)
                     if (buffer[i + 9] != (byte)((i+1)*(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i)))
-                        Assert.Fail();
+                        throw new Exception("Corrupted data received");
             }
         }
 
         [Test]
         [ExpectedException(typeof(Exception))]
+        public void TestPartialData()
+        {
+            partialData = true;
+            TestPieceRequest();
+        }        
+
+        [Test]
+        [ExpectedException(typeof(WebException))]
         public void TestInactiveServer()
         {
             listener.Stop();
@@ -96,7 +106,7 @@ namespace MonoTorrentTests
             {
                 HttpListenerContext c = listener.EndGetContext(result);
                 Console.WriteLine("Got Context");
-                byte[] data = new byte[Piece.BlockSize];
+                byte[] data = partialData ? new byte[Piece.BlockSize/2] : new byte[Piece.BlockSize];
                 for (int i = 0; i < data.Length; i++)
                     data[i] = (byte)((i + 1) * (m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i));
 
