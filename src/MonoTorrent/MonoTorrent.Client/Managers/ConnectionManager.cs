@@ -704,6 +704,9 @@ namespace MonoTorrent.Client
         /// <param name="callback">The callback to invoke when the message has been received</param>
         private void ReceiveMessage(PeerIdInternal id, int length, MessagingCallback callback)
         {
+            // The length must be prepended to the buffer so the message decodes correctly
+            length += 4;
+
             ArraySegment<byte> newBuffer = BufferManager.EmptyBuffer;
             bool cleanUp = false;
             try
@@ -724,11 +727,14 @@ namespace MonoTorrent.Client
                         int alreadyReceived = id.Connection.BytesReceived - id.Connection.BytesToRecieve;
                         ClientEngine.BufferManager.GetBuffer(ref newBuffer, Math.Max(alreadyReceived, length));
 
+                        // Prepend the length
+                        Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(length)), 0, newBuffer.Array, newBuffer.Offset, 4);
+                        
                         // Copy the extra data from the old buffer into the new buffer.
                         Buffer.BlockCopy(id.Connection.recieveBuffer.Array,
                             id.Connection.recieveBuffer.Offset + id.Connection.BytesToRecieve,
                             newBuffer.Array,
-                            newBuffer.Offset,
+                            newBuffer.Offset + 4,
                             alreadyReceived);
 
                         // Free the old buffer and set the new buffer

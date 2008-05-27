@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.ExtendedMessageTests
         {
             ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
             byte[] data = m.Encode();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage)PeerMessage.DecodeMessage(data, 4, data.Length - 4, rig.Manager);
+            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
 
             Assert.AreEqual(m.ByteLength, data.Length);
             Assert.AreEqual(m.ByteLength, decoded.ByteLength, "#1");
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.ExtendedMessageTests
             m.Message = "This Is My Message";
 
             byte[] data = m.Encode();
-            LTChat decoded = (LTChat)PeerMessage.DecodeMessage(data, 4, data.Length - 4, rig.Manager);
+            LTChat decoded = (LTChat)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
         
             Assert.AreEqual(m.Message, decoded.Message, "#1");
         }

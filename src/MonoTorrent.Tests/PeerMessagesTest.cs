@@ -61,14 +61,14 @@ namespace MonoTorrent.Client.StandardMessageTests
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 4, encoded.Length, testRig.Manager);
+            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
         }
         [Test]
         public void BitFieldDecoding()
         {
             byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08 };
             Console.WriteLine("Pieces: " + testRig.Manager.Torrent.Pieces.Count);
-            BitfieldMessage msg = (BitfieldMessage)PeerMessage.DecodeMessage(buffer, 4, 4, this.testRig.Manager);
+            BitfieldMessage msg = (BitfieldMessage)PeerMessage.DecodeMessage(buffer, 0, 8, this.testRig.Manager);
             Console.WriteLine(msg.BitField.Length);
             for (int i = 0; i < msg.BitField.Length; i++)
                 Console.WriteLine(msg.BitField[i] + " " + i);
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.StandardMessageTests
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 4, encoded.Length, testRig.Manager);
+            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
         }
 
 
@@ -272,7 +272,7 @@ namespace MonoTorrent.Client.StandardMessageTests
         private void EncodeDecode(Message orig)
         {
             orig.Encode(buffer, offset);
-            Message dec = PeerMessage.DecodeMessage(buffer, offset + 4, 798, null); // We need the +4 to skip past the message length bytes
+            Message dec = PeerMessage.DecodeMessage(buffer, offset, orig.ByteLength, null);
             Assert.IsTrue(orig.Equals(dec), string.Format("orig: {0}, new: {1}", orig, dec));
         }
     }

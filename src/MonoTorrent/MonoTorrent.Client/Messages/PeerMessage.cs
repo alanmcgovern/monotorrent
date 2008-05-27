@@ -60,16 +60,24 @@ namespace MonoTorrent.Client.Messages
             PeerMessage message;
             CreateMessage creator;
 
-            if (buffer[offset] == LibTorrentMessageId)
-                return ExtensionMessage.DecodeMessage(buffer, offset + 1, count - 1, manager);
+            if (count < 4)
+                throw new ArgumentNullException("A message must contain a 4 byte length prefix");
 
-            if (!messageDict.TryGetValue(buffer[offset], out creator))
+            int messageLength = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, offset));
+
+            if (messageLength > (count - 4))
+                throw new ArgumentException("Incomplete message detected");
+
+            if (buffer[offset + 4] == LibTorrentMessageId)
+                return ExtensionMessage.DecodeMessage(buffer, offset + 4 + 1, count - 4 - 1, manager);
+
+            if (!messageDict.TryGetValue(buffer[offset + 4], out creator))
                 return new UnknownMessage();
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
             message = creator(manager);
-            message.Decode(buffer, offset + 1, count - 1);
+            message.Decode(buffer, offset + 4 + 1, count - 4 - 1);
             return message;
         }
 
