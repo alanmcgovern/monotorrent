@@ -214,7 +214,7 @@ namespace MonoTorrent.Client.Connections
 
             try
             {
-                PeerMessage message = PeerMessage.DecodeMessage(buffer, offset + 4, count - 4, null);
+                PeerMessage message = PeerMessage.DecodeMessage(buffer, offset, count, null);
                 if (message is RequestMessage)
                 {
                     requestMessage = (RequestMessage)message;
@@ -291,7 +291,7 @@ namespace MonoTorrent.Client.Connections
                 WebResponse response = r.EndGetResponse(result);
                 dataStream = response.GetResponseStream();
                 PieceMessage m = new PieceMessage(Manager, requestMessage.PieceIndex, requestMessage.StartOffset, requestMessage.RequestLength);
-                length = m.ByteLength;
+                length = m.ByteLength - 4;
                 // Warning receive and send calls asynchronous. Need better signalling!
                 sendLength = true;
                 SendLength();
@@ -315,7 +315,7 @@ namespace MonoTorrent.Client.Connections
                 {
                     sendLength = false;
                     writeHeader = true;
-                    Message.Write(receiveResult.Buffer, receiveResult.Offset, length - 4);
+                    Message.Write(receiveResult.Buffer, receiveResult.Offset, length);
                     receiveResult.Complete(receiveResult.Count);
                     return true;
                 }

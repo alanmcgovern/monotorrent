@@ -13,13 +13,13 @@ namespace MonoTorrentTests
     [TestFixture]
     public class TestWebSeed
     {
-    //    static void Main(string[] args)
-    //    {
-    //        TestWebSeed s = new TestWebSeed();
-    //        s.Setup();
-    //        s.TestPartialData();
-    //        s.TearDown();
-    //    }
+        static void Main(string[] args)
+        {
+            TestWebSeed s = new TestWebSeed();
+            s.Setup();
+            s.TestPieceRequest();
+            s.TearDown();
+        }
 
         bool partialData;
         public readonly int Count = 5;
@@ -70,7 +70,7 @@ namespace MonoTorrentTests
                         throw new Exception("Not enough data received");
                     received += end;
                 }
-                for (int i = 0; i < total - 9; i++)
+                for (int i = 4; i < total - 9 - 4; i++)
                     if (buffer[i + 9] != (byte)((i+1)*(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i)))
                         throw new Exception("Corrupted data received");
             }
