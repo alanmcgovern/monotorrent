@@ -3,6 +3,7 @@
 //
 // Authors:
 //   Yiduo Wang planetbeing@gmail.com
+//   Alan McGovern alan.mcgovern@gmail.com
 //
 // Copyright (C) 2007 Yiduo Wang
 //
