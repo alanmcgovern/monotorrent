@@ -545,23 +545,15 @@ namespace MonoTorrent.Client
 
                     lock (this.listLock)
                     {
-                        while (this.ConnectingToPeers.Count > 0)
-                            lock (this.ConnectingToPeers[0])
-                            {
-                                if (this.ConnectingToPeers[0].Connection == null)
-                                    this.ConnectingToPeers.RemoveAt(0);
-                                else
-                                    engine.ConnectionManager.AsyncCleanupSocket(this.ConnectingToPeers[0], true, "Called stop");
-                            }
+                        foreach (PeerIdInternal id in ConnectingToPeers)
+                            lock (id)
+                                if (id.Connection.Connection != null)
+                                    id.Connection.Connection.Dispose();
 
-                        while (this.ConnectedPeers.Count > 0)
-                            lock (this.ConnectedPeers[0])
-                            {
-                                if (this.ConnectedPeers[0].Connection == null)
-                                    this.ConnectedPeers.RemoveAt(0);
-                                else
-                                    engine.ConnectionManager.AsyncCleanupSocket(this.ConnectedPeers[0], true, "Called stop");
-                            }
+                        foreach (PeerIdInternal id in ConnectedPeers)
+                            lock (id)
+                                if (id.Connection.Connection != null)
+                                    id.Connection.Connection.Dispose();
 
                         this.peers.ClearAll();
                     }
