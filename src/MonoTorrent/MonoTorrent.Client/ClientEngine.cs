@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsWebSeed = false;
         public static readonly bool SupportsExtended = false;
         public static readonly bool SupportsFastPeer = true;
-        public static readonly bool SupportsEncryption = true;
+        public static readonly bool SupportsEncryption = false;
         public static readonly bool SupportsEndgameMode = false;
         public static readonly bool SupportsDht = false;
         internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
