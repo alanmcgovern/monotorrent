@@ -3,6 +3,7 @@
 //
 // Authors:
 //   Yiduo Wang planetbeing@gmail.com
+//   Alan McGovern alan.mcgovern@gmail.com
 //
 // Copyright (C) 2007 Yiduo Wang
 //
@@ -77,9 +78,8 @@ namespace MonoTorrent.Client.Encryption
         }
 
         #region Private members
-        private bool isReady = false;
 
-        private Random random;
+        private RandomNumberGenerator random;
         private SHA1 hasher;
 
         // Cryptors for the handshaking
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client.Encryption
 
         public EncryptedSocket(EncryptionTypes minCryptoAllowed)
         {
-            random = new Random();
+            random = RNGCryptoServiceProvider.Create();
             hasher = new SHA1Fast();
 
             GenerateX();
@@ -276,12 +276,12 @@ namespace MonoTorrent.Client.Encryption
             streamDecryptor.Decrypt(data, offset, data, offset, length);
         }
 
-        /// <summary>
-        /// Returns true if the cryptor is ready to encrypt and decrypt
-        /// </summary>
-        public bool IsReady
+        private int RandomNumber(int max)
         {
-            get { return isReady; }
+            byte[] b = new byte[4];
+            random.GetBytes(b);
+            uint val = BitConverter.ToUInt32(b, 0);
+            return (int)(val % max);
         }
         #endregion
 
@@ -293,8 +293,8 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void SendY()
         {
-            byte[] toSend = new byte[96 + random.Next(0, 512)];
-            random.NextBytes(toSend);
+            byte[] toSend = new byte[96 + RandomNumber(512)];
+            random.GetBytes(toSend);
 
             Array.Copy(Y, toSend, 96);
 
@@ -606,7 +606,7 @@ namespace MonoTorrent.Client.Encryption
         {
             X = new byte[20];
 
-            random.NextBytes(X);
+            random.GetBytes(X);
         }
 
         /// <summary>
@@ -731,7 +731,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected byte[] GeneratePad()
         {
-            return new byte[random.Next(0, 512)];
+            return new byte[RandomNumber(512)];
         }
         #endregion
 
@@ -783,7 +783,6 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void Ready()
         {
-            isReady = true;
             asyncResult.Complete();
         }
 

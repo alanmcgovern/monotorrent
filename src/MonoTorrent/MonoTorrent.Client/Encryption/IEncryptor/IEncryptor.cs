@@ -37,8 +37,6 @@ namespace MonoTorrent.Client.Encryption
 {
     public interface IEncryptor
     {
-        bool IsReady {  get; }
-
         bool InitialDataAvailable {  get; }
 
         int GetInitialData(byte[] buffer, int offset, int count);
