@@ -32,6 +32,7 @@ using System.Text;
 using System.Net.Sockets;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -121,7 +122,8 @@ namespace MonoTorrent.Client.Encryption
 
                 Array.Copy(VerifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
                 
-                //SelectCrypto(myCP);
+                // We need to select the crypto *after* we send our response, otherwise the wrong
+                // encryption will be used on the response
                 b = myCP;
                 Array.Copy(VerifyBytes, 32, lenPadC, 0, lenPadC.Length); // ... len(padC) ...
                 PadC = new byte[DeLen(lenPadC) + 2];
@@ -174,12 +176,13 @@ namespace MonoTorrent.Client.Encryption
                 byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
                 
                 int offset = 0;
-                Buffer.BlockCopy(VerificationConstant, 0, buffer, offset, VerificationConstant.Length); offset += VerificationConstant.Length;
-                Buffer.BlockCopy(CryptoSelect, 0, buffer, offset, CryptoSelect.Length); offset += CryptoSelect.Length;
-                Buffer.BlockCopy(Len(padD), 0, buffer, offset, 2); offset += 2;
-                Buffer.BlockCopy(padD, 0, buffer, offset, padD.Length);
+                offset += Message.Write(buffer, offset, VerificationConstant);
+                offset += Message.Write(buffer, offset, CryptoSelect);
+                offset += Message.Write(buffer, offset, Len(padD));
+                offset += Message.Write(buffer, offset, padD);
 
-                SendMessage(DoEncrypt(buffer));
+                DoEncrypt(buffer, 0, buffer.Length);
+                SendMessage(buffer);
 
                 SelectCrypto(b, true);
 
@@ -202,25 +205,14 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                bool match = false;
-
                 for (int i = 0; i < possibleSKEYs.Length; i++)
                 {
                     byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i]);
                     byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
-
-                    for (int j = 0; j < req2.Length; j++)
-                    {
-                        if (torrentHash[j] != (req2[j] ^ req3[j]))
-                        {
-                            match = false;
-                            break;
-                        }
-                        else
-                        {
-                            match = true;
-                        }
-                    }
+                    
+                    bool match = true;
+                    for (int j = 0; j < req2.Length && match; j++)
+                        match = torrentHash[j] == (req2[j] ^ req3[j]);
 
                     if (match)
                     {
@@ -228,7 +220,6 @@ namespace MonoTorrent.Client.Encryption
                         return true;
                     }
                 }
-                return false;
             }
             catch (Exception ex)
             {

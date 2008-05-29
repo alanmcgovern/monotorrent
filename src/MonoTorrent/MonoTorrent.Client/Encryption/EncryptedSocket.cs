@@ -38,6 +38,7 @@ using System.Threading;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
 
 
 namespace MonoTorrent.Client.Encryption
@@ -169,6 +170,9 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="socket">The socket to perform handshaking with</param>
         public virtual IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state)
         {
+            if (socket == null)
+                throw new ArgumentNullException("socket");
+
             if (asyncResult != null)
                 throw new ArgumentException("BeginHandshake has already been called");
 
@@ -296,7 +300,7 @@ namespace MonoTorrent.Client.Encryption
             byte[] toSend = new byte[96 + RandomNumber(512)];
             random.GetBytes(toSend);
 
-            Array.Copy(Y, toSend, 96);
+            Buffer.BlockCopy(Y, 0, toSend, 0, 96);
 
             SendMessage(toSend);
         }
@@ -336,18 +340,9 @@ namespace MonoTorrent.Client.Encryption
                 this.syncStopPoint = syncStopPoint;
 
                 if (bytesReceived > syncStopPoint)
-                {
                     asyncResult.Complete(new EncryptionException("Couldn't synchronise 1"));
-                    return;
-                }
-
-                if (socket == null)
-                {
-                    asyncResult.Complete(new EncryptionException("Null Socket"));
-                    return;
-                }
-
-                socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                else
+                    socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
             }
             catch (Exception ex)
             {
@@ -361,33 +356,17 @@ namespace MonoTorrent.Client.Encryption
             {
                 lastActivity = DateTime.Now;
 
-                if (socket == null)
-                {
-                    asyncResult.Complete(new EncryptionException("Null Socket"));
-                    return;
-                }
-
-                int read;
-
-                try
-                {
-                    read = socket.EndReceive(result);
-                    bytesReceived += read;
-                }
-                catch (Exception ex)
-                {
-                    asyncResult.Complete(new EncryptionException("Problem synchronising Socket", ex));
-                    return;
-                }
-
+                int read = socket.EndReceive(result);
                 if (read == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Socket received zero or disconnected"));
                     return;
                 }
 
+                bytesReceived += read;
+
                 int filled = (int)result.AsyncState + read; // count of the bytes currently in synchronizeWindow
-                bool matched=true;
+                bool matched = true;
                 for (int i = 0; i < filled && matched; i++)
                     if (synchronizeData[i] != synchronizeWindow[i])
                         matched = false;
@@ -400,22 +379,15 @@ namespace MonoTorrent.Client.Encryption
                 {
                     if (bytesReceived > (syncStopPoint))
                     {
-                        asyncResult.Complete(new EncryptionException("Couldn't synchronise 2"));
+                        asyncResult.Complete(new EncryptionException("Could not resyncronise the stream"));
                         return;
                     }
-
-                    else // there's no match in this window
+                    // Shuffle everything left by 1 and then receive one more byte at the end
+                    // and try to match that
+                    else
                     {
-                        try
-                        {
-                            Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
-                            socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
-                        }
-                        catch (Exception)
-                        {
-                            asyncResult.Complete(new EncryptionException("Couldn't synchronise"));
-                            return;
-                        }
+                        Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
+                        socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
                     }
                 }
             }
@@ -436,58 +408,33 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                if (length > 0)
+                if (length == 0)
                 {
-                    if (initialBuffer != null)
+                    callback(null);
+                    return;
+                }
+                if (initialBuffer != null)
+                {
+                    int toCopy = Math.Min(initialBufferCount, length);
+                    Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
+                    initialBufferOffset += toCopy;
+                    initialBufferCount -= toCopy;
+
+                    if (toCopy == initialBufferCount)
                     {
-                        int toCopy = Math.Min(initialBufferCount, length);
-                        Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
-
-                        if (toCopy == initialBufferCount)
-                        {
-                            initialBufferCount = 0;
-                            initialBufferOffset = 0;
-                            initialBuffer = new byte[0];
-                        }
-                        else
-                        {
-                            initialBufferOffset += toCopy;
-                            initialBufferCount -= toCopy;
-                        }
-
-                        if (toCopy == length)
-                        {
-                            callback(null);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
-                            }
-                            catch (Exception ex)
-                            {
-                                asyncResult.Complete(ex);
-                                return;
-                            }
-                        }
+                        initialBufferCount = 0;
+                        initialBufferOffset = 0;
+                        initialBuffer = new byte[0];
                     }
+
+                    if (toCopy == length)
+                        callback(null);
                     else
-                    {
-                        try
-                        {
-                            socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
-                        }
-                        catch (Exception ex)
-                        {
-                            asyncResult.Complete(ex);
-                            return;
-                        }
-                    }
+                        socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
                 }
                 else
                 {
-                    callback(null);
+                    socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
                 }
             }
             catch (Exception ex)
@@ -509,19 +456,14 @@ namespace MonoTorrent.Client.Encryption
                 int start = (int)receiveData[2];
                 int length = (int)receiveData[3];
 
-                int received;
-
-
-                received = socket.EndReceive(result);
-                bytesReceived += received;
-
-
+                int received = socket.EndReceive(result);
                 if (received == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Received zero or not connected"));
                     return;
                 }
 
+                bytesReceived += received;
                 if (received < length)
                 {
                     receiveData[2] = start + received;
@@ -541,17 +483,14 @@ namespace MonoTorrent.Client.Encryption
 
         protected void SendMessage(byte[] toSend)
         {
-            if (toSend.Length > 0)
+            try
             {
-                try
-                {
+                if (toSend.Length > 0)
                     socket.BeginSend(toSend, 0, toSend.Length, doneSendCallback, new object[] { toSend, 0, toSend.Length });
-                }
-                catch (Exception ex)
-                {
-                    asyncResult.Complete(ex);
-                    return;
-                }
+            }
+            catch (Exception ex)
+            {
+                asyncResult.Complete(ex);
             }
         }
 
@@ -565,18 +504,7 @@ namespace MonoTorrent.Client.Encryption
                 int start = (int)sendData[1];
                 int length = (int)sendData[2];
 
-                int sent;
-
-                try
-                {
-                    sent = socket.EndSend(result);
-                }
-                catch (Exception ex)
-                {
-                    asyncResult.Complete(ex);
-                    return;
-                }
-
+                int sent = socket.EndSend(result);
                 if (sent == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Sent zero or not connected"));
@@ -680,17 +608,12 @@ namespace MonoTorrent.Client.Encryption
             byte[] combined;
 
             foreach (byte[] datum in data)
-            {
                 totalLength += datum.Length;
-            }
 
             combined = new byte[totalLength];
 
             for (int i = 0; i < data.Length; i++)
-            {
-                data[i].CopyTo(combined, cursor);
-                cursor += data[i].Length;
-            }
+                cursor += Message.Write(combined, cursor, data[i]);
 
             return combined;
         }
