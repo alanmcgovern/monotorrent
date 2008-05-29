@@ -37,8 +37,6 @@
 
 using System;
 using System.Security.Cryptography;
-using Mono.Math.Prime.Generator;
-using Mono.Math.Prime;
 
 namespace Mono.Math
 {
@@ -915,50 +913,10 @@ namespace Mono.Math
 
         #region Prime Testing
 
-        public bool IsProbablePrime()
-        {
-            // can we use our small-prime table ?
-            if (this <= smallPrimes[smallPrimes.Length - 1])
-            {
-                for (int p = 0; p < smallPrimes.Length; p++)
-                {
-                    if (this == smallPrimes[p])
-                        return true;
-                }
-                // the list is complete, so it's not a prime
-                return false;
-            }
-
-            // otherwise check if we can divide by one of the small primes
-            for (int p = 0; p < smallPrimes.Length; p++)
-            {
-                if (this % smallPrimes[p] == 0)
-                    return false;
-            }
-            // the last step is to confirm the "large" prime with the SPP or Miller-Rabin test
-            return PrimalityTests.Test(this, Prime.ConfidenceFactor.Medium);
-        }
 
         #endregion
 
         #region Prime Number Generation
-
-        /// <summary>
-        /// Generates the smallest prime >= bi
-        /// </summary>
-        /// <param name="bi">A BigInteger</param>
-        /// <returns>The smallest prime >= bi. More mathematically, if bi is prime: bi, else Prime [PrimePi [bi] + 1].</returns>
-        public static BigInteger NextHighestPrime(BigInteger bi)
-        {
-            NextPrimeFinder npf = new NextPrimeFinder();
-            return npf.GenerateNewPrime(0, bi);
-        }
-
-        public static BigInteger GeneratePseudoPrime(int bits)
-        {
-            SequentialSearchPrimeGeneratorBase sspg = new SequentialSearchPrimeGeneratorBase();
-            return sspg.GenerateNewPrime(bits);
-        }
 
         /// <summary>
         /// Increments this by two

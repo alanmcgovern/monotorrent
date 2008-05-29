@@ -184,21 +184,6 @@
     <Compile Include="MonoTorrent.Client\Encryption\BigInteger\BigInteger.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\ConfidenceFactor.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\NextPrimeFinder.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\PrimalityTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\PrimeGeneratorBase.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MonoTorrent.Client\Encryption\BigInteger\SequentialSearch.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MonoTorrent.Client\EventArgs\AnnounceResponseEventArgs.cs">
       <SubType>Code</SubType>
     </Compile>
