@@ -39,37 +39,18 @@ namespace MonoTorrent.Client.Encryption
 {
     internal class EncryptorAsyncResult : AsyncResult
     {
-        public ArraySegment<byte> Buffer;
-        public EncryptedSocket EncSocket;
-        private PeerIdInternal id;
-        private IEncryption decrytor;
-        private IEncryption encryptor;
-
-
-        internal PeerIdInternal Id
-        {
-            get { return id; }
-        }
-        public IEncryption Decryptor
-        {
-            get { return decrytor; }
-            set { decrytor = value; }
-        }
-        public IEncryption Encryptor
-        {
-            get { return encryptor; }
-            set { encryptor = value; }
-        }
+        public IEncryptor EncSocket;
+        public PeerIdInternal Id;
+        public IEncryption Decryptor;
+        public IEncryption Encryptor;
 
 
         public EncryptorAsyncResult(PeerIdInternal id, AsyncCallback callback, object state)
             : base(callback, state)
         {
-            this.id = id;
-            decrytor = new PlainTextEncryption();
-            encryptor = new PlainTextEncryption();
-            Buffer = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref Buffer, 16 * 1024);
+            Id = id;
+            Decryptor = new PlainTextEncryption();
+            Encryptor = new PlainTextEncryption();
         }
     }
 
@@ -224,8 +205,6 @@ namespace MonoTorrent.Client.Encryption
             if (r == null)
                 throw new ArgumentException("Invalid async result");
 
-            ClientEngine.BufferManager.FreeBuffer(ref r.Buffer);
-            
             if (r.SavedException != null)
                 throw r.SavedException;
 
