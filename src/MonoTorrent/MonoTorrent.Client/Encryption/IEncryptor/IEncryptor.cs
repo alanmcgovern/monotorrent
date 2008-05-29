@@ -44,5 +44,10 @@ namespace MonoTorrent.Client.Encryption
         IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state);
 
         IAsyncResult BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
+
+        void EndHandshake(IAsyncResult result);
+
+        IEncryption Encryptor { get; }
+        IEncryption Decryptor { get; }
     }
 }
