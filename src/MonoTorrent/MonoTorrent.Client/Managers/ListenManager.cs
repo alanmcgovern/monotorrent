@@ -126,7 +126,11 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);
                 id.Connection.BytesReceived = 0;
                 id.Connection.BytesToRecieve = 68;
-                EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id);
+                List<byte[]> skeys = new List<byte[]>();
+                using (new ReaderLock(engine.torrentsLock))
+                    for (int i = 0; i < engine.Torrents.Count; i++)
+                        skeys.Add(engine.Torrents[i].Torrent.InfoHash);
+                EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
             }
             else
                 id.ConnectionManager.ProcessFreshConnection(id);
