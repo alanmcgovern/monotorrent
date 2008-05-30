@@ -39,6 +39,7 @@ namespace MonoTorrent.Client.Encryption
 {
     internal class EncryptorAsyncResult : AsyncResult
     {
+        public byte[][] SKeys;
         public int Available;
         public byte[] Buffer;
         public byte[] InitialData;
@@ -77,7 +78,15 @@ namespace MonoTorrent.Client.Encryption
 
         internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state)
         {
+            return BeginCheckEncryption(id, callback, state, null);
+        }
+
+
+        internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state, byte[][] sKeys)
+        {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
+            result.SKeys = sKeys;
+
             bool supportRC4 = CheckRC4(id);
             IConnection c = id.Connection.Connection;
             try
@@ -171,11 +180,8 @@ namespace MonoTorrent.Client.Encryption
                 }
                 if (canUseRC4)
                 {
-                    List<byte[]> skeys = new List<byte[]>();
-                    result.Id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
-
                     // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
-                    result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
+                    result.EncSocket = new PeerBEncryption(result.SKeys, EncryptionTypes.Auto);
                     result.EncSocket.BeginHandshake(connection, result.Buffer, 0, result.Buffer.Length, CompletedEncryptedHandshakeCallback, result);
                 }
                 else
