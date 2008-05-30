@@ -139,53 +139,54 @@ namespace MonoTorrent.Client.Encryption
             {
                 received = connection.EndReceive(r);
                 result.Available += received;
+
+                if (received == 0)
+                {
+                    result.Complete(new EncryptionException("Socket returned zero"));
+                    return;
+                }
+                if (received < result.Buffer.Length)
+                {
+                    connection.BeginReceive(result.Buffer, result.Available, result.Buffer.Length - result.Available,
+                                    HandshakeReceivedCallback, result);
+                    return;
+                }
+
+                HandshakeMessage message = new HandshakeMessage();
+                message.Decode(result.Buffer, 0, result.Buffer.Length);
+                bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
+                bool canUseRC4 = CheckRC4(result.Id);
+
+                // If encryption is disabled and we received an invalid handshake - abort!
+                if (valid)
+                {
+                    result.InitialData = result.Buffer;
+                    result.Complete();
+                    return;
+                }
+                if (!canUseRC4 && !valid)
+                {
+                    result.Complete(new EncryptionException("Invalid handshake received and no decryption works"));
+                    return;
+                }
+                if (canUseRC4)
+                {
+                    List<byte[]> skeys = new List<byte[]>();
+                    result.Id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
+
+                    // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
+                    result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
+                    result.EncSocket.BeginHandshake(connection, result.Buffer, 0, result.Buffer.Length, CompletedEncryptedHandshakeCallback, result);
+                }
+                else
+                {
+                    result.Complete();
+                }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Complete(ex);
                 return;
-            }
-            if (received == 0)
-            {
-                result.Complete(new EncryptionException("Socket returned zero"));
-                return;
-            }
-            if (received < result.Buffer.Length)
-            {
-                connection.BeginReceive(result.Buffer, result.Available, result.Buffer.Length - result.Available,
-                                HandshakeReceivedCallback, result);
-                return;
-            }
-            
-            HandshakeMessage message = new HandshakeMessage();
-            message.Decode(result.Buffer, 0, result.Buffer.Length);
-            bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
-            bool canUseRC4 = CheckRC4(result.Id);
-            
-            // If encryption is disabled and we received an invalid handshake - abort!
-            if (valid)
-            {
-                result.InitialData = result.Buffer;
-                result.Complete();
-                return;
-            }
-            if (!canUseRC4 && !valid)
-            {
-                result.Complete(new EncryptionException("Invalid handshake received and no decryption works"));
-                return;
-            }
-            if (canUseRC4)
-            {
-                List<byte[]> skeys = new List<byte[]>();
-                result.Id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
-
-                // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
-                result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
-                result.EncSocket.BeginHandshake(connection, result.Buffer, 0, result.Buffer.Length, CompletedEncryptedHandshakeCallback, result);
-            }
-            else
-            {
-                result.Complete();
             }
         }
 
