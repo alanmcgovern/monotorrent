@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using SampleClient;
 using NUnit.Framework;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
+using MonoTorrentTests;
 
 namespace MonoTorrent.Client.TorrentManagerTests
 {
@@ -95,13 +95,13 @@ namespace MonoTorrent.Client.TorrentManagerTests
     [TestFixture]
     public class TorrentManagerTest
     {
-        EngineTestRig rig;
+        TestRig rig;
         ConnectionPair conn;
 
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            rig = new EngineTestRig("", new TestWriter());
+            rig = new TestRig("", new TestWriter());
         }
         [TestFixtureTearDown]
         public void FixtureTeardown()
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.TorrentManagerTests
         [SetUp]
         public void Setup()
         {
-            rig = new EngineTestRig("", new TestWriter());
+            rig = new TestRig("", new TestWriter());
             conn = new ConnectionPair(51515);
         }
         [TearDown]
@@ -161,13 +161,13 @@ namespace MonoTorrent.Client.TorrentManagerTests
                 if (e.OldState == TorrentState.Hashing)
                     handle.Set();
             };
-            rig.Manager.HashCheck(true);
+            rig.Manager.HashCheck(false);
 
             handle.WaitOne();
             handle.Reset();
 
             rig.Engine.Unregister(rig.Manager);
-            EngineTestRig rig2 = new EngineTestRig("", new TestWriter());
+            TestRig rig2 = new TestRig("", new TestWriter());
             rig2.Engine.Unregister(rig2.Manager);
             rig.Engine.Register(rig2.Manager);
             rig2.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)

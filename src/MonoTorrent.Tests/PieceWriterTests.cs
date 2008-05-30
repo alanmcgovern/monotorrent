@@ -6,6 +6,7 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Threading;
+using MonoTorrentTests;
 
 namespace MonoTorrent.Client.PieceWriterTests
 {
@@ -57,7 +58,7 @@ namespace MonoTorrent.Client.PieceWriterTests
 		public const int PieceSize = BlockCount * BlockSize;
 
 		public static BufferManager Buffer = new BufferManager();
-		SampleClient.EngineTestRig rig;
+		TestRig rig;
 
 		MemoryWriter level1;
 		MemoryWriter level2;
@@ -66,7 +67,7 @@ namespace MonoTorrent.Client.PieceWriterTests
 		[TestFixtureSetUp]
 		public void GlobalSetup()
 		{
-			rig = new SampleClient.EngineTestRig("Downloads", PieceSize, null);
+			rig = new TestRig("Downloads", PieceSize, null);
 		}
 
 		[TestFixtureTearDown]

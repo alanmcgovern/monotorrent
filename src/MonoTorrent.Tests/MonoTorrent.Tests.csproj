@@ -5,7 +5,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Tests</RootNamespace>
     <AssemblyName>MonoTorrent.Tests</AssemblyName>
@@ -55,10 +55,6 @@
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
       <Project>{3F17418C-30C3-42DC-B245-403AB53B4F31}</Project>
       <Name>MonoTorrent</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SampleClient\SampleClient.csproj">
-      <Project>{6842B47D-8D85-4B56-BFBF-F97DD6D4D0B6}</Project>
-      <Name>SampleClient</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

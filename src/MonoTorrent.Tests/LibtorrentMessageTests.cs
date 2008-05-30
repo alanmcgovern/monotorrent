@@ -2,23 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using SampleClient;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages;
+using MonoTorrentTests;
 
 namespace MonoTorrent.Client.ExtendedMessageTests
 {
     [TestFixture]
     public class LibtorrentMessageTests
     {
-        private EngineTestRig rig;
+        TestRig rig;
         byte[] buffer;
         int offset = 2362;
 
         [TestFixtureSetUp]
         public void GlobalSetup()
         {
-            rig = new EngineTestRig("");
+            rig = new TestRig("");
         }
 
         [TestFixtureTearDown]

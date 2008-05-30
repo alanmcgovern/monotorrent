@@ -35,13 +35,14 @@ using MonoTorrent.Common;
 using System.Net;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrentTests;
 
 namespace MonoTorrent.Client.StandardMessageTests
 {
     [TestFixture]
     public class PeerMessagesTest
     {
-        SampleClient.EngineTestRig testRig;
+        TestRig testRig;
         byte[] buffer = new byte[100000];
         int offset = 2362;
 
@@ -51,7 +52,7 @@ namespace MonoTorrent.Client.StandardMessageTests
             buffer = new byte[100000];
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
-            testRig = new SampleClient.EngineTestRig("Downloads");
+            testRig = new TestRig("Downloads");
         }
 
 
