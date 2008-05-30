@@ -243,10 +243,7 @@ namespace MonoTorrent.Client
                         id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
                         id.TorrentManager.ConnectingToPeers.Remove(id);
 
-                        if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
-                            id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);
-                        else
-                            id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
+                        id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
                     }
                 }
             }
@@ -517,7 +514,7 @@ namespace MonoTorrent.Client
 
                     // Decode the handshake and handle it
                     msg = new HandshakeMessage();
-                    msg.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                    msg.Decode(id.Connection.recieveBuffer, 4, id.Connection.BytesToRecieve-4);
                     msg.Handle(id);
 
                     Logger.Log(id.Connection.Connection, "ConnectionManager - Handshake recieved");
