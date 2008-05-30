@@ -119,6 +119,7 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
 
             HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
+            a.Encryptor.Encrypt(buffer);
 
             conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
             conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
