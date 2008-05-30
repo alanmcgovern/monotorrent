@@ -161,14 +161,45 @@ namespace MonoTorrent.Client.Encryption
                 id.TorrentManager.Engine.Torrents.ForEach(delegate(TorrentManager m) { skeys.Add(m.Torrent.infoHash); });
 
                 // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
-                id.Connection.BytesReceived = 0;
                 result.EncSocket = new PeerBEncryption(skeys.ToArray(), EncryptionTypes.Auto);
-                result.EncSocket.BeginHandshake(id.Connection.Connection, b.Array, b.Offset, id.Connection.BytesReceived, CompletedPeerACallback, result);
+                result.EncSocket.BeginHandshake(id.Connection.Connection, b.Array, b.Offset, id.Connection.BytesReceived, CompletedIncomingHandshake, result);
+                id.Connection.BytesReceived = 0;
             }
             else
             {
                 result.Complete();
             }
+        }
+
+        private static void CompletedIncomingHandshake(IAsyncResult result)
+        {
+            EncryptorAsyncResult r = (EncryptorAsyncResult)result.AsyncState;
+            try
+            {
+                r.EncSocket.EndHandshake(result);
+                ArraySegment<byte> buffer = r.Id.Connection.recieveBuffer;
+                r.Decryptor = r.EncSocket.Decryptor;
+                r.Encryptor = r.EncSocket.Encryptor;
+                r.Id.Connection.Connection.BeginReceive(buffer.Array, buffer.Offset, r.Id.Connection.BytesToRecieve, FinishIncoming, r);
+            }
+            catch (Exception ex)
+            {
+                r.Complete(ex);
+            }
+        }
+
+        private static void FinishIncoming(IAsyncResult result)
+        {
+            EncryptorAsyncResult r = (EncryptorAsyncResult)result.AsyncState;
+            try
+            {
+                r.Id.Connection.BytesReceived = r.Id.Connection.Connection.EndReceive(result);
+            }
+            catch (Exception ex)
+            {
+                r.Complete(ex);
+            }
+            r.Complete();
         }
 
         private static void CompletedEncryptedHandshake(IAsyncResult result)
@@ -189,10 +220,7 @@ namespace MonoTorrent.Client.Encryption
                 r.SavedException = ex;
             }
 
-            r.CompletedSynchronously = false;
-            r.AsyncWaitHandle.Set();
-            if (r.Callback != null)
-                r.Callback(r);
+            r.Complete();
         }
 
         internal static void EndCheckEncryption(IAsyncResult result)
