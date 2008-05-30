@@ -37,6 +37,9 @@ namespace MonoTorrent.Client.Encryption
 {
     public interface IEncryptor
     {
+        void AddPayload(byte[] buffer);
+        void AddPayload(byte[] buffer, int offset, int count);
+
         byte[] InitialData { get; }
 
         IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state);

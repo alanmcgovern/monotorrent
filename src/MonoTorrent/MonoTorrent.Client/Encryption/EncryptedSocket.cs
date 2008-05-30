@@ -697,5 +697,23 @@ namespace MonoTorrent.Client.Encryption
         }
 
         #endregion
+
+        public void AddPayload(byte[] buffer)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            AddPayload(buffer, 0, buffer.Length);
+        }
+
+        public void AddPayload(byte[] buffer, int offset, int count)
+        {
+            byte[] newBuffer = new byte[InitialPayload.Length + count];
+
+            Message.Write(newBuffer, 0, InitialPayload);
+            Message.Write(newBuffer, InitialPayload.Length, buffer, offset, count);
+
+            InitialPayload = buffer;
+        }
     }
 }
