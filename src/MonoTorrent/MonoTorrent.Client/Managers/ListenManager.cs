@@ -5,6 +5,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
 using System.Net.Sockets;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -25,6 +26,7 @@ namespace MonoTorrent.Client
         private object locker;
         private ClientEngine engine;
         private MonoTorrentCollection<ConnectionListenerBase> listeners;
+        private AsyncCallback endCheckEncryptionCallback;
 
         #endregion Member Variables
 
@@ -60,6 +62,7 @@ namespace MonoTorrent.Client
             listeners = new MonoTorrentCollection<ConnectionListenerBase>();
             listeners.IsReadOnly = true;
             peerHandshakeReceived = new AsyncCallback(onPeerHandshakeReceived);
+            endCheckEncryptionCallback = EndCheckEncryption;
         }
 
         #endregion Constructors
@@ -123,10 +126,35 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);
                 id.Connection.BytesReceived = 0;
                 id.Connection.BytesToRecieve = 68;
-                EncryptorFactory.BeginCheckEncryption(id, onPeerHandshakeReceived, id);
+                EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id);
             }
             else
                 id.ConnectionManager.ProcessFreshConnection(id);
+        }
+
+        private void EndCheckEncryption(IAsyncResult result)
+        {
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            try
+            {
+                byte[] initialData;
+                SocketError error;
+                EncryptorFactory.EndCheckEncryption(result, out initialData);
+
+                if(initialData == null)
+                    initialData = new byte[0];
+                    
+                id.Connection.BytesReceived += Message.Write(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, initialData);
+
+                if (id.Connection.BytesToRecieve == id.Connection.BytesReceived)
+                    handleHandshake(id);
+                else
+                    id.Connection.BeginReceive(id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, onPeerHandshakeReceived, id, out error);
+            }
+            catch
+            {
+                CleanupSocket(id);
+            }
         }
 
 
@@ -210,7 +238,14 @@ namespace MonoTorrent.Client
             {
                 lock (id)
                 {
-                    EncryptorFactory.EndCheckEncryption(result);
+                    SocketError error;
+                    int read = id.Connection.EndReceive(result, out error);
+                    if (read == 0)
+                    {
+                        CleanupSocket(id);
+                        return;
+                    }
+                    id.Connection.BytesReceived += read;
                     Logger.Log(id.Connection.Connection, "ListenManager - Recieved handshake. Beginning to handle");
 
                     handleHandshake(id);

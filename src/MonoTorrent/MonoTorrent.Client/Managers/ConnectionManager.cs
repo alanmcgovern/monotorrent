@@ -73,6 +73,7 @@ namespace MonoTorrent.Client
         private MessagingCallback messageReceivedCallback;
         private MessagingCallback messageSentCallback;
 
+        private AsyncCallback endCheckEncryptionCallback;
         private AsyncCallback endCreateConnectionCallback;
         private AsyncCallback incomingConnectionAcceptedCallback;
         private AsyncCallback onEndReceiveMessageCallback;
@@ -134,6 +135,7 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
 
+            this.endCheckEncryptionCallback = EndCheckEncryption;
             this.onEndReceiveMessageCallback = new AsyncCallback(EndReceiveMessage);
             this.onEndSendMessageCallback = new AsyncCallback(EndSendMessage);
             this.bitfieldSentCallback = new MessagingCallback(this.onPeerBitfieldSent);
@@ -282,11 +284,7 @@ namespace MonoTorrent.Client
 
                 // Increase the count of the "open" connections
                 System.Threading.Interlocked.Increment(ref this.openConnections);
-
-                // Create a handshake message to send to the peer
-                HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
-
-                SendMessage(id, handshake, this.handshakeSentCallback);
+                EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
             }
             catch (Exception ex)
             {
@@ -320,6 +318,29 @@ namespace MonoTorrent.Client
                 // Decrement the half open connections
                 if (cleanUp)
                     CleanupSocket(id, reason);
+            }
+        }
+
+        private void EndCheckEncryption(IAsyncResult result)
+        {
+            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            byte[] initialData;
+            try
+            {
+                EncryptorFactory.EndCheckEncryption(result, out initialData);
+                if (initialData != null && initialData.Length > 0)
+                {
+                    Console.WriteLine("What is this initial data?!");
+                    throw new EncryptionException("unhandled initial data");
+                }
+
+                // Create a handshake message to send to the peer
+                HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
+                SendMessage(id, handshake, this.handshakeSentCallback);
+            }
+            catch
+            {
+                CleanupSocket(id, "Failed encryptor check");
             }
         }
 

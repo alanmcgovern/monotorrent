@@ -77,6 +77,10 @@ namespace MonoTorrent.Client.Encryption
         {
             get { return streamDecryptor; }
         }
+        public byte[] InitialData
+        {
+            get { return RemoteInitialPayload; }
+        }
 
         #region Private members
 
@@ -225,38 +229,6 @@ namespace MonoTorrent.Client.Encryption
             return BeginHandshake(socket, callback, state);
         }
 
-        /// <summary>
-        /// Returns true if the remote client has transmitted some initial payload data
-        /// </summary>
-        public bool InitialDataAvailable
-        {
-            get { return RemoteInitialPayload.Length > 0; }
-        }
-
-        /// <summary>
-        /// Copies the payload initial data transferred from the remote client into a buffer
-        /// </summary>
-        /// <param name="buffer">Buffer to write the initial data to</param>
-        /// <param name="offset">Offset to begin writing in buffer</param>
-        /// <param name="count">Maximum number of bytes to write in buffer</param>
-        /// <returns>Number of bytes written to buffer</returns>
-        public int GetInitialData(byte[] buffer, int offset, int count)
-        {
-            int toCopy;
-
-            if (count > RemoteInitialPayload.Length)
-                toCopy = RemoteInitialPayload.Length;
-            else
-                toCopy = count;
-
-            Array.Copy(RemoteInitialPayload, 0, buffer, offset, toCopy);
-
-            byte[] newRemoteInitialPayload = new byte[RemoteInitialPayload.Length - toCopy];
-            Array.Copy(RemoteInitialPayload, toCopy, newRemoteInitialPayload, 0, RemoteInitialPayload.Length - toCopy);
-            RemoteInitialPayload = newRemoteInitialPayload;
-
-            return toCopy;
-        }
 
         /// <summary>
         /// Encrypts some data (should only be called after onEncryptorReady)

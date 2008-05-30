@@ -553,58 +553,19 @@ namespace MonoTorrent.Client
         {
             errorCode = SocketError.Success;
 
-            if (decryptor == null)
-            {
-                EncryptorFactory.BeginCheckEncryption(id, delegate(IAsyncResult result)
-                {
-                    SocketError error;
-                    try
-                    {
-                        EncryptorFactory.EndCheckEncryption(result);
-                        BeginReceive(buffer, offset, count, socketFlags, asyncCallback, id, out error);
-                    }
-                    catch (Exception ex)
-                    {
-                        receiveException = ex;
-                        asyncCallback(new AsyncResult(null, id));
-                    }
-                }, id);
-            }
-            else
-            {
-                Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
-            }
+            Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
         }
 
         private Exception sendException;
         internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
         {
             errorCode = SocketError.Success;
-            if (encryptor == null)
-            {
-                EncryptorFactory.BeginCheckEncryption(id, delegate(IAsyncResult result)
-                {
-                    SocketError error;
-                    try
-                    {
-                        EncryptorFactory.EndCheckEncryption(result);
-                        BeginSend(buffer, offset, count, socketFlags, asyncCallback, id, out error);
-                    }
-                    catch (Exception ex)
-                    {
-                        sendException = ex;
-                        asyncCallback(new AsyncResult(null, id));
-                    }
-                }, id);
-            }
-            else
-            {
-                // Encrypt the *entire* message exactly once.
-                if (offset == 0)
-                    Encryptor.Encrypt(buffer.Array, buffer.Offset, buffer.Array, buffer.Offset, id.Connection.BytesToSend);
+            // Encrypt the *entire* message exactly once.
+            // Encrypt the *entire* message exactly once.
+            if (offset == 0)
+                Encryptor.Encrypt(buffer.Array, buffer.Offset, buffer.Array, buffer.Offset, id.Connection.BytesToSend);
 
-                Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
-            }
+            Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
 		}
 
         internal void Dispose()
