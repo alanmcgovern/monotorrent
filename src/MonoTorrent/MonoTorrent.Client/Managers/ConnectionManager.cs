@@ -704,9 +704,6 @@ namespace MonoTorrent.Client
         /// <param name="callback">The callback to invoke when the message has been received</param>
         private void ReceiveMessage(PeerIdInternal id, int length, MessagingCallback callback)
         {
-            // The length must be prepended to the buffer so the message decodes correctly
-            length += 4;
-
             ArraySegment<byte> newBuffer = BufferManager.EmptyBuffer;
             bool cleanUp = false;
             try
@@ -724,25 +721,38 @@ namespace MonoTorrent.Client
                             return;
                         }
 
-                        int alreadyReceived = id.Connection.BytesReceived - id.Connection.BytesToRecieve;
-                        ClientEngine.BufferManager.GetBuffer(ref newBuffer, Math.Max(alreadyReceived, length));
+                        int alreadyReceived = (id.Connection.BytesReceived) - id.Connection.BytesToRecieve;
+                        if(callback == messageLengthReceivedCallback)
+                            ClientEngine.BufferManager.GetBuffer(ref newBuffer, Math.Max(alreadyReceived, length));
+                        else
+                            ClientEngine.BufferManager.GetBuffer(ref newBuffer, Math.Max(alreadyReceived, length + 4));
 
                         // Prepend the length
-                        Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(length)), 0, newBuffer.Array, newBuffer.Offset, 4);
+                        Message.Write(newBuffer.Array, newBuffer.Offset, length);
                         
                         // Copy the extra data from the old buffer into the new buffer.
-                        Buffer.BlockCopy(id.Connection.recieveBuffer.Array,
-                            id.Connection.recieveBuffer.Offset + id.Connection.BytesToRecieve,
-                            newBuffer.Array,
-                            newBuffer.Offset + 4,
-                            alreadyReceived);
+                        ArraySegment<byte> oldBuffer = id.Connection.recieveBuffer;
+
+                        if (callback == messageLengthReceivedCallback)
+                            Message.Write(newBuffer.Array, newBuffer.Offset, oldBuffer.Array, oldBuffer.Offset + id.Connection.BytesToRecieve, alreadyReceived);
+                        else
+                            Message.Write(newBuffer.Array, newBuffer.Offset + 4, oldBuffer.Array, oldBuffer.Offset + id.Connection.BytesToRecieve, alreadyReceived);
 
                         // Free the old buffer and set the new buffer
                         ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
                         id.Connection.recieveBuffer = newBuffer;
 
-                        id.Connection.BytesReceived = alreadyReceived;
-                        id.Connection.BytesToRecieve = length;
+                        if (callback == messageLengthReceivedCallback)
+                        {
+                            id.Connection.BytesReceived = alreadyReceived;
+                            id.Connection.BytesToRecieve = length;
+                        }
+                        else
+                        {
+                            id.Connection.BytesReceived = alreadyReceived + 4;
+                            id.Connection.BytesToRecieve = length + 4;
+                        }
+
                         id.Connection.MessageReceivedCallback = callback;
 
                         if (alreadyReceived < length)
