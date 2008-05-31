@@ -85,6 +85,7 @@ namespace MonoTorrent.Client
         public EncryptionTypes Encryption
         {
             get { return encryption; }
+            set { encryption = value; }
         }
 
         /// <summary>

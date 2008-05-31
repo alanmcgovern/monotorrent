@@ -337,6 +337,8 @@ namespace MonoTorrent.Client
             }
             catch
             {
+                id.Peer.Encryption &= ~EncryptionTypes.RC4Full;
+                id.Peer.Encryption &= ~EncryptionTypes.RC4Header;
                 CleanupSocket(id, "Failed encryptor check");
             }
         }
