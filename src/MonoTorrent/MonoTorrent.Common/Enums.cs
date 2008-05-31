@@ -47,15 +47,6 @@ namespace MonoTorrent.Common
         Outgoing
     }
 
-    [Flags]
-    public enum EncryptionTypes
-    {
-        RC4Header = 1,
-        RC4Full = 2,
-        None = 4,
-        All = RC4Full | RC4Header | None
-    }
-
     public enum TorrentState
     {
         Stopped,

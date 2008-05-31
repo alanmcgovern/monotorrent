@@ -42,6 +42,7 @@ using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {

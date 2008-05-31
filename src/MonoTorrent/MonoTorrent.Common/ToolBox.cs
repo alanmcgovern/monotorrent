@@ -33,6 +33,7 @@ using System.Collections;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Common
 {

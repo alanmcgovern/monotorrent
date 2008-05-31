@@ -67,7 +67,12 @@ namespace MonoTorrent.Client.Encryption
         {
             bool canUseRC4 = ClientEngine.SupportsEncryption;
 
-            EncryptionTypes t = EncryptionTypes.All;// id.TorrentManager.Engine.Settings.MinEncryptionLevel;
+            EncryptionTypes t;
+            if (id.Connection.Connection.IsIncoming)
+                t = EncryptionTypes.All;
+            else
+                t = id.TorrentManager.Engine.Settings.MinEncryptionLevel;
+
             canUseRC4 = canUseRC4 && (Toolbox.HasEncryption(t, EncryptionTypes.RC4Header) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Full));
 
             t = id.Peer.Encryption;

@@ -28,7 +28,7 @@
 
 
 
-using MonoTorrent.Common;
+using MonoTorrent.Client.Encryption;
 using System.Reflection;
 using System;
 

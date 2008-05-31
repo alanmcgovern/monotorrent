@@ -38,6 +38,7 @@ using System.Web;
 using System.Diagnostics;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Tracker
 {

@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.Encryption
         private IEncryption streamEncryptor;
         private IEncryption streamDecryptor;
 
-        private EncryptionTypes minCryptoAllowed;
+        private EncryptionTypes allowedEncryption;
 
         private byte[] X; // A 160 bit random integer
         private byte[] Y; // 2^X mod P
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client.Encryption
 
         #endregion
 
-        public EncryptedSocket(EncryptionTypes minCryptoAllowed)
+        public EncryptedSocket(EncryptionTypes allowedEncryption)
         {
             random = RNGCryptoServiceProvider.Create();
             hasher = new SHA1Fast();
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client.Encryption
             lastActivity = DateTime.Now;
             bytesReceived = 0;
 
-            SetMinCryptoAllowed(minCryptoAllowed);
+            SetMinCryptoAllowed(allowedEncryption);
         }
 
         #region Interface implementation
@@ -539,7 +539,7 @@ namespace MonoTorrent.Client.Encryption
             CryptoSelect = new byte[remoteCryptoBytes.Length];
 
             // '2' corresponds to RC4Full
-            if ((remoteCryptoBytes[3] & 2) == 2 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Full))
+            if ((remoteCryptoBytes[3] & 2) == 2 && Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Full))
             {
                 CryptoSelect[3] |= 2;
                 if (replace)
@@ -551,7 +551,7 @@ namespace MonoTorrent.Client.Encryption
             }
             
             // '1' corresponds to RC4Header
-            if ((remoteCryptoBytes[3] & 1) == 1 && Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Header))
+            if ((remoteCryptoBytes[3] & 1) == 1 && Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Header))
             {
                 CryptoSelect[3] |= 1;
                 if (replace)
@@ -681,18 +681,18 @@ namespace MonoTorrent.Client.Encryption
             asyncResult.Complete();
         }
 
-        protected void SetMinCryptoAllowed(EncryptionTypes minCryptoAllowed)
+        protected void SetMinCryptoAllowed(EncryptionTypes allowedEncryption)
         {
-            this.minCryptoAllowed = minCryptoAllowed;
+            this.allowedEncryption = allowedEncryption;
 
             // EncryptionType is basically a bit position starting from the right.
             // This sets all bits in CryptoProvide 0 that is to the right of minCryptoAllowed.
             CryptoProvide[0] = CryptoProvide[1] = CryptoProvide[2] = CryptoProvide[3] = 0;
 
-            if (Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Full))
+            if (Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Full))
                 CryptoProvide[3] |= 1 << 1;
 
-            if (Toolbox.HasEncryption(minCryptoAllowed, EncryptionTypes.RC4Header))
+            if (Toolbox.HasEncryption(allowedEncryption, EncryptionTypes.RC4Header))
                 CryptoProvide[3] |= 1;
         }
 
