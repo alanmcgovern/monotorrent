@@ -904,6 +904,11 @@ namespace MonoTorrent.Client
                             return;
                     }
                 }
+                else
+                {
+                    for (int i = 0; i < this.torrent.Pieces.Count; i++)
+                        RaisePieceHashed(new PieceHashedEventArgs(this, i, false));
+                }
 				
                 this.hashChecked = true;
 

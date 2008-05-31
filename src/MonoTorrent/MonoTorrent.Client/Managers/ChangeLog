@@ -1,3 +1,8 @@
+2008-05-31  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TorrentManager.cs: When none of the files exist on disk - fire the
+	  event saying all pieces failed
+
 2008-04-07  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* ConnectionManager.cs: Hack-fix: In some cases it can take up to 190
