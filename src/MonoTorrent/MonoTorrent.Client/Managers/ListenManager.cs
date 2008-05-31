@@ -142,7 +142,6 @@ namespace MonoTorrent.Client
             try
             {
                 byte[] initialData;
-                SocketError error;
                 EncryptorFactory.EndCheckEncryption(result, out initialData);
 
                 if(initialData == null)
@@ -153,7 +152,7 @@ namespace MonoTorrent.Client
                 if (id.Connection.BytesToRecieve == id.Connection.BytesReceived)
                     handleHandshake(id);
                 else
-                    id.Connection.BeginReceive(id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, onPeerHandshakeReceived, id, out error);
+                    id.Connection.BeginReceive(id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, onPeerHandshakeReceived, id);
             }
             catch
             {
@@ -226,7 +225,7 @@ namespace MonoTorrent.Client
             Logger.Log(id.Connection.Connection, "ListenManager - Sending connection to torrent manager");
             id.Connection.BeginSend(id.Connection.sendBuffer, 0, id.Connection.BytesToSend,
                                          SocketFlags.None, new AsyncCallback(engine.ConnectionManager.IncomingConnectionAccepted),
-                                         id, out id.ErrorCode);
+                                         id);
             id.Connection.ProcessingQueue = false;
         }
 
@@ -242,8 +241,7 @@ namespace MonoTorrent.Client
             {
                 lock (id)
                 {
-                    SocketError error;
-                    int read = id.Connection.EndReceive(result, out error);
+                    int read = id.Connection.EndReceive(result);
                     if (read == 0)
                     {
                         CleanupSocket(id);

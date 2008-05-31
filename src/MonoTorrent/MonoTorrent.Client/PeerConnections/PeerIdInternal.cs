@@ -84,8 +84,6 @@ namespace MonoTorrent.Client
             get { return torrentManager.Engine; }
         }
 
-        internal SocketError ErrorCode;
-
         internal PeerId PublicId
         {
             get { return this.peerId; }

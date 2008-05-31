@@ -548,17 +548,13 @@ namespace MonoTorrent.Client
 			Connection.BeginConnect(peerEndCreateConnection, id);
 		}
 
-        internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+        internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
         {
-            errorCode = SocketError.Success;
-
             Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
         }
 
-        internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
+        internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
         {
-            errorCode = SocketError.Success;
-            // Encrypt the *entire* message exactly once.
             // Encrypt the *entire* message exactly once.
             if (offset == 0)
                 Encryptor.Encrypt(buffer.Array, buffer.Offset, buffer.Array, buffer.Offset, id.Connection.BytesToSend);
@@ -576,9 +572,8 @@ namespace MonoTorrent.Client
 			Connection.EndConnect(result);
 		}
 
-        internal int EndReceive(IAsyncResult result, out SocketError errorCode)
+        internal int EndReceive(IAsyncResult result)
 		{
-			errorCode = SocketError.Success;
 			int received = Connection.EndReceive(result);
 			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
             byte[] buffer = id.Connection.recieveBuffer.Array;
@@ -587,9 +582,8 @@ namespace MonoTorrent.Client
 			return received;
 		}
 
-        internal int EndSend(IAsyncResult result, out SocketError errorCode)
+        internal int EndSend(IAsyncResult result)
 		{
-			errorCode = SocketError.Success;
 			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 			return Connection.EndSend(result);
 		}

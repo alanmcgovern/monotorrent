@@ -358,14 +358,7 @@ namespace MonoTorrent.Client
                             return;
 
                         // If we receive 0 bytes, the connection has been closed, so exit
-                        int bytesReceived = id.Connection.EndReceive(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success)
-                        {
-                            reason = "EndReceiveMessage: " + id.ErrorCode.ToString();
-                            Logger.Log(id.Connection.Connection, "ConnectionManager - Error receiving message: {0}", id.ErrorCode.ToString());
-                            cleanUp = true;
-                            return;
-                        }
+                        int bytesReceived = id.Connection.EndReceive(result);
                         if (bytesReceived == 0)
                         {
                             reason = "EndReceiveMessage: Received zero bytes";
@@ -426,14 +419,7 @@ namespace MonoTorrent.Client
                             return;
 
                         // If we have sent zero bytes, that is a sign the connection has been closed
-                        int bytesSent = id.Connection.EndSend(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success)
-                        {
-                            reason = "Sending error: " + id.ErrorCode.ToString();
-                            Logger.Log(id.Connection.Connection, "ConnectionManager - Error sending message: {0}", id.ErrorCode.ToString());
-                            cleanup = true;
-                            return;
-                        }
+                        int bytesSent = id.Connection.EndSend(result);
                         if (bytesSent == 0)
                         {
                             reason = "Sending error: Sent zero bytes";
@@ -945,19 +931,11 @@ namespace MonoTorrent.Client
                     lock (id)
                     {
                         Interlocked.Increment(ref this.openConnections);
-                        bytesSent = id.Connection.EndSend(result, out id.ErrorCode);
-                        if (id.ErrorCode != SocketError.Success)
-                        {
-                            Logger.Log(id.Connection.Connection, "ConnectionManager - Sent 0 for incoming connection accepted");
-                            reason = "IncomingConnectionAccepted: " + id.ErrorCode.ToString();
-                            cleanUp = true;
-                            return;
-                        }
-
+                        bytesSent = id.Connection.EndSend(result);
                         id.Connection.BytesSent += bytesSent;
                         if (bytesSent != id.Connection.BytesToSend)
                         {
-                            id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, id.Connection.BytesToSend - id.Connection.BytesSent, SocketFlags.None, this.incomingConnectionAcceptedCallback, id, out id.ErrorCode);
+                            id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, id.Connection.BytesToSend - id.Connection.BytesSent, SocketFlags.None, this.incomingConnectionAcceptedCallback, id);
                             return;
                         }
 
@@ -1140,12 +1118,12 @@ namespace MonoTorrent.Client
                     if (downloading)
                     {
                         byteCount = (id.Connection.BytesToRecieve - id.Connection.BytesReceived) > ChunkLength ? ChunkLength : id.Connection.BytesToRecieve - id.Connection.BytesReceived;
-                        id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, SocketFlags.None, this.onEndReceiveMessageCallback, id, out id.ErrorCode);
+                        id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, SocketFlags.None, this.onEndReceiveMessageCallback, id);
                     }
                     else
                     {
                         byteCount = (id.Connection.BytesToSend - id.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Connection.BytesToSend - id.Connection.BytesSent);
-                        id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, SocketFlags.None, this.onEndSendMessageCallback, id, out id.ErrorCode);
+                        id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, SocketFlags.None, this.onEndSendMessageCallback, id);
                     }
                 }
 
