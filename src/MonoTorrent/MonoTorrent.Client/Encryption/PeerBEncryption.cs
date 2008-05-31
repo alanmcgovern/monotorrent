@@ -48,8 +48,8 @@ namespace MonoTorrent.Client.Encryption
         private AsyncCallback gotPadCCallback;
         private AsyncCallback gotInitialPayloadCallback;
 
-        public PeerBEncryption(byte[][] possibleSKEYs, EncryptionTypes minCryptoAllowed)
-            : base(minCryptoAllowed)
+        public PeerBEncryption(byte[][] possibleSKEYs, EncryptionTypes allowedEncryption)
+            : base(allowedEncryption)
         {
             this.possibleSKEYs = possibleSKEYs;
 

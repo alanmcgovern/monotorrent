@@ -7,9 +7,9 @@ namespace MonoTorrent.Client.Encryption
     [Flags]
     public enum EncryptionTypes
     {
-        None = 0,
-        RC4Header = 1,
-        RC4Full = 2,
-        All = RC4Full | RC4Header
+        None        = 1 << 0,
+        RC4Header   = 1 << 1,
+        RC4Full     = 1 << 2,
+        All = None | RC4Full | RC4Header
     }
 }
