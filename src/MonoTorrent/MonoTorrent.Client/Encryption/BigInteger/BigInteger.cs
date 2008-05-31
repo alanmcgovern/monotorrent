@@ -41,12 +41,7 @@ using System.Security.Cryptography;
 namespace Mono.Math
 {
 
-#if INSIDE_CORLIB
-	internal
-#else
-    internal
-#endif
- class BigInteger
+    internal class BigInteger
     {
 
         #region Data Storage
@@ -97,9 +92,6 @@ namespace Mono.Math
             data = new uint[] { ui };
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public BigInteger(Sign sign, uint len)
         {
             this.data = new uint[len];
@@ -112,9 +104,6 @@ namespace Mono.Math
             this.length = bi.length;
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public BigInteger(BigInteger bi, uint len)
         {
 
@@ -161,9 +150,6 @@ namespace Mono.Math
         }
 
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public static implicit operator BigInteger(uint value)
         {
             return (new BigInteger(value));
@@ -215,9 +201,6 @@ namespace Mono.Math
                 return -(int)Kernel.DwordMod(bi, (uint)-i);
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public static uint operator %(BigInteger bi, uint ui)
         {
             return Kernel.DwordMod(bi, (uint)ui);
@@ -312,9 +295,6 @@ namespace Mono.Math
             return ((this.data[bytePos] | mask) == this.data[bytePos]);
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public void SetBit(uint bitNum, bool value)
         {
             uint bytePos = bitNum >> 5;             // divide by 32
@@ -362,18 +342,12 @@ namespace Mono.Math
 
         #region Compare
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public static bool operator ==(BigInteger bi1, uint ui)
         {
             if (bi1.length != 1) bi1.Normalize();
             return bi1.length == 1 && bi1.data[0] == ui;
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public static bool operator !=(BigInteger bi1, uint ui)
         {
             if (bi1.length != 1) bi1.Normalize();
@@ -429,17 +403,11 @@ namespace Mono.Math
 
         #region Formatting
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public string ToString(uint radix)
         {
             return ToString(radix, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
         }
 
-#if !INSIDE_CORLIB
-        [CLSCompliant(false)]
-#endif
         public string ToString(uint radix, string characterSet)
         {
             if (characterSet.Length < radix)
