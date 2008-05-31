@@ -150,7 +150,7 @@ namespace MonoTorrentTests
             {
                 return s.EndReceive(result);
             }
-            catch (ObjectDisposedException e)
+            catch (ObjectDisposedException)
             {
                 return 0;
             }
@@ -172,7 +172,7 @@ namespace MonoTorrentTests
             {
                 return s.EndSend(result);
             }
-            catch (ObjectDisposedException e)
+            catch (ObjectDisposedException)
             {
                 return 0;
             }

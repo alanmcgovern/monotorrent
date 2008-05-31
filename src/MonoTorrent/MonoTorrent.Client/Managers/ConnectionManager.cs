@@ -223,7 +223,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            catch (Exception ex)
+            catch (Exception)
             {
                 lock (id.TorrentManager.listLock)
                 {
@@ -283,7 +283,7 @@ namespace MonoTorrent.Client
                 System.Threading.Interlocked.Increment(ref this.openConnections);
                 EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 lock (id.TorrentManager.listLock)
                 {

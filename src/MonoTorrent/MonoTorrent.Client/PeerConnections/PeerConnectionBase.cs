@@ -548,7 +548,6 @@ namespace MonoTorrent.Client
 			Connection.BeginConnect(peerEndCreateConnection, id);
 		}
 
-        private Exception receiveException;
         internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
         {
             errorCode = SocketError.Success;
@@ -556,7 +555,6 @@ namespace MonoTorrent.Client
             Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
         }
 
-        private Exception sendException;
         internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id, out SocketError errorCode)
         {
             errorCode = SocketError.Success;
@@ -580,9 +578,6 @@ namespace MonoTorrent.Client
 
         internal int EndReceive(IAsyncResult result, out SocketError errorCode)
 		{
-            if (receiveException != null)
-                throw receiveException;
-
 			errorCode = SocketError.Success;
 			int received = Connection.EndReceive(result);
 			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
@@ -594,9 +589,6 @@ namespace MonoTorrent.Client
 
         internal int EndSend(IAsyncResult result, out SocketError errorCode)
 		{
-            if (sendException != null)
-                throw sendException;
-
 			errorCode = SocketError.Success;
 			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 			return Connection.EndSend(result);

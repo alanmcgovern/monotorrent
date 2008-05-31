@@ -72,7 +72,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                     break;//do nothing when rejected or flood until other peer send the missing piece? 
                 default :
                     throw new MessageException(string.Format("Invalid messagetype in LTMetadata: {0}", messageType));
-                    break;
             }
 
         }
