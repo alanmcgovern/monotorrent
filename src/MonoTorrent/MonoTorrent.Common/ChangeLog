@@ -1,3 +1,7 @@
+2008-05-31  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* SpeedMonitor.cs: SpeedMonitor should be public
+
 2008-05-11  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* SHA1Fast.cs: Updated the SHA1 code to mirror the recent changes in

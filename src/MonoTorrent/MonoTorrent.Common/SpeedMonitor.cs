@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Common
 {
-    internal class SpeedMonitor
+    public class SpeedMonitor
     {
         private const int DefaultAveragePeriod = 12;
 
@@ -35,20 +35,20 @@ namespace MonoTorrent.Common
         }
 
 
-        internal SpeedMonitor()
+        public SpeedMonitor()
             : this(DefaultAveragePeriod)
         {
 
         }
 
-        internal SpeedMonitor(int averagingPeriod)
+        public SpeedMonitor(int averagingPeriod)
         {
             this.lastUpdated = Environment.TickCount;
             this.speeds = new int[averagingPeriod];
         }
 
 
-        internal void AddDelta(int speed)
+        public void AddDelta(int speed)
         {
             Tick();
             this.total += speed;
@@ -56,7 +56,7 @@ namespace MonoTorrent.Common
         }
 
 
-        internal void Reset()
+        public void Reset()
         {
             this.total = 0;
             this.speed = 0;
@@ -73,7 +73,7 @@ namespace MonoTorrent.Common
             int count = 0;
             int total = 0;
 
-            // Find how many miliseconds have passed since the last update and the current tick count
+            // Find how many milliseconds have passed since the last update and the current tick count
             int difference = Environment.TickCount - this.lastUpdated;
             if (difference < 0)
                 difference = 1000;
@@ -107,7 +107,7 @@ namespace MonoTorrent.Common
             this.lastUpdated = Environment.TickCount;
         }
 
-        internal void Tick()
+        public void Tick()
         {
             // Make sure we handle the case where the clock rolls over
             // Ensure that TimePeriodPassed doesn't get executed by multiple threads
