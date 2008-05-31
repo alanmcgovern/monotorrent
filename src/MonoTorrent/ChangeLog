@@ -1,3 +1,7 @@
+2008-05-31  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* MonoTorrent.csproj, Makefile.in, Makefile.am: Fixed up the build
+
 2007-06-14  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Client/Managers/TorrentManager.cs:

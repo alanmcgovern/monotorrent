@@ -161,7 +161,6 @@ LINUX_PKGCONFIG = \
 
 RESGEN = resgen2
 FILES = \
-	AssemblyInfo.cs \
 	MonoTorrent.BEncoding/BEncodedDictionary.cs \
 	MonoTorrent.BEncoding/BEncodedList.cs \
 	MonoTorrent.BEncoding/BEncodedNumber.cs \
@@ -175,25 +174,23 @@ FILES = \
 	MonoTorrent.Client/ConnectionListeners/ConnectionListenerBase.cs \
 	MonoTorrent.Client/ConnectionListeners/SocketListener.cs \
 	MonoTorrent.Client/Encryption/BigInteger/BigInteger.cs \
-	MonoTorrent.Client/Encryption/BigInteger/ConfidenceFactor.cs \
-	MonoTorrent.Client/Encryption/BigInteger/NextPrimeFinder.cs \
-	MonoTorrent.Client/Encryption/BigInteger/PrimalityTests.cs \
-	MonoTorrent.Client/Encryption/BigInteger/PrimeGeneratorBase.cs \
-	MonoTorrent.Client/Encryption/BigInteger/SequentialSearch.cs \
 	MonoTorrent.Client/Encryption/EncryptedSocket.cs \
-	MonoTorrent.Client/Encryption/IEncryption.cs \
-	MonoTorrent.Client/Encryption/IEncryptor.cs \
+	MonoTorrent.Client/Encryption/EncryptionTypes.cs \
+	MonoTorrent.Client/Encryption/EncryptorFactory.cs \
+	MonoTorrent.Client/Encryption/IEncryption/IEncryption.cs \
+	MonoTorrent.Client/Encryption/IEncryption/NullEncryption.cs \
+	MonoTorrent.Client/Encryption/IEncryption/RC4.cs \
+	MonoTorrent.Client/Encryption/IEncryption/RC4Header.cs \
+	MonoTorrent.Client/Encryption/IEncryptor/IEncryptor.cs \
 	MonoTorrent.Client/Encryption/ModuloCalculator.cs \
-	MonoTorrent.Client/Encryption/NoEncryption.cs \
-	MonoTorrent.Client/Encryption/NullEncryption.cs \
 	MonoTorrent.Client/Encryption/PeerAEncryption.cs \
 	MonoTorrent.Client/Encryption/PeerBEncryption.cs \
-	MonoTorrent.Client/Encryption/RC4.cs \
 	MonoTorrent.Client/EventArgs/AnnounceResponseEventArgs.cs \
 	MonoTorrent.Client/EventArgs/BlockEventArgs.cs \
 	MonoTorrent.Client/EventArgs/CriticalExceptionEventArgs.cs \
 	MonoTorrent.Client/EventArgs/MessageEventArgs.cs \
 	MonoTorrent.Client/EventArgs/NewConnectionEventArgs.cs \
+	MonoTorrent.Client/EventArgs/PeerAddedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeerConnectionEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeersAddedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PieceEventArgs.cs \
@@ -298,6 +295,7 @@ FILES = \
 	MonoTorrent.Client/Tracker/UdpTracker.cs \
 	MonoTorrent.Client/TransferType.cs \
 	MonoTorrent.Client/WriterLock.cs \
+	MonoTorrent.Common/AsyncResult.cs \
 	MonoTorrent.Common/BitField.cs \
 	MonoTorrent.Common/Enums.cs \
 	MonoTorrent.Common/EventArgs/TorrentCreatorEventArgs.cs \
@@ -334,7 +332,7 @@ FILES = \
 	MonoTorrent.Tracker/RequestParameters.cs \
 	MonoTorrent.Tracker/SimpleTorrentManager.cs \
 	MonoTorrent.Tracker/StaticIntervalAlgorithm.cs \
-	MonoTorrent.Tracker/Tracker.cs 
+	MonoTorrent.Tracker/Tracker.cs
 
 DATA_FILES = 
 RESOURCES = 
