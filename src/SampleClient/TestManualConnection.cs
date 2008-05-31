@@ -175,7 +175,7 @@ namespace SampleClient
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.Auto);
+            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.All);
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }

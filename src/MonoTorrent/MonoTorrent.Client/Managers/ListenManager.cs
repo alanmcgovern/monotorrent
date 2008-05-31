@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
             id.TorrentManager = man;
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
-            if ((id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.MinEncryptionLevel, EncryptionTypes.None)) && ClientEngine.SupportsEncryption)
+            if ((id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.None)) && ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id.Connection.Connection, "ListenManager - Encryption is required but was not active");
                 CleanupSocket(id);

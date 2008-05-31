@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Encryption
         {
             bool canUseRC4 = ClientEngine.SupportsEncryption;
 
-            EncryptionTypes t = EncryptionTypes.Auto;// id.TorrentManager.Engine.Settings.MinEncryptionLevel;
+            EncryptionTypes t = EncryptionTypes.All;// id.TorrentManager.Engine.Settings.MinEncryptionLevel;
             canUseRC4 = canUseRC4 && (Toolbox.HasEncryption(t, EncryptionTypes.RC4Header) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Full));
 
             t = id.Peer.Encryption;
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client.Encryption
                     // otherwise just use PlainText
                     if (supportRC4)
                     {
-                        result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.Auto);
+                        result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
                         result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
                     }
                     else
@@ -181,7 +181,7 @@ namespace MonoTorrent.Client.Encryption
                 if (canUseRC4)
                 {
                     // The data we just received was part of an encrypted handshake and was *not* the BitTorrent handshake
-                    result.EncSocket = new PeerBEncryption(result.SKeys, EncryptionTypes.Auto);
+                    result.EncSocket = new PeerBEncryption(result.SKeys, EncryptionTypes.All);
                     result.EncSocket.BeginHandshake(connection, result.Buffer, 0, result.Buffer.Length, CompletedEncryptedHandshakeCallback, result);
                 }
                 else

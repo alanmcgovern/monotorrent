@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
         public Peer(string peerId, Uri connectionUri)
-            : this (peerId, connectionUri, EncryptionTypes.Auto)
+            : this (peerId, connectionUri, EncryptionTypes.All)
         {
 
         }
@@ -236,7 +236,7 @@ namespace MonoTorrent.Client
                     peerId = string.Empty;
 
                 Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
-                list.Add(new Peer(peerId, connectionUri, EncryptionTypes.Auto));
+                list.Add(new Peer(peerId, connectionUri, EncryptionTypes.All));
             }
 
             return list;
@@ -270,7 +270,7 @@ namespace MonoTorrent.Client
                 sb.Append(port);
 
                 Uri uri = new Uri("tcp://" + sb.ToString());
-                list.Add(new Peer("", uri, EncryptionTypes.Auto));
+                list.Add(new Peer("", uri, EncryptionTypes.All));
             }
 
             return list;

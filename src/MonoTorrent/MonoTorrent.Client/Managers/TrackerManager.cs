@@ -172,8 +172,10 @@ namespace MonoTorrent.Client.Tracker
             TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, null, waitHandle);
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
-            
-            bool supportsEncryption = ClientEngine.SupportsEncryption && engine.Settings.MinEncryptionLevel != EncryptionTypes.None;
+
+            bool supportsEncryption = Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.RC4Full)
+                                   || Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.RC4Header);
+            supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,

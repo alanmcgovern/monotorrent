@@ -66,12 +66,12 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
         [Test]
         public void Full_AutoTestNoInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.Auto, false);
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, false);
         }
         [Test]
         public void Full_AutoTestInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.Auto, true);
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, true);
         }
 
         [Test]

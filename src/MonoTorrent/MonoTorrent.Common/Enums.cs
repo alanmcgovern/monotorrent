@@ -53,7 +53,7 @@ namespace MonoTorrent.Common
         RC4Header = 1,
         RC4Full = 2,
         None = 4,
-        Auto = RC4Full | RC4Header | None
+        All = RC4Full | RC4Header | None
     }
 
     public enum TorrentState
