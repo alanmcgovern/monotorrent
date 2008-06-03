@@ -906,6 +906,7 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
+                    bitfield.SetAll(false);
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                         RaisePieceHashed(new PieceHashedEventArgs(this, i, false));
                 }
