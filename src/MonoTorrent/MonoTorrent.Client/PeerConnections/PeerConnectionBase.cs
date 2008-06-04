@@ -548,18 +548,18 @@ namespace MonoTorrent.Client
 			Connection.BeginConnect(peerEndCreateConnection, id);
 		}
 
-        internal void BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
+        internal IAsyncResult BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
         {
-            Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
+            return Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
         }
 
-        internal void BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
+        internal IAsyncResult BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
         {
             // Encrypt the *entire* message exactly once.
             if (offset == 0)
                 Encryptor.Encrypt(buffer.Array, buffer.Offset, buffer.Array, buffer.Offset, id.Connection.BytesToSend);
 
-            Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
+            return Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
 		}
 
         internal void Dispose()
