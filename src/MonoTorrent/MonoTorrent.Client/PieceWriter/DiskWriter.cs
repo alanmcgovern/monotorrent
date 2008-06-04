@@ -9,6 +9,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : PieceWriter
     {
+        private Dictionary<TorrentFile, string> paths;
         private FileStreamBuffer streamsBuffer;
 
         public int OpenFiles
@@ -24,6 +25,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public DiskWriter(int maxOpenFiles)
         {
+            paths = new Dictionary<TorrentFile, string>();
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
@@ -41,6 +43,9 @@ namespace MonoTorrent.Client.PieceWriters
 
         protected virtual string GenerateFilePath(TorrentFile file, string baseDirectory, string savePath)
         {
+            if (paths.ContainsKey(file))
+                return paths[file];
+
             string path;
 
             path = Path.Combine(savePath, baseDirectory);
@@ -48,6 +53,8 @@ namespace MonoTorrent.Client.PieceWriters
 
             if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            paths[file] = path;
 
             return path;
         }
