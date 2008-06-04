@@ -48,6 +48,7 @@ namespace MonoTorrent.Client
         private PeerConnectionBase connection;
         private ClientEngine engine;
         private TorrentManager torrentManager;
+        private PeerExchangeManager pexManager;
 
         #endregion Member Variables
 
@@ -97,6 +98,12 @@ namespace MonoTorrent.Client
         {
             get { return this.peer; }
             set { this.peer = value; }
+        }
+
+        internal PeerExchangeManager PeerExchangeManager
+        {
+            get { return this.pexManager; }
+            set { this.pexManager = value; }
         }
 
         /// <summary>

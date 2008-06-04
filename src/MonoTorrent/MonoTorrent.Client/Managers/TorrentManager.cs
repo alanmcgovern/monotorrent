@@ -80,6 +80,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
 
+        internal event EventHandler<PeerAddedEventArgs> OnPeerFound;
+
         #endregion
 
 
@@ -598,7 +600,8 @@ namespace MonoTorrent.Client
                         return 0;
 
                     this.peers.AvailablePeers.Add(peer);
-
+                    if(OnPeerFound != null)
+                        OnPeerFound(this, new PeerAddedEventArgs(this, peer));
                     // When we successfully add a peer we try to connect to the next available peer
                     return 1;
                 }

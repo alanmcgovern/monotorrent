@@ -862,6 +862,9 @@ namespace MonoTorrent.Client
                         if (id.PublicId != null)
                             id.PublicId.IsValid = false;
 
+                        if (id.PeerExchangeManager != null)
+                            id.PeerExchangeManager.Dispose();
+
                         ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
                         ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
 

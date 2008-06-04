@@ -94,8 +94,10 @@
     <Compile Include="MonoTorrent.Client\EventArgs\CriticalExceptionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs" />
     <Compile Include="MonoTorrent.Client\Logger.cs" />
+    <Compile Include="MonoTorrent.Client\Managers\PeerExchangeManager.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
     <Compile Include="MonoTorrent.Client\MessageHandler.cs" />
+    <Compile Include="MonoTorrent.Client\Messages\uTorrent\PeerExchangeMessage.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
     <Compile Include="MonoTorrent.Client\Piece.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs" />

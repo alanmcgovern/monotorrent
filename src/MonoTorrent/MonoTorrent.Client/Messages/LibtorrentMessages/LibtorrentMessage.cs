@@ -28,6 +28,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
             Register(nextId, delegate { return new LTMetadata(); });
             SupportedMessages.Add(new ExtensionSupport("LT_metadata", nextId++));
+
+            Register(nextId, delegate { return new PeerExchangeMessage(); });
+            SupportedMessages.Add(new ExtensionSupport("ut_pex", nextId++));
         }
 
         public static void Register(byte identifier, CreateMessage creator)

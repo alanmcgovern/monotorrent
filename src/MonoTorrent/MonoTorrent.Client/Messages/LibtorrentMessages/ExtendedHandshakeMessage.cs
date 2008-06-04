@@ -172,6 +172,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 id.Peer.LocalPort = localPort;
             id.Connection.MaxPendingRequests = maxRequests;
             id.Connection.ExtensionSupports = supports;
+
+            // FIXME : Find a way to be more elegant!
+            foreach(ExtensionSupport support in supports) {
+                if (support.Name == "ut_pex" && id.PeerExchangeManager == null) {
+                    id.PeerExchangeManager = new PeerExchangeManager (id);
+                    break;
+                }
+            }
+
         }
 
         #endregion
