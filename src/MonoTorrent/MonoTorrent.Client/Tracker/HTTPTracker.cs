@@ -143,9 +143,9 @@ namespace MonoTorrent.Client.Tracker
             sb.Append(parameters.PeerId);
             sb.Append("&port=");
             sb.Append(parameters.Port);
-            if (ClientEngine.SupportsEncryption)
+            if (parameters.SupportsEncryption)
                 sb.Append("&supportcrypto=1");
-            if (parameters.RequireEncryption && ClientEngine.SupportsEncryption)
+            if (parameters.RequireEncryption)
                 sb.Append("&requirecrypto=1");
             sb.Append("&uploaded=");
             sb.Append(parameters.BytesUploaded);

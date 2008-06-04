@@ -17,6 +17,7 @@ namespace MonoTorrent.Client.Tracker
         private string peerId;
         private int port;
         private bool requireEncryption;
+        private bool supportsEncryption;
 
         /// <summary>
         /// The number of bytes downloaded this session
@@ -106,6 +107,12 @@ namespace MonoTorrent.Client.Tracker
         {
             get { return requireEncryption; }
             set { requireEncryption = value; }
+        }
+
+        public bool SupportsEncryption
+        {
+            get { return supportsEncryption; }
+            set { supportsEncryption = value; }
         }
 
 

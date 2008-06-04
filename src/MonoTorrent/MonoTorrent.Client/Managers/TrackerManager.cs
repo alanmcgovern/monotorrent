@@ -174,15 +174,19 @@ namespace MonoTorrent.Client.Tracker
             this.updateSucceeded = true;
             this.lastUpdated = DateTime.Now;
 
-            bool supportsEncryption = Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.RC4Full)
-                                   || Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.RC4Header);
+            EncryptionTypes e = engine.Settings.AllowedEncryption;
+            bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.None);
+            bool supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
+
+            requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
-                                                clientEvent, this.infoHash, id, supportsEncryption, manager.Engine.PeerId,
+                                                clientEvent, this.infoHash, id, requireEncryption, manager.Engine.PeerId,
                                                 null, manager.Engine.Settings.ListenPort);
+            p.SupportsEncryption = supportsEncryption;
             tracker.Announce(p);
             return id.WaitHandle;
         }
