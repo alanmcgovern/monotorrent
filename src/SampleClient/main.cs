@@ -38,8 +38,8 @@ namespace MonoTorrent
             // or an unhandled exception happens
             Console.CancelKeyPress += delegate { shutdown(); };
             AppDomain.CurrentDomain.ProcessExit += delegate { shutdown(); };
-            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e); shutdown(); };
-            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e); shutdown(); };
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
+            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
 
             StartEngine();
         }
