@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.Tracker
             this.lastUpdated = DateTime.Now;
 
             EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.None);
+            bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
             bool supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;

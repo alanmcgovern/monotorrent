@@ -78,13 +78,13 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
         [ExpectedException(typeof(EncryptionException))]
         public void Full_NoneTestNoInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.None, false);
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false);
         }
         [Test]
         [ExpectedException(typeof(EncryptionException))]
         public void Full_NoneTestInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.None, true);
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true);
         }
 
         [Test]

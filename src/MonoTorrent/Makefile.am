@@ -97,6 +97,7 @@ FILES =  \
 	MonoTorrent.Client/Managers/DiskManager.cs \
 	MonoTorrent.Client/Managers/FileManager.cs \
 	MonoTorrent.Client/Managers/ListenManager.cs \
+	MonoTorrent.Client/Managers/PeerExchangeManager.cs \
 	MonoTorrent.Client/Managers/PeerManager.cs \
 	MonoTorrent.Client/Managers/PieceManager.cs \
 	MonoTorrent.Client/Managers/TorrentManager.cs \

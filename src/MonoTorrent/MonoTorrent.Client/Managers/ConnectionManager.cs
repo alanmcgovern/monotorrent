@@ -334,7 +334,7 @@ namespace MonoTorrent.Client
                 EncryptionTypes e = engine.Settings.AllowedEncryption;
                 if (id.Connection.Encryptor is RC4 && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
                     id.Connection.Encryptor is RC4Header && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Header) ||
-                    id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(e, EncryptionTypes.None))
+                    id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(e, EncryptionTypes.PlainText))
                 {
                     CleanupSocket(id, id.Connection.Encryptor.GetType().Name + " encryption is not enabled");
                 }

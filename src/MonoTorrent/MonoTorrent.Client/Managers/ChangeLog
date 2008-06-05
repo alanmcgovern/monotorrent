@@ -1,5 +1,10 @@
 2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
 
+	* TrackerManager.cs, ConnectionManager.cs: Rename from
+	  EncryptionTypes.None -> EncryptionTypes.PlainText
+
+2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
+
 	* TorrentManager.cs, ListenManager.cs: Rename EncryptionTypes.None to
 	  EncryptionTypes.PlainText.
 
