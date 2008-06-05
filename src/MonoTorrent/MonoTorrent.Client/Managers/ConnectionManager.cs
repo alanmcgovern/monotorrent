@@ -331,9 +331,19 @@ namespace MonoTorrent.Client
                     throw new EncryptionException("unhandled initial data");
                 }
 
-                // Create a handshake message to send to the peer
-                HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
-                SendMessage(id, handshake, this.handshakeSentCallback);
+                EncryptionTypes e = engine.Settings.AllowedEncryption;
+                if (id.Connection.Encryptor is RC4 && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
+                    id.Connection.Encryptor is RC4Header && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Header) ||
+                    id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(e, EncryptionTypes.None))
+                {
+                    CleanupSocket(id, id.Connection.Encryptor.GetType().Name + " encryption is not enabled");
+                }
+                else
+                {
+                    // Create a handshake message to send to the peer
+                    HandshakeMessage handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
+                    SendMessage(id, handshake, this.handshakeSentCallback);
+                }
             }
             catch
             {
