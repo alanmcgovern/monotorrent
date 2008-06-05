@@ -1,0 +1,5 @@
+2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* IEncryption/RC4Header.cs, EncryptionTypes.cs: Rename
+	  EncryptionTypes.None to EncryptionTypes.PlainText.
+

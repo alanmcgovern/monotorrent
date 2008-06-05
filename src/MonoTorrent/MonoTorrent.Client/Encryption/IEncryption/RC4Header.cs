@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Encryption
 {
-    class RC4Header : PlainTextEncryption
+    public class RC4Header : PlainTextEncryption
     {
         
     }

@@ -1,0 +1,5 @@
+2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* EngineSettings.cs: Rename EncryptionTypes.None to
+	  EncryptionTypes.PlainText.
+

@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool AllowLegacyConnections
         {
-            get { return (this.allowLegacyConnections) || (this.allowedEncryption == EncryptionTypes.None); }
+            get { return (this.allowLegacyConnections) || (this.allowedEncryption == EncryptionTypes.PlainText); }
             set { this.allowLegacyConnections = value; }
         }
 

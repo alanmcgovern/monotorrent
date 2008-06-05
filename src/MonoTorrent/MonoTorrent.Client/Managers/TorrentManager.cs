@@ -358,7 +358,7 @@ namespace MonoTorrent.Client
             {
                 foreach (string url in torrent.GetRightHttpSeeds)
                 {
-                    Peer peer = new Peer("", new Uri(url), EncryptionTypes.None);
+                    Peer peer = new Peer("", new Uri(url), EncryptionTypes.PlainText);
                     PeerIdInternal id = new PeerIdInternal(peer, this);
 
                     id.Connection = new PeerConnectionBase(this.Torrent.Pieces.Count);

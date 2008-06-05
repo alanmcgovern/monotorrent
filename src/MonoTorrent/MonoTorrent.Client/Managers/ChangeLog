@@ -1,3 +1,8 @@
+2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TorrentManager.cs, ListenManager.cs: Rename EncryptionTypes.None to
+	  EncryptionTypes.PlainText.
+
 2008-05-31  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* TorrentManager.cs: When none of the files exist on disk - fire the
