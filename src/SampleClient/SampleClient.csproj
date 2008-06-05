@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -44,8 +44,8 @@
     <NoWarn>
     </NoWarn>
     <OutputType>Exe</OutputType>
-    <AssemblyName>SampleClient</AssemblyName>
     <RootNamespace>SampleClient</RootNamespace>
+    <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -67,40 +67,23 @@
     <NoWarn>
     </NoWarn>
     <OutputType>Exe</OutputType>
-    <AssemblyName>SampleClient</AssemblyName>
     <RootNamespace>SampleClient</RootNamespace>
+    <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System">
-      <HintPath>\System.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web">
-      <HintPath>\System.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml">
-      <HintPath>\System.Xml.dll</HintPath>
-    </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
+      <Project>{9CC2CC3A-4041-4857-AF8B-D58745FD3066}</Project>
       <Name>MonoTorrent</Name>
-      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
-      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="main.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="TestManualConnection.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Top10Listener.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="main.cs" />
+    <Compile Include="TestManualConnection.cs" />
+    <Compile Include="Top10Listener.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <PropertyGroup>

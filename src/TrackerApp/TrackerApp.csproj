@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -44,8 +44,8 @@
     <NoWarn>
     </NoWarn>
     <OutputType>Exe</OutputType>
-    <AssemblyName>TrackerApp</AssemblyName>
     <RootNamespace>TrackerApp</RootNamespace>
+    <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -67,37 +67,23 @@
     <NoWarn>
     </NoWarn>
     <OutputType>Exe</OutputType>
-    <AssemblyName>TrackerApp</AssemblyName>
     <RootNamespace>TrackerApp</RootNamespace>
+    <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System">
-      <HintPath>\System.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Web">
-      <HintPath>\System.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml">
-      <HintPath>\System.Xml.dll</HintPath>
-    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
+      <Project>{7A647552-B5F0-419F-9395-4DC24990ED20}</Project>
       <Name>MonoTorrent</Name>
-      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
-      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Main.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="StressTest.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Main.cs" />
+    <Compile Include="StressTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <PropertyGroup>

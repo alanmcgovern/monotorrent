@@ -1,3 +1,9 @@
+2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TrackerApp.csproj: Rename EncryptionTypes.None to
+	  EncryptionTypes.PlainText to more accurately reflect what it's used
+	  for.
+
 2007-12-18  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Main.cs: Added comment
