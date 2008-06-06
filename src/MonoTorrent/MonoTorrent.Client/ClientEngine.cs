@@ -253,8 +253,11 @@ namespace MonoTorrent.Client
             if (torrent == null)
                 return false;
 
-            using (new ReaderLock(this.torrentsLock))
+            DelegateTask t = new DelegateTask(delegate {
                 return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
+            });
+            MainLoop.Queue(t).WaitOne();
+            return (bool)t.Result;
         }
 
 
@@ -339,6 +342,11 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("torrent");
 
+            MainLoop.Queue(new RegisterTask(this, manager)).WaitOne();
+        }
+
+        internal void RegisterImpl(TorrentManager manager)
+        {
             if (manager.Engine != null)
                 throw new TorrentException("This manager has already been registered");
 
@@ -350,15 +358,6 @@ namespace MonoTorrent.Client
             }
             manager.PieceHashed += PieceHashed;
             manager.Engine = this;
-/*
-            manager.PieceHashed += delegate (object sender, PieceHashedEventArgs e) {
-                diskManager.Writer.RemovePressure(e.TorrentManager, e.PieceIndex);
-            };
-
-            manager.PieceManager.BlockRequested += delegate(object sender, BlockEventArgs e) {
-                diskManager.Writer.AddPressure(e.TorrentManager, e.Piece.Index, e.Block.StartOffset / Piece.BlockSize);
-            };
-*/
         }
 
 
@@ -400,8 +399,11 @@ namespace MonoTorrent.Client
         {
             get
             {
-                using (new ReaderLock(torrentsLock))
+                DelegateTask t = new DelegateTask(delegate  {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
+                });
+                MainLoop.Queue(t).WaitOne();
+                return (int)t.Result;
             }
         }
 
@@ -413,8 +415,11 @@ namespace MonoTorrent.Client
         {
             get
             {
-                using (new ReaderLock(torrentsLock))
+                DelegateTask t = new DelegateTask(delegate {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
+                });
+                MainLoop.Queue(t).WaitOne();
+                return (int)t.Result;
             }
         }
 
@@ -428,6 +433,11 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
+            MainLoop.Queue(new UnregisterTask(this, manager)).WaitOne();
+        }
+
+        internal void UnregisterImpl(TorrentManager manager)
+        {
             if (manager.Engine != this)
                 throw new TorrentException("The manager has not been registered with this engine");
 

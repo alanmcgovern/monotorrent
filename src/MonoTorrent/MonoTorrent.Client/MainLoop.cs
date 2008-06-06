@@ -35,6 +35,7 @@ using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
+    internal delegate object MainLoopJob();
     static class MainLoop
     {
         static AutoResetEvent handle;
@@ -77,6 +78,11 @@ namespace MonoTorrent.Client
                 handle.Set();
             }
             return task.WaitHandle;
+        }
+
+        internal static void QueueAndWait(MainLoopJob job)
+        {
+            Queue(new DelegateTask(job)).WaitOne();
         }
     }
 }

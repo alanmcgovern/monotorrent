@@ -463,6 +463,9 @@ namespace MonoTorrent.Client
 
         #endregion
 
+
+        #region Internal Methods
+
         internal void PauseImpl()
         {
             CheckRegistered();
@@ -593,13 +596,6 @@ namespace MonoTorrent.Client
             ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); });
         }
 
-        #region Internal Methods
-
-        /// <summary>
-        /// Adds an individual peer to the list
-        /// </summary>
-        /// <param name="peer">The peer to add</param>
-        /// <returns>The number of peers added</returns>
         internal int AddPeers(Peer peer)
         {
             try
@@ -742,11 +738,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="counter"></param>
         internal void DownloadLogic(int counter)
         {
             //???AGH if download is complete, set state to 'Seeding'
@@ -761,11 +752,6 @@ namespace MonoTorrent.Client
                 chokeUnchoker.TimePassed();
         }
 
-
-        /// <summary>
-        /// Called when a Piece has been hashed by the FileManager
-        /// </summary>
-        /// <param name="pieceHashedEventArgs">The event args for the event</param>
         internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
         {
             if (!pieceHashedEventArgs.HashPassed)
@@ -809,10 +795,6 @@ namespace MonoTorrent.Client
             Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
         }
 
-        /// <summary>
-        /// Restarts peers which have been suspended from downloading/uploading due to rate limiting
-        /// </summary>
-        /// <param name="downloading"></param>
         internal void ResumePeers()
         {
             int downSpeed;
@@ -858,10 +840,6 @@ namespace MonoTorrent.Client
                     Interlocked.Decrement(ref uploader.Chunks);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="counter"></param>
         internal void SeedingLogic(int counter)
         {
             //Choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
@@ -870,6 +848,32 @@ namespace MonoTorrent.Client
 
             lock (listLock)
                 chokeUnchoker.TimePassed();
+        }
+
+        internal void SetAmInterestedStatus(PeerIdInternal id, bool interesting)
+        {
+            bool enqueued = false;
+            if (interesting && !id.Connection.AmInterested)
+            {
+                id.Connection.AmInterested = true;
+                id.Connection.Enqueue(new InterestedMessage());
+
+                // He's interesting, so attempt to queue up any FastPieces (if that's possible)
+                while (id.TorrentManager.pieceManager.AddPieceRequest(id)) { }
+                enqueued = true;
+            }
+            else if (!interesting && id.Connection.AmInterested)
+            {
+                id.Connection.AmInterested = false;
+                id.Connection.Enqueue(new NotInterestedMessage());
+                enqueued = true;
+            }
+
+            if (enqueued && !id.Connection.ProcessingQueue)
+            {
+                id.Connection.ProcessingQueue = true;
+                id.ConnectionManager.MessageHandler.EnqueueSend(id);
+            }
         }
 
         #endregion Internal Methods
@@ -883,10 +887,6 @@ namespace MonoTorrent.Client
                 throw new TorrentException("This manager has not been registed with an Engine");
         }
 
-        /// <summary>
-        /// Hash checks the supplied torrent
-        /// </summary>
-        /// <param name="state">The TorrentManager to hashcheck</param>
         private void PerformHashCheck(bool autoStart)
         {
             try
@@ -937,49 +937,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        ///// <summary>
-        ///// Checks the send queue of the peer to see if there are any outstanding pieces which they requested
-        ///// and rejects them as necessary
-        ///// </summary>
-        ///// <param name="id"></param>
-        //private void RejectPendingRequests(PeerIdInternal id)
-        //{
-        //    PeerMessage message;
-        //    PieceMessage pieceMessage;
-        //    int length = id.Connection.QueueLength;
-
-        //    for (int i = 0; i < length; i++)
-        //    {
-        //        message = id.Connection.Dequeue();
-        //        if (!(message is PieceMessage))
-        //        {
-        //            id.Connection.Enqueue(message);
-        //            continue;
-        //        }
-
-        //        pieceMessage = (PieceMessage)message;
-
-        //        // If the peer doesn't support fast peer, then we will never requeue the message
-        //        if (!(id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
-        //        {
-        //            id.Connection.IsRequestingPiecesCount--;
-        //            continue;
-        //        }
-
-        //        // If the peer supports fast peer, queue the message if it is an AllowedFast piece
-        //        // Otherwise send a reject message for the piece
-        //        if (id.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
-        //            id.Connection.Enqueue(pieceMessage);
-        //        else
-        //        {
-        //            id.Connection.IsRequestingPiecesCount--;
-        //            id.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
-        //        }
-        //    }
-        //}
-
-
         private void LoadFastResume(FastResume fastResumeData)
         {
             if (fastResumeData == null)
@@ -996,12 +953,9 @@ namespace MonoTorrent.Client
             this.hashChecked = true;
         }
 
-
-        /// <summary>
-        /// Saves data to allow fastresumes to the disk
-        /// </summary>
         public FastResume SaveFastResume()
         {
+#warning No need for this, and remove the option in the settings. This is fully user-controlled now
             // Do not create fast-resume data if we do not support it for this TorrentManager object
             if (!Settings.FastResumeEnabled || string.IsNullOrEmpty(this.torrent.TorrentPath))
                 return null;
@@ -1009,11 +963,6 @@ namespace MonoTorrent.Client
             return new FastResume(this.torrent.infoHash, this.bitfield, new List<Peer>());
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="p"></param>
         private void SendHaveMessagesToAll()
         {
             // This is "Have Suppression" as defined in the spec.
@@ -1056,39 +1005,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        ///// <summary>
-        ///// Sets the "AmChoking" status of the peer to the new value and enqueues the relevant peer message
-        ///// </summary>
-        ///// <param name="id">The peer to update the choke status for</param>
-        ///// <param name="amChoking">The new status for "AmChoking"</param>
-        //private void SetChokeStatus(PeerIdInternal id, bool amChoking)
-        //{
-        //    if (id.Connection.AmChoking == amChoking)
-        //        return;
-
-        //    id.Connection.PiecesSent = 0;
-        //    id.Connection.AmChoking = amChoking;
-        //    if (amChoking)
-        //    {
-        //        Interlocked.Decrement(ref this.uploadingTo);
-        //        RejectPendingRequests(id);
-        //        id.Connection.EnqueueAt(new ChokeMessage(), 0);
-        //        Logger.Log("Choking: " + this.uploadingTo);
-        //    }
-        //    else
-        //    {
-        //        Interlocked.Increment(ref this.uploadingTo);
-        //        id.Connection.Enqueue(new UnchokeMessage());
-        //        Logger.Log("UnChoking: " + this.uploadingTo);
-        //    }
-        //}
-
-
-        /// <summary>
-        /// Fires the TorrentStateChanged event
-        /// </summary>
-        /// <param name="newState">The new state for the torrent manager</param>
         private void UpdateState(TorrentState newState)
         {
             if (this.state == newState)
@@ -1102,31 +1018,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion Private Methods
-
-        internal void SetAmInterestedStatus(PeerIdInternal id, bool interesting)
-        {
-            bool enqueued = false;
-            if (interesting && !id.Connection.AmInterested)
-            {
-                id.Connection.AmInterested = true;
-                id.Connection.Enqueue(new InterestedMessage());
-
-                // He's interesting, so attempt to queue up any FastPieces (if that's possible)
-                while (id.TorrentManager.pieceManager.AddPieceRequest(id)) { }
-                enqueued = true;
-            }
-            else if (!interesting && id.Connection.AmInterested)
-            {
-                id.Connection.AmInterested = false;
-                id.Connection.Enqueue(new NotInterestedMessage());
-                enqueued = true;
-            }
-
-            if (enqueued && !id.Connection.ProcessingQueue)
-            {
-                id.Connection.ProcessingQueue = true;
-                id.ConnectionManager.MessageHandler.EnqueueSend(id);
-            }
-        }
     }
 }
