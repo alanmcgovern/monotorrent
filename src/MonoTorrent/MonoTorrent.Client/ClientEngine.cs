@@ -85,7 +85,6 @@ namespace MonoTorrent.Client
         private System.Timers.Timer timer;      // The timer used to call the logic methods for the torrent managers
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
-        internal ReaderWriterLock torrentsLock;
         internal RateLimiter uploadLimiter;
         internal RateLimiter downloadLimiter;
 
@@ -222,8 +221,7 @@ namespace MonoTorrent.Client
             this.listenManager = new ListenManager(this);
             this.timer = new System.Timers.Timer(TickLength);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.torrentsLock = new ReaderWriterLock();
-            this.timer.Elapsed += new ElapsedEventHandler(LogicTick);
+            this.timer.Elapsed += delegate { MainLoop.Queue(new DelegateTask(delegate { LogicTick(null, null); return null; })); };
             this.downloadLimiter = new RateLimiter();
             this.uploadLimiter = new RateLimiter();
 
@@ -282,20 +280,7 @@ namespace MonoTorrent.Client
 
         internal void DisposeImpl()
         {
-            using (new WriterLock(this.torrentsLock))
-            {
-                while (this.torrents.Count > 0)
-                {
-                    TorrentManager t = torrents[0];
-                    if (t.State != TorrentState.Stopped)
-                        t.StopImpl().WaitOne();
-
-                    Unregister(t);
-                    t.Dispose();
-                }
-                this.diskManager.Dispose();
-            }
-
+            this.diskManager.Dispose();
             this.listenManager.Dispose();
             this.timer.Dispose();
         }
@@ -324,9 +309,11 @@ namespace MonoTorrent.Client
         {
             List<WaitHandle> handles = new List<WaitHandle>();
 
-            using (new ReaderLock(this.torrentsLock))
+            MainLoop.Queue(new DelegateTask(delegate {
                 foreach (TorrentManager manager in torrents)
                     handles.Add(MainLoop.Queue(new PauseTask(manager)));
+                return null;
+            })).WaitOne();
 
             for (int i = 0; i < handles.Count; i++)
                 handles[i].WaitOne();
@@ -350,12 +337,9 @@ namespace MonoTorrent.Client
             if (manager.Engine != null)
                 throw new TorrentException("This manager has already been registered");
 
-            using (new WriterLock(torrentsLock))
-            {
-                if (Contains(manager.Torrent))
-                    throw new TorrentException("A manager for this torrent has already been registered");
-                this.torrents.Add(manager);
-            }
+            if (Contains(manager.Torrent))
+                throw new TorrentException("A manager for this torrent has already been registered");
+            this.torrents.Add(manager);
             manager.PieceHashed += PieceHashed;
             manager.Engine = this;
         }
@@ -368,9 +352,11 @@ namespace MonoTorrent.Client
         {
             List<WaitHandle> handles = new List<WaitHandle>();
 
-            using (new ReaderLock(this.torrentsLock))
+            MainLoop.Queue(new DelegateTask(delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     handles.Add(MainLoop.Queue(new StartTask(torrents[i])));
+                return null;
+            })).WaitOne();
 
             for (int i = 0; i < handles.Count; i++)
                 handles[i].WaitOne();
@@ -384,9 +370,11 @@ namespace MonoTorrent.Client
         {
             List<WaitHandle> handles = new List<WaitHandle>();
 
-            using (new ReaderLock(this.torrentsLock))
+            MainLoop.Queue(new DelegateTask(delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     handles.Add(MainLoop.Queue(new StopTask(torrents[i])));
+                return null;
+            })).WaitOne();
 
             return handles.ToArray();
         }
@@ -444,8 +432,7 @@ namespace MonoTorrent.Client
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException("The manager must be stopped before it can be unregistered");
 
-            using (new WriterLock(torrentsLock))
-                this.torrents.Remove(manager);
+            this.torrents.Remove(manager);
 
             manager.PieceHashed -= PieceHashed;
             manager.Engine = null;
@@ -468,7 +455,7 @@ namespace MonoTorrent.Client
                 downloadLimiter.UpdateChunks(settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
                 uploadLimiter.UpdateChunks(settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
             }
-            using(new ReaderLock(this.torrentsLock))
+
             for (int i = 0; i < this.torrents.Count; i++)
             {
                 this.torrents[i].PreLogicTick(tickCount);
@@ -517,8 +504,7 @@ namespace MonoTorrent.Client
         internal void Stop()
         {
             // If all the torrents are stopped, stop ticking
-            using (new ReaderLock(this.torrentsLock))
-                timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
+            timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
         }
 
         #endregion

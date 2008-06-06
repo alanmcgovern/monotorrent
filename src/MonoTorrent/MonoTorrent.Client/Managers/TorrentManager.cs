@@ -456,9 +456,11 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops the TorrentManager
         /// </summary>
-        public void Stop()
+        public WaitHandle Stop()
         {
-            MainLoop.Queue(new StopTask(this)).WaitOne();
+            StopTask t = new StopTask(this);
+            MainLoop.Queue(t).WaitOne();
+            return t.ManagerHandle;
         }
 
         #endregion

@@ -30,12 +30,19 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace MonoTorrent.Client.Tasks
 {
     class StopTask : Task
     {
         private TorrentManager manager;
+        private WaitHandle managerHandle;
+
+        public WaitHandle ManagerHandle
+        {
+            get { return managerHandle; }
+        }
 
         public StopTask(TorrentManager manager)
         {
@@ -43,7 +50,7 @@ namespace MonoTorrent.Client.Tasks
         }
         public override void Execute()
         {
-            manager.StopImpl().WaitOne();
+           managerHandle = manager.StopImpl();
         }
     }
 }

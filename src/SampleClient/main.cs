@@ -226,8 +226,7 @@ namespace MonoTorrent
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
-                WaitHandle handle = null;
-                torrents[i].Stop();
+                WaitHandle handle = torrents[i].Stop(); ;
                 while (!handle.WaitOne(10, true))
                     Console.WriteLine(handle.ToString());
 

@@ -36,16 +36,17 @@ using MonoTorrent.Client.Tasks;
 namespace MonoTorrent.Client
 {
     internal delegate object MainLoopJob();
+    internal delegate void MainLoopTask();
     static class MainLoop
     {
         static AutoResetEvent handle;
-        static Queue<ITask> tasks;
+        static Queue<Task> tasks;
         static Thread thread;
 
         static MainLoop()
         {
             handle = new AutoResetEvent(false);
-            tasks = new Queue<ITask>();
+            tasks = new Queue<Task>();
             thread = new Thread(Loop);
             thread.IsBackground = true;
             thread.Start();
@@ -55,7 +56,7 @@ namespace MonoTorrent.Client
         {
             while (true)
             {
-                ITask task = null;
+                Task task = null;
 
                 lock (tasks)
                 {
@@ -66,23 +67,42 @@ namespace MonoTorrent.Client
                 if (task == null)
                     handle.WaitOne();
                 else
+                {
                     task.Execute();
+                    task.WaitHandle.Set();
+                }
+                Console.WriteLine("Mainloop ticked");
             }
         }
 
-        public static WaitHandle Queue(ITask task)
+        public static WaitHandle Queue(Task task)
         {
             lock (tasks)
             {
-                tasks.Enqueue(task);
-                handle.Set();
+                if (Thread.CurrentThread == thread)
+                {
+                    task.Execute();
+                    task.WaitHandle.Set();
+                    return task.WaitHandle;
+                }
+                else
+                {
+                    tasks.Enqueue(task);
+                    handle.Set();
+                }
             }
             return task.WaitHandle;
         }
 
-        internal static void QueueAndWait(MainLoopJob job)
+        internal static WaitHandle Queue(MainLoopTask task)
         {
-            Queue(new DelegateTask(job)).WaitOne();
+            DelegateTask t = new DelegateTask(delegate { 
+                task();
+                return null;
+            });
+
+            Queue(t);
+            return t.WaitHandle;
         }
     }
 }
