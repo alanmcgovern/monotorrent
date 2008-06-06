@@ -53,7 +53,8 @@ namespace MonoTorrent.Common
         Paused,
         Downloading,
         Seeding,
-        Hashing
+        Hashing,
+        Stopping
     }
 
     public enum Priority
@@ -76,12 +77,6 @@ namespace MonoTorrent.Common
         Scraping,
         ScrapingFailed,
         ScrapeSuccessful
-    }
-
-    public enum TrackerFrontend
-    {
-        InternalHttp,
-        ExternalHttp
     }
 
     public enum TorrentEvent

@@ -42,6 +42,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Managers;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -75,7 +76,6 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        internal object asyncCompletionLock;     // The lock used to avoid nasty race conditions when async methods are returned
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
         private DiskManager diskManager;
@@ -217,7 +217,6 @@ namespace MonoTorrent.Client
             }
 
 
-            this.asyncCompletionLock = new object();
             this.connectionManager = new ConnectionManager(this);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
@@ -275,13 +274,18 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Dispose()
         {
+            MainLoop.Queue(new DisposeEngineTask(this)).WaitOne();
+        }
+
+        internal void DisposeImpl()
+        {
             using (new WriterLock(this.torrentsLock))
             {
                 while (this.torrents.Count > 0)
                 {
                     TorrentManager t = torrents[0];
                     if (t.State != TorrentState.Stopped)
-                        t.Stop().WaitOne();
+                        t.StopImpl().WaitOne();
 
                     Unregister(t);
                     t.Dispose();
@@ -289,13 +293,9 @@ namespace MonoTorrent.Client
                 this.diskManager.Dispose();
             }
 
-            lock (asyncCompletionLock)
-            {
-                this.listenManager.Dispose();
-                this.timer.Dispose();
-            }
+            this.listenManager.Dispose();
+            this.timer.Dispose();
         }
-
 
         /// <summary>
         /// 
@@ -319,9 +319,14 @@ namespace MonoTorrent.Client
         /// </summary>
         public void PauseAll()
         {
-            lock (asyncCompletionLock)
-                using (new ReaderLock(this.torrentsLock))
-                    torrents.ForEach(delegate(TorrentManager m) { m.Pause(); });
+            List<WaitHandle> handles = new List<WaitHandle>();
+
+            using (new ReaderLock(this.torrentsLock))
+                foreach (TorrentManager manager in torrents)
+                    handles.Add(MainLoop.Queue(new PauseTask(manager)));
+
+            for (int i = 0; i < handles.Count; i++)
+                handles[i].WaitOne();
         }
 
 
@@ -362,9 +367,14 @@ namespace MonoTorrent.Client
         /// </summary>
         public void StartAll()
         {
-            lock (asyncCompletionLock)
-                using (new ReaderLock(this.torrentsLock))
-                    torrents.ForEach(delegate(TorrentManager m) { m.Start(); });
+            List<WaitHandle> handles = new List<WaitHandle>();
+
+            using (new ReaderLock(this.torrentsLock))
+                for (int i = 0; i < torrents.Count; i++)
+                    handles.Add(MainLoop.Queue(new StartTask(torrents[i])));
+
+            for (int i = 0; i < handles.Count; i++)
+                handles[i].WaitOne();
         }
 
 
@@ -374,9 +384,10 @@ namespace MonoTorrent.Client
         public WaitHandle[] StopAll()
         {
             List<WaitHandle> handles = new List<WaitHandle>();
-            lock (asyncCompletionLock)
-                using (new ReaderLock(this.torrentsLock))
-                    torrents.ForEach(delegate(TorrentManager m) { handles.Add(m.Stop()); });
+
+            using (new ReaderLock(this.torrentsLock))
+                for (int i = 0; i < torrents.Count; i++)
+                    handles.Add(MainLoop.Queue(new StopTask(torrents[i])));
 
             return handles.ToArray();
         }
@@ -488,22 +499,16 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            lock (asyncCompletionLock)
-            {
-                if (!timer.Enabled)
-                    timer.Enabled = true;       // Start logic ticking
-            }
+            if (!timer.Enabled)
+                timer.Enabled = true;       // Start logic ticking
         }
 
 
         internal void Stop()
         {
-            lock (asyncCompletionLock)
-            {
-                // If all the torrents are stopped, stop ticking
-                using (new ReaderLock(this.torrentsLock))
-                    timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
-            }
+            // If all the torrents are stopped, stop ticking
+            using (new ReaderLock(this.torrentsLock))
+                timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
         }
 
         #endregion
