@@ -239,7 +239,10 @@ namespace MonoTorrent.Client.Tracker
                 e.TrackerId.WaitHandle.Set();
                 // FIXME: Figure out why manually firing the event throws an exception here
                 Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
-                manager.AddPeers(e.Peers);
+
+                MainLoop.Queue(delegate {
+                    manager.AddPeers(e.Peers);
+                });
             }
             else
             {
