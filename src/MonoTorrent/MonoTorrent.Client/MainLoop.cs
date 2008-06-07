@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
                     task.Execute();
                     task.WaitHandle.Set();
                 }
-                Console.WriteLine("Mainloop ticked");
+                //Console.WriteLine("Mainloop ticked");
             }
         }
 
