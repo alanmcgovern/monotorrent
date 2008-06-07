@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -61,8 +62,11 @@ namespace MonoTorrent.Client
         {
             get
             {
-                lock (this.manager.listLock)
+                DelegateTask d = new DelegateTask(delegate {
                     return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return !p.IsSeeder; });
+                });
+                MainLoop.Queue(d).WaitOne();
+                return (int)d.Result;
             }
         }
 
@@ -74,8 +78,11 @@ namespace MonoTorrent.Client
         {
             get
             {
-                lock (this.manager.listLock)
+                DelegateTask d = new DelegateTask(delegate {
                     return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return p.IsSeeder; });
+                });
+                MainLoop.Queue(d).WaitOne();
+                return (int)d.Result;
             }
         }
 

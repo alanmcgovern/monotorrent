@@ -94,29 +94,23 @@ namespace MonoTorrent.Client
         {
             try
             {
-                lock (id.TorrentManager.listLock)
+                if (id.Connection == null)
+                    return;
+
+                try
                 {
-                    lock (id)
-                    {
-                        if (id.Connection == null)
-                            return;
+                    PeerMessage message = PeerMessage.DecodeMessage(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
 
-                        try
-                        {
-                            PeerMessage message = PeerMessage.DecodeMessage(messageDetails.Buffer, 0, messageDetails.Count, id.TorrentManager);
+                    // Fire the event to say we recieved a new message
+                    PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
+                    id.ConnectionManager.RaisePeerMessageTransferred(e);
 
-                            // Fire the event to say we recieved a new message
-                            PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, MonoTorrent.Common.Direction.Incoming, id);
-                            id.ConnectionManager.RaisePeerMessageTransferred(e);
-
-                            message.Handle(id);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Should i nuke the peer with the dodgy message too?
-                            Logger.Log (null, "*CRITICAL EXCEPTION* - Error decoding message: {0}", ex);
-                        }
-                    }
+                    message.Handle(id);
+                }
+                catch (Exception ex)
+                {
+                    // Should i nuke the peer with the dodgy message too?
+                    Logger.Log(null, "*CRITICAL EXCEPTION* - Error decoding message: {0}", ex);
                 }
             }
             finally
