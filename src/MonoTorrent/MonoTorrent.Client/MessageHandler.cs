@@ -7,7 +7,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    internal class MessageHandler : IDisposable
+    internal class MessageHandler 
     {
         private struct AsyncMessageDetails
         {
@@ -53,19 +53,6 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        void IDisposable.Dispose()
-        {
-            Dispose();
-        }
-
-        internal void Dispose()
-        {
-            if (!IsActive)
-                return;
-
-            this.Stop();
-        }
-
         internal void EnqueueReceived(PeerIdInternal id, ArraySegment<byte> buffer, int startOffset, int count)
         {
             ArraySegment<byte> messageBuffer = BufferManager.EmptyBuffer;
@@ -77,54 +64,25 @@ namespace MonoTorrent.Client
             details.Count = count;
             details.StartOffset = 0;
 
-            lock (this.queuelock)
-            {
-                this.queue.Enqueue(new KeyValuePair<PeerIdInternal, AsyncMessageDetails>(id, details));
-                this.waitHandle.Set();
-            }
+            MainLoop.Queue(delegate {
+                HandleMessage(id, details);
+            });
         }
 
         internal void EnqueueSend(PeerIdInternal id)
         {
-            lock (this.queuelock)
-            {
-                this.sendQueue.Enqueue(id);
-                this.waitHandle.Set();
-            }
+            MainLoop.Queue(delegate {
+                if (id.Connection != null)
+                    id.ConnectionManager.ProcessQueue(id);
+            });
         }
 
         internal void EnqueueCleanup(PeerIdInternal id)
         {
-            lock (this.queuelock)
-            {
-                this.cleanUpQueue.Enqueue(id);
-                this.waitHandle.Set();
-            }
-        }
-
-        internal void Start()
-        {
-            if (IsActive)
-                throw new InvalidOperationException("Message loop already started");
-
-            this.cleanUpQueue.Clear();
-            this.queue.Clear();
-            this.sendQueue.Clear();
-            this.messageLoopActive = true;
-            this.waitHandle.Reset();
-            this.messageLoopThread = new Thread(new ThreadStart(MessageLoop));
-            this.messageLoopThread.Start();
-        }
-
-        internal void Stop()
-        {
-            if (!IsActive)
-                throw new InvalidOperationException("Message loop is not running");
-
-            this.messageLoopActive = false;
-            this.waitHandle.Set();
-            this.messageLoopThread.Join(500);
-            this.messageLoopThread = null;
+            ConnectionManager manager = id.ConnectionManager;
+            MainLoop.Queue(delegate {
+                manager.AsyncCleanupSocket(id, true, "Async Cleanup");
+            });
         }
 
         #endregion Internal Methods
@@ -165,62 +123,6 @@ namespace MonoTorrent.Client
             {
                 ClientEngine.BufferManager.FreeBuffer(ref messageDetails.Buffer);
             }
-        }
-
-        private void MessageLoop()
-        {
-            try
-            {
-                PeerIdInternal sendMessageToId;
-                PeerIdInternal cleanupId;
-                Nullable<KeyValuePair<PeerIdInternal, AsyncMessageDetails>> receivedMessage;
-
-                while (this.messageLoopActive)
-                {
-                    receivedMessage = null;
-                    cleanupId = null;
-                    sendMessageToId = null;
-
-                    lock (this.queuelock)
-                    {
-                        if (this.queue.Count > 0)
-                            receivedMessage = this.queue.Dequeue();
-
-                        if (this.sendQueue.Count > 0)
-                            sendMessageToId = this.sendQueue.Dequeue();
-
-                        if (this.cleanUpQueue.Count > 0)
-                            cleanupId = this.cleanUpQueue.Dequeue();
-
-                        if (this.queue.Count == 0 && this.sendQueue.Count == 0 && this.cleanUpQueue.Count == 0)
-                            this.waitHandle.Reset();
-                    }
-
-                    if (receivedMessage.HasValue)
-                        HandleMessage(receivedMessage.Value.Key, receivedMessage.Value.Value);
-
-                    if (sendMessageToId != null)
-                        SendMessage(sendMessageToId);
-
-                    if (cleanupId != null)
-                        cleanupId.ConnectionManager.AsyncCleanupSocket(cleanupId, true, "Async Cleanup");
-
-                    this.waitHandle.WaitOne();
-                }
-            }
-            catch(Exception ex)
-            {
-                // Lets continue no matter what
-                Logger.Log(null, "MessageHandler: {0}", ex);
-            }
-        }
-
-        private void SendMessage(PeerIdInternal id)
-        {
-            lock (id.TorrentManager.listLock)
-                lock (id)
-                    if (id.Connection != null)
-                        id.ConnectionManager.ProcessQueue(id);
         }
 
         #endregion Private Methods

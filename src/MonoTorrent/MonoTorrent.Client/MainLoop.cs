@@ -39,15 +39,12 @@ namespace MonoTorrent.Client
     internal delegate void MainLoopTask();
     static class MainLoop
     {
-        static AutoResetEvent handle;
-        static Queue<Task> tasks;
-        static Thread thread;
+        static AutoResetEvent handle = new AutoResetEvent(false);
+        static Queue<Task> tasks = new Queue<Task>();
+        static Thread thread = new Thread(Loop);
 
         static MainLoop()
         {
-            handle = new AutoResetEvent(false);
-            tasks = new Queue<Task>();
-            thread = new Thread(Loop);
             thread.IsBackground = true;
             thread.Start();
         }
@@ -65,7 +62,9 @@ namespace MonoTorrent.Client
                 }
 
                 if (task == null)
+                {
                     handle.WaitOne();
+                }
                 else
                 {
                     task.Execute();
@@ -77,15 +76,14 @@ namespace MonoTorrent.Client
 
         public static WaitHandle Queue(Task task)
         {
-            lock (tasks)
+            if (Thread.CurrentThread == thread)
             {
-                if (Thread.CurrentThread == thread)
-                {
-                    task.Execute();
-                    task.WaitHandle.Set();
-                    return task.WaitHandle;
-                }
-                else
+                task.Execute();
+                task.WaitHandle.Set();
+            }
+            else
+            {
+                lock (tasks)
                 {
                     tasks.Enqueue(task);
                     handle.Set();
@@ -101,8 +99,7 @@ namespace MonoTorrent.Client
                 return null;
             });
 
-            Queue(t);
-            return t.WaitHandle;
+            return Queue(t);
         }
     }
 }

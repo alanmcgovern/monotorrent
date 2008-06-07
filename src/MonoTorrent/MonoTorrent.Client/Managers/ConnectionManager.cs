@@ -1101,9 +1101,6 @@ namespace MonoTorrent.Client
                 if (this.torrents.Contains(torrentManager))
                     throw new TorrentException("TorrentManager is already registered in the connection manager");
 
-                if (!this.messageHandler.IsActive)
-                    this.messageHandler.Start();
-
                 this.torrents.Add(torrentManager);
             }
             TryConnect();
@@ -1253,9 +1250,6 @@ namespace MonoTorrent.Client
                     throw new TorrentException("TorrentManager is not registered in the connection manager");
 
                 this.torrents.Remove(torrentManager);
-
-                if (this.messageHandler.IsActive && this.torrents.Count == 0)
-                    this.messageHandler.Stop();
             }
         }
 
