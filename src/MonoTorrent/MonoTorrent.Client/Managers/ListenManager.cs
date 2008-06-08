@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
                 EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
             }
             else
-                id.ConnectionManager.ProcessFreshConnection(id);
+                MainLoop.Queue(delegate { id.ConnectionManager.ProcessFreshConnection(id); });
         }
 
         private void EndCheckEncryption(IAsyncResult result)
