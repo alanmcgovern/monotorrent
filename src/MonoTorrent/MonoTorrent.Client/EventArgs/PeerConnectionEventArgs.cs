@@ -56,24 +56,42 @@ namespace MonoTorrent.Client
         }
         private Direction connectionDirection;
 
+        private String message;
+
+        /// <summary>
+        /// Any message that might be associated with this event
+        /// </summary>
+        public String Message
+        {
+            get { return message; }
+        }
+
         #endregion
 
 
         #region Constructors
 
-        internal PeerConnectionEventArgs(TorrentManager manager, PeerIdInternal id, Direction connectionDirection)
-             :this(manager, id.PublicId, connectionDirection)
-        {
-        }
-        /// <summary>
-        /// Creates a new PeerConnectionEventArgs
-        /// </summary>
-        /// <param name="peerEvent">The peer event that just happened</param>
-        internal PeerConnectionEventArgs(TorrentManager manager, PeerId id, Direction connectionDirection)
-            : base(manager)
+        internal PeerConnectionEventArgs( TorrentManager manager, PeerIdInternal id, Direction direction )
+            : this( manager, id.PublicId, direction )
+        { }
+
+
+        internal PeerConnectionEventArgs( TorrentManager manager, PeerIdInternal id, Direction direction, String message )
+            : this( manager, id.PublicId, direction, message )
+        { }
+
+
+        internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction )
+            : this( manager, id, direction, "" )
+        { }
+
+
+        internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction, String message )
+            : base( manager )
         {
             this.peerConnectionId = id;
-            this.connectionDirection = connectionDirection;
+            this.connectionDirection = direction;
+            this.message = message;
         }
         #endregion
     }

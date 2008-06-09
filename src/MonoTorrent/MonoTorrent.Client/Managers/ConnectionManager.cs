@@ -833,7 +833,8 @@ namespace MonoTorrent.Client
 
             finally
             {
-                id.TorrentManager.RaisePeerDisconnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.None));
+                id.TorrentManager.RaisePeerDisconnected(
+                    new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
                 TryConnect();
             }
         }
@@ -852,6 +853,7 @@ namespace MonoTorrent.Client
 
         internal void CleanupSocket(PeerIdInternal id, bool localClose, string message)
         {
+            id.DisconnectReason = message;
             this.messageHandler.EnqueueCleanup(id);
         }
 

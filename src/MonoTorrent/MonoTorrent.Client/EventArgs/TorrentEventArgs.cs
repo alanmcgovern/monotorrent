@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    public abstract class TorrentEventArgs : EventArgs
+    public class TorrentEventArgs : EventArgs
     {
         private TorrentManager torrentManager;
 
@@ -16,7 +16,7 @@ namespace MonoTorrent.Client
         }
 
 
-        protected TorrentEventArgs(TorrentManager manager)
+        public TorrentEventArgs(TorrentManager manager)
         {
             torrentManager = manager;
         }

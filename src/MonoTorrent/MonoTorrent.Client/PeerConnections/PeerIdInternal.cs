@@ -49,6 +49,8 @@ namespace MonoTorrent.Client
         private TorrentManager torrentManager;
         private PeerExchangeManager pexManager;
 
+        private String disconnectReason;
+
         #endregion Member Variables
 
 
@@ -119,6 +121,15 @@ namespace MonoTorrent.Client
                 if (connection != null)
                     this.Connection.BitField = new BitField(value.Torrent.Pieces.Count);
             }
+        }
+
+        /// <summary>
+        /// Reason for disconnecting from this peer.
+        /// </summary>
+        public String DisconnectReason
+        {
+            get { return this.disconnectReason; }
+            set { this.disconnectReason = value; }
         }
 
         #endregion
