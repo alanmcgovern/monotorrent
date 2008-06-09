@@ -125,15 +125,18 @@ namespace MonoTorrent.Client
         }
 
 
-        internal ClientEngine Engine
+        /// <summary>
+        /// The ClientEngine this TorrentManager is registered with
+        /// </summary>
+        public ClientEngine Engine
         {
             get { return this.engine; }
-            set { this.engine = value; }
+            internal set { this.engine = value; }
         }
 
 
         /// <summary>
-        /// The DiskManager associated with this torrent
+        /// The FileManager associated with this torrent
         /// </summary>
         public FileManager FileManager
         {
@@ -386,6 +389,16 @@ namespace MonoTorrent.Client
         public void Dispose()
         {
             // Do nothing?
+        }
+
+
+        /// <summary>
+        /// Overrridden.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString( )
+        {
+            return this.Torrent.Name;
         }
 
 
