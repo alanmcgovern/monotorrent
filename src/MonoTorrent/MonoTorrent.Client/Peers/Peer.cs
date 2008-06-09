@@ -159,11 +159,19 @@ namespace MonoTorrent.Client
 
         public override bool Equals(object obj)
         {
-            Peer peer = obj as Peer;
-            if(peer ==null)
+            return Equals(obj as Peer);
+        }
+
+        public bool Equals(Peer other)
+        {
+            if (peer == null)
                 return false;
 
-            return this.connectionUri.Equals(peer.connectionUri);
+            // FIXME: Don't compare the port, just compare the IP
+            if (string.IsNullOrEmpty(peerId) || string.IsNullOrEmpty(other.peerId))
+                return this.connectionUri.Equals(peer.connectionUri);
+
+            return peerId == other.peerId;
         }
 
 
