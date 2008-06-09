@@ -163,7 +163,7 @@ namespace MonoTorrent.Client
             if (id.Connection.Connection == null)
                 return;
 
-            manager.Peers.AddPeer(id.Peer, PeerType.Active);
+            manager.Peers.ActivePeers.Add(id.Peer);
             id.TorrentManager.Peers.ConnectingToPeers.Add(id);
 
             id.Connection.ProcessingQueue = true;
@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
             {
                 // If there's a socket exception at this point, just drop the peer's details silently
                 // as they must be invalid.
-                manager.Peers.RemovePeer(id.Peer, PeerType.Active);
+                manager.Peers.ActivePeers.Remove(id.Peer);
                 id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
             }
 
@@ -226,10 +226,10 @@ namespace MonoTorrent.Client
                 }
 
                 id.Connection = null;
-                id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
+                id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
                 id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
 
-                id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
+                id.TorrentManager.Peers.BusyPeers.Add(id.Peer);
             }
             finally
             {
@@ -279,13 +279,13 @@ namespace MonoTorrent.Client
                 }
 
                 id.Connection = null;
-                id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
+                id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
                 id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
 
                 if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
-                    id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Available);
+                    id.TorrentManager.Peers.AvailablePeers.Add(id.Peer);
                 else
-                    id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Busy);
+                    id.TorrentManager.Peers.BusyPeers.Add(id.Peer);
             }
             finally
             {
@@ -821,7 +821,7 @@ namespace MonoTorrent.Client
                 id.TorrentManager.Peers.ConnectedPeers.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
 
                 if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
-                    id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
+                    id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
 
                 // If we get our own details, this check makes sure we don't try connecting to ourselves again
                 if (canResuse && id.Peer.PeerId != engine.PeerId)
@@ -896,8 +896,8 @@ namespace MonoTorrent.Client
                 }
 
                 Logger.Log(id.Connection.Connection, "ConnectionManager - Incoming connection fully accepted");
-                id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Available);
-                id.TorrentManager.Peers.AddPeer(id.Peer, PeerType.Active);
+                id.TorrentManager.Peers.AvailablePeers.Remove(id.Peer);
+                id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
 
                 //ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);

@@ -6,14 +6,6 @@ using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
-    internal enum PeerType
-    {
-        Active,
-        Available,
-        Banned,
-        Busy
-    }
-
     public class PeerManager
     {
         #region Member Variables
@@ -24,71 +16,71 @@ namespace MonoTorrent.Client
         internal List<PeerIdInternal> ConnectedPeers = new List<PeerIdInternal>();
         internal List<PeerIdInternal> ConnectingToPeers = new List<PeerIdInternal>();
 
-        private MonoTorrentCollection<Peer> activePeers;
-        private MonoTorrentCollection<Peer> availablePeers;
-        private MonoTorrentCollection<Peer> bannedPeers;
-        private MonoTorrentCollection<Peer> busyPeers;
+        internal MonoTorrentCollection<Peer> ActivePeers;
+        internal MonoTorrentCollection<Peer> AvailablePeers;
+        internal MonoTorrentCollection<Peer> BannedPeers;
+        internal MonoTorrentCollection<Peer> BusyPeers;
 
         #endregion Member Variables
 
 
         #region Properties
 
-        /// <summary>
-        /// Returns the total number of peers available (including ones already connected to)
-        /// </summary>
-        public int Available
-        {
-            get { return this.availablePeers.Count + this.activePeers.Count + this.busyPeers.Count; }
-        }
+        ///// <summary>
+        ///// Returns the total number of peers available (including ones already connected to)
+        ///// </summary>
+        //public int Available
+        //{
+        //    get { return this.availablePeers.Count + this.activePeers.Count + this.busyPeers.Count; }
+        //}
 
-        /// <summary>
-        /// The list of peers that are available to be connected to
-        /// </summary>
-        internal MonoTorrentCollection<Peer> AvailablePeers
-        {
-            get { return this.availablePeers; }
-        }
+        ///// <summary>
+        ///// The list of peers that are available to be connected to
+        ///// </summary>
+        //internal MonoTorrentCollection<Peer> AvailablePeers
+        //{
+        //    get { return this.availablePeers; }
+        //}
 
-        /// <summary>
-        /// The list of peers that we are currently connected to
-        /// </summary>
-        internal MonoTorrentCollection<Peer> ActivePeers
-        {
-            get { return this.activePeers; }
-        }
+        ///// <summary>
+        ///// The list of peers that we are currently connected to
+        ///// </summary>
+        //internal MonoTorrentCollection<Peer> ActivePeers
+        //{
+        //    get { return this.activePeers; }
+        //}
 
-        /// <summary>
-        /// Returns the number of Leechs we are currently connected to
-        /// </summary>
-        /// <returns></returns>
-        public int Leechs
-        {
-            get
-            {
-                DelegateTask d = new DelegateTask(delegate {
-                    return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return !p.IsSeeder; });
-                });
-                MainLoop.QueueWait(delegate { d.Execute(); });
-                return (int)d.Result;
-            }
-        }
+        ///// <summary>
+        ///// Returns the number of Leechs we are currently connected to
+        ///// </summary>
+        ///// <returns></returns>
+        //public int Leechs
+        //{
+        //    get
+        //    {
+        //        DelegateTask d = new DelegateTask(delegate {
+        //            return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return !p.IsSeeder; });
+        //        });
+        //        MainLoop.QueueWait(delegate { d.Execute(); });
+        //        return (int)d.Result;
+        //    }
+        //}
 
-        /// <summary>
-        /// Returns the number of Seeds we are currently connected to
-        /// </summary>
-        /// <returns></returns>
-        public int Seeds
-        {
-            get
-            {
-                DelegateTask d = new DelegateTask(delegate {
-                    return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return p.IsSeeder; });
-                });
-                MainLoop.QueueWait(delegate { d.Execute(); });
-                return (int)d.Result;
-            }
-        }
+        ///// <summary>
+        ///// Returns the number of Seeds we are currently connected to
+        ///// </summary>
+        ///// <returns></returns>
+        //public int Seeds
+        //{
+        //    get
+        //    {
+        //        DelegateTask d = new DelegateTask(delegate {
+        //            return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return p.IsSeeder; });
+        //        });
+        //        MainLoop.QueueWait(delegate { d.Execute(); });
+        //        return (int)d.Result;
+        //    }
+        //}
 
         #endregion
 
@@ -99,10 +91,10 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
             this.manager = manager;
-            this.activePeers = new MonoTorrentCollection<Peer>();
-            this.availablePeers = new MonoTorrentCollection<Peer>();
-            this.bannedPeers = new MonoTorrentCollection<Peer>();
-            this.busyPeers = new MonoTorrentCollection<Peer>();
+            this.ActivePeers = new MonoTorrentCollection<Peer>();
+            this.AvailablePeers = new MonoTorrentCollection<Peer>();
+            this.BannedPeers = new MonoTorrentCollection<Peer>();
+            this.BusyPeers = new MonoTorrentCollection<Peer>();
         }
 
         #endregion Constructors
@@ -112,50 +104,25 @@ namespace MonoTorrent.Client
 
         internal IEnumerable<Peer> AllPeers()
         {
-            for (int i = 0; i < availablePeers.Count; i++)
-                yield return availablePeers[i];
+            for (int i = 0; i < AvailablePeers.Count; i++)
+                yield return AvailablePeers[i];
 
-            for (int i = 0; i < activePeers.Count; i++)
-                yield return activePeers[i];
+            for (int i = 0; i < ActivePeers.Count; i++)
+                yield return ActivePeers[i];
 
-            for (int i = 0; i < bannedPeers.Count; i++)
-                yield return bannedPeers[i];
+            for (int i = 0; i < BannedPeers.Count; i++)
+                yield return BannedPeers[i];
 
-            for (int i = 0; i < busyPeers.Count; i++)
-                yield return busyPeers[i];
-        }
-
-        internal void AddPeer(Peer peer, PeerType type)
-        {
-            switch (type)
-            {
-                case (PeerType.Active):
-                    this.activePeers.Add(peer);
-                    break;
-
-                case (PeerType.Available):
-                    this.availablePeers.Add(peer);
-                    break;
-
-                case(PeerType.Banned):
-                    bannedPeers.Add(peer);
-                    break;
-
-                case(PeerType.Busy):
-                    busyPeers.Add(peer);
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
+            for (int i = 0; i < BusyPeers.Count; i++)
+                yield return BusyPeers[i];
         }
 
         internal void ClearAll()
         {
-            this.activePeers.Clear();
-            this.availablePeers.Clear();
-            this.bannedPeers.Clear();
-            this.busyPeers.Clear();
+            this.ActivePeers.Clear();
+            this.AvailablePeers.Clear();
+            this.BannedPeers.Clear();
+            this.BusyPeers.Clear();
         }
 
         internal bool Contains(Peer peer)
@@ -165,77 +132,6 @@ namespace MonoTorrent.Client
                     return true;
 
             return false;
-        }
-
-        internal Peer Dequeue(PeerType type)
-        {
-            switch (type)
-            {
-                case (PeerType.Active):
-                    return activePeers.Dequeue();
-
-                case (PeerType.Available):
-                    return availablePeers.Dequeue();
-
-                case (PeerType.Banned):
-                    return bannedPeers.Dequeue();
-
-                case (PeerType.Busy):
-                    return busyPeers.Dequeue();
-
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        internal void Enqueue(Peer id, PeerType type)
-        {
-            switch (type)
-            {
-                case (PeerType.Active):
-                    activePeers.Add(id);
-                    break;
-
-                case (PeerType.Available):
-                     availablePeers.Add(id);
-                     break;
-
-                case (PeerType.Banned):
-                    bannedPeers.Add(id);
-                    break;
-
-                case (PeerType.Busy):
-                    busyPeers.Add(id);
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
-        }
-
-        internal void RemovePeer(Peer id, PeerType type)
-        {
-            switch (type)
-            {
-                case (PeerType.Active):
-                    activePeers.Remove(id);
-                    break;
-
-                case (PeerType.Available):
-                    availablePeers.Remove(id);
-                    break;
-
-                case (PeerType.Banned):
-                    bannedPeers.Remove(id);
-                    break;
-
-                case (PeerType.Busy):
-                    busyPeers.Remove(id);
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
         }
 
         #endregion Methods
