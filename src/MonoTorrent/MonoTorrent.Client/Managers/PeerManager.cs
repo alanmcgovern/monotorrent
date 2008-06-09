@@ -26,61 +26,37 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        ///// <summary>
-        ///// Returns the total number of peers available (including ones already connected to)
-        ///// </summary>
-        //public int Available
-        //{
-        //    get { return this.availablePeers.Count + this.activePeers.Count + this.busyPeers.Count; }
-        //}
+        /// <summary>
+        /// Returns the number of Leechs we are currently connected to
+        /// </summary>
+        /// <returns></returns>
+        public int Leechs
+        {
+            get
+            {
+                DelegateTask d = new DelegateTask(delegate {
+                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
+                });
+                MainLoop.QueueWait(delegate { d.Execute(); });
+                return (int)d.Result;
+            }
+        }
 
-        ///// <summary>
-        ///// The list of peers that are available to be connected to
-        ///// </summary>
-        //internal MonoTorrentCollection<Peer> AvailablePeers
-        //{
-        //    get { return this.availablePeers; }
-        //}
-
-        ///// <summary>
-        ///// The list of peers that we are currently connected to
-        ///// </summary>
-        //internal MonoTorrentCollection<Peer> ActivePeers
-        //{
-        //    get { return this.activePeers; }
-        //}
-
-        ///// <summary>
-        ///// Returns the number of Leechs we are currently connected to
-        ///// </summary>
-        ///// <returns></returns>
-        //public int Leechs
-        //{
-        //    get
-        //    {
-        //        DelegateTask d = new DelegateTask(delegate {
-        //            return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return !p.IsSeeder; });
-        //        });
-        //        MainLoop.QueueWait(delegate { d.Execute(); });
-        //        return (int)d.Result;
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Returns the number of Seeds we are currently connected to
-        ///// </summary>
-        ///// <returns></returns>
-        //public int Seeds
-        //{
-        //    get
-        //    {
-        //        DelegateTask d = new DelegateTask(delegate {
-        //            return Toolbox.Count<Peer>(activePeers, delegate(Peer p) { return p.IsSeeder; });
-        //        });
-        //        MainLoop.QueueWait(delegate { d.Execute(); });
-        //        return (int)d.Result;
-        //    }
-        //}
+        /// <summary>
+        /// Returns the number of Seeds we are currently connected to
+        /// </summary>
+        /// <returns></returns>
+        public int Seeds
+        {
+            get
+            {
+                DelegateTask d = new DelegateTask(delegate {
+                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
+                });
+                MainLoop.QueueWait(delegate { d.Execute(); });
+                return (int)d.Result;
+            }
+        }
 
         #endregion
 
