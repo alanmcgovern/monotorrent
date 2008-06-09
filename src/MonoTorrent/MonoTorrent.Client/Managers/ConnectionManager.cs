@@ -81,11 +81,6 @@ namespace MonoTorrent.Client
 
         private MonoTorrentCollection<TorrentManager> torrents;
 
-        internal MessageHandler MessageHandler
-        {
-            get { return this.messageHandler; }
-        }
-        private MessageHandler messageHandler;
         /// <summary>
         /// The number of half open connections
         /// </summary>
@@ -147,7 +142,6 @@ namespace MonoTorrent.Client
             this.messageReceivedCallback = new MessagingCallback(this.onPeerMessageReceived);
             this.messageSentCallback = new MessagingCallback(this.onPeerMessageSent);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.messageHandler = new MessageHandler();
         }
 
         #endregion
@@ -603,7 +597,7 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     return;
 
-                this.messageHandler.EnqueueReceived(id, id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                MessageHandler.EnqueueReceived(id, id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
 
                 //FIXME: I thought i was using 5 (i changed the check below from 3 to 5)...
                 // if the peer has sent us three bad pieces, we close the connection.
@@ -854,7 +848,7 @@ namespace MonoTorrent.Client
         internal void CleanupSocket(PeerIdInternal id, bool localClose, string message)
         {
             id.DisconnectReason = message;
-            this.messageHandler.EnqueueCleanup(id);
+            MessageHandler.EnqueueCleanup(id);
         }
 
 

@@ -224,7 +224,7 @@ namespace MonoTorrent.Client.Messages.Standard
             if (!id.Connection.ProcessingQueue)
             {
                 id.Connection.ProcessingQueue = true;
-                id.ConnectionManager.MessageHandler.EnqueueSend(id);
+                MessageHandler.EnqueueSend(id);
             }
         }
 

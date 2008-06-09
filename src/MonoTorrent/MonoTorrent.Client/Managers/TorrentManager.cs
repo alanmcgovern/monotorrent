@@ -696,7 +696,7 @@ namespace MonoTorrent.Client
                 if (!id.Connection.ProcessingQueue && id.Connection.QueueLength > 0)
                 {
                     id.Connection.ProcessingQueue = true;
-                    engine.ConnectionManager.MessageHandler.EnqueueSend(id);
+                    MessageHandler.EnqueueSend(id);
                 }
             }
 
@@ -856,7 +856,7 @@ namespace MonoTorrent.Client
             if (enqueued && !id.Connection.ProcessingQueue)
             {
                 id.Connection.ProcessingQueue = true;
-                id.ConnectionManager.MessageHandler.EnqueueSend(id);
+                MessageHandler.EnqueueSend(id);
             }
         }
 
