@@ -4,7 +4,6 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Connections;
-using System.Net;
 
 namespace MonoTorrent.Client
 {
@@ -30,6 +29,7 @@ namespace MonoTorrent.Client
         private ConnectionMonitor monitor;
         private string peerId;
         private int piecesSent;
+        private int piecesReceived;             // TGS CHANGE: Added variable
         private int sendQueueLength;
         private bool supportsFastPeer;
         private TorrentManager manager;
@@ -125,6 +125,14 @@ namespace MonoTorrent.Client
             get { return this.piecesSent; }
         }
 
+        /// <summary>
+        /// TGS CHANGE: Added property
+        /// </summary>
+        public int PiecesReceived
+        {
+            get { return this.piecesReceived; }
+        }
+
         public int SendQueueLength
         {
             get { return this.sendQueueLength; }
@@ -187,6 +195,9 @@ namespace MonoTorrent.Client
             sendQueueLength = id.Connection.QueueLength;
             supportsFastPeer = id.Connection.SupportsFastPeer;
             manager = id.TorrentManager;
+
+            // TGS CHANGE: Added updating of additional statistics
+            piecesReceived = id.Connection.PiecesReceived;
         }
         
         #endregion

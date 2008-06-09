@@ -212,6 +212,8 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerIdInternal id)
         {
+            id.Connection.PiecesReceived++;
+
             BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager);
             d.Id = id;
             id.TorrentManager.PieceManager.ReceivedPieceMessage(d);

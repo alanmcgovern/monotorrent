@@ -329,6 +329,15 @@ namespace MonoTorrent.Client
             internal set { this.piecesSent = value; }
         }
 
+        /// <summary>
+        /// Number of pieces we've received from the peer
+        /// </summary>
+        public int PiecesReceived
+        {
+            get { return piecesReceived; }
+            internal set { piecesReceived = value; }
+        }
+        private int piecesReceived;
 
         /// <summary>
         /// The port the peer is listening on for DHT
