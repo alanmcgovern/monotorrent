@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
         {
             ConnectionManager manager = id.ConnectionManager;
             MainLoop.Queue(delegate {
-                manager.AsyncCleanupSocket(id, true, "Async Cleanup");
+                manager.AsyncCleanupSocket(id, true, id.DisconnectReason);
             });
         }
 
