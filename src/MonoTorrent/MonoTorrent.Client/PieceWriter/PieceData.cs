@@ -61,6 +61,7 @@ namespace MonoTorrent.Client
         public ManualResetEvent WaitHandle
         {
             get { return waitHandle; }
+            set { waitHandle = value; }
         }
 
         internal BufferedIO(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
@@ -86,7 +87,6 @@ namespace MonoTorrent.Client
             this.manager = manager;
             pieceIndex = (int)(offset / manager.Torrent.PieceLength);
             pieceOffset = (int)(offset % manager.Torrent.PieceLength);
-            waitHandle = new ManualResetEvent(false);
         }
 
         public override string ToString()

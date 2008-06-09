@@ -211,7 +211,8 @@ namespace MonoTorrent.Client.Managers
                 io.ActualCount = writer.ReadChunk(io);
                 readMonitor.AddDelta(io.ActualCount);
             }
-            io.WaitHandle.Set();
+            if (io.WaitHandle != null)
+                io.WaitHandle.Set();
         }
 
 

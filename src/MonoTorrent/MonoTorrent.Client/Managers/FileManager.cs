@@ -194,6 +194,7 @@ namespace MonoTorrent.Client
                     bytesToRead = (int)(fileSize - i);
 
                 io = new BufferedIO(hashBuffer, i, bytesToRead, manager);
+                io.WaitHandle = new ManualResetEvent(false);
                 list.Add(io);
                 manager.Engine.DiskManager.QueueRead(io);
 
@@ -207,6 +208,7 @@ namespace MonoTorrent.Client
                 for (int i = 0; i < list.Count; i++)
                 {
                     list[i].WaitHandle.WaitOne();
+                    list[i].WaitHandle.Close();
                     hashBuffer = list[i].buffer;
                     hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
                     ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
