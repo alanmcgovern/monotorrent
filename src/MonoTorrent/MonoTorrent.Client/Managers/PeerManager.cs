@@ -21,8 +21,9 @@ namespace MonoTorrent.Client
         private ClientEngine engine;
         private TorrentManager manager;
 
-        internal List<PeerIdInternal> ConnectedPeers;
-        internal List<PeerIdInternal> ConnectingToPeers;
+        internal List<PeerIdInternal> ConnectedPeers = new List<PeerIdInternal>();
+        internal List<PeerIdInternal> ConnectingToPeers = new List<PeerIdInternal>();
+
         private MonoTorrentCollection<Peer> activePeers;
         private MonoTorrentCollection<Peer> availablePeers;
         private MonoTorrentCollection<Peer> bannedPeers;
