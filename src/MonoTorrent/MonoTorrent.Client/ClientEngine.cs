@@ -71,6 +71,9 @@ namespace MonoTorrent.Client
         public event EventHandler<StatsUpdateEventArgs> StatsUpdate;
         public event EventHandler<CriticalExceptionEventArgs> CriticalException;
 
+        public event EventHandler<TorrentEventArgs> TorrentRegistered;
+        public event EventHandler<TorrentEventArgs> TorrentUnregistered;
+
         #endregion
 
 
@@ -320,6 +323,9 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("torrent");
 
             MainLoop.QueueWait(delegate { RegisterImpl(manager); });
+
+            if (TorrentRegistered != null)
+                TorrentRegistered(this, new TorrentEventArgs(manager));
         }
 
         internal void RegisterImpl(TorrentManager manager)
@@ -405,6 +411,9 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("manager");
 
             MainLoop.QueueWait(delegate { UnregisterImpl(manager); });
+
+            if (TorrentUnregistered != null)
+                TorrentUnregistered(this, new TorrentEventArgs(manager));
         }
 
         internal void UnregisterImpl(TorrentManager manager)
