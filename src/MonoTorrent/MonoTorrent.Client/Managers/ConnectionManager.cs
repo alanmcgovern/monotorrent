@@ -226,7 +226,6 @@ namespace MonoTorrent.Client
                 }
 
                 id.Connection = null;
-                id.NulledAt = "1";
                 id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
                 id.TorrentManager.ConnectingToPeers.Remove(id);
 
@@ -280,7 +279,6 @@ namespace MonoTorrent.Client
                 }
 
                 id.Connection = null;
-                id.NulledAt = "2";
                 id.TorrentManager.Peers.RemovePeer(id.Peer, PeerType.Active);
                 id.TorrentManager.ConnectingToPeers.Remove(id);
 
@@ -816,7 +814,6 @@ namespace MonoTorrent.Client
 
                 id.Connection.Dispose();
                 id.Connection = null;
-                id.NulledAt = "3";
 
                 id.TorrentManager.uploadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
                 id.TorrentManager.downloadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });

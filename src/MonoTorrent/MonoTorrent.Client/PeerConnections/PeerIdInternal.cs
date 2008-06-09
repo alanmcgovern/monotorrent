@@ -42,7 +42,6 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private int connectTime;
-        public string NulledAt = string.Empty;
         private PeerId peerId;
         private Peer peer;
         private PeerConnectionBase connection;
@@ -82,7 +81,7 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine
         {
-            get { return torrentManager.Engine; }
+            get { return this.engine; ; }
         }
 
         internal PeerId PublicId

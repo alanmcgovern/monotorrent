@@ -117,7 +117,6 @@ namespace MonoTorrent.Client.Connections
             return this.socket.BeginConnect(this.endPoint, peerEndCreateConnection, state);
         }
 
-        // FIXME: Until mono supports the 'out errorcode' overload, we continue as before
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)
         {
             return this.socket.BeginReceive(buffer, offset, count, SocketFlags.None, asyncCallback, state);
