@@ -189,9 +189,8 @@ namespace MonoTorrent.Client.Managers
                     peers.Add(piece.Blocks[i].RequestedOff);
 
             for (int i = 0; i < peers.Count; i++)
-                lock (peers[i])
-                    if (peers[i].Connection != null)
-                        id.Peer.HashedPiece(result);
+                if (peers[i].Connection != null)
+                    id.Peer.HashedPiece(result);
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)

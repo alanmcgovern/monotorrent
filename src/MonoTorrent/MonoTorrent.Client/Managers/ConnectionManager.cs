@@ -1024,13 +1024,10 @@ namespace MonoTorrent.Client
 
         internal void RegisterManager(TorrentManager torrentManager)
         {
-            lock (this.torrents)
-            {
-                if (this.torrents.Contains(torrentManager))
-                    throw new TorrentException("TorrentManager is already registered in the connection manager");
+            if (this.torrents.Contains(torrentManager))
+                throw new TorrentException("TorrentManager is already registered in the connection manager");
 
-                this.torrents.Add(torrentManager);
-            }
+            this.torrents.Add(torrentManager);
             TryConnect();
         }
 
@@ -1157,13 +1154,10 @@ namespace MonoTorrent.Client
 
         internal void UnregisterManager(TorrentManager torrentManager)
         {
-            lock (this.torrents)
-            {
-                if (!this.torrents.Contains(torrentManager))
-                    throw new TorrentException("TorrentManager is not registered in the connection manager");
+            if (!this.torrents.Contains(torrentManager))
+                throw new TorrentException("TorrentManager is not registered in the connection manager");
 
-                this.torrents.Remove(torrentManager);
-            }
+            this.torrents.Remove(torrentManager);
         }
 
         #endregion

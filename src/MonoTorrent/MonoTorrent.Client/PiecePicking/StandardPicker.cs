@@ -381,25 +381,22 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < otherPeers.Count; i++)
                 {
-                    lock (otherPeers[i])
-                    {
-                        if (otherPeers[i].Connection == null || otherPeers[i].Peer.IsSeeder)
-                            continue;
+                    if (otherPeers[i].Connection == null || otherPeers[i].Peer.IsSeeder)
+                        continue;
 
-                        // currentBitfield = currentBitfield & (!otherBitfield)
-                        // This calculation finds the pieces this peer has that other peers *do not* have.
-                        // i.e. the rarest piece.
-                        current.AndNotFast(otherPeers[i].Connection.BitField);
+                    // currentBitfield = currentBitfield & (!otherBitfield)
+                    // This calculation finds the pieces this peer has that other peers *do not* have.
+                    // i.e. the rarest piece.
+                    current.AndNotFast(otherPeers[i].Connection.BitField);
 
-                        // If the bitfield now has no pieces or we've knocked out a file which is at
-                        // a high priority then we've completed our task
-                        if (current.AllFalseSecure() || highestPriority != HighestPriorityAvailable(current))
-                            break;
+                    // If the bitfield now has no pieces or we've knocked out a file which is at
+                    // a high priority then we've completed our task
+                    if (current.AllFalseSecure() || highestPriority != HighestPriorityAvailable(current))
+                        break;
 
-                        // Otherwise push the bitfield on the stack and clone it and iterate again.
-                        bitfields.Push(current);
-                        current = ClientEngine.BufferManager.GetClonedBitfield(current);
-                    }
+                    // Otherwise push the bitfield on the stack and clone it and iterate again.
+                    bitfields.Push(current);
+                    current = ClientEngine.BufferManager.GetClonedBitfield(current);
                 }
 
                 return bitfields;

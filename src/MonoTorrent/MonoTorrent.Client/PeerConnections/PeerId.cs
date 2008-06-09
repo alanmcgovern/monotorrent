@@ -156,9 +156,10 @@ namespace MonoTorrent.Client
         #region Methods
         public void CloseConnection ()
         {
-			lock (id)
-				if (id.Connection.Connection != null)
-					id.Connection.Connection.Dispose ();
+            MainLoop.QueueWait(delegate {
+                if (id.Connection.Connection != null)
+                    id.Connection.Connection.Dispose();
+            });
         }
 		
         internal void UpdateStats(PeerIdInternal id)

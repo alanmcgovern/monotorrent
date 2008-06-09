@@ -244,19 +244,16 @@ namespace MonoTorrent.Client
 
             try
             {
-                lock (id)
+                int read = id.Connection.EndReceive(result);
+                if (read == 0)
                 {
-                    int read = id.Connection.EndReceive(result);
-                    if (read == 0)
-                    {
-                        CleanupSocket(id);
-                        return;
-                    }
-                    id.Connection.BytesReceived += read;
-                    Logger.Log(id.Connection.Connection, "ListenManager - Recieved handshake. Beginning to handle");
-
-                    handleHandshake(id);
+                    CleanupSocket(id);
+                    return;
                 }
+                id.Connection.BytesReceived += read;
+                Logger.Log(id.Connection.Connection, "ListenManager - Recieved handshake. Beginning to handle");
+
+                handleHandshake(id);
             }
             catch (NullReferenceException)
             {
@@ -280,19 +277,16 @@ namespace MonoTorrent.Client
             if (id == null) // Sometimes onEncryptionError fires with a null id
                 return;
 
-            lock (id)
+            Logger.Log(id.Connection.Connection, "ListenManager - Cleaning up socket");
+            if (id.Connection != null)
             {
-                Logger.Log(id.Connection.Connection, "ListenManager - Cleaning up socket");
-                if (id.Connection != null)
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                    id.Connection.Dispose();
-                }
-                else
-                {
-                    Logger.Log(id.Connection.Connection, "!!!!!!!!!!CE Already null!!!!!!!!");
-                }
+                ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
+                ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
+                id.Connection.Dispose();
+            }
+            else
+            {
+                Logger.Log(id.Connection.Connection, "!!!!!!!!!!CE Already null!!!!!!!!");
             }
         }
     }

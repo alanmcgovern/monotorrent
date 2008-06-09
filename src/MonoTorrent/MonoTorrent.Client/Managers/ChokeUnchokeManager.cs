@@ -61,37 +61,34 @@ namespace MonoTorrent.Client
 
             foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
             {
-                lock (connectedPeer)
+                if (connectedPeer.Connection == null)
+                    continue;
+
+                //If the peer is a seeder and we are not currently interested in it, put that right
+                if (connectedPeer.Peer.IsSeeder && !connectedPeer.Connection.AmInterested)
                 {
-                    if (connectedPeer.Connection == null)
-                        continue;
+                    owningTorrent.SetAmInterestedStatus(connectedPeer, true);
+                    //Send2Log("Forced AmInterested: " + connectedPeer.Peer.Location);
+                }
 
-					//If the peer is a seeder and we are not currently interested in it, put that right
-					if (connectedPeer.Peer.IsSeeder && !connectedPeer.Connection.AmInterested)
-					{
-						owningTorrent.SetAmInterestedStatus(connectedPeer, true);
-						//Send2Log("Forced AmInterested: " + connectedPeer.Peer.Location);
-					}
+                // If the peer is interesting try to queue up some piece requests off him
+                // If he is choking, we will only queue a piece if there is a FastPiece we can choose
+                if (connectedPeer.Connection.AmInterested)
+                    while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
 
-                    // If the peer is interesting try to queue up some piece requests off him
-                    // If he is choking, we will only queue a piece if there is a FastPiece we can choose
-                    if (connectedPeer.Connection.AmInterested)
-                        while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
+                if (!connectedPeer.Peer.IsSeeder)
+                {
+                    if (!connectedPeer.Connection.IsInterested && !connectedPeer.Connection.AmChoking)
+                        //This peer is disinterested and unchoked; choke it
+                        Choke(connectedPeer);
 
-                    if (!connectedPeer.Peer.IsSeeder)
+                    else if (connectedPeer.Connection.IsInterested)
                     {
-                        if (!connectedPeer.Connection.IsInterested && !connectedPeer.Connection.AmChoking)
-                            //This peer is disinterested and unchoked; choke it
-                            Choke(connectedPeer);
-
-                        else if (connectedPeer.Connection.IsInterested)
-                        {
-                            interestedCount++;
-                            if (!connectedPeer.Connection.AmChoking)       //This peer is interested and unchoked, count it
-                                unchokedCount++;
-                            else
-                                chokedInterestedPeers.Add(connectedPeer); //This peer is interested and choked, remember it and count it
-                        }
+                        interestedCount++;
+                        if (!connectedPeer.Connection.AmChoking)       //This peer is interested and unchoked, count it
+                            unchokedCount++;
+                        else
+                            chokedInterestedPeers.Add(connectedPeer); //This peer is interested and choked, remember it and count it
                     }
                 }
             }
@@ -169,16 +166,15 @@ namespace MonoTorrent.Client
                 bool peerFound = false;
                 foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
                 {
-                    lock (connectedPeer)
-                        if (connectedPeer.Connection != null)
+                    if (connectedPeer.Connection != null)
+                    {
+                        if (connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking)
                         {
-                            if (connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking)
-                            {
-                                Unchoke(connectedPeer);
-                                peerFound = true;
-                                break;
-                            }
+                            Unchoke(connectedPeer);
+                            peerFound = true;
+                            break;
                         }
+                    }
                 }
                 if (!peerFound)
                     //No interested choked peers anywhere, we're done
@@ -258,74 +254,73 @@ namespace MonoTorrent.Client
 
             foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
             {
-                lock (connectedPeer)
-                    if (connectedPeer.Connection != null)
+                if (connectedPeer.Connection != null)
+                {
+                    if (!connectedPeer.Peer.IsSeeder)
                     {
-                        if (!connectedPeer.Peer.IsSeeder)
+                        //Determine common values for use in this routine
+                        double timeSinceLastReview = SecondsBetween(timeOfLastReview, DateTime.Now);
+                        double timeUnchoked = 0;
+                        if (!connectedPeer.Connection.AmChoking)
                         {
-                            //Determine common values for use in this routine
-                            double timeSinceLastReview = SecondsBetween(timeOfLastReview, DateTime.Now);
-                            double timeUnchoked = 0;
-                            if (!connectedPeer.Connection.AmChoking)
-                            {
-                                timeUnchoked = SecondsBetween(connectedPeer.Connection.LastUnchoked.Value, DateTime.Now);
-                                unchokedPeers++;
-                            }
-                            long bytesTransferred = 0;
-                            if (!isDownloading)
-                                //We are seeding the torrent; determine bytesTransferred as bytes uploaded
-                                bytesTransferred = connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview;
-                            else
-                                //The peer is unchoked and we are downloading the torrent; determine bytesTransferred as bytes downloaded
-                                bytesTransferred = connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview;
-
-                            //Reset review up and download rates to zero; peers are therefore non-responders unless we determine otherwise
-                            connectedPeer.Connection.LastReviewDownloadRate = 0;
-                            connectedPeer.Connection.LastReviewUploadRate = 0;
-
-                            if (!connectedPeer.Connection.AmChoking &&
-                                (timeUnchoked < minimumTimeBetweenReviews ||
-                                (connectedPeer.Connection.FirstReviewPeriod && bytesTransferred > 0)))
-                                //The peer is unchoked but either it has not been unchoked for the warm up interval,
-                                // or it is the first full period and only just started transferring data
-                                nascentPeers.Add(connectedPeer);
-
-                            else if ((timeUnchoked >= minimumTimeBetweenReviews) && bytesTransferred > 0)
-                            //The peer is unchoked, has been for the warm up period and has transferred data in the period
-                            {
-                                //Add to peers that are candidates for unchoking based on their performance
-                                candidatePeers.Add(connectedPeer);
-                                //Calculate the latest up/downloadrate
-                                connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
-                                connectedPeer.Connection.LastReviewDownloadRate = (connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview;
-                            }
-
-                            else if (isDownloading && connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking && bytesTransferred > 0)
-                            //A peer is optimistically unchoking us.  Take the maximum of their current download rate and their download rate over the
-                            //	review period since they might have only just unchoked us and we don't want to miss out on a good opportunity.  Upload
-                            // rate is less important, so just take an average over the period.
-                            {
-                                //Add to peers that are candidates for unchoking based on their performance
-                                candidatePeers.Add(connectedPeer);
-                                //Calculate the latest up/downloadrate
-                                connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
-                                connectedPeer.Connection.LastReviewDownloadRate = Math.Max((connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview,
-                                    connectedPeer.Connection.Monitor.DownloadSpeed);
-                            }
-
-                            else if (connectedPeer.Connection.IsInterested)
-                                //All other interested peers are candidates for optimistic unchoking
-                                optimisticUnchokeCandidates.Add(connectedPeer);
-
-                            //Remember the number of bytes up and downloaded for the next review
-                            connectedPeer.Connection.BytesUploadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesUploaded;
-                            connectedPeer.Connection.BytesDownloadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesDownloaded;
-
-                            //If the peer has been unchoked for longer than one review period, unset FirstReviewPeriod
-                            if (timeUnchoked >= minimumTimeBetweenReviews)
-                                connectedPeer.Connection.FirstReviewPeriod = false;
+                            timeUnchoked = SecondsBetween(connectedPeer.Connection.LastUnchoked.Value, DateTime.Now);
+                            unchokedPeers++;
                         }
+                        long bytesTransferred = 0;
+                        if (!isDownloading)
+                            //We are seeding the torrent; determine bytesTransferred as bytes uploaded
+                            bytesTransferred = connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview;
+                        else
+                            //The peer is unchoked and we are downloading the torrent; determine bytesTransferred as bytes downloaded
+                            bytesTransferred = connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview;
+
+                        //Reset review up and download rates to zero; peers are therefore non-responders unless we determine otherwise
+                        connectedPeer.Connection.LastReviewDownloadRate = 0;
+                        connectedPeer.Connection.LastReviewUploadRate = 0;
+
+                        if (!connectedPeer.Connection.AmChoking &&
+                            (timeUnchoked < minimumTimeBetweenReviews ||
+                            (connectedPeer.Connection.FirstReviewPeriod && bytesTransferred > 0)))
+                            //The peer is unchoked but either it has not been unchoked for the warm up interval,
+                            // or it is the first full period and only just started transferring data
+                            nascentPeers.Add(connectedPeer);
+
+                        else if ((timeUnchoked >= minimumTimeBetweenReviews) && bytesTransferred > 0)
+                        //The peer is unchoked, has been for the warm up period and has transferred data in the period
+                        {
+                            //Add to peers that are candidates for unchoking based on their performance
+                            candidatePeers.Add(connectedPeer);
+                            //Calculate the latest up/downloadrate
+                            connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.Connection.LastReviewDownloadRate = (connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview;
+                        }
+
+                        else if (isDownloading && connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking && bytesTransferred > 0)
+                        //A peer is optimistically unchoking us.  Take the maximum of their current download rate and their download rate over the
+                        //	review period since they might have only just unchoked us and we don't want to miss out on a good opportunity.  Upload
+                        // rate is less important, so just take an average over the period.
+                        {
+                            //Add to peers that are candidates for unchoking based on their performance
+                            candidatePeers.Add(connectedPeer);
+                            //Calculate the latest up/downloadrate
+                            connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.Connection.LastReviewDownloadRate = Math.Max((connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview,
+                                connectedPeer.Connection.Monitor.DownloadSpeed);
+                        }
+
+                        else if (connectedPeer.Connection.IsInterested)
+                            //All other interested peers are candidates for optimistic unchoking
+                            optimisticUnchokeCandidates.Add(connectedPeer);
+
+                        //Remember the number of bytes up and downloaded for the next review
+                        connectedPeer.Connection.BytesUploadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesUploaded;
+                        connectedPeer.Connection.BytesDownloadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesDownloaded;
+
+                        //If the peer has been unchoked for longer than one review period, unset FirstReviewPeriod
+                        if (timeUnchoked >= minimumTimeBetweenReviews)
+                            connectedPeer.Connection.FirstReviewPeriod = false;
                     }
+                }
             }
             //				Send2Log(nascentPeers.Count.ToString() + "," + candidatePeers.Count.ToString() + "," + optimisticUnchokeCandidates.Count.ToString());
 
