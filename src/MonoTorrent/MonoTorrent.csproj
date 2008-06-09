@@ -125,7 +125,6 @@
     <Compile Include="MonoTorrent.Client\EventArgs\NewConnectionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerConnectionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeersAddedEventArgs.cs" />
-    <Compile Include="MonoTorrent.Client\EventArgs\PieceEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PieceHashedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\ScrapeResponseEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\StateUpdateEventArgs.cs" />
