@@ -174,6 +174,11 @@ namespace MonoTorrent.BEncoding
 
 
         #region Helper Methods
+        public string Hex
+        {
+            get { return BitConverter.ToString(TextBytes); }
+        }
+
         public override int LengthInBytes()
         {
             string output = this.textBytes.Length.ToString() + ":";
