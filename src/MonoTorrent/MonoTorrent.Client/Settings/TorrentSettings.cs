@@ -50,16 +50,6 @@ namespace MonoTorrent.Client
         }
         private bool initialSeedingEnabled;
 
-        /// <summary>
-        /// Whether the Torrent uses fast resume functionality
-        /// </summary>
-        public bool FastResumeEnabled
-        {
-            get { return this.fastResumeEnabled; }
-            set { this.fastResumeEnabled = value; }
-        }
-        private bool fastResumeEnabled;
-
 
         /// <summary>
         /// The maximum download speed for the torrent in bytes/sec
@@ -113,7 +103,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Minimum time in seconds that needs to pass before we execute a review of peer performance; 0 to disable 'tit-for-tat' code (default 30)
 		/// </summary>
-		public int MinimumTimeBetweenReviews
+        internal int MinimumTimeBetweenReviews
 		{
 			get { return this.minimumTimeBetweenReviews; }
 			set
@@ -127,7 +117,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the peer performance review (default 90)
 		/// </summary>
-		public int PercentOfMaxRateToSkipReview
+		internal int PercentOfMaxRateToSkipReview
 		{
 			get { return this.percentOfMaxRateToSkipReview; }
 			set
@@ -144,7 +134,6 @@ namespace MonoTorrent.Client
 
         #region Defaults
 
-        private const bool DefaultFastResumeEnabled = true;
         private const int DefaultDownloadSpeed = 0;
         private const int DefaultMaxConnections = 60;
         private const int DefaultUploadSlots = 4;
@@ -156,7 +145,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
         public TorrentSettings()
-            : this(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled, DefaultInitialSeedingEnabled)
+            : this(DefaultUploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultInitialSeedingEnabled)
         {
         }
 
@@ -167,7 +156,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         public TorrentSettings(int uploadSlots)
-            : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled, DefaultInitialSeedingEnabled)
+            : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultInitialSeedingEnabled)
         {
         }
 
@@ -179,7 +168,7 @@ namespace MonoTorrent.Client
         /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         /// <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections)
-            : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultFastResumeEnabled, DefaultInitialSeedingEnabled)
+            : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultInitialSeedingEnabled)
         {
         }
 
@@ -192,14 +181,13 @@ namespace MonoTorrent.Client
         /// <param name="maxDownloadSpeed">The maximum download speed for this torrent</param>
         /// <param name="maxUploadSpeed">The maximum upload speed for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed)
-            : this(uploadSlots, maxConnections, maxDownloadSpeed, maxUploadSpeed, DefaultFastResumeEnabled, DefaultInitialSeedingEnabled)
+            : this(uploadSlots, maxConnections, maxDownloadSpeed, maxUploadSpeed, DefaultInitialSeedingEnabled)
         {
 
         }
 
-        public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed, bool fastResumeEnabled, bool initialSeedingEnabled)
+        public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed, bool initialSeedingEnabled)
         {
-            this.fastResumeEnabled = fastResumeEnabled;
             this.maxConnections = maxConnections;
             this.maxDownloadSpeed = maxDownloadSpeed;
             this.maxUploadSpeed = maxUploadSpeed;
@@ -224,7 +212,6 @@ namespace MonoTorrent.Client
         {
             TorrentSettings settings = obj as TorrentSettings;
             return (settings == null) ? false : this.initialSeedingEnabled == settings.initialSeedingEnabled && 
-                                                this.fastResumeEnabled == settings.fastResumeEnabled &&
                                                 this.maxConnections == settings.maxConnections &&
                                                 this.maxDownloadSpeed == settings.maxDownloadSpeed &&
                                                 this.maxUploadSpeed == settings.maxUploadSpeed &&
@@ -234,7 +221,6 @@ namespace MonoTorrent.Client
         public override int GetHashCode()
         {
             return this.initialSeedingEnabled.GetHashCode() ^
-                   this.fastResumeEnabled.GetHashCode() ^
                    this.maxConnections ^ 
                    this.maxDownloadSpeed ^ 
                    this.maxUploadSpeed ^ 

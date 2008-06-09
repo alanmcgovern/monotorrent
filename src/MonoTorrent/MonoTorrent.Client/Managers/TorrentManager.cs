@@ -939,11 +939,6 @@ namespace MonoTorrent.Client
 
         public FastResume SaveFastResume()
         {
-#warning No need for this, and remove the option in the settings. This is fully user-controlled now
-            // Do not create fast-resume data if we do not support it for this TorrentManager object
-            if (!Settings.FastResumeEnabled || string.IsNullOrEmpty(this.torrent.TorrentPath))
-                return null;
-
             return new FastResume(this.torrent.infoHash, this.bitfield, new List<Peer>());
         }
 
