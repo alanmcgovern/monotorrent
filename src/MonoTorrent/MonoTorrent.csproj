@@ -201,7 +201,6 @@
     <Compile Include="MonoTorrent.Client\PieceWriter\IPieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\MemoryWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\PieceData.cs" />
-    <Compile Include="MonoTorrent.Client\PieceWriter\Pressure.cs" />
     <Compile Include="MonoTorrent.Client\Settings\EngineSettings.cs" />
     <Compile Include="MonoTorrent.Client\Settings\TorrentSettings.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\AnnounceParameters.cs" />

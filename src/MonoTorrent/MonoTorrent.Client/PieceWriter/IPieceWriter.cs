@@ -55,36 +55,5 @@ namespace MonoTorrent.Client.PieceWriters
         }
 
         public abstract void Write(BufferedIO data);
-
-        /*
-        protected List<Pressure> pressures;
-        public void AddPressure(TorrentManager manager, int pieceIndex)
-        {
-            foreach (int i in AllBlocks(manager))
-                AddPressure(manager, pieceIndex, i);
-        }
-        public virtual void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
-        {
-        }
-        public void RemovePressure(TorrentManager manager, int pieceIndex)
-        {
-            foreach (int i in AllBlocks(manager))
-                RemovePressure(manager, pieceIndex, i);
-        }
-        public virtual void RemovePressure(TorrentManager manager, int pieceIndex, int blockIndex)
-        {
-
-        }
-        protected Pressure FindPressure(FileManager manager, int pieceIndex, int blockIndex)
-        {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            return pressures.Find(delegate(Pressure p)
-            {
-                return p.PieceIndex == pieceIndex && p.BlockIndex == blockIndex && p.Manager.FileManager == manager;
-            });
-        }
-        */
     }
 }
