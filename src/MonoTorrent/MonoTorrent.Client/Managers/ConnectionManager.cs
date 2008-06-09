@@ -318,7 +318,8 @@ namespace MonoTorrent.Client
                 // If the first byte is '7' and we're receiving more than 256 bytes (a made up number)
                 // then this is a piece message, so we add it as "data", not protocol. 256 bytes should filter out
                 // any non piece messages that happen to have '7' as the first byte.
-                TransferType type = (id.Connection.recieveBuffer.Array[id.Connection.recieveBuffer.Offset] == PieceMessage.MessageId && id.Connection.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
+                // The We need to skip past the first 4 bytes, they are message length
+                TransferType type = (id.Connection.recieveBuffer.Array[id.Connection.recieveBuffer.Offset + 4] == PieceMessage.MessageId && id.Connection.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
                 id.Connection.ReceivedBytes(bytesReceived, type);
                 id.TorrentManager.Monitor.BytesReceived(bytesReceived, type);
 
