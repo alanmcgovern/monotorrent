@@ -80,5 +80,18 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             CheckWritten(written - offset);
             return written - offset; ;
         }
+
+
+        /// <summary>
+        /// Overridden. Displays the number of peers received
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString( )
+        {
+            BEncodedString added = (BEncodedString)peerDict[AddedKey];
+            int numPeers = added.TextBytes.Length / 6;
+
+            return String.Format( "PeerExchangeMessage: {0} peers", numPeers );
+        }
     }
 }
