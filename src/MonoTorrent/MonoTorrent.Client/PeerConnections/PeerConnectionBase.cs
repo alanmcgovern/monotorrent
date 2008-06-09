@@ -73,6 +73,7 @@ namespace MonoTorrent.Client
         private MessagingCallback messageSentCallback;
         private ConnectionMonitor monitor;
         private int piecesSent;
+        private int piecesReceived;
         private ushort port;
         private bool processingQueue;
         internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
@@ -337,7 +338,6 @@ namespace MonoTorrent.Client
             get { return piecesReceived; }
             internal set { piecesReceived = value; }
         }
-        private int piecesReceived;
 
         /// <summary>
         /// The port the peer is listening on for DHT
