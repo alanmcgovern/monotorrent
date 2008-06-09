@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
             int interestedCount = 0;
             int unchokedCount = 0;
 
-            foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
+            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
                 if (connectedPeer.Connection == null)
                     continue;
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client
             {
                 //No peers left, look for any interested choked peers
                 bool peerFound = false;
-                foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
+                foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
                 {
                     if (connectedPeer.Connection != null)
                     {
@@ -252,7 +252,7 @@ namespace MonoTorrent.Client
 
             int unchokedPeers = 0;
 
-            foreach (PeerIdInternal connectedPeer in owningTorrent.ConnectedPeers)
+            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
                 if (connectedPeer.Connection != null)
                 {

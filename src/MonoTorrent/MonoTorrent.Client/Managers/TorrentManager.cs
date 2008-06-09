@@ -54,8 +54,6 @@ namespace MonoTorrent.Client
     {
         internal MonoTorrentCollection<PeerIdInternal> downloadQueue = new MonoTorrentCollection<PeerIdInternal>();
         internal MonoTorrentCollection<PeerIdInternal> uploadQueue = new MonoTorrentCollection<PeerIdInternal>();
-        internal List<PeerIdInternal> ConnectedPeers;
-        internal List<PeerIdInternal> ConnectingToPeers;
         private bool abortHashing;
         private ManualResetEvent hashingWaitHandle;
 
@@ -177,7 +175,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int OpenConnections
         {
-            get { return this.ConnectedPeers.Count; }
+            get { return this.Peers.ConnectedPeers.Count; }
         }
 
 
@@ -336,8 +334,6 @@ namespace MonoTorrent.Client
                 throw new ArgumentNullException("settings");
 
             this.bitfield = new BitField(torrent.Pieces.Count);
-            this.ConnectedPeers = new List<PeerIdInternal>();
-            this.ConnectingToPeers = new List<PeerIdInternal>();
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, baseDirectory);
             this.finishedPieces = new Queue<int>();
             this.hashingWaitHandle = new ManualResetEvent(false);
@@ -375,7 +371,7 @@ namespace MonoTorrent.Client
                     
                     id.PublicId = new PeerId();
                     //nothing more?
-                    ConnectedPeers.Add(id);
+                    Peers.ConnectedPeers.Add(id);
                 }
             }
         }
@@ -563,11 +559,11 @@ namespace MonoTorrent.Client
                 if (trackerManager.CurrentTracker != null)
                     handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
 
-                foreach (PeerIdInternal id in ConnectingToPeers)
+                foreach (PeerIdInternal id in Peers.ConnectingToPeers)
                     if (id.Connection.Connection != null)
                         id.Connection.Connection.Dispose();
 
-                foreach (PeerIdInternal id in ConnectedPeers)
+                foreach (PeerIdInternal id in Peers.ConnectedPeers)
                     if (id.Connection.Connection != null)
                         id.Connection.Connection.Dispose();
 
@@ -648,9 +644,9 @@ namespace MonoTorrent.Client
             if (this.finishedPieces.Count > 0)
                 SendHaveMessagesToAll();
 
-            for (int i = 0; i < this.ConnectedPeers.Count; i++)
+            for (int i = 0; i < this.Peers.ConnectedPeers.Count; i++)
             {
-                id = this.ConnectedPeers[i];
+                id = this.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                 {
                     //Console.WriteLine("Nulled out: " + id.Peer.ConnectionUri.ToString());
@@ -673,9 +669,9 @@ namespace MonoTorrent.Client
             DateTime nintySecondsAgo = nowTime.AddSeconds(-90);
             DateTime onhundredAndEightySecondsAgo = nowTime.AddSeconds(-180);
 
-            for (int i = 0; i < this.ConnectedPeers.Count; i++)
+            for (int i = 0; i < this.Peers.ConnectedPeers.Count; i++)
             {
-                id = this.ConnectedPeers[i];
+                id = this.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
                     continue;
 
@@ -961,9 +957,9 @@ namespace MonoTorrent.Client
                 finishedPieces.Clear();
             }
 
-            for (int i = 0; i < this.ConnectedPeers.Count; i++)
+            for (int i = 0; i < this.Peers.ConnectedPeers.Count; i++)
             {
-                if (this.ConnectedPeers[i].Connection == null)
+                if (this.Peers.ConnectedPeers[i].Connection == null)
                     continue;
 
                 MessageBundle bundle = new MessageBundle();
@@ -971,11 +967,11 @@ namespace MonoTorrent.Client
                 foreach (int pieceIndex in pieces)
                 {
                     // If the peer has the piece already, we need to recalculate his "interesting" status.
-                    bool hasPiece = this.ConnectedPeers[i].Connection.BitField[pieceIndex];
+                    bool hasPiece = this.Peers.ConnectedPeers[i].Connection.BitField[pieceIndex];
                     if (hasPiece)
                     {
-                        bool isInteresting = this.pieceManager.IsInteresting(this.ConnectedPeers[i]);
-                        SetAmInterestedStatus(this.ConnectedPeers[i], isInteresting);
+                        bool isInteresting = this.pieceManager.IsInteresting(this.Peers.ConnectedPeers[i]);
+                        SetAmInterestedStatus(this.Peers.ConnectedPeers[i], isInteresting);
                     }
 
                     // Check to see if have supression is enabled and send the have message accordingly
@@ -983,7 +979,7 @@ namespace MonoTorrent.Client
                         bundle.Messages.Add(new HaveMessage(pieceIndex));
                 }
 
-                this.ConnectedPeers[i].Connection.Enqueue(bundle);
+                this.Peers.ConnectedPeers[i].Connection.Enqueue(bundle);
             }
         }
 

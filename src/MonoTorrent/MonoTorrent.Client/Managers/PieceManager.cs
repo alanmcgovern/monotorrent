@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
                 if (id.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
 
-            msg = this.PickPiece(id, id.TorrentManager.ConnectedPeers);
+            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
             if (msg == null)
                 return false;
 
