@@ -103,14 +103,11 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
-    <Compile Include="MonoTorrent.Client\ReaderLock.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\DelegateTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\ITask.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\Task.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs" />
-    <Compile Include="MonoTorrent.Client\WriterLock.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\ConnectionListenerBase.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\SocketListener.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptedSocket.cs" />
