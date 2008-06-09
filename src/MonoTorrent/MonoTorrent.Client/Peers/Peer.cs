@@ -41,8 +41,6 @@ namespace MonoTorrent.Client
     {
         #region Private Fields
 
-        private bool activeReceive;
-        private bool activeSend;
         private int cleanedUpCount;
         private Uri connectionUri;
         private EncryptionTypes encryption;
@@ -58,18 +56,6 @@ namespace MonoTorrent.Client
 
 
         #region Properties
-
-        internal bool ActiveReceive
-        {
-            get { return this.activeReceive; }
-            set { this.activeReceive = value; }
-        }
-
-        internal bool ActiveSend
-        {
-            get { return this.activeSend; }
-            set { this.activeSend = value; }
-        }
 
         public Uri ConnectionUri
         {

@@ -802,8 +802,6 @@ namespace MonoTorrent.Client
                 System.Threading.Interlocked.Decrement(ref this.openConnections);
                 id.TorrentManager.PieceManager.RemoveRequests(id);
                 id.Peer.CleanedUpCount++;
-                id.Peer.ActiveReceive = false;
-                id.Peer.ActiveSend = false;
                 if (id.PublicId != null)
                     id.PublicId.IsValid = false;
 
@@ -1117,9 +1115,7 @@ namespace MonoTorrent.Client
                     // if they are not a seeder.
                     for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
                         if ((manager.State != TorrentState.Seeding ||
-                           (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder))
-                            && (!manager.Peers.AvailablePeers[i].ActiveReceive)
-                            && (!manager.Peers.AvailablePeers[i].ActiveSend))
+                           (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder)))
                             break;
 
                     // If this is true, there were no peers in the available list to connect to.
