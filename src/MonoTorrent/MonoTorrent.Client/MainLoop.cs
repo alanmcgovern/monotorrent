@@ -68,18 +68,15 @@ namespace MonoTorrent.Client
                 else
                 {
                     task.Execute();
-                    task.WaitHandle.Set();
                 }
-                //Console.WriteLine("Mainloop ticked");
             }
         }
 
-        public static WaitHandle Queue(Task task)
+        public static void Queue(Task task)
         {
             if (Thread.CurrentThread == thread)
             {
                 task.Execute();
-                task.WaitHandle.Set();
             }
             else
             {
@@ -89,17 +86,25 @@ namespace MonoTorrent.Client
                     handle.Set();
                 }
             }
-            return task.WaitHandle;
         }
 
-        internal static WaitHandle Queue(MainLoopTask task)
+        internal static void Queue(MainLoopTask task)
         {
             DelegateTask t = new DelegateTask(delegate { 
                 task();
                 return null;
             });
 
-            return Queue(t);
+            Queue(t);
+        }
+
+        internal static void QueueWait(MainLoopTask task)
+        {
+            DelegateTask t = new DelegateTask(delegate { task(); return null; });
+            t.Handle = new ManualResetEvent(false);
+            Queue(t);
+            t.Handle.WaitOne();
+            t.Handle.Close();
         }
     }
 }

@@ -37,30 +37,11 @@ namespace MonoTorrent.Client.Tasks
 {
     abstract class Task : ITask
     {
-        private int executeAt;
-        private ManualResetEvent waitHandle;
-
         protected Task()
         {
-            waitHandle = new ManualResetEvent(false);
+            
         }
 
         public abstract void Execute();
-
-        public int ExecuteAt
-        {
-            get { return executeAt; }
-            set { executeAt = value; }
-        }
-
-        public ManualResetEvent WaitHandle
-        {
-            get { return waitHandle; }
-        }
-
-        WaitHandle ITask.WaitHandle
-        {
-            get { return WaitHandle; }
-        }
     }
 }

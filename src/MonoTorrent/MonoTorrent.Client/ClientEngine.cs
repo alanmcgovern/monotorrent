@@ -251,11 +251,7 @@ namespace MonoTorrent.Client
             if (torrent == null)
                 return false;
 
-            DelegateTask t = new DelegateTask(delegate {
-                return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
-            });
-            MainLoop.Queue(t).WaitOne();
-            return (bool)t.Result;
+            return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
         }
 
 
@@ -275,7 +271,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Dispose()
         {
-            MainLoop.Queue(new DisposeEngineTask(this)).WaitOne();
+            MainLoop.QueueWait(DisposeImpl);
         }
 
         internal void DisposeImpl()
@@ -307,16 +303,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public void PauseAll()
         {
-            List<WaitHandle> handles = new List<WaitHandle>();
-
-            MainLoop.Queue(new DelegateTask(delegate {
+            MainLoop.QueueWait(delegate {
                 foreach (TorrentManager manager in torrents)
-                    handles.Add(MainLoop.Queue(new PauseTask(manager)));
-                return null;
-            })).WaitOne();
-
-            for (int i = 0; i < handles.Count; i++)
-                handles[i].WaitOne();
+                    manager.PauseImpl();
+            });
         }
 
 
@@ -329,7 +319,7 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("torrent");
 
-            MainLoop.Queue(new RegisterTask(this, manager)).WaitOne();
+            MainLoop.QueueWait(delegate { RegisterImpl(manager); });
         }
 
         internal void RegisterImpl(TorrentManager manager)
@@ -350,16 +340,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public void StartAll()
         {
-            List<WaitHandle> handles = new List<WaitHandle>();
-
-            MainLoop.Queue(new DelegateTask(delegate {
+            MainLoop.QueueWait(delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    handles.Add(MainLoop.Queue(new StartTask(torrents[i])));
-                return null;
-            })).WaitOne();
-
-            for (int i = 0; i < handles.Count; i++)
-                handles[i].WaitOne();
+                    torrents[i].StartImpl();
+            });
         }
 
 
@@ -370,11 +354,10 @@ namespace MonoTorrent.Client
         {
             List<WaitHandle> handles = new List<WaitHandle>();
 
-            MainLoop.Queue(new DelegateTask(delegate {
+            MainLoop.QueueWait(delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    handles.Add(MainLoop.Queue(new StopTask(torrents[i])));
-                return null;
-            })).WaitOne();
+                    handles.Add(torrents[i].StopImpl());
+            });
 
             return handles.ToArray();
         }
@@ -390,7 +373,7 @@ namespace MonoTorrent.Client
                 DelegateTask t = new DelegateTask(delegate  {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
                 });
-                MainLoop.Queue(t).WaitOne();
+                MainLoop.QueueWait(t.Execute);
                 return (int)t.Result;
             }
         }
@@ -406,7 +389,7 @@ namespace MonoTorrent.Client
                 DelegateTask t = new DelegateTask(delegate {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
                 });
-                MainLoop.Queue(t).WaitOne();
+                MainLoop.QueueWait(t.Execute);
                 return (int)t.Result;
             }
         }
@@ -421,7 +404,7 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
-            MainLoop.Queue(new UnregisterTask(this, manager)).WaitOne();
+            MainLoop.QueueWait(delegate { UnregisterImpl(manager); });
         }
 
         internal void UnregisterImpl(TorrentManager manager)

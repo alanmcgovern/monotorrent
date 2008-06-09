@@ -1,4 +1,4 @@
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -87,7 +87,6 @@
     <Compile Include="MonoTorrent.BEncoding\IBEncodedValue.cs" />
     <Compile Include="MonoTorrent.Client\AllowedFastAlgorithm.cs" />
     <Compile Include="MonoTorrent.Client\Block.cs" />
-    <Compile Include="MonoTorrent.Client\BufferedFileRead.cs" />
     <Compile Include="MonoTorrent.Client\ClientEngine.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptorFactory.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\IEncryption\RC4Header.cs" />
@@ -105,21 +104,9 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\ReaderLock.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\AnnounceTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\CompleteAnnounceTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\CompleteHashCheck.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\DelegateTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\DisconnectPeerTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\DisposeEngineTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\HandlMessageTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\HashCheck.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\ITask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\PauseTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\RegisterTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\StartTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\StopTask.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\Task.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\UnregisterTask.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs" />
@@ -291,5 +278,6 @@
         </MonoDevelop.Autotools.MakefileInfo>
       </Properties>
     </MonoDevelop>
+    <VisualStudio />
   </ProjectExtensions>
 </Project>

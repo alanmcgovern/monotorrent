@@ -1056,12 +1056,12 @@ namespace MonoTorrent.Client
                 if (downloading)
                 {
                     byteCount = (id.Connection.BytesToRecieve - id.Connection.BytesReceived) > ChunkLength ? ChunkLength : id.Connection.BytesToRecieve - id.Connection.BytesReceived;
-                    id.Connection.BeginReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, SocketFlags.None, this.onEndReceiveMessageCallback, id);
+                    NetworkIO.EnqueueReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, onEndReceiveMessageCallback, id);
                 }
                 else
                 {
                     byteCount = (id.Connection.BytesToSend - id.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Connection.BytesToSend - id.Connection.BytesSent);
-                    id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, SocketFlags.None, this.onEndSendMessageCallback, id);
+                    NetworkIO.EnqueueSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, this.onEndSendMessageCallback, id);
                 }
 
                 return byteCount;

@@ -129,11 +129,10 @@ namespace MonoTorrent.Client
                 id.Connection.BytesToRecieve = 68;
                 List<byte[]> skeys = new List<byte[]>();
 
-                MainLoop.Queue(new DelegateTask(delegate {
+                MainLoop.QueueWait(delegate {
                     for (int i = 0; i < engine.Torrents.Count; i++)
                         skeys.Add(engine.Torrents[i].Torrent.InfoHash);
-                    return null;
-                })).WaitOne();
+                });
 
                 EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
             }
@@ -183,12 +182,11 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            MainLoop.Queue(new DelegateTask(delegate {
+            MainLoop.QueueWait(delegate {
                 for (int i = 0; i < engine.Torrents.Count; i++)
                     if (Toolbox.ByteMatch(handshake.infoHash, engine.Torrents[i].Torrent.InfoHash))
                         man = engine.Torrents[i];
-                return null;
-            })).WaitOne();
+            });
 
             //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
             if (man == null)        // We're not hosting that torrent

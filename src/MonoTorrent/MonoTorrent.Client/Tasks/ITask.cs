@@ -37,7 +37,5 @@ namespace MonoTorrent.Client.Tasks
     interface ITask
     {
         void Execute();
-        int ExecuteAt { get; set; }
-        WaitHandle WaitHandle { get; }
     }
 }

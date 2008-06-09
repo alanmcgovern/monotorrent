@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace MonoTorrent.Client.Tasks
 {
     class DelegateTask : Task
     {
-        private MainLoopJob task;
+        public ManualResetEvent Handle;
         private object result;
+        private MainLoopJob task;
 
         public object Result
         {
@@ -21,6 +23,8 @@ namespace MonoTorrent.Client.Tasks
         public override void Execute()
         {
             result = task();
+            if (Handle != null)
+                Handle.Set();
         }
     }
 }

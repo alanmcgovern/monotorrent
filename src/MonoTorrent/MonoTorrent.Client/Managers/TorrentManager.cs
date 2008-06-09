@@ -429,7 +429,7 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool autoStart)
         {
-            MainLoop.Queue(new HashCheck(this, autoStart)).WaitOne();
+            MainLoop.QueueWait(delegate { HashCheckImpl(autoStart); });
         }
 
 
@@ -438,7 +438,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
-            MainLoop.Queue(new PauseTask(this)).WaitOne();
+            MainLoop.QueueWait(PauseImpl);
         }
 
 
@@ -447,7 +447,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            MainLoop.Queue(new StartTask(this)).WaitOne();
+            MainLoop.QueueWait(StartImpl);
         }
 
 
@@ -456,9 +456,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-            StopTask t = new StopTask(this);
-            MainLoop.Queue(t).WaitOne();
-            return t.ManagerHandle;
+            DelegateTask t = new DelegateTask(delegate {
+                return StopImpl();
+            });
+            MainLoop.QueueWait(delegate { t.Execute(); });
+            return (WaitHandle)t.Result;
         }
 
         #endregion
