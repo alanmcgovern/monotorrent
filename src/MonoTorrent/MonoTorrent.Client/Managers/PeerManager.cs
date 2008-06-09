@@ -14,12 +14,12 @@ namespace MonoTorrent.Client
         private TorrentManager manager;
 
         internal List<PeerIdInternal> ConnectedPeers = new List<PeerIdInternal>();
-        internal List<PeerIdInternal> ConnectingToPeers = new List<PeerIdInternal>();
+        internal List<Peer> ConnectingToPeers = new List<Peer>();
 
-        internal MonoTorrentCollection<Peer> ActivePeers;
-        internal MonoTorrentCollection<Peer> AvailablePeers;
-        internal MonoTorrentCollection<Peer> BannedPeers;
-        internal MonoTorrentCollection<Peer> BusyPeers;
+        internal List<Peer> ActivePeers;
+        internal List<Peer> AvailablePeers;
+        internal List<Peer> BannedPeers;
+        internal List<Peer> BusyPeers;
 
         #endregion Member Variables
 
@@ -91,10 +91,10 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
             this.manager = manager;
-            this.ActivePeers = new MonoTorrentCollection<Peer>();
-            this.AvailablePeers = new MonoTorrentCollection<Peer>();
-            this.BannedPeers = new MonoTorrentCollection<Peer>();
-            this.BusyPeers = new MonoTorrentCollection<Peer>();
+            this.ActivePeers = new List<Peer>();
+            this.AvailablePeers = new List<Peer>();
+            this.BannedPeers = new List<Peer>();
+            this.BusyPeers = new List<Peer>();
         }
 
         #endregion Constructors

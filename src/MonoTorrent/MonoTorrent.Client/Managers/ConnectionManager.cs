@@ -86,9 +86,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public int HalfOpenConnections
         {
-            get { return this.halfOpenConnections; }
+            get { return NetworkIO.HalfOpens; }
         }
-        private int halfOpenConnections;
 
 
         /// <summary>
@@ -149,33 +148,26 @@ namespace MonoTorrent.Client
 
         #region Async Connection Methods
 
-        internal void ConnectToPeer(TorrentManager manager, PeerIdInternal id)
+        internal void ConnectToPeer(TorrentManager manager, Peer peer)
         {
             // Connect to the peer.
-            id.Connection = new PeerConnectionBase(id.TorrentManager.Torrent.Pieces.Count);
-            id.Connection.Connection = ConnectionFactory.Create(id.Peer.ConnectionUri);
-            if (id.Connection.Connection == null)
+            IConnection connection = ConnectionFactory.Create(peer.ConnectionUri);
+            if (connection == null)
                 return;
 
-            manager.Peers.ActivePeers.Add(id.Peer);
-            id.TorrentManager.Peers.ConnectingToPeers.Add(id);
+            manager.Peers.ConnectingToPeers.Add(peer);
 
-            id.Connection.ProcessingQueue = true;
-            id.Peer.LastConnectionAttempt = DateTime.Now;
-            id.Connection.LastMessageSent = DateTime.Now;
-            id.Connection.LastMessageReceived = DateTime.Now;
+            peer.LastConnectionAttempt = DateTime.Now;
+            AsyncConnect c = new AsyncConnect(manager, peer, connection, endCreateConnectionCallback);
             try
             {
-                id.Connection.BeginConnect(this.endCreateConnectionCallback, id);
-                id.ConnectTime = Environment.TickCount;
-                Interlocked.Increment(ref this.halfOpenConnections);
+                NetworkIO.EnqueueConnect(c);
             }
             catch (Exception)
             {
                 // If there's a socket exception at this point, just drop the peer's details silently
                 // as they must be invalid.
-                manager.Peers.ActivePeers.Remove(id.Peer);
-                id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
+                manager.Peers.ConnectingToPeers.Remove(peer);
             }
 
             // Try to connect to another peer
@@ -189,20 +181,20 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void EndCreateConnection(IAsyncResult result)
         {
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-            //Console.WriteLine ("{0}ms: {1}", Environment.TickCount - id.ConnectTime, id.Peer.ConnectionUri.Host);
+            AsyncConnect connect = (AsyncConnect)result.AsyncState;
+            if(connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding)
+                connect.Connection.Dispose();
+            
             try
             {
-                id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
-                Interlocked.Decrement(ref this.halfOpenConnections);
-                // If the peer has been cleaned up, then don't continue processing the peer
-                if (id.Connection == null)
-                {
-                    Logger.Log(id.Connection.Connection, "ConnectionManager - EndCreateConnection: null already");
-                    return;
-                }
+                connect.Manager.Peers.ConnectingToPeers.Remove(connect.Peer);
+                connect.Connection.EndConnect(result);
 
-                id.Connection.EndConnect(result);
+                PeerIdInternal id = new PeerIdInternal(connect.Peer, connect.Manager);
+                id.Connection = new PeerConnectionBase(connect.Manager.Torrent.Pieces.Count);
+                id.Connection.Connection = connect.Connection;
+                connect.Manager.Peers.ActivePeers.Add(connect.Peer);
+
                 Logger.Log(id.Connection.Connection, "ConnectionManager - Connection opened");
 
                 ProcessFreshConnection(id);
@@ -210,20 +202,10 @@ namespace MonoTorrent.Client
 
             catch (Exception)
             {
-                Logger.Log(id.Connection.Connection, "ConnectionManager - Failed to connect");
-                id.Peer.FailedConnectionAttempts++;
-
-                if (id.Connection != null)
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                    id.Connection.Dispose();
-                }
-
-                id.Connection = null;
-                id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
-                id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
-
-                id.TorrentManager.Peers.BusyPeers.Add(id.Peer);
+                Logger.Log(null, "ConnectionManager - Failed to connect{0}", connect.Peer);
+                connect.Peer.FailedConnectionAttempts++;
+                connect.Connection.Dispose();
+                connect.Manager.Peers.BusyPeers.Add(connect.Peer);
             }
             finally
             {
@@ -241,7 +223,6 @@ namespace MonoTorrent.Client
             {
                 // Remove the peer from the "connecting" list and put them in the "connected" list
                 // because we have now successfully connected to them
-                id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
 
                 id.PublicId = new PeerId();
@@ -263,23 +244,10 @@ namespace MonoTorrent.Client
             }
             catch (Exception)
             {
-                Logger.Log(id.Connection.Connection, "failed to connect2");
-                id.Peer.FailedConnectionAttempts++;
-
-                if (id.Connection != null)
-                {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                    id.Connection.Dispose();
-                }
-
+                Logger.Log(id.Connection.Connection, "failed to encrypt");
+                id.Connection.Dispose();
                 id.Connection = null;
                 id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
-                id.TorrentManager.Peers.ConnectingToPeers.Remove(id);
-
-                if (id.Peer.FailedConnectionAttempts < 2)   // We couldn't connect this time, so re-add to available
-                    id.TorrentManager.Peers.AvailablePeers.Add(id.Peer);
-                else
-                    id.TorrentManager.Peers.BusyPeers.Add(id.Peer);
             }
             finally
             {
@@ -811,7 +779,6 @@ namespace MonoTorrent.Client
 
                 id.TorrentManager.uploadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
                 id.TorrentManager.downloadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
-                id.TorrentManager.Peers.ConnectingToPeers.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
                 id.TorrentManager.Peers.ConnectedPeers.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
 
                 if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
@@ -1067,30 +1034,16 @@ namespace MonoTorrent.Client
             return 0;
         }
 
-        private void ClosePendingConnections()
-        {
-            foreach (TorrentManager manager in this.torrents)
-            {
-                foreach (PeerIdInternal peer in manager.Peers.ConnectingToPeers)
-                {
-                    // If we haven't connected after 10 seconds, abort
-                    if ((Environment.TickCount - peer.ConnectTime) > 10000)
-                        peer.Connection.Connection.Dispose();
-                }
-            }
-        }
-
         internal void TryConnect()
         {
             try
             {
-                ClosePendingConnections();
                 int i;
-                PeerIdInternal id;
+                Peer peer;
                 TorrentManager m = null;
 
                 // If we have already reached our max connections globally, don't try to connect to a new peer
-                if ((this.openConnections >= this.MaxOpenConnections) || this.halfOpenConnections >= this.MaxHalfOpenConnections)
+                if ((this.openConnections >= this.MaxOpenConnections) || this.HalfOpenConnections >= this.MaxHalfOpenConnections)
                     return;
 
                 // Check each torrent manager in turn to see if they have any peers we want to connect to
@@ -1107,8 +1060,9 @@ namespace MonoTorrent.Client
                     // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
                     // if they are not a seeder.
                     for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
-                        if ((manager.State != TorrentState.Seeding ||
-                           (manager.State == TorrentState.Seeding && !manager.Peers.AvailablePeers[i].IsSeeder)))
+                        if (manager.State == TorrentState.Seeding && manager.Peers.AvailablePeers[i].IsSeeder)
+                            continue;
+                        else
                             break;
 
                     // If this is true, there were no peers in the available list to connect to.
@@ -1116,14 +1070,14 @@ namespace MonoTorrent.Client
                         continue;
 
                     // Remove the peer from the lists so we can start connecting to him
-                    id = new PeerIdInternal(manager.Peers.AvailablePeers[i], manager);
+                    peer = manager.Peers.AvailablePeers[i];
                     manager.Peers.AvailablePeers.RemoveAt(i);
 
                     // Save the manager we're using so we can place it to the end of the list
                     m = manager;
 
                     // Connect to the peer
-                    ConnectToPeer(manager, id);
+                    ConnectToPeer(manager, peer);
                     break;
                 }
 

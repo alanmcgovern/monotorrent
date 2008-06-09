@@ -559,10 +559,6 @@ namespace MonoTorrent.Client
                 if (trackerManager.CurrentTracker != null)
                     handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
 
-                foreach (PeerIdInternal id in Peers.ConnectingToPeers)
-                    if (id.Connection.Connection != null)
-                        id.Connection.Connection.Dispose();
-
                 foreach (PeerIdInternal id in Peers.ConnectedPeers)
                     if (id.Connection.Connection != null)
                         id.Connection.Connection.Dispose();

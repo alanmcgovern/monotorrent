@@ -35,31 +35,74 @@ using MonoTorrent.Common;
 using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using System.Net.Sockets;
+using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client
 {
+    internal class AsyncConnect
+    {
+        public AsyncConnect(TorrentManager manager, Peer peer, IConnection connection, AsyncCallback callback)
+        {
+            Manager = manager;
+            Peer = peer;
+            Connection = connection;
+            Callback = callback;
+        }
+
+        public bool ShouldAbort
+        {
+            get { return (Environment.TickCount - StartTime) > 10000; }
+        }
+
+        public AsyncCallback Callback;
+        public IConnection Connection;
+        public TorrentManager Manager;
+        public Peer Peer;
+        public IAsyncResult Result;
+        public int StartTime;
+    }
+
     internal static class NetworkIO
     {
-        private static List<KeyValuePair<IAsyncResult, AsyncCallback>> receives;
-        private static List<KeyValuePair<IAsyncResult, AsyncCallback>> sends;
+        private struct AsyncIO
+        {
+            public AsyncIO(IAsyncResult result, AsyncCallback callback)
+            {
+                Result = result;
+                Callback = callback;
+            }
+
+            public IAsyncResult Result;
+            public AsyncCallback Callback;
+        }
+        private static List<AsyncConnect> connects;
+        private static List<AsyncIO> receives;
+        private static List<AsyncIO> sends;
+
+        public static int HalfOpens
+        {
+            get { lock (connects) return connects.Count; }
+        }
 
         static NetworkIO()
         {
-            receives = new List<KeyValuePair<IAsyncResult, AsyncCallback>>();
-            sends = new List<KeyValuePair<IAsyncResult, AsyncCallback>>();
+            connects = new List<AsyncConnect>();
+            receives = new List<AsyncIO>();
+            sends = new List<AsyncIO>();
 
             Thread t = new Thread((ThreadStart)delegate
             {
                 while (true)
                 {
-                    KeyValuePair<IAsyncResult, AsyncCallback>? r = null;
-                    KeyValuePair<IAsyncResult, AsyncCallback>? s = null;
+                    AsyncConnect c = null;
+                    AsyncIO? r = null;
+                    AsyncIO? s = null;
 
                     lock (receives)
                     {
                         for (int i = 0; i < receives.Count; i++)
                         {
-                            if (!receives[i].Key.IsCompleted)
+                            if (!receives[i].Result.IsCompleted)
                                 continue;
                             r = receives[i];
                             receives.RemoveAt(i);
@@ -71,24 +114,37 @@ namespace MonoTorrent.Client
                     {
                         for (int i = 0; i < sends.Count; i++)
                         {
-                            if (!sends[i].Key.IsCompleted)
+                            if (!sends[i].Result.IsCompleted)
                                 continue;
                             s = sends[i];
                             sends.RemoveAt(i);
                             break;
                         }
                     }
+                    lock (connects)
+                    {
+                        for (int i = 0; i < connects.Count; i++)
+                        {
+                            if (!connects[i].Result.IsCompleted && !connects[i].ShouldAbort)
+                                continue;
+                            c = connects[i];
+                            connects.RemoveAt(i);
+                            break;
+                        }
+                    }
 
                     if (r.HasValue)
                     {
-                        r.Value.Value(r.Value.Key);
-                        r.Value.Key.AsyncWaitHandle.Close();
+                        r.Value.Callback(r.Value.Result);
+                        r.Value.Result.AsyncWaitHandle.Close();
                     }
                     if (s.HasValue)
                     {
-                        s.Value.Value(s.Value.Key);
-                        s.Value.Key.AsyncWaitHandle.Close();
+                        s.Value.Callback(s.Value.Result);
+                        s.Value.Result.AsyncWaitHandle.Close();
                     }
+                    if (c != null)
+                        CompleteConnect(c);
 
                     System.Threading.Thread.Sleep(1);
                 }
@@ -97,19 +153,37 @@ namespace MonoTorrent.Client
             t.Start();
         }
 
+        private static void CompleteConnect(AsyncConnect connect)
+        {
+            if (connect.ShouldAbort)
+                connect.Connection.Dispose();
+
+            connect.Callback(connect.Result);
+            connect.Result.AsyncWaitHandle.Close();
+        }
+
 
         internal static void EnqueueSend(ArraySegment<byte> sendBuffer, int bytesSent, int count, AsyncCallback callback, PeerIdInternal id)
         {
             IAsyncResult result = id.Connection.BeginSend(sendBuffer, bytesSent, count, SocketFlags.None, null, id);
             lock (sends)
-                sends.Add(new KeyValuePair<IAsyncResult,AsyncCallback>(result, callback));
+                sends.Add(new AsyncIO(result, callback));
         }
 
         internal static void EnqueueReceive(ArraySegment<byte> receiveBuffer, int bytesReceived, int count, AsyncCallback callback, PeerIdInternal id)
         {
             IAsyncResult result = id.Connection.BeginReceive(receiveBuffer, bytesReceived, count, SocketFlags.None, null, id);
             lock (receives)
-                receives.Add(new KeyValuePair<IAsyncResult,AsyncCallback>(result, callback));
+                receives.Add(new AsyncIO(result, callback));
+        }
+
+        internal static void EnqueueConnect(AsyncConnect connect)
+        {
+            connect.Result = connect.Connection.BeginConnect(null, connect);
+            connect.StartTime = Environment.TickCount;
+            
+            lock (connects)
+                connects.Add(connect);
         }
     }
 }

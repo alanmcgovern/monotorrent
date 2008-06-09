@@ -41,7 +41,6 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private int connectTime;
         private PeerId peerId;
         private Peer peer;
         private PeerConnectionBase connection;
@@ -73,12 +72,6 @@ namespace MonoTorrent.Client
         public ConnectionManager ConnectionManager
         {
             get { return this.engine.ConnectionManager; }
-        }
-        
-        public int ConnectTime
-        {
-            get { return connectTime; }
-            set { connectTime = value; }
         }
 
         public ClientEngine Engine
