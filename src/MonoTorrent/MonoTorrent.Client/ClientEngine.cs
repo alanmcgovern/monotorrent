@@ -376,11 +376,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                DelegateTask t = new DelegateTask(delegate  {
-                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
-                });
-                MainLoop.QueueWait(t.Execute);
-                return (int)t.Result;
+                return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
             }
         }
 
@@ -392,11 +388,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                DelegateTask t = new DelegateTask(delegate {
-                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
-                });
-                MainLoop.QueueWait(t.Execute);
-                return (int)t.Result;
+                return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
             }
         }
 
