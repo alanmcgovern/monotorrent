@@ -65,20 +65,21 @@ namespace MonoTorrent.Client.Encryption
 
         private static bool CheckRC4(PeerIdInternal id)
         {
-            bool canUseRC4 = ClientEngine.SupportsEncryption;
+            // By default we assume all encryption levels are allowed. This is
+            // needed when we receive an incoming connection, because that is not
+            // associated with an engine and so we cannot check the engines settings
+            EncryptionTypes t = EncryptionTypes.All;
 
-            EncryptionTypes t;
-            if (id.Connection.Connection.IsIncoming)
-                t = EncryptionTypes.All;
-            else
+            // If the connection is *not* incoming, then it will be associated with an Engine
+            // so we can check what encryption levels the engine allows.
+            if (!id.Connection.Connection.IsIncoming)
                 t = id.TorrentManager.Engine.Settings.AllowedEncryption;
 
-            canUseRC4 = canUseRC4 && (Toolbox.HasEncryption(t, EncryptionTypes.RC4Header) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Full));
-
-            t = id.Peer.Encryption;
-            canUseRC4 = canUseRC4 && (Toolbox.HasEncryption(t, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Header));
-
-            return canUseRC4;
+            // We're allowed use encryption if the engine settings allow it and the peer supports it
+            // Binary AND both the engine encryption and peer encryption and check what levels are supported
+            t = t & id.Peer.Encryption;
+            return ClientEngine.SupportsEncryption &&
+                   (Toolbox.HasEncryption(t, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Header));
         }
 
         internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state)
@@ -92,7 +93,6 @@ namespace MonoTorrent.Client.Encryption
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
             result.SKeys = sKeys;
 
-            bool supportRC4 = CheckRC4(id);
             IConnection c = id.Connection.Connection;
             try
             {
@@ -105,16 +105,32 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    // If we have an outgoing connection, if RC4 is allowable, negiotiate the encryption method
-                    // otherwise just use PlainText
-                    if (supportRC4)
+                    bool hasRC4 = CheckRC4(id);
+                    bool hasPlainText = Toolbox.HasEncryption(id.Engine.Settings.AllowedEncryption, EncryptionTypes.PlainText);
+
+                    if (id.Engine.Settings.PreferEncryption)
                     {
-                        result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
-                        result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
+                        if (hasRC4)
+                        {
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
+                            result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
+                        }
+                        else
+                        {
+                            result.Complete();
+                        }
                     }
                     else
                     {
-                        result.Complete();
+                        if (hasPlainText)
+                        {
+                            result.Complete();
+                        }
+                        else
+                        {
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
+                            result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
+                        }
                     }
                 }
             }
