@@ -171,6 +171,7 @@ namespace MonoTorrent.Client
             HandshakeMessage handshake = new HandshakeMessage();
             try
             {
+                id.Connection.Decryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
                 handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                     throw new ProtocolException("Invalid protocol string in handshake");
@@ -226,6 +227,7 @@ namespace MonoTorrent.Client
             id.Connection.BytesSent = 0;
             id.Connection.BytesToSend = handshake.Encode(id.Connection.sendBuffer, 0);
             id.Connection.BytesToSend += bf.Encode(id.Connection.sendBuffer, id.Connection.BytesToSend);
+            id.Connection.Encryptor.Encrypt(id.Connection.sendBuffer.Array, id.Connection.sendBuffer.Offset, id.Connection.BytesToSend);
 
             Logger.Log(id.Connection.Connection, "ListenManager - Sending connection to torrent manager");
             id.Connection.BeginSend(id.Connection.sendBuffer, 0, id.Connection.BytesToSend,

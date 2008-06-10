@@ -564,10 +564,6 @@ namespace MonoTorrent.Client
 
         internal IAsyncResult BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
         {
-            // Encrypt the *entire* message exactly once.
-            if (offset == 0)
-                Encryptor.Encrypt(buffer.Array, buffer.Offset, buffer.Array, buffer.Offset, id.Connection.BytesToSend);
-
             return Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
 		}
 
@@ -583,17 +579,11 @@ namespace MonoTorrent.Client
 
         internal int EndReceive(IAsyncResult result)
 		{
-			int received = Connection.EndReceive(result);
-			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
-            byte[] buffer = id.Connection.recieveBuffer.Array;
-            int offset = id.Connection.recieveBuffer.Offset + id.Connection.bytesReceived;
-            Decryptor.Decrypt(buffer, offset, buffer, offset, received);
-			return received;
+			return Connection.EndReceive(result);
 		}
 
         internal int EndSend(IAsyncResult result)
 		{
-			PeerIdInternal id = (PeerIdInternal)result.AsyncState;
 			return Connection.EndSend(result);
 		}
 

@@ -162,6 +162,11 @@ namespace MonoTorrent.Client
             connect.Result.AsyncWaitHandle.Close();
         }
 
+        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
+        }
+
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             IAsyncResult result = connection.BeginSend(buffer, offset, count, null, state);
@@ -169,23 +174,14 @@ namespace MonoTorrent.Client
                 sends.Add(new AsyncIO(result, callback));
         }
 
+        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
+        }
+
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             IAsyncResult result = connection.BeginReceive(buffer, offset, count, null, state);
-            lock (receives)
-                receives.Add(new AsyncIO(result, callback));
-        }
-
-        internal static void EnqueueSend(ArraySegment<byte> sendBuffer, int bytesSent, int count, AsyncCallback callback, PeerIdInternal id)
-        {
-            IAsyncResult result = id.Connection.BeginSend(sendBuffer, bytesSent, count, SocketFlags.None, null, id);
-            lock (sends)
-                sends.Add(new AsyncIO(result, callback));
-        }
-
-        internal static void EnqueueReceive(ArraySegment<byte> receiveBuffer, int bytesReceived, int count, AsyncCallback callback, PeerIdInternal id)
-        {
-            IAsyncResult result = id.Connection.BeginReceive(receiveBuffer, bytesReceived, count, SocketFlags.None, null, id);
             lock (receives)
                 receives.Add(new AsyncIO(result, callback));
         }

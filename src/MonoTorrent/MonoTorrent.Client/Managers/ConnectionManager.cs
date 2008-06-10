@@ -333,6 +333,11 @@ namespace MonoTorrent.Client
                 else
                 {
                     // Invoke the callback we were told to invoke once the message had been received fully
+                    ArraySegment<byte> b = id.Connection.recieveBuffer;
+                    if (id.Connection.MessageReceivedCallback == messageLengthReceivedCallback)
+                        id.Connection.Decryptor.Decrypt(b.Array, b.Offset, id.Connection.BytesToRecieve);
+                    else
+                        id.Connection.Decryptor.Decrypt(b.Array, b.Offset + 4, id.Connection.BytesToRecieve - 4);
                     id.Connection.MessageReceivedCallback(id);
                 }
             }
@@ -723,6 +728,7 @@ namespace MonoTorrent.Client
 
                 id.Connection.BytesSent = 0;
                 id.Connection.BytesToSend = message.Encode(id.Connection.sendBuffer, 0);
+                id.Connection.Encryptor.Encrypt(id.Connection.sendBuffer.Array, id.Connection.sendBuffer.Offset, id.Connection.BytesToSend);
 
                 id.TorrentManager.uploadQueue.Add(id);
                 id.TorrentManager.ResumePeers();
@@ -1012,12 +1018,12 @@ namespace MonoTorrent.Client
                 if (downloading)
                 {
                     byteCount = (id.Connection.BytesToRecieve - id.Connection.BytesReceived) > ChunkLength ? ChunkLength : id.Connection.BytesToRecieve - id.Connection.BytesReceived;
-                    NetworkIO.EnqueueReceive(id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, onEndReceiveMessageCallback, id);
+                    NetworkIO.EnqueueReceive(id.Connection.Connection, id.Connection.recieveBuffer, id.Connection.BytesReceived, byteCount, onEndReceiveMessageCallback, id);
                 }
                 else
                 {
                     byteCount = (id.Connection.BytesToSend - id.Connection.BytesSent) > ChunkLength ? ChunkLength : (id.Connection.BytesToSend - id.Connection.BytesSent);
-                    NetworkIO.EnqueueSend(id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, this.onEndSendMessageCallback, id);
+                    NetworkIO.EnqueueSend(id.Connection.Connection, id.Connection.sendBuffer, id.Connection.BytesSent, byteCount, this.onEndSendMessageCallback, id);
                 }
 
                 return byteCount;
