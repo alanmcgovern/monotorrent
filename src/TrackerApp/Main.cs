@@ -146,6 +146,9 @@ namespace SampleTracker
 					
                     // ITrackable trackable = new InfoHashTrackable(t);
                     ITrackable trackable = new CustomITrackable(t);
+
+                    // The lock is here because the TorrentFound event is asyncronous and I have
+                    // to ensure that only 1 thread access the tracker at the same time.
                     lock (tracker)
                         tracker.Add(trackable);
                 }
