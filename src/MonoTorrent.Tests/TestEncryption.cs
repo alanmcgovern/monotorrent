@@ -129,12 +129,14 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
         [Test]
         public void EncrytorFactoryPeerBFull()
         {
+            rig.Engine.Settings.PreferEncryption = true;
             PeerBTest(EncryptionTypes.RC4Full);
         }
 
         [Test]
         public void EncrytorFactoryPeerBHeader()
         {
+            rig.Engine.Settings.PreferEncryption = true;
             PeerBTest(EncryptionTypes.RC4Header);
         }
 
