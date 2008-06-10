@@ -73,7 +73,10 @@ namespace MonoTorrent.Client.Encryption
         {
             Encrypt(buffer, 0, buffer, 0, buffer.Length);
         }
-
+        public void Decrypt(byte[] buffer, int offset, int count)
+        {
+            Decrypt(buffer, offset, buffer, offset, count);
+        }
         public void Decrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             Encrypt(src, srcOffset, dest, destOffset, count);
@@ -83,7 +86,10 @@ namespace MonoTorrent.Client.Encryption
         {
             Encrypt(buffer, 0, buffer, 0, buffer.Length);
         }
-
+        public void Encrypt(byte[] buffer, int offset, int count)
+        {
+            Encrypt(buffer, offset, buffer, offset, count);
+        }
         public void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count)
         {
             byte c;
