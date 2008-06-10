@@ -402,11 +402,11 @@ namespace MonoTorrent.Client.Encryption
                     if (toCopy == length)
                         callback(null);
                     else
-                        socket.BeginReceive(buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
+                        NetworkIO.EnqueueReceive(socket, buffer, toCopy, length - toCopy, doneReceiveCallback, new object[] { callback, buffer, toCopy, length - toCopy });
                 }
                 else
                 {
-                    socket.BeginReceive(buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
+                    NetworkIO.EnqueueReceive(socket, buffer, 0, length, doneReceiveCallback, new object[] { callback, buffer, 0, length });
                 }
             }
             catch (Exception ex)
@@ -440,7 +440,7 @@ namespace MonoTorrent.Client.Encryption
                 {
                     receiveData[2] = start + received;
                     receiveData[3] = length - received;
-                    socket.BeginReceive(buffer, start + received, length - received, doneReceiveCallback, receiveData);
+                    NetworkIO.EnqueueReceive(socket, buffer, start + received, length - received, doneReceiveCallback, receiveData);
                 }
                 else
                 {
@@ -458,7 +458,7 @@ namespace MonoTorrent.Client.Encryption
             try
             {
                 if (toSend.Length > 0)
-                    socket.BeginSend(toSend, 0, toSend.Length, doneSendCallback, new object[] { toSend, 0, toSend.Length });
+                    NetworkIO.EnqueueSend(socket, toSend, 0, toSend.Length, doneSendCallback, new object[] { toSend, 0, toSend.Length });
             }
             catch (Exception ex)
             {
@@ -487,7 +487,7 @@ namespace MonoTorrent.Client.Encryption
                 {
                     sendData[1] = start + sent;
                     sendData[2] = length - sent;
-                    socket.BeginSend(toSend, start + sent, length - sent, doneSendCallback, sendData);
+                    NetworkIO.EnqueueSend(socket, toSend, start + sent, length - sent, doneSendCallback, sendData);
                 }
             }
             catch (Exception ex)

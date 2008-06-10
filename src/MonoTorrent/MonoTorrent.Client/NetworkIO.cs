@@ -162,6 +162,19 @@ namespace MonoTorrent.Client
             connect.Result.AsyncWaitHandle.Close();
         }
 
+        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            IAsyncResult result = connection.BeginSend(buffer, offset, count, null, state);
+            lock (sends)
+                sends.Add(new AsyncIO(result, callback));
+        }
+
+        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            IAsyncResult result = connection.BeginReceive(buffer, offset, count, null, state);
+            lock (receives)
+                receives.Add(new AsyncIO(result, callback));
+        }
 
         internal static void EnqueueSend(ArraySegment<byte> sendBuffer, int bytesSent, int count, AsyncCallback callback, PeerIdInternal id)
         {
