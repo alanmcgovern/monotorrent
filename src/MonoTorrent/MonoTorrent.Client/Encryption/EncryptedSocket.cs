@@ -314,7 +314,7 @@ namespace MonoTorrent.Client.Encryption
                 if (bytesReceived > syncStopPoint)
                     asyncResult.Complete(new EncryptionException("Couldn't synchronise 1"));
                 else
-                    socket.BeginReceive(synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                    NetworkIO.EnqueueReceive(socket, synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
             }
             catch (Exception ex)
             {
@@ -359,7 +359,7 @@ namespace MonoTorrent.Client.Encryption
                     else
                     {
                         Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
-                        socket.BeginReceive(synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
+                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
                     }
                 }
             }

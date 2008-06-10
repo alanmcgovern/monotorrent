@@ -245,7 +245,7 @@ namespace MonoTorrent.Client
             catch (Exception)
             {
                 Logger.Log(id.Connection.Connection, "failed to encrypt");
-                id.Connection.Dispose();
+                id.Connection.Connection.Dispose();
                 id.Connection = null;
                 id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
             }
@@ -306,7 +306,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // If we receive 0 bytes, the connection has been closed, so exit
-                int bytesReceived = id.Connection.EndReceive(result);
+                int bytesReceived = id.Connection.Connection.EndReceive(result);
                 if (bytesReceived == 0)
                 {
                     reason = "EndReceiveMessage: Received zero bytes";
@@ -369,7 +369,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // If we have sent zero bytes, that is a sign the connection has been closed
-                int bytesSent = id.Connection.EndSend(result);
+                int bytesSent = id.Connection.Connection.EndSend(result);
                 if (bytesSent == 0)
                 {
                     reason = "Sending error: Sent zero bytes";
@@ -781,7 +781,7 @@ namespace MonoTorrent.Client
                 if (!id.Connection.AmChoking)
                     id.TorrentManager.UploadingTo--;
 
-                id.Connection.Dispose();
+                id.Connection.Connection.Dispose();
                 id.Connection = null;
 
                 id.TorrentManager.uploadQueue.RemoveAll(delegate(PeerIdInternal other) { return id == other; });
@@ -840,11 +840,12 @@ namespace MonoTorrent.Client
             try
             {
                 Interlocked.Increment(ref this.openConnections);
-                bytesSent = id.Connection.EndSend(result);
+                bytesSent = id.Connection.Connection.EndSend(result);
                 id.Connection.BytesSent += bytesSent;
                 if (bytesSent != id.Connection.BytesToSend)
                 {
-                    id.Connection.BeginSend(id.Connection.sendBuffer, id.Connection.BytesSent, id.Connection.BytesToSend - id.Connection.BytesSent, SocketFlags.None, this.incomingConnectionAcceptedCallback, id);
+                    NetworkIO.EnqueueSend(id.Connection.Connection, id.Connection.sendBuffer, id.Connection.BytesSent,
+                                          id.Connection.BytesToSend - id.Connection.BytesSent, incomingConnectionAcceptedCallback, id);
                     return;
                 }
 
@@ -859,7 +860,7 @@ namespace MonoTorrent.Client
                 if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
                 {
                     Logger.Log(id.Connection.Connection, "ConnectionManager - Already connected to peer");
-                    id.Connection.Dispose();
+                    id.Connection.Connection.Dispose();
                     return;
                 }
 

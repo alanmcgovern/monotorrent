@@ -75,6 +75,9 @@ namespace MonoTorrent.Client
             public IAsyncResult Result;
             public AsyncCallback Callback;
         }
+
+        private static ManualResetEvent handle;
+        private static object locker = new object();
         private static List<AsyncConnect> connects;
         private static List<AsyncIO> receives;
         private static List<AsyncIO> sends;
@@ -86,7 +89,9 @@ namespace MonoTorrent.Client
 
         static NetworkIO()
         {
+            locker = new object();
             connects = new List<AsyncConnect>();
+            handle = new ManualResetEvent(false);
             receives = new List<AsyncIO>();
             sends = new List<AsyncIO>();
 
@@ -98,7 +103,7 @@ namespace MonoTorrent.Client
                     AsyncIO? r = null;
                     AsyncIO? s = null;
 
-                    lock (receives)
+                    lock (locker)
                     {
                         for (int i = 0; i < receives.Count; i++)
                         {
@@ -108,10 +113,7 @@ namespace MonoTorrent.Client
                             receives.RemoveAt(i);
                             break;
                         }
-                    }
 
-                    lock (sends)
-                    {
                         for (int i = 0; i < sends.Count; i++)
                         {
                             if (!sends[i].Result.IsCompleted)
@@ -120,9 +122,7 @@ namespace MonoTorrent.Client
                             sends.RemoveAt(i);
                             break;
                         }
-                    }
-                    lock (connects)
-                    {
+
                         for (int i = 0; i < connects.Count; i++)
                         {
                             if (!connects[i].Result.IsCompleted && !connects[i].ShouldAbort)
@@ -131,6 +131,9 @@ namespace MonoTorrent.Client
                             connects.RemoveAt(i);
                             break;
                         }
+
+                        if (receives.Count == 0 && sends.Count == 0 && connects.Count == 0)
+                            handle.Reset();
                     }
 
                     if (r.HasValue)
@@ -146,7 +149,7 @@ namespace MonoTorrent.Client
                     if (c != null)
                         CompleteConnect(c);
 
-                    System.Threading.Thread.Sleep(1);
+                    handle.WaitOne();
                 }
             });
             t.IsBackground = true;
@@ -170,8 +173,11 @@ namespace MonoTorrent.Client
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             IAsyncResult result = connection.BeginSend(buffer, offset, count, null, state);
-            lock (sends)
+            lock (locker)
+            {
                 sends.Add(new AsyncIO(result, callback));
+                handle.Set();
+            }
         }
 
         internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncCallback callback, object state)
@@ -182,17 +188,23 @@ namespace MonoTorrent.Client
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             IAsyncResult result = connection.BeginReceive(buffer, offset, count, null, state);
-            lock (receives)
+            lock (locker)
+            {
                 receives.Add(new AsyncIO(result, callback));
+                handle.Set();
+            }
         }
 
         internal static void EnqueueConnect(AsyncConnect connect)
         {
             connect.Result = connect.Connection.BeginConnect(null, connect);
             connect.StartTime = Environment.TickCount;
-            
-            lock (connects)
+
+            lock (locker)
+            {
                 connects.Add(connect);
+                handle.Set();
+            }
         }
     }
 }

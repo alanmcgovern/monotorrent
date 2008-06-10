@@ -548,45 +548,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
-
-        #region Async Methods
-
-        internal void BeginConnect(AsyncCallback peerEndCreateConnection, PeerIdInternal id)
-		{
-			Connection.BeginConnect(peerEndCreateConnection, id);
-		}
-
-        internal IAsyncResult BeginReceive(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
-        {
-            return Connection.BeginReceive(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
-        }
-
-        internal IAsyncResult BeginSend(ArraySegment<byte> buffer, int offset, int count, SocketFlags socketFlags, AsyncCallback asyncCallback, PeerIdInternal id)
-        {
-            return Connection.BeginSend(buffer.Array, buffer.Offset + offset, count, asyncCallback, id);
-		}
-
-        internal void Dispose()
-		{
-			Connection.Dispose();
-		}
-
-        internal void EndConnect(IAsyncResult result)
-		{
-			Connection.EndConnect(result);
-		}
-
-        internal int EndReceive(IAsyncResult result)
-		{
-			return Connection.EndReceive(result);
-		}
-
-        internal int EndSend(IAsyncResult result)
-		{
-			return Connection.EndSend(result);
-		}
-
-        #endregion
     }
 }

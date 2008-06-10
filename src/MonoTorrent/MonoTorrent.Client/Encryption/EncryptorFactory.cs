@@ -100,7 +100,7 @@ namespace MonoTorrent.Client.Encryption
                 if (id.Connection.Connection.IsIncoming)
                 {
                     result.Buffer = new byte[id.Connection.BytesToRecieve];
-                    c.BeginReceive(result.Buffer, 0, result.Buffer.Length, HandshakeReceivedCallback, result);
+                    NetworkIO.EnqueueReceive(c, result.Buffer, 0, result.Buffer.Length, HandshakeReceivedCallback, result);
                 }
                 else
                 {
@@ -156,6 +156,8 @@ namespace MonoTorrent.Client.Encryption
             r.Id.Connection.Encryptor = r.Encryptor;
             r.Id.Connection.Decryptor = r.Decryptor;
             initialData = r.InitialData;
+
+            r.AsyncWaitHandle.Close();
         }
 
         private static void HandshakeReceived(IAsyncResult r)
@@ -176,7 +178,7 @@ namespace MonoTorrent.Client.Encryption
                 }
                 if (received < result.Buffer.Length)
                 {
-                    connection.BeginReceive(result.Buffer, result.Available, result.Buffer.Length - result.Available,
+                    NetworkIO.EnqueueReceive(connection, result.Buffer, result.Available, result.Buffer.Length - result.Available,
                                     HandshakeReceivedCallback, result);
                     return;
                 }
@@ -235,7 +237,7 @@ namespace MonoTorrent.Client.Encryption
             r.Complete();
 
             result.AsyncWaitHandle.Close();
-            r.AsyncWaitHandle.Close();
+            //r.AsyncWaitHandle.Close();
         }
     }
 }

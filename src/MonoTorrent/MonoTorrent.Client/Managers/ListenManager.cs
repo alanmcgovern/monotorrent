@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
                 if (id.Connection.BytesToRecieve == id.Connection.BytesReceived)
                     handleHandshake(id);
                 else
-                    id.Connection.BeginReceive(id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, SocketFlags.None, onPeerHandshakeReceived, id);
+                    NetworkIO.EnqueueReceive(id.Connection.Connection, id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, onPeerHandshakeReceived, id);
             }
             catch
             {
@@ -171,8 +171,15 @@ namespace MonoTorrent.Client
             HandshakeMessage handshake = new HandshakeMessage();
             try
             {
-                id.Connection.Decryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
+                // Nasty hack - If there is initial data on the connection, it's already decrypted
+                // If there was no initial data, we need to decrypt it here
                 handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
+                {
+                    id.Connection.Decryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
+                    handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                }
+
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                     throw new ProtocolException("Invalid protocol string in handshake");
             }
@@ -230,9 +237,8 @@ namespace MonoTorrent.Client
             id.Connection.Encryptor.Encrypt(id.Connection.sendBuffer.Array, id.Connection.sendBuffer.Offset, id.Connection.BytesToSend);
 
             Logger.Log(id.Connection.Connection, "ListenManager - Sending connection to torrent manager");
-            id.Connection.BeginSend(id.Connection.sendBuffer, 0, id.Connection.BytesToSend,
-                                         SocketFlags.None, new AsyncCallback(engine.ConnectionManager.IncomingConnectionAccepted),
-                                         id);
+            NetworkIO.EnqueueSend(id.Connection.Connection, id.Connection.sendBuffer, 0, id.Connection.BytesToSend,
+                                    engine.ConnectionManager.IncomingConnectionAccepted, id);
             id.Connection.ProcessingQueue = false;
         }
 
@@ -246,7 +252,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                int read = id.Connection.EndReceive(result);
+                int read = id.Connection.Connection.EndReceive(result);
                 if (read == 0)
                 {
                     CleanupSocket(id);
@@ -284,7 +290,7 @@ namespace MonoTorrent.Client
             {
                 ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
                 ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                id.Connection.Dispose();
+                id.Connection.Connection.Dispose();
             }
             else
             {
