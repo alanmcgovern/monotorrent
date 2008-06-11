@@ -132,12 +132,11 @@ namespace MonoTorrent.Client
         #region Private/Internal Methods
         public override void Dispose()
         {
-            // Already disposed?
             if (Disposed)
                 return;
 
-            listener.Close();
             Disposed = true;
+            listener.Close();
         }
 
         private void EndAccept(IAsyncResult result)
@@ -145,10 +144,6 @@ namespace MonoTorrent.Client
             Socket peerSocket = null;
             try
             {
-                // If disposed, don't call EndAccept
-                if (Disposed || !IsListening)
-                    return;
-
                 peerSocket = listener.EndAccept(result);
 
                 IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
