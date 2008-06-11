@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
         private ClientEngine engine;
         private bool isListening;
 
-        protected internal ClientEngine Engine
+        internal ClientEngine Engine
         {
             get { return engine; }
             set { engine = value; }
