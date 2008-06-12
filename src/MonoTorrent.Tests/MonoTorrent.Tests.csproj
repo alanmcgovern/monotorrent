@@ -5,7 +5,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Tests</RootNamespace>
     <AssemblyName>MonoTorrent.Tests</AssemblyName>
@@ -44,6 +44,7 @@
     <Compile Include="FileManager.cs" />
     <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="PeerMessagesTest.cs" />
+    <Compile Include="PiecePickerTests.cs" />
     <Compile Include="PieceWriterTests.cs" />
     <Compile Include="TestEncryption.cs" />
     <Compile Include="TestRig.cs" />

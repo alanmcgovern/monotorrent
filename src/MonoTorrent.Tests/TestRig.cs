@@ -323,7 +323,7 @@ namespace MonoTorrentTests
         {
             BEncodedDictionary infoDict = new BEncodedDictionary();
             infoDict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 15]);
+            infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 50]);
             infoDict[new BEncodedString("length")] = new BEncodedNumber(15 * 256 * 1024 - 1);
             infoDict[new BEncodedString("name")] = new BEncodedString("test.files");
 

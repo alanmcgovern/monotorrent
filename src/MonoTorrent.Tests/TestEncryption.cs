@@ -12,20 +12,20 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
     [TestFixture]
     public class TestEncryption
     {
-        public static void Main(string[] args)
-        {
-            int i = 0;
-            while (true)
-            {
-                TestEncryption d = new TestEncryption();
-                d.Setup();
-                try { d.EncrytorFactoryPeerAFullInitial(); }
-                catch { Console.WriteLine("******** FAILURE ********"); }
-                d.Teardown();
-                if (i == 100)
-                    break;
-            }
-        }
+        //public static void Main(string[] args)
+        //{
+        //    int i = 0;
+        //    while (true)
+        //    {
+        //        TestEncryption d = new TestEncryption();
+        //        d.Setup();
+        //        try { d.EncrytorFactoryPeerAFullInitial(); }
+        //        catch { Console.WriteLine("******** FAILURE ********"); }
+        //        d.Teardown();
+        //        if (i == 100)
+        //            break;
+        //    }
+        //}
         
         private TestRig rig;
         private ConnectionPair conn;
