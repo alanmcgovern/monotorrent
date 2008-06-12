@@ -5,6 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using MonoTorrentTests;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Tests
 {
@@ -24,6 +25,16 @@ namespace MonoTorrent.Tests
             t.RequestWhenSeeder();
             t.Setup();
             t.NoInterestingPieces();
+            t.Setup();
+            t.CancelRequests();
+            t.Setup();
+            t.RejectRequests();
+            t.Setup();
+            t.PeerChoked();
+            t.Setup();
+            t.FastPeerChoked();
+            t.Setup();
+            t.ChokeThenClose();
         }
         PeerIdInternal peer;
         List<PeerIdInternal> peers;
@@ -121,6 +132,118 @@ namespace MonoTorrent.Tests
                     picker.MyBitField[i] = true;
                 }
             Assert.IsNull(picker.PickPiece(peer, peers));
+        }
+
+        [Test]
+        public void CancelRequests()
+        {
+            List<RequestMessage> messages = new List<RequestMessage>();
+            peer.Connection.IsChoking = false;
+            peer.Connection.BitField.SetAll(true);
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.RemoveRequests(peer);
+
+            List<RequestMessage> messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            for (int i = 0; i < messages.Count; i++)
+                Assert.IsTrue(messages2.Contains(messages[i]));
+        }
+
+        [Test]
+        public void RejectRequests()
+        {
+            List<RequestMessage> messages = new List<RequestMessage>();
+            peer.Connection.IsChoking = false;
+            peer.Connection.BitField.SetAll(true);
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            foreach (RequestMessage message in messages)
+                picker.ReceivedRejectRequest(peer, new RejectRequestMessage(message.PieceIndex, message.StartOffset, message.RequestLength));
+
+            List<RequestMessage> messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            for (int i = 0; i < messages.Count; i++)
+                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
+        }
+
+        [Test]
+        public void PeerChoked()
+        {
+            List<RequestMessage> messages = new List<RequestMessage>();
+            peer.Connection.IsChoking = false;
+            peer.Connection.BitField.SetAll(true);
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.ReceivedChokeMessage(peer);
+
+            List<RequestMessage> messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            for (int i = 0; i < messages.Count; i++)
+                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
+        }
+
+        [Test]
+        public void FastPeerChoked()
+        {
+            List<RequestMessage> messages = new List<RequestMessage>();
+            peer.Connection.IsChoking = false;
+            peer.Connection.BitField.SetAll(true);
+            peer.Connection.SupportsFastPeer = true;
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.ReceivedChokeMessage(peer);
+
+            List<RequestMessage> messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.AreEqual(0, messages2.Count, "#1");
+        }
+
+        [Test]
+        public void ChokeThenClose()
+        {
+            List<RequestMessage> messages = new List<RequestMessage>();
+            peer.Connection.IsChoking = false;
+            peer.Connection.BitField.SetAll(true);
+            peer.Connection.SupportsFastPeer = true;
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.ReceivedChokeMessage(peer);
+            picker.RemoveRequests(peer);
+
+            List<RequestMessage> messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            for (int i = 0; i < messages.Count; i++)
+                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
         }
     }
 }
