@@ -70,12 +70,22 @@
     <RootNamespace>MonoTorrent</RootNamespace>
     <DebugType>none</DebugType>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Stats\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STATS</DefineConstants>
+    <BaseAddress>285212672</BaseAddress>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptionTypes.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\InitialSeed\InitialSeed.cs" />

@@ -128,6 +128,7 @@ namespace MonoTorrent
             {
                 Console.WriteLine("No torrents found in the Torrents directory");
                 Console.WriteLine("Exiting...");
+                engine.Dispose();
                 return;
             }
 
@@ -161,6 +162,10 @@ namespace MonoTorrent
                 manager.Start();
             }
 
+#if STATS
+            System.Windows.Forms.Application.Run(new MonoTorrent.Client.DebugStatistics(engine, torrents[0]));
+            return;
+#endif
 
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.

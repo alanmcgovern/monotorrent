@@ -27,6 +27,16 @@ namespace MonoTorrent.Client
         private PeerList candidatePeers = new PeerList(PeerListType.CandidatePeers); //Peers that are candidates for unchoking based on past performance
         private PeerList optimisticUnchokeCandidates = new PeerList(PeerListType.OptimisticUnchokeCandidatePeers); //Peers that are candidates for unchoking in case they perform well
 
+        private int reviewsExecuted;
+
+        /// <summary>
+        /// Number of peer reviews that have been conducted
+        /// </summary>
+        internal int ReviewsExecuted
+        {
+            get { return this.reviewsExecuted; }
+        }
+
         #endregion Private Fields
 
         #region Constructors
@@ -382,7 +392,73 @@ namespace MonoTorrent.Client
             }
 
             timeOfLastReview = DateTime.Now;
+            reviewsExecuted++;
         }
+
+
+        /// <summary>
+        /// Review method for BitTyrant Choking/Unchoking Algorithm
+        /// </summary>
+        private void ExecuteTyrantReview( )
+        {
+            // if we are seeding, don't deal with it - just send it to old method
+            if (!isDownloading)
+                ExecuteReview();
+
+            List<PeerIdInternal> sortedPeers = new List<PeerIdInternal>();
+            int uploadBandwidthUsed;
+
+            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            {
+                lock (connectedPeer)
+                {
+                    if (connectedPeer.Connection != null)
+                    {
+                        // update stats
+                        connectedPeer.UpdatePublicStats();
+
+                        // update tyrant stats
+                        connectedPeer.PublicId.UpdateTyrantStats();
+
+                        sortedPeers.Add( connectedPeer );
+                    }
+                }
+            }
+
+            // sort the list by BitTyrant ratio
+            sortedPeers.Sort( delegate( PeerIdInternal p1, PeerIdInternal p2 )
+            {
+                return p2.PublicId.Ratio.CompareTo( p1.PublicId.Ratio );
+            } );
+
+            //TODO: Make sure that lan-local peers always get unchoked. Perhaps an implementation like AZInstanceManager
+            //(in com.aelitis.azureus.core.instancemanager)
+
+
+            // After this is complete, sort them and and unchoke until upload capcity is met
+            // TODO: Should we consider some extra measures, like nascent peers, candidatePeers, optimisticUnchokeCandidates ETC.
+
+            uploadBandwidthUsed = 0;
+            foreach (PeerIdInternal pid in sortedPeers)
+            {
+                // unchoke the top interested peers till we reach the max bandwidth allotted.
+                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaxUploadSpeed && pid.PublicId.IsInterested)
+                {
+                    Unchoke( pid );
+
+                    uploadBandwidthUsed += pid.PublicId.UploadRateForRecip;
+                }
+                else
+                {
+                    Choke( pid );
+                }
+            }
+
+            this.timeOfLastReview = DateTime.Now;
+            this.reviewsExecuted++;
+
+        }
+
 
         /// <summary>
         /// Reallocates the specified number of upload slots

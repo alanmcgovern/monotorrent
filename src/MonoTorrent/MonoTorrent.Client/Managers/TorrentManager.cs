@@ -143,6 +143,21 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// Number of completed peer review rounds
+        /// </summary>
+        public int PeerReviewRoundsComplete
+        {
+            get
+            {
+                if (this.chokeUnchoker != null)
+                    return this.chokeUnchoker.ReviewsExecuted;
+                else
+                    return 0;
+            }
+        }
+
+
+        /// <summary>
         /// True if this file has been hashchecked
         /// </summary>
         public bool HashChecked

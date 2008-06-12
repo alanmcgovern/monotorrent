@@ -1,4 +1,4 @@
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -70,8 +70,23 @@
     <RootNamespace>SampleClient</RootNamespace>
     <DebugType>none</DebugType>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Stats\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STATS</DefineConstants>
+    <BaseAddress>285212672</BaseAddress>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\MonoTorrent\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
@@ -81,9 +96,46 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="main.cs" />
+    <Compile Include="Stats\DebugStatistics.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Stats\DebugStatistics.designer.cs">
+      <DependentUpon>DebugStatistics.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Stats\PeerInfo.cs" />
+    <Compile Include="Stats\PeerMessageLogger.cs" />
+    <Compile Include="Stats\PeerMessagesDisplay.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Stats\PeerMessagesDisplay.designer.cs">
+      <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Stats\StatsBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Stats\StatsBox.designer.cs">
+      <DependentUpon>StatsBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="TestManualConnection.cs" />
     <Compile Include="Top10Listener.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Stats\DebugStatistics.resx">
+      <DependentUpon>DebugStatistics.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Stats\log4net.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Stats\PeerMessagesDisplay.resx">
+      <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Stats\StatsBox.resx">
+      <DependentUpon>StatsBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <PropertyGroup>
