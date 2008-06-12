@@ -522,6 +522,8 @@ namespace MonoTorrent.Client
             }
             finally
             {
+                CancelTimedOutRequests();
+
                 if (message != null)
                 {
                     foreach (Piece p in requests)
@@ -535,6 +537,14 @@ namespace MonoTorrent.Client
                     }
                 }
             }
+        }
+
+        private void CancelTimedOutRequests()
+        {
+            foreach (Piece p in requests)
+                for (int i = 0; i < p.BlockCount; i++)
+                    if (p[i].RequestTimedOut)
+                        RemoveRequests(p[i].RequestedOff, new RequestMessage(p[i].PieceIndex, p[i].StartOffset, p[i].RequestLength));
         }
 
 
@@ -552,8 +562,7 @@ namespace MonoTorrent.Client
                     {
                         if (p.Blocks[i].Requested && !p.Blocks[i].Received && id.Equals(p.Blocks[i].RequestedOff))
                         {
-                            p.Blocks[i].Requested = false;
-                            p.Blocks[i].RequestedOff = null;
+                            p.Blocks[i].CancelRequest();
                             id.Connection.AmRequestingPiecesCount--;
                             id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[i], p, id));
                         }
@@ -582,8 +591,7 @@ namespace MonoTorrent.Client
                     {
                         if (p.Blocks[blockIndex].Requested && !p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                         {
-                            p.Blocks[blockIndex].Requested = false;
-                            p.Blocks[blockIndex].RequestedOff = null;
+                            p.Blocks[blockIndex].CancelRequest();
                             id.Connection.AmRequestingPiecesCount--;
                             id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                             return;
@@ -702,8 +710,7 @@ namespace MonoTorrent.Client
 
                     if (!p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                     {
-                        p.Blocks[blockIndex].RequestedOff = null;
-                        p.Blocks[blockIndex].Requested = false;
+                        p.Blocks[blockIndex].CancelRequest();
                         id.Connection.AmRequestingPiecesCount--;
                         id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                     }

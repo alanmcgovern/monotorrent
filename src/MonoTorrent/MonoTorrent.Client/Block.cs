@@ -29,7 +29,9 @@
 
 
 
+using System;
 using MonoTorrent.Client.Messages.Standard;
+
 namespace MonoTorrent.Client
 {
     /// <summary>
@@ -41,6 +43,7 @@ namespace MonoTorrent.Client
 
         private Piece piece;
         private int startOffset;
+        private int requestedAt;
         private PeerIdInternal requestedOff;
         private int requestLength;
         private bool requested;
@@ -104,6 +107,11 @@ namespace MonoTorrent.Client
             get { return this.requestLength; }
         }
 
+        public bool RequestTimedOut
+        {
+            get { return !Received && requestedAt != 0 && (Environment.TickCount - requestedAt) > 60000; } // 60 seconds timeout for a request to fulfill
+        }
+
         /// <summary>
         /// The peer who we requested this piece off
         /// </summary>
@@ -152,6 +160,7 @@ namespace MonoTorrent.Client
         /// <param name="requestLength">The length in bytes of the block</param>
         internal Block(Piece piece, int startOffset, int requestLength)
         {
+            this.requestedAt = 0;
             this.requestedOff = null;
             this.piece = piece;
             this.received = false;
@@ -172,8 +181,16 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         internal RequestMessage CreateRequest(PeerIdInternal id)
         {
+            this.requestedAt = Environment.TickCount;
             this.requestedOff = id;
             return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
+        }
+
+        internal void CancelRequest()
+        {
+            this.requested = false;
+            this.requestedAt = 0;
+            this.requestedOff = null;
         }
 
         public override bool Equals(object obj)
