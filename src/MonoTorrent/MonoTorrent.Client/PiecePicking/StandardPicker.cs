@@ -707,6 +707,7 @@ namespace MonoTorrent.Client
                         id.Connection.AmRequestingPiecesCount--;
                         id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                     }
+                    break;
                 }
             }
         }
