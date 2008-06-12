@@ -31,34 +31,41 @@
 using System;
 using System.Net;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Common;
 namespace MonoTorrent.Client
 {
-    public abstract class ConnectionListenerBase : IDisposable
+    public enum ListenerStatus
+    {
+        Listening,
+        PortNotFree,
+        NotListening
+    }
+
+    public abstract class ConnectionListenerBase
     {
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
+        public event EventHandler<EventArgs> StateChanged;
 
-        private ClientEngine engine;
-        private bool isListening;
+        private ListenerStatus state;
 
-        internal ClientEngine Engine
+        public abstract int ListenPort { get; }
+        public ListenerStatus State
         {
-            get { return engine; }
-            set { engine = value; }
+            get { return state; }
         }
 
-        public bool IsListening
-        {
-            get { return isListening; }
-            protected set { isListening = value; }
-        }
-
-        public abstract void Dispose();
+        public abstract void ChangePort(int port);
         public abstract void Start();
         public abstract void Stop();
 
-        protected internal virtual void RaiseConnectionReceived(Peer peer, IConnection connection, TorrentManager manager)
+        protected virtual void RaiseConnectionReceived(Peer peer, IConnection connection, TorrentManager manager)
         {
-            ConnectionReceived(this, new NewConnectionEventArgs(peer, connection, manager));
+            Toolbox.RaiseAsyncEvent<NewConnectionEventArgs>(ConnectionReceived, this, new NewConnectionEventArgs(peer, connection, manager));
+        }
+        protected virtual void RaiseStateChanged(ListenerStatus status)
+        {
+            this.state = status;
+            Toolbox.RaiseAsyncEvent<EventArgs>(StateChanged, this, EventArgs.Empty);
         }
     }
 }

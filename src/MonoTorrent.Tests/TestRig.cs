@@ -192,11 +192,6 @@ namespace MonoTorrentTests
 
     public class CustomListener : ConnectionListenerBase
     {
-        public override void Dispose()
-        {
-
-        }
-
         public override void Start()
         {
 
@@ -211,6 +206,16 @@ namespace MonoTorrentTests
         {
             MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.All);
             base.RaiseConnectionReceived(p, connection, manager);
+        }
+
+        public override void ChangePort(int port)
+        {
+
+        }
+
+        public override int ListenPort
+        {
+            get { return 0; }
         }
     }
 

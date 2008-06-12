@@ -82,6 +82,7 @@ namespace MonoTorrent.Client
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
         private DiskManager diskManager;
+        private ConnectionListenerBase listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private readonly string peerId;
         private EngineSettings settings;
@@ -113,9 +114,9 @@ namespace MonoTorrent.Client
             get { return diskManager; }
         }
 
-        public ListenManager ListenManager
+        public ConnectionListenerBase Listener
         {
-            get { return listenManager; }
+            get { return this.listener; }
         }
 
         /// <summary>
@@ -164,19 +165,17 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="engineSettings">The engine settings to use</param>
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
-        public ClientEngine(EngineSettings engineSettings)
+        public ClientEngine(EngineSettings settings)
+            : this (settings, new DiskWriter())
         {
-            Initialise(engineSettings, null, null);
-            this.peerId = GeneratePeerId();
+
         }
 
         public ClientEngine(EngineSettings settings, PieceWriter writer)
-        {
-            if (writer == null)
-                throw new ArgumentNullException("writer");
+            : this(settings, new SocketListener(new IPEndPoint(IPAddress.Any, 0)), writer)
 
-            Initialise(settings, null, writer);
-            this.peerId = GeneratePeerId();
+        {
+
         }
 
         /// <summary>
@@ -184,61 +183,43 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="engineSettings">The engine settings to use</param>
         /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
-        public ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener)
+        public ClientEngine(EngineSettings settings, ConnectionListenerBase listener)
+            : this (settings, listener, new DiskWriter())
         {
-            if (listener == null)
-                throw new ArgumentNullException("listener");
 
-            Initialise(engineSettings, listener, null);
-            this.peerId = GeneratePeerId();
         }
 
-        public ClientEngine(EngineSettings engineSettings, ConnectionListenerBase listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, ConnectionListenerBase listener, PieceWriter writer)
         {
+            if (settings == null)
+                throw new ArgumentNullException("settings");
             if (listener == null)
                 throw new ArgumentNullException("listener");
             if (writer == null)
                 throw new ArgumentNullException("writer");
-            
-            Initialise(engineSettings, listener, writer);
-            this.peerId = GeneratePeerId();
-        }
 
-        private void Initialise(EngineSettings engineSettings, ConnectionListenerBase listener, PieceWriter writer)
-        {
-            if (engineSettings == null)
-                throw new ArgumentNullException("engineSettings");
-
-            this.settings = engineSettings;
-
-            // Wrap a memory buffer around the disk writer
-            if (writer == null)
-            {
-                writer = new DiskWriter(engineSettings.MaxOpenFiles);
-                //writer = new MemoryWriter(writer);
-            }
-
+            this.listener = listener;
+            this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             this.timer = new System.Timers.Timer(TickLength);
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.timer.Elapsed += delegate { MainLoop.Queue(new DelegateTask(delegate { LogicTick(null, null); return null; })); };
+            this.timer.Elapsed += delegate { MainLoop.Queue(LogicTick); };
             this.downloadLimiter = new RateLimiter();
             this.uploadLimiter = new RateLimiter();
+            this.peerId = GeneratePeerId();
 
-            if (listener == null)
-            {
-                listener = new SocketListener(new IPEndPoint(IPAddress.Any, engineSettings.ListenPort));
-                listenManager.Register(listener);
-                listener.Start();
-            }
-            else
-            {
-                listenManager.Register(listener);
-            }
+            listenManager.Register(listener);
+
+            // This means we created the listener in the constructor
+            if (listener.ListenPort == 0)
+                listener.ChangePort(settings.ListenPort);
+
+            listener.Start();
         }
+
         #endregion
 
 
@@ -427,7 +408,7 @@ namespace MonoTorrent.Client
 
         #region Private/Internal methods
 
-        private void LogicTick(object sender, ElapsedEventArgs e)
+        private void LogicTick()
         {
             tickCount++;
 

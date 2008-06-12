@@ -42,42 +42,14 @@ namespace MonoTorrent.Client
     /// </summary>
     public class SocketListener : ConnectionListenerBase
     {
-        #region Member Variables
-
-        private bool disposed;
         private AsyncCallback endAcceptCallback;
         private IPEndPoint listenEndPoint;
         private Socket listener;
 
-        #endregion
-
-
-        #region Properties
-
-        public bool Disposed
+        public override int ListenPort
         {
-            get { return disposed; }
-            private set
-            {
-                disposed = value;
-                if (disposed)
-                    IsListening = false;
-            }
+            get { return listenEndPoint.Port; }
         }
-
-        /// <summary>
-        /// The Endpoint the listener should listen for connections on
-        /// </summary>
-        public IPEndPoint ListenEndPoint
-        {
-            get { return listenEndPoint; }
-        }
-
-        #endregion
-
-
-        #region Constructors
-
         public SocketListener(IPEndPoint endpoint)
         {
             if (endpoint == null)
@@ -87,57 +59,46 @@ namespace MonoTorrent.Client
             this.endAcceptCallback = new AsyncCallback(EndAccept);
         }
 
-        #endregion
 
+        public override void ChangePort(int port)
+        {
+            bool listening = State == ListenerStatus.Listening;
 
-        #region Public Methods
+            Stop();
+            listenEndPoint.Port = port;
 
-        /// <summary>
-        /// Begin listening for incoming connections
-        /// </summary>
+            if (listening)
+                Start();
+        }
+
         public override void Start()
         {
-            if (Engine == null)
-                throw new ListenerException("This listener hasn't been registered with a torrent manager");
-
-            if (Disposed)
-                throw new ObjectDisposedException(ToString());
-
-            if (IsListening)
+            if (State == ListenerStatus.Listening)
                 return;
 
-            listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(listenEndPoint);
-            listener.Listen(6);
-            listener.BeginAccept(endAcceptCallback, this.listener);
-            IsListening = true;
+            try
+            {
+                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                listener.Bind(listenEndPoint);
+                listener.Listen(6);
+                listener.BeginAccept(endAcceptCallback, this.listener);
+                RaiseStateChanged(ListenerStatus.Listening);
+            }
+            catch (SocketException)
+            {
+                RaiseStateChanged(ListenerStatus.PortNotFree);
+            }
         }
 
-
-        /// <summary>
-        /// Stop listening for incoming connections
-        /// </summary>
         public override void Stop()
         {
-            if (!IsListening)
-                return;
+            if (State == ListenerStatus.Listening)
+                RaiseStateChanged(ListenerStatus.NotListening);
 
-            IsListening = false;
-            this.listener.Close();
+            if (listener != null)
+                listener.Close();
         }
 
-        #endregion
-
-
-        #region Private/Internal Methods
-        public override void Dispose()
-        {
-            if (Disposed)
-                return;
-
-            Disposed = true;
-            listener.Close();
-        }
 
         private void EndAccept(IAsyncResult result)
         {
@@ -172,7 +133,7 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    if (!Disposed && IsListening)
+                    if (State == ListenerStatus.Listening)
                         listener.BeginAccept(endAcceptCallback, null);
                 }
                 catch(ObjectDisposedException)
@@ -180,7 +141,5 @@ namespace MonoTorrent.Client
                 }
             }
         }
-
-        #endregion Private/Internal Methods
     }
 }

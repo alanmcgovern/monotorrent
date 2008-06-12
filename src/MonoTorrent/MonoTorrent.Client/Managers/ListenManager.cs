@@ -73,40 +73,16 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            for (int i = 0; i < listeners.Count; i++)
-                listeners[i].Dispose();
         }
 
         public void Register(ConnectionListenerBase listener)
         {
-            lock (Locker)
-            {
-                if (listener.Engine != null)
-                    throw new ListenerException("This listener is registered to a different engine");
-
-                if (listeners.Contains(listener))
-                    throw new ListenerException("This listener has already been registered with the manager");
-
-                listener.Engine = engine;
-                listeners.Add(listener, true);
-                listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
-            }
+            listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
         public void Unregister(ConnectionListenerBase listener)
         {
-            lock (Locker)
-            {
-                if (listener.Engine != this.engine)
-                    throw new ListenerException("This listener is registered to a different engine");
-
-                if (!listeners.Contains(listener))
-                    throw new ListenerException("This listener has not been registered with the manager");
-
-                listener.Engine = null;
-                listeners.Remove(listener, true);
-                listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
-            }
+            listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
         #endregion Public Methods
