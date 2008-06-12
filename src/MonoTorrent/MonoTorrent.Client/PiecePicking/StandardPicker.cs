@@ -502,7 +502,7 @@ namespace MonoTorrent.Client
                         return message;
 
                     // Then we check if there are any allowed "Fast" pieces to download
-                    if ((message = GetFastPiece(id)) != null)
+                    if (id.Connection.IsChoking && (message = GetFastPiece(id)) != null)
                         return message;
 
                     // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
