@@ -13,44 +13,25 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
     <Member MemberName="Create">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Connections.IConnection Create (Uri connectionUri);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.Connections.IConnection</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="connectionUri" Type="System.Uri" />
-      </Parameters>
-      <Docs>
-        <param name="connectionUri">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="RegisterTypeForProtocol">
+      <ReturnValue><ReturnType>MonoTorrent.Client.Connections.IConnection</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="connectionUri" Type="System.Uri" /></Parameters>
+      <Docs><param name="connectionUri">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="RegisterTypeForProtocol">
       <MemberSignature Language="C#" Value="public static void RegisterTypeForProtocol (string protocol, Type connectionType);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="protocol" Type="System.String" />
-        <Parameter Name="connectionType" Type="System.Type" />
-      </Parameters>
-      <Docs>
-        <param name="protocol">To be added.</param>
-        <param name="connectionType">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="protocol" Type="System.String" /><Parameter Name="connectionType" Type="System.Type" /></Parameters>
+      <Docs><param name="protocol">To be added.</param><param name="connectionType">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

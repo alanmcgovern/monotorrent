@@ -13,6 +13,13 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
+    
+    
+    
+    
+    
+    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="protected ListenerBase ();" />
       <MemberType>Constructor</MemberType>
@@ -20,129 +27,67 @@
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="AnnounceReceived">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="AnnounceReceived">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Tracker.AnnounceParameters&gt; AnnounceReceived;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Tracker.AnnounceParameters&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Handle">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Tracker.AnnounceParameters&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Handle">
       <MemberSignature Language="C#" Value="public virtual MonoTorrent.BEncoding.BEncodedValue Handle (System.Collections.Specialized.NameValueCollection collection, System.Net.IPAddress remoteAddress, bool isScrape);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="collection" Type="System.Collections.Specialized.NameValueCollection" />
-        <Parameter Name="remoteAddress" Type="System.Net.IPAddress" />
-        <Parameter Name="isScrape" Type="System.Boolean" />
-      </Parameters>
-      <Docs>
-        <param name="collection">To be added.</param>
-        <param name="remoteAddress">To be added.</param>
-        <param name="isScrape">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Handle">
+      <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="collection" Type="System.Collections.Specialized.NameValueCollection" /><Parameter Name="remoteAddress" Type="System.Net.IPAddress" /><Parameter Name="isScrape" Type="System.Boolean" /></Parameters>
+      <Docs><param name="collection">To be added.</param><param name="remoteAddress">To be added.</param><param name="isScrape">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Handle">
       <MemberSignature Language="C#" Value="public virtual MonoTorrent.BEncoding.BEncodedValue Handle (string queryString, System.Net.IPAddress remoteAddress, bool isScrape);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="queryString" Type="System.String" />
-        <Parameter Name="remoteAddress" Type="System.Net.IPAddress" />
-        <Parameter Name="isScrape" Type="System.Boolean" />
-      </Parameters>
-      <Docs>
-        <param name="queryString">To be added.</param>
-        <param name="remoteAddress">To be added.</param>
-        <param name="isScrape">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Running">
+      <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="queryString" Type="System.String" /><Parameter Name="remoteAddress" Type="System.Net.IPAddress" /><Parameter Name="isScrape" Type="System.Boolean" /></Parameters>
+      <Docs><param name="queryString">To be added.</param><param name="remoteAddress">To be added.</param><param name="isScrape">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Running">
       <MemberSignature Language="C#" Value="public abstract bool Running { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Boolean</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="ScrapeReceived">
+      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="ScrapeReceived">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Tracker.ScrapeParameters&gt; ScrapeReceived;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Tracker.ScrapeParameters&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Start">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Tracker.ScrapeParameters&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Start">
       <MemberSignature Language="C#" Value="public abstract void Start ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Stop">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Stop">
       <MemberSignature Language="C#" Value="public abstract void Stop ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

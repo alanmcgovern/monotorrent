@@ -1,0 +1,6 @@
+<Namespace Name="MonoTorrent.Tracker">
+  <Docs>
+    <summary>This namespace contains the classes necessary to host a Tracker</summary>
+    <remarks />
+  </Docs>
+</Namespace>

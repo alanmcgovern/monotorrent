@@ -20,543 +20,318 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public TorrentManager (MonoTorrent.Common.Torrent torrent, string savePath, MonoTorrent.Client.TorrentSettings settings);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" />
-        <Parameter Name="savePath" Type="System.String" />
-        <Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" />
-      </Parameters>
-      <Docs>
-        <param name="torrent">To be added.</param>
-        <param name="savePath">To be added.</param>
-        <param name="settings">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName=".ctor">
+      <Parameters><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" /><Parameter Name="savePath" Type="System.String" /><Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" /></Parameters>
+      <Docs><param name="torrent">To be added.</param><param name="savePath">To be added.</param><param name="settings">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public TorrentManager (MonoTorrent.Common.Torrent torrent, string savePath, MonoTorrent.Client.TorrentSettings settings, MonoTorrent.Client.FastResume fastResumeData);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" />
-        <Parameter Name="savePath" Type="System.String" />
-        <Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" />
-        <Parameter Name="fastResumeData" Type="MonoTorrent.Client.FastResume" />
-      </Parameters>
-      <Docs>
-        <param name="torrent">To be added.</param>
-        <param name="savePath">To be added.</param>
-        <param name="settings">To be added.</param>
-        <param name="fastResumeData">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName=".ctor">
+      <Parameters><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" /><Parameter Name="savePath" Type="System.String" /><Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" /><Parameter Name="fastResumeData" Type="MonoTorrent.Client.FastResume" /></Parameters>
+      <Docs><param name="torrent">To be added.</param><param name="savePath">To be added.</param><param name="settings">To be added.</param><param name="fastResumeData">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public TorrentManager (MonoTorrent.Common.Torrent torrent, string savePath, MonoTorrent.Client.TorrentSettings settings, string baseDirectory);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" />
-        <Parameter Name="savePath" Type="System.String" />
-        <Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" />
-        <Parameter Name="baseDirectory" Type="System.String" />
-      </Parameters>
-      <Docs>
-        <param name="torrent">To be added.</param>
-        <param name="savePath">To be added.</param>
-        <param name="settings">To be added.</param>
-        <param name="baseDirectory">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName=".ctor">
+      <Parameters><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" /><Parameter Name="savePath" Type="System.String" /><Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" /><Parameter Name="baseDirectory" Type="System.String" /></Parameters>
+      <Docs><param name="torrent">To be added.</param><param name="savePath">To be added.</param><param name="settings">To be added.</param><param name="baseDirectory">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public TorrentManager (MonoTorrent.Common.Torrent torrent, string savePath, MonoTorrent.Client.TorrentSettings settings, string baseDirectory, MonoTorrent.Client.FastResume fastResumeData);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" />
-        <Parameter Name="savePath" Type="System.String" />
-        <Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" />
-        <Parameter Name="baseDirectory" Type="System.String" />
-        <Parameter Name="fastResumeData" Type="MonoTorrent.Client.FastResume" />
-      </Parameters>
-      <Docs>
-        <param name="torrent">To be added.</param>
-        <param name="savePath">To be added.</param>
-        <param name="settings">To be added.</param>
-        <param name="baseDirectory">To be added.</param>
-        <param name="fastResumeData">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Complete">
+      <Parameters><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent" /><Parameter Name="savePath" Type="System.String" /><Parameter Name="settings" Type="MonoTorrent.Client.TorrentSettings" /><Parameter Name="baseDirectory" Type="System.String" /><Parameter Name="fastResumeData" Type="MonoTorrent.Client.FastResume" /></Parameters>
+      <Docs><param name="torrent">To be added.</param><param name="savePath">To be added.</param><param name="settings">To be added.</param><param name="baseDirectory">To be added.</param><param name="fastResumeData">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Complete">
       <MemberSignature Language="C#" Value="public bool Complete { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Boolean</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Dispose">
+      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Dispose">
       <MemberSignature Language="C#" Value="public void Dispose ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Engine">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Engine">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.ClientEngine Engine { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.ClientEngine</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Equals">
+      <ReturnValue><ReturnType>MonoTorrent.Client.ClientEngine</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Equals">
       <MemberSignature Language="C#" Value="public bool Equals (MonoTorrent.Client.TorrentManager other);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Boolean</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="other" Type="MonoTorrent.Client.TorrentManager" />
-      </Parameters>
-      <Docs>
-        <param name="other">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="FileManager">
+      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="other" Type="MonoTorrent.Client.TorrentManager" /></Parameters>
+      <Docs><param name="other">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="FileManager">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.FileManager FileManager { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.FileManager</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="HashCheck">
+      <ReturnValue><ReturnType>MonoTorrent.Client.FileManager</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="HashCheck">
       <MemberSignature Language="C#" Value="public void HashCheck (bool autoStart);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="autoStart" Type="System.Boolean" />
-      </Parameters>
-      <Docs>
-        <param name="autoStart">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="HashChecked">
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="autoStart" Type="System.Boolean" /></Parameters>
+      <Docs><param name="autoStart">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="HashChecked">
       <MemberSignature Language="C#" Value="public bool HashChecked { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Boolean</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="HashFails">
+      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="HashFails">
       <MemberSignature Language="C#" Value="public int HashFails { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Int32</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="IsInitialSeeding">
+      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="IsInitialSeeding">
       <MemberSignature Language="C#" Value="public bool IsInitialSeeding { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Boolean</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Monitor">
+      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Monitor">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.ConnectionMonitor Monitor { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.ConnectionMonitor</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="OpenConnections">
+      <ReturnValue><ReturnType>MonoTorrent.Client.ConnectionMonitor</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="OpenConnections">
       <MemberSignature Language="C#" Value="public int OpenConnections { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Int32</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Pause">
+      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Pause">
       <MemberSignature Language="C#" Value="public void Pause ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="PeerConnected">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="PeerConnected">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt; PeerConnected;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="PeerDisconnected">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="PeerDisconnected">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt; PeerDisconnected;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Peers">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeerConnectionEventArgs&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Peers">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.PeerManager Peers { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.PeerManager</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="PeersFound">
+      <ReturnValue><ReturnType>MonoTorrent.Client.PeerManager</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="PeersFound">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.PeersAddedEventArgs&gt; PeersFound;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeersAddedEventArgs&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="PieceHashed">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.PeersAddedEventArgs&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="PieceHashed">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.PieceHashedEventArgs&gt; PieceHashed;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.PieceHashedEventArgs&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="PieceManager">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.PieceHashedEventArgs&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="PieceManager">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.PieceManager PieceManager { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.PieceManager</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Progress">
+      <ReturnValue><ReturnType>MonoTorrent.Client.PieceManager</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Progress">
       <MemberSignature Language="C#" Value="public double Progress { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Double</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="SaveFastResume">
+      <ReturnValue><ReturnType>System.Double</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="SaveFastResume">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.FastResume SaveFastResume ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.FastResume</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>MonoTorrent.Client.FastResume</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="SavePath">
+      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="SavePath">
       <MemberSignature Language="C#" Value="public string SavePath { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.String</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Settings">
+      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Settings">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.TorrentSettings Settings { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.TorrentSettings</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Start">
+      <ReturnValue><ReturnType>MonoTorrent.Client.TorrentSettings</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Start">
       <MemberSignature Language="C#" Value="public void Start ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Void</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="StartTime">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="StartTime">
       <MemberSignature Language="C#" Value="public DateTime StartTime { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.DateTime</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="State">
+      <ReturnValue><ReturnType>System.DateTime</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="State">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.TorrentState State { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Common.TorrentState</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Stop">
+      <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Stop">
       <MemberSignature Language="C#" Value="public System.Threading.WaitHandle Stop ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Threading.WaitHandle</ReturnType>
-      </ReturnValue>
+      <ReturnValue><ReturnType>System.Threading.WaitHandle</ReturnType></ReturnValue>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Torrent">
+      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Torrent">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.Torrent Torrent { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="TorrentStateChanged">
+      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="TorrentStateChanged">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.TorrentStateChangedEventArgs&gt; TorrentStateChanged;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.TorrentStateChangedEventArgs&gt;</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="TrackerManager">
+      <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.TorrentStateChangedEventArgs&gt;</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="TrackerManager">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.Tracker.TrackerManager TrackerManager { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.Tracker.TrackerManager</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="UploadingTo">
+      <ReturnValue><ReturnType>MonoTorrent.Client.Tracker.TrackerManager</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="UploadingTo">
       <MemberSignature Language="C#" Value="public int UploadingTo { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Int32</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

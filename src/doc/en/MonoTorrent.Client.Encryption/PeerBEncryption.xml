@@ -19,16 +19,8 @@
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="possibleSKEYs" Type="System.Byte[][]" />
-        <Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" />
-      </Parameters>
-      <Docs>
-        <param name="possibleSKEYs">To be added.</param>
-        <param name="allowedEncryption">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <Parameters><Parameter Name="possibleSKEYs" Type="System.Byte[][]" /><Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" /></Parameters>
+      <Docs><param name="possibleSKEYs">To be added.</param><param name="allowedEncryption">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

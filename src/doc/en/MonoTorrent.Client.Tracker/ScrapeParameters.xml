@@ -13,52 +13,32 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
+    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public ScrapeParameters (MonoTorrent.Client.Tracker.TrackerConnectionID id, byte[] infoHash);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="id" Type="MonoTorrent.Client.Tracker.TrackerConnectionID" />
-        <Parameter Name="infoHash" Type="System.Byte[]" />
-      </Parameters>
-      <Docs>
-        <param name="id">To be added.</param>
-        <param name="infoHash">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="Id">
+      <Parameters><Parameter Name="id" Type="MonoTorrent.Client.Tracker.TrackerConnectionID" /><Parameter Name="infoHash" Type="System.Byte[]" /></Parameters>
+      <Docs><param name="id">To be added.</param><param name="infoHash">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="Id">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.Tracker.TrackerConnectionID Id { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.Tracker.TrackerConnectionID</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="InfoHash">
+      <ReturnValue><ReturnType>MonoTorrent.Client.Tracker.TrackerConnectionID</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="InfoHash">
       <MemberSignature Language="C#" Value="public byte[] InfoHash { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>System.Byte[]</ReturnType>
-      </ReturnValue>
-      <Docs>
-        <summary>To be added.</summary>
-        <value>To be added.</value>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
+      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

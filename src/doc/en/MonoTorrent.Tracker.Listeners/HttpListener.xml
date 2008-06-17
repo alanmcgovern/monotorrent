@@ -13,52 +13,32 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
+    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public HttpListener (System.Net.IPEndPoint endpoint);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="endpoint" Type="System.Net.IPEndPoint" />
-      </Parameters>
-      <Docs>
-        <param name="endpoint">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName=".ctor">
+      <Parameters><Parameter Name="endpoint" Type="System.Net.IPEndPoint" /></Parameters>
+      <Docs><param name="endpoint">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public HttpListener (string httpPrefix);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="httpPrefix" Type="System.String" />
-      </Parameters>
-      <Docs>
-        <param name="httpPrefix">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName=".ctor">
+      <Parameters><Parameter Name="httpPrefix" Type="System.String" /></Parameters>
+      <Docs><param name="httpPrefix">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public HttpListener (System.Net.IPAddress address, int port);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <Parameters>
-        <Parameter Name="address" Type="System.Net.IPAddress" />
-        <Parameter Name="port" Type="System.Int32" />
-      </Parameters>
-      <Docs>
-        <param name="address">To be added.</param>
-        <param name="port">To be added.</param>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <Parameters><Parameter Name="address" Type="System.Net.IPAddress" /><Parameter Name="port" Type="System.Int32" /></Parameters>
+      <Docs><param name="address">To be added.</param><param name="port">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

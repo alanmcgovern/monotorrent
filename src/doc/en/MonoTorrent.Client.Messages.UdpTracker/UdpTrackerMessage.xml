@@ -13,6 +13,8 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
+    
+    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="protected UdpTrackerMessage ();" />
       <MemberType>Constructor</MemberType>
@@ -20,56 +22,25 @@
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
       <Parameters />
-      <Docs>
-        <summary>To be added.</summary>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="DecodeMessage">
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="DecodeMessage">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage DecodeMessage (ArraySegment&lt;byte&gt; buffer, int offset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="buffer" Type="System.ArraySegment&lt;System.Byte&gt;" />
-        <Parameter Name="offset" Type="System.Int32" />
-        <Parameter Name="count" Type="System.Int32" />
-      </Parameters>
-      <Docs>
-        <param name="buffer">To be added.</param>
-        <param name="offset">To be added.</param>
-        <param name="count">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
-    </Member>
-    <Member MemberName="DecodeMessage">
+      <ReturnValue><ReturnType>MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="buffer" Type="System.ArraySegment&lt;System.Byte&gt;" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
+      <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+    </Member><Member MemberName="DecodeMessage">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage DecodeMessage (byte[] buffer, int offset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
         <AssemblyVersion>0.0.0.0</AssemblyVersion>
       </AssemblyInfo>
-      <ReturnValue>
-        <ReturnType>MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage</ReturnType>
-      </ReturnValue>
-      <Parameters>
-        <Parameter Name="buffer" Type="System.Byte[]" />
-        <Parameter Name="offset" Type="System.Int32" />
-        <Parameter Name="count" Type="System.Int32" />
-      </Parameters>
-      <Docs>
-        <param name="buffer">To be added.</param>
-        <param name="offset">To be added.</param>
-        <param name="count">To be added.</param>
-        <summary>To be added.</summary>
-        <returns>To be added.</returns>
-        <remarks>To be added.</remarks>
-      </Docs>
+      <ReturnValue><ReturnType>MonoTorrent.Client.Messages.UdpTracker.UdpTrackerMessage</ReturnType></ReturnValue>
+      <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
+      <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>
