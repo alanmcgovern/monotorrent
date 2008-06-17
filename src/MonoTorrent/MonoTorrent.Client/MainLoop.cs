@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
     {
         static AutoResetEvent handle = new AutoResetEvent(false);
         static Queue<Task> tasks = new Queue<Task>();
-        static Thread thread = new Thread(Loop);
+        internal static Thread thread = new Thread(Loop);
 
         static MainLoop()
         {
@@ -74,17 +74,10 @@ namespace MonoTorrent.Client
 
         public static void Queue(Task task)
         {
-            if (Thread.CurrentThread == thread)
+            lock (tasks)
             {
-                task.Execute();
-            }
-            else
-            {
-                lock (tasks)
-                {
-                    tasks.Enqueue(task);
-                    handle.Set();
-                }
+                tasks.Enqueue(task);
+                handle.Set();
             }
         }
 
@@ -102,7 +95,12 @@ namespace MonoTorrent.Client
         {
             DelegateTask t = new DelegateTask(delegate { task(); return null; });
             t.Handle = new ManualResetEvent(false);
-            Queue(t);
+            
+            if (Thread.CurrentThread == thread)
+                t.Execute();
+            else
+                Queue(t);
+
             t.Handle.WaitOne();
             t.Handle.Close();
         }
