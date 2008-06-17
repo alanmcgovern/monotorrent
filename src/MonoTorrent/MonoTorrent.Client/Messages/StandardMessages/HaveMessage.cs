@@ -98,6 +98,8 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerIdInternal id)
         {
+            id.PublicId.HaveMessagesReceived++;
+            
             // First set the peers bitfield to true for that piece
             id.Connection.BitField[this.pieceIndex] = true;
 

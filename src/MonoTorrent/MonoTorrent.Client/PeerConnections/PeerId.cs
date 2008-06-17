@@ -250,6 +250,12 @@ namespace MonoTorrent.Client
         private int uploadRateForRecip;
 
 
+        public int HaveMessagesReceived
+        {
+            get { return this.haveMessagesReceived; }
+            internal set { this.haveMessagesReceived++; }
+        }
+
         /// <summary>
         /// This is Up
         /// </summary>
@@ -381,15 +387,6 @@ namespace MonoTorrent.Client
             {
                 this.uploadRateForRecip = (this.uploadRateForRecip * 9) / 10;
             }
-        }
-
-
-        /// <summary>
-        /// Method used for reporting receipt of a Have message from a peer
-        /// </summary>
-        internal void HaveMessageReceived()
-        {
-            this.haveMessagesReceived++;
         }
 
 
