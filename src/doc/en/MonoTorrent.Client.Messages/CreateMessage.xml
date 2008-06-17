@@ -1,0 +1,22 @@
+<Type Name="CreateMessage" FullName="MonoTorrent.Client.Messages.CreateMessage">
+  <TypeSignature Language="C#" Value="public delegate MonoTorrent.Client.Messages.PeerMessage CreateMessage(TorrentManager manager);" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>System.Delegate</BaseTypeName>
+  </Base>
+  <Parameters>
+    <Parameter Name="manager" Type="MonoTorrent.Client.TorrentManager" />
+  </Parameters>
+  <ReturnValue>
+    <ReturnType>MonoTorrent.Client.Messages.PeerMessage</ReturnType>
+  </ReturnValue>
+  <Docs>
+    <param name="manager">To be added.</param>
+    <summary>To be added.</summary>
+    <value>To be added.</value>
+    <remarks>To be added.</remarks>
+  </Docs>
+</Type>

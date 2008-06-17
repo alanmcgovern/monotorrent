@@ -1,0 +1,206 @@
+<Overview>
+  <Assemblies>
+    <Assembly Name="MonoTorrent" Version="0.0.0.0">
+      <Attributes>
+        <Attribute>
+          <AttributeName>System.Runtime.CompilerServices.RuntimeCompatibility(WrapNonExceptionThrows=true)</AttributeName>
+        </Attribute>
+      </Attributes>
+    </Assembly>
+  </Assemblies>
+  <Remarks>To be added.</Remarks>
+  <Copyright>To be added.</Copyright>
+  <Types>
+    <Namespace Name="MonoTorrent.BEncoding">
+      <Type Name="BEncodedDictionary" />
+      <Type Name="BEncodedList" />
+      <Type Name="BEncodedNumber" />
+      <Type Name="BEncodedString" />
+      <Type Name="BEncodedValue" />
+      <Type Name="BEncodingException" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client">
+      <Type Name="AllowedFastAlgorithm" />
+      <Type Name="AnnounceResponseEventArgs" />
+      <Type Name="Block" />
+      <Type Name="BlockEventArgs" />
+      <Type Name="BufferedIO" />
+      <Type Name="BufferManager" />
+      <Type Name="BufferType" />
+      <Type Name="ClientEngine" />
+      <Type Name="ConnectionException" />
+      <Type Name="ConnectionListenerBase" />
+      <Type Name="ConnectionManager" />
+      <Type Name="ConnectionMonitor" />
+      <Type Name="CriticalExceptionEventArgs" />
+      <Type Name="EngineSettings" />
+      <Type Name="FastResume" />
+      <Type Name="FileManager" />
+      <Type Name="ListenerException" />
+      <Type Name="ListenManager" />
+      <Type Name="Logger" />
+      <Type Name="ManagerWaitHandle" />
+      <Type Name="MessageException" />
+      <Type Name="NewConnectionEventArgs" />
+      <Type Name="Peer" />
+      <Type Name="PeerAddedEventArgs" />
+      <Type Name="PeerConnectionEventArgs" />
+      <Type Name="PeerExchangeManager" />
+      <Type Name="PeerId" />
+      <Type Name="PeerManager" />
+      <Type Name="PeerMessageEventArgs" />
+      <Type Name="PeersAddedEventArgs" />
+      <Type Name="Piece" />
+      <Type Name="PieceHashedEventArgs" />
+      <Type Name="PieceManager" />
+      <Type Name="ProtocolException" />
+      <Type Name="RateLimiter" />
+      <Type Name="SocketListener" />
+      <Type Name="StatsUpdateEventArgs" />
+      <Type Name="TorrentEventArgs" />
+      <Type Name="TorrentLoadException" />
+      <Type Name="TorrentManager" />
+      <Type Name="TorrentSettings" />
+      <Type Name="TorrentStateChangedEventArgs" />
+      <Type Name="TransferType" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Connections">
+      <Type Name="ConnectionFactory" />
+      <Type Name="HttpConnection" />
+      <Type Name="IConnection" />
+      <Type Name="IPV4Connection" />
+      <Type Name="IPV6Connection" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Encryption">
+      <Type Name="EncryptedSocket" />
+      <Type Name="EncryptionException" />
+      <Type Name="EncryptionTypes" />
+      <Type Name="IEncryption" />
+      <Type Name="IEncryptor" />
+      <Type Name="PeerAEncryption" />
+      <Type Name="PeerBEncryption" />
+      <Type Name="PlainTextEncryption" />
+      <Type Name="RC4" />
+      <Type Name="RC4Header" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Managers">
+      <Type Name="DiskManager" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Messages">
+      <Type Name="CreateMessage" />
+      <Type Name="Message" />
+      <Type Name="MessageBundle" />
+      <Type Name="PeerMessage" />
+      <Type Name="UnknownMessage" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Messages.FastPeer">
+      <Type Name="AllowedFastMessage" />
+      <Type Name="HaveAllMessage" />
+      <Type Name="HaveNoneMessage" />
+      <Type Name="RejectRequestMessage" />
+      <Type Name="SuggestPieceMessage" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Messages.Libtorrent">
+      <Type Name="ExtendedHandshakeMessage" />
+      <Type Name="ExtensionMessage" />
+      <Type Name="ExtensionSupport" />
+      <Type Name="LTChat" />
+      <Type Name="LTMetadata" />
+      <Type Name="LTMetadata+eMessageType" />
+      <Type Name="PeerExchangeMessage" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Messages.Standard">
+      <Type Name="BitfieldMessage" />
+      <Type Name="CancelMessage" />
+      <Type Name="ChokeMessage" />
+      <Type Name="HandshakeMessage" />
+      <Type Name="HaveMessage" />
+      <Type Name="InterestedMessage" />
+      <Type Name="KeepAliveMessage" />
+      <Type Name="NotInterestedMessage" />
+      <Type Name="PieceMessage" />
+      <Type Name="PortMessage" />
+      <Type Name="RequestMessage" />
+      <Type Name="UnchokeMessage" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Messages.UdpTracker">
+      <Type Name="ConnectMessage" />
+      <Type Name="UdpTrackerMessage" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.PieceWriters">
+      <Type Name="DiskWriter" />
+      <Type Name="MemoryWriter" />
+      <Type Name="PieceWriter" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Client.Tracker">
+      <Type Name="AnnounceParameters" />
+      <Type Name="HTTPTracker" />
+      <Type Name="ScrapeParameters" />
+      <Type Name="ScrapeResponseEventArgs" />
+      <Type Name="Tracker" />
+      <Type Name="TrackerConnectionID" />
+      <Type Name="TrackerFactory" />
+      <Type Name="TrackerManager" />
+      <Type Name="TrackerResponseEventArgs" />
+      <Type Name="TrackerStateChangedEventArgs" />
+      <Type Name="TrackerTier" />
+      <Type Name="UdpTracker" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Common">
+      <Type Name="AsyncResult" />
+      <Type Name="BitField" />
+      <Type Name="Client" />
+      <Type Name="Direction" />
+      <Type Name="Hashes" />
+      <Type Name="MonoTorrentCollection`1" DisplayName="MonoTorrentCollection&lt;T&gt;" />
+      <Type Name="Operation`1" DisplayName="Operation&lt;T&gt;" />
+      <Type Name="PeerConnectionEvent" />
+      <Type Name="PeerListType" />
+      <Type Name="PeerStatus" />
+      <Type Name="PieceEvent" />
+      <Type Name="Priority" />
+      <Type Name="Software" />
+      <Type Name="SpeedMonitor" />
+      <Type Name="Toolbox" />
+      <Type Name="Torrent" />
+      <Type Name="TorrentCreator" />
+      <Type Name="TorrentCreatorAsyncResult" />
+      <Type Name="TorrentCreatorEventArgs" />
+      <Type Name="TorrentEvent" />
+      <Type Name="TorrentException" />
+      <Type Name="TorrentFile" />
+      <Type Name="TorrentState" />
+      <Type Name="TrackerState" />
+      <Type Name="VersionInfo" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.TorrentWatcher">
+      <Type Name="ITorrentWatcher" />
+      <Type Name="TorrentFolderWatcher" />
+      <Type Name="TorrentWatcherEventArgs" />
+      <Type Name="TorrentWatchers" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Tracker">
+      <Type Name="AnnounceParameters" />
+      <Type Name="ByteComparer" />
+      <Type Name="IIntervalAlgorithm" />
+      <Type Name="InfoHashTrackable" />
+      <Type Name="IPAddressComparer" />
+      <Type Name="IPeerComparer" />
+      <Type Name="ITrackable" />
+      <Type Name="Peer" />
+      <Type Name="RequestMonitor" />
+      <Type Name="RequestParameters" />
+      <Type Name="ScrapeParameters" />
+      <Type Name="SimpleTorrentManager" />
+      <Type Name="StaticIntervalAlgorithm" />
+      <Type Name="Tracker" />
+      <Type Name="TrackerException" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Tracker.Listeners">
+      <Type Name="HttpListener" />
+      <Type Name="ListenerBase" />
+      <Type Name="ManualListener" />
+    </Namespace>
+  </Types>
+  <Title>MonoTorrent</Title>
+</Overview>

@@ -1,0 +1,49 @@
+<Type Name="ScrapeResponseEventArgs" FullName="MonoTorrent.Client.Tracker.ScrapeResponseEventArgs">
+  <TypeSignature Language="C#" Value="public class ScrapeResponseEventArgs : MonoTorrent.Client.Tracker.TrackerResponseEventArgs" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Client.Tracker.TrackerResponseEventArgs</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public ScrapeResponseEventArgs (MonoTorrent.Client.Tracker.Tracker tracker);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="tracker" Type="MonoTorrent.Client.Tracker.Tracker" />
+      </Parameters>
+      <Docs>
+        <param name="tracker">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public ScrapeResponseEventArgs (MonoTorrent.Client.Tracker.Tracker tracker, bool successful);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="tracker" Type="MonoTorrent.Client.Tracker.Tracker" />
+        <Parameter Name="successful" Type="System.Boolean" />
+      </Parameters>
+      <Docs>
+        <param name="tracker">To be added.</param>
+        <param name="successful">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

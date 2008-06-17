@@ -1,0 +1,34 @@
+<Type Name="PeerBEncryption" FullName="MonoTorrent.Client.Encryption.PeerBEncryption">
+  <TypeSignature Language="C#" Value="public class PeerBEncryption : MonoTorrent.Client.Encryption.EncryptedSocket" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Client.Encryption.EncryptedSocket</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public PeerBEncryption (byte[][] possibleSKEYs, MonoTorrent.Client.Encryption.EncryptionTypes allowedEncryption);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="possibleSKEYs" Type="System.Byte[][]" />
+        <Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" />
+      </Parameters>
+      <Docs>
+        <param name="possibleSKEYs">To be added.</param>
+        <param name="allowedEncryption">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

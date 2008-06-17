@@ -1,0 +1,104 @@
+<Type Name="TrackerConnectionID" FullName="MonoTorrent.Client.Tracker.TrackerConnectionID">
+  <TypeSignature Language="C#" Value="public class TrackerConnectionID" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>System.Object</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public TrackerConnectionID (MonoTorrent.Client.Tracker.Tracker tracker, bool trySubsequent, MonoTorrent.Common.TorrentEvent torrentEvent, object request);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="tracker" Type="MonoTorrent.Client.Tracker.Tracker" />
+        <Parameter Name="trySubsequent" Type="System.Boolean" />
+        <Parameter Name="torrentEvent" Type="MonoTorrent.Common.TorrentEvent" />
+        <Parameter Name="request" Type="System.Object" />
+      </Parameters>
+      <Docs>
+        <param name="tracker">To be added.</param>
+        <param name="trySubsequent">To be added.</param>
+        <param name="torrentEvent">To be added.</param>
+        <param name="request">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public TrackerConnectionID (MonoTorrent.Client.Tracker.Tracker tracker, bool trySubsequent, MonoTorrent.Common.TorrentEvent torrentEvent, object request, System.Threading.ManualResetEvent waitHandle);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="tracker" Type="MonoTorrent.Client.Tracker.Tracker" />
+        <Parameter Name="trySubsequent" Type="System.Boolean" />
+        <Parameter Name="torrentEvent" Type="MonoTorrent.Common.TorrentEvent" />
+        <Parameter Name="request" Type="System.Object" />
+        <Parameter Name="waitHandle" Type="System.Threading.ManualResetEvent" />
+      </Parameters>
+      <Docs>
+        <param name="tracker">To be added.</param>
+        <param name="trySubsequent">To be added.</param>
+        <param name="torrentEvent">To be added.</param>
+        <param name="request">To be added.</param>
+        <param name="waitHandle">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Request">
+      <MemberSignature Language="C#" Value="public object Request;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Object</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Tracker">
+      <MemberSignature Language="C#" Value="public MonoTorrent.Client.Tracker.Tracker Tracker;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Tracker.Tracker</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="WaitHandle">
+      <MemberSignature Language="C#" Value="public System.Threading.ManualResetEvent WaitHandle { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Threading.ManualResetEvent</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>
