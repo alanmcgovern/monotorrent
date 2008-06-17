@@ -105,6 +105,7 @@ namespace MonoTorrent.Client
             Socket peerSocket = null;
             try
             {
+                Socket listener = (Socket)result.AsyncState;
                 peerSocket = listener.EndAccept(result);
 
                 IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
