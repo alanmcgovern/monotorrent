@@ -221,10 +221,6 @@ namespace MonoTorrent.Client
 
             try
             {
-                // Remove the peer from the "connecting" list and put them in the "connected" list
-                // because we have now successfully connected to them
-                id.TorrentManager.Peers.ConnectedPeers.Add(id);
-
                 id.PublicId = new PeerId();
                 id.UpdatePublicStats();
 
@@ -239,15 +235,16 @@ namespace MonoTorrent.Client
                 }
 
                 // Increase the count of the "open" connections
-                System.Threading.Interlocked.Increment(ref this.openConnections);
                 EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
+                
+                System.Threading.Interlocked.Increment(ref this.openConnections);
+                id.TorrentManager.Peers.ConnectedPeers.Add(id);
             }
             catch (Exception)
             {
                 Logger.Log(id.Connection.Connection, "failed to encrypt");
                 id.Connection.Connection.Dispose();
                 id.Connection = null;
-                id.TorrentManager.Peers.ActivePeers.Remove(id.Peer);
             }
             finally
             {
