@@ -49,8 +49,18 @@ FILES =  \
 	MonoTorrent.BEncoding/IBEncodedValue.cs \
 	MonoTorrent.Client/AllowedFastAlgorithm.cs \
 	MonoTorrent.Client/Block.cs \
-	MonoTorrent.Client/BufferedFileRead.cs \
 	MonoTorrent.Client/ClientEngine.cs \
+	MonoTorrent.Client/Logger.cs \
+	MonoTorrent.Client/FileStreamBuffer.cs \
+	MonoTorrent.Client/MainLoop.cs \
+	MonoTorrent.Client/ManagerWaitHandle.cs \
+	MonoTorrent.Client/MessageHandler.cs \
+	MonoTorrent.Client/NetworkIO.cs \
+	MonoTorrent.Client/Piece.cs \
+	MonoTorrent.Client/RateLimiter.cs \
+	MonoTorrent.Client/TorrentFileStream.cs \
+	MonoTorrent.Client/TransferType.cs \
+	\
 	MonoTorrent.Client/ConnectionListeners/ConnectionListenerBase.cs \
 	MonoTorrent.Client/ConnectionListeners/SocketListener.cs \
 	MonoTorrent.Client/Encryption/BigInteger/BigInteger.cs \
@@ -73,7 +83,6 @@ FILES =  \
 	MonoTorrent.Client/EventArgs/PeerAddedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeerConnectionEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeersAddedEventArgs.cs \
-	MonoTorrent.Client/EventArgs/PieceEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PieceHashedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/ScrapeResponseEventArgs.cs \
 	MonoTorrent.Client/EventArgs/StateUpdateEventArgs.cs \
@@ -87,9 +96,7 @@ FILES =  \
 	MonoTorrent.Client/Exceptions/ProtocolException.cs \
 	MonoTorrent.Client/Exceptions/TorrentLoadException.cs \
 	MonoTorrent.Client/FastResume/FastResume.cs \
-	MonoTorrent.Client/FileStreamBuffer.cs \
 	MonoTorrent.Client/InitialSeed/InitialSeed.cs \
-	MonoTorrent.Client/Logger.cs \
 	MonoTorrent.Client/Managers/BufferManager.cs \
 	MonoTorrent.Client/Managers/ChokeUnchokeManager.cs \
 	MonoTorrent.Client/Managers/ConnectionManager.cs \
@@ -102,8 +109,6 @@ FILES =  \
 	MonoTorrent.Client/Managers/PieceManager.cs \
 	MonoTorrent.Client/Managers/TorrentManager.cs \
 	MonoTorrent.Client/Managers/TrackerManager.cs \
-	MonoTorrent.Client/ManagerWaitHandle.cs \
-	MonoTorrent.Client/MessageHandler.cs \
 	MonoTorrent.Client/Messages/FastPeerExtensions/AllowedFastMessage.cs \
 	MonoTorrent.Client/Messages/FastPeerExtensions/HaveAllMessage.cs \
 	MonoTorrent.Client/Messages/FastPeerExtensions/HaveNoneMessage.cs \
@@ -141,6 +146,7 @@ FILES =  \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeMessage.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeResponseMessage.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/UdpTrackerMessage.cs \
+	MonoTorrent.Client/Messages/uTorrent/PeerExchangeMessage.cs \
 	MonoTorrent.Client/Messages/UnknownMessage.cs \
 	MonoTorrent.Client/PeerConnections/ConnectionFactory.cs \
 	MonoTorrent.Client/PeerConnections/HTTPConnection.cs \
@@ -152,7 +158,6 @@ FILES =  \
 	MonoTorrent.Client/PeerConnections/TCPConnection.cs \
 	MonoTorrent.Client/Peers/Peer.cs \
 	MonoTorrent.Client/Peers/PeerList.cs \
-	MonoTorrent.Client/Piece.cs \
 	MonoTorrent.Client/PiecePicking/EndGamePicker.cs \
 	MonoTorrent.Client/PiecePicking/PiecePickerBase.cs \
 	MonoTorrent.Client/PiecePicking/StandardPicker.cs \
@@ -160,12 +165,10 @@ FILES =  \
 	MonoTorrent.Client/PieceWriter/IPieceWriter.cs \
 	MonoTorrent.Client/PieceWriter/MemoryWriter.cs \
 	MonoTorrent.Client/PieceWriter/PieceData.cs \
-	MonoTorrent.Client/PieceWriter/Pressure.cs \
-	MonoTorrent.Client/RateLimiter.cs \
-	MonoTorrent.Client/ReaderLock.cs \
 	MonoTorrent.Client/Settings/EngineSettings.cs \
 	MonoTorrent.Client/Settings/TorrentSettings.cs \
-	MonoTorrent.Client/TorrentFileStream.cs \
+	MonoTorrent.Client/Tasks/DelegateTask.cs \
+	MonoTorrent.Client/Tasks/Task.cs \
 	MonoTorrent.Client/Tracker/AnnounceParameters.cs \
 	MonoTorrent.Client/Tracker/HTTPTracker.cs \
 	MonoTorrent.Client/Tracker/ScrapeParameters.cs \
@@ -174,8 +177,6 @@ FILES =  \
 	MonoTorrent.Client/Tracker/TrackerFactory.cs \
 	MonoTorrent.Client/Tracker/TrackerTier.cs \
 	MonoTorrent.Client/Tracker/UdpTracker.cs \
-	MonoTorrent.Client/TransferType.cs \
-	MonoTorrent.Client/WriterLock.cs \
 	MonoTorrent.Common/AsyncResult.cs \
 	MonoTorrent.Common/BitField.cs \
 	MonoTorrent.Common/Enums.cs \
