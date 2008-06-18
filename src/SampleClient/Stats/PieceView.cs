@@ -1,4 +1,6 @@
-﻿using System;
+#if STATS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -124,3 +126,4 @@ namespace SampleClient.Stats
         }
     }
 }
+#endif

@@ -1,4 +1,6 @@
-﻿namespace SampleClient.Stats
+#if STATS
+
+namespace SampleClient.Stats
 {
     partial class PieceView
     {
@@ -54,3 +56,4 @@
         private System.Windows.Forms.Panel panel1;
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.21022</ProductVersion>
@@ -41,6 +42,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -48,7 +50,7 @@
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;DEBUG;STATS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
@@ -97,10 +99,6 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Design" />
@@ -110,74 +108,46 @@
     <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\log4net\log4net.csproj">
-      <Project>{F6A02431-167E-4347-BC43-65532C31CDB7}</Project>
-      <Name>log4net</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
-      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
+      <Project>{9CC2CC3A-4041-4857-AF8B-D58745FD3066}</Project>
       <Name>MonoTorrent</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="main.cs" />
-    <Compile Include="Stats\DebugStatistics.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Stats\DebugStatistics.cs" />
     <Compile Include="Stats\DebugStatistics.designer.cs">
       <DependentUpon>DebugStatistics.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\GlacialList\BorderStrip.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Stats\GlacialList\BorderStrip.cs" />
     <Compile Include="Stats\GlacialList\ColumnCollection.cs" />
-    <Compile Include="Stats\GlacialList\GlacialList.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Stats\GlacialList\GLComboBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Stats\GlacialList\GLDateTimePicker.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Stats\GlacialList\GlacialList.cs" />
+    <Compile Include="Stats\GlacialList\GLComboBox.cs" />
+    <Compile Include="Stats\GlacialList\GLDateTimePicker.cs" />
     <Compile Include="Stats\GlacialList\GLEmbeddedControl.cs" />
     <Compile Include="Stats\GlacialList\GLMergeSort.cs" />
     <Compile Include="Stats\GlacialList\GLQuickSort.cs" />
-    <Compile Include="Stats\GlacialList\GLTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Stats\GlacialList\GLTextBox.cs" />
     <Compile Include="Stats\GlacialList\HelperFunctions.cs" />
     <Compile Include="Stats\GlacialList\ItemCollection.cs" />
-    <Compile Include="Stats\GlacialList\ManagedHScrollBar.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Stats\GlacialList\ManagedVScrollBar.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Stats\GlacialList\ManagedHScrollBar.cs" />
+    <Compile Include="Stats\GlacialList\ManagedVScrollBar.cs" />
     <Compile Include="Stats\GlacialList\ThemeRoutines.cs" />
     <Compile Include="Stats\PeerInfo.cs" />
     <Compile Include="Stats\PeerMessageLogger.cs" />
-    <Compile Include="Stats\PeerMessagesDisplay.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Stats\PeerMessagesDisplay.cs" />
     <Compile Include="Stats\PeerMessagesDisplay.designer.cs">
       <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\Pieces.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Stats\Pieces.cs" />
     <Compile Include="Stats\Pieces.Designer.cs">
       <DependentUpon>Pieces.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\PieceView.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="Stats\PieceView.cs" />
     <Compile Include="Stats\PieceView.designer.cs">
       <DependentUpon>PieceView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\StatsBox.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Stats\StatsBox.cs" />
     <Compile Include="Stats\StatsBox.designer.cs">
       <DependentUpon>StatsBox.cs</DependentUpon>
     </Compile>
@@ -189,54 +159,40 @@
   <ItemGroup>
     <EmbeddedResource Include="Stats\DebugStatistics.resx">
       <DependentUpon>DebugStatistics.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\BorderStrip.resx">
       <DependentUpon>BorderStrip.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\GlacialList.resx">
       <DependentUpon>GlacialList.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\GLComboBox.resx">
       <DependentUpon>GLComboBox.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\GLDateTimePicker.resx">
       <DependentUpon>GLDateTimePicker.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\GLTextBox.resx">
       <DependentUpon>GLTextBox.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\ManagedHScrollBar.resx">
       <DependentUpon>ManagedHScrollBar.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\GlacialList\ManagedVScrollBar.resx">
       <DependentUpon>ManagedVScrollBar.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="Stats\log4net.resx">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Stats\log4net.resx" />
     <EmbeddedResource Include="Stats\PeerMessagesDisplay.resx">
       <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\Pieces.resx">
       <DependentUpon>Pieces.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\PieceView.resx">
       <DependentUpon>PieceView.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Stats\StatsBox.resx">
       <DependentUpon>StatsBox.cs</DependentUpon>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -264,5 +220,15 @@
     </PostBuildEvent>
     <ProjectGuid>{9CC2CC3A-4041-4857-AF8B-D58745FD3066}</ProjectGuid>
     <RootNamespace>SampleClient</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Stats\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STATS</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <BaseAddress>285212672</BaseAddress>
   </PropertyGroup>
 </Project>

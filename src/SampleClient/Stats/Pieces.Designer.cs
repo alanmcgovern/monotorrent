@@ -1,4 +1,6 @@
-﻿namespace SampleClient.Stats
+#if STATS
+
+namespace SampleClient.Stats
 {
     partial class Pieces
     {
@@ -203,3 +205,5 @@
         private PieceList glacialList1;
     }
 }
+
+#endif

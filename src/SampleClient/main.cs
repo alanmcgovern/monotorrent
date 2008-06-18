@@ -12,7 +12,9 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
 
+#if STATS
 using SampleClient.Stats;
+#endif
 
 namespace MonoTorrent
 {

@@ -1,4 +1,6 @@
-﻿using System;
+#if STATS
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -315,3 +317,5 @@ namespace SampleClient.Stats
         }
     }
 }
+
+#endif
