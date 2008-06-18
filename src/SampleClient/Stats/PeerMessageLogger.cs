@@ -126,6 +126,10 @@ namespace SampleClient.Stats
         }
 
 
+        /// <summary>
+        /// Log custom message
+        /// </summary>
+        /// <param name="message"></param>
         public void LogPeerMessage(object message)
         {
             LOG.Info(message);

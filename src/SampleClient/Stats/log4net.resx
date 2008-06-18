@@ -158,6 +158,7 @@
     &lt;/appender&gt;
 
     &lt;!-- MESSAGE LOG APPENDER: Append all message information (per-peer appenders are created programatically --&gt;
+    &lt;!--
     &lt;appender name="MessageLogAppender" type="log4net.Appender.RollingFileAppender"&gt;
       &lt;File value="messages.log"/&gt;
       &lt;rollingStyle value="Once" /&gt;
@@ -167,6 +168,7 @@
         &lt;conversionPattern value="%date{HH:mm:ss} %message%newline"/&gt;
       &lt;/layout&gt;
     &lt;/appender&gt;
+    --&gt;
 
     &lt;!-- LOGGERS --&gt;
 
@@ -180,7 +182,7 @@
       &lt;appender-ref ref="MessageLogAppender"/&gt;
       &lt;additivity value="false"/&gt;
     &lt;/logger&gt;
-
+   
     &lt;!-- Connection logger --&gt;
     &lt;logger name="MonoTorrent.Client.ConnectionManager"&gt;
       &lt;appender-ref ref="ConnectionLogAppender"/&gt;

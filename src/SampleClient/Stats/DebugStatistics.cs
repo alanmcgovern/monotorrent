@@ -142,6 +142,7 @@ namespace SampleClient.Stats
                         if (this.manager != null)
                         {
                             // unregister the events
+
                             this.manager.PeerConnected -= new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
                             this.manager.PeerDisconnected -= new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
                             this.manager.Engine.ConnectionManager.PeerMessageTransferred -= new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
@@ -162,12 +163,14 @@ namespace SampleClient.Stats
                             ConfigureLogging();
 
                             // register the events
+
                             this.manager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
                             this.manager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
                             this.manager.Engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
                             foreach (TrackerTier tier in manager.TrackerManager.TrackerTiers)
                                 foreach (Tracker t in tier.Trackers)
                                     t.AnnounceComplete += new EventHandler<AnnounceResponseEventArgs>(TrackerAnnounceCompleteHandler);
+
                             this.statsBox.SetTorrent(this.manager);
 
                             // set the title
@@ -215,11 +218,6 @@ namespace SampleClient.Stats
             this.peerList = new SortableBindingList<PeerInfo>();
             this.loggers = new Dictionary<Uri, PeerMessageLogger>();
 
-            this.statsBox = new StatsBox();
-            this.statsBox.SelectedTorrent += new EventHandler<TorrentEventArgs>(SelectedTorrentHandler);
-
-            this.pieces = new Pieces();
-
             this.dataGridView1.AutoGenerateColumns = true;
 
             this.bindingSource = new BindingSource();
@@ -237,8 +235,13 @@ namespace SampleClient.Stats
 
             this.numHeaderClicks = new int[this.dataGridView1.Columns.Count];
 
+            this.statsBox = new StatsBox();
+            this.pieces = new Pieces();
+
+            this.statsBox.SelectedTorrent += new EventHandler<TorrentEventArgs>(SelectedTorrentHandler);
+
             this.statsBox.Show();
-            this.Show();
+            this.pieces.Show();
 
             this.engine = engine;
             foreach (TorrentManager mgr in this.engine.Torrents)
@@ -382,6 +385,19 @@ namespace SampleClient.Stats
 
 
         /// <summary>
+        /// Log the failed connection attempt
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void ConnectionAttemptFailedHandler(object sender, PeerConnectionFailedEventArgs args)
+        {
+            connectionLog.InfoFormat("Failed to {0} peer at {1}. Message: {2}",
+                args.ConnectionDirection == Direction.Incoming ? "accept connection from" : "connect to", 
+                args.Peer.ConnectionUri, args.Message);
+        }
+
+
+        /// <summary>
         /// Log the peer connection
         /// </summary>
         /// <param name="sender"></param>
@@ -398,10 +414,19 @@ namespace SampleClient.Stats
 
                 lock (this.loggers)
                 {
-                    if (this.loggers.ContainsKey(args.PeerID.Location))
+                    PeerMessageLogger logger;
+
+                    if (!this.loggers.ContainsKey(args.PeerID.Location))
                     {
-                        this.loggers[args.PeerID.Location].LogPeerMessage(msg);
+                        logger = new PeerMessageLogger(args.PeerID.Location.ToString(), this.peerLogDir);
+                        this.loggers[args.PeerID.Location] = logger;
                     }
+                    else
+                    {
+                        logger = this.loggers[args.PeerID.Location];
+                    }
+
+                    logger.LogPeerMessage(msg);
                 }
             }
         }
@@ -424,10 +449,19 @@ namespace SampleClient.Stats
 
                 lock (this.loggers)
                 {
-                    if (this.loggers.ContainsKey(args.PeerID.Location))
+                    PeerMessageLogger logger;
+
+                    if (!this.loggers.ContainsKey(args.PeerID.Location))
                     {
-                        this.loggers[args.PeerID.Location].LogPeerMessage(msg);
+                        logger = new PeerMessageLogger(args.PeerID.Location.ToString(), this.peerLogDir);
+                        this.loggers[args.PeerID.Location] = logger;
                     }
+                    else
+                    {
+                        logger = this.loggers[args.PeerID.Location];
+                    }
+
+                    logger.LogPeerMessage(msg);
                 }
             }
         }
@@ -504,9 +538,21 @@ namespace SampleClient.Stats
             {
                 Uri uri = this.dataGridView1.Rows[e.RowIndex].Cells[0].Value as Uri;
 
-                if (loggers.ContainsKey(uri))
+                lock (this.loggers)
                 {
-                    loggers[uri].CreatePeerDisplay();
+                    PeerMessageLogger logger;
+
+                    if (!this.loggers.ContainsKey(uri))
+                    {
+                        logger = new PeerMessageLogger(uri.ToString(), this.peerLogDir);
+                        this.loggers[uri] = logger;
+                    }
+                    else
+                    {
+                        logger = this.loggers[uri];
+                    }
+
+                    logger.CreatePeerDisplay();
                 }
             }
         }
@@ -655,13 +701,15 @@ namespace SampleClient.Stats
                 {
                     //statsLog.Info(" Time Percent Playback Total-Down Total-Up Download-Speed Upload-Speed Peers Choked"
                     //+ " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us");
-                    /*statsLog.InfoFormat("{0,5} {1,7} {2,8} {3,10} {4,8} {5,14} {6,12} {7,5} {8,6} {9,8} {10,10} {11,10} {12,12} {13,24} {14,16}",
+                    statsLog.InfoFormat("{0,5} {1,7} {2,8} {3,10} {4,8} {5,14} {6,12} {7,5} {8,6} {9,8} {10,10} {11,10} {12,12} {13,24} {14,16}",
                         this.milliSeconds / 1000, this.manager.Progress.ToString("#0.##"),
-                        (((double)this.manager.PieceManager.HighPrioritySetStart / (double)this.manager.Torrent.Pieces.Count) * 100).ToString("#0.##"),
+                        // useless data till the SlidingWindowPicker code hits SVN
+                        0, 0,
+                        //(((double)this.manager.PieceManager.HighPrioritySetStart / (double)this.manager.Torrent.Pieces.Count) * 100).ToString("#0.##"),
                         this.bytesDownloaded, this.bytesUploaded, this.downloadSpeed, this.uploadSpeed, this.peers, this.totalChoked,
                         this.totalUnchoked, this.totalInterested, this.totalChokingUs, this.totalUnchokingUs,
                         this.totalOptimisticallyUnchokingUs, this.totalInterestedInUs);
-                    */
+
                     this.lastStatsWrite = this.milliSeconds;
                 }
             }

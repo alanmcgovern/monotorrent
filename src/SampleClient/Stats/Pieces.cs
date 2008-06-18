@@ -68,6 +68,9 @@ namespace SampleClient.Stats
         }
 
 
+        /// <summary>
+        /// Create new instance of the pieces control with no manager specified
+        /// </summary>
         public Pieces()
         {
             InitializeComponent();
@@ -83,8 +86,6 @@ namespace SampleClient.Stats
                 }));
 
             this.glacialList1.ItemHeight = 20;
-
-            this.Show();
 
             SetPiecesText();
         }
@@ -175,7 +176,7 @@ namespace SampleClient.Stats
             //Utils.PerformControlOperation(this.glacialList1, new Action<int>(((PieceList)this.glacialList1).RemoveOldPieces),
             //    this.manager.PieceManager.HighPrioritySetStart);
 
-            Utils.PerformControlOperation(this.glacialList1, new NoParam(this.glacialList1.Refresh));
+            Utils.PerformControlOperation(this.glacialList1, this.glacialList1.Refresh);
 
             SetPiecesText();
         }
@@ -187,7 +188,7 @@ namespace SampleClient.Stats
         /// <param name="view"></param>
         private void AddPieceView(PieceView view)
         {
-            Utils.PerformControlOperation(this.glacialList1, delegate { ((PieceList)this.glacialList1).AddPieceView(view); });
+            Utils.PerformControlOperation(this.glacialList1, delegate { this.glacialList1.AddPieceView(view); });
         }
 
 

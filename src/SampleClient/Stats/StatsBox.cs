@@ -116,10 +116,10 @@ namespace SampleClient.Stats
         {
             if (SelectedTorrent != null)
             {
-                Utils.PerformControlOperation(this.comboBox1, new NoParam(delegate
+                Utils.PerformControlOperation(this.comboBox1, delegate
                         {
                             SelectedTorrent(this, new TorrentEventArgs((TorrentManager)this.comboBox1.SelectedItem));
-                        }));
+                        });
             }
         }
     }

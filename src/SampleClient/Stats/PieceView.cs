@@ -11,12 +11,13 @@ using MonoTorrent.Common;
 
 namespace SampleClient.Stats
 {
-    internal partial class PieceView : UserControl, IComparable
+    /// <summary>
+    /// blue = block received
+    /// red = normal
+    /// green = outstanding block (> 1 block request)
+    /// </summary>
+    internal partial class PieceView : UserControl
     {
-        // blue = block received
-        // red = normal
-        // green = outstanding block (> 1 block request)
-
         private Piece piece;
 
         public Piece Piece
@@ -89,14 +90,21 @@ namespace SampleClient.Stats
             }
         }
 
+        /// <summary>
+        /// Update the block coloring with the status of the piece
+        /// </summary>
         public void UpdateBlock()
         {
-            for (int x = 0; x < piece.BlockCount; x++)
+            Utils.PerformControlOperation(this.panel1, delegate
             {
-                Block b = piece[x];
+                for (int x = 0; x < piece.BlockCount; x++)
+                {
+                    Control c = panel1.Controls[x];
+                    Block b = piece[x];
 
-                panel1.Controls[x].BackColor = GetBlockColor(piece[x]);
-            }
+                    c.BackColor = GetBlockColor(b);
+                }
+            });
         }
 
         private Color GetBlockColor(Block b)
@@ -114,17 +122,5 @@ namespace SampleClient.Stats
                 return Color.Red;
             }
         }
-
-
-
-        public int CompareTo(object obj)
-        {
-            if (obj is PieceView)
-            {
-                return this.Piece.Index.CompareTo(((PieceView)obj).Piece.Index);
-            }
-            return 0;
-        }
-
     }
 }

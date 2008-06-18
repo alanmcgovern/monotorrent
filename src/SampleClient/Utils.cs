@@ -33,7 +33,6 @@ namespace SampleClient
         /// </summary>
         /// <param name="control"></param>
         /// <param name="action"></param>
-        /// <param name="args">Parameters required, or null if no parameters</param>
         public static void PerformControlOperation(Control control, NoParam action)
         {
             if (control.InvokeRequired)
