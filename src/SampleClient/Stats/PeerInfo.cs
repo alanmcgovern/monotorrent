@@ -33,9 +33,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     /// <summary>
     /// All the peer information for a DataGridView row
@@ -162,29 +163,29 @@ namespace MonoTorrent.Client
 
         #endregion
 
-        public PeerInfo( PeerIdInternal id )
+        public PeerInfo(PeerIdInternal id)
         {
-            UpdateData( id );
+            UpdateData(id);
         }
 
-        public bool Equals( PeerInfo info )
+        public bool Equals(PeerInfo info)
         {
-            return this.connectionUri.Equals( info.connectionUri );
+            return this.connectionUri.Equals(info.connectionUri);
         }
 
-        public override int GetHashCode( )
+        public override int GetHashCode()
         {
             return this.connectionUri.GetHashCode();
         }
 
-        public override bool Equals( object obj )
+        public override bool Equals(object obj)
         {
             if (obj is PeerInfo)
-                return Equals( obj as PeerInfo );
+                return Equals(obj as PeerInfo);
             return false;
         }
 
-        public void UpdateData( PeerIdInternal pIdInternal )
+        public void UpdateData(PeerIdInternal pIdInternal)
         {
             this.connectionUri = pIdInternal.PublicId.Location;
             this.connected = pIdInternal.PublicId.Connection != null;

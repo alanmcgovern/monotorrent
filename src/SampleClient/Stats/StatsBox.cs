@@ -36,7 +36,9 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-namespace MonoTorrent.Client
+using MonoTorrent.Client;
+
+namespace SampleClient.Stats
 {
     internal delegate int ItemAdd(TorrentManager o);
 
@@ -44,7 +46,7 @@ namespace MonoTorrent.Client
     {
         public event EventHandler<TorrentEventArgs> SelectedTorrent;
 
-        public StatsBox( )
+        public StatsBox()
         {
             InitializeComponent();
         }
@@ -54,12 +56,9 @@ namespace MonoTorrent.Client
         /// Set the text inside the textbox
         /// </summary>
         /// <param name="text"></param>
-        public void SetText( String text )
+        public void SetText(String text)
         {
-            if (this.textBox1.InvokeRequired)
-                this.textBox1.BeginInvoke( new Action<String>( delegate( String s ) { this.textBox1.Text = s; } ), text );
-            else
-                this.textBox1.Text = text;
+            Utils.PerformControlOperation(this.textBox1, delegate { this.textBox1.Text = text; });
         }
 
 
@@ -67,24 +66,18 @@ namespace MonoTorrent.Client
         /// Changes the title
         /// </summary>
         /// <param name="manager"></param>
-        public void SetTorrent( TorrentManager manager )
+        public void SetTorrent(TorrentManager manager)
         {
-            if (this.InvokeRequired)
-                this.BeginInvoke( new Action<object>( delegate( object o ) { this.Text = "StatsBox: " + manager.Torrent.Name; } ) );
-            else
-                this.Text = "StatsBox: " + manager.Torrent.Name;
+            Utils.PerformControlOperation(this, new NoParam(delegate { this.Text = "StatsBox: " + manager.Torrent.Name; }));
         }
 
 
         /// <summary>
         /// Clear the statsBox
         /// </summary>
-        public void Clear( )
+        public void Clear()
         {
-            if (this.textBox1.InvokeRequired)
-                this.textBox1.BeginInvoke( new NoParam( this.textBox1.Clear ) );
-            else
-                this.textBox1.Clear();
+            Utils.PerformControlOperation(this.textBox1, new NoParam(this.textBox1.Clear));
         }
 
 
@@ -92,12 +85,9 @@ namespace MonoTorrent.Client
         /// Report the addition of a torrent to the ClientEngine
         /// </summary>
         /// <param name="torrent"></param>
-        public void TorrentAdded( TorrentManager torrent )
+        public void TorrentAdded(TorrentManager torrent)
         {
-            if (this.comboBox1.InvokeRequired)
-                this.comboBox1.BeginInvoke( new ItemAdd( this.comboBox1.Items.Add ), torrent );
-            else
-                this.comboBox1.Items.Add( torrent );
+            Utils.PerformControlOperation(this.comboBox1, delegate { this.comboBox1.Items.Add(torrent);});
         }
 
 
@@ -105,40 +95,31 @@ namespace MonoTorrent.Client
         /// Report the removal of a torrent from the ClientEngine
         /// </summary>
         /// <param name="torrent"></param>
-        public void TorrentRemoved( TorrentManager torrent )
+        public void TorrentRemoved(TorrentManager torrent)
         {
-            if (this.comboBox1.InvokeRequired)
-                this.comboBox1.BeginInvoke( new Action<TorrentManager>( TorrentRemovedInvoke ), torrent );
-            else
-                TorrentRemovedInvoke( torrent );
+            Utils.PerformControlOperation(this.comboBox1, delegate { TorrentRemovedInvoke(torrent); });
         }
 
-        private void TorrentRemovedInvoke( TorrentManager torrent )
+
+        private void TorrentRemovedInvoke(TorrentManager torrent)
         {
-            for (int i = 0 ; i < this.comboBox1.Items.Count ; i++)
+            for (int i = 0; i < this.comboBox1.Items.Count; i++)
             {
                 object o = this.comboBox1.Items[i];
                 if (o == torrent)
-                    this.comboBox1.Items.Remove( o );
+                    this.comboBox1.Items.Remove(o);
             }
         }
 
-        private void comboBox1_SelectedValueChanged( object sender, EventArgs e )
+
+        private void comboBox1_SelectedValueChanged(object sender, EventArgs e)
         {
             if (SelectedTorrent != null)
             {
-                if (this.comboBox1.InvokeRequired)
-                {
-                    this.comboBox1.BeginInvoke( new Action<object>( delegate( object o )
+                Utils.PerformControlOperation(this.comboBox1, new NoParam(delegate
                         {
-                            SelectedTorrent( this, new TorrentEventArgs( (TorrentManager)this.comboBox1.SelectedItem ) );
-                        } ),
-                        null );
-                }
-                else
-                {
-                    SelectedTorrent( this, new TorrentEventArgs( (TorrentManager)this.comboBox1.SelectedItem ) );
-                }
+                            SelectedTorrent(this, new TorrentEventArgs((TorrentManager)this.comboBox1.SelectedItem));
+                        }));
             }
         }
     }

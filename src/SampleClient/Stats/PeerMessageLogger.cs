@@ -36,9 +36,10 @@ using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
 
+using MonoTorrent.Client;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     /// <summary>
     /// Used for logging peer messages, both to disk and to a PeerMessageDisplay (if open)
@@ -54,7 +55,7 @@ namespace MonoTorrent.Client
         private String filePath;
         private PeerMessagesDisplay display;
 
-        static PeerMessageLogger( )
+        static PeerMessageLogger()
         {
             layout = new PatternLayout();
             layout.ConversionPattern = "%date{HH:mm:ss} - %message%newline";
@@ -62,23 +63,23 @@ namespace MonoTorrent.Client
         }
 
 
-        public PeerMessageLogger( String peerUri, String peerLogDir )
+        public PeerMessageLogger(String peerUri, String peerLogDir)
         {
             this.uri = peerUri;
 
             // create the appender
-            filePath = Path.Combine( peerLogDir, CreateLogFileNameFromUri( peerUri ) );
-            appender = CreateFileAppender( peerUri, filePath, layout );
+            filePath = Path.Combine(peerLogDir, CreateLogFileNameFromUri(peerUri));
+            appender = CreateFileAppender(peerUri, filePath, layout);
 
             // create the logger
-            LOG = LogManager.GetLogger( "peer." + peerUri );
+            LOG = LogManager.GetLogger("peer." + peerUri);
 
             // set layout options for us, the appender
             this.Layout = layout;
             this.ActivateOptions();
 
             // attach ourselves as an appender to the logger
-            AddAppender( LOG, this );
+            AddAppender(LOG, this);
         }
 
 
@@ -86,16 +87,16 @@ namespace MonoTorrent.Client
         /// Display the logging messages onto a display window. Further logged peer messages will be written to the window
         /// automatically.
         /// </summary>
-        public void CreatePeerDisplay( )
+        public void CreatePeerDisplay()
         {
             lock (this)
             {
                 if (this.display == null)
                 {
-                    this.display = new PeerMessagesDisplay( this.uri, this.filePath );
+                    this.display = new PeerMessagesDisplay(this.uri, this.filePath);
                     this.display.LoadLog();
 
-                    this.display.Disposed += new EventHandler( DisplayDisposed );
+                    this.display.Disposed += new EventHandler(DisplayDisposed);
                 }
                 else
                 {
@@ -105,7 +106,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void DisplayDisposed( object sender, EventArgs args )
+        private void DisplayDisposed(object sender, EventArgs args)
         {
             lock (this)
             {
@@ -119,15 +120,15 @@ namespace MonoTorrent.Client
         /// ToString
         /// </summary>
         /// <param name="message"></param>
-        public void LogPeerMessage( PeerMessageEventArgs args )
+        public void LogPeerMessage(PeerMessageEventArgs args)
         {
-            LOG.InfoFormat( "{0}: {1}", args.Direction == Direction.Incoming ? "Received" : "Sent", args.Message );
+            LOG.InfoFormat("{0}: {1}", args.Direction == Direction.Incoming ? "Received" : "Sent", args.Message);
         }
 
 
-        public void LogPeerMessage( object message )
+        public void LogPeerMessage(object message)
         {
-            LOG.Info( message );
+            LOG.Info(message);
         }
 
 
@@ -136,17 +137,17 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
-        public static String CreateLogFileNameFromUri( String uri )
+        public static String CreateLogFileNameFromUri(String uri)
         {
-            uri = uri.Replace( ':', '.' );
+            uri = uri.Replace(':', '.');
             char[] invalidChars = Path.GetInvalidFileNameChars();
             int index;
 
-            for (int i = 0 ; i < invalidChars.Length ; )
+            for (int i = 0; i < invalidChars.Length; )
             {
-                if ((index = uri.IndexOf( invalidChars[i] )) > 0)
+                if ((index = uri.IndexOf(invalidChars[i])) > 0)
                 {
-                    uri = uri.Remove( index, 1 );
+                    uri = uri.Remove(index, 1);
                 }
                 else
                     i++;
@@ -161,9 +162,9 @@ namespace MonoTorrent.Client
         //this code taken from: http://mail-archives.apache.org/mod_mbox/logging-log4net-user/200602.mbox/%3CDDEB64C8619AC64DBC074208B046611C769745@kronos.neoworks.co.uk%3E
 
         // Set the level for a named logger
-        public static void SetLevel( string loggerName, string levelName )
+        public static void SetLevel(string loggerName, string levelName)
         {
-            ILog log = LogManager.GetLogger( loggerName );
+            ILog log = LogManager.GetLogger(loggerName);
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
             l.Level = l.Hierarchy.LevelMap[levelName];
@@ -175,10 +176,10 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="loggerName"></param>
         /// <param name="appender"></param>
-        public static void AddAppender( string loggerName, log4net.Appender.IAppender appender )
+        public static void AddAppender(string loggerName, log4net.Appender.IAppender appender)
         {
-            log4net.ILog log = log4net.LogManager.GetLogger( loggerName );
-            AddAppender( log, appender );
+            log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+            AddAppender(log, appender);
         }
 
 
@@ -187,16 +188,16 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="log"></param>
         /// <param name="appender"></param>
-        public static void AddAppender( ILog log, IAppender appender )
+        public static void AddAppender(ILog log, IAppender appender)
         {
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
-            l.AddAppender( appender );
+            l.AddAppender(appender);
         }
 
 
         // Find a named appender already attached to a logger
-        public static IAppender FindAppender( string appenderName )
+        public static IAppender FindAppender(string appenderName)
         {
             foreach (IAppender appender in LogManager.GetRepository().GetAppenders())
             {
@@ -215,13 +216,13 @@ namespace MonoTorrent.Client
         /// <param name="name"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static IAppender CreateFileAppender( string name, string fileName )
+        public static IAppender CreateFileAppender(string name, string fileName)
         {
             PatternLayout layout = new PatternLayout();
             layout.ConversionPattern = "%d [%t] %-5p %c [%x] - %m%n";
             layout.ActivateOptions();
 
-            return CreateFileAppender( name, fileName, layout );
+            return CreateFileAppender(name, fileName, layout);
         }
 
 
@@ -232,7 +233,7 @@ namespace MonoTorrent.Client
         /// <param name="fileName"></param>
         /// <param name="layout"></param>
         /// <returns></returns>
-        public static IAppender CreateFileAppender( string name, string fileName, PatternLayout layout )
+        public static IAppender CreateFileAppender(string name, string fileName, PatternLayout layout)
         {
             FileAppender appender = new FileAppender();
             appender.Name = name;
@@ -255,17 +256,17 @@ namespace MonoTorrent.Client
         /// Sends the log message to the appender and to the display window, if any
         /// </summary>
         /// <param name="loggingEvent"></param>
-        protected override void Append( log4net.Core.LoggingEvent loggingEvent )
+        protected override void Append(log4net.Core.LoggingEvent loggingEvent)
         {
             // first send it to the default appender
-            this.appender.DoAppend( loggingEvent );
+            this.appender.DoAppend(loggingEvent);
 
             // then, if there is a peer display window, send it to that
             lock (this)
             {
                 if (this.display != null)
                 {
-                    this.display.AddNewMessage( this.RenderLoggingEvent( loggingEvent ) );
+                    this.display.AddNewMessage(this.RenderLoggingEvent(loggingEvent));
                 }
             }
         }

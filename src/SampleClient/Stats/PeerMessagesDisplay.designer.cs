@@ -1,6 +1,6 @@
 ﻿#if STATS
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     partial class PeerMessagesDisplay
     {

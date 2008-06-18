@@ -2,7 +2,7 @@
 
 using System.Windows.Forms;
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     partial class DebugStatistics
     {

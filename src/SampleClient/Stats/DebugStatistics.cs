@@ -28,7 +28,7 @@
 //
 
 
-#if STATS  // If its in Debug mode, compile this form.
+#if STATS  // Conditional compilation
 
 using System;
 using System.Collections;
@@ -38,6 +38,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Resources;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -49,12 +50,12 @@ using log4net.Appender;
 using log4net.Layout;
 
 using MonoTorrent.Common;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using System.Resources;
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     /// <summary>
     /// delegate with no parameters - simulates the parameterless Action delegate from .NET 3.0
@@ -86,17 +87,19 @@ namespace MonoTorrent.Client
         private object managerLock = new object();
         private bool disposed;
 
-        private StatsBox statsBox;
+        // DebugStatistics thread
+        private Thread thread;
 
-        private Stopwatch stopwatch;
-        private long lastStatsWrite;
-
+        // logging fields
         private ILog statsLog;              // logger for stats
         private ILog announceLog;           // logger for tracker announces
         private ILog connectionLog;         // logger for connect/disconnects
         private String peerLogDir;          // directory for all per-peer logs
 
         // statistic fields
+        private Stopwatch stopwatch;
+        private long lastStatsWrite;
+
         private long milliSeconds;
         private long bytesDownloaded;
         private long bytesUploaded;
@@ -111,6 +114,8 @@ namespace MonoTorrent.Client
         private int totalOptimisticallyUnchokingUs; // number of peers that are optimistically unchoking us
         private int totalInterestedInUs;            // number of peers that are interested in us
 
+        private StatsBox statsBox;
+        private Pieces pieces;
         private SortableBindingList<PeerInfo> peerList;
         private BindingSource bindingSource;
         private int[] numHeaderClicks;
@@ -130,7 +135,6 @@ namespace MonoTorrent.Client
             get { return this.manager; }
             set
             {
-                //TODO: I don't like giant property code, is there a way to improve this?
                 lock (this.managerLock)
                 {
                     if (this.manager != value)
@@ -138,16 +142,19 @@ namespace MonoTorrent.Client
                         if (this.manager != null)
                         {
                             // unregister the events
-                            this.manager.PeerConnected -= new EventHandler<PeerConnectionEventArgs>( PeerConnectedHandler );
-                            this.manager.PeerDisconnected -= new EventHandler<PeerConnectionEventArgs>( PeerDisconnectedHandler );
-                            this.manager.Engine.ConnectionManager.PeerMessageTransferred -= new EventHandler<PeerMessageEventArgs>( PeerMessageTransferredHandler );
-                            this.manager.Engine.StatsUpdate -= new EventHandler<StatsUpdateEventArgs>( StatsUpdateHandler );
+                            this.manager.PeerConnected -= new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
+                            this.manager.PeerDisconnected -= new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
+                            this.manager.Engine.ConnectionManager.PeerMessageTransferred -= new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
+                            foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)
+                                foreach(Tracker t in tier.Trackers)
+                                    t.AnnounceComplete -= new EventHandler<AnnounceResponseEventArgs>(TrackerAnnounceCompleteHandler);
                         }
 
                         this.peerList.Clear();
                         this.statsBox.Clear();
 
                         this.manager = value;
+                        this.pieces.Manager = this.manager;
 
                         if (this.manager != null)
                         {
@@ -155,25 +162,19 @@ namespace MonoTorrent.Client
                             ConfigureLogging();
 
                             // register the events
-                            this.manager.PeerConnected += new EventHandler<PeerConnectionEventArgs>( PeerConnectedHandler );
-                            this.manager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>( PeerDisconnectedHandler );
-                            this.manager.Engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>( PeerMessageTransferredHandler );
-                            this.manager.Engine.StatsUpdate += new EventHandler<StatsUpdateEventArgs>( StatsUpdateHandler );
-
-                            this.statsBox.SetTorrent( this.manager );
+                            this.manager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
+                            this.manager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
+                            this.manager.Engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
+                            foreach (TrackerTier tier in manager.TrackerManager.TrackerTiers)
+                                foreach (Tracker t in tier.Trackers)
+                                    t.AnnounceComplete += new EventHandler<AnnounceResponseEventArgs>(TrackerAnnounceCompleteHandler);
+                            this.statsBox.SetTorrent(this.manager);
 
                             // set the title
-                            if (this.InvokeRequired)
-                            {
-                                this.BeginInvoke( new Action<object>( delegate( object o )
+                            Utils.PerformControlOperation(this, new NoParam(delegate
                                 {
                                     this.Text = "DebugStatistics: " + this.manager.Torrent.Name;
-                                } ) );
-                            }
-                            else
-                            {
-                                this.Text = "DebugStatistics: " + this.manager.Torrent.Name;
-                            }
+                                }));
 
                             // timer stuff
                             if (this.stopwatch == null)
@@ -196,8 +197,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Initialize the DebugStatistics class without a specified initial TorrentManager
         /// </summary>
-        public DebugStatistics( ClientEngine engine )
-            : this( engine, null )
+        public DebugStatistics(ClientEngine engine)
+            : this(engine, null)
         { }
 
         /// <summary>
@@ -205,17 +206,20 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="engine">ClientEngine</param>
         /// <param name="manager">TorrentManager</param>
-        public DebugStatistics( ClientEngine engine, TorrentManager manager )
+        public DebugStatistics(ClientEngine engine, TorrentManager manager)
         {
             InitializeComponent();
 
-            this.peerLogDir = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "peerlogs" );
+            this.peerLogDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "peerlogs");
 
             this.peerList = new SortableBindingList<PeerInfo>();
             this.loggers = new Dictionary<Uri, PeerMessageLogger>();
 
             this.statsBox = new StatsBox();
-            this.statsBox.SelectedTorrent += new EventHandler<TorrentEventArgs>( SelectedTorrentHandler );
+            this.statsBox.SelectedTorrent += new EventHandler<TorrentEventArgs>(SelectedTorrentHandler);
+
+            this.pieces = new Pieces();
+
             this.dataGridView1.AutoGenerateColumns = true;
 
             this.bindingSource = new BindingSource();
@@ -239,11 +243,25 @@ namespace MonoTorrent.Client
             this.engine = engine;
             foreach (TorrentManager mgr in this.engine.Torrents)
             {
-                this.statsBox.TorrentAdded( mgr );
+                this.statsBox.TorrentAdded(mgr);
             }
-            this.engine.TorrentRegistered += new EventHandler<TorrentEventArgs>( TorrentRegisteredHandler );
-            this.engine.TorrentUnregistered += new EventHandler<TorrentEventArgs>( TorrentUnregisteredHandler );
+            this.engine.TorrentRegistered += new EventHandler<TorrentEventArgs>(TorrentRegisteredHandler);
+            this.engine.TorrentUnregistered += new EventHandler<TorrentEventArgs>(TorrentUnregisteredHandler);
             this.Manager = manager;
+
+            // start the DebugStatistics thread
+            this.thread = new Thread(
+                (ThreadStart)delegate
+            {
+                while (!this.disposed)
+                {
+                    TorrentDebugStatistics();
+                    Thread.Sleep(500);
+                }
+            });
+            this.thread.Name = "DebugStatistics";
+            this.thread.IsBackground = true;
+            this.thread.Start();
         }
 
 
@@ -251,48 +269,49 @@ namespace MonoTorrent.Client
         /// This needs to be run every time a new torrent manager is loaded, so that the log files
         /// roll over and aren't overwritten.
         /// </summary>
-        private void ConfigureLogging( )
+        private void ConfigureLogging()
         {
             string[] names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-            ResourceManager rm = new ResourceManager( "SampleClient.Stats.log4net", Assembly.GetExecutingAssembly() );
-            String config = rm.GetString( "config" );
+            ResourceManager rm = new ResourceManager("SampleClient.Stats.log4net", Assembly.GetExecutingAssembly());
+            String config = rm.GetString("config");
 
             XmlDocument doc = new XmlDocument();
-            doc.LoadXml( config );
+            doc.LoadXml(config);
 
-            XmlElement element = (XmlElement)doc.GetElementsByTagName( "log4net" )[0];
-            log4net.Config.XmlConfigurator.Configure( element );
+            XmlElement element = (XmlElement)doc.GetElementsByTagName("log4net")[0];
+            log4net.Config.XmlConfigurator.Configure(element);
 
             // set up the loggers
-            this.statsLog = LogManager.GetLogger( typeof( DebugStatistics ) );
-            this.connectionLog = LogManager.GetLogger( typeof( ConnectionManager ) );
-            this.announceLog = LogManager.GetLogger( typeof( TrackerManager ) );
+            this.statsLog = LogManager.GetLogger(typeof(DebugStatistics));
+            this.connectionLog = LogManager.GetLogger(typeof(ConnectionManager));
+            this.announceLog = LogManager.GetLogger(typeof(TrackerManager));
 
             // stats log file headers
-            statsLog.Info( " Time Percent Bytes-Downloaded Bytes-Uploaded Download-Speed Upload-Speed Peers Choked"
-                    + " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us" );
+            statsLog.Info(" Time Percent Playback Total-Down Total-Up Download-Speed Upload-Speed Peers Choked"
+                    + " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us");
 
             RolloverPeerLogs();
         }
 
+
         /// <summary>
         /// 
         /// </summary>
-        private void RolloverPeerLogs( )
+        private void RolloverPeerLogs()
         {
             int num = 0;
 
             // see how many rollover directories there are
-            while (Directory.Exists( peerLogDir + "." + (num + 1) ))
+            while (Directory.Exists(peerLogDir + "." + (num + 1)))
                 num++;
 
             // increment all of them by 1
-            for ( ; num > 0 ; num--)
-                Directory.Move( peerLogDir + "." + num, peerLogDir + "." + (num + 1) );
+            for (; num > 0; num--)
+                Directory.Move(peerLogDir + "." + num, peerLogDir + "." + (num + 1));
 
             // roll over the current directory to peerlogs.1, if it exists
-            if(Directory.Exists(peerLogDir))
-                Directory.Move( peerLogDir, peerLogDir + ".1" );
+            if (Directory.Exists(peerLogDir))
+                Directory.Move(peerLogDir, peerLogDir + ".1");
         }
 
         #endregion
@@ -300,32 +319,36 @@ namespace MonoTorrent.Client
 
         #region Event Handlers
 
-        private void TorrentRegisteredHandler( object sender, TorrentEventArgs args )
+        /// <summary>
+        /// Handle torrent registration event from ClientEngine
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void TorrentRegisteredHandler(object sender, TorrentEventArgs args)
         {
-            this.statsBox.TorrentAdded( args.TorrentManager );
-        }
-
-
-        private void TorrentUnregisteredHandler( object sender, TorrentEventArgs args )
-        {
-            this.statsBox.TorrentRemoved( args.TorrentManager );
-        }
-
-
-        void SelectedTorrentHandler( object sender, TorrentEventArgs e )
-        {
-            this.Manager = e.TorrentManager;
+            this.statsBox.TorrentAdded(args.TorrentManager);
         }
 
 
         /// <summary>
-        /// Called every tick of the torrent manager - updates the statistics and refreshes the data view
+        /// Handle torrent unregistered event from ClientEngine
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void StatsUpdateHandler( object sender, StatsUpdateEventArgs args )
+        private void TorrentUnregisteredHandler(object sender, TorrentEventArgs args)
         {
-            TorrentDebugStatistics();
+            this.statsBox.TorrentRemoved(args.TorrentManager);
+        }
+
+
+        /// <summary>
+        /// Handle selection of torrent from StatsBox drop down menu
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void SelectedTorrentHandler(object sender, TorrentEventArgs e)
+        {
+            this.Manager = e.TorrentManager;
         }
 
 
@@ -334,7 +357,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void PeerMessageTransferredHandler( object sender, PeerMessageEventArgs args )
+        private void PeerMessageTransferredHandler(object sender, PeerMessageEventArgs args)
         {
             lock (loggers)
             {
@@ -342,17 +365,17 @@ namespace MonoTorrent.Client
                 {
                     PeerMessageLogger logger;
 
-                    if (loggers.ContainsKey( args.ID.Location ))
+                    if (loggers.ContainsKey(args.ID.Location))
                     {
                         logger = loggers[args.ID.Location];
                     }
                     else
                     {
-                        logger = new PeerMessageLogger( args.ID.Location.ToString(), this.peerLogDir );
+                        logger = new PeerMessageLogger(args.ID.Location.ToString(), this.peerLogDir);
                         loggers[args.ID.Location] = logger;
                     }
 
-                    logger.LogPeerMessage( args );
+                    logger.LogPeerMessage(args);
                 }
             }
         }
@@ -363,19 +386,21 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void PeerConnectedHandler( object sender, PeerConnectionEventArgs args )
+        private void PeerConnectedHandler(object sender, PeerConnectionEventArgs args)
         {
             if (args.PeerID != null)
             {
-                connectionLog.InfoFormat( "{0} peer at {1}",
+                String msg = String.Format("{0} peer at {1}",
                     args.ConnectionDirection == Direction.Incoming ? "Accepted connection from" : "Connected to",
-                    args.PeerID.Location );
-                
+                    args.PeerID.Location);
+
+                connectionLog.Info(msg);
+
                 lock (this.loggers)
                 {
                     if (this.loggers.ContainsKey(args.PeerID.Location))
                     {
-                        this.loggers[args.PeerID.Location].LogPeerMessage( "Connected" );
+                        this.loggers[args.PeerID.Location].LogPeerMessage(msg);
                     }
                 }
             }
@@ -387,19 +412,21 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void PeerDisconnectedHandler( object sender, PeerConnectionEventArgs args )
+        private void PeerDisconnectedHandler(object sender, PeerConnectionEventArgs args)
         {
             if (args.PeerID != null)
             {
-                connectionLog.InfoFormat( "{0} peer at {1}. Reason: {2}",
+                String msg = String.Format("{0} peer at {1}. Reason: {2}",
                     args.ConnectionDirection == Direction.Incoming ? "Got disconnected from" : "Disconnected from",
-                    args.PeerID.Location, args.Message );
+                    args.PeerID.Location, args.Message);
+
+                connectionLog.Info(msg);
 
                 lock (this.loggers)
                 {
-                    if (this.loggers.ContainsKey( args.PeerID.Location ))
+                    if (this.loggers.ContainsKey(args.PeerID.Location))
                     {
-                        this.loggers[args.PeerID.Location].LogPeerMessage( "Connected" );
+                        this.loggers[args.PeerID.Location].LogPeerMessage(msg);
                     }
                 }
             }
@@ -411,12 +438,12 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void TrackerAnnounceCompleteHandler( object sender, AnnounceResponseEventArgs e )
+        private void TrackerAnnounceCompleteHandler(object sender, AnnounceResponseEventArgs e)
         {
             this.announceLog.InfoFormat(
                 "Announce {0} complete for tracker {1}. Success = {2}. Number of peers = {3}. Update Interval = {4}, Minimum = {5}",
-                    e.TrackerId.TorrentEvent.ToString( "G" ), e.Tracker, e.Successful, e.Peers.Count, e.Tracker.UpdateInterval,
-                    e.Tracker.MinUpdateInterval );
+                    e.TrackerId.TorrentEvent.ToString("G"), e.Tracker, e.Successful, e.Peers.Count, e.Tracker.UpdateInterval,
+                    e.Tracker.MinUpdateInterval);
 
         }
 
@@ -426,38 +453,38 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dataGridView1_ColumnHeaderMouseClick( object sender, DataGridViewCellMouseEventArgs e )
+        private void dataGridView1_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
             this.numHeaderClicks[e.ColumnIndex]++;
             switch (e.ColumnIndex)
             {
                 case 1:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["Connected"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["Connected"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 8:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["ImChoking"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["ImChoking"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 9:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["ImInterested"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["ImInterested"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 10:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["HesChoking"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["HesChoking"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 11:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["HesInterested"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["HesInterested"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 12:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["IsSeeder"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["IsSeeder"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 case 16:
-                    this.peerList.ApplySort( TypeDescriptor.GetProperties( typeof( PeerInfo ) )["Encrypted"],
-                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending) );
+                    this.peerList.ApplySort(TypeDescriptor.GetProperties(typeof(PeerInfo))["Encrypted"],
+                        (this.numHeaderClicks[e.ColumnIndex] % 2 == 0 ? ListSortDirection.Ascending : ListSortDirection.Descending));
                     break;
                 default:
                     break;
@@ -471,13 +498,13 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dataGridView1_CellContentDoubleClick( object sender, DataGridViewCellEventArgs e )
+        private void dataGridView1_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
             {
                 Uri uri = this.dataGridView1.Rows[e.RowIndex].Cells[0].Value as Uri;
 
-                if (loggers.ContainsKey( uri ))
+                if (loggers.ContainsKey(uri))
                 {
                     loggers[uri].CreatePeerDisplay();
                 }
@@ -488,11 +515,11 @@ namespace MonoTorrent.Client
 
 
         #region Logic
-        
+
         /// <summary>
         /// Debug thread logic
         /// </summary>
-        private void TorrentDebugStatistics( )
+        private void TorrentDebugStatistics()
         {
             try
             {
@@ -501,7 +528,7 @@ namespace MonoTorrent.Client
                     if (this.disposed || this.manager == null)
                         return;
 
-                    StringBuilder sb = new StringBuilder( 1024 );
+                    StringBuilder sb = new StringBuilder(1024);
 
                     List<PeerIdInternal> pidCopy;
                     List<Peer> allPeers;
@@ -514,16 +541,16 @@ namespace MonoTorrent.Client
                     totalUnchokingUs = 0;
                     totalOptimisticallyUnchokingUs = 0;
 
-                    pidCopy = new List<PeerIdInternal>( this.manager.Peers.ConnectedPeers );
-                    allPeers = new List<Peer>( this.manager.Peers.AllPeers() );
+                    pidCopy = new List<PeerIdInternal>(this.manager.Peers.ConnectedPeers);
+                    allPeers = new List<Peer>(this.manager.Peers.AllPeers());
 
-                    sb.Remove( 0, sb.Length );
+                    sb.Remove(0, sb.Length);
 
-                    AppendFormat( sb, "Disk Read Rate:       {0:0.00} kB/s", this.manager.Engine.DiskManager.ReadRate / 1024.0 );
-                    AppendFormat( sb, "Disk Write Rate:      {0:0.00} kB/s", this.manager.Engine.DiskManager.WriteRate / 1024.0 );
-                    AppendFormat( sb, "Total Read:           {0:0.00} kB", this.manager.Engine.DiskManager.TotalRead / 1024.0 );
-                    AppendFormat( sb, "Total Written:        {0:0.00} kB", this.manager.Engine.DiskManager.TotalWritten / 1024.0 );
-                    AppendFormat( sb, "Rounds Complete:       {0}", this.manager.PeerReviewRoundsComplete );
+                    AppendFormat(sb, "Disk Read Rate:       {0:0.00} kB/s", this.manager.Engine.DiskManager.ReadRate / 1024.0);
+                    AppendFormat(sb, "Disk Write Rate:      {0:0.00} kB/s", this.manager.Engine.DiskManager.WriteRate / 1024.0);
+                    AppendFormat(sb, "Total Read:           {0:0.00} kB", this.manager.Engine.DiskManager.TotalRead / 1024.0);
+                    AppendFormat(sb, "Total Written:        {0:0.00} kB", this.manager.Engine.DiskManager.TotalWritten / 1024.0);
+                    AppendFormat(sb, "Rounds Complete:       {0}", this.manager.PeerReviewRoundsComplete);
 
                     this.milliSeconds = this.stopwatch.ElapsedMilliseconds;
                     this.bytesDownloaded = this.manager.Monitor.DataBytesDownloaded;
@@ -563,7 +590,7 @@ namespace MonoTorrent.Client
                         PeerInfo p = null;
                         foreach (PeerInfo pi in this.peerList)
                         {
-                            if (pi.Uri.Equals( pIdInternal.Peer.ConnectionUri ))
+                            if (pi.Uri.Equals(pIdInternal.Peer.ConnectionUri))
                             {
                                 p = pi;
                                 break;
@@ -572,12 +599,13 @@ namespace MonoTorrent.Client
 
                         if (p == null)
                         {
-                            p = new PeerInfo( pIdInternal );
-                            this.peerList.Add(p);
+                            p = new PeerInfo(pIdInternal);
+
+                            Utils.PerformControlOperation(this.dataGridView1, delegate { this.peerList.Add(p); });
                         }
                         else
                         {
-                            p.UpdateData( pIdInternal );
+                            p.UpdateData(pIdInternal);
                         }
                         p.seen = true;
 
@@ -588,80 +616,80 @@ namespace MonoTorrent.Client
                         }
                     }
 
-                    if (this.dataGridView1.InvokeRequired)
-                        this.dataGridView1.BeginInvoke( new NoParam( this.dataGridView1.Refresh ) );
-                    else
-                        this.dataGridView1.Refresh();
+                    Utils.PerformControlOperation(this.dataGridView1, new NoParam(this.dataGridView1.Refresh));
 
-                    AppendSeperator( sb );
+                    AppendSeperator(sb);
 
-                    AppendFormat( sb, "Total Download Heuristics:", "" );
-                    AppendFormat( sb, "\tWe've Choked:          {0}", totalChoked );
-                    AppendFormat( sb, "\tWe've Unchoked:        {0}", totalUnchoked );
-                    AppendFormat( sb, "\tWe're Interested In:   {0}", totalInterested );
-                    AppendFormat( sb, "", null );
-                    AppendFormat( sb, "\tChoking Us:            {0}", totalChokingUs );
-                    AppendFormat( sb, "\tUnchoking Us:          {0}", totalUnchokingUs );
-                    AppendFormat( sb, "\tInterested In Us:      {0}", totalInterestedInUs );
+                    AppendFormat(sb, "Total Download Heuristics:", "");
+                    AppendFormat(sb, "\tWe've Choked:          {0}", totalChoked);
+                    AppendFormat(sb, "\tWe've Unchoked:        {0}", totalUnchoked);
+                    AppendFormat(sb, "\tWe're Interested In:   {0}", totalInterested);
+                    AppendFormat(sb, "", null);
+                    AppendFormat(sb, "\tChoking Us:            {0}", totalChokingUs);
+                    AppendFormat(sb, "\tUnchoking Us:          {0}", totalUnchokingUs);
+                    AppendFormat(sb, "\tInterested In Us:      {0}", totalInterestedInUs);
 
-                    AppendSeperator( sb );
+                    AppendSeperator(sb);
 
-                    AppendFormat( sb, "Name:                 {0}", this.manager.Torrent.Name );
-                    AppendFormat( sb, "Progress:             {0:0.00}", this.manager.Progress );
-                    AppendFormat( sb, "Download Speed:       {0:0.00} kB/s", this.manager.Monitor.DownloadSpeed / 1024.0 );
-                    AppendFormat( sb, "Upload Speed:         {0:0.00} kB/s", this.manager.Monitor.UploadSpeed / 1024.0 );
-                    AppendFormat( sb, "Total Downloaded:     {0:0.00} MB", this.manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0) );
-                    AppendFormat( sb, "Total Uploaded:       {0:0.00} MB", this.manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0) );
-                    AppendFormat( sb, "Tracker:              {0}", this.manager.TrackerManager.CurrentTracker );
-                    AppendFormat( sb, "Tracker Status:       {0}", this.manager.TrackerManager.CurrentTracker.State );
-                    AppendFormat( sb, "Warning Message:      {0}", this.manager.TrackerManager.CurrentTracker.WarningMessage );
-                    AppendFormat( sb, "Failure Message:      {0}", this.manager.TrackerManager.CurrentTracker.FailureMessage );
-                    //AppendFormat( sb, "Windows:              {0}", this.manager.PieceManager.GetWindow() );
-                    AppendFormat( sb, "Total Connections:    {0}", this.manager.OpenConnections );
-                    AppendFormat( sb, "Seeds:                {0}", this.manager.Peers.Seeds );
-                    AppendFormat( sb, "Leeches:              {0}", this.manager.Peers.Leechs );
-                    AppendFormat( sb, "Available Peers:      {0}", this.manager.Peers.AvailablePeers.Count );
+                    AppendFormat(sb, "Name:                 {0}", this.manager.Torrent.Name);
+                    AppendFormat(sb, "Progress:             {0:0.00}", this.manager.Progress);
+                    AppendFormat(sb, "Download Speed:       {0:0.00} kB/s", this.manager.Monitor.DownloadSpeed / 1024.0);
+                    AppendFormat(sb, "Upload Speed:         {0:0.00} kB/s", this.manager.Monitor.UploadSpeed / 1024.0);
+                    AppendFormat(sb, "Total Downloaded:     {0:0.00} MB", this.manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+                    AppendFormat(sb, "Total Uploaded:       {0:0.00} MB", this.manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+                    AppendFormat(sb, "Tracker:              {0}", this.manager.TrackerManager.CurrentTracker);
+                    AppendFormat(sb, "Tracker Status:       {0}", this.manager.TrackerManager.CurrentTracker.State);
+                    AppendFormat(sb, "Warning Message:      {0}", this.manager.TrackerManager.CurrentTracker.WarningMessage);
+                    AppendFormat(sb, "Failure Message:      {0}", this.manager.TrackerManager.CurrentTracker.FailureMessage);
+                    //AppendFormat( sb, "Piece Picker:         {0}", this.manager.PieceManager.GetWindow() );
+                    AppendFormat(sb, "Total Connections:    {0}", this.manager.OpenConnections);
+                    AppendFormat(sb, "Seeds:                {0}", this.manager.Peers.Seeds);
+                    AppendFormat(sb, "Leeches:              {0}", this.manager.Peers.Leechs);
+                    AppendFormat(sb, "Available Peers:      {0}", this.manager.Peers.AvailablePeers.Count);
 
-                    this.statsBox.SetText( sb.ToString() );
+                    this.statsBox.SetText(sb.ToString());
                 }
+
+                // log the statistics every 30 seconds
                 if (this.milliSeconds - this.lastStatsWrite > 30000)
                 {
-                    // statsLog.Info( " Time  Percent Bytes-Downloaded Bytes-Uploaded Download-Speed Upload-Speed Peers Choked"
-                    // + " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us" );
-
-                    statsLog.InfoFormat( "{0,5} {13,7} {1,16} {2,14} {3,14} {4,12} {5,5} {6,6} {7,8} {8,10} {9,10} {10,12} {11,24} {12,16} ",
-                        this.milliSeconds / 1000, this.bytesDownloaded, this.bytesUploaded,
-                        this.downloadSpeed, this.uploadSpeed, this.peers, this.totalChoked, this.totalUnchoked,
-                        this.totalInterested, this.totalChokingUs, this.totalUnchokingUs,
-                        this.totalOptimisticallyUnchokingUs, this.totalInterestedInUs, this.manager.Progress.ToString( "#0.##" ) );
-
+                    //statsLog.Info(" Time Percent Playback Total-Down Total-Up Download-Speed Upload-Speed Peers Choked"
+                    //+ " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us");
+                    /*statsLog.InfoFormat("{0,5} {1,7} {2,8} {3,10} {4,8} {5,14} {6,12} {7,5} {8,6} {9,8} {10,10} {11,10} {12,12} {13,24} {14,16}",
+                        this.milliSeconds / 1000, this.manager.Progress.ToString("#0.##"),
+                        (((double)this.manager.PieceManager.HighPrioritySetStart / (double)this.manager.Torrent.Pieces.Count) * 100).ToString("#0.##"),
+                        this.bytesDownloaded, this.bytesUploaded, this.downloadSpeed, this.uploadSpeed, this.peers, this.totalChoked,
+                        this.totalUnchoked, this.totalInterested, this.totalChokingUs, this.totalUnchokingUs,
+                        this.totalOptimisticallyUnchokingUs, this.totalInterestedInUs);
+                    */
                     this.lastStatsWrite = this.milliSeconds;
                 }
             }
             catch (Exception e)
             {
-                // ignore it
+                LogManager.GetLogger("error").Error("Error in TorrentDebugStatistics: ", e);
             }
         }
 
         #endregion
 
+
         #region Utils
 
-        private static void AppendSeperator( StringBuilder sb )
+        private static void AppendSeperator(StringBuilder sb)
         {
-            AppendFormat( sb, "", null );
-            AppendFormat( sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null );
-            AppendFormat( sb, "", null );
+            AppendFormat(sb, "", null);
+            AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
+            AppendFormat(sb, "", null);
         }
 
 
-        private static void AppendFormat( StringBuilder sb, string str, params object[] formatting )
+        private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
         {
             if (formatting != null)
-                sb.AppendFormat( str, formatting );
+                sb.AppendFormat(str, formatting);
             else
-                sb.Append( str );
+                sb.Append(str);
             sb.AppendLine();
         }
 
@@ -699,15 +727,15 @@ namespace MonoTorrent.Client
             get { return this.listSortDirection; }
         }
 
-        public void ApplySort( PropertyDescriptor prop, ListSortDirection direction )
+        public void ApplySort(PropertyDescriptor prop, ListSortDirection direction)
         {
-            ApplySortCore( prop, direction );
+            ApplySortCore(prop, direction);
         }
 
-        protected override void ApplySortCore( PropertyDescriptor prop, ListSortDirection direction )
+        protected override void ApplySortCore(PropertyDescriptor prop, ListSortDirection direction)
         {
             List<T> itemsList = this.Items as List<T>;
-            itemsList.Sort( delegate( T t1, T t2 )
+            itemsList.Sort(delegate(T t1, T t2)
             {
                 this.propertyDescriptor = prop;
                 this.listSortDirection = direction;
@@ -715,33 +743,33 @@ namespace MonoTorrent.Client
 
                 int reverse = direction == ListSortDirection.Ascending ? 1 : -1;
 
-                PropertyInfo propertyInfo = typeof( T ).GetProperty( prop.Name );
-                object value1 = propertyInfo.GetValue( t1, null );
-                object value2 = propertyInfo.GetValue( t2, null );
+                PropertyInfo propertyInfo = typeof(T).GetProperty(prop.Name);
+                object value1 = propertyInfo.GetValue(t1, null);
+                object value2 = propertyInfo.GetValue(t2, null);
 
                 IComparable comparable = value1 as IComparable;
                 if (comparable != null)
                 {
-                    return reverse * comparable.CompareTo( value2 );
+                    return reverse * comparable.CompareTo(value2);
                 }
                 else
                 {
                     comparable = value2 as IComparable;
                     if (comparable != null)
                     {
-                        return -1 * reverse * comparable.CompareTo( value1 );
+                        return -1 * reverse * comparable.CompareTo(value1);
                     }
                     else
                     {
                         return 0;
                     }
                 }
-            } );
+            });
 
-            this.OnListChanged( new ListChangedEventArgs( ListChangedType.Reset, -1 ) );
+            this.OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
         }
 
-        protected override void RemoveSortCore( )
+        protected override void RemoveSortCore()
         {
             this.isSorted = false;
             this.propertyDescriptor = base.SortPropertyCore;

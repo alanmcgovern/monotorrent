@@ -43,7 +43,7 @@ using MonoTorrent.Client.Messages;
 
 using log4net.Appender;
 
-namespace MonoTorrent.Client
+namespace SampleClient.Stats
 {
     public partial class PeerMessagesDisplay : Form
     {
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="title"></param>
         /// <param name="logFilePath"></param>
-        public PeerMessagesDisplay( String title, String logFilePath )
+        public PeerMessagesDisplay(String title, String logFilePath)
         {
             InitializeComponent();
 
@@ -71,32 +71,29 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Load the messages from the log file into the window
         /// </summary>
-        public void LoadLog( )
+        public void LoadLog()
         {
-            ThreadPool.QueueUserWorkItem( delegate
+            ThreadPool.QueueUserWorkItem(delegate
             {
                 try
                 {
-                    if (this.InvokeRequired)
-                        this.BeginInvoke( new Action<String>( delegate( String s ) { this.Text = s; } ), title );
-                    else
-                        this.Text = title;
+                    Utils.PerformControlOperation(this, delegate { this.Text = title; });
 
-                    using (FileStream fs = File.OpenRead( this.logFile ))
+                    using (FileStream fs = File.OpenRead(this.logFile))
                     {
-                        using (StreamReader reader = new StreamReader( fs ))
+                        using (StreamReader reader = new StreamReader(fs))
                         {
                             String line;
-                            while((line = reader.ReadLine()) != null)
-                                AddNewMessage( line );
+                            while ((line = reader.ReadLine()) != null)
+                                AddNewMessage(line);
                         }
                     }
                 }
                 catch (IOException ioe)
                 {
-                    AddNewMessage( ioe.Message );
+                    AddNewMessage(ioe.Message);
                 }
-            } );
+            });
         }
 
 
@@ -104,13 +101,13 @@ namespace MonoTorrent.Client
         /// Append message to the bottom of the text window
         /// </summary>
         /// <param name="message"></param>
-        public void AddNewMessage( String message )
+        public void AddNewMessage(String message)
         {
             lock (this)
             {
                 int charsToRemove = 0;
 
-                for (int i = message.Length - 1 ; i >= 0 ; i--)
+                for (int i = message.Length - 1; i >= 0; i--)
                 {
                     if (message[i] == '\r' || message[i] == '\n')
                         charsToRemove++;
@@ -119,11 +116,9 @@ namespace MonoTorrent.Client
                 if (this.disposed)
                     throw new ObjectDisposedException("PeerMessagesDisplay");
 
-                if (this.listBox1.InvokeRequired)
-                    this.listBox1.BeginInvoke( new Action<String>( AddNewMessageInvoke ), 
-                        charsToRemove == 0 ? message : message.Substring(0, message.Length - charsToRemove) );
-                else
-                    AddNewMessageInvoke( message );
+                Utils.PerformControlOperation(this.listBox1, delegate {
+                    AddNewMessageInvoke(charsToRemove == 0 ? message : message.Substring(0, message.Length - charsToRemove));
+                });
             }
         }
 
@@ -135,14 +130,14 @@ namespace MonoTorrent.Client
         /// keep scrolling up to them.
         /// </summary>
         /// <param name="message"></param>
-        private void AddNewMessageInvoke( String message )
+        private void AddNewMessageInvoke(String message)
         {
             // if the bottom item shown is the bottom index, don't reset the top index
-            int bottomIndex = listBox1.IndexFromPoint( listBox1.Bounds.Left + 10, listBox1.Bounds.Bottom - 10 );
+            int bottomIndex = listBox1.IndexFromPoint(listBox1.Bounds.Left + 10, listBox1.Bounds.Bottom - 10);
             bool shouldTail = (bottomIndex == this.listBox1.Items.Count - 1);
             int index = this.listBox1.TopIndex;
-            
-            this.listBox1.Items.Add( message );
+
+            this.listBox1.Items.Add(message);
 
             if (shouldTail)
                 this.listBox1.TopIndex = index + 1;

@@ -12,6 +12,8 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
 
+using SampleClient.Stats;
+
 namespace MonoTorrent
 {
     class main
@@ -163,7 +165,7 @@ namespace MonoTorrent
             }
 
 #if STATS
-            System.Windows.Forms.Application.Run(new MonoTorrent.Client.DebugStatistics(engine, torrents[0]));
+            System.Windows.Forms.Application.Run(new DebugStatistics(engine, torrents[0]));
             return;
 #endif
 
