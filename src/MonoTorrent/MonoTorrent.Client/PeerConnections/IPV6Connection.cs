@@ -51,12 +51,12 @@ namespace MonoTorrent.Client.Connections
 
         public virtual bool CanReconnect
         {
-            get { return true; }
+            get { return !isIncoming; }
         }
 
         public bool IsIncoming
         {
-            get { return false; }
+            get { return isIncoming; }
         }
 
         public EndPoint EndPoint

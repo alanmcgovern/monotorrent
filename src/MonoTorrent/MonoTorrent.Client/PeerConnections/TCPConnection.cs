@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Connections
 
         public bool CanReconnect
         {
-            get { return true; }
+            get { return !isIncoming; }
         }
 
         public bool Connected

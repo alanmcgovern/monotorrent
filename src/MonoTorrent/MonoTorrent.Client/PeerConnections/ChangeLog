@@ -1,3 +1,8 @@
+2008-06-18  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* TCPConnection.cs, IPV6Connection.cs: If the connection is incoming,
+	  we cannot reconnect.
+
 2008-04-07  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* PeerIdInternal.cs: Hack-fix: In some cases it can take up to 190
