@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private RequestMessage ContinueAnyExisting(PeerIdInternal id)
+        private RequestMessage ContinueAnyExisting(PeerId id)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             {
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
-                if ((p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0) || p.AllBlocksRequested || !id.Connection.BitField[p.Index])
+                if ((p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0) || p.AllBlocksRequested || !id.BitField[p.Index])
                     continue;
 
                 for (int i = 0; i < p.Blocks.Length; i++)
@@ -168,7 +168,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private RequestMessage ContinueExistingRequest(PeerIdInternal id)
+        private RequestMessage ContinueExistingRequest(PeerId id)
         {
             foreach (Piece p in requests)
             {
@@ -197,27 +197,27 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private RequestMessage GetFastPiece(PeerIdInternal id)
+        private RequestMessage GetFastPiece(PeerId id)
         {
             int requestIndex;
 
             // If fast peers isn't supported on both sides, then return null
-            if (!id.Connection.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
+            if (!id.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
                 return null;
 
             // Remove pieces in the list that we already have
-            RemoveOwnedPieces(id.Connection.IsAllowedFastPieces);
+            RemoveOwnedPieces(id.IsAllowedFastPieces);
 
             // For all the remaining fast pieces
-            for (int i = 0; i < id.Connection.IsAllowedFastPieces.Count; i++)
+            for (int i = 0; i < id.IsAllowedFastPieces.Count; i++)
             {
                 // The peer may not always have the piece that is marked as 'allowed fast'
-                if (!id.Connection.BitField[(int)id.Connection.IsAllowedFastPieces[i]])
+                if (!id.BitField[(int)id.IsAllowedFastPieces[i]])
                     continue;
 
                 // We request that piece and remove it from the list
-                requestIndex = (int)id.Connection.IsAllowedFastPieces[i];
-                id.Connection.IsAllowedFastPieces.RemoveAt(i);
+                requestIndex = (int)id.IsAllowedFastPieces[i];
+                id.IsAllowedFastPieces.RemoveAt(i);
 
                 Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
                 requests.Add(p);
@@ -259,7 +259,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private RequestMessage GetStandardRequest(PeerIdInternal id, List<PeerIdInternal> otherPeers)
+        private RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers)
         {
             int checkIndex = 0;
             BitField current = null;
@@ -329,7 +329,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private Stack<BitField> GenerateRarestFirst(PeerIdInternal id, List<PeerIdInternal> otherPeers)
+        private Stack<BitField> GenerateRarestFirst(PeerId id, List<PeerId> otherPeers)
         {
             Priority highestPriority = Priority.DoNotDownload;
             Stack<BitField> bitfields = new Stack<BitField>();
@@ -360,7 +360,7 @@ namespace MonoTorrent.Client
 				
                 // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
                 if (!id.Peer.IsSeeder)
-                    current.AndFast(id.Connection.BitField);
+                    current.AndFast(id.BitField);
 
                 // Check the priority of the availabe pieces and record the highest one found
                 highestPriority = HighestPriorityAvailable(current);
@@ -387,7 +387,7 @@ namespace MonoTorrent.Client
                     // currentBitfield = currentBitfield & (!otherBitfield)
                     // This calculation finds the pieces this peer has that other peers *do not* have.
                     // i.e. the rarest piece.
-                    current.AndNotFast(otherPeers[i].Connection.BitField);
+                    current.AndNotFast(otherPeers[i].BitField);
 
                     // If the bitfield now has no pieces or we've knocked out a file which is at
                     // a high priority then we've completed our task
@@ -413,20 +413,20 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private RequestMessage GetSuggestedPiece(PeerIdInternal id)
+        private RequestMessage GetSuggestedPiece(PeerId id)
         {
             int requestIndex;
             // Remove any pieces that we already have
-            RemoveOwnedPieces(id.Connection.SuggestedPieces);
+            RemoveOwnedPieces(id.SuggestedPieces);
 
-            for (int i = 0; i < id.Connection.SuggestedPieces.Count; i++)
+            for (int i = 0; i < id.SuggestedPieces.Count; i++)
             {
                 // A peer should only suggest a piece he has, but just in case.
-                if (!id.Connection.BitField[id.Connection.SuggestedPieces[i]])
+                if (!id.BitField[id.SuggestedPieces[i]])
                     continue;
 
-                requestIndex = id.Connection.SuggestedPieces[i];
-                id.Connection.SuggestedPieces.RemoveAt(i);
+                requestIndex = id.SuggestedPieces[i];
+                id.SuggestedPieces.RemoveAt(i);
                 Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
                 this.requests.Add(p);
                 p.Blocks[0].Requested = true;
@@ -462,7 +462,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to check to see if he's interesting or not</param>
         /// <returns>True if the peer is interesting, false otherwise</returns>
-        public override bool IsInteresting(PeerIdInternal id)
+        public override bool IsInteresting(PeerId id)
         {
             BitField bitfield = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
             try
@@ -470,7 +470,7 @@ namespace MonoTorrent.Client
                 Buffer.BlockCopy(myBitfield.Array, 0, bitfield.Array, 0, myBitfield.Array.Length * 4);
 
                 bitfield.Not();
-                bitfield.AndFast(id.Connection.BitField);
+                bitfield.AndFast(id.BitField);
                 if (!bitfield.AllFalseSecure())
                     return true;                            // He's interesting if he has a piece we want
 
@@ -489,7 +489,7 @@ namespace MonoTorrent.Client
         /// <param name="id">The id of the peer to request a piece off of</param>
         /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
         /// <returns></returns>
-        public override RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers)
+        public override RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             RequestMessage message = null;
             try
@@ -502,11 +502,11 @@ namespace MonoTorrent.Client
                         return message;
 
                     // Then we check if there are any allowed "Fast" pieces to download
-                    if (id.Connection.IsChoking && (message = GetFastPiece(id)) != null)
+                    if (id.IsChoking && (message = GetFastPiece(id)) != null)
                         return message;
 
                     // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
-                    if (id.Connection.IsChoking)
+                    if (id.IsChoking)
                         return null;
 
                     if ((message = ContinueAnyExisting(id)) != null)
@@ -552,7 +552,7 @@ namespace MonoTorrent.Client
         /// Removes any outstanding requests from the supplied peer
         /// </summary>
         /// <param name="id">The peer to remove outstanding requests from</param>
-        public override void RemoveRequests(PeerIdInternal id)
+        public override void RemoveRequests(PeerId id)
         {
             lock (this.requests)
             {
@@ -563,11 +563,12 @@ namespace MonoTorrent.Client
                         if (p.Blocks[i].Requested && !p.Blocks[i].Received && id.Equals(p.Blocks[i].RequestedOff))
                         {
                             p.Blocks[i].CancelRequest();
-                            id.Connection.AmRequestingPiecesCount--;
+                            id.AmRequestingPiecesCount--;
                             id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[i], p, id));
                         }
                     }
                 }
+                requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
             }
         }
 
@@ -577,7 +578,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <param name="message"></param>
-        private void RemoveRequests(PeerIdInternal id, RequestMessage message)
+        private void RemoveRequests(PeerId id, RequestMessage message)
         {
             lock (this.requests)
             {
@@ -592,7 +593,7 @@ namespace MonoTorrent.Client
                         if (p.Blocks[blockIndex].Requested && !p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                         {
                             p.Blocks[blockIndex].CancelRequest();
-                            id.Connection.AmRequestingPiecesCount--;
+                            id.AmRequestingPiecesCount--;
                             id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                             return;
                         }
@@ -612,14 +613,14 @@ namespace MonoTorrent.Client
         /// <param name="p"></param>
         public override PieceEvent ReceivedPieceMessage(BufferedIO data)
         {
-            PeerIdInternal id = data.Id;
+            PeerId id = data.Id;
             lock (this.requests)
             {
                 Piece piece = requests.Find(delegate(Piece p) { return p.Index == data.PieceIndex; });
                 data.Piece = piece;
                 if (piece == null)
                 {
-                    Logger.Log(data.Id.Connection.Connection, "Received block from unrequested piece");
+                    Logger.Log(data.Id.Connection, "Received block from unrequested piece");
                     return PieceEvent.BlockNotRequested;
                 }
 
@@ -627,26 +628,26 @@ namespace MonoTorrent.Client
                 int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, data.PieceOffset, data.Count);
                 if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
                 {
-                    Logger.Log(id.Connection.Connection, "Invalid block start offset returned");
+                    Logger.Log(id.Connection, "Invalid block start offset returned");
                     return PieceEvent.BlockNotRequested;
                 }
 
                 if (piece.Blocks[blockIndex].Received)
                 {
-                    Logger.Log(id.Connection.Connection, "Block already received");
+                    Logger.Log(id.Connection, "Block already received");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block already received");
 
                 if (!piece.Blocks[blockIndex].Requested)
                 {
-                    Logger.Log(id.Connection.Connection, "Block was not requested");
+                    Logger.Log(id.Connection, "Block was not requested");
                     return PieceEvent.BlockNotRequested;
                 }
                 //throw new MessageException("Block was not requested");
 
                 piece.Blocks[blockIndex].Received = true;
-                id.Connection.AmRequestingPiecesCount--;
+                id.AmRequestingPiecesCount--;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
                 id.TorrentManager.FileManager.QueueWrite(data);
 
@@ -669,10 +670,10 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="id"></param>
-        public override void ReceivedChokeMessage(PeerIdInternal id)
+        public override void ReceivedChokeMessage(PeerId id)
         {
             // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
-            if (!(id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+            if (!(id.SupportsFastPeer && ClientEngine.SupportsFastPeer))
             {
                 this.RemoveRequests(id);
             }
@@ -680,12 +681,12 @@ namespace MonoTorrent.Client
             {
                 // Cleanly remove any pending request messages from the send queue as there's no point in sending them
                 PeerMessage message;
-                int length = id.Connection.QueueLength;
+                int length = id.QueueLength;
                 for (int i = 0; i < length; i++)
-                    if ((message = id.Connection.Dequeue()) is RequestMessage)
+                    if ((message = id.Dequeue()) is RequestMessage)
                         RemoveRequests(id, (RequestMessage)message);
                     else
-                        id.Connection.Enqueue(message);
+                        id.Enqueue(message);
             }
         }
 
@@ -695,7 +696,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id"></param>
         /// <param name="rejectRequestMessage"></param>
-        public override void ReceivedRejectRequest(PeerIdInternal id, RejectRequestMessage rejectRequestMessage)
+        public override void ReceivedRejectRequest(PeerId id, RejectRequestMessage rejectRequestMessage)
         {
             lock (this.requests)
             {
@@ -711,7 +712,7 @@ namespace MonoTorrent.Client
                     if (!p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                     {
                         p.Blocks[blockIndex].CancelRequest();
-                        id.Connection.AmRequestingPiecesCount--;
+                        id.AmRequestingPiecesCount--;
                         id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                     }
                     break;

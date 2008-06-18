@@ -71,19 +71,12 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerConnectionEventArgs( TorrentManager manager, PeerIdInternal id, Direction direction )
-            : this( manager, id.PublicId, direction )
-        { }
-
-
-        internal PeerConnectionEventArgs( TorrentManager manager, PeerIdInternal id, Direction direction, String message )
-            : this( manager, id.PublicId, direction, message )
-        { }
-
 
         internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction )
             : this( manager, id, direction, "" )
-        { }
+        {
+
+        }
 
 
         internal PeerConnectionEventArgs( TorrentManager manager, PeerId id, Direction direction, String message )

@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private PeerIdInternal id;
+        private PeerId id;
         private Timer timer;
         private List<Peer> addedPeers;
         private List<Peer> droppedPeers;
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal PeerExchangeManager(PeerIdInternal id)
+        internal PeerExchangeManager(PeerId id)
         {
             this.id = id;
 			this.addedPeers = new List<Peer>();
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
                     droppedPeers[i].CompactPeer(dropped, i * 6);
                 }
 
-                id.Connection.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
+                id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
                 addedPeers.RemoveRange(0, len);
                 droppedPeers.RemoveRange(0, len);                    
         }

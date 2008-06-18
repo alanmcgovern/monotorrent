@@ -10,15 +10,15 @@ namespace MonoTorrent.Client
 		public InitialSeed (TorrentManager torrentManager)
 		{
 			this.torrentManager = torrentManager;
-			pieceToPeer = new Dictionary<int, PeerIdInternal> (torrentManager.Bitfield.Length);
+			pieceToPeer = new Dictionary<int, PeerId> (torrentManager.Bitfield.Length);
 			bitfield = torrentManager.Bitfield.Clone();//all true
 		}
 
 		private BitField bitfield;
 		private TorrentManager torrentManager;
-		private IDictionary<int, PeerIdInternal> pieceToPeer;
+		private IDictionary<int, PeerId> pieceToPeer;
 
-		public int GetNextPieceForPeer (PeerIdInternal id)
+		public int GetNextPieceForPeer (PeerId id)
 		{
 			int piece = bitfield.FirstTrue();
 			if (piece == -1) { // unactive superseed mode
@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
 			bitfield [piece] = false;//the piece is uploaded to another peer
 		}
 
-		public PeerIdInternal GetOriginPeer (int piece)
+		public PeerId GetOriginPeer (int piece)
 		{
 			return ((pieceToPeer.ContainsKey (piece)) ? (pieceToPeer [piece]) : null);
 		}

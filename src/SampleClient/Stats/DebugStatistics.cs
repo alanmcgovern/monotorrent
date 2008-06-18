@@ -368,14 +368,14 @@ namespace SampleClient.Stats
                 {
                     PeerMessageLogger logger;
 
-                    if (loggers.ContainsKey(args.ID.Location))
+                    if (loggers.ContainsKey(args.ID.Peer.ConnectionUri))
                     {
-                        logger = loggers[args.ID.Location];
+                        logger = loggers[args.ID.Peer.ConnectionUri];
                     }
                     else
                     {
-                        logger = new PeerMessageLogger(args.ID.Location.ToString(), this.peerLogDir);
-                        loggers[args.ID.Location] = logger;
+                        logger = new PeerMessageLogger(args.ID.Peer.ConnectionUri.ToString(), this.peerLogDir);
+                        loggers[args.ID.Peer.ConnectionUri] = logger;
                     }
 
                     logger.LogPeerMessage(args);
@@ -408,7 +408,7 @@ namespace SampleClient.Stats
             {
                 String msg = String.Format("{0} peer at {1}",
                     args.ConnectionDirection == Direction.Incoming ? "Accepted connection from" : "Connected to",
-                    args.PeerID.Location);
+                    args.PeerID.Peer.ConnectionUri);
 
                 connectionLog.Info(msg);
 
@@ -416,14 +416,14 @@ namespace SampleClient.Stats
                 {
                     PeerMessageLogger logger;
 
-                    if (!this.loggers.ContainsKey(args.PeerID.Location))
+                    if (!this.loggers.ContainsKey(args.PeerID.Peer.ConnectionUri))
                     {
-                        logger = new PeerMessageLogger(args.PeerID.Location.ToString(), this.peerLogDir);
-                        this.loggers[args.PeerID.Location] = logger;
+                        logger = new PeerMessageLogger(args.PeerID.Peer.ConnectionUri.ToString(), this.peerLogDir);
+                        this.loggers[args.PeerID.Peer.ConnectionUri] = logger;
                     }
                     else
                     {
-                        logger = this.loggers[args.PeerID.Location];
+                        logger = this.loggers[args.PeerID.Peer.ConnectionUri];
                     }
 
                     logger.LogPeerMessage(msg);
@@ -443,7 +443,7 @@ namespace SampleClient.Stats
             {
                 String msg = String.Format("{0} peer at {1}. Reason: {2}",
                     args.ConnectionDirection == Direction.Incoming ? "Got disconnected from" : "Disconnected from",
-                    args.PeerID.Location, args.Message);
+                    args.PeerID.Peer.ConnectionUri, args.Message);
 
                 connectionLog.Info(msg);
 
@@ -451,14 +451,14 @@ namespace SampleClient.Stats
                 {
                     PeerMessageLogger logger;
 
-                    if (!this.loggers.ContainsKey(args.PeerID.Location))
+                    if (!this.loggers.ContainsKey(args.PeerID.Peer.ConnectionUri))
                     {
-                        logger = new PeerMessageLogger(args.PeerID.Location.ToString(), this.peerLogDir);
-                        this.loggers[args.PeerID.Location] = logger;
+                        logger = new PeerMessageLogger(args.PeerID.Peer.ConnectionUri.ToString(), this.peerLogDir);
+                        this.loggers[args.PeerID.Peer.ConnectionUri] = logger;
                     }
                     else
                     {
-                        logger = this.loggers[args.PeerID.Location];
+                        logger = this.loggers[args.PeerID.Peer.ConnectionUri];
                     }
 
                     logger.LogPeerMessage(msg);
@@ -576,7 +576,7 @@ namespace SampleClient.Stats
 
                     StringBuilder sb = new StringBuilder(1024);
 
-                    List<PeerIdInternal> pidCopy;
+                    List<PeerId> pidCopy;
                     List<Peer> allPeers;
 
                     totalChoked = 0;
@@ -587,7 +587,7 @@ namespace SampleClient.Stats
                     totalUnchokingUs = 0;
                     totalOptimisticallyUnchokingUs = 0;
 
-                    pidCopy = new List<PeerIdInternal>(this.manager.Peers.ConnectedPeers);
+                    pidCopy = new List<PeerId>(this.manager.Peers.ConnectedPeers);
                     allPeers = new List<Peer>(this.manager.Peers.AllPeers());
 
                     sb.Remove(0, sb.Length);
@@ -610,27 +610,27 @@ namespace SampleClient.Stats
                         pi.seen = false;
                     }
 
-                    foreach (PeerIdInternal pIdInternal in pidCopy)
+                    foreach (PeerId pIdInternal in pidCopy)
                     {
-                        if (pIdInternal.PublicId.IsChoking)
+                        if (pIdInternal.IsChoking)
                             totalChokingUs++;
                         else
                         {
                             totalUnchokingUs++;
 
                             // if they aren't interested and they are unchoking us, we mark it as an optimistic unchoke
-                            if (!pIdInternal.PublicId.IsInterested)
+                            if (!pIdInternal.IsInterested)
                                 totalOptimisticallyUnchokingUs++;
                         }
-                        if (pIdInternal.PublicId.AmChoking)
+                        if (pIdInternal.AmChoking)
                             totalChoked++;
                         else
                             totalUnchoked++;
 
-                        if (pIdInternal.PublicId.IsInterested)
+                        if (pIdInternal.IsInterested)
                             totalInterestedInUs++;
 
-                        if (pIdInternal.PublicId.AmInterested)
+                        if (pIdInternal.AmInterested)
                             totalInterested++;
 
                         PeerInfo p = null;

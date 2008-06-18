@@ -16,7 +16,7 @@ namespace MonoTorrent.Client
             public int Count;
         }
 
-        internal static void EnqueueReceived(PeerIdInternal id, ArraySegment<byte> buffer, int startOffset, int count)
+        internal static void EnqueueReceived(PeerId id, ArraySegment<byte> buffer, int startOffset, int count)
         {
             ArraySegment<byte> messageBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref messageBuffer, buffer.Count);
@@ -32,7 +32,7 @@ namespace MonoTorrent.Client
             });
         }
 
-        internal static void EnqueueSend(PeerIdInternal id)
+        internal static void EnqueueSend(PeerId id)
         {
             MainLoop.Queue(delegate {
                 if (id.Connection != null)
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
             });
         }
 
-        internal static void EnqueueCleanup(PeerIdInternal id)
+        internal static void EnqueueCleanup(PeerId id)
         {
             ConnectionManager manager = id.ConnectionManager;
             MainLoop.Queue(delegate {
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
             });
         }
 
-        private static void HandleMessage(PeerIdInternal id, AsyncMessageDetails messageDetails)
+        private static void HandleMessage(PeerId id, AsyncMessageDetails messageDetails)
         {
             try
             {

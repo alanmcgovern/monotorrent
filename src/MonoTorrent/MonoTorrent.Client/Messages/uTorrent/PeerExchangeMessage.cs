@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get { return ((BEncodedString)peerDict[DroppedKey]).TextBytes; }
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             id.TorrentManager.AddPeers(Peer.Decode((BEncodedString)peerDict[AddedKey]));
         }

@@ -9,7 +9,7 @@ namespace MonoTorrent.Client
 	{
 		#region Private Fields
 
-		private List<PeerIdInternal> peers; //Peers held
+		private List<PeerId> peers; //Peers held
 		private PeerListType listType; //The type of list this represents
 		private int scanIndex = 0; //Position in the list when scanning peers
 
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client
 		/// <param name="ListType">The type of list</param>
 		public PeerList(PeerListType ListType)
 		{
-			peers = new List<PeerIdInternal>();
+			peers = new List<PeerId>();
 			listType = ListType;
 		}
 
@@ -61,8 +61,8 @@ namespace MonoTorrent.Client
 			get
 			{
 				int peersCount = 0;
-				foreach (PeerIdInternal peer in peers)
-					if (!peer.Connection.AmChoking)
+				foreach (PeerId peer in peers)
+					if (!peer.AmChoking)
 						peersCount++;
 				return peersCount;
 			}
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Adds a peer to the peer list
 		/// </summary>
-        public void Add(PeerIdInternal peer)
+        public void Add(PeerId peer)
 		{
 			peers.Add(peer);
 		}
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Gets the next peer to be scanned, returns null if there are no more
 		/// </summary>
-        public PeerIdInternal GetNextPeer()
+        public PeerId GetNextPeer()
 		{
 			if (scanIndex < peers.Count)
 			{
@@ -106,12 +106,12 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Gets the first choked peer in the list, or null if none found
 		/// </summary>
-        public PeerIdInternal GetFirstInterestedChokedPeer()
+        public PeerId GetFirstInterestedChokedPeer()
 		{
 			//Look for a choked peer
-            foreach (PeerIdInternal peer in peers)
+            foreach (PeerId peer in peers)
 				if (peer.Connection != null)
-					if (peer.Connection.IsInterested && peer.Connection.AmChoking)
+					if (peer.IsInterested && peer.AmChoking)
 						return peer;
 			//None found, return null
 			return null;
@@ -120,16 +120,16 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Looks for a choked peer that we can optimistically unchoke, or null if none found
 		/// </summary>
-        public PeerIdInternal GetOUPeer()
+        public PeerId GetOUPeer()
 		{
 			//Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
-            PeerIdInternal longestIntervalPeer = null;
+            PeerId longestIntervalPeer = null;
 			double longestIntervalPeerTime = 0;
-            foreach (PeerIdInternal peer in peers)
+            foreach (PeerId peer in peers)
 				if (peer.Connection != null)
-					if (peer.Connection.AmChoking)
+					if (peer.AmChoking)
 					{
-                        if (!peer.Connection.LastUnchoked.HasValue)
+                        if (!peer.LastUnchoked.HasValue)
 							//This is an untried peer that we haven't unchoked, return it
 							return peer;
 						else
@@ -142,8 +142,8 @@ namespace MonoTorrent.Client
 							{
 								//Compare dates to determine whether the new one has a longer interval (but halve the interval
 								//  if the peer has never sent us any data)
-                                double newInterval = SecondsBetween(peer.Connection.LastUnchoked.Value, DateTime.Now);
-								if (peer.Connection.Monitor.DataBytesDownloaded == 0)
+                                double newInterval = SecondsBetween(peer.LastUnchoked.Value, DateTime.Now);
+								if (peer.Monitor.DataBytesDownloaded == 0)
 									newInterval = newInterval / 2;
 								if (newInterval > longestIntervalPeerTime)
 								{
@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
 		/// Tests to see if the list includes a given peer
 		/// </summary>
 		/// <param name="Peer">The peer we are testing for</param>
-        public bool Includes(PeerIdInternal peer)
+        public bool Includes(PeerId peer)
 		{
 			//Return false if the supplied peer is null
 			if (peer == null)
@@ -210,91 +210,91 @@ namespace MonoTorrent.Client
 
 		#region Private Methods
 
-        private static int CompareCandidatePeersWhileDownloading(PeerIdInternal P1, PeerIdInternal P2)
+        private static int CompareCandidatePeersWhileDownloading(PeerId P1, PeerId P2)
 		{
 			//Comparer for candidate peers for use when the torrent is downloading
 			//First sort Am interested before !AmInterested
-			if (P1.Connection.AmInterested && !P2.Connection.AmInterested)
+			if (P1.AmInterested && !P2.AmInterested)
 				return -1;
-			else if (!P1.Connection.AmInterested && P2.Connection.AmInterested)
+			else if (!P1.AmInterested && P2.AmInterested)
 				return 1;
 
 			//Both have the same AmInterested status, sort by download rate highest first
-            return P2.Connection.LastReviewDownloadRate.CompareTo(P1.Connection.LastReviewDownloadRate);
+            return P2.LastReviewDownloadRate.CompareTo(P1.LastReviewDownloadRate);
 		}
 
-        private static int CompareCandidatePeersWhileSeeding(PeerIdInternal P1, PeerIdInternal P2)
+        private static int CompareCandidatePeersWhileSeeding(PeerId P1, PeerId P2)
 		{
 			//Comparer for candidate peers for use when the torrent is seeding
 			//Sort by upload rate, largest first
-            return P2.Connection.LastReviewUploadRate.CompareTo(P1.Connection.LastReviewUploadRate);
+            return P2.LastReviewUploadRate.CompareTo(P1.LastReviewUploadRate);
 		}
 
-        private static int CompareNascentPeers(PeerIdInternal P1, PeerIdInternal P2)
+        private static int CompareNascentPeers(PeerId P1, PeerId P2)
 		{
 			//Comparer for nascent peers
 			//Sort most recent first
-            if (P1.Connection.LastUnchoked > P2.Connection.LastUnchoked)
+            if (P1.LastUnchoked > P2.LastUnchoked)
 				return -1;
-            else if (P1.Connection.LastUnchoked < P2.Connection.LastUnchoked)
+            else if (P1.LastUnchoked < P2.LastUnchoked)
 				return 1;
 			else
 				return 0;
 		}
 
-        private static int CompareOptimisticUnchokeCandidatesWhileDownloading(PeerIdInternal P1, PeerIdInternal P2)
+        private static int CompareOptimisticUnchokeCandidatesWhileDownloading(PeerId P1, PeerId P2)
 		{
 			//Comparer for optimistic unchoke candidates
 
 			//Start by sorting peers that have given us most data before to the top
-			if (P1.Connection.Monitor.DataBytesDownloaded > P2.Connection.Monitor.DataBytesDownloaded)
+			if (P1.Monitor.DataBytesDownloaded > P2.Monitor.DataBytesDownloaded)
 				return -1;
-			else if (P1.Connection.Monitor.DataBytesDownloaded < P2.Connection.Monitor.DataBytesDownloaded)
+			else if (P1.Monitor.DataBytesDownloaded < P2.Monitor.DataBytesDownloaded)
 				return 1;
 
 			//Amount of data sent is equal (and probably 0), sort untried before tried
-            if (!P1.Connection.LastUnchoked.HasValue && P2.Connection.LastUnchoked.HasValue)
+            if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
 				return -1;
-            else if (P1.Connection.LastUnchoked.HasValue && !P2.Connection.LastUnchoked.HasValue)
+            else if (P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
 				return 1;
-            else if (!P1.Connection.LastUnchoked.HasValue && !P2.Connection.LastUnchoked.HasValue)
+            else if (!P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
 				//Both untried, nothing to choose between them
 				return 0;
 
 			//Both peers have been unchoked
 			//Sort into descending order (most recent first)
-            if (P1.Connection.LastUnchoked > P2.Connection.LastUnchoked)
+            if (P1.LastUnchoked > P2.LastUnchoked)
 				return -1;
-            else if (P1.Connection.LastUnchoked < P2.Connection.LastUnchoked)
+            else if (P1.LastUnchoked < P2.LastUnchoked)
 				return 1;
 			else
 				return 0;
 		}
 
-        private static int CompareOptimisticUnchokeCandidatesWhileSeeding(PeerIdInternal P1, PeerIdInternal P2)
+        private static int CompareOptimisticUnchokeCandidatesWhileSeeding(PeerId P1, PeerId P2)
 		{
 			//Comparer for optimistic unchoke candidates
 
 			//Start by sorting peers that we have sent most data to before to the top
-			if (P1.Connection.Monitor.DataBytesUploaded > P2.Connection.Monitor.DataBytesUploaded)
+			if (P1.Monitor.DataBytesUploaded > P2.Monitor.DataBytesUploaded)
 				return -1;
-			else if (P1.Connection.Monitor.DataBytesUploaded < P2.Connection.Monitor.DataBytesUploaded)
+			else if (P1.Monitor.DataBytesUploaded < P2.Monitor.DataBytesUploaded)
 				return 1;
 
 			//Amount of data sent is equal (and probably 0), sort untried before tried
-            if (!P1.Connection.LastUnchoked.HasValue && P2.Connection.LastUnchoked.HasValue)
+            if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
 				return -1;
-            else if (P1.Connection.LastUnchoked.HasValue && !P2.Connection.LastUnchoked.HasValue)
+            else if (P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
 				return 1;
-            else if (!P1.Connection.LastUnchoked.HasValue && P2.Connection.LastUnchoked.HasValue)
+            else if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
 				//Both untried, nothing to choose between them
 				return 0;
 
 			//Both peers have been unchoked
 			//Sort into descending order (most recent first)
-            if (P1.Connection.LastUnchoked > P2.Connection.LastUnchoked)
+            if (P1.LastUnchoked > P2.LastUnchoked)
 				return -1;
-            else if (P1.Connection.LastUnchoked < P2.Connection.LastUnchoked)
+            else if (P1.LastUnchoked < P2.LastUnchoked)
 				return 1;
 			else
 				return 0;

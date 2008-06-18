@@ -120,9 +120,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
             this.requestLength = ReadInt(buffer, offset + 8);
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
-            if (!id.Connection.SupportsFastPeer)
+            if (!id.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
             id.TorrentManager.PieceManager.ReceivedRejectRequest(id, this);

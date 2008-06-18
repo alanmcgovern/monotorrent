@@ -17,7 +17,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get { return ((BEncodedString)messageDict[MessageKey]).Text; }
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new MessageException("Libtorrent extension messages not supported");

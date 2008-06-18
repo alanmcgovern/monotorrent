@@ -210,9 +210,9 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
-            id.Connection.PiecesReceived++;
+            id.PiecesReceived++;
 
             BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager);
             d.Id = id;
@@ -221,9 +221,9 @@ namespace MonoTorrent.Client.Messages.Standard
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
 
-            if (!id.Connection.ProcessingQueue)
+            if (!id.ProcessingQueue)
             {
-                id.Connection.ProcessingQueue = true;
+                id.ProcessingQueue = true;
                 MessageHandler.EnqueueSend(id);
             }
         }

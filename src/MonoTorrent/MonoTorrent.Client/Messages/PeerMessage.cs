@@ -81,6 +81,6 @@ namespace MonoTorrent.Client.Messages
             return message;
         }
 
-        internal abstract void Handle(PeerIdInternal id);
+        internal abstract void Handle(PeerId id);
     }
 }

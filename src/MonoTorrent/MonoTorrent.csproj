@@ -200,8 +200,6 @@
     <Compile Include="MonoTorrent.Client\PeerConnections\ConnectionFactory.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HTTPConnection.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IConnection.cs" />
-    <Compile Include="MonoTorrent.Client\PeerConnections\PeerConnectionBase.cs" />
-    <Compile Include="MonoTorrent.Client\PeerConnections\PeerId.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\PeerIdInternal.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\TCPConnection.cs" />
     <Compile Include="MonoTorrent.Client\Peers\Peer.cs" />

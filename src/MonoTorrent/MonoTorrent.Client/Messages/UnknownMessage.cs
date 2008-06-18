@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Messages
             get { return 0; }
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             throw new ProtocolException("Unknown message received");
         }

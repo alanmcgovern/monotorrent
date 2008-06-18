@@ -44,12 +44,12 @@ namespace MonoTorrent.Client.Encryption
         public byte[] Buffer;
         public byte[] InitialData;
         public IEncryptor EncSocket;
-        public PeerIdInternal Id;
+        public PeerId Id;
         public IEncryption Decryptor;
         public IEncryption Encryptor;
 
 
-        public EncryptorAsyncResult(PeerIdInternal id, AsyncCallback callback, object state)
+        public EncryptorAsyncResult(PeerId id, AsyncCallback callback, object state)
             : base(callback, state)
         {
             Id = id;
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Encryption
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
         private static readonly AsyncTransfer HandshakeReceivedCallback = HandshakeReceived;
 
-        private static bool CheckRC4(PeerIdInternal id)
+        private static bool CheckRC4(PeerId id)
         {
             // By default we assume all encryption levels are allowed. This is
             // needed when we receive an incoming connection, because that is not
@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Encryption
 
             // If the connection is *not* incoming, then it will be associated with an Engine
             // so we can check what encryption levels the engine allows.
-            if (!id.Connection.Connection.IsIncoming)
+            if (!id.Connection.IsIncoming)
                 t = id.TorrentManager.Engine.Settings.AllowedEncryption;
 
             // We're allowed use encryption if the engine settings allow it and the peer supports it
@@ -82,24 +82,24 @@ namespace MonoTorrent.Client.Encryption
                    (Toolbox.HasEncryption(t, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Header));
         }
 
-        internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state)
+        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state)
         {
             return BeginCheckEncryption(id, callback, state, null);
         }
 
-        internal static IAsyncResult BeginCheckEncryption(PeerIdInternal id, AsyncCallback callback, object state, byte[][] sKeys)
+        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state, byte[][] sKeys)
         {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
             result.SKeys = sKeys;
 
-            IConnection c = id.Connection.Connection;
+            IConnection c = id.Connection;
             try
             {
                 // If the connection is incoming, receive the handshake before
                 // trying to decide what encryption to use
-                if (id.Connection.Connection.IsIncoming)
+                if (id.Connection.IsIncoming)
                 {
-                    result.Buffer = new byte[id.Connection.BytesToRecieve];
+                    result.Buffer = new byte[id.BytesToRecieve];
                     NetworkIO.EnqueueReceive(c, result.Buffer, 0, result.Buffer.Length, HandshakeReceivedCallback, result);
                 }
                 else
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Encryption
                         if (hasRC4)
                         {
                             result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
-                            result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
+                            result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                         else
                         {
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client.Encryption
                         else
                         {
                             result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
-                            result.EncSocket.BeginHandshake(id.Connection.Connection, CompletedEncryptedHandshakeCallback, result);
+                            result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                     }
                 }
@@ -153,8 +153,8 @@ namespace MonoTorrent.Client.Encryption
             if (r.SavedException != null)
                 throw r.SavedException;
 
-            r.Id.Connection.Encryptor = r.Encryptor;
-            r.Id.Connection.Decryptor = r.Decryptor;
+            r.Id.Encryptor = r.Encryptor;
+            r.Id.Decryptor = r.Decryptor;
             initialData = r.InitialData;
 
             r.AsyncWaitHandle.Close();
@@ -164,7 +164,7 @@ namespace MonoTorrent.Client.Encryption
         {
             int received = count;
             EncryptorAsyncResult result = (EncryptorAsyncResult)state;
-            IConnection connection = result.Id.Connection.Connection;
+            IConnection connection = result.Id.Connection;
 
             try
             {

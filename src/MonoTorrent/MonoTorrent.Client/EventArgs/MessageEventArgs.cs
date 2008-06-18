@@ -84,11 +84,6 @@ namespace MonoTorrent.Client
             this.message = message;
         }
 
-        internal PeerMessageEventArgs(TorrentManager manager, PeerMessage message, Direction direction, PeerIdInternal id)
-            : this(manager, message, direction, id.PublicId)
-        {
-        }
-
         #endregion
     }
 }

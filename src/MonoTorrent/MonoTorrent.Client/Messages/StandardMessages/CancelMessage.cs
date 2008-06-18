@@ -125,26 +125,26 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             PeerMessage msg;
-            for (int i = 0; i < id.Connection.QueueLength; i++)
+            for (int i = 0; i < id.QueueLength; i++)
             {
-                msg = id.Connection.Dequeue();
+                msg = id.Dequeue();
                 if (!(msg is PieceMessage))
                 {
-                    id.Connection.Enqueue(msg);
+                    id.Enqueue(msg);
                     continue;
                 }
 
                 PieceMessage piece = msg as PieceMessage;
                 if (!(piece.PieceIndex == this.pieceIndex && piece.StartOffset == this.startOffset && piece.RequestLength == this.requestLength))
                 {
-                    id.Connection.Enqueue(msg);
+                    id.Enqueue(msg);
                 }
                 else
                 {
-                    id.Connection.IsRequestingPiecesCount--;
+                    id.IsRequestingPiecesCount--;
                 }
             }
         }

@@ -161,7 +161,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new MessageException("Libtorrent extension messages not supported");
@@ -170,8 +170,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             // FIXME: Recreate the uri? Give warning?
             if (localPort > 0)
                 id.Peer.LocalPort = localPort;
-            id.Connection.MaxPendingRequests = maxRequests;
-            id.Connection.ExtensionSupports = supports;
+            id.MaxPendingRequests = maxRequests;
+            id.ExtensionSupports = supports;
 
             // FIXME : Find a way to be more elegant!
             foreach(ExtensionSupport support in supports) {

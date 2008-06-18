@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{9CC2CC3A-4041-4857-AF8B-D58745FD3066}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -119,19 +119,33 @@
     <Compile Include="Stats\DebugStatistics.designer.cs">
       <DependentUpon>DebugStatistics.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\GlacialList\BorderStrip.cs" />
+    <Compile Include="Stats\GlacialList\BorderStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Stats\GlacialList\ColumnCollection.cs" />
-    <Compile Include="Stats\GlacialList\GlacialList.cs" />
-    <Compile Include="Stats\GlacialList\GLComboBox.cs" />
-    <Compile Include="Stats\GlacialList\GLDateTimePicker.cs" />
+    <Compile Include="Stats\GlacialList\GlacialList.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Stats\GlacialList\GLComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Stats\GlacialList\GLDateTimePicker.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Stats\GlacialList\GLEmbeddedControl.cs" />
     <Compile Include="Stats\GlacialList\GLMergeSort.cs" />
     <Compile Include="Stats\GlacialList\GLQuickSort.cs" />
-    <Compile Include="Stats\GlacialList\GLTextBox.cs" />
+    <Compile Include="Stats\GlacialList\GLTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Stats\GlacialList\HelperFunctions.cs" />
     <Compile Include="Stats\GlacialList\ItemCollection.cs" />
-    <Compile Include="Stats\GlacialList\ManagedHScrollBar.cs" />
-    <Compile Include="Stats\GlacialList\ManagedVScrollBar.cs" />
+    <Compile Include="Stats\GlacialList\ManagedHScrollBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Stats\GlacialList\ManagedVScrollBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Stats\GlacialList\ThemeRoutines.cs" />
     <Compile Include="Stats\PeerInfo.cs" />
     <Compile Include="Stats\PeerMessageLogger.cs" />
@@ -181,7 +195,9 @@
     <EmbeddedResource Include="Stats\GlacialList\ManagedVScrollBar.resx">
       <DependentUpon>ManagedVScrollBar.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Stats\log4net.resx" />
+    <EmbeddedResource Include="Stats\log4net.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Stats\PeerMessagesDisplay.resx">
       <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
     </EmbeddedResource>

@@ -163,7 +163,7 @@ namespace SampleClient.Stats
 
         #endregion
 
-        public PeerInfo(PeerIdInternal id)
+        public PeerInfo(PeerId id)
         {
             UpdateData(id);
         }
@@ -185,25 +185,25 @@ namespace SampleClient.Stats
             return false;
         }
 
-        public void UpdateData(PeerIdInternal pIdInternal)
+        public void UpdateData(PeerId pIdInternal)
         {
-            this.connectionUri = pIdInternal.PublicId.Location;
-            this.connected = pIdInternal.PublicId.Connection != null;
-            this.downloadRate = pIdInternal.PublicId.Monitor.DownloadSpeed;
-            this.uploadRate = pIdInternal.PublicId.Monitor.UploadSpeed; // Upload Measured
-            this.dp = pIdInternal.PublicId.GetDownloadRate();
-            this.recipUpload = pIdInternal.PublicId.UploadRateForRecip;
-            this.tyrantRatio = pIdInternal.PublicId.Ratio;
-            this.estimatedDownloadRate = pIdInternal.PublicId.EstimatedDownloadRate;
-            this.amChoking = pIdInternal.PublicId.AmChoking;
-            this.amInterested = pIdInternal.PublicId.AmInterested;
-            this.isChoking = pIdInternal.PublicId.IsChoking;
-            this.isInterested = pIdInternal.PublicId.IsInterested;
-            this.isSeeder = pIdInternal.PublicId.IsSeeder;
-            this.outstandingRequests = ((pIdInternal.Connection != null) ? pIdInternal.Connection.AmRequestingPiecesCount : 0);
-            this.piecesSentFrom = pIdInternal.PublicId.PiecesReceived; // Pieces Received From
-            this.piecesSentTo = pIdInternal.PublicId.PiecesSent; // Pieces Sent To
-            this.encrypted = !(pIdInternal.PublicId.Encryptor is PlainTextEncryption);
+            this.connectionUri = pIdInternal.Peer.ConnectionUri;
+            this.connected = pIdInternal.Connection != null;
+            this.downloadRate = pIdInternal.Connection.Monitor.DownloadSpeed;
+            this.uploadRate = pIdInternal.Connection.Monitor.UploadSpeed; // Upload Measured
+            this.dp = pIdInternal.GetDownloadRate();
+            this.recipUpload = pIdInternal.UploadRateForRecip;
+            this.tyrantRatio = pIdInternal.Ratio;
+            this.estimatedDownloadRate = pIdInternal.EstimatedDownloadRate;
+            this.amChoking = pIdInternal.AmChoking;
+            this.amInterested = pIdInternal.AmInterested;
+            this.isChoking = pIdInternal.IsChoking;
+            this.isInterested = pIdInternal.IsInterested;
+            this.isSeeder = pIdInternal.Peer.IsSeeder;
+            this.outstandingRequests = ((pIdInternal.Connection != null) ? pIdInternal.AmRequestingPiecesCount : 0);
+            this.piecesSentFrom = pIdInternal.PiecesReceived; // Pieces Received From
+            this.piecesSentTo = pIdInternal.PiecesSent; // Pieces Sent To
+            this.encrypted = !(pIdInternal.Encryptor is PlainTextEncryption);
         }
     }
 }

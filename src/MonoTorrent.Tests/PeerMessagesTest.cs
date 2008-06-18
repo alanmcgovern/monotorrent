@@ -59,7 +59,9 @@ namespace MonoTorrent.Client.StandardMessageTests
         [Test]
         public void BitFieldEncoding()
         {
-            bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false };
+            bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true,
+                                       false, true, false, false, false, true, true, true, false, false,
+                                       false, true, false, true, false };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
             BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
@@ -67,7 +69,7 @@ namespace MonoTorrent.Client.StandardMessageTests
         [Test]
         public void BitFieldDecoding()
         {
-            byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08 };
+            byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08, 0xAA, 0xE3 };
             Console.WriteLine("Pieces: " + testRig.Manager.Torrent.Pieces.Count);
             BitfieldMessage msg = (BitfieldMessage)PeerMessage.DecodeMessage(buffer, 0, 8, this.testRig.Manager);
             Console.WriteLine(msg.BitField.Length);
@@ -84,6 +86,7 @@ namespace MonoTorrent.Client.StandardMessageTests
             for (int i = 13; i < 15; i++)
                 Assert.IsFalse(msg.BitField[i], i.ToString());
         }
+
         [Test]
         [ExpectedException(typeof(MessageException))]
         [Ignore("Deliberately broken to work around bugs in azureus")]

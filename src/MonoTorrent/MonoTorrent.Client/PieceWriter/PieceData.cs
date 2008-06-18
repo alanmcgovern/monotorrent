@@ -13,7 +13,7 @@ namespace MonoTorrent.Client
         private int count;
         private int pieceIndex;
         private int pieceOffset;
-        private PeerIdInternal peerId;
+        private PeerId peerId;
         private ManualResetEvent waitHandle;
 
         public int ActualCount
@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
             get { return count; }
             set { count = value; }
         }
-        internal PeerIdInternal Id
+        internal PeerId Id
         {
             get { return peerId; }
             set { peerId = value; }

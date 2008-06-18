@@ -152,7 +152,7 @@ namespace MonoTorrent.Client.Managers
         /// <param name="bufferedFileIO"></param>
         private void PerformWrite(BufferedIO data)
         {
-            PeerIdInternal id = data.Id;
+            PeerId id = data.Id;
             ArraySegment<byte> recieveBuffer = data.buffer;
             Piece piece = data.Piece;
 
@@ -183,7 +183,7 @@ namespace MonoTorrent.Client.Managers
                 id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-            List<PeerIdInternal> peers = new List<PeerIdInternal>(piece.Blocks.Length);
+            List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
             for (int i = 0; i < piece.Blocks.Length; i++)
                 if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
                     peers.Add(piece.Blocks[i].RequestedOff);

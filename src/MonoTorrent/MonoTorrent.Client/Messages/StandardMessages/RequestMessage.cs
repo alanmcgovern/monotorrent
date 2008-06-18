@@ -168,7 +168,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             // If we are not on the last piece and the user requested a stupidly big/small amount of data
             // we will close the connection
@@ -179,23 +179,23 @@ namespace MonoTorrent.Client.Messages.Standard
             PieceMessage m = new PieceMessage(id.TorrentManager, this.PieceIndex, this.startOffset, this.requestLength);
 
             // If we're not choking the peer, enqueue the message right away
-            if (!id.Connection.AmChoking)
+            if (!id.AmChoking)
             {
-                id.Connection.IsRequestingPiecesCount++;
-                id.Connection.Enqueue(m);
+                id.IsRequestingPiecesCount++;
+                id.Enqueue(m);
             }
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
             // otherwise send back a reject request message
-            else if (id.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer)
+            else if (id.SupportsFastPeer && ClientEngine.SupportsFastPeer)
             {
-                if (id.Connection.AmAllowedFastPieces.Contains(this.pieceIndex))
+                if (id.AmAllowedFastPieces.Contains(this.pieceIndex))
                 {
-                    id.Connection.IsRequestingPiecesCount++;
-                    id.Connection.Enqueue(m);
+                    id.IsRequestingPiecesCount++;
+                    id.Enqueue(m);
                 }
                 else
-                    id.Connection.Enqueue(new RejectRequestMessage(m));
+                    id.Enqueue(new RejectRequestMessage(m));
             }
         }
 

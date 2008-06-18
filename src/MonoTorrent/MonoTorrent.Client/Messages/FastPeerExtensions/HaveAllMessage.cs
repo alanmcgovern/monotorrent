@@ -67,12 +67,12 @@ namespace MonoTorrent.Client.Messages.FastPeer
                 throw new ProtocolException("Message decoding not supported");
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
-            if (!id.Connection.SupportsFastPeer)
+            if (!id.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.Connection.BitField.SetAll(true);
+            id.BitField.SetAll(true);
             id.Peer.IsSeeder = true;
             id.TorrentManager.SetAmInterestedStatus(id, id.TorrentManager.PieceManager.IsInteresting(id));
         }

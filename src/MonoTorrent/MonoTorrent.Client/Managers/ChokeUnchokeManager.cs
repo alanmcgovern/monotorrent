@@ -20,7 +20,7 @@ namespace MonoTorrent.Client
         private bool firstCall = true; //Indicates the first call to the TimePassed method
         private bool isDownloading = true; //Allows us to identify change in state from downloading to seeding
         private TorrentManager owningTorrent; //The torrent to which this manager belongs
-        private PeerIdInternal optimisticUnchokePeer = null; //This is the peer we have optimistically unchoked, or null
+        private PeerId optimisticUnchokePeer = null; //This is the peer we have optimistically unchoked, or null
 
         //Lists of peers held by the choke/unchoke manager
         private PeerList nascentPeers = new PeerList(PeerListType.NascentPeers); //Peers that have yet to be unchoked and downloading for a full review period
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
             //  the choked and interested peers
             //  the number of unchoked peers
             //Choke peers that have become disinterested at the same time
-            List<PeerIdInternal> chokedInterestedPeers = new List<PeerIdInternal>();
+            List<PeerId> chokedInterestedPeers = new List<PeerId>();
             int interestedCount = 0;
             int unchokedCount = 0;
 
@@ -75,13 +75,13 @@ namespace MonoTorrent.Client
             skipDownload = skipDownload && owningTorrent.Settings.MaxDownloadSpeed > 0;
             skipUpload = skipUpload && owningTorrent.Settings.MaxUploadSpeed > 0;
 
-            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
                 if (connectedPeer.Connection == null)
                     continue;
 
                 //If the peer is a seeder and we are not currently interested in it, put that right
-                if (connectedPeer.Peer.IsSeeder && !connectedPeer.Connection.AmInterested)
+                if (connectedPeer.Peer.IsSeeder && !connectedPeer.AmInterested)
                 {
                     owningTorrent.SetAmInterestedStatus(connectedPeer, true);
                     //Send2Log("Forced AmInterested: " + connectedPeer.Peer.Location);
@@ -89,19 +89,19 @@ namespace MonoTorrent.Client
 
                 // If the peer is interesting try to queue up some piece requests off him
                 // If he is choking, we will only queue a piece if there is a FastPiece we can choose
-                if (connectedPeer.Connection.AmInterested)
+                if (connectedPeer.AmInterested)
                     while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
 
                 if (!connectedPeer.Peer.IsSeeder)
                 {
-                    if (!connectedPeer.Connection.IsInterested && !connectedPeer.Connection.AmChoking)
+                    if (!connectedPeer.IsInterested && !connectedPeer.AmChoking)
                         //This peer is disinterested and unchoked; choke it
                         Choke(connectedPeer);
 
-                    else if (connectedPeer.Connection.IsInterested)
+                    else if (connectedPeer.IsInterested)
                     {
                         interestedCount++;
-                        if (!connectedPeer.Connection.AmChoking)       //This peer is interested and unchoked, count it
+                        if (!connectedPeer.AmChoking)       //This peer is interested and unchoked, count it
                             unchokedCount++;
                         else
                             chokedInterestedPeers.Add(connectedPeer); //This peer is interested and choked, remember it and count it
@@ -155,7 +155,7 @@ namespace MonoTorrent.Client
 
         private void AllocateSlots(int alreadyUnchoked)
         {
-            PeerIdInternal peer = null;
+            PeerId peer = null;
 
             //Allocate interested peers to slots based on the latest review results
             //First determine how many slots are available to be allocated
@@ -179,11 +179,11 @@ namespace MonoTorrent.Client
             {
                 //No peers left, look for any interested choked peers
                 bool peerFound = false;
-                foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+                foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
                 {
                     if (connectedPeer.Connection != null)
                     {
-                        if (connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking)
+                        if (connectedPeer.IsInterested && connectedPeer.AmChoking)
                         {
                             Unchoke(connectedPeer);
                             peerFound = true;
@@ -199,19 +199,19 @@ namespace MonoTorrent.Client
 
 
 
-        private void Choke(PeerIdInternal peer)
+        private void Choke(PeerId peer)
         {
             //Choke the supplied peer
 
-            if (peer.Connection.AmChoking)
+            if (peer.AmChoking)
                 //We're already choking this peer, nothing to do
                 return;
 
-            peer.Connection.AmChoking = true;
+            peer.AmChoking = true;
             owningTorrent.UploadingTo--;
             RejectPendingRequests(peer);
-            peer.Connection.EnqueueAt(new ChokeMessage(), 0);
-            Logger.Log(peer.Connection.Connection, "Choking");
+            peer.EnqueueAt(new ChokeMessage(), 0);
+            Logger.Log(peer.Connection, "Choking");
             //			Send2Log("Choking: " + PeerToChoke.Location);
         }
 
@@ -241,9 +241,9 @@ namespace MonoTorrent.Client
             //                {
             //                    logEntry.Append(
             //                        B2YN(connectedPeer.Peer.IsSeeder) +
-            //                        B2YN(connectedPeer.Connection.AmChoking) +
-            //                        B2YN(connectedPeer.Connection.AmInterested) +
-            //                        B2YN(connectedPeer.Connection.IsInterested) +
+            //                        B2YN(connectedPeer.AmChoking) +
+            //                        B2YN(connectedPeer.AmInterested) +
+            //                        B2YN(connectedPeer.IsInterested) +
             //                        B2YN(connectedPeer.Peer.FirstReviewPeriod) +
             //                        connectedPeer.Connection.Monitor.DataBytesDownloaded.ToString() + "," +
             //                        connectedPeer.Peer.BytesDownloadedAtLastReview.ToString() + "," +
@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
 
             int unchokedPeers = 0;
 
-            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
                 if (connectedPeer.Connection != null)
                 {
@@ -276,26 +276,26 @@ namespace MonoTorrent.Client
                         //Determine common values for use in this routine
                         double timeSinceLastReview = SecondsBetween(timeOfLastReview, DateTime.Now);
                         double timeUnchoked = 0;
-                        if (!connectedPeer.Connection.AmChoking)
+                        if (!connectedPeer.AmChoking)
                         {
-                            timeUnchoked = SecondsBetween(connectedPeer.Connection.LastUnchoked.Value, DateTime.Now);
+                            timeUnchoked = SecondsBetween(connectedPeer.LastUnchoked.Value, DateTime.Now);
                             unchokedPeers++;
                         }
                         long bytesTransferred = 0;
                         if (!isDownloading)
                             //We are seeding the torrent; determine bytesTransferred as bytes uploaded
-                            bytesTransferred = connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview;
+                            bytesTransferred = connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview;
                         else
                             //The peer is unchoked and we are downloading the torrent; determine bytesTransferred as bytes downloaded
-                            bytesTransferred = connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview;
+                            bytesTransferred = connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview;
 
                         //Reset review up and download rates to zero; peers are therefore non-responders unless we determine otherwise
-                        connectedPeer.Connection.LastReviewDownloadRate = 0;
-                        connectedPeer.Connection.LastReviewUploadRate = 0;
+                        connectedPeer.LastReviewDownloadRate = 0;
+                        connectedPeer.LastReviewUploadRate = 0;
 
-                        if (!connectedPeer.Connection.AmChoking &&
+                        if (!connectedPeer.AmChoking &&
                             (timeUnchoked < minimumTimeBetweenReviews ||
-                            (connectedPeer.Connection.FirstReviewPeriod && bytesTransferred > 0)))
+                            (connectedPeer.FirstReviewPeriod && bytesTransferred > 0)))
                             //The peer is unchoked but either it has not been unchoked for the warm up interval,
                             // or it is the first full period and only just started transferring data
                             nascentPeers.Add(connectedPeer);
@@ -306,11 +306,11 @@ namespace MonoTorrent.Client
                             //Add to peers that are candidates for unchoking based on their performance
                             candidatePeers.Add(connectedPeer);
                             //Calculate the latest up/downloadrate
-                            connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
-                            connectedPeer.Connection.LastReviewDownloadRate = (connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.LastReviewDownloadRate = (connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview;
                         }
 
-                        else if (isDownloading && connectedPeer.Connection.IsInterested && connectedPeer.Connection.AmChoking && bytesTransferred > 0)
+                        else if (isDownloading && connectedPeer.IsInterested && connectedPeer.AmChoking && bytesTransferred > 0)
                         //A peer is optimistically unchoking us.  Take the maximum of their current download rate and their download rate over the
                         //	review period since they might have only just unchoked us and we don't want to miss out on a good opportunity.  Upload
                         // rate is less important, so just take an average over the period.
@@ -318,22 +318,22 @@ namespace MonoTorrent.Client
                             //Add to peers that are candidates for unchoking based on their performance
                             candidatePeers.Add(connectedPeer);
                             //Calculate the latest up/downloadrate
-                            connectedPeer.Connection.LastReviewUploadRate = (connectedPeer.Connection.Monitor.DataBytesUploaded - connectedPeer.Connection.BytesUploadedAtLastReview) / timeSinceLastReview;
-                            connectedPeer.Connection.LastReviewDownloadRate = Math.Max((connectedPeer.Connection.Monitor.DataBytesDownloaded - connectedPeer.Connection.BytesDownloadedAtLastReview) / timeSinceLastReview,
-                                connectedPeer.Connection.Monitor.DownloadSpeed);
+                            connectedPeer.LastReviewUploadRate = (connectedPeer.Monitor.DataBytesUploaded - connectedPeer.BytesUploadedAtLastReview) / timeSinceLastReview;
+                            connectedPeer.LastReviewDownloadRate = Math.Max((connectedPeer.Monitor.DataBytesDownloaded - connectedPeer.BytesDownloadedAtLastReview) / timeSinceLastReview,
+                                connectedPeer.Monitor.DownloadSpeed);
                         }
 
-                        else if (connectedPeer.Connection.IsInterested)
+                        else if (connectedPeer.IsInterested)
                             //All other interested peers are candidates for optimistic unchoking
                             optimisticUnchokeCandidates.Add(connectedPeer);
 
                         //Remember the number of bytes up and downloaded for the next review
-                        connectedPeer.Connection.BytesUploadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesUploaded;
-                        connectedPeer.Connection.BytesDownloadedAtLastReview = connectedPeer.Connection.Monitor.DataBytesDownloaded;
+                        connectedPeer.BytesUploadedAtLastReview = connectedPeer.Monitor.DataBytesUploaded;
+                        connectedPeer.BytesDownloadedAtLastReview = connectedPeer.Monitor.DataBytesDownloaded;
 
                         //If the peer has been unchoked for longer than one review period, unset FirstReviewPeriod
                         if (timeUnchoked >= minimumTimeBetweenReviews)
-                            connectedPeer.Connection.FirstReviewPeriod = false;
+                            connectedPeer.FirstReviewPeriod = false;
                     }
                 }
             }
@@ -361,7 +361,7 @@ namespace MonoTorrent.Client
                 //We should reallocate all the slots but one and allocate the last slot to the next optimistic unchoke peer
                 ReallocateSlots(owningTorrent.Settings.UploadSlots - 1, unchokedPeers);
                 //In case we don't find a suitable peer, make the optimistic unchoke peer null
-                PeerIdInternal oup = optimisticUnchokeCandidates.GetOUPeer();
+                PeerId oup = optimisticUnchokeCandidates.GetOUPeer();
                 if (oup != null)
                 {
                     //						Send2Log("OUP: " + oup.Location);
@@ -373,20 +373,20 @@ namespace MonoTorrent.Client
             //Finally, deallocate (any) remaining peers from the three lists
             while (nascentPeers.MorePeers)
             {
-                PeerIdInternal nextPeer = nascentPeers.GetNextPeer();
-                if (!nextPeer.Connection.AmChoking)
+                PeerId nextPeer = nascentPeers.GetNextPeer();
+                if (!nextPeer.AmChoking)
                     Choke(nextPeer);
             }
             while (candidatePeers.MorePeers)
             {
-                PeerIdInternal nextPeer = candidatePeers.GetNextPeer();
-                if (!nextPeer.Connection.AmChoking)
+                PeerId nextPeer = candidatePeers.GetNextPeer();
+                if (!nextPeer.AmChoking)
                     Choke(nextPeer);
             }
             while (optimisticUnchokeCandidates.MorePeers)
             {
-                PeerIdInternal nextPeer = optimisticUnchokeCandidates.GetNextPeer();
-                if (!nextPeer.Connection.AmChoking)
+                PeerId nextPeer = optimisticUnchokeCandidates.GetNextPeer();
+                if (!nextPeer.AmChoking)
                     //This peer is currently unchoked, choke it unless it is the optimistic unchoke peer
                     if (optimisticUnchokePeer == null)
                         //There isn't an optimistic unchoke peer
@@ -410,20 +410,17 @@ namespace MonoTorrent.Client
             if (!isDownloading)
                 ExecuteReview();
 
-            List<PeerIdInternal> sortedPeers = new List<PeerIdInternal>();
+            List<PeerId> sortedPeers = new List<PeerId>();
             int uploadBandwidthUsed;
 
-            foreach (PeerIdInternal connectedPeer in owningTorrent.Peers.ConnectedPeers)
+            foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
                 lock (connectedPeer)
                 {
                     if (connectedPeer.Connection != null)
                     {
-                        // update stats
-                        connectedPeer.UpdatePublicStats();
-
                         // update tyrant stats
-                        connectedPeer.PublicId.UpdateTyrantStats();
+                        connectedPeer.UpdateTyrantStats();
 
                         sortedPeers.Add( connectedPeer );
                     }
@@ -431,9 +428,9 @@ namespace MonoTorrent.Client
             }
 
             // sort the list by BitTyrant ratio
-            sortedPeers.Sort( delegate( PeerIdInternal p1, PeerIdInternal p2 )
+            sortedPeers.Sort( delegate( PeerId p1, PeerId p2 )
             {
-                return p2.PublicId.Ratio.CompareTo( p1.PublicId.Ratio );
+                return p2.Ratio.CompareTo( p1.Ratio );
             } );
 
             //TODO: Make sure that lan-local peers always get unchoked. Perhaps an implementation like AZInstanceManager
@@ -444,14 +441,14 @@ namespace MonoTorrent.Client
             // TODO: Should we consider some extra measures, like nascent peers, candidatePeers, optimisticUnchokeCandidates ETC.
 
             uploadBandwidthUsed = 0;
-            foreach (PeerIdInternal pid in sortedPeers)
+            foreach (PeerId pid in sortedPeers)
             {
                 // unchoke the top interested peers till we reach the max bandwidth allotted.
-                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaxUploadSpeed && pid.PublicId.IsInterested)
+                if (uploadBandwidthUsed < this.owningTorrent.Settings.MaxUploadSpeed && pid.IsInterested)
                 {
                     Unchoke( pid );
 
-                    uploadBandwidthUsed += pid.PublicId.UploadRateForRecip;
+                    uploadBandwidthUsed += pid.UploadRateForRecip;
                 }
                 else
                 {
@@ -498,9 +495,9 @@ namespace MonoTorrent.Client
         /// <param name="NumberOfSlots"></param>The number of slots left to reallocate
         /// <param name="MaximumUnchokes"></param>The number of peers we can unchoke
         /// <param name="Peer"></param>The peer to consider for reallocation
-        private void ReallocateSlot(ref int NumberOfSlots, ref int MaximumUnchokes, PeerIdInternal peer)
+        private void ReallocateSlot(ref int NumberOfSlots, ref int MaximumUnchokes, PeerId peer)
         {
-            if (!peer.Connection.AmChoking)
+            if (!peer.AmChoking)
             {
                 //This peer is already unchoked, just decrement the number of slots
                 NumberOfSlots--;
@@ -520,38 +517,38 @@ namespace MonoTorrent.Client
         /// and rejects them as necessary
         /// </summary>
         /// <param name="Peer"></param>
-        private void RejectPendingRequests(PeerIdInternal Peer)
+        private void RejectPendingRequests(PeerId Peer)
         {
             PeerMessage message;
             PieceMessage pieceMessage;
-            int length = Peer.Connection.QueueLength;
+            int length = Peer.QueueLength;
 
             for (int i = 0; i < length; i++)
             {
-                message = Peer.Connection.Dequeue();
+                message = Peer.Dequeue();
                 if (!(message is PieceMessage))
                 {
-                    Peer.Connection.Enqueue(message);
+                    Peer.Enqueue(message);
                     continue;
                 }
 
                 pieceMessage = (PieceMessage)message;
 
                 // If the peer doesn't support fast peer, then we will never requeue the message
-                if (!(Peer.Connection.SupportsFastPeer && ClientEngine.SupportsFastPeer))
+                if (!(Peer.SupportsFastPeer && ClientEngine.SupportsFastPeer))
                 {
-                    Peer.Connection.IsRequestingPiecesCount--;
+                    Peer.IsRequestingPiecesCount--;
                     continue;
                 }
 
                 // If the peer supports fast peer, queue the message if it is an AllowedFast piece
                 // Otherwise send a reject message for the piece
-                if (Peer.Connection.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
-                    Peer.Connection.Enqueue(pieceMessage);
+                if (Peer.AmAllowedFastPieces.Contains(pieceMessage.PieceIndex))
+                    Peer.Enqueue(pieceMessage);
                 else
                 {
-                    Peer.Connection.IsRequestingPiecesCount--;
-                    Peer.Connection.Enqueue(new RejectRequestMessage(pieceMessage));
+                    Peer.IsRequestingPiecesCount--;
+                    Peer.Enqueue(new RejectRequestMessage(pieceMessage));
                 }
             }
         }
@@ -563,27 +560,27 @@ namespace MonoTorrent.Client
             return difference.TotalMilliseconds / 1000;
         }
 
-        private void Unchoke(PeerIdInternal PeerToUnchoke)
+        private void Unchoke(PeerId PeerToUnchoke)
         {
             //Unchoke the supplied peer
 
-            if (!PeerToUnchoke.Connection.AmChoking)
+            if (!PeerToUnchoke.AmChoking)
                 //We're already unchoking this peer, nothing to do
                 return;
 
-            PeerToUnchoke.Connection.AmChoking = false;
+            PeerToUnchoke.AmChoking = false;
             owningTorrent.UploadingTo++;
-            PeerToUnchoke.Connection.EnqueueAt(new UnchokeMessage(), 0);
-            PeerToUnchoke.Connection.LastUnchoked = DateTime.Now;
-            PeerToUnchoke.Connection.FirstReviewPeriod = true;
-            Logger.Log(PeerToUnchoke.Connection.Connection, "Unchoking");
+            PeerToUnchoke.EnqueueAt(new UnchokeMessage(), 0);
+            PeerToUnchoke.LastUnchoked = DateTime.Now;
+            PeerToUnchoke.FirstReviewPeriod = true;
+            Logger.Log(PeerToUnchoke.Connection, "Unchoking");
             //			Send2Log("Unchoking: " + PeerToUnchoke.Location);
         }
 
-        private void UnchokePeerList(List<PeerIdInternal> PeerList)
+        private void UnchokePeerList(List<PeerId> PeerList)
         {
             //Unchoke all the peers in the supplied list
-            PeerList.ForEach(delegate(PeerIdInternal d) { Unchoke(d); });
+            PeerList.ForEach(delegate(PeerId d) { Unchoke(d); });
         }
 
         #endregion

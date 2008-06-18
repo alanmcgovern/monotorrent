@@ -224,11 +224,11 @@ namespace MonoTorrent.Client.Messages.Standard
         }
 
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             if (!this.protocolString.Equals(VersionInfo.ProtocolStringV100))
             {
-                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid protocol in handshake: {0}", this.protocolString);
+                Logger.Log(id.Connection, "HandShake.Handle - Invalid protocol in handshake: {0}", this.protocolString);
                 throw new ProtocolException("Invalid protocol string");
             }
 
@@ -240,25 +240,25 @@ namespace MonoTorrent.Client.Messages.Standard
             // If the infohash doesn't match, dump the connection
             if (!Toolbox.ByteMatch(this.infoHash, id.TorrentManager.Torrent.InfoHash))
             {
-                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid infohash");
+                Logger.Log(id.Connection, "HandShake.Handle - Invalid infohash");
                 throw new TorrentException("Invalid infohash. Not tracking this torrent");
             }
 
             // If the peer id's don't match, dump the connection. This is due to peers faking usually
             if (id.Peer.PeerId != this.peerId)
             {
-                Logger.Log(id.Connection.Connection, "HandShake.Handle - Invalid peerid");
+                Logger.Log(id.Connection, "HandShake.Handle - Invalid peerid");
                 throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");
             }
 
             // Attempt to parse the application that the peer is using
-            id.Connection.ClientApp = new Software(this.peerId);
-            id.Connection.SupportsFastPeer = this.supportsFastPeer;
-            id.Connection.SupportsLTMessages = this.extended;
+            id.ClientApp = new Software(this.peerId);
+            id.SupportsFastPeer = this.supportsFastPeer;
+            id.SupportsLTMessages = this.extended;
 
             // If they support fast peers, create their list of allowed pieces that they can request off me
             if (this.supportsFastPeer && id.TorrentManager != null)
-                id.Connection.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.Connection.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Count);
+                id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.AddressBytes, id.TorrentManager.Torrent.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Count);
 
         }
 

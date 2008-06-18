@@ -102,39 +102,39 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="id">The peer to add the request too</param>
         /// <returns>True if the request was added</returns>
-        internal bool AddPieceRequest(PeerIdInternal id)
+        internal bool AddPieceRequest(PeerId id)
         {
             RequestMessage msg;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Connection.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
+            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
 			maxRequests = maxRequests > 50 ? 50 : maxRequests;
 
-            if (id.Connection.AmRequestingPiecesCount >= maxRequests)
+            if (id.AmRequestingPiecesCount >= maxRequests)
                 return false;
 
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
-                if (id.Connection.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+                if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
 
             msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
             if (msg == null)
                 return false;
 
-            id.Connection.Enqueue(msg);
-            id.Connection.AmRequestingPiecesCount++;
+            id.Enqueue(msg);
+            id.AmRequestingPiecesCount++;
             return true;
         }
 
 
-        internal bool IsInteresting(PeerIdInternal id)
+        internal bool IsInteresting(PeerId id)
         {
             // If i have completed the torrent, then no-one is interesting
             if (id.TorrentManager.Complete)
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.Connection.BitField.AllTrue))
+            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
                 return true;
 
             // Otherwise we need to do a full check
@@ -160,7 +160,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers)
+        internal RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             //if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
             //    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
@@ -169,19 +169,19 @@ namespace MonoTorrent.Client
         }
 
 
-        internal void ReceivedChokeMessage(PeerIdInternal id)
+        internal void ReceivedChokeMessage(PeerId id)
         {
             this.piecePicker.ReceivedChokeMessage(id);
         }
 
 
-        internal void ReceivedRejectRequest(PeerIdInternal id, RejectRequestMessage msg)
+        internal void ReceivedRejectRequest(PeerId id, RejectRequestMessage msg)
         {
             this.piecePicker.ReceivedRejectRequest(id, msg);
         }
 
 
-        internal void RemoveRequests(PeerIdInternal id)
+        internal void RemoveRequests(PeerId id)
         {
             this.piecePicker.RemoveRequests(id);
         }

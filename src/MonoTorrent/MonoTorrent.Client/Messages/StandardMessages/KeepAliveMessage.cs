@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Performs any necessary actions required to process the message
         /// </summary>
         /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             // No handling needed
         }

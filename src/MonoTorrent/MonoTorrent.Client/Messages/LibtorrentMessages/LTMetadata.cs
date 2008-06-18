@@ -34,12 +34,12 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             this.messageType = eMessageType.Request;
         }
 
-        internal override void Handle(PeerIdInternal id)
+        internal override void Handle(PeerId id)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new MessageException("Libtorrent extension messages not supported");
 
-            messageId = id.Connection.ExtensionSupports.Find(delegate(ExtensionSupport l) { return l.Name == Support.Name; }).MessageId;
+            messageId = id.ExtensionSupports.Find(delegate(ExtensionSupport l) { return l.Name == Support.Name; }).MessageId;
             
             switch (messageType) {
                 case eMessageType.Request :
@@ -47,14 +47,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                          messageType = eMessageType.Data;
                      else
                          messageType = eMessageType.Reject;
-                     id.Connection.Enqueue(this);//only send the piece requested
+                     id.Enqueue(this);//only send the piece requested
                      break;
                 case eMessageType.Data :
                     if ((piece + 1) * BLOCK_SIZE < metadata.Length) // if not last piece request another
                     {
                         messageType = eMessageType.Request;
                         piece++;
-                        id.Connection.Enqueue(this);
+                        id.Enqueue(this);
                     }
                     else
                     { 

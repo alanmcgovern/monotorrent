@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         private Piece piece;
         private int startOffset;
         private int requestedAt;
-        private PeerIdInternal requestedOff;
+        private PeerId requestedOff;
         private int requestLength;
         private bool requested;
         private bool received;
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// The peer who we requested this piece off
         /// </summary>
-        internal PeerIdInternal RequestedOff
+        internal PeerId RequestedOff
         {
             get { return this.requestedOff; }
             set { this.requestedOff = value; }
@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
         /// Creates a RequestMessage for this Block
         /// </summary>
         /// <returns></returns>
-        internal RequestMessage CreateRequest(PeerIdInternal id)
+        internal RequestMessage CreateRequest(PeerId id)
         {
             this.requestedAt = Environment.TickCount;
             this.requestedOff = id;
@@ -188,9 +188,9 @@ namespace MonoTorrent.Client
 
         internal void CancelRequest()
         {
-            this.requested = false;
-            this.requestedAt = 0;
-            this.requestedOff = null;
+            Requested = false;
+            requestedAt = 0;
+            RequestedOff = null;
         }
 
         public override bool Equals(object obj)

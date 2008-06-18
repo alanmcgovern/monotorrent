@@ -6,6 +6,7 @@ using MonoTorrent.Client;
 using MonoTorrentTests;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.StandardMessageTests;
 
 namespace MonoTorrent.Tests
 {
@@ -36,8 +37,8 @@ namespace MonoTorrent.Tests
             t.Setup();
             t.ChokeThenClose();
         }
-        PeerIdInternal peer;
-        List<PeerIdInternal> peers;
+        PeerId peer;
+        List<PeerId> peers;
         StandardPicker picker;
         TestRig rig;
 
@@ -47,15 +48,13 @@ namespace MonoTorrent.Tests
         {
             // Yes, this is horrible. Deal with it.
             rig = new TestRig("");
-            peers = new List<PeerIdInternal>();
+            peers = new List<PeerId>();
             picker = new StandardPicker(rig.Manager.Bitfield, rig.Torrent.Files);
-            peer = new PeerIdInternal(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
-            peer.Connection = new PeerConnectionBase(rig.Manager.Bitfield.Length);
+            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
             {
-                PeerIdInternal p = new PeerIdInternal(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
-                p.Connection = new PeerConnectionBase(rig.Manager.Bitfield.Length);
-                p.Connection.SupportsFastPeer = true;
+                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
+                p.SupportsFastPeer = true;
                 peers.Add(p);
             }
         }
@@ -63,10 +62,10 @@ namespace MonoTorrent.Tests
         [Test]
         public void RequestFastSeeder()
         {
-            peers[0].Connection.SupportsFastPeer = true;
-            peers[0].Connection.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
 
-            peers[0].Connection.BitField.SetAll(true); // Lets pretend he has everything
+            peers[0].BitField.SetAll(true); // Lets pretend he has everything
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 16; j++)
                     Assert.IsNotNull(picker.PickPiece(peers[0], peers));
@@ -76,13 +75,13 @@ namespace MonoTorrent.Tests
         [Test]
         public void RequestFastNotSeeder()
         {
-            peers[0].Connection.SupportsFastPeer = true;
-            peers[0].Connection.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
 
-            peers[0].Connection.BitField.SetAll(true);
-            peers[0].Connection.BitField[1] = false;
-            peers[0].Connection.BitField[3] = false;
-            peers[0].Connection.BitField[5] = false;
+            peers[0].BitField.SetAll(true);
+            peers[0].BitField[1] = false;
+            peers[0].BitField[3] = false;
+            peers[0].BitField[5] = false;
 
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 16; j++)
@@ -96,10 +95,10 @@ namespace MonoTorrent.Tests
         [Test]
         public void RequestFastHaveEverything()
         {
-            peers[0].Connection.SupportsFastPeer = true;
-            peers[0].Connection.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
 
-            peers[0].Connection.BitField.SetAll(true);
+            peers[0].BitField.SetAll(true);
             picker.MyBitField.SetAll(true);
 
             Assert.IsNull(picker.PickPiece(peers[0], peers));
@@ -115,8 +114,8 @@ namespace MonoTorrent.Tests
         public void RequestWhenSeeder()
         {
             picker.MyBitField.SetAll(true);
-            peers[0].Connection.BitField.SetAll(true);
-            peers[0].Connection.IsChoking = false;
+            peers[0].BitField.SetAll(true);
+            peers[0].IsChoking = false;
 
             Assert.IsNull(picker.PickPiece(peers[0], peers));
         }
@@ -124,11 +123,11 @@ namespace MonoTorrent.Tests
         [Test]
         public void NoInterestingPieces()
         {
-            peer.Connection.IsChoking = false;
+            peer.IsChoking = false;
             for (int i = 0; i < picker.MyBitField.Length; i++)
                 if (i % 2 == 0)
                 {
-                    peer.Connection.BitField[i] = true;
+                    peer.BitField[i] = true;
                     picker.MyBitField[i] = true;
                 }
             Assert.IsNull(picker.PickPiece(peer, peers));
@@ -138,8 +137,8 @@ namespace MonoTorrent.Tests
         public void CancelRequests()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
-            peer.Connection.IsChoking = false;
-            peer.Connection.BitField.SetAll(true);
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
 
             RequestMessage m;
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -160,8 +159,8 @@ namespace MonoTorrent.Tests
         public void RejectRequests()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
-            peer.Connection.IsChoking = false;
-            peer.Connection.BitField.SetAll(true);
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
 
             RequestMessage m;
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -183,8 +182,8 @@ namespace MonoTorrent.Tests
         public void PeerChoked()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
-            peer.Connection.IsChoking = false;
-            peer.Connection.BitField.SetAll(true);
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
 
             RequestMessage m;
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -205,9 +204,9 @@ namespace MonoTorrent.Tests
         public void FastPeerChoked()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
-            peer.Connection.IsChoking = false;
-            peer.Connection.BitField.SetAll(true);
-            peer.Connection.SupportsFastPeer = true;
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            peer.SupportsFastPeer = true;
 
             RequestMessage m;
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -226,9 +225,9 @@ namespace MonoTorrent.Tests
         public void ChokeThenClose()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
-            peer.Connection.IsChoking = false;
-            peer.Connection.BitField.SetAll(true);
-            peer.Connection.SupportsFastPeer = true;
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            peer.SupportsFastPeer = true;
 
             RequestMessage m;
             while ((m = picker.PickPiece(peer, peers)) != null)

@@ -92,17 +92,16 @@ namespace MonoTorrent.Client
 
         private void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
-            PeerIdInternal id = new PeerIdInternal(e.Peer, e.TorrentManager);
-            id.Connection = new PeerConnectionBase(0);
-            id.Connection.Connection = e.Connection;
+            PeerId id = new PeerId(e.Peer, e.TorrentManager);
+            id.Connection = e.Connection;
 
-            Logger.Log(id.Connection.Connection, "ListenManager - ConnectionReceived");
+            Logger.Log(id.Connection, "ListenManager - ConnectionReceived");
 
-            if (id.Connection.Connection.IsIncoming)
+            if (id.Connection.IsIncoming)
             {
-                ClientEngine.BufferManager.GetBuffer(ref id.Connection.recieveBuffer, 68);
-                id.Connection.BytesReceived = 0;
-                id.Connection.BytesToRecieve = 68;
+                ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
+                id.BytesReceived = 0;
+                id.BytesToRecieve = 68;
                 List<byte[]> skeys = new List<byte[]>();
 
                 MainLoop.QueueWait(delegate {
@@ -118,7 +117,7 @@ namespace MonoTorrent.Client
 
         private void EndCheckEncryption(IAsyncResult result)
         {
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            PeerId id = (PeerId)result.AsyncState;
             try
             {
                 byte[] initialData;
@@ -127,12 +126,12 @@ namespace MonoTorrent.Client
                 if(initialData == null)
                     initialData = new byte[0];
                     
-                id.Connection.BytesReceived += Message.Write(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, initialData);
+                id.BytesReceived += Message.Write(id.recieveBuffer.Array, id.recieveBuffer.Offset, initialData);
 
-                if (id.Connection.BytesToRecieve == id.Connection.BytesReceived)
+                if (id.BytesToRecieve == id.BytesReceived)
                     handleHandshake(id);
                 else
-                    NetworkIO.EnqueueReceive(id.Connection.Connection, id.Connection.recieveBuffer, initialData.Length, id.Connection.BytesToRecieve - id.Connection.BytesReceived, onPeerHandshakeReceived, id);
+                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, id.BytesToRecieve - id.BytesReceived, onPeerHandshakeReceived, id);
             }
             catch
             {
@@ -141,7 +140,7 @@ namespace MonoTorrent.Client
         }
 
 
-        private void handleHandshake(PeerIdInternal id)
+        private void handleHandshake(PeerId id)
         {
             TorrentManager man = null;
             HandshakeMessage handshake = new HandshakeMessage();
@@ -149,11 +148,11 @@ namespace MonoTorrent.Client
             {
                 // Nasty hack - If there is initial data on the connection, it's already decrypted
                 // If there was no initial data, we need to decrypt it here
-                handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                handshake.Decode(id.recieveBuffer, 0, id.BytesToRecieve);
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                 {
-                    id.Connection.Decryptor.Decrypt(id.Connection.recieveBuffer.Array, id.Connection.recieveBuffer.Offset, id.Connection.BytesToRecieve);
-                    handshake.Decode(id.Connection.recieveBuffer, 0, id.Connection.BytesToRecieve);
+                    id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, id.BytesToRecieve);
+                    handshake.Decode(id.recieveBuffer, 0, id.BytesToRecieve);
                 }
 
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
@@ -161,7 +160,7 @@ namespace MonoTorrent.Client
             }
             catch(Exception ex)
             {
-                Logger.Log(id.Connection.Connection, ex.Message);
+                Logger.Log(id.Connection, ex.Message);
                 CleanupSocket(id);
                 return;
             }
@@ -175,13 +174,13 @@ namespace MonoTorrent.Client
             //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
             if (man == null)        // We're not hosting that torrent
             {
-                Logger.Log(id.Connection.Connection, "ListenManager - Handshake requested nonexistant torrent");
+                Logger.Log(id.Connection, "ListenManager - Handshake requested nonexistant torrent");
                 CleanupSocket(id);
                 return;
             }
 			if (man.State == TorrentState.Stopped)
 			{
-				Logger.Log(id.Connection.Connection, "ListenManager - Handshake requested for torrent which is not running");
+				Logger.Log(id.Connection, "ListenManager - Handshake requested for torrent which is not running");
 				CleanupSocket(id);
 				return;
 			}
@@ -190,32 +189,32 @@ namespace MonoTorrent.Client
             id.TorrentManager = man;
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
-            if ((id.Connection.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText)) && ClientEngine.SupportsEncryption)
+            if ((id.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText)) && ClientEngine.SupportsEncryption)
             {
-                Logger.Log(id.Connection.Connection, "ListenManager - Encryption is required but was not active");
+                Logger.Log(id.Connection, "ListenManager - Encryption is required but was not active");
                 CleanupSocket(id);
                 return;
             }
 
             handshake.Handle(id);
-            Logger.Log(id.Connection.Connection, "ListenManager - Handshake successful handled");
+            Logger.Log(id.Connection, "ListenManager - Handshake successful handled");
 
-            ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
-            id.Connection.ClientApp = new Software(handshake.PeerId);
+            ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+            id.ClientApp = new Software(handshake.PeerId);
 
             handshake = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
             BitfieldMessage bf = new BitfieldMessage(id.TorrentManager.Bitfield);
 
-            ClientEngine.BufferManager.GetBuffer(ref id.Connection.sendBuffer, handshake.ByteLength + bf.ByteLength);
-            id.Connection.BytesSent = 0;
-            id.Connection.BytesToSend = handshake.Encode(id.Connection.sendBuffer, 0);
-            id.Connection.BytesToSend += bf.Encode(id.Connection.sendBuffer, id.Connection.BytesToSend);
-            id.Connection.Encryptor.Encrypt(id.Connection.sendBuffer.Array, id.Connection.sendBuffer.Offset, id.Connection.BytesToSend);
+            ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, handshake.ByteLength + bf.ByteLength);
+            id.BytesSent = 0;
+            id.BytesToSend = handshake.Encode(id.sendBuffer, 0);
+            id.BytesToSend += bf.Encode(id.sendBuffer, id.BytesToSend);
+            id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
-            Logger.Log(id.Connection.Connection, "ListenManager - Sending connection to torrent manager");
-            NetworkIO.EnqueueSend(id.Connection.Connection, id.Connection.sendBuffer, 0, id.Connection.BytesToSend,
+            Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
+            NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, id.BytesToSend,
                                     engine.ConnectionManager.IncomingConnectionAccepted, id);
-            id.Connection.ProcessingQueue = false;
+            id.ProcessingQueue = false;
         }
 
         /// <summary>
@@ -224,7 +223,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(bool succeeded, int count, object state)
         {
-            PeerIdInternal id = (PeerIdInternal)state;
+            PeerId id = (PeerId)state;
 
             try
             {
@@ -240,19 +239,19 @@ namespace MonoTorrent.Client
                     CleanupSocket(id);
                     return;
                 }
-                id.Connection.BytesReceived += read;
-                Logger.Log(id.Connection.Connection, "ListenManager - Recieved handshake. Beginning to handle");
+                id.BytesReceived += read;
+                Logger.Log(id.Connection, "ListenManager - Recieved handshake. Beginning to handle");
 
                 handleHandshake(id);
             }
             catch (NullReferenceException)
             {
-                Logger.Log(id.Connection.Connection, "ListenManager - Null ref receiving handshake");
+                Logger.Log(id.Connection, "ListenManager - Null ref receiving handshake");
                 CleanupSocket(id);
             }
             catch (Exception)
             {
-                Logger.Log(id.Connection.Connection, "ListenManager - Socket exception receiving handshake");
+                Logger.Log(id.Connection, "ListenManager - Socket exception receiving handshake");
                 CleanupSocket(id);
             }
         }
@@ -262,21 +261,21 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="id"></param>
-        private void CleanupSocket(PeerIdInternal id)
+        private void CleanupSocket(PeerId id)
         {
             if (id == null) // Sometimes onEncryptionError fires with a null id
                 return;
 
-            Logger.Log(id.Connection.Connection, "ListenManager - Cleaning up socket");
+            Logger.Log(id.Connection, "ListenManager - Cleaning up socket");
             if (id.Connection != null)
             {
-                ClientEngine.BufferManager.FreeBuffer(ref id.Connection.recieveBuffer);
-                ClientEngine.BufferManager.FreeBuffer(ref id.Connection.sendBuffer);
-                id.Connection.Connection.Dispose();
+                ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+                ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
+                id.Connection.Dispose();
             }
             else
             {
-                Logger.Log(id.Connection.Connection, "!!!!!!!!!!CE Already null!!!!!!!!");
+                Logger.Log(id.Connection, "!!!!!!!!!!CE Already null!!!!!!!!");
             }
         }
     }

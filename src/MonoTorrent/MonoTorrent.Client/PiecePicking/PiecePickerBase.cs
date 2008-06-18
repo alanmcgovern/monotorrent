@@ -65,12 +65,12 @@ namespace MonoTorrent.Client
         #region Abstract Methods
 
         public abstract int CurrentRequestCount();
-        public abstract bool IsInteresting(PeerIdInternal id);
-        public abstract RequestMessage PickPiece(PeerIdInternal id, List<PeerIdInternal> otherPeers);
-        public abstract void ReceivedChokeMessage(PeerIdInternal id);
-        public abstract void ReceivedRejectRequest(PeerIdInternal id, RejectRequestMessage message);
+        public abstract bool IsInteresting(PeerId id);
+        public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
+        public abstract void ReceivedChokeMessage(PeerId id);
+        public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
         public abstract PieceEvent ReceivedPieceMessage(BufferedIO data);
-        public abstract void RemoveRequests(PeerIdInternal id);
+        public abstract void RemoveRequests(PeerId id);
         public abstract void Reset();
 
         #endregion
