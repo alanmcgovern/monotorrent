@@ -1,4 +1,4 @@
-﻿//
+//
 // DebugStatistics.cs
 //
 // Authors:
@@ -389,12 +389,12 @@ namespace SampleClient.Stats
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void ConnectionAttemptFailedHandler(object sender, PeerConnectionFailedEventArgs args)
+        /*private void ConnectionAttemptFailedHandler(object sender, PeerConnectionFailedEventArgs args)
         {
             connectionLog.InfoFormat("Failed to {0} peer at {1}. Message: {2}",
                 args.ConnectionDirection == Direction.Incoming ? "accept connection from" : "connect to", 
                 args.Peer.ConnectionUri, args.Message);
-        }
+        }*/
 
 
         /// <summary>

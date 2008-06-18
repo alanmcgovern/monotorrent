@@ -1,3 +1,7 @@
+2008-06-18  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* AssemblyInfo.cs: Added missing 'InternalsVisibleTo' attribute.
+
 2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Makefile.in, MonoTorrent.csproj, Makefile.am: Rename from
