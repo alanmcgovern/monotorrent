@@ -185,7 +185,7 @@ namespace MonoTorrent.Client.Tracker
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
                                                 clientEvent, this.infoHash, id, requireEncryption, manager.Engine.PeerId,
-                                                null, manager.Engine.Settings.ListenPort);
+                                                null, manager.Engine.Listener.ListenPort);
             p.SupportsEncryption = supportsEncryption;
             tracker.Announce(p);
             return id.WaitHandle;
