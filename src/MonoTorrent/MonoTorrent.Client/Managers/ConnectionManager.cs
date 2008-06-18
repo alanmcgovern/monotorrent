@@ -74,10 +74,10 @@ namespace MonoTorrent.Client
         private MessagingCallback messageSentCallback;
 
         private AsyncCallback endCheckEncryptionCallback;
-        private AsyncCallback endCreateConnectionCallback;
-        private AsyncCallback incomingConnectionAcceptedCallback;
-        private AsyncCallback onEndReceiveMessageCallback;
-        private AsyncCallback onEndSendMessageCallback;
+        private AsyncConnect endCreateConnectionCallback;
+        private AsyncTransfer incomingConnectionAcceptedCallback;
+        private AsyncTransfer onEndReceiveMessageCallback;
+        private AsyncTransfer onEndSendMessageCallback;
 
         private MonoTorrentCollection<TorrentManager> torrents;
 
@@ -130,13 +130,13 @@ namespace MonoTorrent.Client
             this.engine = engine;
 
             this.endCheckEncryptionCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { EndCheckEncryption(result); }); };
-            this.onEndReceiveMessageCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { EndReceiveMessage(result); }); };
-            this.onEndSendMessageCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { EndSendMessage(result); }); };
+            this.onEndReceiveMessageCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { EndReceiveMessage(s, c, o); }); };
+            this.onEndSendMessageCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { EndSendMessage(s, c, o); }); };
             this.bitfieldSentCallback = new MessagingCallback(this.onPeerBitfieldSent);
-            this.endCreateConnectionCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { EndCreateConnection(result); }); };
+            this.endCreateConnectionCallback = delegate(bool succeeded, object state) { MainLoop.Queue(delegate { EndCreateConnection(succeeded, state); }); };
             this.handshakeSentCallback = new MessagingCallback(this.onPeerHandshakeSent);
             this.handshakeReceievedCallback = new MessagingCallback(this.onPeerHandshakeReceived);
-            this.incomingConnectionAcceptedCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { IncomingConnectionAccepted(result); }); };
+            this.incomingConnectionAcceptedCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { IncomingConnectionAccepted(s, c, o); }); };
             this.messageLengthReceivedCallback = new MessagingCallback(this.onPeerMessageLengthReceived);
             this.messageReceivedCallback = new MessagingCallback(this.onPeerMessageReceived);
             this.messageSentCallback = new MessagingCallback(this.onPeerMessageSent);
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
             manager.Peers.ConnectingToPeers.Add(peer);
 
             peer.LastConnectionAttempt = DateTime.Now;
-            AsyncConnect c = new AsyncConnect(manager, peer, connection, endCreateConnectionCallback);
+            AsyncConnectState c = new AsyncConnectState(manager, peer, connection, endCreateConnectionCallback);
             try
             {
                 NetworkIO.EnqueueConnect(c);
@@ -179,33 +179,38 @@ namespace MonoTorrent.Client
         /// This method is called as part of the AsyncCallbacks when we try to create a remote connection
         /// </summary>
         /// <param name="result"></param>
-        private void EndCreateConnection(IAsyncResult result)
+        private void EndCreateConnection(bool succeeded, object state)
         {
-            AsyncConnect connect = (AsyncConnect)result.AsyncState;
+            AsyncConnectState connect = (AsyncConnectState)state;
             if(connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding)
                 connect.Connection.Dispose();
             
             try
             {
                 connect.Manager.Peers.ConnectingToPeers.Remove(connect.Peer);
-                connect.Connection.EndConnect(result);
+                if (!succeeded)
+                {
+                    Logger.Log(null, "ConnectionManager - Failed to connect{0}", connect.Peer);
+                    connect.Peer.FailedConnectionAttempts++;
+                    connect.Connection.Dispose();
+                    connect.Manager.Peers.BusyPeers.Add(connect.Peer);
+                }
+                else
+                {
+                    PeerIdInternal id = new PeerIdInternal(connect.Peer, connect.Manager);
+                    id.Connection = new PeerConnectionBase(connect.Manager.Torrent.Pieces.Count);
+                    id.Connection.Connection = connect.Connection;
+                    connect.Manager.Peers.ActivePeers.Add(connect.Peer);
 
-                PeerIdInternal id = new PeerIdInternal(connect.Peer, connect.Manager);
-                id.Connection = new PeerConnectionBase(connect.Manager.Torrent.Pieces.Count);
-                id.Connection.Connection = connect.Connection;
-                connect.Manager.Peers.ActivePeers.Add(connect.Peer);
+                    Logger.Log(id.Connection.Connection, "ConnectionManager - Connection opened");
 
-                Logger.Log(id.Connection.Connection, "ConnectionManager - Connection opened");
-
-                ProcessFreshConnection(id);
+                    ProcessFreshConnection(id);
+                }
             }
 
             catch (Exception)
             {
-                Logger.Log(null, "ConnectionManager - Failed to connect{0}", connect.Peer);
-                connect.Peer.FailedConnectionAttempts++;
-                connect.Connection.Dispose();
-                connect.Manager.Peers.BusyPeers.Add(connect.Peer);
+                // FIXME: Do nothing now?
             }
             finally
             {
@@ -290,11 +295,11 @@ namespace MonoTorrent.Client
         }
 
 
-        private void EndReceiveMessage(IAsyncResult result)
+        private void EndReceiveMessage(bool succeeded, int count, object state)
         {
             string reason = null;
             bool cleanUp = false;
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)state;
 
             try
             {
@@ -303,7 +308,10 @@ namespace MonoTorrent.Client
                     return;
 
                 // If we receive 0 bytes, the connection has been closed, so exit
-                int bytesReceived = id.Connection.Connection.EndReceive(result);
+                if (!succeeded)
+                    throw new SocketException((int)SocketError.SocketError);
+
+                int bytesReceived = count;
                 if (bytesReceived == 0)
                 {
                     reason = "EndReceiveMessage: Received zero bytes";
@@ -353,11 +361,11 @@ namespace MonoTorrent.Client
         }
 
 
-        private void EndSendMessage(IAsyncResult result)
+        private void EndSendMessage(bool succeeded, int count, object state)
         {
             string reason = null;
             bool cleanup = false;
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)state;
 
             try
             {
@@ -366,7 +374,10 @@ namespace MonoTorrent.Client
                     return;
 
                 // If we have sent zero bytes, that is a sign the connection has been closed
-                int bytesSent = id.Connection.Connection.EndSend(result);
+                if (!succeeded)
+                    throw new SocketException((int)SocketError.SocketError);
+
+                int bytesSent = count;
                 if (bytesSent == 0)
                 {
                     reason = "Sending error: Sent zero bytes";
@@ -827,17 +838,22 @@ namespace MonoTorrent.Client
         /// This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
         /// <param name="result"></param>
-        internal void IncomingConnectionAccepted(IAsyncResult result)
+        internal void IncomingConnectionAccepted(bool succeeded, int count, object state)
         {
             string reason = null;
             int bytesSent;
             bool cleanUp = false;
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)state;
 
             try
             {
                 Interlocked.Increment(ref this.openConnections);
-                bytesSent = id.Connection.Connection.EndSend(result);
+                if (!succeeded)
+                {
+                    cleanUp = true;
+                    return;
+                }
+                bytesSent = count;
                 id.Connection.BytesSent += bytesSent;
                 if (bytesSent != id.Connection.BytesToSend)
                 {

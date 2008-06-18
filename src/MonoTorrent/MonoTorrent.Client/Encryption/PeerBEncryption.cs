@@ -58,11 +58,11 @@ namespace MonoTorrent.Client.Encryption
             gotInitialPayloadCallback = new AsyncCallback(gotInitialPayload);
         }
 
-        protected override void doneReceiveY(IAsyncResult result)
+        protected override void doneReceiveY()
         {
             try
             {
-                base.doneReceiveY(result); // 1 A->B: Diffie Hellman Ya, PadA
+                base.doneReceiveY(); // 1 A->B: Diffie Hellman Ya, PadA
 
                 byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
                 Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
@@ -74,11 +74,11 @@ namespace MonoTorrent.Client.Encryption
         }
 
 
-        protected override void doneSynchronize(IAsyncResult result)
+        protected override void doneSynchronize()
         {
             try
             {
-                base.doneSynchronize(result);
+                base.doneSynchronize();
 
                 VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 

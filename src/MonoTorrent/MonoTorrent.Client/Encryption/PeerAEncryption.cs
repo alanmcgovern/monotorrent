@@ -55,11 +55,11 @@ namespace MonoTorrent.Client.Encryption
             SKEY = InfoHash;
         }
 
-        protected override void doneReceiveY(IAsyncResult result)
+        protected override void doneReceiveY()
         {
             try
             {
-                base.doneReceiveY(result); // 2 B->A: Diffie Hellman Yb, PadB
+                base.doneReceiveY(); // 2 B->A: Diffie Hellman Yb, PadB
 
                 StepThree();
             }
@@ -118,11 +118,11 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        protected override void doneSynchronize(IAsyncResult result)
+        protected override void doneSynchronize()
         {
             try
             {
-                base.doneSynchronize(result); // 4 B->A: ENCRYPT(VC, ...
+                base.doneSynchronize(); // 4 B->A: ENCRYPT(VC, ...
 
                 VerifyBytes = new byte[4 + 2];
                 ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback); // crypto_select, len(padD) ...

@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
     {
         #region old members
 
-        private AsyncCallback peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
+        private AsyncTransfer peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
 
         #endregion old members
 
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
             Locker = new object();
             listeners = new MonoTorrentCollection<ConnectionListenerBase>();
             listeners.IsReadOnly = true;
-            peerHandshakeReceived = new AsyncCallback(onPeerHandshakeReceived);
+            peerHandshakeReceived = onPeerHandshakeReceived;
             endCheckEncryptionCallback = EndCheckEncryption;
         }
 
@@ -222,13 +222,19 @@ namespace MonoTorrent.Client
         /// 
         /// </summary>
         /// <param name="result"></param>
-        private void onPeerHandshakeReceived(IAsyncResult result)
+        private void onPeerHandshakeReceived(bool succeeded, int count, object state)
         {
-            PeerIdInternal id = (PeerIdInternal)result.AsyncState;
+            PeerIdInternal id = (PeerIdInternal)state;
 
             try
             {
-                int read = id.Connection.Connection.EndReceive(result);
+                if (!succeeded)
+                {
+                    CleanupSocket(id);
+                    return;
+                }
+
+                int read = count;
                 if (read == 0)
                 {
                     CleanupSocket(id);

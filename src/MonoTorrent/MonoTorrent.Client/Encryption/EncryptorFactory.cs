@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Encryption
     internal static class EncryptorFactory
     {
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
-        private static readonly AsyncCallback HandshakeReceivedCallback = HandshakeReceived;
+        private static readonly AsyncTransfer HandshakeReceivedCallback = HandshakeReceived;
 
         private static bool CheckRC4(PeerIdInternal id)
         {
@@ -160,15 +160,19 @@ namespace MonoTorrent.Client.Encryption
             r.AsyncWaitHandle.Close();
         }
 
-        private static void HandshakeReceived(IAsyncResult r)
+        private static void HandshakeReceived(bool succeeded, int count, object state)
         {
-            int received = 0;
-            EncryptorAsyncResult result = (EncryptorAsyncResult)r.AsyncState;
+            int received = count;
+            EncryptorAsyncResult result = (EncryptorAsyncResult)state;
             IConnection connection = result.Id.Connection.Connection;
 
             try
             {
-                received = connection.EndReceive(r);
+                if (!succeeded)
+                {
+                    result.Complete(new EncryptionException("Couldn't receive the handshake"));
+                    return;
+                }
                 result.Available += received;
 
                 if (received == 0)

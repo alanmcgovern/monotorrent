@@ -113,11 +113,11 @@ namespace MonoTorrent.Client.Encryption
         private int bytesReceived;
 
         // Callbacks
-        private AsyncCallback doneSendCallback;
-        private AsyncCallback doneReceiveCallback;
+        private AsyncTransfer doneSendCallback;
+        private AsyncTransfer doneReceiveCallback;
         private AsyncCallback doneReceiveYCallback;
         private AsyncCallback doneSynchronizeCallback;
-        private AsyncCallback fillSynchronizeBytesCallback;
+        private AsyncTransfer fillSynchronizeBytesCallback;
 
         // State information for synchronization
         private byte[] synchronizeData = null;
@@ -154,11 +154,11 @@ namespace MonoTorrent.Client.Encryption
             InitialPayload = new byte[0];
             RemoteInitialPayload = new byte[0];
 
-            doneSendCallback = new AsyncCallback(doneSend);
-            doneReceiveCallback = new AsyncCallback(doneReceive);
-            doneReceiveYCallback = new AsyncCallback(doneReceiveY);
-            doneSynchronizeCallback = new AsyncCallback(doneSynchronize);
-            fillSynchronizeBytesCallback = new AsyncCallback(fillSynchronizeBytes);
+            doneSendCallback = doneSend;
+            doneReceiveCallback = doneReceive;
+            doneReceiveYCallback = delegate { doneReceiveY(); };
+            doneSynchronizeCallback = delegate { doneSynchronize(); };
+            fillSynchronizeBytesCallback = fillSynchronizeBytes;
 
             lastActivity = DateTime.Now;
             bytesReceived = 0;
@@ -287,7 +287,7 @@ namespace MonoTorrent.Client.Encryption
             ReceiveMessage(OtherY, 96, doneReceiveYCallback);
         }
 
-        protected virtual void doneReceiveY(IAsyncResult result)
+        protected virtual void doneReceiveY()
         {
             S = ModuloCalculator.Calculate(OtherY, X);
         }
@@ -322,13 +322,16 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        protected void fillSynchronizeBytes(IAsyncResult result)
+        protected void fillSynchronizeBytes(bool succeeded, int count, object state)
         {
             try
             {
                 lastActivity = DateTime.Now;
 
-                int read = socket.EndReceive(result);
+                if (!succeeded)
+                    throw new MessageException("Could not fill sync. bytes");
+
+                int read = count;
                 if (read == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Socket received zero or disconnected"));
@@ -337,7 +340,7 @@ namespace MonoTorrent.Client.Encryption
 
                 bytesReceived += read;
 
-                int filled = (int)result.AsyncState + read; // count of the bytes currently in synchronizeWindow
+                int filled = (int)state + read; // count of the bytes currently in synchronizeWindow
                 bool matched = true;
                 for (int i = 0; i < filled && matched; i++)
                     if (synchronizeData[i] != synchronizeWindow[i])
@@ -345,7 +348,7 @@ namespace MonoTorrent.Client.Encryption
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
                 {
-                    doneSynchronizeCallback(result);
+                    doneSynchronizeCallback(null);
                 }
                 else
                 {
@@ -369,7 +372,7 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        protected virtual void doneSynchronize(IAsyncResult result)
+        protected virtual void doneSynchronize()
         {
             // do nothing for now
         }
@@ -415,20 +418,22 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        private void doneReceive(IAsyncResult result)
+        private void doneReceive(bool succeeded, int count, object state)
         {
             try
             {
                 lastActivity = DateTime.Now;
 
-                object[] receiveData = (object[])result.AsyncState;
+                object[] receiveData = (object[])state;
 
                 AsyncCallback callback = (AsyncCallback)receiveData[0];
                 byte[] buffer = (byte[])receiveData[1];
                 int start = (int)receiveData[2];
                 int length = (int)receiveData[3];
 
-                int received = socket.EndReceive(result);
+                if (!succeeded)
+                    throw new MessageException("Could not receive");
+                int received = count;
                 if (received == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Received zero or not connected"));
@@ -444,7 +449,7 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    callback(result);
+                    callback(null);
                 }
             }
             catch (Exception ex)
@@ -466,17 +471,19 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        private void doneSend(IAsyncResult result)
+        private void doneSend(bool succeeded, int count, object state)
         {
             try
             {
-                object[] sendData = (object[])result.AsyncState;
+                object[] sendData = (object[])state;
 
                 byte[] toSend = (byte[])sendData[0];
                 int start = (int)sendData[1];
                 int length = (int)sendData[2];
 
-                int sent = socket.EndSend(result);
+                if (!succeeded)
+                    throw new MessageException("Could not fill sync. bytes");
+                int sent = count;
                 if (sent == 0 || !socket.Connected)
                 {
                     asyncResult.Complete(new EncryptionException("Sent zero or not connected"));
