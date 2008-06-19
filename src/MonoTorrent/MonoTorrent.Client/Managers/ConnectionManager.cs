@@ -192,8 +192,8 @@ namespace MonoTorrent.Client
                 {
                     Logger.Log(null, "ConnectionManager - Failed to connect{0}", connect.Peer);
 
-                    connect.Manager.RaiseConnectionAttemptFailed(
-                        new PeerConnectionFailedEventArgs(connect.Manager, connect.Peer, Direction.Outgoing, "EndCreateConnection"));
+                    connect.Manager.RaiseConnectionAttemptFailed(EventArgs.Empty);
+                        //new PeerConnectionFailedEventArgs(connect.Manager, connect.Peer, Direction.Outgoing, "EndCreateConnection"));
                     
                     connect.Peer.FailedConnectionAttempts++;
                     connect.Connection.Dispose();
@@ -248,8 +248,8 @@ namespace MonoTorrent.Client
             {
                 Logger.Log(id.Connection, "failed to encrypt");
 
-                id.TorrentManager.RaiseConnectionAttemptFailed(
-                    new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Outgoing, "ProcessFreshConnection: failed to encrypt"));
+                id.TorrentManager.RaiseConnectionAttemptFailed(EventArgs.Empty);
+                    //new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Outgoing, "ProcessFreshConnection: failed to encrypt"));
 
                 id.Connection.Dispose();
                 id.Connection = null;
@@ -921,8 +921,8 @@ namespace MonoTorrent.Client
                 {
                     CleanupSocket(id, reason);
 
-                    id.TorrentManager.RaiseConnectionAttemptFailed(
-                        new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Incoming, reason));
+                    id.TorrentManager.RaiseConnectionAttemptFailed(EventArgs.Empty);
+                        //new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Incoming, reason));
                 }
             }
         }
