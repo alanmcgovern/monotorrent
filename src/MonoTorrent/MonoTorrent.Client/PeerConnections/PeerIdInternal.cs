@@ -251,7 +251,7 @@ namespace MonoTorrent.Client
             internal set { this.clientApp = value; }
         }
 
-        public ConnectionManager ConnectionManager
+        internal ConnectionManager ConnectionManager
         {
             get { return this.engine.ConnectionManager; }
         }
@@ -265,7 +265,7 @@ namespace MonoTorrent.Client
             set { this.currentlySendingMessage = value; }
         }
 
-        public IEncryption Decryptor
+        internal IEncryption Decryptor
         {
             get { return this.decryptor; }
             set { this.decryptor = value; }
@@ -274,13 +274,13 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Reason for disconnecting from this peer.
         /// </summary>
-        public string DisconnectReason
+        internal string DisconnectReason
         {
             get { return this.disconnectReason; }
             set { this.disconnectReason = value; }
         }
 
-        public IEncryption Encryptor
+        internal IEncryption Encryptor
         {
             get { return this.encryptor; }
             set { this.encryptor = value; }
@@ -638,7 +638,7 @@ namespace MonoTorrent.Client
         private int uploadRateForRecip;
 
 
-        public int HaveMessagesReceived
+        internal int HaveMessagesReceived
         {
             get { return this.haveMessagesReceived; }
             internal set { this.haveMessagesReceived++; }
@@ -647,7 +647,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This is Up
         /// </summary>
-        public int UploadRateForRecip
+        internal int UploadRateForRecip
         {
             get { return this.uploadRateForRecip; }
         }
@@ -658,7 +658,7 @@ namespace MonoTorrent.Client
         /// us Have messages. Note that this could be false if the peer has a malicious client.
         /// Units: Bytes/s
         /// </summary>
-        public int EstimatedDownloadRate
+        internal int EstimatedDownloadRate
         {
             get
             {
@@ -670,7 +670,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// This is the ratio of Dp to Up
         /// </summary>
-        public float Ratio
+        internal float Ratio
         {
             get
             {
@@ -682,7 +682,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Last time we looked that this peer was choking us
         /// </summary>
-        public DateTime LastChokedTime
+        internal DateTime LastChokedTime
         {
             get { return this.lastChokedTime; }
         }
@@ -690,17 +690,17 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Used to check how much upload capacity we are giving this peer
         /// </summary>
-        public RateLimiter RateLimiter
+        internal RateLimiter RateLimiter
         {
             get { return this.rateLimiter; }
         }
 
-        public short RoundsChoked
+        internal short RoundsChoked
         {
             get { return this.roundsChoked; }
         }
 
-        public short RoundsUnchoked
+        internal short RoundsUnchoked
         {
             get { return this.roundsUnchoked; }
         }
@@ -715,7 +715,7 @@ namespace MonoTorrent.Client
         ///     - divide this upload rate by the standard implementation's active set size for that rate
         /// </summary>
         /// <returns></returns>
-        public int GetDownloadRate()
+        internal int GetDownloadRate()
         {
             if (this.lastMeasuredDownloadRate > 0)
             {
