@@ -7,6 +7,7 @@ using System.Data;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 using log4net;
@@ -19,6 +20,10 @@ namespace SampleClient.Stats
     {
         private TorrentManager manager;
         private Dictionary<int, PieceView> pieceViews;
+        private System.Threading.Timer updateTimer;
+        
+        private Dictionary<int, Piece> toBeUpdated;
+        private List<int> completed;
 
         private int blocksRequested;
         private int blocksReceived;
@@ -78,6 +83,11 @@ namespace SampleClient.Stats
             InitializeComponent();
 
             this.pieceViews = new Dictionary<int, PieceView>();
+            this.toBeUpdated = new Dictionary<int, Piece>();
+            this.completed = new List<int>();
+
+            // set up the update timer to run once per second
+            this.updateTimer = new System.Threading.Timer(new TimerCallback(delegate(object o) { UpdatePieces(); }), null, 2000, 1000);
 
             Utils.PerformControlOperation(this.glacialList1, new NoParam(delegate
                 {
@@ -96,31 +106,36 @@ namespace SampleClient.Stats
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void PieceHashedHandler(object sender, PieceHashedEventArgs args)
         {
-            if (args.HashPassed && !this.pieceViews.ContainsKey(args.PieceIndex))
+            if (args.HashPassed)
             {
-                /*
-                // only handle it if we don't have a PieceView for it yet (i.e. we hashed the piece straight from disk,
-                // there was no downloading involved)
-                Piece p = new Piece(args.PieceIndex, args.TorrentManager.Torrent);
-
-                for (int i = 0; i < p.BlockCount; i++)
+                if (!this.pieceViews.ContainsKey(args.PieceIndex))
                 {
-                    p.Blocks[i].Received = true;
+                    /*
+                    // only handle it if we don't have a PieceView for it yet (i.e. we hashed the piece straight from disk,
+                    // there was no downloading involved)
+                    Piece p = new Piece(args.PieceIndex, args.TorrentManager.Torrent);
+
+                    for (int i = 0; i < p.BlockCount; i++)
+                    {
+                        p.Blocks[i].Received = true;
+                    }
+
+                    PieceView pv = new PieceView(p);
+                    AddPieceView(new PieceView(p));
+                    //*/
+
+                    //Utils.PerformControlOperation(this.glacialList1, new Action<int>(this.glacialList1.RemoveOldPieces),
+                    //this.manager.PieceManager.HighPrioritySetStart);
                 }
-
-                PieceView pv = new PieceView(p);
-                AddPieceView(new PieceView(p));
-                //*/
-
-                //Utils.PerformControlOperation(this.glacialList1, new Action<int>(this.glacialList1.RemoveOldPieces),
-    //this.manager.PieceManager.HighPrioritySetStart);
-
                 this.completePieces++;
                 SetPiecesText();
             }
 
-            // remove the pieceview to prevent the control from lagging
-            Utils.PerformControlOperation(this.glacialList1, delegate { this.glacialList1.RemovePieceView(args.PieceIndex); });
+            lock (this)
+            {
+                if (!completed.Contains(args.PieceIndex))
+                    completed.Add(args.PieceIndex);
+            }
         }
 
 
@@ -159,28 +174,49 @@ namespace SampleClient.Stats
         {
             PieceView view;
 
-            if (!this.pieceViews.ContainsKey(args.Piece.Index))
+            lock (this)
             {
-                view = new PieceView(args.Piece);
-                view.Size = new Size(500, 40);
-
-                this.pieceViews[args.Piece.Index] = view;
-
-                AddPieceView(view);
+                this.toBeUpdated[args.Piece.Index] = args.Piece;
             }
-            else
-            {
-                view = this.pieceViews[args.Piece.Index];
-            }
-
-            view.UpdateBlock();
-
-            //Utils.PerformControlOperation(this.glacialList1, new Action<int>(((PieceList)this.glacialList1).RemoveOldPieces),
-            //    this.manager.PieceManager.HighPrioritySetStart);
-
-            Utils.PerformControlOperation(this.glacialList1, this.glacialList1.Refresh);
 
             SetPiecesText();
+        }
+
+
+        private void UpdatePieces()
+        {
+            lock (this)
+            {
+                foreach (KeyValuePair<int, Piece> kvp in this.toBeUpdated)
+                {
+                    PieceView view;
+
+                    if (!this.pieceViews.ContainsKey(kvp.Key))
+                    {
+                        view = new PieceView(kvp.Value);
+                        view.Size = new Size(500, 40);
+
+                        this.pieceViews[kvp.Key] = view;
+
+                        AddPieceView(view);
+                    }
+                    else
+                    {
+                        view = this.pieceViews[kvp.Key];
+                        view.UpdateBlock();
+                    }
+                }
+
+                foreach(int index in this.completed)
+                {
+                    this.glacialList1.RemovePieceView(index);
+                }
+
+                this.toBeUpdated.Clear();
+                this.completed.Clear();
+            }
+
+            Utils.PerformControlOperation(this.glacialList1, this.glacialList1.Refresh);
         }
 
 
@@ -229,6 +265,7 @@ namespace SampleClient.Stats
         private void Pieces_SizeChanged(object sender, EventArgs e)
         {
             panel1.Height = ((Pieces)sender).Size.Height - this.textBox1.Height - 60;
+            panel1.Width = ((Pieces)sender).Size.Width;
         }
 
     }
@@ -256,25 +293,16 @@ namespace SampleClient.Stats
             {
                 if (this[i] != null && this[i].Piece.Index == pieceIndex)
                 {
+                    // dispose of the PieceView
+                    this[i].Dispose();
+
+                    // remove the GLItem from the list
                     Items.Remove(i);
                     break;
                 }
             }
-        }
 
-        /// <summary>
-        /// Remove pieces before the high priority start
-        /// </summary>
-        /// <param name="startIndex"></param>
-        public void RemoveOldPieces(int startIndex)
-        {
-            for (int i = 0; i < Items.Count; )
-            {
-                if (this[i].Piece.Index < startIndex)
-                    Items.Remove(i);
-                else
-                    i++;
-            }
+            
         }
 
 

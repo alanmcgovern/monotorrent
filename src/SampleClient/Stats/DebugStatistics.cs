@@ -145,6 +145,7 @@ namespace SampleClient.Stats
 
                             this.manager.PeerConnected -= new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
                             this.manager.PeerDisconnected -= new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
+                            this.manager.ConnectionAttemptFailed -= this.ConnectionAttemptFailedHandler;
                             this.manager.Engine.ConnectionManager.PeerMessageTransferred -= new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
                             foreach(TrackerTier tier in manager.TrackerManager.TrackerTiers)
                                 foreach(Tracker t in tier.Trackers)
@@ -166,6 +167,7 @@ namespace SampleClient.Stats
 
                             this.manager.PeerConnected += new EventHandler<PeerConnectionEventArgs>(PeerConnectedHandler);
                             this.manager.PeerDisconnected += new EventHandler<PeerConnectionEventArgs>(PeerDisconnectedHandler);
+                            this.manager.ConnectionAttemptFailed += this.ConnectionAttemptFailedHandler;
                             this.manager.Engine.ConnectionManager.PeerMessageTransferred += new EventHandler<PeerMessageEventArgs>(PeerMessageTransferredHandler);
                             foreach (TrackerTier tier in manager.TrackerManager.TrackerTiers)
                                 foreach (Tracker t in tier.Trackers)
@@ -258,7 +260,14 @@ namespace SampleClient.Stats
             {
                 while (!this.disposed)
                 {
-                    TorrentDebugStatistics();
+                    try
+                    {
+                        TorrentDebugStatistics();
+                    }
+                    catch(Exception e)
+                    {
+                        LogManager.GetLogger("error").Error("Error in TorrentDebugStatistics: ", e);
+                    }
                     Thread.Sleep(500);
                 }
             });
@@ -389,12 +398,12 @@ namespace SampleClient.Stats
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        /*private void ConnectionAttemptFailedHandler(object sender, PeerConnectionFailedEventArgs args)
+        private void ConnectionAttemptFailedHandler(object sender, PeerConnectionFailedEventArgs args)
         {
             connectionLog.InfoFormat("Failed to {0} peer at {1}. Message: {2}",
                 args.ConnectionDirection == Direction.Incoming ? "accept connection from" : "connect to", 
                 args.Peer.ConnectionUri, args.Message);
-        }*/
+        }
 
 
         /// <summary>

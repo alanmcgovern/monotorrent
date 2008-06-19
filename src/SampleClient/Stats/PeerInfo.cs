@@ -189,8 +189,8 @@ namespace SampleClient.Stats
         {
             this.connectionUri = pIdInternal.Peer.ConnectionUri;
             this.connected = pIdInternal.Connection != null;
-            this.downloadRate = pIdInternal.Connection.Monitor.DownloadSpeed;
-            this.uploadRate = pIdInternal.Connection.Monitor.UploadSpeed; // Upload Measured
+            this.downloadRate = pIdInternal.Monitor.DownloadSpeed;
+            this.uploadRate = pIdInternal.Monitor.UploadSpeed; // Upload Measured
             this.dp = pIdInternal.GetDownloadRate();
             this.recipUpload = pIdInternal.UploadRateForRecip;
             this.tyrantRatio = pIdInternal.Ratio;
