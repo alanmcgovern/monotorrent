@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// When this peer was last unchoked, or null if we haven't unchoked it yet
         /// </summary>
-        public DateTime? LastUnchoked
+        internal DateTime? LastUnchoked
         {
             get { return this.lastUnchoked; }
             set { this.lastUnchoked = value; }
@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Number of bytes downloaded when this peer was last reviewed
         /// </summary>
-        public long BytesDownloadedAtLastReview
+        internal long BytesDownloadedAtLastReview
         {
             get { return this.bytesDownloadedAtLastReview; }
             set { this.bytesDownloadedAtLastReview = value; }
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Number of bytes uploaded when this peer was last reviewed
         /// </summary>
-        public long BytesUploadedAtLastReview
+        internal long BytesUploadedAtLastReview
         {
             get { return this.bytesUploadedAtLastReview; }
             set { this.bytesUploadedAtLastReview = value; }
@@ -76,7 +76,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Download rate determined at the end of the last full review period when this peer was unchoked
         /// </summary>
-        public double LastReviewDownloadRate
+        internal double LastReviewDownloadRate
         {
             get { return this.lastReviewDownloadRate; }
             set { this.lastReviewDownloadRate = value; }
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Upload rate determined at the end of the last full review period when this peer was unchoked
         /// </summary>
-        public double LastReviewUploadRate
+        internal double LastReviewUploadRate
         {
             get { return this.lastReviewUploadRate; }
             set { this.lastReviewUploadRate = value; }
@@ -94,10 +94,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// True if this is the first review period since this peer was last unchoked
         /// </summary>
-        public bool FirstReviewPeriod
+        internal bool FirstReviewPeriod
         {
             get { return this.firstReviewPeriod; }
-            internal set { this.firstReviewPeriod = value; }
+            set { this.firstReviewPeriod = value; }
         }
         private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
         private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         private int bytesToRecieve;
         private int bytesToSend;
         private Software clientApp;
-        public IConnection Connection;
+        internal IConnection Connection;
         private PeerMessage currentlySendingMessage;
         private IEncryption decryptor;
         private string disconnectReason;
@@ -641,7 +641,7 @@ namespace MonoTorrent.Client
         internal int HaveMessagesReceived
         {
             get { return this.haveMessagesReceived; }
-            internal set { this.haveMessagesReceived++; }
+            set { this.haveMessagesReceived++; }
         }
 
         /// <summary>
