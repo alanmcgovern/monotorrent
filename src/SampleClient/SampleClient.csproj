@@ -115,7 +115,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="main.cs" />
-    <Compile Include="Stats\DebugStatistics.cs" />
+    <Compile Include="Stats\DebugStatistics.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Stats\DebugStatistics.designer.cs">
       <DependentUpon>DebugStatistics.cs</DependentUpon>
     </Compile>
@@ -149,19 +151,27 @@
     <Compile Include="Stats\GlacialList\ThemeRoutines.cs" />
     <Compile Include="Stats\PeerInfo.cs" />
     <Compile Include="Stats\PeerMessageLogger.cs" />
-    <Compile Include="Stats\PeerMessagesDisplay.cs" />
+    <Compile Include="Stats\PeerMessagesDisplay.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Stats\PeerMessagesDisplay.designer.cs">
       <DependentUpon>PeerMessagesDisplay.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\Pieces.cs" />
+    <Compile Include="Stats\Pieces.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Stats\Pieces.Designer.cs">
       <DependentUpon>Pieces.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\PieceView.cs" />
+    <Compile Include="Stats\PieceView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Stats\PieceView.designer.cs">
       <DependentUpon>PieceView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Stats\StatsBox.cs" />
+    <Compile Include="Stats\StatsBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Stats\StatsBox.designer.cs">
       <DependentUpon>StatsBox.cs</DependentUpon>
     </Compile>
