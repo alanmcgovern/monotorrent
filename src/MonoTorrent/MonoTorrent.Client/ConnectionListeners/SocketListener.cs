@@ -135,7 +135,7 @@ namespace MonoTorrent.Client
                 try
                 {
                     if (State == ListenerStatus.Listening)
-                        listener.BeginAccept(endAcceptCallback, null);
+                        listener.BeginAccept(endAcceptCallback, listener);
                 }
                 catch(ObjectDisposedException)
                 {
