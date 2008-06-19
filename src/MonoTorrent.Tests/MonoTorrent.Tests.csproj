@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AllowedFastAlgorithmTest.cs" />
     <Compile Include="BitFieldTest.cs" />
+    <Compile Include="ConnectionListenerTests.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="PeerMessagesTest.cs" />

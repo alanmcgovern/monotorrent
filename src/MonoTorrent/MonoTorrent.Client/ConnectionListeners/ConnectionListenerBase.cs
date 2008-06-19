@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
         public event EventHandler<NewConnectionEventArgs> ConnectionReceived;
         public event EventHandler<EventArgs> StateChanged;
 
-        private ListenerStatus state;
+        private ListenerStatus state = ListenerStatus.NotListening;
 
         public abstract int ListenPort { get; }
         public ListenerStatus State
