@@ -1,0 +1,1 @@
+monodocer -assembly:../src/MonoTorrent/bin/Debug/MonoTorrent.dll -path:en
