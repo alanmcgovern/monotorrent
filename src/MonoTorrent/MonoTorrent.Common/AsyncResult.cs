@@ -109,6 +109,12 @@ namespace MonoTorrent.Common
         }
         protected internal void Complete(Exception ex)
         {
+            // Ensure we only complete once - Needed because in encryption there could be
+            // both a pending send and pending receive so if there is an error, both will
+            // attempt to complete the encryption handshake meaning this is called twice.
+            if (isCompleted)
+                return;
+
             savedException = ex;
             completedSyncronously = false;
             isCompleted = true;
