@@ -59,18 +59,22 @@ namespace MonoTorrent.Client
 
         #region Events
 
-        
+        /// <summary>
+        /// Event fired on every peer connect
+        /// </summary>
         public event EventHandler<PeerConnectionEventArgs> PeerConnected;
 
-
+        /// <summary>
+        /// Event fired on every peer that is disconnected
+        /// </summary>
         public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
 
         /// <summary>
         /// Event that's fired every time a connection attempt (incoming or outgoing) fails.
         /// </summary>
-        internal event EventHandler<EventArgs> ConnectionAttemptFailed;
-
+        internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
         /// <summary>
+
         /// Event that's fired every time new peers are added from a tracker update
         /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
@@ -797,9 +801,9 @@ namespace MonoTorrent.Client
         /// Raise the connection attempt failed event
         /// </summary>
         /// <param name="args"></param>
-        internal void RaiseConnectionAttemptFailed(EventArgs args)
+        internal void RaiseConnectionAttemptFailed(PeerConnectionFailedEventArgs args)
         {
-            Toolbox.RaiseAsyncEvent<EventArgs>(this.ConnectionAttemptFailed, this, args);
+            Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
         }
 
         internal void ResumePeers()
