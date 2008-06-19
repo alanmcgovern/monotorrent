@@ -64,6 +64,12 @@ namespace MonoTorrent.Client
 
 
         public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
+
+        /// <summary>
+        /// Event that's fired every time a connection attempt (incoming or outgoing) fails.
+        /// </summary>
+        internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
+
         /// <summary>
         /// Event that's fired every time new peers are added from a tracker update
         /// </summary>
@@ -402,7 +408,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Overrridden.
+        /// Overrridden. Returns the name of the torrent.
         /// </summary>
         /// <returns></returns>
         public override string ToString( )
@@ -785,6 +791,15 @@ namespace MonoTorrent.Client
             // For example, Started->Paused, Started->Stopped, Downloading->Seeding etc should all
             // flush to disk.
             Toolbox.RaiseAsyncEvent<TorrentStateChangedEventArgs>(TorrentStateChanged, this, e);
+        }
+
+        /// <summary>
+        /// Raise the connection attempt failed event
+        /// </summary>
+        /// <param name="args"></param>
+        internal void RaiseConnectionAttemptFailed(PeerConnectionFailedEventArgs args)
+        {
+            Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
         }
 
         internal void ResumePeers()

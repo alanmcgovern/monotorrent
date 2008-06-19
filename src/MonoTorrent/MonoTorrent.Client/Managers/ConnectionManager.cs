@@ -191,6 +191,10 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                 {
                     Logger.Log(null, "ConnectionManager - Failed to connect{0}", connect.Peer);
+
+                    connect.Manager.RaiseConnectionAttemptFailed(
+                        new PeerConnectionFailedEventArgs(connect.Manager, connect.Peer, Direction.Outgoing, "EndCreateConnection"));
+                    
                     connect.Peer.FailedConnectionAttempts++;
                     connect.Connection.Dispose();
                     connect.Manager.Peers.BusyPeers.Add(connect.Peer);
@@ -243,6 +247,10 @@ namespace MonoTorrent.Client
             catch (Exception)
             {
                 Logger.Log(id.Connection, "failed to encrypt");
+
+                id.TorrentManager.RaiseConnectionAttemptFailed(
+                    new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Outgoing, "ProcessFreshConnection: failed to encrypt"));
+
                 id.Connection.Dispose();
                 id.Connection = null;
             }
@@ -345,7 +353,7 @@ namespace MonoTorrent.Client
             catch (Exception ex)
             {
                 Logger.Log(id.Connection, "Exception recieving message" + ex.ToString());
-                reason = "Socket Exception receiving";
+                reason = String.Format("Exception receiving: {0} - {1}", ex.ToString(), ex.Message);
                 cleanUp = true;
             }
             finally
@@ -901,16 +909,21 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
                 ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                reason = "Exception for incoming connection";
+                reason = String.Format("Exception for incoming connection: {0} - {1}", e.ToString(), e.Message);
                 Logger.Log(id.Connection, "Socket exception when accepting peer");
                 cleanUp = true;
             }
             finally
             {
                 if (cleanUp)
+                {
                     CleanupSocket(id, reason);
+
+                    id.TorrentManager.RaiseConnectionAttemptFailed(
+                        new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Incoming, reason));
+                }
             }
         }
 
@@ -955,10 +968,10 @@ namespace MonoTorrent.Client
                 SendMessage(id, msg, this.messageSentCallback);
                 Logger.Log(id.Connection, "ConnectionManager - Sending message from queue: {0}", msg.ToString());
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 Logger.Log(id.Connection, "ConnectionManager - Socket exception dequeuing message");
-                CleanupSocket(id, "Exception calling SendMessage");
+                CleanupSocket(id, String.Format("Exception calling SendMessage: {0} - {1}", e.ToString(), e.Message));
             }
         }
 
