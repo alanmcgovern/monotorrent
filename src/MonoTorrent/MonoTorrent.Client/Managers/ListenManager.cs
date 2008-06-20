@@ -213,7 +213,7 @@ namespace MonoTorrent.Client
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
             NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, id.BytesToSend,
-                                    engine.ConnectionManager.IncomingConnectionAccepted, id);
+                                    delegate(IAsyncResult result) { MainLoop.Queue(engine.ConnectionManager.IncomingConnectionAccepted(result)); }, id);
             id.ProcessingQueue = false;
         }
 
