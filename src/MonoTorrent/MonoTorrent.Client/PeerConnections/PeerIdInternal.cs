@@ -486,7 +486,6 @@ namespace MonoTorrent.Client
             this.suggestedPieces = new MonoTorrentCollection<int>();
             this.amChoking = true;
             this.isChoking = true;
-            this.bitField = new BitField(manager.Bitfield.Length);
 
             this.isAllowedFastPieces = new MonoTorrentCollection<int>();
             this.amAllowedFastPieces = new MonoTorrentCollection<int>();

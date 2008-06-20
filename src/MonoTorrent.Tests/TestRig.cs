@@ -316,7 +316,10 @@ namespace MonoTorrentTests
 
         public void AddConnection(IConnection connection)
         {
-            listener.Add(manager, connection);
+            if (connection.IsIncoming)
+                listener.Add(null, connection);
+            else
+                listener.Add(manager, connection);
         }
 
         private static BEncodedDictionary CreateTorrent(int pieceLength)
