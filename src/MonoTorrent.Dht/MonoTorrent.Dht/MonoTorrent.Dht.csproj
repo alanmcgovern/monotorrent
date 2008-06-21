@@ -1,0 +1,81 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7A2A7E73-FD43-4171-AA34-DA413D35459E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MonoTorrent.Dht</RootNamespace>
+    <AssemblyName>MonoTorrent.Dht</AssemblyName>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MonoTorrent, Version=0.40.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\bitsharp\src\MonoTorrent\bin\Debug\MonoTorrent.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="BigInteger.cs" />
+    <Compile Include="Nodes\CompactIpPort.cs" />
+    <Compile Include="DhtEngine.cs" />
+    <Compile Include="Listeners\IListener.cs" />
+    <Compile Include="Listeners\UdpListener.cs" />
+    <Compile Include="MessageLoop.cs" />
+    <Compile Include="Messages\Errors\ErrorMessage.cs" />
+    <Compile Include="Messages\Message.cs" />
+    <Compile Include="Messages\MessageFactory.cs" />
+    <Compile Include="Messages\Queries\AnnouncePeer.cs" />
+    <Compile Include="Messages\Queries\FindNode.cs" />
+    <Compile Include="Messages\Queries\GetPeers.cs" />
+    <Compile Include="Messages\Queries\Ping.cs" />
+    <Compile Include="Messages\Queries\QueryMessage.cs" />
+    <Compile Include="Messages\Responses\AnnouncePeerResponse.cs" />
+    <Compile Include="Messages\Responses\FindNodeResponse.cs" />
+    <Compile Include="Messages\Responses\GetPeersResponse.cs" />
+    <Compile Include="Messages\Responses\PingResponse.cs" />
+    <Compile Include="Messages\Responses\ResponseMessage.cs" />
+    <Compile Include="Nodes\NodeId.cs" />
+    <Compile Include="RoutingTable\Bucket.cs" />
+    <Compile Include="Nodes\NodeState.cs" />
+    <Compile Include="Nodes\Node.cs" />
+    <Compile Include="RoutingTable\RoutingTable.cs" />
+    <Compile Include="State.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
