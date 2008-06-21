@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
 
         public static int HalfOpens
         {
-            get { lock (connects) return connects.Count; }
+            get { lock (locker) return connects.Count; }
         }
 
         static NetworkIO()
