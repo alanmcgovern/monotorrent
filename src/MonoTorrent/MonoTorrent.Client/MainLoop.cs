@@ -46,6 +46,7 @@ namespace MonoTorrent.Client
         static MainLoop()
         {
             thread.IsBackground = true;
+            thread.Name = "MainLoop";
             thread.Start();
         }
 

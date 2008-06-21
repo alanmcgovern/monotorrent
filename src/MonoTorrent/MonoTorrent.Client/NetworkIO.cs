@@ -166,6 +166,7 @@ namespace MonoTorrent.Client
                 }
             });
             t.IsBackground = true;
+            t.Name = "NetworkIO";
             t.Start();
         }
 
