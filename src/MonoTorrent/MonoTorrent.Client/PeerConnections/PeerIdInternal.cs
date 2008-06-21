@@ -580,6 +580,23 @@ namespace MonoTorrent.Client
             this.monitor.BytesReceived(bytesRecieved, type);
         }
 
+        public void SendMessage(Message message)
+        {
+            if (message == null)
+                throw new ArgumentNullException("message");
+            if (!(message is PeerMessage))
+                throw new ArgumentException("The message must be a peer message");
+
+            MainLoop.QueueWait(delegate {
+                if (Connection == null)
+                    return;
+                
+                sendQueue.Enqueue((PeerMessage)message);
+                if (!processingQueue)
+                    this.torrentManager.Engine.ConnectionManager.ProcessQueue(this);
+            });
+        }
+
         /// <summary>
         /// 
         /// </summary>
