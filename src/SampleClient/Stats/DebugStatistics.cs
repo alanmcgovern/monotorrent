@@ -698,6 +698,7 @@ namespace SampleClient.Stats
                     AppendFormat(sb, "Failure Message:      {0}", this.manager.TrackerManager.CurrentTracker.FailureMessage);
                     //AppendFormat( sb, "Piece Picker:         {0}", this.manager.PieceManager.GetWindow() );
                     AppendFormat(sb, "Total Connections:    {0}", this.manager.OpenConnections);
+                    AppendFormat(sb, "Half Open Connections: {0}", this.engine.ConnectionManager.HalfOpenConnections);
                     AppendFormat(sb, "Seeds:                {0}", this.manager.Peers.Seeds);
                     AppendFormat(sb, "Leeches:              {0}", this.manager.Peers.Leechs);
                     AppendFormat(sb, "Available Peers:      {0}", this.manager.Peers.AvailablePeers.Count);

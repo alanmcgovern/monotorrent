@@ -27,8 +27,7 @@ namespace SampleClient.Stats
             get { return this.piece; }
             set
             {
-                this.piece = value;
-                InitializePieceView();
+                UpdatePieceView(value);
             }
         }
 
@@ -45,35 +44,44 @@ namespace SampleClient.Stats
         }
 
 
-        private void InitializePieceView()
+        public void UpdatePieceView(Piece piece)
         {
-            foreach (Control c in panel1.Controls)
+            if (!piece.Equals(this.piece))
             {
-                c.Dispose();
-            }
-
-            Utils.PerformControlOperation(this.panel1, new NoParam(ClearBlocks));
-
-            if (this.piece != null)
-            {
-                int startX = 0;
-
-                for (int x = 0; x < piece.BlockCount; x++)
+                foreach (Control c in panel1.Controls)
                 {
-                    Label label = new Label();
-
-                    label.Location = new System.Drawing.Point(startX, 2);
-                    label.Text = x.ToString();
-                    label.Size = new System.Drawing.Size(10, 17);
-                    label.TabIndex = 0;
-                    label.TabStop = false;
-                    label.BackColor = GetBlockColor(piece.Blocks[x]);
-
-                    Utils.PerformControlOperation(this.panel1, delegate { panel1.Controls.Add(label); });
-
-                    startX += 15;
+                    c.Dispose();
                 }
 
+                Utils.PerformControlOperation(this.panel1, new NoParam(ClearBlocks));
+                
+                this.piece = piece;
+
+                if (this.piece != null)
+                {
+                    int startX = 0;
+
+                    for (int x = 0; x < piece.BlockCount; x++)
+                    {
+                        Label label = new Label();
+
+                        label.Location = new System.Drawing.Point(startX, 2);
+                        label.Text = x.ToString();
+                        label.Size = new System.Drawing.Size(10, 17);
+                        label.TabIndex = 0;
+                        label.TabStop = false;
+                        label.BackColor = GetBlockColor(piece.Blocks[x]);
+
+                        Utils.PerformControlOperation(this.panel1, delegate { panel1.Controls.Add(label); });
+
+                        startX += 15;
+                    }
+
+                }
+            }
+            else
+            {
+                UpdateBlocks();
             }
         }
 
@@ -94,19 +102,22 @@ namespace SampleClient.Stats
 
         /// <summary>
         /// Update the block coloring with the status of the piece
+        /// 
+        /// Should be invoked on the parent control, to make sure that the control has been created/added before this is called
         /// </summary>
-        public void UpdateBlock()
+        public void UpdateBlocks()
         {
-            Utils.PerformControlOperation(this.panel1, delegate
-            {
-                for (int x = 0; x < piece.BlockCount; x++)
-                {
-                    Control c = panel1.Controls[x];
-                    Block b = piece[x];
+            // if the piece has been completed, then don't do this
+            if (disposed)
+                return;
 
-                    c.BackColor = GetBlockColor(b);
-                }
-            });
+            for (int x = 0; x < piece.BlockCount; x++)
+            {
+                Control c = panel1.Controls[x];
+                Block b = piece[x];
+
+                c.BackColor = GetBlockColor(b);
+            }
         }
 
         private Color GetBlockColor(Block b)

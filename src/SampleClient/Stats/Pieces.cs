@@ -198,12 +198,13 @@ namespace SampleClient.Stats
 
                         this.pieceViews[kvp.Key] = view;
 
-                        AddPieceView(view);
+                        this.glacialList1.AddPieceView(view);
                     }
                     else
                     {
                         view = this.pieceViews[kvp.Key];
-                        view.UpdateBlock();
+
+                        Utils.PerformControlOperation(this.glacialList1, delegate { view.UpdateBlocks(); });
                     }
                 }
 
@@ -217,16 +218,6 @@ namespace SampleClient.Stats
             }
 
             Utils.PerformControlOperation(this.glacialList1, this.glacialList1.Refresh);
-        }
-
-
-        /// <summary>
-        /// Add a PieceView to the PieceList
-        /// </summary>
-        /// <param name="view"></param>
-        private void AddPieceView(PieceView view)
-        {
-            Utils.PerformControlOperation(this.glacialList1, delegate { this.glacialList1.AddPieceView(view); });
         }
 
 
@@ -287,14 +278,24 @@ namespace SampleClient.Stats
         }
 
 
+        /// <summary>
+        /// Remove/dispose of the given pieceview
+        /// </summary>
+        /// <param name="pieceIndex"></param>
         public void RemovePieceView(int pieceIndex)
+        {
+            Utils.PerformControlOperation(this, delegate { RemovePieceViewInvoke(pieceIndex); });
+        }
+
+
+        private void RemovePieceViewInvoke(int pieceIndex)
         {
             for (int i = 0; i < Items.Count; i++)
             {
                 if (this[i] != null && this[i].Piece.Index == pieceIndex)
                 {
                     // dispose of the PieceView
-                    this[i].Dispose();
+                    Utils.PerformControlOperation(this[i], delegate { this[i].Dispose(); });
 
                     // remove the GLItem from the list
                     Items.Remove(i);
@@ -311,6 +312,12 @@ namespace SampleClient.Stats
         /// </summary>
         /// <param name="view"></param>
         public void AddPieceView(PieceView view)
+        {
+            Utils.PerformControlOperation(this, delegate { AddPieceViewInvoke(view); });
+        }
+
+
+        private void AddPieceViewInvoke(PieceView view)
         {
             // find the place where it should be inserted
             int insertIndex;
