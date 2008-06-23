@@ -41,6 +41,7 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
         private Creator responseCreator;
+        private int failedCount;
 
         internal NodeId Id
         {
@@ -97,6 +98,10 @@ namespace MonoTorrent.Dht.Messages
                 return false;
 
             node.FailedCount++;
+
+            if (node.FailedCount < Node.MaxFailures)
+                engine.MessageLoop.EnqueueSend(this, node);
+
             return true;
         }
     }
