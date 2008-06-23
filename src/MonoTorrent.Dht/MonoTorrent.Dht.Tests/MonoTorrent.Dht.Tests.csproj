@@ -43,8 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="MessageHandlingTests.cs" />
     <Compile Include="MessageTests.cs" />
     <Compile Include="RoutingTableTests.cs" />
+    <Compile Include="TestListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">

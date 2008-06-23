@@ -41,21 +41,38 @@ namespace MonoTorrent.Dht
 {
     public class MessageLoop
     {
+        private struct SendDetails
+        {
+            public SendDetails(IPEndPoint destination, Message message)
+            {
+                Destination = destination;
+                Message = message;
+                SentAt = DateTime.MinValue;
+            }
+            public IPEndPoint Destination;
+            public Message Message;
+            public DateTime SentAt;
+        }
+
         List<IAsyncResult> activeSends = new List<IAsyncResult>();
+        DhtEngine engine;
         IListener listener;
         private object locker = new object();
-        Queue<KeyValuePair<Message, IPEndPoint>> sendQueue = new Queue<KeyValuePair<Message, IPEndPoint>>();
+        Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
         Thread thread;
         ManualResetEvent waitHandle = new ManualResetEvent(false);
+
+        Dictionary<BEncodedString, QueryMessage> messages = new Dictionary<BEncodedString, QueryMessage>();
 
         private bool CanSend
         {
             get { return activeSends.Count < 5 && sendQueue.Count > 0; }
         }
 
-        public MessageLoop(IListener listener)
+        public MessageLoop(DhtEngine engine, IListener listener)
         {
+            this.engine = engine;
             this.listener = listener;
             listener.MessageReceived += new MessageReceived(MessageReceived);
             thread = new Thread(Loop);
@@ -70,19 +87,22 @@ namespace MonoTorrent.Dht
         {
             lock (locker)
             {
+                // I should check the IP address matches as well as the transaction id
+                if (!messages.ContainsKey(m.TransactionId))
+                    return;
+
+                messages.Remove(m.TransactionId);
                 receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
                 waitHandle.Set();
             }
         }
-
-
 
         void Loop()
         {
             while (true)
             {
                 KeyValuePair<IPEndPoint, Message>? receive = null;
-                KeyValuePair<Message, IPEndPoint>? send = null;
+                SendDetails? send = null;
 
                 lock (locker)
                 {
@@ -97,38 +117,40 @@ namespace MonoTorrent.Dht
                 }
 
                 if (send != null)
-                    SendMessage(send.Value);
+                    SendMessage(send.Value.Message, send.Value.Destination);
 
                 if (receive != null)
-                    Handle(receive.Value.Key, receive.Value.Value);
+                    receive.Value.Value.Handle(engine, receive.Value.Key);
 
                 waitHandle.WaitOne();
             }
         }
 
-        private void Handle(IPEndPoint endpoint, Message message)
+        private void SendMessage(Message message, IPEndPoint endpoint)
         {
-            throw new Exception("The method or operation is not implemented.");
-        }
-
-        private void SendMessage(KeyValuePair<Message, IPEndPoint> keypair)
-        {
-            byte[] send = keypair.Key.Encode();
-            listener.Send(send, keypair.Value);
+            byte[] buffer = message.Encode();
+            listener.Send(buffer, endpoint);
         }
 
         internal void EnqueueSend(Message message, IPEndPoint endpoint)
         {
+            if (message.TransactionId == null)
+                throw new ArgumentException("Message must have a transaction id");
+            
             lock (locker)
             {
-                sendQueue.Enqueue(new KeyValuePair<Message, IPEndPoint>(message, endpoint));
+                // We need to be able to cancel a query message if we time out waiting for a response
+                if(message is QueryMessage)
+                    messages.Add(message.TransactionId, (QueryMessage) message);
+
+                sendQueue.Enqueue(new SendDetails(endpoint, message));
                 waitHandle.Set();
             }
         }
 
-        internal bool ReceivedResponse(BEncodedString bEncodedString)
+        internal void EnqueueSend(Message message, Node node)
         {
-            throw new Exception("The method or operation is not implemented.");
+            EnqueueSend(message, node.ContactInfo.EndPoint);
         }
     }
 }

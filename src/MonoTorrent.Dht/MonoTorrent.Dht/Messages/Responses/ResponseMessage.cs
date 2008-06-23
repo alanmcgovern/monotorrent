@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht.Messages
                 return false;
 
             node.Seen();
-            return engine.MessageLoop.ReceivedResponse(this.TransactionId);
+            return true;
         }
     }
 }
