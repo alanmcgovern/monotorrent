@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht
         }
 
         public RoutingTable()
-            : this(new Node(NodeId.Create(), NodeState.Good))
+            : this(new Node(NodeId.Create()))
         {
 
         }
@@ -60,6 +60,7 @@ namespace MonoTorrent.Dht
         public RoutingTable(Node localNode)
         {
             this.localNode = localNode;
+            localNode.Seen();
             Add(new Bucket());
             Add(localNode);
         }
