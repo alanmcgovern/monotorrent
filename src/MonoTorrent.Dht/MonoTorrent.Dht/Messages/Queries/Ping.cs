@@ -66,10 +66,5 @@ namespace MonoTorrent.Dht.Messages
             engine.MessageLoop.EnqueueSend(m, source);
             return true;
         }
-
-        public override void TimedOut(DhtEngine engine)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
     }
 }

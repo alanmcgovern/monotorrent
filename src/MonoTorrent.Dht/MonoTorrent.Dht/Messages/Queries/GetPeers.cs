@@ -67,10 +67,5 @@ namespace MonoTorrent.Dht.Messages
             // FIXME: Do the rest
             return true;
         }
-
-        public override void TimedOut(DhtEngine engine)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
     }
 }

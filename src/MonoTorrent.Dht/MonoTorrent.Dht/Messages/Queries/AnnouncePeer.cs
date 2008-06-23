@@ -85,10 +85,5 @@ namespace MonoTorrent.Dht.Messages
             // a specific torrent?
             return true;
         }
-
-        public override void TimedOut(DhtEngine engine)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
     }
 }
