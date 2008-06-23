@@ -60,6 +60,11 @@ namespace MonoTorrent.Dht.Messages
             messages.Add(message.TransactionId, message.ResponseCreator);
         }
 
+        public static void UnregisterSend(QueryMessage message)
+        {
+            messages.Remove(message.TransactionId);
+        }
+
         public static Message DecodeMessage(BEncodedDictionary dictionary)
         {
             Creator creator = null;

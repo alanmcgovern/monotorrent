@@ -96,6 +96,8 @@ namespace MonoTorrent.Dht.Messages
 
         public virtual bool TimedOut(DhtEngine engine)
         {
+            MessageFactory.UnregisterSend(this);
+
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
                 return false;
