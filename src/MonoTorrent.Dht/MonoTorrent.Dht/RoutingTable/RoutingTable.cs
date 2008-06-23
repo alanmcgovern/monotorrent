@@ -41,15 +41,26 @@ namespace MonoTorrent.Dht
         private readonly Node localNode;
         private List<Bucket> buckets = new List<Bucket>();
 
+        internal List<Bucket> Buckets
+        {
+            get { return buckets; }
+        }
+
         public Node LocalNode
         {
             get { return localNode; }
         }
 
         public RoutingTable()
+            : this(new Node(NodeId.Create(), NodeState.Good))
         {
+
+        }
+
+        public RoutingTable(Node localNode)
+        {
+            this.localNode = localNode;
             Add(new Bucket());
-            localNode = new Node(NodeId.Create(), NodeState.Good);
             Add(localNode);
         }
 
@@ -59,7 +70,8 @@ namespace MonoTorrent.Dht
 
             bool added = bucket.Add(node);
             if (!added && bucket.Nodes.Contains(LocalNode))
-                Split(bucket, node);
+                if (Split(bucket))
+                    Add(node);
         }
 
         private void Add(Bucket bucket)
@@ -88,8 +100,11 @@ namespace MonoTorrent.Dht
             buckets.Remove(bucket);
         }
 
-        private void Split(Bucket bucket, Node id)
+        private bool Split(Bucket bucket)
         {
+            if (bucket.Max - bucket.Min < 6)
+                return false;
+
             NodeId median = (bucket.Min + bucket.Max) / 2;
             Bucket left = new Bucket(bucket.Min, median);
             Bucket right = new Bucket(median, bucket.Max);
@@ -100,8 +115,9 @@ namespace MonoTorrent.Dht
 
             foreach (Node n in bucket.Nodes)
                 Add(n);
-            
-            Add(id);
+
+            Add(bucket.Replacement);
+            return true;
         }
 
         internal List<Node> GetClosest(NodeId Target)
