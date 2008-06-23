@@ -69,6 +69,11 @@ namespace MonoTorrent.Dht
             get { return nodes; }
         }
 
+        internal Node Replacement
+        {
+            get { return replacement; }
+        }
+
 
         public Bucket()
             : this(new NodeId(0), new NodeId(2).Pow(160))
@@ -121,7 +126,7 @@ namespace MonoTorrent.Dht
 
         public override string ToString()
         {
-            return string.Format("Min: {0}  Max: {1}", min, max);
+            return string.Format("Count: {2} Min: {0}  Max: {1}", min, max, this.nodes.Count);
         }
     }
 }
