@@ -64,25 +64,15 @@ namespace MonoTorrent.Dht.Messages
                 return false;
 
             FindNodeResponse response = new FindNodeResponse(engine.RoutingTable.LocalNode.Id);
-
-            // Is this right? Should i just be searching for the target? I think so.
+            response.TransactionId = TransactionId;
             Node node = engine.RoutingTable.FindNode(Target);
             if (node != null)
-            {
                 response.Nodes = node.CompactNode();
-            }
             else
-            {
-                // Have a method which will BEncoded/un-BEncode compact peer info.
-                List<Node> nodes = engine.RoutingTable.GetClosest(Target);
-
-                // Encode the list into a single stream and assign it here
-                response.Nodes = Node.CompactNode(nodes);
-            }
+                response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(Target));
 
             engine.MessageLoop.EnqueueSend(response, source);
             return true;
         }
-
     }
 }
