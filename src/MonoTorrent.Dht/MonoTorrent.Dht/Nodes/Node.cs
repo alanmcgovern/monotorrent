@@ -39,11 +39,11 @@ namespace MonoTorrent.Dht
 {
     public class Node
     {
+        public const int MaxFailures = 4;
         CompactIpPort contactInfo;
         NodeId id;
         int failedCount;
         DateTime lastSeen;
-        NodeState state;
         BEncodedString token;
 
         public CompactIpPort ContactInfo
@@ -73,8 +73,16 @@ namespace MonoTorrent.Dht
         // and must take into account when a node does not send us messages etc
         public NodeState State
         {
-            get { return state; }
-            set { state = value; }
+            get
+            {
+                if (failedCount > MaxFailures)
+                    return NodeState.Bad;
+
+                else if (lastSeen == DateTime.MinValue)
+                    return NodeState.Unknown;
+
+                return (DateTime.Now - lastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
+            }
         }
 
         public BEncodedString Token
@@ -83,24 +91,15 @@ namespace MonoTorrent.Dht
             set { token = value; }
         }
 
-
         public Node(NodeId id)
-            : this(id, NodeState.Unknown)
-        {
-
-        }
-
-        public Node(NodeId id, NodeState state)
         {
             this.id = id;
-            this.state = state;
         }
 
         internal void Seen()
         {
             failedCount = 0;
             lastSeen = DateTime.Now;
-            state = NodeState.Good;
         }
     }
 }
