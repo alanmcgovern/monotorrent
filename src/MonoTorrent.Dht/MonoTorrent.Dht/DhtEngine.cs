@@ -48,6 +48,7 @@ namespace MonoTorrent.Dht
         State state = State.NotReady;
         MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
+        int timeout;
 
         internal MessageLoop MessageLoop
         {
@@ -64,9 +65,16 @@ namespace MonoTorrent.Dht
             get { return state; }
         }
 
+        internal int TimeOut
+        {
+            get { return timeout; }
+            set { timeout = value; }
+        }
+
         public DhtEngine(IListener listener)
         {
-            messageLoop = new MessageLoop(listener);
+            messageLoop = new MessageLoop(this, listener);
+            timeout = 20 * 1000; // 20 second message timeout by default
         }
 
         public void Add(IEnumerable<Node> nodes)
