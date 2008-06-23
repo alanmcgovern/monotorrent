@@ -99,10 +99,12 @@ namespace MonoTorrent.Dht
 
         void Loop()
         {
+            Queue<KeyValuePair<DateTime, QueryMessage>> waitingResponse = new Queue<KeyValuePair<DateTime, QueryMessage>>();
             while (true)
             {
                 KeyValuePair<IPEndPoint, Message>? receive = null;
                 SendDetails? send = null;
+                QueryMessage timedOut = null;
 
                 lock (locker)
                 {
@@ -114,15 +116,36 @@ namespace MonoTorrent.Dht
 
                     if (receiveQueue.Count == 0 && !CanSend)
                         waitHandle.Reset();
+
+                    if (waitingResponse.Count > 0)
+                    {
+                        if (!messages.ContainsKey(waitingResponse.Peek().Value.TransactionId))
+                        {
+                            waitingResponse.Dequeue();
+                        }
+                        else if ((DateTime.Now - waitingResponse.Peek().Key).TotalMilliseconds > engine.TimeOut)
+                        {
+                            timedOut = waitingResponse.Dequeue().Value;
+                            messages.Remove(timedOut.TransactionId);
+                        }
+                    }
                 }
 
                 if (send != null)
+                {
                     SendMessage(send.Value.Message, send.Value.Destination);
+                    if (send.Value.Message is QueryMessage)
+                        waitingResponse.Enqueue(new KeyValuePair<DateTime, QueryMessage>(DateTime.Now, (QueryMessage)send.Value.Message));
+                }
 
                 if (receive != null)
                     receive.Value.Value.Handle(engine, receive.Value.Key);
 
-                waitHandle.WaitOne();
+                if (timedOut != null)
+                    timedOut.TimedOut(engine);
+
+                // Wait timeout milliseconds or 1000, whichever is lower
+                waitHandle.WaitOne(Math.Min(engine.TimeOut, 1000), false);
             }
         }
 
