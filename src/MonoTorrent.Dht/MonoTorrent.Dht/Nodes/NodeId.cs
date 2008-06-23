@@ -167,7 +167,7 @@ namespace MonoTorrent.Dht
             return this;
         }
 
-        internal static NodeId Create()
+        public static NodeId Create()
         {
             byte[] b = new byte[20];
             lock (random)
