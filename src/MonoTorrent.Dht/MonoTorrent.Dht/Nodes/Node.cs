@@ -76,7 +76,7 @@ namespace MonoTorrent.Dht
         {
             get
             {
-                if (failedCount > MaxFailures)
+                if (failedCount >= MaxFailures)
                     return NodeState.Bad;
 
                 else if (lastSeen == DateTime.MinValue)
