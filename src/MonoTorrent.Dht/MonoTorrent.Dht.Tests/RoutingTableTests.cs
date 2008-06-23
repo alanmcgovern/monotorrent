@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Dht;
 using NUnit.Framework;
+using System.Net;
 
 namespace monotorrent_dht_tests
 {
@@ -17,7 +18,7 @@ namespace monotorrent_dht_tests
         {
             id = new byte[20];
             id[1] = 128;
-            table = new RoutingTable(new Node(new NodeId(id)));
+            table = new RoutingTable(new Node(new NodeId(id), new System.Net.IPEndPoint(IPAddress.Any, 0)));
         }
 
         [Test]
@@ -27,7 +28,7 @@ namespace monotorrent_dht_tests
             {
                 byte[] id = (byte[])this.id.Clone();
                 //id[id.Length - 1] += (byte)i;
-                table.Add(new Node(new NodeId(id)));
+                table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
             Assert.AreEqual(160, table.Buckets.Count, "#1");
@@ -56,7 +57,7 @@ namespace monotorrent_dht_tests
             {
                 byte[] id = (byte[])this.id.Clone();
                 id[0] += (byte)i;
-                table.Add(new Node(new NodeId(id)));
+                table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
             Assert.AreEqual(8, table.Buckets.Count, "#1");

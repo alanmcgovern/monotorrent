@@ -69,7 +69,7 @@ namespace MonoTorrent.Dht.Messages
             Node node = engine.RoutingTable.FindNode(Target);
             if (node != null)
             {
-                response.Nodes = node.ContactInfo.Encode();
+                response.Nodes = node.Encode();
             }
             else
             {
@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht.Messages
                 List<Node> nodes = engine.RoutingTable.GetClosest(Target);
 
                 // Encode the list into a single stream and assign it here
-                response.Nodes = CompactIpPort.Encode(nodes);
+                response.Nodes = Node.Encode(nodes);
             }
 
             engine.MessageLoop.EnqueueSend(response, source);

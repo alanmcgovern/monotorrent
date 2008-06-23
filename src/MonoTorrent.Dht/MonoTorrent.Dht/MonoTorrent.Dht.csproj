@@ -42,7 +42,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BigInteger.cs" />
-    <Compile Include="Nodes\CompactIpPort.cs" />
     <Compile Include="DhtEngine.cs" />
     <Compile Include="Listeners\IListener.cs" />
     <Compile Include="Listeners\UdpListener.cs" />

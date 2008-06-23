@@ -173,7 +173,7 @@ namespace MonoTorrent.Dht
 
         internal void EnqueueSend(Message message, Node node)
         {
-            EnqueueSend(message, node.ContactInfo.EndPoint);
+            EnqueueSend(message, node.EndPoint);
         }
     }
 }

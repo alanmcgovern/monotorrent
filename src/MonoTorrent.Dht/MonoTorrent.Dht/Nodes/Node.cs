@@ -34,22 +34,23 @@ using System.Collections.Generic;
 
 using Mono.Math;
 using MonoTorrent.BEncoding;
+using System.Net;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
     public class Node
     {
         public const int MaxFailures = 4;
-        CompactIpPort contactInfo;
+        IPEndPoint endpoint;
         NodeId id;
         int failedCount;
         DateTime lastSeen;
         BEncodedString token;
 
-        public CompactIpPort ContactInfo
+        public IPEndPoint EndPoint
         {
-            get { return contactInfo; }
-            set { contactInfo = value; }
+            get { return endpoint; }
         }
 
         public int FailedCount
@@ -91,8 +92,9 @@ namespace MonoTorrent.Dht
             set { token = value; }
         }
 
-        public Node(NodeId id)
+        public Node(NodeId id, IPEndPoint endpoint)
         {
+            this.endpoint = endpoint;
             this.id = id;
         }
 
@@ -100,6 +102,29 @@ namespace MonoTorrent.Dht
         {
             failedCount = 0;
             lastSeen = DateTime.Now;
+        }
+
+
+        internal BEncodedString Encode()
+        {
+            byte[] buffer = new byte[6];
+            Encode(buffer, 0);
+            return buffer;
+        }
+
+        internal void Encode(byte[] buffer, int offset)
+        {
+            Message.Write(buffer, offset, endpoint.Address.GetAddressBytes());
+            Message.Write(buffer, offset + 4, (ushort)endpoint.Port);
+        }
+
+        public static BEncodedString Encode(IList<Node> peers)
+        {
+            byte[] buffer = new byte[peers.Count * 6];
+            for (int i = 0; i < peers.Count; i++)
+                peers[i].Encode(buffer, i * 6);
+
+            return new BEncodedString(buffer);
         }
     }
 }

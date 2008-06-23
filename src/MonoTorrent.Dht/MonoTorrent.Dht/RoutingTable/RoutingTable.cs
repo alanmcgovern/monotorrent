@@ -32,6 +32,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using Mono.Math;
+using System.Net;
 
 
 namespace MonoTorrent.Dht
@@ -52,7 +53,7 @@ namespace MonoTorrent.Dht
         }
 
         public RoutingTable()
-            : this(new Node(NodeId.Create()))
+            : this(new Node(NodeId.Create(), new System.Net.IPEndPoint(IPAddress.Any, 0)))
         {
 
         }
