@@ -48,7 +48,7 @@ namespace MonoTorrent.Dht.Tests
             DateTime lastSeen = node.LastSeen;
             PingResponse response = new PingResponse(node.Id);
             response.TransactionId = transactionId;
-            listener.RaiseMessageReceived(response, node.EndPoint);
+            listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
             System.Threading.Thread.Sleep(10);
             Assert.Less(lastSeen, node.LastSeen, "#2");
             Assert.AreEqual(NodeState.Good, node.State, "#3");
@@ -65,7 +65,7 @@ namespace MonoTorrent.Dht.Tests
             // Receive response
             PingResponse response = new PingResponse(node.Id);
             response.TransactionId = transactionId;
-            listener.RaiseMessageReceived(response, node.EndPoint);
+            listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
 
             engine.TimeOut = 2;
             DateTime lastSeen = node.LastSeen;

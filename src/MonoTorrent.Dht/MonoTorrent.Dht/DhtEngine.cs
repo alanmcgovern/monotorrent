@@ -38,17 +38,21 @@ using MonoTorrent.Client;
 using MonoTorrent.BEncoding;
 using System.IO;
 using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Client.Tasks;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
 	public class DhtEngine
 	{
+        internal static MainLoop MainLoop = new MainLoop();
         public event EventHandler StateChanged;
 
         State state = State.NotReady;
         MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
         int timeout;
+        Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
 
         internal MessageLoop MessageLoop
         {
@@ -71,6 +75,11 @@ namespace MonoTorrent.Dht
             set { timeout = value; }
         }
 
+        internal Dictionary<NodeId, List<Node>> Torrents
+        {
+            get { return torrents; }
+        }
+
         public DhtEngine(IListener listener)
         {
             messageLoop = new MessageLoop(this, listener);
@@ -90,22 +99,63 @@ namespace MonoTorrent.Dht
         {
             if (node == null)
                 throw new ArgumentNullException("node");
-            
-            table.Add(node);
+
+            messageLoop.EnqueueSend(new Ping(node.Id), node);
         }
 
         public void Start()
         {
+            if (this.RoutingTable.Buckets.Count == 1 && RoutingTable.Buckets[0].Nodes.Count == 1)
+            {
+                Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
+                Add(utorrent);
+                Add(node2);
+            }
             RaiseStateChanged(State.Initialising);
         }
 
         private void RaiseStateChanged(State newState)
         {
-            table.Initialise();
             state = newState;
 
             if (StateChanged != null)
                 StateChanged(this, EventArgs.Empty);
         }
+
+        public byte[] SaveNodes()
+        {
+            BEncodedList details = new BEncodedList();
+
+            MainLoop.QueueWait(delegate {
+                foreach (Bucket b in RoutingTable.Buckets)
+                {
+                    foreach (Node n in b.Nodes)
+                        if (n != RoutingTable.LocalNode && n.State != NodeState.Bad)
+                            details.Add(n.CompactNode());
+
+                    if (b.Replacement != null)
+                        if (b.Replacement != RoutingTable.LocalNode && b.Replacement.State != NodeState.Bad)
+                            details.Add(b.Replacement.CompactNode());
+                }
+            });
+
+            return details.Encode();
+        }
+
+        public void LoadNodes(byte[] nodes)
+        {
+            MainLoop.QueueWait(delegate {
+                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
+                foreach (BEncodedString s in list)
+                    Add(Node.FromCompactNode(s.TextBytes, 0));
+            });
+        }
+
+        /*
+        public void GetNodes(Node node)
+        {
+            messageLoop.EnqueueSend(new MonoTorrent.Dht.Messages.FindNode(RoutingTable.LocalNode.Id, RoutingTable.LocalNode.Id), node);
+        }*/
     }
 }

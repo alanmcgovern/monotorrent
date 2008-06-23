@@ -35,7 +35,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Listeners
 {
-    public delegate void MessageReceived(Message m, IPEndPoint endpoint);
+    public delegate void MessageReceived(byte[] buffer, IPEndPoint endpoint);
     public interface IListener
     {
         event MessageReceived MessageReceived;

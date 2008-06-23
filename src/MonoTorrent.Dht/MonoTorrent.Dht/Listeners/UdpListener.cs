@@ -52,17 +52,35 @@ namespace MonoTorrent.Dht.Listeners
 
         private void EndReceive(IAsyncResult result)
         {
-            IPEndPoint e = new IPEndPoint(IPAddress.Any, endpoint.Port);
-            byte[] buffer = client.EndReceive(result, ref e);
+            try
+            {
+                IPEndPoint e = new IPEndPoint(IPAddress.Any, endpoint.Port);
+                byte[] buffer = client.EndReceive(result, ref e);
 
-            Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
-            if (MessageReceived != null)
-                MessageReceived(m, e);
+                if (MessageReceived != null)
+                    MessageReceived(buffer, e);
+            }
+            catch (Exception ex)
+            {
+                // FIXME: This should be handled in a cleaner manner
+                Console.WriteLine(ex);
+            }
+
+            // FIXME Figure out why the client appears to die occasionally
+            client.BeginReceive(EndReceive, null);
         }
 
         public void Send(byte[] buffer, IPEndPoint endpoint)
         {
-            client.Send(buffer, buffer.Length, endpoint);
+            try
+            {
+                if (endpoint.Address != IPAddress.Any)
+                    client.Send(buffer, buffer.Length, endpoint);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);// FIXME: Shoulnd't need a try/catch
+            }
         }
 
         public void Start()

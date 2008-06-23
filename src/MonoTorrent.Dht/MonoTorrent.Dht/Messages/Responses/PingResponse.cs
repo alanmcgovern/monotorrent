@@ -48,5 +48,19 @@ namespace MonoTorrent.Dht.Messages
         {
 
         }
+
+        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        {
+            if (!base.Handle(engine, source))
+                return false;
+
+            Node node = engine.RoutingTable.FindNode(Id);
+            if (node != null)
+                node.CurrentlyPinging = false;
+
+            FindNode find = new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id);
+            engine.MessageLoop.EnqueueSend(find, source);
+            return true;
+        }
     }
 }

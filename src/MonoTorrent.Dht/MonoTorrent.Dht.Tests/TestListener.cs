@@ -24,10 +24,10 @@ namespace MonoTorrent.Dht.Tests
             // Do nothing
         }
 
-        public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
+        public void RaiseMessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
             if (MessageReceived != null)
-                MessageReceived(message, endpoint);
+                MessageReceived(buffer, endpoint);
         }
 
         public void Start()

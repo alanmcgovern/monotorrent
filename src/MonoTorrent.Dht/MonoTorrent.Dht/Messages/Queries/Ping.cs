@@ -59,7 +59,19 @@ namespace MonoTorrent.Dht.Messages
                 return false;
 
             PingResponse m = new PingResponse(engine.RoutingTable.LocalNode.Id);
+            m.TransactionId = TransactionId;
             engine.MessageLoop.EnqueueSend(m, source);
+            return true;
+        }
+
+        public override bool TimedOut(DhtEngine engine)
+        {
+            if (!base.TimedOut(engine))
+                return false;
+
+            Node n = engine.RoutingTable.FindNode(this.Id);
+            if (n != null)
+                n.CurrentlyPinging = false;
             return true;
         }
     }

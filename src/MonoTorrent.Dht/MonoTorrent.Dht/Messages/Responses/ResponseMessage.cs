@@ -68,7 +68,10 @@ namespace MonoTorrent.Dht.Messages
         {
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
-                return false;
+            {
+                node = new Node(Id, source);
+                engine.RoutingTable.Add(node);
+            }
 
             node.Seen();
             return true;

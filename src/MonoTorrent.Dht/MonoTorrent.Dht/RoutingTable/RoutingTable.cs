@@ -125,6 +125,9 @@ namespace MonoTorrent.Dht
             {
                 foreach (Node node in b.Nodes)
                 {
+                    if (node == localNode)
+                        continue;
+
                     if (closest.Count < Bucket.MaxCapacity)
                     {
                         closest.Add(node);

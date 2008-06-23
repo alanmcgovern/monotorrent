@@ -35,7 +35,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    public class NodeId : IEquatable<NodeId>, IComparable<NodeId>
+    public class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
         static readonly Random random = new Random();
 
@@ -86,8 +86,16 @@ namespace MonoTorrent.Dht
             return value.ToString();
         }
 
+        public int CompareTo(object obj)
+        {
+            return CompareTo(obj as NodeId);
+        }
+
         public int CompareTo(NodeId other)
         {
+            if ((object)other == null)
+                return 1;
+
             BigInteger.Sign s = value.Compare(other.value);
             if (s == BigInteger.Sign.Zero)
                 return 0;

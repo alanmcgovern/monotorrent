@@ -39,14 +39,22 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
-    public class Node
+    public class Node : IComparable, IComparable<Node>
     {
         public const int MaxFailures = 4;
+
+        bool currentlyPinging;
         IPEndPoint endpoint;
         NodeId id;
         int failedCount;
         DateTime lastSeen;
         BEncodedString token;
+
+        internal bool CurrentlyPinging
+        {
+            get { return currentlyPinging; }
+            set { currentlyPinging = value; }
+        }
 
         public IPEndPoint EndPoint
         {
@@ -154,9 +162,21 @@ namespace MonoTorrent.Dht
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
             string s = string.Format("{0}.{1}.{2}.{3}", buffer[offset + 20], buffer[offset + 21], buffer[offset + 22], buffer[offset + 23]);
             IPAddress address = IPAddress.Parse(s);
-            int port = (int)(uint)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, 24));
+            int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
 
             return new Node(new NodeId(id), new IPEndPoint(address, port));
+        }
+
+        public int CompareTo(Node other)
+        {
+            if (other == null)
+                return 1;
+            return id.CompareTo(other.id);
+        }
+
+        public int CompareTo(object obj)
+        {
+            return CompareTo(obj as Node);
         }
     }
 }
