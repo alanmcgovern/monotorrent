@@ -152,7 +152,8 @@ namespace MonoTorrent.Dht
         {
             byte[] id = new byte[20];
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress(BitConverter.ToInt32(buffer, offset + 20));
+            string s = string.Format("{0}.{1}.{2}.{3}", buffer[offset + 20], buffer[offset + 21], buffer[offset + 22], buffer[offset + 23]);
+            IPAddress address = IPAddress.Parse(s);
             int port = (int)(uint)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, 24));
 
             return new Node(new NodeId(id), new IPEndPoint(address, port));
