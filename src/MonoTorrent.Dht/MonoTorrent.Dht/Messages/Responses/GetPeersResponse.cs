@@ -38,6 +38,7 @@ namespace MonoTorrent.Dht.Messages
 {
     class GetPeersResponse : ResponseMessage
     {
+        private static readonly BEncodedString NodesKey = "nodes";
         private static readonly BEncodedString TokenKey = "token";
         private static readonly BEncodedString ValuesKey = "values";
 
@@ -47,16 +48,51 @@ namespace MonoTorrent.Dht.Messages
             set { Parameters[TokenKey] = value; }
         }
 
+        public BEncodedString Nodes
+        {
+            get
+            {
+                if(Parameters.ContainsKey(ValuesKey))
+                    throw new InvalidOperationException("Already contains the values key");
+                if(!Parameters.ContainsKey(NodesKey))
+                    Parameters.Add(NodesKey, null);
+                return (BEncodedString)Parameters[NodesKey];
+            }
+            set
+            {
+                if(Parameters.ContainsKey(ValuesKey))
+                    throw new InvalidOperationException("Already contains the values key");
+                if(!Parameters.ContainsKey(NodesKey))
+                    Parameters.Add(NodesKey, null);
+                Parameters[NodesKey] = value;
+            }
+        }
+
         public BEncodedList Values
         {
-            get { return (BEncodedList)Parameters[ValuesKey]; }
+            get
+            {
+                if(Parameters.ContainsKey(NodesKey))
+                    throw new InvalidOperationException("Already contains the nodes key");
+                if (!Parameters.ContainsKey(ValuesKey))
+                    Parameters.Add(ValuesKey, new BEncodedList());
+                return (BEncodedList)Parameters[ValuesKey];
+            }
+            set
+            {
+                if (Parameters.ContainsKey(NodesKey))
+                    throw new InvalidOperationException("Already contains the nodes key");
+                if (!Parameters.ContainsKey(ValuesKey))
+                    Parameters.Add(ValuesKey, value);
+                else
+                    Parameters[ValuesKey] = value;
+            }
         }
 
         public GetPeersResponse(NodeId id, BEncodedString token)
             :base (id)
         {
             Parameters.Add(TokenKey, token);
-            Parameters.Add(ValuesKey, new BEncodedList());
         }
 
         public GetPeersResponse(BEncodedDictionary d)
