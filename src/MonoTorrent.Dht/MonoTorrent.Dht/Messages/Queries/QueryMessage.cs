@@ -90,6 +90,14 @@ namespace MonoTorrent.Dht.Messages
             return true;
         }
 
-        public abstract void TimedOut(DhtEngine engine);
+        public virtual bool TimedOut(DhtEngine engine)
+        {
+            Node node = engine.RoutingTable.FindNode(Id);
+            if (node == null)
+                return false;
+
+            node.FailedCount++;
+            return true;
+        }
     }
 }
