@@ -46,7 +46,7 @@ namespace MonoTorrent.Dht.Messages
 
         internal NodeId InfoHash
         {
-            get { return new NodeId(new BigInteger(((BEncodedString)Parameters[InfoHashKey]).TextBytes)); }
+            get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
         }
 
         internal BEncodedNumber Port
@@ -80,9 +80,11 @@ namespace MonoTorrent.Dht.Messages
 
             AnnouncePeerResponse m = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id);
 
-            // FIXME: Do the rest
-            // Where should i be storing the information that a specific peer is downloading
-            // a specific torrent?
+            if (!engine.Torrents.ContainsKey(InfoHash))
+                engine.Torrents.Add(InfoHash, new List<Node>());
+
+            // FIXME: We need to verify the Token before adding the peer
+            engine.Torrents[InfoHash].Add(engine.RoutingTable.FindNode(Id));
             return true;
         }
     }

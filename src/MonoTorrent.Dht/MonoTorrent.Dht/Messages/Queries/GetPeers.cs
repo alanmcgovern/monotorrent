@@ -47,10 +47,10 @@ namespace MonoTorrent.Dht.Messages
             get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
         }
 
-        public GetPeers(NodeId id, NodeId infoHash)
+        public GetPeers(NodeId id, NodeId infohash)
             : base(id, QueryName, responseCreator)
         {
-            Parameters.Add(InfoHashKey, infoHash.BencodedString());
+            Parameters.Add(InfoHashKey, infohash.BencodedString());
         }
 
         public GetPeers(BEncodedDictionary d)
@@ -64,7 +64,23 @@ namespace MonoTorrent.Dht.Messages
             if (!base.Handle(engine, source))
                 return false;
 
-            // FIXME: Do the rest
+            // FIXME: Need a class which handles token generation properly
+            GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, "token!");
+            response.TransactionId = TransactionId;
+            if (engine.Torrents.ContainsKey(InfoHash))
+            {
+                BEncodedList list = new BEncodedList();
+                foreach (Node node in engine.Torrents[InfoHash])
+                    list.Add(node.CompactPort());
+                response.Values = list;
+            }
+            else
+            {
+                // Is this right?
+                response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(InfoHash));
+            }
+
+            engine.MessageLoop.EnqueueSend(response, source);
             return true;
         }
     }

@@ -62,9 +62,9 @@ namespace MonoTorrent.Dht.Messages
             if (!base.Handle(engine, source))
                 return false;
 
-            // FIXME: Do the rest
-            // Convert the 'nodes' property into ipaddress:port
-            // and add them to the routing table.
+            byte[] b = Nodes.TextBytes;
+            for (int i = 0; (i + 26) <= b.Length; i += 26)
+                engine.Add(Node.FromCompactNode(b, i));
             return true;
         }
     }

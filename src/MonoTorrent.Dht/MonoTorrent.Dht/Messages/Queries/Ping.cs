@@ -55,12 +55,8 @@ namespace MonoTorrent.Dht.Messages
 
         public override bool Handle(DhtEngine engine, IPEndPoint source)
         {
-            Node node = engine.RoutingTable.FindNode(Id);
-            
-            if (node == null)
+            if (!base.Handle(engine, source))
                 return false;
-
-            node.Seen();
 
             PingResponse m = new PingResponse(engine.RoutingTable.LocalNode.Id);
             engine.MessageLoop.EnqueueSend(m, source);
