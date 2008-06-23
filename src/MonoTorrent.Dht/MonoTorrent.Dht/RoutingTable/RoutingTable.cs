@@ -33,6 +33,7 @@ using System.Collections.Generic;
 
 using Mono.Math;
 using System.Net;
+using MonoTorrent.BEncoding;
 
 
 namespace MonoTorrent.Dht
@@ -90,11 +91,6 @@ namespace MonoTorrent.Dht
                         return n;
 
             return null;
-        }
-
-        internal void Initialise()
-        {
-            throw new Exception("The method or operation is not implemented.");
         }
 
         private void Remove(Bucket bucket)
