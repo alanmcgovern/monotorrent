@@ -41,13 +41,19 @@ namespace MonoTorrent.Dht
 
         BigInteger value;
 
+        internal NodeId(byte[] value)
+            : this(new BigInteger(value))
+        {
+
+        }
+
         internal NodeId(BigInteger value)
         {
             this.value = value;
         }
 
-        internal NodeId(BEncodedString val)
-            : this(new BigInteger(val.TextBytes))
+        internal NodeId(BEncodedString value)
+            : this(new BigInteger(value.TextBytes))
         {
 
         }
