@@ -129,14 +129,14 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
 
-            this.endCheckEncryptionCallback = delegate(IAsyncResult result) { MainLoop.Queue(delegate { EndCheckEncryption(result); }); };
-            this.onEndReceiveMessageCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { EndReceiveMessage(s, c, o); }); };
-            this.onEndSendMessageCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { EndSendMessage(s, c, o); }); };
+            this.endCheckEncryptionCallback = delegate(IAsyncResult result) { ClientEngine.MainLoop.Queue(delegate { EndCheckEncryption(result); }); };
+            this.onEndReceiveMessageCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { EndReceiveMessage(s, c, o); }); };
+            this.onEndSendMessageCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { EndSendMessage(s, c, o); }); };
             this.bitfieldSentCallback = new MessagingCallback(this.onPeerBitfieldSent);
-            this.endCreateConnectionCallback = delegate(bool succeeded, object state) { MainLoop.Queue(delegate { EndCreateConnection(succeeded, state); }); };
+            this.endCreateConnectionCallback = delegate(bool succeeded, object state) { ClientEngine.MainLoop.Queue(delegate { EndCreateConnection(succeeded, state); }); };
             this.handshakeSentCallback = new MessagingCallback(this.onPeerHandshakeSent);
             this.handshakeReceievedCallback = new MessagingCallback(this.onPeerHandshakeReceived);
-            this.incomingConnectionAcceptedCallback = delegate(bool s, int c, object o) { MainLoop.Queue(delegate { IncomingConnectionAccepted(s, c, o); }); };
+            this.incomingConnectionAcceptedCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { IncomingConnectionAccepted(s, c, o); }); };
             this.messageLengthReceivedCallback = new MessagingCallback(this.onPeerMessageLengthReceived);
             this.messageReceivedCallback = new MessagingCallback(this.onPeerMessageReceived);
             this.messageSentCallback = new MessagingCallback(this.onPeerMessageSent);

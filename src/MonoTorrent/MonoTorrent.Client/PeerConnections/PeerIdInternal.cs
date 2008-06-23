@@ -504,7 +504,7 @@ namespace MonoTorrent.Client
 
         public void CloseConnection()
         {
-            MainLoop.QueueWait(delegate
+            ClientEngine.MainLoop.QueueWait(delegate
             {
                 if (Connection != null)
                     Connection.Dispose();
@@ -587,7 +587,7 @@ namespace MonoTorrent.Client
             if (!(message is PeerMessage))
                 throw new ArgumentException("The message must be a peer message");
 
-            MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait(delegate {
                 if (Connection == null)
                     return;
                 

@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
                 DelegateTask d = new DelegateTask(delegate {
                     return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
                 });
-                MainLoop.QueueWait(delegate { d.Execute(); });
+                ClientEngine.MainLoop.QueueWait(delegate { d.Execute(); });
                 return (int)d.Result;
             }
         }
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
                 DelegateTask d = new DelegateTask(delegate {
                     return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
                 });
-                MainLoop.QueueWait(delegate { d.Execute(); });
+                ClientEngine.MainLoop.QueueWait(delegate { d.Execute(); });
                 return (int)d.Result;
             }
         }

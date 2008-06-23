@@ -240,7 +240,7 @@ namespace MonoTorrent.Client.Tracker
                 // FIXME: Figure out why manually firing the event throws an exception here
                 Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
 
-                MainLoop.Queue(delegate {
+                ClientEngine.MainLoop.QueueWait(delegate {
                     manager.AddPeers(e.Peers);
                 });
             }

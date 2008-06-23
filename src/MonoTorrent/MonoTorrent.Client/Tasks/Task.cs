@@ -35,7 +35,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client.Tasks
 {
-    abstract class Task
+    public abstract class Task
     {
         protected Task()
         {

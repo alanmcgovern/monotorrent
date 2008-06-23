@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
                 id.BytesToRecieve = 68;
                 List<byte[]> skeys = new List<byte[]>();
 
-                MainLoop.QueueWait(delegate {
+                ClientEngine.MainLoop.QueueWait(delegate {
                     for (int i = 0; i < engine.Torrents.Count; i++)
                         skeys.Add(engine.Torrents[i].Torrent.InfoHash);
                 });
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
                 EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
             }
             else
-                MainLoop.Queue(delegate { id.ConnectionManager.ProcessFreshConnection(id); });
+                ClientEngine.MainLoop.Queue(delegate { id.ConnectionManager.ProcessFreshConnection(id); });
         }
 
         private void EndCheckEncryption(IAsyncResult result)
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait(delegate {
                 for (int i = 0; i < engine.Torrents.Count; i++)
                     if (Toolbox.ByteMatch(handshake.infoHash, engine.Torrents[i].Torrent.InfoHash))
                         man = engine.Torrents[i];

@@ -35,22 +35,23 @@ using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
-    internal delegate object MainLoopJob();
-    internal delegate void MainLoopTask();
-    static class MainLoop
+    public delegate object MainLoopJob();
+    public delegate void MainLoopTask();
+    public class MainLoop
     {
-        static AutoResetEvent handle = new AutoResetEvent(false);
-        static Queue<Task> tasks = new Queue<Task>();
-        internal static Thread thread = new Thread(Loop);
+        AutoResetEvent handle = new AutoResetEvent(false);
+        Queue<Task> tasks = new Queue<Task>();
+        internal Thread thread;
 
-        static MainLoop()
+        public MainLoop()
         {
+            thread = new Thread(Loop);
             thread.IsBackground = true;
             thread.Name = "MainLoop";
             thread.Start();
         }
 
-        static void Loop()
+        void Loop()
         {
             while (true)
             {
@@ -73,7 +74,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public static void Queue(Task task)
+        private void Queue(Task task)
         {
             lock (tasks)
             {
@@ -82,7 +83,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal static void Queue(MainLoopTask task)
+        public void Queue(MainLoopTask task)
         {
             DelegateTask t = new DelegateTask(delegate { 
                 task();
@@ -92,7 +93,7 @@ namespace MonoTorrent.Client
             Queue(t);
         }
 
-        internal static void QueueWait(MainLoopTask task)
+        public void QueueWait(MainLoopTask task)
         {
             DelegateTask t = new DelegateTask(delegate { task(); return null; });
             t.Handle = new ManualResetEvent(false);
