@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
+using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
@@ -41,7 +42,6 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
         private Creator responseCreator;
-        private int failedCount;
 
         internal NodeId Id
         {
@@ -85,9 +85,12 @@ namespace MonoTorrent.Dht.Messages
         {
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
-                return false;
-
+            {
+                node = new Node(Id, source);
+                engine.RoutingTable.Add(node);
+            }
             node.Seen();
+
             return true;
         }
 
