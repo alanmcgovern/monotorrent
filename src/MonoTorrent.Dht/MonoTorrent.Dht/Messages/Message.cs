@@ -55,6 +55,7 @@ namespace MonoTorrent.Dht.Messages
 
         protected Message(BEncodedString messageType)
         {
+            properties.Add(TransactionIdKey, null);
             properties.Add(MessageTypeKey, messageType);
         }
 
