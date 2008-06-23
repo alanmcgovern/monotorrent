@@ -47,18 +47,6 @@ namespace MonoTorrent.Dht.Messages
         public AnnouncePeerResponse(BEncodedDictionary d)
             : base(d)
         {
-        }
-
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
-        {
-            if (!base.Handle(engine, source))
-                return false;
-
-            // When i announce to a peer, i should store what i'm announcing to them
-            // I then keep retrying the announce until the peer responds or becomes dead
-            // When i get this message, i should mark the peer as having responded so i don't
-            // announce to him again.
-            return true;
 
         }
     }
