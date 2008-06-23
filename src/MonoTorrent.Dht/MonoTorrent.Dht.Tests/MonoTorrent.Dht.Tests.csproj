@@ -45,6 +45,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="MessageHandlingTests.cs" />
     <Compile Include="MessageTests.cs" />
+    <Compile Include="NodeTests.cs" />
     <Compile Include="RoutingTableTests.cs" />
     <Compile Include="TestListener.cs" />
   </ItemGroup>

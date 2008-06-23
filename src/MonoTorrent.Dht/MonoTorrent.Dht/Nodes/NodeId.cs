@@ -41,6 +41,11 @@ namespace MonoTorrent.Dht
 
         BigInteger value;
 
+        internal byte[] Bytes
+        {
+            get { return value.GetBytes(); }
+        }
+
         internal NodeId(byte[] value)
             : this(new BigInteger(value))
         {

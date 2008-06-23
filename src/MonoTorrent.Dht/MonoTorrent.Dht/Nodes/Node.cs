@@ -104,27 +104,58 @@ namespace MonoTorrent.Dht
             lastSeen = DateTime.Now;
         }
 
-
-        internal BEncodedString Encode()
+        internal BEncodedString CompactPort()
         {
             byte[] buffer = new byte[6];
-            Encode(buffer, 0);
+            CompactPort(buffer, 0);
             return buffer;
         }
 
-        internal void Encode(byte[] buffer, int offset)
+        internal void CompactPort(byte[] buffer, int offset)
         {
             Message.Write(buffer, offset, endpoint.Address.GetAddressBytes());
             Message.Write(buffer, offset + 4, (ushort)endpoint.Port);
         }
 
-        public static BEncodedString Encode(IList<Node> peers)
+        internal static BEncodedString CompactPort(IList<Node> peers)
         {
             byte[] buffer = new byte[peers.Count * 6];
             for (int i = 0; i < peers.Count; i++)
-                peers[i].Encode(buffer, i * 6);
+                peers[i].CompactPort(buffer, i * 6);
 
             return new BEncodedString(buffer);
+        }
+
+        internal BEncodedString CompactNode()
+        {
+            byte[] buffer = new byte[26];
+            CompactNode(buffer, 0);
+            return buffer;
+        }
+
+        private void CompactNode(byte[] buffer, int offset)
+        {
+            Message.Write(buffer, offset, id.Bytes);
+            CompactPort(buffer, offset + 20);
+        }
+
+        internal static BEncodedString CompactNode(List<Node> nodes)
+        {
+            byte[] buffer = new byte[nodes.Count * 26];
+            for (int i = 0; i < nodes.Count; i++)
+                nodes[i].CompactNode(buffer, i * 26);
+
+            return new BEncodedString(buffer);
+        }
+
+        internal static Node FromCompactNode(byte[] buffer, int offset)
+        {
+            byte[] id = new byte[20];
+            Buffer.BlockCopy(buffer, offset, id, 0, 20);
+            IPAddress address = new IPAddress(BitConverter.ToInt32(buffer, offset + 20));
+            int port = (int)(uint)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, 24));
+
+            return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
     }
 }
