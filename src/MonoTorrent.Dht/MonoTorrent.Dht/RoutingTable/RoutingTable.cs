@@ -124,7 +124,27 @@ namespace MonoTorrent.Dht
 
         internal List<Node> GetClosest(NodeId Target)
         {
-            throw new Exception("The method or operation is not implemented.");
+            List<Node> closest = new List<Node>(Bucket.MaxCapacity);
+            foreach (Bucket b in Buckets)
+            {
+                foreach (Node node in b.Nodes)
+                {
+                    if (closest.Count < Bucket.MaxCapacity)
+                    {
+                        closest.Add(node);
+                    }
+                    else
+                    {
+                        NodeId distance = Target.Xor(node.Id);
+                        NodeId furthest = Target.Xor(closest[closest.Count -1].Id);
+                        if (distance < furthest)
+                            closest[closest.Count - 1] = node;
+                        closest.Sort();
+                    }
+                }
+            }
+
+            return closest;
         }
     }
 }
