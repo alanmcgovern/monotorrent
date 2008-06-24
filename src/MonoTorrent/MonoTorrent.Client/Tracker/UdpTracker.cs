@@ -23,8 +23,8 @@ namespace MonoTorrent.Client.Tracker
         {
             this.announceUrl = announceUrl;
             CanScrape = false;
-            endpoint = new IPEndPoint(IPAddress.Parse(announceUrl.Host), announceUrl.Port);
             tracker = new UdpClient(announceUrl.Host, announceUrl.Port);
+            endpoint = (IPEndPoint)tracker.Client.RemoteEndPoint;
         }
 
         public override WaitHandle Announce(AnnounceParameters parameters)
