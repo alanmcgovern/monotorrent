@@ -74,7 +74,7 @@ namespace MonoTorrent.Dht
             get { return replacement; }
         }
 
-
+        //TODO avoid calcul and made it with hardcoded const NodeIdDefaultMaxBuffer = 
         public Bucket()
             : this(new NodeId(0), new NodeId(2).Pow(160))
         {

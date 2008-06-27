@@ -1383,12 +1383,18 @@ namespace MonoTorrent.Dht
         internal BigInteger Xor(BigInteger other)
         {
             BigInteger b = new BigInteger(new byte[20]);
-            for (int i = 0; i < b.length; i++)
+                      
+            int len = (int)Math.Min(length, other.length);
+
+            for (int i = 0; i < len; i++)
                 b.data[i] = this.data[i] ^ other.data[i];
+            
+            b.length=5;// 20/4
             b.Normalize();
+      
             return b;
         }
-
+        
         internal static BigInteger Pow(BigInteger value, uint p)
         {
             BigInteger b = value;

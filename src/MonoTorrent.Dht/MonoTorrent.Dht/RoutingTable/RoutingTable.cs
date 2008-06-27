@@ -118,32 +118,26 @@ namespace MonoTorrent.Dht
             return true;
         }
 
-        internal List<Node> GetClosest(NodeId Target)
+        public IList<Node> GetClosest(NodeId Target)
         {
-            List<Node> closest = new List<Node>(Bucket.MaxCapacity);
-            foreach (Bucket b in Buckets)
+            SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);
+						
+            foreach (Bucket b in this.buckets)
             {
-                foreach (Node node in b.Nodes)
+                foreach (Node n in b.Nodes)
                 {
-                    if (node == localNode)
-                        continue;
-
-                    if (closest.Count < Bucket.MaxCapacity)
+                    NodeId distance = n.Id.Xor(Target);
+                    if (sortedNodes.Count == Bucket.MaxCapacity)
                     {
-                        closest.Add(node);
+                        if (distance > sortedNodes.Keys[sortedNodes.Count-1])//maxdistance
+                            continue;
+                        //remove last (with the maximum distance)
+                        sortedNodes.RemoveAt(sortedNodes.Count-1);						
                     }
-                    else
-                    {
-                        NodeId distance = Target.Xor(node.Id);
-                        NodeId furthest = Target.Xor(closest[closest.Count -1].Id);
-                        if (distance < furthest)
-                            closest[closest.Count - 1] = node;
-                        closest.Sort();
-                    }
+                    sortedNodes.Add(distance, n);
                 }
             }
-
-            return closest;
+            return sortedNodes.Values;
         }
     }
 }

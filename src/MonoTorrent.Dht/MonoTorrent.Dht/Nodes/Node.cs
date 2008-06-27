@@ -147,7 +147,7 @@ namespace MonoTorrent.Dht
             CompactPort(buffer, offset + 20);
         }
 
-        internal static BEncodedString CompactNode(List<Node> nodes)
+        internal static BEncodedString CompactNode(IList<Node> nodes)
         {
             byte[] buffer = new byte[nodes.Count * 26];
             for (int i = 0; i < nodes.Count; i++)
@@ -163,7 +163,6 @@ namespace MonoTorrent.Dht
             string s = string.Format("{0}.{1}.{2}.{3}", buffer[offset + 20], buffer[offset + 21], buffer[offset + 22], buffer[offset + 23]);
             IPAddress address = IPAddress.Parse(s);
             int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
-
             return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
 
