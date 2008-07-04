@@ -33,9 +33,6 @@ using System.Net;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public class UnchokeMessage : PeerMessage
     {
         public const byte MessageId = 1;
@@ -43,16 +40,16 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Constructors
-        /// <summary>
-        /// Creates a new UnchokeMessage
-        /// </summary>
+        
         public UnchokeMessage()
         {
         }
+
         #endregion
 
 
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
 			int written = offset;
@@ -64,22 +61,11 @@ namespace MonoTorrent.Client.Messages.Standard
             return written - offset;
         }
 
-
-        /// <summary>
-        /// Decodes an UnchokeMessage from the supplied buffer
-        /// </summary>
-        /// <param name="buffer">The buffer to decode the message from</param>
-        /// <param name="offset">The offset thats the message starts at</param>
-        /// <param name="length">The maximum number of bytes to read from the buffer</param>
         public override void Decode(byte[] buffer, int offset, int length)
         {
             // No decoding needed
         }
 
-        /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerId id)
         {
             id.IsChoking = false;
@@ -95,10 +81,6 @@ namespace MonoTorrent.Client.Messages.Standard
             }
         }
 
-
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
         public override int ByteLength
         {
             get { return (messageLength + 4); }
@@ -107,10 +89,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Overridden Methods
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
+        
         public override string ToString()
         {
             return "UnChokeMessage";
@@ -125,6 +104,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return this.ToString().GetHashCode();
         }
+
         #endregion
     }
 }

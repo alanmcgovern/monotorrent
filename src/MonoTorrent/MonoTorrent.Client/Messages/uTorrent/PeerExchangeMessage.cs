@@ -81,11 +81,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return written - offset; ;
         }
 
-
-        /// <summary>
-        /// Overridden. Displays the number of peers received
-        /// </summary>
-        /// <returns></returns>
         public override string ToString( )
         {
             BEncodedString added = (BEncodedString)peerDict[AddedKey];

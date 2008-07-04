@@ -40,21 +40,12 @@ using System.Web;
 
 namespace MonoTorrent.Client.Tracker
 {
-    /// <summary>
-    /// Class representing an instance of a Tracker
-    /// </summary>
     public class HTTPTracker : Tracker
     {
         private static readonly BEncodedString CustomErrorKey = (BEncodedString)"custom error";
 
-        /// <summary>
-        /// The announce URL for this tracker
-        /// </summary>
         private Uri announceUrl;
 
-        /// <summary>
-        /// The Scrape URL for this tracker
-        /// </summary>
         private Uri scrapeUrl;
 
         public HTTPTracker(Uri announceUrl)
@@ -126,8 +117,6 @@ namespace MonoTorrent.Client.Tracker
             return h;
         }
 
-
-
         protected string CreateAnnounceString(AnnounceParameters parameters)
         {
             StringBuilder sb = new StringBuilder(256);
@@ -186,13 +175,6 @@ namespace MonoTorrent.Client.Tracker
             return sb.ToString();
         }
 
-
-
-        /// <summary>
-        /// Decodes the response from a HTTPWebRequest
-        /// </summary>
-        /// <param name="result"></param>
-        /// <returns></returns>
         private BEncodedDictionary DecodeResponse(IAsyncResult result)
         {
             int bytesRead = 0;
@@ -248,11 +230,6 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-
-        /// <summary>
-        /// Called as part of the Async SendUpdate reponse
-        /// </summary>
-        /// <param name="result"></param>
         private void AnnounceReceived(IAsyncResult result)
         {
             TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
@@ -284,11 +261,6 @@ namespace MonoTorrent.Client.Tracker
             RaiseAnnounceComplete(args);
         }
 
-        /// <summary>
-        /// Handles the parsing of the dictionary when an announce result has been received
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="dict"></param>
         private void HandleAnnounce(BEncodedDictionary dict, AnnounceResponseEventArgs args)
         {
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
@@ -342,11 +314,6 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="result"></param>
         private void ScrapeReceived(IAsyncResult result)
         {
             BEncodedDictionary d;
@@ -403,7 +370,6 @@ namespace MonoTorrent.Client.Tracker
             RaiseScrapeComplete(args);
         }
 
-
         public override bool Equals(object obj)
         {
             HTTPTracker tracker = obj as HTTPTracker;
@@ -414,12 +380,10 @@ namespace MonoTorrent.Client.Tracker
             return (this.announceUrl == tracker.announceUrl);
         }
 
-
         public override int GetHashCode()
         {
             return this.announceUrl.GetHashCode();
         }
-
 
         public override string ToString()
         {

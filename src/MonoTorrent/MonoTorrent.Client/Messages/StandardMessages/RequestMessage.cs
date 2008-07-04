@@ -34,9 +34,6 @@ using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
-    /// <summary>
-    /// Represents a "Request" message
-    /// </summary>
     public class RequestMessage : PeerMessage
     {
         public const byte MessageId = 6;
@@ -54,35 +51,21 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Public Properties
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
         public override int ByteLength
         {
             get { return (messageLength + 4); }
         }
 
-        /// <summary>
-        /// The offset in bytes of the block of data
-        /// </summary>
         public int StartOffset
         {
             get { return this.startOffset; }
         }
 
-
-        /// <summary>
-        /// The index of the piece
-        /// </summary>
         public int PieceIndex
         {
             get { return this.pieceIndex; }
         }
 
-
-        /// <summary>
-        /// The length of the block of data
-        /// </summary>
         public int RequestLength
         {
             get { return this.requestLength; }
@@ -93,20 +76,10 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new RequestMessage
-        /// </summary>
         public RequestMessage()
         {
         }
 
-
-        /// <summary>
-        /// Creates a new RequestMessage
-        /// </summary>
-        /// <param name="pieceIndex">The index of the piece to request</param>
-        /// <param name="startOffset">The offset in bytes of the block of data to request</param>
-        /// <param name="requestLength">The length of the block of data to request</param>
         public RequestMessage(int pieceIndex, int startOffset, int requestLength)
         {
             this.pieceIndex = pieceIndex;
@@ -118,13 +91,13 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Methods
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
             pieceIndex = ReadInt(buffer, offset);
             startOffset = ReadInt(buffer, offset + 4);
             requestLength = ReadInt(buffer, offset + 8);
         }
-
 
         public override int Encode(byte[] buffer, int offset)
         {
@@ -140,11 +113,6 @@ namespace MonoTorrent.Client.Messages.Standard
             return written - offset;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj)
         {
             RequestMessage msg = obj as RequestMessage;
@@ -153,21 +121,11 @@ namespace MonoTorrent.Client.Messages.Standard
                                             && this.requestLength == msg.requestLength);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
             return (this.pieceIndex.GetHashCode() ^ this.requestLength.GetHashCode() ^ this.startOffset.GetHashCode());
         }
 
-
-        /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerId id)
         {
             // If we are not on the last piece and the user requested a stupidly big/small amount of data
@@ -199,10 +157,6 @@ namespace MonoTorrent.Client.Messages.Standard
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
 
@@ -216,6 +170,7 @@ namespace MonoTorrent.Client.Messages.Standard
             sb.Append(this.requestLength);
             return sb.ToString();
         }
+
         #endregion
     }
 }

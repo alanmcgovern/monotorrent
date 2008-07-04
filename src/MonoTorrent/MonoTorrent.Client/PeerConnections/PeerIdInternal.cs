@@ -46,59 +46,43 @@ namespace MonoTorrent.Client
     public class PeerId //: IComparable<PeerIdInternal>
     {
         #region Choke/Unchoke
-        /// <summary>
-        /// When this peer was last unchoked, or null if we haven't unchoked it yet
-        /// </summary>
+        
         internal DateTime? LastUnchoked
         {
             get { return this.lastUnchoked; }
             set { this.lastUnchoked = value; }
         }
 
-        /// <summary>
-        /// Number of bytes downloaded when this peer was last reviewed
-        /// </summary>
         internal long BytesDownloadedAtLastReview
         {
             get { return this.bytesDownloadedAtLastReview; }
             set { this.bytesDownloadedAtLastReview = value; }
         }
 
-        /// <summary>
-        /// Number of bytes uploaded when this peer was last reviewed
-        /// </summary>
         internal long BytesUploadedAtLastReview
         {
             get { return this.bytesUploadedAtLastReview; }
             set { this.bytesUploadedAtLastReview = value; }
         }
 
-        /// <summary>
-        /// Download rate determined at the end of the last full review period when this peer was unchoked
-        /// </summary>
         internal double LastReviewDownloadRate
         {
             get { return this.lastReviewDownloadRate; }
             set { this.lastReviewDownloadRate = value; }
         }
 
-        /// <summary>
-        /// Upload rate determined at the end of the last full review period when this peer was unchoked
-        /// </summary>
         internal double LastReviewUploadRate
         {
             get { return this.lastReviewUploadRate; }
             set { this.lastReviewUploadRate = value; }
         }
 
-        /// <summary>
-        /// True if this is the first review period since this peer was last unchoked
-        /// </summary>
         internal bool FirstReviewPeriod
         {
             get { return this.firstReviewPeriod; }
             set { this.firstReviewPeriod = value; }
         }
+
         private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
         private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
         //downloaded during a review period
@@ -161,90 +145,60 @@ namespace MonoTorrent.Client
             get { return Connection.AddressBytes; }
         }
 
-        /// <summary>
-        /// Contains the indexs of all the pieces we will let the peer download even if they are choked
-        /// </summary>
         internal MonoTorrentCollection<int> AmAllowedFastPieces
         {
             get { return this.amAllowedFastPieces; }
             set { this.amAllowedFastPieces = value; }
         }
 
-        /// <summary>
-        /// True if we are currently choking the peer
-        /// </summary>
         public bool AmChoking
         {
             get { return this.amChoking; }
             internal set { this.amChoking = value; }
         }
 
-        /// <summary>
-        /// True if the peer has some pieces that we need
-        /// </summary>
         public bool AmInterested
         {
             get { return this.amInterested; }
             internal set { this.amInterested = value; }
         }
 
-        /// <summary>
-        /// Returns the number of pieces currently being requested
-        /// </summary>
         public int AmRequestingPiecesCount
         {
             get { return this.amRequestingPiecesCount; }
             set { this.amRequestingPiecesCount = value; }
         }
 
-        /// <summary>
-        /// The peers bitfield
-        /// </summary>
         public BitField BitField
         {
             get { return this.bitField; }
             set { this.bitField = value; }
         }
 
-        /// <summary>
-        /// The total number of bytes Received into the current recieve buffer
-        /// </summary>
         internal int BytesReceived
         {
             get { return this.bytesReceived; }
             set { this.bytesReceived = value; }
         }
 
-        /// <summary>
-        /// The total number of bytes sent from the current send buffer
-        /// </summary>
         internal int BytesSent
         {
             get { return this.bytesSent; }
             set { this.bytesSent = value; }
         }
 
-        /// <summary>
-        /// The total number of bytes to receive
-        /// </summary>
         internal int BytesToRecieve
         {
             get { return this.bytesToRecieve; }
             set { this.bytesToRecieve = value; }
         }
 
-        /// <summary>
-        /// The total bytes to send from the buffer
-        /// </summary>
         internal int BytesToSend
         {
             get { return this.bytesToSend; }
             set { this.bytesToSend = value; }
         }
 
-        /// <summary>
-        /// Contains the version and name of the application this client is using.
-        /// </summary>
         public Software ClientApp
         {
             get { return this.clientApp; }
@@ -256,9 +210,6 @@ namespace MonoTorrent.Client
             get { return this.engine.ConnectionManager; }
         }
 
-        /// <summary>
-        /// This is the message we're currently sending to a peer
-        /// </summary>
         internal PeerMessage CurrentlySendingMessage
         {
             get { return this.currentlySendingMessage; }
@@ -271,9 +222,6 @@ namespace MonoTorrent.Client
             set { this.decryptor = value; }
         }
 
-        /// <summary>
-        /// Reason for disconnecting from this peer.
-        /// </summary>
         internal string DisconnectReason
         {
             get { return this.disconnectReason; }
@@ -297,54 +245,36 @@ namespace MonoTorrent.Client
             set { extensionSupports = value; }
         }
 
-        /// <summary>
-        /// Contains the indexes of all the pieces which the peer will let us download even if we are choked
-        /// </summary>
         internal MonoTorrentCollection<int> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
             set { this.isAllowedFastPieces = value; }
         }
 
-        /// <summary>
-        /// True if the peer is currently choking us
-        /// </summary>
         public bool IsChoking
         {
             get { return this.isChoking; }
             internal set { this.isChoking = value; }
         }
 
-        /// <summary>
-        /// True if the peer is currently interested in us
-        /// </summary>
         public bool IsInterested
         {
             get { return this.isInterested; }
             internal set { this.isInterested = value; }
         }
 
-        /// <summary>
-        /// The number of pieces the peer has requested off me
-        /// </summary>
         public int IsRequestingPiecesCount
         {
             get { return this.isRequestingPiecesCount; }
             set { this.isRequestingPiecesCount = value; }
         }
 
-        /// <summary>
-        /// The time at which the last message was received at
-        /// </summary>
         internal DateTime LastMessageReceived
         {
             get { return this.lastMessageReceived; }
             set { this.lastMessageReceived = value; }
         }
 
-        /// <summary>
-        /// The time at which the last message was sent at
-        /// </summary>
         internal DateTime LastMessageSent
         {
             get { return this.lastMessageSent; }
@@ -369,17 +299,11 @@ namespace MonoTorrent.Client
             set { this.messageReceivedCallback = value; }
         }
 
-        /// <summary>
-        /// The connection Monitor for this peer
-        /// </summary>
         public ConnectionMonitor Monitor
         {
             get { return this.monitor; }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         internal Peer Peer
         {
             get { return this.peer; }
@@ -392,45 +316,30 @@ namespace MonoTorrent.Client
             set { this.pexManager = value; }
         }
 
-        /// <summary>
-        /// The number of pieces that we've sent the peer.
-        /// </summary>
         public int PiecesSent
         {
             get { return this.piecesSent; }
             internal set { this.piecesSent = value; }
         }
 
-        /// <summary>
-        /// Number of pieces we've received from the peer
-        /// </summary>
         public int PiecesReceived
         {
             get { return piecesReceived; }
             internal set { piecesReceived = value; }
         }
 
-        /// <summary>
-        /// The port the peer is listening on for DHT
-        /// </summary>
         internal ushort Port
         {
             get { return this.port; }
             set { this.port = value; }
         }
 
-        /// <summary>
-        /// True if we are currently processing the peers message queue
-        /// </summary>
         internal bool ProcessingQueue
         {
             get { return this.processingQueue; }
             set { this.processingQueue = value; }
         }
 
-        /// <summary>
-        /// True if the peer supports the Fast Peers extension
-        /// </summary>
         public bool SupportsFastPeer
         {
             get { return this.supportsFastPeer; }
@@ -443,18 +352,11 @@ namespace MonoTorrent.Client
             internal set { this.supportsLTMessages = value; }
         }
 
-        /// <summary>
-        /// A list of pieces that this peer has suggested we download. These should be downloaded
-        /// with higher priority than standard pieces.
-        /// </summary>
         internal MonoTorrentCollection<int> SuggestedPieces
         {
             get { return this.suggestedPieces; }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public TorrentManager TorrentManager
         {
             get { return this.torrentManager; }
@@ -473,11 +375,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="peer"></param>
-        /// <param name="manager"></param>
         internal PeerId(Peer peer, TorrentManager manager)
         {
             if (peer == null)
@@ -511,29 +408,16 @@ namespace MonoTorrent.Client
             });
         }
 
-        /// <summary>
-        /// Returns the PeerMessage at the head of the queue
-        /// </summary>
-        /// <returns></returns>
         internal PeerMessage Dequeue()
         {
             return sendQueue.Dequeue();
         }
 
-        /// <summary>
-        /// Queues a PeerMessage up to be sent to the remote host
-        /// </summary>
-        /// <param name="msg"></param>
         internal void Enqueue(PeerMessage msg)
         {
             sendQueue.Enqueue(msg);
         }
 
-        /// <summary>
-        /// Enqueues a peer message at the specified index
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="index"></param>
         internal void EnqueueAt(PeerMessage message, int index)
         {
             int length = this.sendQueue.Count;
@@ -561,19 +445,11 @@ namespace MonoTorrent.Client
             return this.peer.ConnectionUri.GetHashCode();
         }
         
-        /// <summary>
-        /// The length of the Message queue
-        /// </summary>
         internal int QueueLength
         {
             get { return this.sendQueue.Count; }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="bytesRecieved"></param>
-        /// <param name="type"></param>
         internal void ReceivedBytes(int bytesRecieved, TransferType type)
         {
             this.bytesReceived += bytesRecieved;
@@ -597,11 +473,6 @@ namespace MonoTorrent.Client
             });
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="bytesSent"></param>
-        /// <param name="type"></param>
         internal void SentBytes(int bytesSent, TransferType type)
         {
             this.bytesSent += bytesSent;

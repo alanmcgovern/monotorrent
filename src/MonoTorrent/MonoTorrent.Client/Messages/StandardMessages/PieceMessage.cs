@@ -40,6 +40,7 @@ namespace MonoTorrent.Client.Messages.Standard
         private const int messageLength = 9;
 
         #region Private Fields
+
         private int dataOffset;
         private TorrentManager manager;
         private int pieceIndex;
@@ -47,7 +48,9 @@ namespace MonoTorrent.Client.Messages.Standard
         private int requestLength;
 
         private ArraySegment<byte> data;
+
         #endregion
+
 
         #region Properties
 
@@ -56,79 +59,46 @@ namespace MonoTorrent.Client.Messages.Standard
             get { return this.startOffset / Piece.BlockSize; }
         }
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
         public override int ByteLength
         {
             get { return (messageLength + this.requestLength + 4); }
         }
         
-
-        /// <summary>
-        /// The offset in the buffer at which the piece starts
-        /// </summary>
         internal int DataOffset
         {
             get { return this.dataOffset; }
         }
 
-
-        /// <summary>
-        /// The index of the piece
-        /// </summary>
         public int PieceIndex
         {
             get { return this.pieceIndex; }
         }
 
-
-        /// <summary>
-        /// The length of the piece in bytes
-        /// </summary>
         public int PieceLength
         {
             get { return this.manager.FileManager.PieceLength; }
         }
 
-
-        /// <summary>
-        /// The start offset of the data
-        /// </summary>
         public int StartOffset
         {
             get { return this.startOffset; }
         }
 
-
-        /// <summary>
-        /// The length of the data
-        /// </summary>
         public int RequestLength
         {
             get { return this.requestLength; }
         }
 
-
         #endregion
+
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new piece message
-        /// </summary>
         public PieceMessage(TorrentManager manager)
         {
             this.manager = manager;
         }
 
-
-        /// <summary>
-        /// Creates a new piece message
-        /// </summary>
-        /// <param name="pieceIndex">The index of the piece</param>
-        /// <param name="startOffset">The start offset in bytes of the block of data</param>
-        /// <param name="blockLength">The length in bytes of the data</param>
         public PieceMessage(TorrentManager manager, int pieceIndex, int startOffset, int blockLength)
         {
             this.manager = manager;
@@ -139,7 +109,9 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
+
         #region Methods
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
             this.pieceIndex = ReadInt(buffer, offset);
@@ -155,7 +127,6 @@ namespace MonoTorrent.Client.Messages.Standard
             ClientEngine.BufferManager.GetBuffer(ref this.data, requestLength);
             Buffer.BlockCopy(buffer, offset, this.data.Array, this.data.Offset, requestLength);
         }
-
 
         public override int Encode(byte[] buffer, int offset)
         {
@@ -178,11 +149,6 @@ namespace MonoTorrent.Client.Messages.Standard
             return written - offset;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj)
         {
             PieceMessage msg = obj as PieceMessage;
@@ -191,11 +157,6 @@ namespace MonoTorrent.Client.Messages.Standard
                                             && this.requestLength == msg.requestLength);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
             return (this.requestLength.GetHashCode()
@@ -205,11 +166,6 @@ namespace MonoTorrent.Client.Messages.Standard
                 ^ this.manager.GetHashCode());
         }
 
-
-        /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerId id)
         {
             id.PiecesReceived++;
@@ -228,11 +184,6 @@ namespace MonoTorrent.Client.Messages.Standard
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -245,6 +196,7 @@ namespace MonoTorrent.Client.Messages.Standard
             sb.Append(this.requestLength);
             return sb.ToString();
         }
+
         #endregion
     }
 }

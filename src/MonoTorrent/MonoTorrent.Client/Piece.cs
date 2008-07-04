@@ -32,16 +32,8 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// This class represents a Piece in the torrent
-    /// </summary>
     public class Piece
     {
-        /// <summary>
-        /// The official client rejects any request above 16kb, so even thought it adds more overhead
-        /// I use the same size requests. All other clients accept up to 128kB requests (afaik).
-        /// In the future the Piece picker could adaptively choose blocksize.
-        /// </summary>
         public const int BlockSize = (1 << 14); // 16kB
 
         #region Member Variables
@@ -62,83 +54,53 @@ namespace MonoTorrent.Client
             get { return this.blocks[index]; }
         }
 
-        /// <summary>
-        /// The blocks that this piece is composed of
-        /// </summary>
         internal Block[] Blocks
         {
             get { return this.blocks; }
         }
 
-        /// <summary>
-        /// True if all the blocks have been requested
-        /// </summary>
         public bool AllBlocksRequested
         {
             get { return this.totalRequested == BlockCount; }
         }
 
-        /// <summary>
-        /// True if all the blocks have been received
-        /// </summary>
         public bool AllBlocksReceived
         {
             get { return this.totalReceived == BlockCount; }
         }
         
-        /// <summary>
-        /// True if all the blocks have been written to disk
-        /// </summary>
         public bool AllBlocksWritten
         {
             get { return this.totalWritten == BlockCount; }
         }
 
-        /// <summary>
-        /// The number of blocks in this piece
-        /// </summary>
         public int BlockCount
         {
             get { return this.blocks.Length; }
         }
 
-        /// <summary>
-        /// The index of the piece
-        /// </summary>
         public int Index
         {
             get { return this.index; }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool NoBlocksRequested
         {
             get { return this.totalRequested == 0; }
         }
 
-        /// <summary>
-        /// The number of blocks which have been received from this piece
-        /// </summary>
         public int TotalReceived
         {
             get { return this.totalReceived; }
             internal set { this.totalReceived = value; }
         }
 
-        /// <summary>
-        /// The number of blocks which have been requested from this piece
-        /// </summary>
         public int TotalRequested
         {
             get { return this.totalRequested; }
             internal set { this.totalRequested = value; }
         }
 
-        /// <summary>
-        /// The number of blocks which have been written to disk from this piece
-        /// </summary>
         public int TotalWritten
         {
             get { return totalWritten; }
@@ -150,11 +112,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new Piece
-        /// </summary>
-        /// <param name="pieceIndex">The index of the piece</param>
-        /// <param name="torrent">The Torrent the piece is from</param>
         internal Piece(int pieceIndex, Torrent torrent)
         {
             this.index = pieceIndex;
@@ -176,12 +133,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// Special logic required to create the "LastPiece" for a torrent
-        /// </summary>
-        /// <param name="pieceIndex">The index of the piece</param>
-        /// <param name="torrent">The ITorrent the piece is coming from</param>
         private void LastPiece(int pieceIndex, Torrent torrent)
         {
             int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Count - 1) * torrent.PieceLength);

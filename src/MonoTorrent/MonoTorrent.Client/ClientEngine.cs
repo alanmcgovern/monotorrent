@@ -98,18 +98,11 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        /// <summary>
-        /// The connection manager which manages all the connections for the library
-        /// </summary>
         public ConnectionManager ConnectionManager
         {
             get { return this.connectionManager; }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
         public DiskManager DiskManager
         {
             get { return diskManager; }
@@ -120,36 +113,21 @@ namespace MonoTorrent.Client
             get { return this.listener; }
         }
 
-        /// <summary>
-        /// True if the engine has been started
-        /// </summary>
         public bool IsRunning
         {
             get { return this.timer.Enabled; }
         }
 
-
-        /// <summary>
-        /// Returns the engines PeerID
-        /// </summary>
         public string PeerId
         {
             get { return peerId; }
         }
 
-
-        /// <summary>
-        /// The engines settings
-        /// </summary>
         public EngineSettings Settings
         {
             get { return this.settings; }
         }
 
-
-        /// <summary>
-        /// The TorrentManager's loaded into the engine
-        /// </summary>
         internal MonoTorrentCollection<TorrentManager> Torrents
         {
             get { return this.torrents; }
@@ -161,11 +139,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new ClientEngine
-        /// </summary>
-        /// <param name="engineSettings">The engine settings to use</param>
-        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings settings)
             : this (settings, new DiskWriter())
         {
@@ -179,11 +152,6 @@ namespace MonoTorrent.Client
 
         }
 
-        /// <summary>
-        /// Creates a new ClientEngine
-        /// </summary>
-        /// <param name="engineSettings">The engine settings to use</param>
-        /// <param name="defaultTorrentSettings">The default settings for new torrents</param>
         public ClientEngine(EngineSettings settings, ConnectionListenerBase listener)
             : this (settings, listener, new DiskWriter())
         {
@@ -226,11 +194,6 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        /// <summary>
-        /// Returns true if a TorrentManager containing this Torrent has been registered with this engine
-        /// </summary>
-        /// <param name="torrent"></param>
-        /// <returns></returns>
         public bool Contains(Torrent torrent)
         {
             if (torrent == null)
@@ -239,21 +202,11 @@ namespace MonoTorrent.Client
             return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
         }
 
-
-        /// <summary>
-        /// Returns true if the TorrentManager has been registered with this engine
-        /// </summary>
-        /// <param name="manager"></param>
-        /// <returns></returns>
         public bool Contains(TorrentManager manager)
         {
             return manager == null ? false : Contains(manager.Torrent);
         }
 
-
-        /// <summary>
-        /// Disposes the Engine as well as all TorrentManagers still registered with the engine
-        /// </summary>
         public void Dispose()
         {
             MainLoop.QueueWait(DisposeImpl);
@@ -266,10 +219,6 @@ namespace MonoTorrent.Client
             this.timer.Dispose();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         private static string GeneratePeerId()
         {
             StringBuilder sb = new StringBuilder(20);
@@ -282,10 +231,6 @@ namespace MonoTorrent.Client
             return sb.ToString();
         }
 
-
-        /// <summary>
-        /// Pauses all TorrentManagers which are registered to this engine
-        /// </summary>
         public void PauseAll()
         {
             MainLoop.QueueWait(delegate {
@@ -294,11 +239,6 @@ namespace MonoTorrent.Client
             });
         }
 
-
-        /// <summary>
-        /// Registers the TorrentManager with this engine
-        /// </summary>
-        /// <param name="manager"></param>
         public void Register(TorrentManager manager)
         {
             if (manager == null)
@@ -322,10 +262,6 @@ namespace MonoTorrent.Client
             manager.Engine = this;
         }
 
-
-        /// <summary>
-        /// Starts all stopped or paused TorrentManagers which are registered to this engine
-        /// </summary>
         public void StartAll()
         {
             MainLoop.QueueWait(delegate {
@@ -334,10 +270,6 @@ namespace MonoTorrent.Client
             });
         }
 
-
-        /// <summary>
-        /// Stops all TorrentManagers which are registered to this engine
-        /// </summary>
         public WaitHandle[] StopAll()
         {
             List<WaitHandle> handles = new List<WaitHandle>();
@@ -350,10 +282,6 @@ namespace MonoTorrent.Client
             return handles.ToArray();
         }
 
-
-        /// <summary>
-        /// Returns the combined download speed of all active torrents in bytes/sec
-        /// </summary>
         public int TotalDownloadSpeed
         {
             get
@@ -362,10 +290,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// Returns the combined upload speed of all active torrents in bytes/sec
-        /// </summary>
         public int TotalUploadSpeed
         {
             get
@@ -374,11 +298,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// Unregisters the TorrentManager from this engine
-        /// </summary>
-        /// <param name="manager"></param>
         public void Unregister(TorrentManager manager)
         {
             if (manager == null)

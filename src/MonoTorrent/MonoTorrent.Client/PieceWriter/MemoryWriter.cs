@@ -118,34 +118,5 @@ namespace MonoTorrent.Client.PieceWriters
             // Dispose the held writer
             writer.Dispose();
         }
-
-        /*
-        public override void AddPressure(TorrentManager manager, int pieceIndex, int blockIndex)
-        {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            Pressure p = FindPressure(manager.FileManager, pieceIndex, blockIndex);
-            if (p != null)
-                p.Value++;
-            else
-                pressures.Add(new Pressure(manager, pieceIndex, blockIndex, 1));
-
-            writer.AddPressure(manager, pieceIndex, blockIndex);
-        }
-        public override void RemovePressure(TorrentManager manager, int pieceIndex, int blockIndex)
-        {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            Pressure p = FindPressure(manager.FileManager, pieceIndex, blockIndex);
-            if (p != null)
-                p.Value--;
-            else
-                pressures.Add(new Pressure(manager, pieceIndex, blockIndex, -1));
-
-            writer.RemovePressure(manager, pieceIndex, blockIndex);
-        }
-       */
     }
 }

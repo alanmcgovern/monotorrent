@@ -48,18 +48,11 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Public Properties
 
-        /// <summary>
-        /// Returns the length of the message in bytes
-        /// </summary>
         public override int ByteLength
         {
             get { return (messageLength + 4); }
         }
 
-
-        /// <summary>
-        /// The port
-        /// </summary>
         public int Port
         {
             get { return this.port; }
@@ -69,31 +62,24 @@ namespace MonoTorrent.Client.Messages.Standard
 
 
         #region Constructors
-        /// <summary>
-        /// Creates a new PortMessage
-        /// </summary>
         public PortMessage()
         {
         }
 
-
-        /// <summary>
-        /// Creates a new Port Message
-        /// </summary>
-        /// <param name="port">The port to use</param>
         public PortMessage(ushort port)
         {
             this.port = port;
         }
+        
         #endregion
 
 
         #region Methods
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
             this.port = (ushort)ReadShort(buffer, offset);
         }
-
 
         public override int Encode(byte[] buffer, int offset)
         {
@@ -107,42 +93,22 @@ namespace MonoTorrent.Client.Messages.Standard
             return written - offset;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj)
         {
             PortMessage msg = obj as PortMessage;
             return (msg == null) ? false : (this.port == msg.port);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
             return this.port.GetHashCode();
         }
 
-
-        /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
         internal override void Handle(PeerId id)
         {
             id.Port = this.port;
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -151,6 +117,7 @@ namespace MonoTorrent.Client.Messages.Standard
             sb.Append(this.port);
             return sb.ToString();
         }
+
         #endregion
     }
 }

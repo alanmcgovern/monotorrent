@@ -47,9 +47,6 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        /// <summary>
-        /// The bitfield for the torrent
-        /// </summary>
         public BitField MyBitField
         {
             get { return this.myBitfield; }
@@ -60,6 +57,7 @@ namespace MonoTorrent.Client
             get { return linearPickingEnabled; }
             set { linearPickingEnabled = value; }
         }
+
         #endregion Properties
 
         #region Abstract Methods

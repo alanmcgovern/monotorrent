@@ -64,9 +64,6 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        /// <summary>
-        /// Returns the number of outstanding requests
-        /// </summary>
         public override int CurrentRequestCount()
         {
             int result = 0;
@@ -92,11 +89,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new piece picker with support for prioritisation of files
-        /// </summary>
-        /// <param name="bitField">The bitfield associated with the torrent</param>
-        /// <param name="torrentFiles">The files that are available in this torrent</param>
         internal StandardPicker(BitField bitField, TorrentFile[] torrentFiles)
         {
             this.myBitfield = bitField;
@@ -117,11 +109,6 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        /// <summary>
-        /// Helper method that tells us if a specific piece has already been downloaded or is already being requested
-        /// </summary>
-        /// <param name="index">The index of the piece to check</param>
-        /// <returns></returns>
         private bool AlreadyHaveOrRequested(int index)
         {
             if (this.myBitfield[index])
@@ -133,7 +120,6 @@ namespace MonoTorrent.Client
             lock (this.unhashedPieces)
                 return this.unhashedPieces[index];
         }
-
 
         private RequestMessage ContinueAnyExisting(PeerId id)
         {
@@ -162,12 +148,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-
-        /// <summary>
-        /// When picking a piece, attempt to request the next free block from an existing request if there is one
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         private RequestMessage ContinueExistingRequest(PeerId id)
         {
             foreach (Piece p in requests)
@@ -191,12 +171,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-
-        /// <summary>
-        /// When picking a piece, attempt to request a fast piece if there is one available
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         private RequestMessage GetFastPiece(PeerId id)
         {
             int requestIndex;
@@ -228,10 +202,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        /// <summary>
-        /// Remove all the pieces in the list that we already have
-        /// </summary>
-        /// <param name="list"></param>
         private void RemoveOwnedPieces(MonoTorrentCollection<int> list)
         {
             while (true)
@@ -253,12 +223,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// When picking a piece, request a new piece normally
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         private RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers)
         {
             int checkIndex = 0;
@@ -327,7 +291,6 @@ namespace MonoTorrent.Client
                 }
             }
         }
-
 
         private Stack<BitField> GenerateRarestFirst(PeerId id, List<PeerId> otherPeers)
         {
@@ -407,12 +370,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// When picking a piece, attempt to request a piece that the peer has recommended that we download
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         private RequestMessage GetSuggestedPiece(PeerId id)
         {
             int requestIndex;
@@ -437,12 +394,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-
-        /// <summary>
-        /// Checks to see which files have available pieces and returns the highest priority found
-        /// </summary>
-        /// <param name="bitField"></param>
-        /// <returns></returns>
         private Priority HighestPriorityAvailable(BitField bitField)
         {
             Priority highestFound = Priority.DoNotDownload;
@@ -456,12 +407,6 @@ namespace MonoTorrent.Client
             return highestFound;
         }
 
-
-        /// <summary>
-        /// Checks to see if a peer has a piece we want
-        /// </summary>
-        /// <param name="id">The peer to check to see if he's interesting or not</param>
-        /// <returns>True if the peer is interesting, false otherwise</returns>
         public override bool IsInteresting(PeerId id)
         {
             BitField bitfield = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
@@ -482,13 +427,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// Creates a request message for the first available block that the peer can download
-        /// </summary>
-        /// <param name="id">The id of the peer to request a piece off of</param>
-        /// <param name="otherPeers">The other peers that are also downloading the same torrent</param>
-        /// <returns></returns>
         public override RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             RequestMessage message = null;
@@ -547,11 +485,6 @@ namespace MonoTorrent.Client
                         RemoveRequests(p[i].RequestedOff, new RequestMessage(p[i].PieceIndex, p[i].StartOffset, p[i].RequestLength));
         }
 
-
-        /// <summary>
-        /// Removes any outstanding requests from the supplied peer
-        /// </summary>
-        /// <param name="id">The peer to remove outstanding requests from</param>
         public override void RemoveRequests(PeerId id)
         {
             lock (this.requests)
@@ -572,12 +505,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="message"></param>
         private void RemoveRequests(PeerId id, RequestMessage message)
         {
             lock (this.requests)
@@ -602,15 +529,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="recieveBuffer"></param>
-        /// <param name="offset"></param>
-        /// <param name="writeIndex"></param>
-        /// <param name="p"></param>
         public override PieceEvent ReceivedPieceMessage(BufferedIO data)
         {
             PeerId id = data.Id;
@@ -665,11 +583,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
         public override void ReceivedChokeMessage(PeerId id)
         {
             // If fast peer peers extensions are not supported on both sides, all pending requests are implicitly rejected
@@ -690,12 +603,6 @@ namespace MonoTorrent.Client
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="rejectRequestMessage"></param>
         public override void ReceivedRejectRequest(PeerId id, RejectRequestMessage rejectRequestMessage)
         {
             lock (this.requests)
@@ -719,7 +626,6 @@ namespace MonoTorrent.Client
                 }
             }
         }
-
 
         public override void Reset()
         {

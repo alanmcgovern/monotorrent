@@ -32,17 +32,11 @@ using System;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Class representing the "Settings" for individual torrents
-    /// </summary>
     [Serializable]
     public class TorrentSettings : ICloneable
     {
         #region Member Variables
 
-        /// <summary>
-        /// Whether the Torrent initial the seed (super seeding)
-        /// </summary>
         public bool InitialSeedingEnabled
         {
             get { return this.initialSeedingEnabled; }
@@ -50,10 +44,6 @@ namespace MonoTorrent.Client
         }
         private bool initialSeedingEnabled;
 
-
-        /// <summary>
-        /// The maximum download speed for the torrent in bytes/sec
-        /// </summary>
         public int MaxDownloadSpeed
         {
             get { return this.maxDownloadSpeed; }
@@ -61,10 +51,6 @@ namespace MonoTorrent.Client
         }
         private int maxDownloadSpeed;
 
-
-        /// <summary>
-        /// The maximum upload speed for the torrent in bytes/sec
-        /// </summary>
         public int MaxUploadSpeed
         {
             get { return this.maxUploadSpeed; }
@@ -72,10 +58,6 @@ namespace MonoTorrent.Client
         }
         private int maxUploadSpeed;
 
-
-        /// <summary>
-        /// The maximum simultaneous open connections for the torrent
-        /// </summary>
         public int MaxConnections
         {
             get { return this.maxConnections; }
@@ -83,10 +65,6 @@ namespace MonoTorrent.Client
         }
         private int maxConnections;
 
-
-        /// <summary>
-        /// The number of upload slots for the torrent - must be at least 2
-        /// </summary>
         public int UploadSlots
         {
             get { return this.uploadSlots; }
@@ -99,10 +77,6 @@ namespace MonoTorrent.Client
         }
         private int uploadSlots;
 
-
-		/// <summary>
-		/// Minimum time in seconds that needs to pass before we execute a review of peer performance; 0 to disable 'tit-for-tat' code (default 30)
-		/// </summary>
         internal int MinimumTimeBetweenReviews
 		{
 			get { return this.minimumTimeBetweenReviews; }
@@ -113,10 +87,6 @@ namespace MonoTorrent.Client
 		}
 		private int minimumTimeBetweenReviews = 30;
 
-
-		/// <summary>
-		/// If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the peer performance review (default 90)
-		/// </summary>
 		internal int PercentOfMaxRateToSkipReview
 		{
 			get { return this.percentOfMaxRateToSkipReview; }
@@ -149,37 +119,16 @@ namespace MonoTorrent.Client
         {
         }
 
-
-        /// <summary>
-        /// Creates a new TorrentSettings with the specified number of upload slots and with
-        /// default settings for everything else
-        /// </summary>
-        /// <param name="uploadSlots">The number of upload slots for this torrent</param>
         public TorrentSettings(int uploadSlots)
             : this(uploadSlots, DefaultMaxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultInitialSeedingEnabled)
         {
         }
 
-
-        /// <summary>
-        /// Creates a new TorrentSettings with the specified number of uploadSlots and max connections and
-        /// default settings for everything else
-        /// </summary>
-        /// <param name="uploadSlots">The number of upload slots for this torrent</param>
-        /// <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections)
             : this(uploadSlots, maxConnections, DefaultDownloadSpeed, DefaultUploadSpeed, DefaultInitialSeedingEnabled)
         {
         }
 
-
-        /// <summary>
-        /// Creates a new TorrentSettings with the specified settings
-        /// </summary>
-        /// <param name="uploadSlots">The number of upload slots for this torrent</param>
-        /// <param name="maxConnections">The maximum number of simultaneous open connections for this torrent</param>
-        /// <param name="maxDownloadSpeed">The maximum download speed for this torrent</param>
-        /// <param name="maxUploadSpeed">The maximum upload speed for this torrent</param>
         public TorrentSettings(int uploadSlots, int maxConnections, int maxDownloadSpeed, int maxUploadSpeed)
             : this(uploadSlots, maxConnections, maxDownloadSpeed, maxUploadSpeed, DefaultInitialSeedingEnabled)
         {

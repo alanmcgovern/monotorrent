@@ -19,90 +19,60 @@ namespace MonoTorrent.Client.Tracker
         private bool requireEncryption;
         private bool supportsEncryption;
 
-        /// <summary>
-        /// The number of bytes downloaded this session
-        /// </summary>
         public long BytesDownloaded
         {
             get { return bytesDownloaded; }
             set { bytesDownloaded = value; }
         }
 
-        /// <summary>
-        /// The number of bytes left to download
-        /// </summary>
         public long BytesLeft
         {
             get { return bytesLeft; }
             set { bytesLeft = value; }
         }
 
-        /// <summary>
-        /// The number of bytes uploaded this session
-        /// </summary>
         public long BytesUploaded
         {
             get { return bytesUploaded; }
             set { bytesUploaded = value; }
         }
 
-        /// <summary>
-        /// The event that caused this announce (if any)
-        /// </summary>
         public TorrentEvent ClientEvent
         {
             get { return clientEvent; }
             set { clientEvent = value; }
         }
 
-        /// <summary>
-        /// FIXME: Maybe this should be private....
-        /// </summary>
         public TrackerConnectionID Id
         {
             get { return id; }
             set { id = value; }
         }
 
-        /// <summary>
-        /// The infohash for the torrent which caused this announce
-        /// </summary>
         public byte[] Infohash
         {
             get { return infohash; }
             set { infohash = value; }
         }
 
-        /// <summary>
-        /// The publicly advertised IP address for this computer
-        /// </summary>
         public string Ipaddress
         {
             get { return ipaddress; }
             set { ipaddress = value; }
         }
 
-        /// <summary>
-        /// FIXME: Maybe this should be private?...
-        /// </summary>
         public string PeerId
         {
             get { return peerId; }
             set { peerId = value; }
         }
 
-        /// <summary>
-        /// The public port number that the engine is listening at for connections
-        /// </summary>
         public int Port
         {
             get { return port; }
             set { port = value; }
         }
 
-        /// <summary>
-        /// True if encrypted connections are required
-        /// </summary>
         public bool RequireEncryption
         {
             get { return requireEncryption; }

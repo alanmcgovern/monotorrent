@@ -76,137 +76,82 @@ namespace MonoTorrent.Client.Tracker
 
         #region Properties
 
-        /// <summary>
-        /// True if the tracker supports scrape requests
-        /// </summary>
         public bool CanScrape
         {
             get { return this.canScrape; }
             protected set { canScrape = value; }
         }
 
-
-        /// <summary>
-        /// The number of seeders downloading the torrent
-        /// </summary>
         public int Complete
         {
             get { return this.complete; }
             protected set { this.complete = value; }
         }
 
-
-        /// <summary>
-        /// The number of times the torrent was downloaded
-        /// </summary>
         public int Downloaded
         {
             get { return this.downloaded; }
             protected set { this.downloaded = value; }
         }
 
-
-        /// <summary>
-        /// The error message returned by the tracker
-        /// </summary>
         public string FailureMessage
         {
             get { return this.failureMessage; }
             protected set { this.failureMessage = value; }
         }
 
-
-        /// <summary>
-        /// The number of peers downloading the torrent who are not seeders.
-        /// </summary>
         public int Incomplete
         {
             get { return this.inComplete; }
             protected set { this.inComplete = value; }
         }
 
-
-        /// <summary>
-        /// The private key used in tracker communcations. Must be sent in every tracker request
-        /// </summary>
         protected internal string Key
         {
             get { return key; }
         }
 
-
-        /// <summary>
-        /// The DateTime that the last tracker update was fired at
-        /// </summary>
         public DateTime LastUpdated
         {
             get { return lastUpdated; }
             protected set { lastUpdated = value; }
         }
 
-
-        /// <summary>
-        /// The minimum update interval for the tracker
-        /// </summary>
         public int MinUpdateInterval
         {
             get { return this.minUpdateInterval; }
             protected set { this.minUpdateInterval = value; }
         }
 
-
-        /// <summary>
-        /// The current state of the tracker
-        /// </summary>
         public TrackerState State
         {
             get { return this.state; }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
         internal TrackerTier Tier
         {
             get { return tier; }
             set { tier = value; }
         }
 
-
-        /// <summary>
-        /// The ID for the current tracker
-        /// </summary>
         public string TrackerId
         {
             get { return this.trackerId; }
             protected set { this.trackerId = value; }
         }
 
-
-        /// <summary>
-        /// The recommended update interval for the tracker
-        /// </summary>
         public int UpdateInterval
         {
             get { return updateInterval; }
             protected set { updateInterval = value; }
         }
 
-
-        /// <summary>
-        /// True if the last tracker update succeeded
-        /// </summary>
         public bool UpdateSucceeded
         {
             get { return this.updateSucceeded; }
             protected set { this.updateSucceeded = value; }
         }
 
-
-        /// <summary>
-        /// The warning message returned by the tracker
-        /// </summary>
         public string WarningMessage
         {
             get { return this.warningMessage; }

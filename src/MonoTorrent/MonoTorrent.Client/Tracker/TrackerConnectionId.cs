@@ -35,23 +35,13 @@ using System.Threading;
 
 namespace MonoTorrent.Client.Tracker
 {
-    /// <summary>
-    /// Provides a method of keeping a TrackerConnection linked with its TorrentManager during an AsyncRequest
-    /// </summary>
     public class TrackerConnectionID
     {
         private ManualResetEvent handle;
         internal TorrentEvent TorrentEvent;
 
-        /// <summary>
-        /// Object containing information about the async event
-        /// </summary>
         public object Request;
 
-
-        /// <summary>
-        /// Either Announcing or Scraping depending on which event is about to happen
-        /// </summary>
         public Tracker Tracker;
 
         public ManualResetEvent WaitHandle
@@ -65,11 +55,7 @@ namespace MonoTorrent.Client.Tracker
 
 
         #region Constructors
-        /// <summary>
-        /// Creates a new TrackerConnectionID
-        /// </summary>
-        /// <param name="request">Object containing information about the Async Request</param>
-        /// <param name="manager">The TorrentManager associated with the TrackerConnection</param>
+        
         public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, object request)
             : this(tracker, trySubsequent, torrentEvent, request, new ManualResetEvent(false))
         {
@@ -84,6 +70,7 @@ namespace MonoTorrent.Client.Tracker
             this.TorrentEvent = torrentEvent;
             this.Request = request;
         }
+        
         #endregion
     }
 }

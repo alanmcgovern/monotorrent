@@ -74,44 +74,28 @@ namespace MonoTorrent.Client
             set { encryption = value; }
         }
 
-        /// <summary>
-        /// Returns the number of times the peer has sent us a piece which failed a hashcheck
-        /// </summary>
         internal int TotalHashFails
         {
             get { return this.totalHashFails; }
         }
 
-
-        /// <summary>
-        /// The ID of the peer
-        /// </summary>
         internal string PeerId
         {
             get { return peerId; }
             set { peerId = value; }
         }
 
-
-        /// <summary>
-        /// True if the peer is a seeder
-        /// </summary>
         internal bool IsSeeder
         {
             get { return this.isSeeder; }
             set { this.isSeeder = value; }
         }
 
-
-        /// <summary>
-        /// The number of times we tried to connect to the peer and failed
-        /// </summary>
         internal int FailedConnectionAttempts
         {
             get { return this.failedConnectionAttempts; }
             set { this.failedConnectionAttempts = value; }
         }
-
 
         internal int LocalPort
         {
@@ -119,13 +103,11 @@ namespace MonoTorrent.Client
             set { localPort = value; }
         }
 
-
         internal DateTime LastConnectionAttempt
         {
             get { return this.lastConnectionAttempt; }
             set { this.lastConnectionAttempt = value; }
         }
-
 
         internal int RepeatedHashFails
         {
@@ -136,6 +118,7 @@ namespace MonoTorrent.Client
 
 
         #region Constructors
+
         public Peer(string peerId, Uri connectionUri)
             : this (peerId, connectionUri, EncryptionTypes.All)
         {
@@ -174,18 +157,15 @@ namespace MonoTorrent.Client
             return peerId == other.peerId;
         }
 
-
         public override int GetHashCode()
         {
             return this.connectionUri.GetHashCode();
         }
 
-
         public override string ToString()
         {
             return this.connectionUri.ToString();
         }
-
 
         internal byte[] CompactPeer()
         {
@@ -202,7 +182,6 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(short.Parse(peer[1]))), 0, data, offset + 4, 2);
         }
 
-
         internal void HashedPiece(bool succeeded)
         {
             if (succeeded && repeatedHashFails > 0)
@@ -214,7 +193,6 @@ namespace MonoTorrent.Client
                 totalHashFails++;
             }
         }
-
 
         internal static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
         {

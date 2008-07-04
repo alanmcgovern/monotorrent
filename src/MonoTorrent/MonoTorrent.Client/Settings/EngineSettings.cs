@@ -60,99 +60,60 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-		/// <summary>
-        /// Specifies the encryption levels allowed
-        /// </summary>
         public EncryptionTypes AllowedEncryption
         {
             get { return this.allowedEncryption; }
             set { this.allowedEncryption = value; }
         }
 		
-        /// <summary>
-        /// This specifies whether have supression should be enabled or disabled. It is highly recommend that this should
-        /// not be enabled
-        /// </summary>
         public bool HaveSupressionEnabled
         {
             get { return this.haveSupressionEnabled; }
             set { this.haveSupressionEnabled = value; }
         }
 
-
-        /// <summary>
-        /// This is the combined maximum open connections for all running torrents
-        /// </summary>
         public int GlobalMaxConnections
         {
             get { return this.globalMaxConnections; }
             set { this.globalMaxConnections = value; }
         }
 
-
-        /// <summary>
-        /// This is the maximum half-open connections allowed
-        /// </summary>
         public int GlobalMaxHalfOpenConnections
         {
             get { return this.globalMaxHalfOpenConnections; }
             set { this.globalMaxHalfOpenConnections = value; }
         }
 
-
-        /// <summary>
-        /// This is the combined maximum download speed for all running torrents
-        /// </summary>
         public int GlobalMaxDownloadSpeed
         {
             get { return this.globalMaxDownloadSpeed; }
             set { this.globalMaxDownloadSpeed = value; }
         }
 
-
-        /// <summary>
-        /// This is the combined maximum upload speed for all running torrents
-        /// </summary>
         public int GlobalMaxUploadSpeed
         {
             get { return this.globalMaxUploadSpeed; }
             set { this.globalMaxUploadSpeed = value; }
         }
 
-
-        /// <summary>
-        /// The port to listen for incoming connections on
-        /// </summary>
         public int ListenPort
         {
             get { return this.listenPort; }
             set { this.listenPort = value; }
         }
 
-
-        /// <summary>
-        /// The maximum number of files which can be opened at the same time
-        /// </summary>
         public int MaxOpenFiles
         {
             get { return maxOpenStreams; }
             set { maxOpenStreams = value; }
         }
 
-
-        /// <summary>
-        /// The maximum read rate from the hard disk
-        /// </summary>
         public int MaxReadRate
         {
             get { return maxReadRate; }
             set { maxReadRate = value; }
         }
 
-
-        /// <summary>
-        /// The maximum write rate to the hard disk
-        /// </summary>
         public int MaxWriteRate
         {
             get { return maxWriteRate; }
@@ -165,9 +126,6 @@ namespace MonoTorrent.Client
             set { preferEncryption = value; }
         }
 		
-        /// <summary>
-        /// This is the default directory that torrents will be downloaded to
-        /// </summary>
         public string SavePath
         {
             get { return this.savePath; }
@@ -200,57 +158,24 @@ namespace MonoTorrent.Client
 
         }
 
-
-        /// <summary>
-        /// Initialises a new engine settings with the supplied values
-        /// </summary>
-        /// <param name="defaultSavePath">The default path to save downloaded material to</param>
-        /// <param name="listenPort">The port to listen for incoming connections on</param>
         public EngineSettings(string defaultSavePath, int listenPort)
             : this(defaultSavePath, listenPort, DefaultMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultAllowedEncryption)
         {
 
         }
 
-
-        /// <summary>
-        /// Initialises a new engine settings with the supplied values
-        /// </summary>
-        /// <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
-        /// <param name="defaultSavePath">The default path to save downloaded material to</param>
-        /// <param name="listenPort">The port to listen for incoming connections on</param>
         public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections)
             : this(defaultSavePath, listenPort, globalMaxConnections, DefaultMaxHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultAllowedEncryption)
         {
 
         }
 
-
-        /// <summary>
-        /// Initialises a new engine settings with the supplied values
-        /// </summary>
-        /// <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
-        /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
-        /// <param name="defaultSavePath">The default path to save downloaded material to</param>
-        /// <param name="listenPort">The port to listen for incoming connections on</param>
         public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections)
             : this(defaultSavePath, listenPort, globalMaxConnections, globalHalfOpenConnections, DefaultMaxDownloadSpeed, DefaultMaxUploadSpeed, DefaultAllowedEncryption)
         {
 
         }
 
-
-        /// <summary>
-        /// Initialises a new engine settings with the supplied values
-        /// </summary>
-        /// <param name="globalMaxConnections">The overall maximum number of open connections allowed</param>
-        /// <param name="globalMaxDownloadSpeed">The overall maximum download speed</param>
-        /// <param name="globalMaxUploadSpeed">The overall maximum upload speed</param>
-        /// <param name="globalHalfOpenConnections">The overall maximum number of half open connections</param>
-        /// <param name="defaultSavePath">The default path to save downloaded material to</param>
-        /// <param name="listenPort">The port to listen for incoming connections on</param>
-        /// <param name="allowLegacyConnections">True if incoming connections without encryption should be accepted when encryption is enabled</param>
-        /// <param name="minEncryption">The minimum level of encryption to use for outgoing connections</param>
         public EngineSettings(string defaultSavePath, int listenPort, int globalMaxConnections, int globalHalfOpenConnections, int globalMaxDownloadSpeed, int globalMaxUploadSpeed, EncryptionTypes allowedEncryption)
         {
             this.globalMaxConnections = globalMaxConnections;

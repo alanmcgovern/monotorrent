@@ -41,13 +41,6 @@ namespace MonoTorrent.Client
         public const int AllowedFastPieceCount = 10;
         private static SHA1 hasher = new SHA1Fast();
 
-        /// <summary>
-        /// Calculates the pieces a peer can request even if they're choked
-        /// </summary>
-        /// <param name="addressBytes">The IPv4 address of the peer in byte format</param>
-        /// <param name="infohash">The info hash of the torrent</param>
-        /// <param name="numberOfPieces">The number of pieces in the torrent</param>
-        /// <returns></returns>
         internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
         {
             return Calculate(addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);

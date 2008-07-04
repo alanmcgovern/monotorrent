@@ -17,10 +17,6 @@ namespace MonoTorrent.Client
 
 		#region Constructors
 
-		/// <summary>
-		/// Creates a new, empty peer list
-		/// </summary>
-		/// <param name="ListType">The type of list</param>
 		public PeerList(PeerListType ListType)
 		{
 			peers = new List<PeerId>();
@@ -31,17 +27,11 @@ namespace MonoTorrent.Client
 
 		#region Public Properties
 
-		/// <summary>
-		/// Count of peers in the list
-		/// </summary>
 		public int Count
 		{
 			get { return peers.Count; }
 		}
 
-		/// <summary>
-		/// True if there are more peers left to scan
-		/// </summary>
 		public bool MorePeers
 		{
 			get
@@ -53,9 +43,6 @@ namespace MonoTorrent.Client
 			}
 		}
 
-		/// <summary>
-		/// Number of unchoked peers in the list
-		/// </summary>
 		public int UnchokedPeers
 		{
 			get
@@ -72,26 +59,17 @@ namespace MonoTorrent.Client
 
 		#region Public Methods
 
-		/// <summary>
-		/// Adds a peer to the peer list
-		/// </summary>
         public void Add(PeerId peer)
 		{
 			peers.Add(peer);
 		}
 
-		/// <summary>
-		/// Clears the peer list
-		/// </summary>
 		public void Clear()
 		{
 			peers.Clear();
 			scanIndex = 0;
 		}
 
-		/// <summary>
-		/// Gets the next peer to be scanned, returns null if there are no more
-		/// </summary>
         public PeerId GetNextPeer()
 		{
 			if (scanIndex < peers.Count)
@@ -103,9 +81,6 @@ namespace MonoTorrent.Client
 				return null;
 		}
 
-		/// <summary>
-		/// Gets the first choked peer in the list, or null if none found
-		/// </summary>
         public PeerId GetFirstInterestedChokedPeer()
 		{
 			//Look for a choked peer
@@ -117,9 +92,6 @@ namespace MonoTorrent.Client
 			return null;
 		}
 
-		/// <summary>
-		/// Looks for a choked peer that we can optimistically unchoke, or null if none found
-		/// </summary>
         public PeerId GetOUPeer()
 		{
 			//Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
@@ -158,10 +130,6 @@ namespace MonoTorrent.Client
 			return longestIntervalPeer;
 		}
 
-		/// <summary>
-		/// Tests to see if the list includes a given peer
-		/// </summary>
-		/// <param name="Peer">The peer we are testing for</param>
         public bool Includes(PeerId peer)
 		{
 			//Return false if the supplied peer is null
@@ -170,10 +138,6 @@ namespace MonoTorrent.Client
 			return peers.Contains(peer);
 		}
 
-		/// <summary>
-		/// Sorts the peer list based on list type and whether we are seeding, or not
-		/// </summary>
-		/// <param name="IsSeeding">Indicates whether the torrent using the peers is seeding, or not</param>
 		public void Sort(bool IsSeeding)
 		{
 			switch (listType)
@@ -198,9 +162,6 @@ namespace MonoTorrent.Client
 			}
 		}
 
-		/// <summary>
-		/// Start a scan of the peer list; puts current scan position to the first peer
-		/// </summary>
 		public void StartScan()
 		{
 			scanIndex = 0;

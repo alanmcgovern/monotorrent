@@ -55,17 +55,11 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        /// <summary>
-        /// The index of the piece
-        /// </summary>
         public int PieceIndex
         {
             get { return this.piece.Index; }
         }
 
-        /// <summary>
-        /// True if this piece has been Received
-        /// </summary>
         public bool Received
         {
             get { return this.received; }
@@ -81,9 +75,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        /// <summary>
-        /// True if this block has been requested
-        /// </summary>
         public bool Requested
         {
             get { return this.requested; }
@@ -99,9 +90,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        /// <summary>
-        /// The length in bytes of this block
-        /// </summary>
         public int RequestLength
         {
             get { return this.requestLength; }
@@ -112,26 +100,17 @@ namespace MonoTorrent.Client
             get { return !Received && requestedAt != 0 && (Environment.TickCount - requestedAt) > 60000; } // 60 seconds timeout for a request to fulfill
         }
 
-        /// <summary>
-        /// The peer who we requested this piece off
-        /// </summary>
         internal PeerId RequestedOff
         {
             get { return this.requestedOff; }
             set { this.requestedOff = value; }
         }
 
-        /// <summary>
-        /// The offset in bytes that this block starts at
-        /// </summary>
         public int StartOffset
         {
             get { return this.startOffset; }
         }
 
-        /// <summary>
-        /// True if the block has been written to disk
-        /// </summary>
         public bool Written
         {
             get { return this.written; }
@@ -152,12 +131,6 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        /// <summary>
-        /// Creates a new Block
-        /// </summary>
-        /// <param name="pieceIndex">The index of the piece this block is from</param>
-        /// <param name="startOffset">The offset in bytes that this block starts at</param>
-        /// <param name="requestLength">The length in bytes of the block</param>
         internal Block(Piece piece, int startOffset, int requestLength)
         {
             this.requestedAt = 0;
@@ -175,10 +148,6 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        /// <summary>
-        /// Creates a RequestMessage for this Block
-        /// </summary>
-        /// <returns></returns>
         internal RequestMessage CreateRequest(PeerId id)
         {
             this.requestedAt = Environment.TickCount;
