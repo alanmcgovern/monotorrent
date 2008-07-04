@@ -38,16 +38,34 @@ namespace MonoTorrent.Client.Messages
 
         static public short ReadShort(byte[] buffer, int offset)
         {
+            return ReadShort(buffer, offset);
+        }
+
+        static public short ReadShort(byte[] buffer, ref int offset)
+        {
+            offset += 2;
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, offset));
         }
 
         static public int ReadInt(byte[] buffer, int offset)
         {
+            return ReadInt(buffer, ref offset);
+        }
+
+        static public int ReadInt(byte[] buffer, ref int offset)
+        {
+            offset += 4;
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
         }
 
         static public long ReadLong(byte[] buffer, int offset)
         {
+            return ReadLong(buffer, ref offset);
+        }
+
+        static public long ReadLong(byte[] buffer, ref int offset)
+        {
+            offset += 8;
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, offset));
         }
 
