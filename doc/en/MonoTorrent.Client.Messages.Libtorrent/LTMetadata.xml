@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Messages.Libtorrent.ExtensionMessage</BaseTypeName>
@@ -18,16 +19,16 @@
       <MemberSignature Language="C#" Value="public LTMetadata ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters />
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Support">
       <MemberSignature Language="C#" Value="public static readonly MonoTorrent.Client.Messages.Libtorrent.ExtensionSupport Support;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Messages.Libtorrent.ExtensionSupport</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>

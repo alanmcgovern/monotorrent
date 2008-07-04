@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <TypeParameters>
     <TypeParameter>T</TypeParameter>

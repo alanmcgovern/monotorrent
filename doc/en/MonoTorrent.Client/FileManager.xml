@@ -3,13 +3,16 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
   </Base>
   <Interfaces />
   <Docs>
-    <summary>To be added.</summary>
+    <summary>
+            This class manages writing and reading of pieces from the disk
+            </summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -22,51 +25,57 @@
       <MemberSignature Language="C#" Value="public string BaseDirectory { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="BlockWritten">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.BlockEventArgs&gt; BlockWritten;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Client.BlockEventArgs&gt;</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Files">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.TorrentFile[] Files { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentFile[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="FileSize">
       <MemberSignature Language="C#" Value="public long FileSize { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="MoveFiles">
       <MemberSignature Language="C#" Value="public void MoveFiles (string path, bool overWriteExisting);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="path" Type="System.String" /><Parameter Name="overWriteExisting" Type="System.Boolean" /></Parameters>
-      <Docs><param name="path">To be added.</param><param name="overWriteExisting">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="path"></param><param name="overWriteExisting">To be added.</param><summary>
+            Loads fast resume data if it exists
+            </summary><summary>
+            Moves all files from the current path to the new path. The existing directory structure is maintained
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="StreamsOpen">
       <MemberSignature Language="C#" Value="public bool StreamsOpen { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns true if the write streams are open.
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

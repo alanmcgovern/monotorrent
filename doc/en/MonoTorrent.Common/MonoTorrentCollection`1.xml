@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <TypeParameters>
     <TypeParameter>T</TypeParameter>
@@ -52,32 +53,32 @@
       <MemberSignature Language="C#" Value="public MonoTorrentCollection ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters />
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public MonoTorrentCollection (System.Collections.Generic.IEnumerable&lt;T&gt; collection);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="collection" Type="System.Collections.Generic.IEnumerable&lt;T&gt;" /></Parameters>
       <Docs><param name="collection">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public MonoTorrentCollection (int capacity);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="capacity" Type="System.Int32" /></Parameters>
       <Docs><param name="capacity">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Add">
       <MemberSignature Language="C#" Value="public void Add (T item);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="item" Type="T" /></Parameters>
       <Docs><param name="item">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -85,8 +86,8 @@
       <MemberSignature Language="C#" Value="public void AddRange (System.Collections.Generic.IEnumerable&lt;T&gt; collection);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="collection" Type="System.Collections.Generic.IEnumerable&lt;T&gt;" /></Parameters>
       <Docs><param name="collection">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -94,8 +95,8 @@
       <MemberSignature Language="C#" Value="public void Clear ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -103,8 +104,8 @@
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.MonoTorrentCollection&lt;T&gt; Clone ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.MonoTorrentCollection&lt;T&gt;</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -112,8 +113,8 @@
       <MemberSignature Language="C#" Value="public bool Contains (T item);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="item" Type="T" /></Parameters>
       <Docs><param name="item">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -121,8 +122,8 @@
       <MemberSignature Language="C#" Value="public void CopyTo (T[] array, int arrayIndex);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array" Type="T[]" /><Parameter Name="arrayIndex" Type="System.Int32" /></Parameters>
       <Docs><param name="array">To be added.</param><param name="arrayIndex">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -130,16 +131,16 @@
       <MemberSignature Language="C#" Value="public int Count { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Dequeue">
       <MemberSignature Language="C#" Value="public T Dequeue ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>T</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -147,8 +148,8 @@
       <MemberSignature Language="C#" Value="public bool Exists (Predicate&lt;T&gt; match);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="match" Type="System.Predicate&lt;T&gt;" /></Parameters>
       <Docs><param name="match">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -156,8 +157,8 @@
       <MemberSignature Language="C#" Value="public T Find (Predicate&lt;T&gt; match);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>T</ReturnType></ReturnValue>
       <Parameters><Parameter Name="match" Type="System.Predicate&lt;T&gt;" /></Parameters>
       <Docs><param name="match">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -165,8 +166,8 @@
       <MemberSignature Language="C#" Value="public void ForEach (Action&lt;T&gt; action);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="action" Type="System.Action&lt;T&gt;" /></Parameters>
       <Docs><param name="action">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -174,8 +175,8 @@
       <MemberSignature Language="C#" Value="public System.Collections.Generic.IEnumerator&lt;T&gt; GetEnumerator ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Collections.Generic.IEnumerator&lt;T&gt;</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -183,8 +184,8 @@
       <MemberSignature Language="C#" Value="public int IndexOf (T item);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="item" Type="T" /></Parameters>
       <Docs><param name="item">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -192,8 +193,8 @@
       <MemberSignature Language="C#" Value="public void Insert (int index, T item);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="index" Type="System.Int32" /><Parameter Name="item" Type="T" /></Parameters>
       <Docs><param name="index">To be added.</param><param name="item">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -201,16 +202,16 @@
       <MemberSignature Language="C#" Value="public bool IsReadOnly { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Item">
       <MemberSignature Language="C#" Value="public T this[int index] { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>T</ReturnType></ReturnValue>
       <Parameters><Parameter Name="index" Type="System.Int32" /></Parameters>
       <Docs><param name="index">To be added.</param><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
@@ -218,8 +219,8 @@
       <MemberSignature Language="C#" Value="public bool Remove (T item);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="item" Type="T" /></Parameters>
       <Docs><param name="item">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -227,8 +228,8 @@
       <MemberSignature Language="C#" Value="public void RemoveAll (Predicate&lt;T&gt; match);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="match" Type="System.Predicate&lt;T&gt;" /></Parameters>
       <Docs><param name="match">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -236,8 +237,8 @@
       <MemberSignature Language="C#" Value="public void RemoveAt (int index);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="index" Type="System.Int32" /></Parameters>
       <Docs><param name="index">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -245,8 +246,8 @@
       <MemberSignature Language="C#" Value="System.Collections.IEnumerator IEnumerable.GetEnumerator ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Collections.IEnumerator</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>

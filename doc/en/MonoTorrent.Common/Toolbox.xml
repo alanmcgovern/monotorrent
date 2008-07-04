@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -24,8 +25,8 @@
       <MemberSignature Language="C#" Value="public static int Accumulate&lt;T&gt; (System.Collections.Generic.IEnumerable&lt;T&gt; enumerable, MonoTorrent.Common.Operation&lt;T&gt; action);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="enumerable" Type="System.Collections.Generic.IEnumerable&lt;T&gt;" /><Parameter Name="action" Type="MonoTorrent.Common.Operation&lt;T&gt;" /></Parameters>
       <Docs><typeparam name="T">To be added.</typeparam><param name="enumerable">To be added.</param><param name="action">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -33,26 +34,30 @@
       <MemberSignature Language="C#" Value="public static bool ByteMatch (byte[] array1, byte[] array2);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array1" Type="System.Byte[]" /><Parameter Name="array2" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="array1">To be added.</param><param name="array2">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="array1">The first array</param><param name="array2">The second array</param><summary>
+            Checks to see if the contents of two byte arrays are equal
+            </summary><returns>True if the arrays are equal, false if they aren't</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="ByteMatch">
       <MemberSignature Language="C#" Value="public static bool ByteMatch (byte[] array1, int offset1, byte[] array2, int offset2, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array1" Type="System.Byte[]" /><Parameter Name="offset1" Type="System.Int32" /><Parameter Name="array2" Type="System.Byte[]" /><Parameter Name="offset2" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
-      <Docs><param name="array1">To be added.</param><param name="offset1">To be added.</param><param name="array2">To be added.</param><param name="offset2">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="array1">The first array</param><param name="offset1">The starting index for the first array</param><param name="array2">The second array</param><param name="offset2">The starting index for the second array</param><param name="count">The number of bytes to check</param><summary>
+            Checks to see if the contents of two byte arrays are equal
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Count&lt;T&gt;">
       <MemberSignature Language="C#" Value="public static int Count&lt;T&gt; (System.Collections.Generic.IEnumerable&lt;T&gt; enumerable, Predicate&lt;T&gt; predicate);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="enumerable" Type="System.Collections.Generic.IEnumerable&lt;T&gt;" /><Parameter Name="predicate" Type="System.Predicate&lt;T&gt;" /></Parameters>
       <Docs><typeparam name="T">To be added.</typeparam><param name="enumerable">To be added.</param><param name="predicate">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -60,8 +65,8 @@
       <MemberSignature Language="C#" Value="public static void RaiseAsyncEvent&lt;T&gt; (EventHandler&lt;T&gt; e, object o, T args);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="e" Type="System.EventHandler&lt;T&gt;" /><Parameter Name="o" Type="System.Object" /><Parameter Name="args" Type="T" /></Parameters>
       <Docs><typeparam name="T">To be added.</typeparam><param name="e">To be added.</param><param name="o">To be added.</param><param name="args">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -69,29 +74,35 @@
       <MemberSignature Language="C#" Value="public static void Randomize&lt;T&gt; (System.Collections.Generic.List&lt;T&gt; array);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array" Type="System.Collections.Generic.List&lt;T&gt;" /></Parameters>
-      <Docs><typeparam name="T">To be added.</typeparam><param name="array">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><typeparam name="T"></typeparam><param name="array"></param><summary>
+            Randomizes the contents of the array
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Switch&lt;T&gt;">
       <MemberSignature Language="C#" Value="public static void Switch&lt;T&gt; (System.Collections.Generic.IList&lt;T&gt; array, int first, int second);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array" Type="System.Collections.Generic.IList&lt;T&gt;" /><Parameter Name="first" Type="System.Int32" /><Parameter Name="second" Type="System.Int32" /></Parameters>
-      <Docs><typeparam name="T">To be added.</typeparam><param name="array">To be added.</param><param name="first">To be added.</param><param name="second">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><typeparam name="T"></typeparam><param name="array"></param><param name="first"></param><param name="second"></param><summary>
+            Switches the positions of two elements in an array
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="ToHex">
       <MemberSignature Language="C#" Value="public static string ToHex (byte[] array);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Parameters><Parameter Name="array" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="array">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="array">To be added.</param><summary>
+            Creates a hex string from the given byte[]
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.EventArgs</BaseTypeName>
@@ -22,50 +23,62 @@
       <MemberSignature Language="C#" Value="public long FileBytesHashed { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The number of bytes hashed from the current file
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="FileCompletion">
       <MemberSignature Language="C#" Value="public double FileCompletion { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Double</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The percentage of the current file which has been hashed (range 0-100)
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="FileSize">
       <MemberSignature Language="C#" Value="public long FileSize { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The size of the current file
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="OverallBytesHashed">
       <MemberSignature Language="C#" Value="public long OverallBytesHashed { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The number of bytes hashed so far
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="OverallCompletion">
       <MemberSignature Language="C#" Value="public double OverallCompletion { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Double</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The percentage of the data which has been hashed (range 0-100)
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="OverallSize">
       <MemberSignature Language="C#" Value="public long OverallSize { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The total number of bytes to hash
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

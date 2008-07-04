@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Enum</BaseTypeName>
@@ -22,56 +23,56 @@
       <MemberSignature Language="C#" Value="AnnounceSuccessful" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Announcing">
       <MemberSignature Language="C#" Value="Announcing" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="AnnouncingFailed">
       <MemberSignature Language="C#" Value="AnnouncingFailed" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="ScrapeSuccessful">
       <MemberSignature Language="C#" Value="ScrapeSuccessful" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Scraping">
       <MemberSignature Language="C#" Value="Scraping" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="ScrapingFailed">
       <MemberSignature Language="C#" Value="ScrapingFailed" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Unknown">
       <MemberSignature Language="C#" Value="Unknown" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TrackerState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member>

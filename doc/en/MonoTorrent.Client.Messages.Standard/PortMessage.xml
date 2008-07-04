@@ -3,13 +3,16 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Messages.PeerMessage</BaseTypeName>
   </Base>
   <Interfaces />
   <Docs>
-    <summary>To be added.</summary>
+    <summary>
+            Represents a "Port" message
+            </summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -20,24 +23,28 @@
       <MemberSignature Language="C#" Value="public PortMessage ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters />
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Creates a new PortMessage
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public PortMessage (ushort port);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="port" Type="System.UInt16" /></Parameters>
-      <Docs><param name="port">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="port">The port to use</param><summary>
+            Creates a new Port Message
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="MessageId">
       <MemberSignature Language="C#" Value="public const byte MessageId = 9;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte</ReturnType></ReturnValue>
       <MemberValue>9</MemberValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -45,10 +52,12 @@
       <MemberSignature Language="C#" Value="public int Port { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The port
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

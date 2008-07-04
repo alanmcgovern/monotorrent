@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -21,7 +22,9 @@
     </Attribute>
   </Attributes>
   <Docs>
-    <summary>To be added.</summary>
+    <summary>
+            This class is for represting the Peer's bitfield
+            </summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -46,128 +49,150 @@
       <MemberSignature Language="C#" Value="public BitField (bool[] array);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="array" Type="System.Boolean[]" /></Parameters>
       <Docs><param name="array">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public BitField (int length);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="length" Type="System.Int32" /></Parameters>
-      <Docs><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="length">The length of the BitField</param><summary>
+            Creates a new BitField
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public BitField (byte[] array, int length);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="array" Type="System.Byte[]" /><Parameter Name="length" Type="System.Int32" /></Parameters>
       <Docs><param name="array">To be added.</param><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="And">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField And (MonoTorrent.Common.BitField value);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.BitField</ReturnType></ReturnValue>
       <Parameters><Parameter Name="value" Type="MonoTorrent.Common.BitField" /></Parameters>
-      <Docs><param name="value">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="value">The BitField with which to perform the operation against</param><summary>
+            Performs binary AND on all the elements of this BitField against the elements of the supplied BitField
+            </summary><returns>Itself</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Clone">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField Clone ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.BitField</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Clones the BitField
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="FirstTrue">
       <MemberSignature Language="C#" Value="public int FirstTrue ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns the first index of the BitField that is true. If no elements are true, returns -1
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="FirstTrue">
       <MemberSignature Language="C#" Value="public int FirstTrue (int startIndex, int endIndex);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="startIndex" Type="System.Int32" /><Parameter Name="endIndex" Type="System.Int32" /></Parameters>
-      <Docs><param name="startIndex">To be added.</param><param name="endIndex">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="startIndex"></param><param name="endIndex"></param><summary>
+            Returns the first index of the BitField that is true between the start and end index
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="GetEnumerator">
       <MemberSignature Language="C#" Value="public System.Collections.Generic.IEnumerator&lt;bool&gt; GetEnumerator ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Collections.Generic.IEnumerator&lt;System.Boolean&gt;</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary /><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Item">
       <MemberSignature Language="C#" Value="public bool this[int index] { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="index" Type="System.Int32" /></Parameters>
-      <Docs><param name="index">To be added.</param><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><param name="index">The index of the BitField to check</param><summary>
+            Returns the value of the BitField at the specified index
+            </summary><returns /><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Length">
       <MemberSignature Language="C#" Value="public int Length { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns the length of the BitField
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="LengthInBytes">
       <MemberSignature Language="C#" Value="public int LengthInBytes { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns the length of this message in bytes
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Not">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField Not ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.BitField</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Performs binary NOT on all the elements of the bitarray
+            </summary><returns>Itself</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Or">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField Or (MonoTorrent.Common.BitField value);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.BitField</ReturnType></ReturnValue>
       <Parameters><Parameter Name="value" Type="MonoTorrent.Common.BitField" /></Parameters>
-      <Docs><param name="value">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="value">The BitField with which to perform the operation against</param><summary>
+            Performs binary OR on all the elements of this BitField against the elements of the supplied BitField
+            </summary><returns>Itself</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PercentComplete">
       <MemberSignature Language="C#" Value="public double PercentComplete { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Double</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns the percentage of pieces that are true
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="System.Collections.IEnumerable.GetEnumerator">
       <MemberSignature Language="C#" Value="System.Collections.IEnumerator IEnumerable.GetEnumerator ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Collections.IEnumerator</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -175,8 +200,8 @@
       <MemberSignature Language="C#" Value="object ICloneable.Clone ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Object</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -184,19 +209,21 @@
       <MemberSignature Language="C#" Value="public int TrueCount { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Xor">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField Xor (MonoTorrent.Common.BitField value);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.BitField</ReturnType></ReturnValue>
       <Parameters><Parameter Name="value" Type="MonoTorrent.Common.BitField" /></Parameters>
-      <Docs><param name="value">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="value">The BitField with which to perform the operation against</param><summary>
+            Performs binary EXCLUSIVE OR on all the elements of this BitField against the elements of the supplied BitField
+            </summary><returns>Itself</returns><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

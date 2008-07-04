@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Messages.Message</BaseTypeName>
@@ -19,16 +20,16 @@
       <MemberSignature Language="C#" Value="protected PeerMessage ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters />
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DecodeMessage">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Messages.PeerMessage DecodeMessage (ArraySegment&lt;byte&gt; buffer, int offset, int count, MonoTorrent.Client.TorrentManager manager);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Messages.PeerMessage</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.ArraySegment&lt;System.Byte&gt;" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="manager" Type="MonoTorrent.Client.TorrentManager" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><param name="manager">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -36,8 +37,8 @@
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Messages.PeerMessage DecodeMessage (byte[] buffer, int offset, int count, MonoTorrent.Client.TorrentManager manager);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Messages.PeerMessage</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="manager" Type="MonoTorrent.Client.TorrentManager" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><param name="manager">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>

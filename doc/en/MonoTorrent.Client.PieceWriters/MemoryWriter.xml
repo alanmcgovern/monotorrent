@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.PieceWriters.PieceWriter</BaseTypeName>
@@ -22,32 +23,32 @@
       <MemberSignature Language="C#" Value="public MemoryWriter (MonoTorrent.Client.PieceWriters.PieceWriter writer);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="writer" Type="MonoTorrent.Client.PieceWriters.PieceWriter" /></Parameters>
       <Docs><param name="writer">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public MemoryWriter (MonoTorrent.Client.PieceWriters.PieceWriter writer, int capacity);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="writer" Type="MonoTorrent.Client.PieceWriters.PieceWriter" /><Parameter Name="capacity" Type="System.Int32" /></Parameters>
       <Docs><param name="writer">To be added.</param><param name="capacity">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Capacity">
       <MemberSignature Language="C#" Value="public int Capacity { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Flush">
       <MemberSignature Language="C#" Value="public void Flush (Predicate&lt;MonoTorrent.Client.BufferedIO&gt; flush);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="flush" Type="System.Predicate&lt;MonoTorrent.Client.BufferedIO&gt;" /></Parameters>
       <Docs><param name="flush">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -55,16 +56,16 @@
       <MemberSignature Language="C#" Value="public int Used { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Write">
       <MemberSignature Language="C#" Value="public void Write (MonoTorrent.Client.BufferedIO data, bool forceWrite);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="MonoTorrent.Client.BufferedIO" /><Parameter Name="forceWrite" Type="System.Boolean" /></Parameters>
       <Docs><param name="data">To be added.</param><param name="forceWrite">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>

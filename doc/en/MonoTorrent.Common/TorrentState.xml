@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Enum</BaseTypeName>
@@ -21,48 +22,48 @@
       <MemberSignature Language="C#" Value="Downloading" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Hashing">
       <MemberSignature Language="C#" Value="Hashing" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Paused">
       <MemberSignature Language="C#" Value="Paused" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Seeding">
       <MemberSignature Language="C#" Value="Seeding" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Stopped">
       <MemberSignature Language="C#" Value="Stopped" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="Stopping">
       <MemberSignature Language="C#" Value="Stopping" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentState</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member>

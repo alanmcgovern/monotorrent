@@ -3,13 +3,14 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
   </Base>
   <Interfaces />
   <Docs>
-    <summary>To be added.</summary>
+    <summary>This class holds informations about Peers downloading Files</summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -25,74 +26,92 @@
       <MemberSignature Language="C#" Value="public System.Net.IPEndPoint ClientAddress { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Net.IPEndPoint</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The IPEndpoint at which the client is listening for connections at
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Downloaded">
       <MemberSignature Language="C#" Value="public long Downloaded { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The amount of data (in bytes) which the peer has downloaded this session
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DownloadSpeed">
       <MemberSignature Language="C#" Value="public int DownloadSpeed { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The estimated download speed of the peer in bytes/second
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="HasCompleted">
       <MemberSignature Language="C#" Value="public bool HasCompleted { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            True if the peer has completed the torrent
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="LastAnnounceTime">
       <MemberSignature Language="C#" Value="public DateTime LastAnnounceTime { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.DateTime</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The time when the peer last announced at
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PeerId">
       <MemberSignature Language="C#" Value="public string PeerId { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The Id of the client software
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Remaining">
       <MemberSignature Language="C#" Value="public long Remaining { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The amount of data (in bytes) which the peer has to download to complete the torrent
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Uploaded">
       <MemberSignature Language="C#" Value="public long Uploaded { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The amount of data the peer has uploaded this session
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="UploadSpeed">
       <MemberSignature Language="C#" Value="public int UploadSpeed { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The estimated upload speed of the peer in bytes/second
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

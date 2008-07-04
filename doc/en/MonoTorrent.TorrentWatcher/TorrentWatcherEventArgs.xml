@@ -3,13 +3,16 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.EventArgs</BaseTypeName>
   </Base>
   <Interfaces />
   <Docs>
-    <summary>To be added.</summary>
+    <summary>
+            Provides the data needed to handle a TorrentWatcher event
+            </summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -18,18 +21,22 @@
       <MemberSignature Language="C#" Value="public TorrentWatcherEventArgs (string torrentPath);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="torrentPath" Type="System.String" /></Parameters>
-      <Docs><param name="torrentPath">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="torrentPath">To be added.</param><summary>
+            Creates a new TorrentWatcherEventArgs
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="TorrentPath">
       <MemberSignature Language="C#" Value="public string TorrentPath { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The path of the torrent
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
   </Members>
 </Type>

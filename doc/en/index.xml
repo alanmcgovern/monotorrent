@@ -1,9 +1,30 @@
 <Overview>
   <Assemblies>
-    <Assembly Name="MonoTorrent" Version="0.0.0.0">
+    <Assembly Name="MonoTorrent" Version="0.40.0.0">
       <Attributes>
         <Attribute>
           <AttributeName>System.Runtime.CompilerServices.RuntimeCompatibility(WrapNonExceptionThrows=true)</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyTitle("MonoTorrent Common Library")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyProduct("MonoTorrent Common Library")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyInformationalVersion("0.40")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyFileVersion("0.40")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyDescription("MonoTorrent Utilities")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Reflection.AssemblyCopyright("Alan McGovern, Gregor Buguer;  MIT X11 Licensed")</AttributeName>
+        </Attribute>
+        <Attribute>
+          <AttributeName>System.Runtime.CompilerServices.InternalsVisibleTo("MonoTorrent.Tests")</AttributeName>
         </Attribute>
       </Attributes>
     </Assembly>
@@ -37,6 +58,7 @@
       <Type Name="FastResume" />
       <Type Name="FileManager" />
       <Type Name="ListenerException" />
+      <Type Name="ListenerStatus" />
       <Type Name="ListenManager" />
       <Type Name="Logger" />
       <Type Name="ManagerWaitHandle" />

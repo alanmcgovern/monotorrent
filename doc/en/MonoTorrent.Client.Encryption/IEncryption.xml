@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Interfaces />
   <Docs>
@@ -19,8 +20,8 @@
       <MemberSignature Language="C#" Value="public void Decrypt (byte[] buffer);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /></Parameters>
       <Docs><param name="buffer">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -28,8 +29,8 @@
       <MemberSignature Language="C#" Value="public void Decrypt (byte[] buffer, int offset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -37,8 +38,8 @@
       <MemberSignature Language="C#" Value="public void Decrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="src" Type="System.Byte[]" /><Parameter Name="srcOffset" Type="System.Int32" /><Parameter Name="dest" Type="System.Byte[]" /><Parameter Name="destOffset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
       <Docs><param name="src">To be added.</param><param name="srcOffset">To be added.</param><param name="dest">To be added.</param><param name="destOffset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -46,8 +47,8 @@
       <MemberSignature Language="C#" Value="public void Encrypt (byte[] buffer);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /></Parameters>
       <Docs><param name="buffer">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -55,8 +56,8 @@
       <MemberSignature Language="C#" Value="public void Encrypt (byte[] buffer, int offset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -64,8 +65,8 @@
       <MemberSignature Language="C#" Value="public void Encrypt (byte[] src, int srcOffset, byte[] dest, int destOffset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="src" Type="System.Byte[]" /><Parameter Name="srcOffset" Type="System.Int32" /><Parameter Name="dest" Type="System.Byte[]" /><Parameter Name="destOffset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
       <Docs><param name="src">To be added.</param><param name="srcOffset">To be added.</param><param name="dest">To be added.</param><param name="destOffset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>

@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -18,8 +19,8 @@
       <MemberSignature Language="C#" Value="public static MonoTorrent.Client.Tracker.Tracker Create (string protocol, Uri announceUrl);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Tracker.Tracker</ReturnType></ReturnValue>
       <Parameters><Parameter Name="protocol" Type="System.String" /><Parameter Name="announceUrl" Type="System.Uri" /></Parameters>
       <Docs><param name="protocol">To be added.</param><param name="announceUrl">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -27,8 +28,8 @@
       <MemberSignature Language="C#" Value="public static void Register (string protocol, Type trackerType);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="protocol" Type="System.String" /><Parameter Name="trackerType" Type="System.Type" /></Parameters>
       <Docs><param name="protocol">To be added.</param><param name="trackerType">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>

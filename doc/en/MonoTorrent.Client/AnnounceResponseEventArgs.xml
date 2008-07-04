@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Tracker.TrackerResponseEventArgs</BaseTypeName>
@@ -18,16 +19,16 @@
       <MemberSignature Language="C#" Value="public AnnounceResponseEventArgs (MonoTorrent.Client.Tracker.TrackerConnectionID id);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="id" Type="MonoTorrent.Client.Tracker.TrackerConnectionID" /></Parameters>
       <Docs><param name="id">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Peers">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.MonoTorrentCollection&lt;MonoTorrent.Client.Peer&gt; Peers;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.MonoTorrentCollection&lt;MonoTorrent.Client.Peer&gt;</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>

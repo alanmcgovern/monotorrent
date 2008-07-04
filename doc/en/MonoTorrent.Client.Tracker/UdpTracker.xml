@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Tracker.Tracker</BaseTypeName>
@@ -17,8 +18,8 @@
       <MemberSignature Language="C#" Value="public UdpTracker (Uri announceUrl);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="announceUrl" Type="System.Uri" /></Parameters>
       <Docs><param name="announceUrl">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>

@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -13,7 +14,9 @@
     </Interface>
   </Interfaces>
   <Docs>
-    <summary>To be added.</summary>
+    <summary>
+            The class that handles.Message Stream Encryption for a connection
+            </summary>
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
@@ -62,16 +65,16 @@
       <MemberSignature Language="C#" Value="public EncryptedSocket (MonoTorrent.Client.Encryption.EncryptionTypes allowedEncryption);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters><Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" /></Parameters>
       <Docs><param name="allowedEncryption">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="AddPayload">
       <MemberSignature Language="C#" Value="public void AddPayload (byte[] buffer);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /></Parameters>
       <Docs><param name="buffer">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -79,8 +82,8 @@
       <MemberSignature Language="C#" Value="public void AddPayload (byte[] buffer, int offset, int count);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -88,112 +91,131 @@
       <MemberSignature Language="C#" Value="protected MonoTorrent.Common.AsyncResult asyncResult;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.AsyncResult</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="BeginHandshake">
       <MemberSignature Language="C#" Value="public virtual IAsyncResult BeginHandshake (MonoTorrent.Client.Connections.IConnection socket, AsyncCallback callback, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.IAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="socket" Type="MonoTorrent.Client.Connections.IConnection" /><Parameter Name="callback" Type="System.AsyncCallback" /><Parameter Name="state" Type="System.Object" /></Parameters>
-      <Docs><param name="socket">To be added.</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="socket">The socket to perform handshaking with</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>
+            Begins the message stream encryption handshaking process
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="BeginHandshake">
       <MemberSignature Language="C#" Value="public virtual IAsyncResult BeginHandshake (MonoTorrent.Client.Connections.IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.IAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="socket" Type="MonoTorrent.Client.Connections.IConnection" /><Parameter Name="initialBuffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="callback" Type="System.AsyncCallback" /><Parameter Name="state" Type="System.Object" /></Parameters>
-      <Docs><param name="socket">To be added.</param><param name="initialBuffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="socket">The socket to perform handshaking with</param><param name="initialBuffer">Buffer containing soome data already received from the socket</param><param name="offset">Offset to begin reading in initialBuffer</param><param name="count">Number of bytes to read from initialBuffer</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>
+            Begins the message stream encryption handshaking process, beginning with some data
+            already received from the socket.
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Combine">
       <MemberSignature Language="C#" Value="protected byte[] Combine (byte[][] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[][]"><Attributes><Attribute><AttributeName>System.ParamArray</AttributeName></Attribute></Attributes></Parameter></Parameters>
-      <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">Buffers to concatenate</param><summary>
+            Concatenates several byte buffers
+            </summary><returns>Resulting concatenated buffer</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="CreateCryptors">
       <MemberSignature Language="C#" Value="protected void CreateCryptors (string encryptionSalt, string decryptionSalt);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="encryptionSalt" Type="System.String" /><Parameter Name="decryptionSalt" Type="System.String" /></Parameters>
-      <Docs><param name="encryptionSalt">To be added.</param><param name="decryptionSalt">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="encryptionSalt">The salt to calculate the encryption key with</param><param name="decryptionSalt">The salt to calculate the decryption key with</param><summary>
+            Instantiate the cryptors with the keys: Hash(encryptionSalt, S, SKEY) for the encryptor and
+            Hash(encryptionSalt, S, SKEY) for the decryptor.
+            (encryptionSalt should be "keyA" if you're A, "keyB" if you're B, and reverse for decryptionSalt)
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="CryptoProvide">
       <MemberSignature Language="C#" Value="protected byte[] CryptoProvide;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="CryptoSelect">
       <MemberSignature Language="C#" Value="protected byte[] CryptoSelect;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Decrypt">
       <MemberSignature Language="C#" Value="public void Decrypt (byte[] data, int offset, int length);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="length" Type="System.Int32" /></Parameters>
-      <Docs><param name="data">To be added.</param><param name="offset">To be added.</param><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">To be added.</param><param name="offset">Offset to begin decryption</param><param name="length">To be added.</param><summary>
+            Decrypts some data (should only be called after onEncryptorReady)
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Decryptor">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.Encryption.IEncryption Decryptor { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Encryption.IEncryption</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DeLen">
       <MemberSignature Language="C#" Value="protected int DeLen (byte[] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">2 byte buffer</param><summary>
+            Converts a 2-byte big endian integer into an int (reverses operation of Len())
+            </summary><returns>int</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DoDecrypt">
       <MemberSignature Language="C#" Value="protected byte[] DoDecrypt (byte[] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">Buffers with the data to decrypt</param><summary>
+            Decrypts some data with the RC4 encryptor used in handshaking
+            </summary><returns>Buffer with decrypted data</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DoDecrypt">
       <MemberSignature Language="C#" Value="protected void DoDecrypt (byte[] data, int offset, int length);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="length" Type="System.Int32" /></Parameters>
-      <Docs><param name="data">To be added.</param><param name="offset">To be added.</param><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">To be added.</param><param name="offset">Offset to begin decryption</param><param name="length">To be added.</param><summary>
+            Decrypts some data with the RC4 decryptor used in handshaking
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="DoEncrypt">
       <MemberSignature Language="C#" Value="protected byte[] DoEncrypt (byte[] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /></Parameters>
       <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -201,138 +223,150 @@
       <MemberSignature Language="C#" Value="protected void DoEncrypt (byte[] data, int offset, int length);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="length" Type="System.Int32" /></Parameters>
-      <Docs><param name="data">To be added.</param><param name="offset">To be added.</param><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">To be added.</param><param name="offset">Offset to begin encryption</param><param name="length">To be added.</param><summary>
+            Encrypts some data with the RC4 encryptor used in handshaking
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="doneReceiveY">
-      <MemberSignature Language="C#" Value="protected virtual void doneReceiveY (IAsyncResult result);" />
+      <MemberSignature Language="C#" Value="protected virtual void doneReceiveY ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
-      <Docs><param name="result">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Parameters />
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="doneSynchronize">
-      <MemberSignature Language="C#" Value="protected virtual void doneSynchronize (IAsyncResult result);" />
+      <MemberSignature Language="C#" Value="protected virtual void doneSynchronize ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
-      <Docs><param name="result">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Parameters />
+      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Encrypt">
       <MemberSignature Language="C#" Value="public void Encrypt (byte[] data, int offset, int length);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="length" Type="System.Int32" /></Parameters>
-      <Docs><param name="data">To be added.</param><param name="offset">To be added.</param><param name="length">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">To be added.</param><param name="offset">Offset to begin encryption</param><param name="length">To be added.</param><summary>
+            Encrypts some data (should only be called after onEncryptorReady)
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Encryptor">
       <MemberSignature Language="C#" Value="public MonoTorrent.Client.Encryption.IEncryption Encryptor { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Client.Encryption.IEncryption</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndHandshake">
       <MemberSignature Language="C#" Value="public void EndHandshake (IAsyncResult result);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
       <Docs><param name="result">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="fillSynchronizeBytes">
-      <MemberSignature Language="C#" Value="protected void fillSynchronizeBytes (IAsyncResult result);" />
+      <MemberSignature Language="C#" Value="protected void fillSynchronizeBytes (bool succeeded, int count, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
-      <Docs><param name="result">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Parameters><Parameter Name="succeeded" Type="System.Boolean" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="state" Type="System.Object" /></Parameters>
+      <Docs><param name="succeeded">To be added.</param><param name="count">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="GeneratePad">
       <MemberSignature Language="C#" Value="protected byte[] GeneratePad ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Returns a 0 to 512 byte 0-filled pad.
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Hash">
       <MemberSignature Language="C#" Value="protected byte[] Hash (byte[][] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[][]"><Attributes><Attribute><AttributeName>System.ParamArray</AttributeName></Attribute></Attributes></Parameter></Parameters>
-      <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">Buffers to hash</param><summary>
+            Hash some data with SHA1
+            </summary><returns>20-byte hash</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="InitialData">
       <MemberSignature Language="C#" Value="public byte[] InitialData { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="InitialPayload">
       <MemberSignature Language="C#" Value="protected byte[] InitialPayload;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Len">
       <MemberSignature Language="C#" Value="protected byte[] Len (byte[] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Parameters><Parameter Name="data" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="data">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="data">To be added.</param><summary>
+            Returns a 2-byte buffer with the length of data
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PadC">
       <MemberSignature Language="C#" Value="protected byte[] PadC;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PadD">
       <MemberSignature Language="C#" Value="protected byte[] PadD;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Ready">
       <MemberSignature Language="C#" Value="protected void Ready ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="ReceiveMessage">
       <MemberSignature Language="C#" Value="protected void ReceiveMessage (byte[] buffer, int length, AsyncCallback callback);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="length" Type="System.Int32" /><Parameter Name="callback" Type="System.AsyncCallback" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="length">To be added.</param><param name="callback">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -340,42 +374,47 @@
       <MemberSignature Language="C#" Value="protected void ReceiveY ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
+            (Either "1 A-&gt;B: Diffie Hellman Ya, PadA" or "2 B-&gt;A: Diffie Hellman Yb, PadB")
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="RemoteInitialPayload">
       <MemberSignature Language="C#" Value="protected byte[] RemoteInitialPayload;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="S">
       <MemberSignature Language="C#" Value="protected byte[] S;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="SelectCrypto">
       <MemberSignature Language="C#" Value="protected virtual int SelectCrypto (byte[] remoteCryptoBytes, bool replace);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="remoteCryptoBytes" Type="System.Byte[]" /><Parameter Name="replace" Type="System.Boolean" /></Parameters>
-      <Docs><param name="remoteCryptoBytes">To be added.</param><param name="replace">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param><param name="replace">To be added.</param><summary>
+            Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="SendMessage">
       <MemberSignature Language="C#" Value="protected void SendMessage (byte[] toSend);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="toSend" Type="System.Byte[]" /></Parameters>
       <Docs><param name="toSend">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -383,17 +422,20 @@
       <MemberSignature Language="C#" Value="protected void SendY ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Send Y to the remote client, with a random padding that is 0 to 512 bytes long
+            (Either "1 A-&gt;B: Diffie Hellman Ya, PadA" or "2 B-&gt;A: Diffie Hellman Yb, PadB")
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="SetMinCryptoAllowed">
       <MemberSignature Language="C#" Value="protected void SetMinCryptoAllowed (MonoTorrent.Client.Encryption.EncryptionTypes allowedEncryption);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" /></Parameters>
       <Docs><param name="allowedEncryption">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -401,25 +443,29 @@
       <MemberSignature Language="C#" Value="protected byte[] SKEY;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Synchronize">
       <MemberSignature Language="C#" Value="protected void Synchronize (byte[] syncData, int syncStopPoint);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="syncData" Type="System.Byte[]" /><Parameter Name="syncStopPoint" Type="System.Int32" /></Parameters>
-      <Docs><param name="syncData">To be added.</param><param name="syncStopPoint">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="syncData">Buffer with the data to synchronize to</param><param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param><summary>
+            Read data from the socket until the byte string in syncData is read, or until syncStopPoint
+            is reached (in that case, there is an EncryptionError).
+            (Either "3 A-&gt;B: HASH('req1', S)" or "4 B-&gt;A: ENCRYPT(VC)")
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="VerificationConstant">
       <MemberSignature Language="C#" Value="protected static byte[] VerificationConstant;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member>

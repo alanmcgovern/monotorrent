@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Interfaces>
     <Interface>
@@ -28,16 +29,16 @@
       <MemberSignature Language="C#" Value="public byte[] AddressBytes { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="BeginConnect">
       <MemberSignature Language="C#" Value="public IAsyncResult BeginConnect (AsyncCallback callback, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.IAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="callback" Type="System.AsyncCallback" /><Parameter Name="state" Type="System.Object" /></Parameters>
       <Docs><param name="callback">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -45,8 +46,8 @@
       <MemberSignature Language="C#" Value="public IAsyncResult BeginReceive (byte[] buffer, int offset, int count, AsyncCallback callback, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.IAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="callback" Type="System.AsyncCallback" /><Parameter Name="state" Type="System.Object" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -54,8 +55,8 @@
       <MemberSignature Language="C#" Value="public IAsyncResult BeginSend (byte[] buffer, int offset, int count, AsyncCallback callback, object state);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.IAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="buffer" Type="System.Byte[]" /><Parameter Name="offset" Type="System.Int32" /><Parameter Name="count" Type="System.Int32" /><Parameter Name="callback" Type="System.AsyncCallback" /><Parameter Name="state" Type="System.Object" /></Parameters>
       <Docs><param name="buffer">To be added.</param><param name="offset">To be added.</param><param name="count">To be added.</param><param name="callback">To be added.</param><param name="state">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -63,24 +64,24 @@
       <MemberSignature Language="C#" Value="public bool CanReconnect { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Connected">
       <MemberSignature Language="C#" Value="public bool Connected { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndConnect">
       <MemberSignature Language="C#" Value="public void EndConnect (IAsyncResult result);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
       <Docs><param name="result">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -88,16 +89,16 @@
       <MemberSignature Language="C#" Value="public System.Net.EndPoint EndPoint { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Net.EndPoint</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndReceive">
       <MemberSignature Language="C#" Value="public int EndReceive (IAsyncResult result);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
       <Docs><param name="result">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -105,8 +106,8 @@
       <MemberSignature Language="C#" Value="public int EndSend (IAsyncResult result);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
       <Docs><param name="result">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -114,8 +115,8 @@
       <MemberSignature Language="C#" Value="public bool IsIncoming { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>

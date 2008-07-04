@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Enum</BaseTypeName>
@@ -18,24 +19,24 @@
       <MemberSignature Language="C#" Value="Disconnected" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.PeerConnectionEvent</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="IncomingConnectionReceived">
       <MemberSignature Language="C#" Value="IncomingConnectionReceived" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.PeerConnectionEvent</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member><Member MemberName="OutgoingConnectionCreated">
       <MemberSignature Language="C#" Value="OutgoingConnectionCreated" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.PeerConnectionEvent</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary></Docs>
     </Member>

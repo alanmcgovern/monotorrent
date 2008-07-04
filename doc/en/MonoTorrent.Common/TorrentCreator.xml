@@ -3,6 +3,7 @@
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <AssemblyVersion>0.40.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -42,33 +43,35 @@
       <MemberSignature Language="C#" Value="public TorrentCreator ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <Parameters />
       <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="AddCustom">
       <MemberSignature Language="C#" Value="public void AddCustom (MonoTorrent.BEncoding.BEncodedString key, MonoTorrent.BEncoding.BEncodedValue value);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="key" Type="MonoTorrent.BEncoding.BEncodedString" /><Parameter Name="value" Type="MonoTorrent.BEncoding.BEncodedValue" /></Parameters>
-      <Docs><param name="key">To be added.</param><param name="value">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="key">To be added.</param><param name="value">To be added.</param><summary>
+            Adds a custom value to the main bencoded dictionary
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Announces">
       <MemberSignature Language="C#" Value="public System.Collections.Generic.List&lt;System.Collections.Generic.List&lt;string&gt;&gt; Announces { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Collections.Generic.List&lt;System.Collections.Generic.List&lt;System.String&gt;&gt;</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="BeginCreate">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.TorrentCreatorAsyncResult BeginCreate (object asyncState, AsyncCallback callback);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.Common.TorrentCreatorAsyncResult</ReturnType></ReturnValue>
       <Parameters><Parameter Name="asyncState" Type="System.Object" /><Parameter Name="callback" Type="System.AsyncCallback" /></Parameters>
       <Docs><param name="asyncState">To be added.</param><param name="callback">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -76,34 +79,38 @@
       <MemberSignature Language="C#" Value="public string Comment { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Create">
       <MemberSignature Language="C#" Value="public MonoTorrent.BEncoding.BEncodedDictionary Create ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedDictionary</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Creates a Torrent and returns it in it's dictionary form
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Create">
       <MemberSignature Language="C#" Value="public void Create (System.IO.Stream stream);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="stream" Type="System.IO.Stream" /></Parameters>
-      <Docs><param name="stream">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="stream">The stream to write the torrent to</param><summary>
+            Generates a Torrent and writes it to the supplied stream
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Create">
       <MemberSignature Language="C#" Value="public void Create (string path);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="path" Type="System.String" /></Parameters>
       <Docs><param name="path">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -111,25 +118,27 @@
       <MemberSignature Language="C#" Value="public string CreatedBy { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="CreateMultiFileTorrent">
       <MemberSignature Language="C#" Value="protected void CreateMultiFileTorrent (MonoTorrent.BEncoding.BEncodedDictionary dictionary);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="dictionary" Type="MonoTorrent.BEncoding.BEncodedDictionary" /></Parameters>
-      <Docs><param name="dictionary">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="dictionary">To be added.</param><summary>
+            used for creating multi file mode torrents.
+            </summary><returns>the dictionary representing which is stored in the torrent file</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="CreateSingleFileTorrent">
       <MemberSignature Language="C#" Value="protected void CreateSingleFileTorrent (MonoTorrent.BEncoding.BEncodedDictionary dictionary);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="dictionary" Type="MonoTorrent.BEncoding.BEncodedDictionary" /></Parameters>
       <Docs><param name="dictionary">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
@@ -137,108 +146,126 @@
       <MemberSignature Language="C#" Value="public string Encoding { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndCreate">
       <MemberSignature Language="C#" Value="public MonoTorrent.BEncoding.BEncodedDictionary EndCreate (IAsyncResult result);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedDictionary</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /></Parameters>
-      <Docs><param name="result">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="result"></param><summary>
+            Ends the asynchronous torrent creation and returns the torrent in it's dictionary form
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndCreate">
       <MemberSignature Language="C#" Value="public bool EndCreate (IAsyncResult result, System.IO.Stream stream);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /><Parameter Name="stream" Type="System.IO.Stream" /></Parameters>
-      <Docs><param name="result">To be added.</param><param name="stream">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="result"></param><param name="stream">To be added.</param><summary>
+            Ends the asynchronous torrent creation and writes the torrent to the specified stream
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="EndCreate">
       <MemberSignature Language="C#" Value="public bool EndCreate (IAsyncResult result, string path);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="result" Type="System.IAsyncResult" /><Parameter Name="path" Type="System.String" /></Parameters>
-      <Docs><param name="result">To be added.</param><param name="path">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="result"></param><param name="path">To be added.</param><summary>
+            Ends the asynchronous torrent creation and writes the torrent to the specified path
+            </summary><returns /><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="GetSize">
       <MemberSignature Language="C#" Value="public long GetSize ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
       <Parameters />
-      <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            Calculates the approximate size of the final .torrent in bytes
+            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Hashed">
       <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Common.TorrentCreatorEventArgs&gt; Hashed;" />
       <MemberType>Event</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.EventHandler&lt;MonoTorrent.Common.TorrentCreatorEventArgs&gt;</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            This event indicates the progress of the torrent creation and is fired every time a piece is hashed
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="IgnoreHiddenFiles">
       <MemberSignature Language="C#" Value="public bool IgnoreHiddenFiles { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Path">
       <MemberSignature Language="C#" Value="public string Path { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The path from which the torrent can be created. This can be either
+            a file or a folder containing the files to hash.
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PieceLength">
       <MemberSignature Language="C#" Value="public long PieceLength { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            The length of each piece in bytes (range 16384 bytes -&gt; 4MB)
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Private">
       <MemberSignature Language="C#" Value="public bool Private { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
+      <Docs><summary>
+            A private torrent can only accept peers from the tracker and will not share peer data
+            through DHT
+            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Publisher">
       <MemberSignature Language="C#" Value="public string Publisher { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="PublisherUrl">
       <MemberSignature Language="C#" Value="public string PublisherUrl { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="RecommendedPieceSize">
       <MemberSignature Language="C#" Value="public int RecommendedPieceSize ();" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
       <Parameters />
       <Docs><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
@@ -246,17 +273,19 @@
       <MemberSignature Language="C#" Value="public void RemoveCustom (MonoTorrent.BEncoding.BEncodedString key);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
       <Parameters><Parameter Name="key" Type="MonoTorrent.BEncoding.BEncodedString" /></Parameters>
-      <Docs><param name="key">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+      <Docs><param name="key">To be added.</param><summary>
+            Removes a custom value from the main bencoded dictionary.
+            </summary><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="StoreMD5">
       <MemberSignature Language="C#" Value="public bool StoreMD5 { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        <AssemblyVersion>0.0.0.0</AssemblyVersion>
-      </AssemblyInfo>
+        
+      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Docs><summary>To be added.</summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
     </Member>
