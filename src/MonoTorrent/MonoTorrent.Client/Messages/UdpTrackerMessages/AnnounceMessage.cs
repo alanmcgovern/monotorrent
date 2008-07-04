@@ -65,24 +65,15 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             offset += 20;
             peerId = Encoding.ASCII.GetString(buffer, offset, 20);
             offset += 20;
-            downloaded = ReadLong(buffer, offset);
-            offset += 8;
-            left = ReadLong(buffer, offset);
-            offset += 8;
-            uploaded = ReadLong(buffer, offset);
-            offset += 8;
-            torrentEvent = (TorrentEvent)ReadInt(buffer, offset);
-            offset += 4;
-            ip = (uint)ReadInt(buffer, offset);
-            offset += 4;
-            key = (uint)ReadInt(buffer, offset);
-            offset += 4;
-            numWanted = ReadInt(buffer, offset);
-            offset += 4;
-            port = (ushort)ReadShort(buffer, offset);
-            offset += 2;
-            extensions = (ushort)ReadShort(buffer, offset);
-            offset += 2;
+            downloaded = ReadLong(buffer, ref offset);
+            left = ReadLong(buffer, ref offset);
+            uploaded = ReadLong(buffer, ref offset);
+            torrentEvent = (TorrentEvent)ReadInt(buffer, ref offset);
+            ip = (uint)ReadInt(buffer, ref offset);
+            key = (uint)ReadInt(buffer, ref offset);
+            numWanted = ReadInt(buffer, ref offset);
+            port = (ushort)ReadShort(buffer, ref offset);
+            extensions = (ushort)ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
