@@ -38,7 +38,9 @@ namespace MonoTorrent.Tracker
 {       
     public class AnnounceParameters : RequestParameters
     {
-        private static readonly string[] mandatoryFields = { "info_hash", "peer_id", "port", "uploaded", "downloaded", "left", "compact" };
+        private static readonly string[] mandatoryFields = {
+            "info_hash", "peer_id", "port", "uploaded", "downloaded", "left", "compact"
+        };
 
         // FIXME: Expose these as configurable options
         public const int DefaultWanted = 30;

@@ -14,8 +14,8 @@
     </Interface>
   </Interfaces>
   <Docs>
-    <summary>To be added.</summary>
-    <remarks>To be added.</remarks>
+    <summary>Represents a Tracker server</summary>
+    <remarks>This class is essentially the engine which handles all announce/scrape requests and keeps an up-to-date list of active peers.</remarks>
   </Docs>
   <Members>
     
@@ -51,7 +51,7 @@
       <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="trackable" Type="MonoTorrent.Tracker.ITrackable" /></Parameters>
-      <Docs><param name="trackable">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="trackable">The ITrackable which the Tracker should handle announce/scrape requests for</param><summary>Adds an ITrackable to the tracker</summary><returns>False if the Tracker already contained this ITrackable; otherwise, true</returns><remarks>To be added.</remarks></Docs>
     </Member><Member MemberName="Add">
       <MemberSignature Language="C#" Value="public bool Add (MonoTorrent.Tracker.ITrackable trackable, MonoTorrent.Tracker.IPeerComparer comparer);" />
       <MemberType>Method</MemberType>
@@ -60,7 +60,49 @@
       <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
       <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
       <Parameters><Parameter Name="trackable" Type="MonoTorrent.Tracker.ITrackable" /><Parameter Name="comparer" Type="MonoTorrent.Tracker.IPeerComparer" /></Parameters>
-      <Docs><param name="trackable">To be added.</param><param name="comparer">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
+      <Docs><param name="trackable">The ITrackable which the Tracker should handle announce/scrape requests for</param><param name="comparer">An IComparer which can be used to decide when two peers are the same. This comparer is not shared between all ITrackables.</param><summary>Adds an ITrackable to the tracker</summary><returns>False if the Tracker already contained this ITrackable; otherwise, true</returns><remarks>By default peers are compared by their IPAddress. An alternative implementation could check for a specific key/value pair in the query string.
+
+<para>
+</para>
+For example, the query string could contain a 'password' field which can be used to check for equality as follows:
+
+
+<example>
+  <code lang="C#">
+    public class IPAddressComparer : IPeerComparer
+    {
+        public new bool Equals(object left, object right)
+        {
+            if (left == null)
+                return right == null;
+            
+            if (right == null)
+                return false;
+            
+            // We can safely cast to string here as we always
+            // return a string from the GetKey method
+            string leftString = (string)left;
+            string rightString = (string)right;
+            return l.Equals(r);
+        }
+        
+        public int GetHashCode(object obj)
+        {
+            if (obj == null)
+                return 0;
+
+            return obj.GetHashCode();
+        }
+        
+        public object GetKey(AnnounceParameters parameters)
+        {
+            // This is known to always be a string
+            // So in the 'Equals' method we can safely cast to string
+            return parameters.Parameters["password"];
+        }
+    }
+  </code>
+</example></remarks></Docs>
     </Member><Member MemberName="AllowNonCompact">
       <MemberSignature Language="C#" Value="public bool AllowNonCompact { set; get; }" />
       <MemberType>Property</MemberType>

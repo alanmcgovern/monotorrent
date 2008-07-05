@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections.Specialized;
@@ -23,22 +23,13 @@ namespace MonoTorrent.Tracker
             set { handled = value; }
         }
 
-        /// <summary>
-        /// True if the request is properly formed and valid
-        /// </summary>
         public abstract bool IsValid { get; }
         
-        /// <summary>
-        /// The parameters from the original query
-        /// </summary>
         public NameValueCollection Parameters
         {
             get { return parameters; }
         }
 
-        /// <summary>
-        /// The response which will be returned to the peer
-        /// </summary>
         public BEncodedDictionary Response
         {
             get { return response; }

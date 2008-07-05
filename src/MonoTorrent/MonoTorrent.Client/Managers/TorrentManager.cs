@@ -47,9 +47,6 @@ using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
         internal MonoTorrentCollection<PeerId> downloadQueue = new MonoTorrentCollection<PeerId>();
@@ -59,34 +56,17 @@ namespace MonoTorrent.Client
 
         #region Events
 
-        /// <summary>
-        /// Event fired on every peer connect
-        /// </summary>
         public event EventHandler<PeerConnectionEventArgs> PeerConnected;
 
-        /// <summary>
-        /// Event fired on every peer that is disconnected
-        /// </summary>
+
         public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
 
-        /// <summary>
-        /// Event that's fired every time a connection attempt (incoming or outgoing) fails.
-        /// </summary>
         internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
-        /// <summary>
 
-        /// Event that's fired every time new peers are added from a tracker update
-        /// </summary>
         public event EventHandler<PeersAddedEventArgs> PeersFound;
 
-        /// <summary>
-        /// Event that's fired every time a piece is hashed
-        /// </summary>
         public event EventHandler<PieceHashedEventArgs> PieceHashed;
 
-        /// <summary>
-        /// Event that's fired every time the TorrentManagers state changes
-        /// </summary>
         public event EventHandler<TorrentStateChangedEventArgs> TorrentStateChanged;
 
         internal event EventHandler<PeerAddedEventArgs> OnPeerFound;
@@ -132,29 +112,17 @@ namespace MonoTorrent.Client
             get { return this.bitfield.AllTrue; }
         }
 
-
-        /// <summary>
-        /// The ClientEngine this TorrentManager is registered with
-        /// </summary>
         public ClientEngine Engine
         {
             get { return this.engine; }
             internal set { this.engine = value; }
         }
 
-
-        /// <summary>
-        /// The FileManager associated with this torrent
-        /// </summary>
         public FileManager FileManager
         {
             get { return this.fileManager; }
         }
 
-
-        /// <summary>
-        /// Number of completed peer review rounds
-        /// </summary>
         public int PeerReviewRoundsComplete
         {
             get
@@ -167,28 +135,18 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// True if this file has been hashchecked
-        /// </summary>
         public bool HashChecked
         {
             get { return this.hashChecked; }
             internal set { this.hashChecked = value; }
         }
 
-
-        /// <summary>
-        /// The number of times we recieved a piece that failed the hashcheck
-        /// </summary>
         public int HashFails
         {
             get { return this.hashFails; }
         }
 
 
-        /// <summary>
-        /// Records statistics such as Download speed, Upload speed and amount of data uploaded/downloaded
-        /// </summary>
         public ConnectionMonitor Monitor
         {
             get { return this.monitor; }

@@ -36,43 +36,37 @@ using System.Net;
 
 namespace MonoTorrent.Tracker
 {
-    ///<summary>Struct to hold and iterate parameters used by the Scraperequest.</summary> 
     public class ScrapeParameters : RequestParameters
     {
         private List<byte[]> hashs;
         
-        ///<summary>Number of infoHashs.</summary>
         public int Count
         {
             get { return hashs.Count; }
         }
         
-        ///<summary>The first infohash</summary>
         public List<byte[]> InfoHashes
         {
             get { return hashs; }
         }
-
-
+        
         public override bool IsValid
         {
             get { return true; }
         }
-
-
+        
         public ScrapeParameters(NameValueCollection collection, IPAddress address)
             : base(collection, address)
         {
             hashs = new List<byte[]>();
             ParseHashes(Parameters["info_hash"]);
         }
-
-
+        
         private void ParseHashes(string infoHash)
         {
             if (string.IsNullOrEmpty(infoHash))
                 return;
-
+            
             if (infoHash.IndexOf(',') > 0)
             {
                 string[] stringHashs = infoHash.Split(',');
@@ -85,8 +79,6 @@ namespace MonoTorrent.Tracker
             }
         }
 
-
-        ///<summary>Enumerate over the infohashs</summary>
         public IEnumerator GetEnumerator()
         {
             return hashs.GetEnumerator();
