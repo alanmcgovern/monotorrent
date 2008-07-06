@@ -39,6 +39,7 @@ namespace MonoTorrent.Dht.Messages
         protected static readonly BEncodedString IdKey = "id";
         private static readonly BEncodedString ReturnValuesKey = "r";
         internal static readonly BEncodedString ResponseType = "r";
+        protected QueryMessage queryMessage;
 
         public NodeId Id
         {
@@ -56,10 +57,10 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add(IdKey, id.BencodedString());
         }
 
-        protected ResponseMessage(BEncodedDictionary d)
+        protected ResponseMessage(BEncodedDictionary d, QueryMessage m)
             : base(d)
         {
-
+            queryMessage = m;
         }
 
 

@@ -52,8 +52,8 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add(NodesKey, new BEncodedString());
         }
 
-        public FindNodeResponse(BEncodedDictionary d)
-            : base(d)
+        public FindNodeResponse(BEncodedDictionary d, QueryMessage m)
+            : base(d, m)
         {
         }
 

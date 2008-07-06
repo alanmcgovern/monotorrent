@@ -95,8 +95,8 @@ namespace MonoTorrent.Dht.Messages
             Parameters.Add(TokenKey, token);
         }
 
-        public GetPeersResponse(BEncodedDictionary d)
-            : base(d)
+        public GetPeersResponse(BEncodedDictionary d, QueryMessage m)
+            : base(d, m)
         {
 
         }
@@ -105,8 +105,33 @@ namespace MonoTorrent.Dht.Messages
         {
             if (!base.Handle(engine, source))
                 return false;
-
-            // FIXME: Do the rest
+            
+			//null have ever been check in base.Handle
+			Node node = engine.RoutingTable.FindNode(Id);
+            
+			node.Token = Token;
+			if (Parameters.ContainsKey(ValuesKey)) 
+			{
+                NodeId infoHash = ((GetPeers)queryMessage).InfoHash;
+                if (!engine.Torrents.ContainsKey(infoHash))
+                    engine.Torrents.Add(infoHash,new List<Node>());
+                
+                List<Node> peers = engine.Torrents[infoHash];
+                
+			    foreach(BEncodedValue val in Values)
+			    {
+				    Node n = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
+                    peers.Add(n);
+			    }
+                engine.RaisePeersFound(peers);
+			}
+			else if (Parameters.ContainsKey(NodesKey)) 
+			{
+                 byte[] b = Nodes.TextBytes;
+                 for (int i = 0; (i + 26) <= b.Length; i += 26)
+                     engine.Add(Node.FromCompactNode(b, i));
+                //TODO
+			}
             return true;
         }
     }

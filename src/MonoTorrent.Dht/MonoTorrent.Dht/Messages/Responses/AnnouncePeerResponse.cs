@@ -44,8 +44,8 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public AnnouncePeerResponse(BEncodedDictionary d)
-            : base(d)
+        public AnnouncePeerResponse(BEncodedDictionary d, QueryMessage m)
+            : base(d, m)
         {
 
         }
