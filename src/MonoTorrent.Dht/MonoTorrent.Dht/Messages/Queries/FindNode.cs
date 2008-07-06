@@ -40,7 +40,7 @@ namespace MonoTorrent.Dht.Messages
     {
         private static BEncodedString TargetKey = "target";
         private static BEncodedString QueryName = "find_node";
-        private static Creator responseCreator = delegate(BEncodedDictionary d) { return new FindNodeResponse(d); };
+        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new FindNodeResponse(d, m); };
 
         public NodeId Target
         {

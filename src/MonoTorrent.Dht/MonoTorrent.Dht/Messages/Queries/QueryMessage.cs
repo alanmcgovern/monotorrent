@@ -41,14 +41,14 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString QueryArgumentsKey = "a";
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
-        private Creator responseCreator;
+        private ResponseCreator responseCreator;
 
         internal NodeId Id
         {
             get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
         }
 
-        internal Creator ResponseCreator
+        internal ResponseCreator ResponseCreator
         {
             get { return responseCreator; }
             private set { responseCreator = value; }
@@ -59,13 +59,13 @@ namespace MonoTorrent.Dht.Messages
             get { return (BEncodedDictionary)properties[QueryArgumentsKey]; }
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, Creator responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, ResponseCreator responseCreator)
             : this(id, queryName, new BEncodedDictionary(), responseCreator)
         {
 
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, Creator responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, ResponseCreator responseCreator)
             : base(QueryType)
         {
             properties.Add(QueryNameKey, queryName);
@@ -75,7 +75,7 @@ namespace MonoTorrent.Dht.Messages
             ResponseCreator = responseCreator;
         }
 
-        protected QueryMessage(BEncodedDictionary d, Creator responseCreator)
+        protected QueryMessage(BEncodedDictionary d, ResponseCreator responseCreator)
             : base(d)
         {
             ResponseCreator = responseCreator;

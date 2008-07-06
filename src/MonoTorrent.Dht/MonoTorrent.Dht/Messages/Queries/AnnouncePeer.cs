@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht.Messages
         private static BEncodedString QueryName = "announce_peer";
         private static BEncodedString PortKey = "port";
         private static BEncodedString TokenKey = "token";
-        private static Creator responseCreator = delegate(BEncodedDictionary d) { return new AnnouncePeerResponse(d); };
+        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new AnnouncePeerResponse(d, m); };
 
         internal NodeId InfoHash
         {
@@ -83,8 +83,10 @@ namespace MonoTorrent.Dht.Messages
             if (!engine.Torrents.ContainsKey(InfoHash))
                 engine.Torrents.Add(InfoHash, new List<Node>());
 
-            // FIXME: We need to verify the Token before adding the peer
-            engine.Torrents[InfoHash].Add(engine.RoutingTable.FindNode(Id));
+            Node n = engine.RoutingTable.FindNode(Id);
+            
+            if (engine.TokenManager.VerifyToken(n, Token))
+                engine.Torrents[InfoHash].Add(n);
             return true;
         }
     }

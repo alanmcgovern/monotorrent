@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht.Messages
     internal class Ping : QueryMessage
     {
         private static BEncodedString QueryName = "ping";
-        private static Creator responseCreator = delegate(BEncodedDictionary d) { return new PingResponse(d); };
+        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new PingResponse(d, m); };
 
         public Ping(NodeId id)
             :base(id, QueryName, responseCreator)

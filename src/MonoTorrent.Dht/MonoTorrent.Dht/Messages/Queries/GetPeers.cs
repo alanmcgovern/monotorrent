@@ -40,7 +40,7 @@ namespace MonoTorrent.Dht.Messages
     {
         private static BEncodedString InfoHashKey = "info_hash";
         private static BEncodedString QueryName = "get_peers";
-        private static Creator responseCreator = delegate(BEncodedDictionary d) { return new GetPeersResponse(d); };
+        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new GetPeersResponse(d, m); };
 
         public NodeId InfoHash
         {
@@ -64,14 +64,15 @@ namespace MonoTorrent.Dht.Messages
             if (!base.Handle(engine, source))
                 return false;
 
-            // FIXME: Need a class which handles token generation properly
-            GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, "token!");
+            Node node = engine.RoutingTable.FindNode(Id);
+            BEncodedString token = engine.TokenManager.GenerateToken(node);
+            GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, token);
             response.TransactionId = TransactionId;
             if (engine.Torrents.ContainsKey(InfoHash))
             {
                 BEncodedList list = new BEncodedList();
-                foreach (Node node in engine.Torrents[InfoHash])
-                    list.Add(node.CompactPort());
+                foreach (Node n in engine.Torrents[InfoHash])
+                    list.Add(n.CompactPort());
                 response.Values = list;
             }
             else
