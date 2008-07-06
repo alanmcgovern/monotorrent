@@ -36,7 +36,8 @@ using MonoTorrent.BEncoding;
 namespace MonoTorrent.Dht.Messages
 {
     delegate Message Creator(BEncodedDictionary dictionary);
-
+    delegate Message ResponseCreator(BEncodedDictionary dictionary, QueryMessage message);
+    
     internal static class MessageFactory
     {
         private static BEncodedString IdKey = "id";
@@ -52,12 +53,12 @@ namespace MonoTorrent.Dht.Messages
             queryDecoders.Add("ping",          delegate(BEncodedDictionary d) { return new Ping(d); });
         }
 
-        private static Dictionary<BEncodedString, Creator> messages = new Dictionary<BEncodedString, Creator>();
+        private static Dictionary<BEncodedString, QueryMessage> messages = new Dictionary<BEncodedString, QueryMessage>();
         private static Dictionary<BEncodedString, Creator> queryDecoders = new Dictionary<BEncodedString, Creator>();
 
         public static void RegisterSend(QueryMessage message)
         {
-            messages.Add(message.TransactionId, message.ResponseCreator);
+            messages.Add(message.TransactionId, message);
         }
 
         public static void UnregisterSend(QueryMessage message)
@@ -67,7 +68,7 @@ namespace MonoTorrent.Dht.Messages
 
         public static Message DecodeMessage(BEncodedDictionary dictionary)
         {
-            Creator creator = null;
+            QueryMessage msg = null;
 
             if (dictionary[MessageTypeKey].Equals(QueryMessage.QueryType))
             {
@@ -80,12 +81,12 @@ namespace MonoTorrent.Dht.Messages
             else
             {
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
-                if (!messages.TryGetValue(key, out creator))
+                if (!messages.TryGetValue(key, out msg))
                     throw new Exception("FIX THIS EXCEPTION");
                 messages.Remove(key);
             }
 
-            return creator(dictionary);
+            return msg.ResponseCreator(dictionary, msg);
         }
     }
 }

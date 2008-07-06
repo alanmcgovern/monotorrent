@@ -21,6 +21,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <OutputType>Library</OutputType>
+    <AssemblyName>MonoTorrent.Dht</AssemblyName>
+    <RootNamespace>MonoTorrent.Dht</RootNamespace>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,9 +33,15 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <OutputType>Library</OutputType>
+    <AssemblyName>MonoTorrent.Dht</AssemblyName>
+    <DebugSymbols>true</DebugSymbols>
+    <RootNamespace>MonoTorrent.Dht</RootNamespace>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MonoTorrent, Version=0.40.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MonoTorrent, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\MonoTorrent\bin\Debug\MonoTorrent.dll</HintPath>
     </Reference>
@@ -66,6 +76,8 @@
     <Compile Include="RoutingTable\RoutingTable.cs" />
     <Compile Include="State.cs" />
     <Compile Include="TransactionId.cs" />
+    <Compile Include="Nodes\TokenManager.cs" />
+    <Compile Include="EventArgs\PeersFoundEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

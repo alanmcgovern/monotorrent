@@ -40,25 +40,36 @@ using System.IO;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Client.Tasks;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Dht
 {
 	public class DhtEngine
 	{
         internal static MainLoop MainLoop = new MainLoop();
+        
         public event EventHandler StateChanged;
-
+        
+        public event EventHandler<PeersFoundEventArgs> PeersFound;
+        
         State state = State.NotReady;
         MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
         int timeout;
         Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
+        TokenManager tokenManager;
 
+        
         internal MessageLoop MessageLoop
         {
             get { return messageLoop; }
         }
 
+        internal TokenManager TokenManager
+        {
+            get { return tokenManager; }
+        }
+        
         internal RoutingTable RoutingTable
         {
             get { return table; }
@@ -84,6 +95,7 @@ namespace MonoTorrent.Dht
         {
             messageLoop = new MessageLoop(this, listener);
             timeout = 20 * 1000; // 20 second message timeout by default
+            tokenManager = new TokenManager();
         }
 
         public void Add(IEnumerable<Node> nodes)
@@ -122,6 +134,12 @@ namespace MonoTorrent.Dht
             if (StateChanged != null)
                 StateChanged(this, EventArgs.Empty);
         }
+        
+        internal void RaisePeersFound(List<Node> peers)
+        {
+            if (PeersFound != null)
+                PeersFound(this, new PeersFoundEventArgs(peers));
+        }
 
         public byte[] SaveNodes()
         {
@@ -152,6 +170,16 @@ namespace MonoTorrent.Dht
             });
         }
 
+        public void GetPeers(byte[] infoHash)
+        {
+            NodeId target = new NodeId(infoHash);
+            IList<Node> nodes = table.GetClosest(target);
+            foreach(Node n in nodes)
+            {
+                messageLoop.EnqueueSend(new GetPeers(RoutingTable.LocalNode.Id, target), n);
+            }            
+        }
+        
         /*
         public void GetNodes(Node node)
         {
