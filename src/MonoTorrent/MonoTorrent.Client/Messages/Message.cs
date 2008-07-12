@@ -43,8 +43,9 @@ namespace MonoTorrent.Client.Messages
 
         static public short ReadShort(byte[] buffer, ref int offset)
         {
+            short ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, offset));
             offset += 2;
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, offset));
+            return ret;
         }
 
         static public int ReadInt(byte[] buffer, int offset)
@@ -54,8 +55,9 @@ namespace MonoTorrent.Client.Messages
 
         static public int ReadInt(byte[] buffer, ref int offset)
         {
+            int ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
             offset += 4;
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
+            return ret;
         }
 
         static public long ReadLong(byte[] buffer, int offset)
@@ -65,8 +67,9 @@ namespace MonoTorrent.Client.Messages
 
         static public long ReadLong(byte[] buffer, ref int offset)
         {
+            long ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, offset));
             offset += 8;
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, offset));
+            return ret;
         }
 
         static public int Write(byte[] buffer, int offset, byte value)
