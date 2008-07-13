@@ -34,23 +34,40 @@ using System.Text.RegularExpressions;
 
 namespace MonoTorrent.Common
 {
+    /// <summary>
+    /// BitTorrrent 
+    /// </summary>
+    /// <remarks>
+    /// Good place for information about BT peer ID conventions:
+    ///     http://wiki.theory.org/BitTorrentSpecification
+    ///     http://transmission.m0k.org/trac/browser/trunk/libtransmission/clients.c (hello Transmission authors!) :)
+    ///     http://rufus.cvs.sourceforge.net/rufus/Rufus/g3peerid.py?view=log (for older clients)
+    ///     http://shareaza.svn.sourceforge.net/viewvc/shareaza/trunk/shareaza/BTClient.cpp?view=markup
+    ///     http://libtorrent.rakshasa.no/browser/trunk/libtorrent/src/torrent/peer/client_list.cc
+    /// </remarks>
     public enum Client
     {
         ABC,
+        Ares,
+        Artemis,
         Artic,
-        BitPump,
+        Avicora,
         Azureus,
+        BitPump,
         BitBuddy,
         BitComet,
         Bitflu,
         BitLord,
         BitsOnWheels,
+        BTSlave,
+        BitRocket,
         BitTornado,
         BitTorrent,
-        BTSlave,
-        BittorrentX,
+        BitTorrentX,
+        BTG,
         EnhancedCTorrent,
         CTorrent,
+        DelugeTorrent,
         EBit,
         ElectricSheep,
         KTorrent,
@@ -78,36 +95,31 @@ namespace MonoTorrent.Common
         Unknown,
         uTorrent,
         UPnPNatBitTorrent,
+        Vuze,
         XanTorrent,
         XBTClient,
         ZipTorrent
     }
 
+    /// <summary>
+    /// Class representing the various and sundry BitTorrent Clients lurking about on the web
+    /// </summary>
     public struct Software
     {
         private Client client;
         private string peerId;
         private string shortId;
 
-        /// <summary>
-        /// The name of the torrent software being used
-        /// </summary>
         public Client Client
         {
             get { return this.client; }
         }
 
-        /// <summary>
-        /// The peer's ID
-        /// </summary>
         internal string PeerId
         {
             get { return this.peerId; }
         }
 
-        /// <summary>
-        /// A shortened version of the peers ID
-        /// </summary>
         public string ShortId
         {
             get { return this.shortId; }
@@ -122,7 +134,7 @@ namespace MonoTorrent.Common
             this.peerId = peerId;
 
             #region Standard style peers
-            r = new Regex(@"-(([A-Za-z]{2})\d{4})-*");
+            r = new Regex(@"-(([A-Za-z\~]{2})\d{4})-*");
             if (r.IsMatch(peerId))
             {
                 m = r.Match(peerId);
@@ -130,18 +142,25 @@ namespace MonoTorrent.Common
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
+                    case ("AG"):
+                    case ("A~"):
+                        this.client = Common.Client.Ares;
+                        break;
                     case ("AR"):
                         this.client = Common.Client.Artic;
                         break;
-
+                    case ("AT"):
+                        this.client = Common.Client.Artemis;
+                        break;
                     case ("AX"):
                         this.client = Common.Client.BitPump;
                         break;
-
+                    case ("AV"):
+                        this.client = Common.Client.Avicora;
+                        break;
                     case ("AZ"):
                         this.client = Common.Client.Azureus;
                         break;
-
                     case ("BB"):
                         this.client = Common.Client.BitBuddy;
                         break;
@@ -159,7 +178,7 @@ namespace MonoTorrent.Common
                         break;
 
                     case ("BX"):
-                        this.client = Common.Client.BittorrentX;
+                        this.client = Common.Client.BitTorrentX;
                         break;
 
                     case ("CD"):
@@ -168,6 +187,10 @@ namespace MonoTorrent.Common
 
                     case ("CT"):
                         this.client = Common.Client.CTorrent;
+                        break;
+
+                    case ("DE"):
+                        this.client = Common.Client.DelugeTorrent;
                         break;
 
                     case ("EB"):
