@@ -42,7 +42,14 @@ namespace MonoTorrent.Dht
         private DateTime LastSecretGeneration;
         private Random random;
         private SHA1CryptoServiceProvider sha1;
-        
+        private int timeout = 5 * 60;                   // 5 min timeout by default
+
+        internal int Timeout
+        {
+            get { return timeout; }
+            set { timeout = value; }
+        }
+
         public TokenManager()
         {
             sha1 = new SHA1CryptoServiceProvider();
@@ -55,13 +62,6 @@ namespace MonoTorrent.Dht
         }
         public BEncodedString GenerateToken(Node node)
         {
-            //refresh secret needed
-            if (LastSecretGeneration.AddMinutes(5) < DateTime.Now)
-            {
-                LastSecretGeneration = DateTime.Now;
-                secret.CopyTo(previousSecret,0);
-                random.NextBytes(secret);
-            }
             return GetToken(node, secret);
         }
 
@@ -72,6 +72,14 @@ namespace MonoTorrent.Dht
         
         private BEncodedString GetToken(Node node, byte[] s)
         {
+            //refresh secret needed
+            if (LastSecretGeneration.AddSeconds(timeout) < DateTime.Now)
+            {
+                LastSecretGeneration = DateTime.Now;
+                secret.CopyTo(previousSecret, 0);
+                random.NextBytes(secret);
+            }
+
             byte[] n = node.CompactPort().TextBytes;
             sha1.Initialize();
             sha1.TransformBlock(n, 0, n.Length, n, 0);

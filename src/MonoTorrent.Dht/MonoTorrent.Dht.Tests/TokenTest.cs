@@ -49,6 +49,7 @@ namespace MonoTorrent.Dht.MessageTests
         public void CheckTokenGenerator()
         {
             TokenManager m = new TokenManager();
+            m.Timeout = 1; // 1 second timeout for testing purposes
             Node n = new Node(NodeId.Create(),new IPEndPoint(IPAddress.Parse("127.0.0.1"), 25));
             Node n2 = new Node(NodeId.Create(),new IPEndPoint(IPAddress.Parse("127.0.0.2"), 25));
             BEncodedString s = m.GenerateToken(n);
@@ -56,8 +57,14 @@ namespace MonoTorrent.Dht.MessageTests
 
             Assert.AreEqual(s, s2, "#1");
 
-            Assert.IsTrue(m.VerifyToken(n, s),"#2");//ToolBoxByteMatch seems to fail...
-            Assert.IsFalse(m.VerifyToken(n2, s),"#3");            
+            Assert.IsTrue(m.VerifyToken(n, s),"#2");
+            Assert.IsFalse(m.VerifyToken(n2, s),"#3");
+
+            System.Threading.Thread.Sleep(1200);
+            Assert.IsTrue(m.VerifyToken(n, s), "#4");
+
+            System.Threading.Thread.Sleep(1200);
+            Assert.IsFalse(m.VerifyToken(n, s), "#5");
         }
     }
 }
