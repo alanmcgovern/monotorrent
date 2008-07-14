@@ -13,7 +13,7 @@ namespace MonoTorrent.Dht.Tests
         [SetUp]
         public void Setup()
         {
-            NodeId[] nodes = new NodeId[20];
+            nodes = new NodeId[20];
             for (int i = 0; i < nodes.Length; i++)
             {
                 byte[] id = new byte[20];
@@ -26,9 +26,26 @@ namespace MonoTorrent.Dht.Tests
         [Test]
         public void GreaterThanTest()
         {
-            Assert.Less(nodes[0], nodes[1]);
-            Assert.Greater(nodes[1], nodes[2]);
-            Assert.Less(nodes[15], nodes[10]);
+            Assert.Less(nodes[0], nodes[1], "#1");
+            Assert.Greater(nodes[1], nodes[0], "#2");
+            Assert.IsTrue(nodes[0] == nodes[0], "#3");
+            Assert.AreEqual(nodes[0], nodes[0], "#4");
+            Assert.Greater(nodes[2], nodes[1], "#5");
+            Assert.Less(nodes[15], nodes[10], "#6");
+        }
+
+        [Test]
+        public void XorTest()
+        {
+            NodeId zero = new NodeId(new byte[20]);
+
+            byte[] b = new byte[20]; b[0] = 1;
+            NodeId one = new NodeId(b);
+
+            NodeId r = one.Xor(zero);
+            Assert.AreEqual(one, r, "#1");
+            Assert.IsTrue(one > zero, "#2");
+            Assert.Greater(one, zero, "#3");
         }
     }
 }

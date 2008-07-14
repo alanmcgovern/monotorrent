@@ -92,6 +92,13 @@ namespace MonoTorrent.Dht
             data = new uint[] { ui };
         }
 
+        public BigInteger(uint[] ui)
+        {
+            data = ui;
+            length = (uint)data.Length;
+            Normalize();
+        }
+
         public BigInteger(Sign sign, uint len)
         {
             this.data = new uint[len];
@@ -1382,17 +1389,13 @@ namespace MonoTorrent.Dht
 
         internal BigInteger Xor(BigInteger other)
         {
-            BigInteger b = new BigInteger(new byte[20]);
-                      
-            int len = (int)Math.Min(length, other.length);
+            int len = (int)Math.Min(this.data.Length, other.data.Length);
+            uint[] result = new uint[len];
 
             for (int i = 0; i < len; i++)
-                b.data[i] = this.data[i] ^ other.data[i];
-            
-            b.length=5;// 20/4
-            b.Normalize();
-      
-            return b;
+                result[i] = this.data[i] ^ other.data[i];
+
+            return new BigInteger(result);
         }
         
         internal static BigInteger Pow(BigInteger value, uint p)
