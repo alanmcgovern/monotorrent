@@ -40,11 +40,11 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class TokenTest
     {
-        static void Main(string[] args)
-        {
-            TokenTest t = new TokenTest();
-            t.CheckTokenGenerator();
-        }
+        //static void Main(string[] args)
+        //{
+        //    TokenTest t = new TokenTest();
+        //    t.CheckTokenGenerator();
+        //}
         [Test]
         public void CheckTokenGenerator()
         {

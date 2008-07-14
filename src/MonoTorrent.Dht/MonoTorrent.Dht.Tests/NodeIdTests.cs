@@ -24,7 +24,7 @@ namespace MonoTorrent.Dht.Tests
         }
 
         [Test]
-        public void GreaterThanTest()
+        public void GreaterLessThanTest()
         {
             Assert.Less(nodes[0], nodes[1], "#1");
             Assert.Greater(nodes[1], nodes[0], "#2");
@@ -46,6 +46,19 @@ namespace MonoTorrent.Dht.Tests
             Assert.AreEqual(one, r, "#1");
             Assert.IsTrue(one > zero, "#2");
             Assert.Greater(one, zero, "#3");
+
+            NodeId z = one.Xor(r);
+            Assert.AreEqual(zero, z, "#4");
+        }
+
+        [Test]
+        public void CompareTest()
+        {
+            NodeId one = new NodeId(1);
+            NodeId two = new NodeId(2);
+            Assert.IsTrue(one.CompareTo(two) < 0);
+            Assert.IsTrue(two.CompareTo(one) > 0);
+            Assert.IsTrue(one.CompareTo(one) == 0);
         }
     }
 }

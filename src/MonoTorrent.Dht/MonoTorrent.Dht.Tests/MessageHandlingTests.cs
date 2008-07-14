@@ -50,6 +50,7 @@ namespace MonoTorrent.Dht.Tests
             response.TransactionId = transactionId;
             listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
             System.Threading.Thread.Sleep(10);
+            node = engine.RoutingTable.FindNode(node.Id);
             Assert.Less(lastSeen, node.LastSeen, "#2");
             Assert.AreEqual(NodeState.Good, node.State, "#3");
         }
