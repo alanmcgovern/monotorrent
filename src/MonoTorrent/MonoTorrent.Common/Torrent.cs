@@ -796,10 +796,15 @@ namespace MonoTorrent.Common
                         break;
 
                     case ("url-list"):
-                        foreach (BEncodedString str in ((BEncodedList)keypair.Value))
+                        if (keypair.Value is BEncodedString)
                         {
-                            t.GetRightHttpSeeds.Add (str.Text);
-                        }                        
+                            t.getRightHttpSeeds.Add(((BEncodedString)keypair.Value).Text);
+                        }
+                        else if (keypair.Value is BEncodedList)
+                        {
+                            foreach (BEncodedString str in (BEncodedList)keypair.Value)
+                                t.GetRightHttpSeeds.Add(str.Text);
+                        }
                         break;
 
                     default:
