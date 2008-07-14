@@ -35,7 +35,7 @@ using System.Net;
 using MonoTorrent.Dht;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Dht.MessageTests
+namespace MonoTorrent.Dht.Tests
 {
     [TestFixture]
     public class TokenTest
