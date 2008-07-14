@@ -58,6 +58,7 @@ namespace MonoTorrent.Dht
             //refresh secret needed
             if (LastSecretGeneration.AddMinutes(5) < DateTime.Now)
             {
+                LastSecretGeneration = DateTime.Now;
                 secret.CopyTo(previousSecret,0);
                 random.NextBytes(secret);
             }
@@ -66,17 +67,17 @@ namespace MonoTorrent.Dht
 
         public bool VerifyToken(Node node, BEncodedString token)
         {
-            return (token == GetToken(node, secret) || token == GetToken(node, previousSecret));// thanks to Equals override
+            return (token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret)));
         }
         
         private BEncodedString GetToken(Node node, byte[] s)
         {
-            byte[] addr = node.EndPoint.Address.GetAddressBytes();
-            byte[] result = new byte[addr.Length + s.Length];
-            Array.Copy(addr, result, addr.Length);
-            Array.Copy(s, result, s.Length);
-            result = sha1.ComputeHash(result);
-            return new BEncodedString(result);
+            byte[] n = node.CompactPort().TextBytes;
+            sha1.Initialize();
+            sha1.TransformBlock(n, 0, n.Length, n, 0);
+            sha1.TransformFinalBlock(s, 0, s.Length);
+
+            return (BEncodedString)sha1.Hash;
         }
         /*public void PrintBuff(string str, byte[] bb)
         {

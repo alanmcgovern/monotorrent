@@ -40,15 +40,24 @@ namespace MonoTorrent.Dht.MessageTests
     [TestFixture]
     public class TokenTest
     {
+        static void Main(string[] args)
+        {
+            TokenTest t = new TokenTest();
+            t.CheckTokenGenerator();
+        }
         [Test]
         public void CheckTokenGenerator()
         {
             TokenManager m = new TokenManager();
-            Node n = new Node(NodeId.Create(),new IPEndPoint(new IPAddress(new Byte[] {0x7F,0x00,0x00,0x01}), 25));
-            Node n2 = new Node(NodeId.Create(),new IPEndPoint(new IPAddress(new Byte[] {0x7F,0x00,0x00,0x02}), 25));
+            Node n = new Node(NodeId.Create(),new IPEndPoint(IPAddress.Parse("127.0.0.1"), 25));
+            Node n2 = new Node(NodeId.Create(),new IPEndPoint(IPAddress.Parse("127.0.0.2"), 25));
             BEncodedString s = m.GenerateToken(n);
-            Assert.IsTrue(m.VerifyToken(n, s),"#1");//ToolBoxByteMatch seems to fail...
-            Assert.IsFalse(m.VerifyToken(n2, s),"#2");            
+            BEncodedString s2 = m.GenerateToken(n);
+
+            Assert.AreEqual(s, s2, "#1");
+
+            Assert.IsTrue(m.VerifyToken(n, s),"#2");//ToolBoxByteMatch seems to fail...
+            Assert.IsFalse(m.VerifyToken(n2, s),"#3");            
         }
     }
 }
