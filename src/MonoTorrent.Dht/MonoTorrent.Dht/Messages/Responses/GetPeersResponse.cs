@@ -42,6 +42,11 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString TokenKey = "token";
         private static readonly BEncodedString ValuesKey = "values";
 
+        private GetPeers InitialMessage
+        {
+            get { return (GetPeers)queryMessage; }
+        }
+
         public BEncodedString Token
         {
             get { return (BEncodedString)Parameters[TokenKey]; }
@@ -52,17 +57,17 @@ namespace MonoTorrent.Dht.Messages
         {
             get
             {
-                if(Parameters.ContainsKey(ValuesKey))
+                if (Parameters.ContainsKey(ValuesKey))
                     throw new InvalidOperationException("Already contains the values key");
-                if(!Parameters.ContainsKey(NodesKey))
+                if (!Parameters.ContainsKey(NodesKey))
                     Parameters.Add(NodesKey, null);
                 return (BEncodedString)Parameters[NodesKey];
             }
             set
             {
-                if(Parameters.ContainsKey(ValuesKey))
+                if (Parameters.ContainsKey(ValuesKey))
                     throw new InvalidOperationException("Already contains the values key");
-                if(!Parameters.ContainsKey(NodesKey))
+                if (!Parameters.ContainsKey(NodesKey))
                     Parameters.Add(NodesKey, null);
                 Parameters[NodesKey] = value;
             }
@@ -72,7 +77,7 @@ namespace MonoTorrent.Dht.Messages
         {
             get
             {
-                if(Parameters.ContainsKey(NodesKey))
+                if (Parameters.ContainsKey(NodesKey))
                     throw new InvalidOperationException("Already contains the nodes key");
                 if (!Parameters.ContainsKey(ValuesKey))
                     Parameters.Add(ValuesKey, new BEncodedList());
@@ -90,7 +95,7 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public GetPeersResponse(NodeId id, BEncodedString token)
-            :base (id)
+            : base(id)
         {
             Parameters.Add(TokenKey, token);
         }
@@ -105,33 +110,45 @@ namespace MonoTorrent.Dht.Messages
         {
             if (!base.Handle(engine, source))
                 return false;
-            
-			//null have ever been check in base.Handle
-			Node node = engine.RoutingTable.FindNode(Id);
-            
-			node.Token = Token;
-			if (Parameters.ContainsKey(ValuesKey)) 
-			{
-                NodeId infoHash = ((GetPeers)queryMessage).InfoHash;
+            Console.WriteLine("getpeerresponse.handle start");
+            //null have ever been check in base.Handle
+            Node node = engine.RoutingTable.FindNode(Id);
+
+            node.Token = Token;
+            if (Parameters.ContainsKey(ValuesKey))
+            {
+                NodeId infoHash = InitialMessage.InfoHash;
                 if (!engine.Torrents.ContainsKey(infoHash))
-                    engine.Torrents.Add(infoHash,new List<Node>());
-                
+                    engine.Torrents.Add(infoHash, new List<Node>());
+
                 List<Node> peers = engine.Torrents[infoHash];
-                
-			    foreach(BEncodedValue val in Values)
-			    {
-				    Node n = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
-                    peers.Add(n);
-			    }
-                engine.RaisePeersFound(peers);
-			}
-			else if (Parameters.ContainsKey(NodesKey)) 
-			{
-                 byte[] b = Nodes.TextBytes;
-                 for (int i = 0; (i + 26) <= b.Length; i += 26)
-                     engine.Add(Node.FromCompactNode(b, i));
-                //TODO
-			}
+
+                foreach (BEncodedValue val in Values)
+                {
+                    Node p = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
+                    peers.Add(p);
+                }
+                AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, node.Token);
+                engine.MessageLoop.EnqueueSend(apmsg, node);
+                Console.WriteLine("getpeerresponse.peer");
+                engine.RaisePeersFound(((GetPeers)queryMessage).InfoHash, new List<Node>(peers));//make a copy
+            }
+            else if (Parameters.ContainsKey(NodesKey))
+            {
+                byte[] b = Nodes.TextBytes;
+                for (int i = 0; (i + 26) <= b.Length; i += 26)
+                {
+                    Node n = Node.FromCompactNode(b, i);
+                    if (engine.RoutingTable.FindNode(n.Id) == null)
+                    {
+                        engine.Add(n);
+                        GetPeers gpmsg = new GetPeers(engine.RoutingTable.LocalNode.Id, InitialMessage.InfoHash);
+                        engine.MessageLoop.EnqueueSend(gpmsg, n);
+                    }
+                }
+                Console.WriteLine("getpeerresponse.nodes");
+            }
+            Console.WriteLine("getpeerresponse.handle stop");
             return true;
         }
     }

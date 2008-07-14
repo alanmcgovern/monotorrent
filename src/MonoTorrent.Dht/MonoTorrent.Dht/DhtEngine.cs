@@ -44,6 +44,14 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Dht
 {
+    public enum eErrorCode : int
+    {
+        GenericError = 201,
+        ServerError = 202,
+        ProtocolError = 203,// malformed packet, invalid arguments, or bad token
+        MethodUnknown = 204//Method Unknown
+    }
+    
 	public class DhtEngine
 	{
         internal static MainLoop MainLoop = new MainLoop();
@@ -52,6 +60,7 @@ namespace MonoTorrent.Dht
         
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         
+        int port = 6881;
         State state = State.NotReady;
         MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
@@ -59,6 +68,11 @@ namespace MonoTorrent.Dht
         Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
         TokenManager tokenManager;
 
+        public int Port
+        {
+            get { return port; }
+            set { port = value; }
+        }
         
         internal MessageLoop MessageLoop
         {
@@ -126,7 +140,9 @@ namespace MonoTorrent.Dht
             }
             RaiseStateChanged(State.Initialising);
         }
-
+        
+        #region event
+        
         private void RaiseStateChanged(State newState)
         {
             state = newState;
@@ -135,12 +151,16 @@ namespace MonoTorrent.Dht
                 StateChanged(this, EventArgs.Empty);
         }
         
-        internal void RaisePeersFound(List<Node> peers)
+        internal void RaisePeersFound(NodeId infoHash, List<Node> peers)
         {
             if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(peers));
+                PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
         }
 
+        #endregion
+        
+        #region Load/save
+        
         public byte[] SaveNodes()
         {
             BEncodedList details = new BEncodedList();
@@ -169,8 +189,10 @@ namespace MonoTorrent.Dht
                     Add(Node.FromCompactNode(s.TextBytes, 0));
             });
         }
-
-        public void GetPeers(byte[] infoHash)
+        
+        #endregion
+        
+        public void Announce(byte[] infoHash)
         {
             NodeId target = new NodeId(infoHash);
             IList<Node> nodes = table.GetClosest(target);
@@ -179,11 +201,5 @@ namespace MonoTorrent.Dht
                 messageLoop.EnqueueSend(new GetPeers(RoutingTable.LocalNode.Id, target), n);
             }            
         }
-        
-        /*
-        public void GetNodes(Node node)
-        {
-            messageLoop.EnqueueSend(new MonoTorrent.Dht.Messages.FindNode(RoutingTable.LocalNode.Id, RoutingTable.LocalNode.Id), node);
-        }*/
     }
 }

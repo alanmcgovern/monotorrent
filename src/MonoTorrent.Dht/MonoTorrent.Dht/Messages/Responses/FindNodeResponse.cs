@@ -64,7 +64,11 @@ namespace MonoTorrent.Dht.Messages
 
             byte[] b = Nodes.TextBytes;
             for (int i = 0; (i + 26) <= b.Length; i += 26)
-                engine.Add(Node.FromCompactNode(b, i));
+            {
+                Node n = Node.FromCompactNode(b, i);
+                if (engine.RoutingTable.FindNode(n.Id) == null)
+                    engine.Add(n);
+            }
             return true;
         }
     }

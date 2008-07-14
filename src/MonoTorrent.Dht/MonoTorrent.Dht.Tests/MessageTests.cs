@@ -23,6 +23,8 @@ namespace MonoTorrent.Dht.MessageTests
         [Test]
         public void AnnouncePeerEncode()
         {
+            Node n = new MonoTorrent.Dht.Node(NodeId.Create(), null);
+            n.Token = token;
             AnnouncePeer m = new AnnouncePeer(id, infohash, 6881, token);
             m.TransactionId = transactionId;
 

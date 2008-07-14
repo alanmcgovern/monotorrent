@@ -61,9 +61,13 @@ namespace MonoTorrent.Dht.Messages
             messages.Add(message.TransactionId, message);
         }
 
-        public static void UnregisterSend(QueryMessage message)
+        public static bool UnregisterSend(Message message)
         {
+            if (!messages.ContainsKey(message.TransactionId))
+                return false;
+				
             messages.Remove(message.TransactionId);
+			return true;
         }
 
         public static Message DecodeMessage(BEncodedDictionary dictionary)

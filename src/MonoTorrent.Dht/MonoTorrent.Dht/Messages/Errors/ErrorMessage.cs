@@ -30,26 +30,41 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Net;
 
 using MonoTorrent.BEncoding;
-using System.Net;
+using MonoTorrent.Dht;
+
 
 namespace MonoTorrent.Dht.Messages
 {
     internal class ErrorMessage : Message
     {
-        private static readonly BEncodedString ErrorCodeKey = "e";
+        private static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
-
-        public int ErrorCode
+		
+        private BEncodedList ErrorList
         {
-            get { return (int)((BEncodedNumber)properties[ErrorCodeKey]).Number; }
+            get { return (BEncodedList)properties[ErrorListKey]; }
         }
-
-        public ErrorMessage()
+		
+		private eErrorCode ErrorCode
+        {
+            get { return ((eErrorCode)((BEncodedNumber)ErrorList[0]).Number); }
+        }
+		
+		private string Message
+        {
+            get { return ((BEncodedString)ErrorList[1]).Text; }
+        }
+		
+        public ErrorMessage(eErrorCode error, string message)
             : base(ErrorType)
         {
-
+		    BEncodedList l = new BEncodedList();
+		    l.Add(new BEncodedNumber((int)error));
+			l.Add(new BEncodedString(message));
+            properties.Add(ErrorListKey, l);
         }
 
         public ErrorMessage(BEncodedDictionary d)
@@ -60,7 +75,7 @@ namespace MonoTorrent.Dht.Messages
 
         public override bool Handle(DhtEngine engine, IPEndPoint source)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new MessageException(ErrorCode, Message);
         }
     }
 }

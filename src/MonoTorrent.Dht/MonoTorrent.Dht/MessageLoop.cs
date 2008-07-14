@@ -64,8 +64,6 @@ namespace MonoTorrent.Dht
         Thread thread;
         ManualResetEvent waitHandle = new ManualResetEvent(false);
 
-        Dictionary<BEncodedString, QueryMessage> messages = new Dictionary<BEncodedString, QueryMessage>();
-
         private bool CanSend
         {
             get { return activeSends.Count < 5 && sendQueue.Count > 0 && (Environment.TickCount - lastSent) > 5; }
@@ -90,10 +88,9 @@ namespace MonoTorrent.Dht
                 // I should check the IP address matches as well as the transaction id
                 if (m is ResponseMessage)
                 {
-                    if (!messages.ContainsKey(m.TransactionId))
+                    // FIXME: Should an error message be sent back?
+                    if (!MessageFactory.UnregisterSend(m))
                         return;
-
-                    messages.Remove(m.TransactionId);
                 }
 
 
@@ -127,14 +124,11 @@ namespace MonoTorrent.Dht
 
                         if (waitingResponse.Count > 0)
                         {
-                            if (!messages.ContainsKey(waitingResponse.Peek().Value.TransactionId))
+                            if ((DateTime.Now - waitingResponse.Peek().Key).TotalMilliseconds > engine.TimeOut)
                             {
-                                waitingResponse.Dequeue();
-                            }
-                            else if ((DateTime.Now - waitingResponse.Peek().Key).TotalMilliseconds > engine.TimeOut)
-                            {
-                                timedOut = waitingResponse.Dequeue().Value;
-                                messages.Remove(timedOut.TransactionId);
+								timedOut = waitingResponse.Dequeue().Value;
+							    if (MessageFactory.UnregisterSend(timedOut))
+                                    timedOut = null;
                             }
                         }
                     }
@@ -150,7 +144,22 @@ namespace MonoTorrent.Dht
                     {
                         Message m = receive.Value.Value;
                         IPEndPoint source = receive.Value.Key;
-                        DhtEngine.MainLoop.Queue(delegate { Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source); m.Handle(engine, source); });
+                        DhtEngine.MainLoop.Queue(delegate { 
+                            Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
+                            try
+                            {
+                                m.Handle(engine, source);
+                            }
+                            catch (MessageException ex)
+                            {
+                                // Normal operation (FIXME: do i need to send a response error message?) 
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Handle Error for message: {0}", m);
+                                this.EnqueueSend(new ErrorMessage(eErrorCode.GenericError, "Misshandle received message!"), source);
+                            }
+                        });
                     }
                     if (timedOut != null)
                         timedOut.TimedOut(engine);
@@ -200,10 +209,7 @@ namespace MonoTorrent.Dht
             {
                 // We need to be able to cancel a query message if we time out waiting for a response
                 if (message is QueryMessage)
-                {
                     MessageFactory.RegisterSend((QueryMessage)message);
-                    messages.Add(message.TransactionId, (QueryMessage)message);
-                }
 
                 sendQueue.Enqueue(new SendDetails(endpoint, message));
                 waitHandle.Set();
