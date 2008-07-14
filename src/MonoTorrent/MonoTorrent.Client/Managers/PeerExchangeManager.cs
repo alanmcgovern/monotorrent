@@ -78,12 +78,12 @@ namespace MonoTorrent.Client
         internal void Start()
         {
             timer = new Timer();
-            timer.Elapsed+=new ElapsedEventHandler(OnTick);
+            timer.Elapsed += delegate { ClientEngine.MainLoop.Queue(OnTick); };
             timer.Interval=60000;//1 minute
             timer.Enabled=true;
         }
 
-        internal void OnTick(object source, ElapsedEventArgs e)
+        internal void OnTick()
         {
                 byte[] added = new byte[addedPeers.Count * 6];
                 byte[] addedDotF = new byte[addedPeers.Count];
@@ -111,7 +111,7 @@ namespace MonoTorrent.Client
 
                 id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
                 addedPeers.RemoveRange(0, len);
-                droppedPeers.RemoveRange(0, len);                    
+                droppedPeers.Clear();                   
         }
 
         protected void Dispose(bool disposing)
