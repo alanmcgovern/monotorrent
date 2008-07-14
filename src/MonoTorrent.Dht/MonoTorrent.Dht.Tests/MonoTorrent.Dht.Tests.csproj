@@ -5,7 +5,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8BE20CF2-D48D-426F-8A66-255AFED7B5C9}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>

@@ -11,14 +11,14 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class MessageHandlingTests
     {
-        public static void Main(String[] args)
-        {
-            MessageHandlingTests t = new MessageHandlingTests();
-            t.Setup();
-            t.SendPing();
-            t.Setup();
-            t.PingTimeout();
-        }
+        //public static void Main(String[] args)
+        //{
+        //    MessageHandlingTests t = new MessageHandlingTests();
+        //    t.Setup();
+        //    t.SendPing();
+        //    t.Setup();
+        //    t.PingTimeout();
+        //}
 
         BEncodedString transactionId = "aa";
         DhtEngine engine;
