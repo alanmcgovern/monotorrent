@@ -5,7 +5,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8BE20CF2-D48D-426F-8A66-255AFED7B5C9}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>
@@ -24,7 +24,7 @@
     <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -59,6 +59,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="MessageHandlingTests.cs" />
     <Compile Include="MessageTests.cs" />
+    <Compile Include="NodeIdTests.cs" />
     <Compile Include="NodeTests.cs" />
     <Compile Include="RoutingTableTests.cs" />
     <Compile Include="TestListener.cs" />
