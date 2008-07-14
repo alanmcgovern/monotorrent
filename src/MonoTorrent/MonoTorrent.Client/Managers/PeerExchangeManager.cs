@@ -85,33 +85,33 @@ namespace MonoTorrent.Client
 
         internal void OnTick()
         {
-                byte[] added = new byte[addedPeers.Count * 6];
-                byte[] addedDotF = new byte[addedPeers.Count];
-                int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
-                for(int i = 0; i < len; i++) {
-                    addedPeers[i].CompactPeer(added, i * 6);
-                    if(Toolbox.HasEncryption (addedPeers[i].Encryption, EncryptionTypes.RC4Header) ||
-                        Toolbox.HasEncryption (addedPeers[i].Encryption, EncryptionTypes.RC4Full))
-                    {
-                        addedDotF[i] = 0x01;
-                    }
-                    else
-                    {
-                        addedDotF[i] = 0x00;
-                    }
-
-                    addedDotF[i] |= (byte)(addedPeers[i].IsSeeder ? 0x02 : 0x00);
+            int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
+            byte[] added = new byte[len * 6];
+            byte[] addedDotF = new byte[len];
+            for (int i = 0; i < len; i++)
+            {
+                addedPeers[i].CompactPeer(added, i * 6);
+                if ((addedPeers[i].Encryption & (EncryptionTypes.RC4Full | EncryptionTypes.RC4Header)) != EncryptionTypes.None)
+                {
+                    addedDotF[i] = 0x01;
+                }
+                else
+                {
+                    addedDotF[i] = 0x00;
                 }
 
-                byte[] dropped = new byte[droppedPeers.Count * 6];
+                addedDotF[i] |= (byte)(addedPeers[i].IsSeeder ? 0x02 : 0x00);
+            }
+            addedPeers.RemoveRange(0, len);
 
-                for(int i=0; i<droppedPeers.Count; i++) {
-                    droppedPeers[i].CompactPeer(dropped, i * 6);
-                }
+            len = Math.Min(MAX_PEERS - len, droppedPeers.Count);
 
-                id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
-                addedPeers.RemoveRange(0, len);
-                droppedPeers.Clear();                   
+            byte[] dropped = new byte[len * 6];
+            for (int i = 0; i < len; i++)
+                droppedPeers[i].CompactPeer(dropped, i * 6);
+
+            droppedPeers.RemoveRange(0, len);
+            id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
         }
 
         protected void Dispose(bool disposing)
