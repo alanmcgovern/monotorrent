@@ -84,16 +84,10 @@ namespace MonoTorrent.Dht
         {
             lock (locker)
             {
-                Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
                 // I should check the IP address matches as well as the transaction id
-                if (m is ResponseMessage)
-                {
-                    // FIXME: Should an error message be sent back?
-                    if (!MessageFactory.UnregisterSend(m))
-                        return;
-                }
-
-
+                // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
+                // and return an error message (if that's what the spec allows)
+                Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
                 receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
                 waitHandle.Set();
             }
@@ -109,7 +103,8 @@ namespace MonoTorrent.Dht
                 SendDetails? send = null;
                 QueryMessage timedOut = null;
 
-                if (engine.State != State.NotReady)
+                // FIXME: Should this just loop regardless of state?
+                if (engine.State != State.NotReady || true)
                 {
                     lock (locker)
                     {
