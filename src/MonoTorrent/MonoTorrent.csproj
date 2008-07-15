@@ -81,12 +81,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptionTypes.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\AttemptConnectionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerConnectionFailedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\InitialSeed\InitialSeed.cs" />
