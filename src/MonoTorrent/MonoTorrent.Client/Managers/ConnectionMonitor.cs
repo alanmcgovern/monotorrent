@@ -68,12 +68,12 @@ namespace MonoTorrent.Client
 
         public long ProtocolBytesDownloaded
         {
-            get { return protocolDown.Rate; }
+            get { return protocolDown.Total; }
         }
 
         public long ProtocolBytesUploaded
         {
-            get { return protocolUp.Rate; }
+            get { return protocolUp.Total; }
         }
 
         public int UploadSpeed
