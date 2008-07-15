@@ -363,6 +363,12 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
+        public void ChangePicker(PiecePickerBase picker)
+        {
+            ClientEngine.MainLoop.QueueWait(delegate {
+                this.pieceManager.ChangePicker(picker, torrent.Files);
+            });
+        }
         public void Dispose()
         {
             // Do nothing?

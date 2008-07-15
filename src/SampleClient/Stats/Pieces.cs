@@ -234,12 +234,13 @@ namespace SampleClient.Stats
 
             if (this.manager != null)
             {
-                // commented this out for now until the SlidingWindowPicker code hits SVN
-                /*
-                text.AppendFormat("High priority set start: {0}  High Pri Set Size: {1}  Medium Pri Set Size: {2}",
-                    this.manager.PieceManager.HighPrioritySetStart, this.manager.PieceManager.HighPrioritySetSize,
-                    this.manager.PieceManager.MediumPrioritySetSize);
-                */
+                SlidingWindowPicker swp = this.manager.PieceManager.PiecePicker as SlidingWindowPicker;
+
+                if (swp != null)
+                {
+                    text.AppendFormat("High priority set start: {0}  High Pri Set Size: {1}  Medium Pri Set Size: {2}",
+                        swp.HighPrioritySetStart, swp.HighPrioritySetSize, swp.MediumPrioritySetSize);
+                }
             }
 
             //TODO: Write down other statistics here

@@ -112,6 +112,7 @@
     <Compile Include="MonoTorrent.Client\Piece.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\Tasks\DelegateTask.cs" />

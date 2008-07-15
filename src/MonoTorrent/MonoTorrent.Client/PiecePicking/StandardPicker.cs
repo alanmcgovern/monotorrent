@@ -37,7 +37,10 @@ using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    internal class StandardPicker : PiecePickerBase
+    /// <summary>
+    /// TGS CHANGE: Made private fields/methods protected for SlidingWindowPicker
+    /// </summary>
+    public class StandardPicker : PiecePickerBase
     {
         #region Member Variables
 
@@ -48,16 +51,13 @@ namespace MonoTorrent.Client
         private int[] priorities;
         
         // A random number generator used to choose the starting index when downloading a piece randomly
-        private Random random = new Random();
+        protected Random random = new Random();
 
         // The list of pieces that are currently being requested
-        private MonoTorrentCollection<Piece> requests;
+        protected MonoTorrentCollection<Piece> requests;
 
         // The list of files in the torrent being requested
-        private TorrentFile[] torrentFiles;
-
-        // Stores the indices of pieces which have been downloaded but are not hashed. These count as "AlreadyHaveOrRequested"
-        private BitField unhashedPieces;   
+        protected TorrentFile[] torrentFiles; 
 
         #endregion Member Variables
 
@@ -79,29 +79,14 @@ namespace MonoTorrent.Client
             get { return this.requests; }
         }
 
-        internal BitField UnhashedPieces
-        {
-            get { return this.unhashedPieces; }
-        }
-
         #endregion
 
 
         #region Constructors
 
-        internal StandardPicker(BitField bitField, TorrentFile[] torrentFiles)
+        public StandardPicker()
         {
-            this.myBitfield = bitField;
-            this.previousBitfields = new List<BitField>();
-            this.previousBitfields.Add(new BitField(bitField.Length));
-            this.priorities = (int[])Enum.GetValues(typeof(Priority));
-            this.requests = new MonoTorrentCollection<Piece>(16);
-            this.torrentFiles = torrentFiles;
-            this.unhashedPieces = new BitField(bitField.Length);
 
-            // Order the priorities in decending order of priority. i.e. Immediate is first, and DoNotDownload is last
-            Array.Sort<int>(this.priorities);
-            Array.Reverse(this.priorities);
         }
 
         #endregion
@@ -109,7 +94,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        private bool AlreadyHaveOrRequested(int index)
+        protected bool AlreadyHaveOrRequested(int index)
         {
             if (this.myBitfield[index])
                 return true;
@@ -121,7 +106,12 @@ namespace MonoTorrent.Client
                 return this.unhashedPieces[index];
         }
 
-        private RequestMessage ContinueAnyExisting(PeerId id)
+        /// <summary>
+        /// Continue requesting any existing piece
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        protected RequestMessage ContinueAnyExisting(PeerId id)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
             // piece request.
@@ -148,7 +138,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        private RequestMessage ContinueExistingRequest(PeerId id)
+        protected RequestMessage ContinueExistingRequest(PeerId id)
         {
             foreach (Piece p in requests)
             {
@@ -171,7 +161,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        private RequestMessage GetFastPiece(PeerId id)
+        protected RequestMessage GetFastPiece(PeerId id)
         {
             int requestIndex;
 
@@ -202,7 +192,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        private void RemoveOwnedPieces(MonoTorrentCollection<int> list)
+        protected void RemoveOwnedPieces(MonoTorrentCollection<int> list)
         {
             while (true)
             {
@@ -223,11 +213,32 @@ namespace MonoTorrent.Client
             }
         }
 
-        private RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="otherPeers"></param>
+        /// <returns></returns>
+        protected RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers)
+        {
+            return GetStandardRequest(id, otherPeers, 0, this.myBitfield.Length - 1);
+        }
+
+
+        /// <summary>
+        /// When picking a piece, request a new piece normally
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="otherPeers"></param>
+        /// <param name="startIndex">Starting point of allowed request piece range</param>
+        /// <param name="endIndex">Ending point of allowed piece range</param>
+        /// <returns></returns>
+        protected virtual RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex)
         {
             int checkIndex = 0;
             BitField current = null;
-            Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers);
+            Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers, startIndex, endIndex);
 
             try
             {
@@ -238,8 +249,7 @@ namespace MonoTorrent.Client
                     // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
                     // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
                     // uninteresting. If we're doing linear searching, then the start index is 0.
-                    int midPoint = LinearPickingEnabled ? 0 : random.Next(0, current.Length);
-                    int endIndex = current.Length;
+                    int midPoint = random.Next(startIndex, endIndex + 1);
                     checkIndex = midPoint;
 
                     // First we check all the places from midpoint -> end
@@ -292,7 +302,15 @@ namespace MonoTorrent.Client
             }
         }
 
-        private Stack<BitField> GenerateRarestFirst(PeerId id, List<PeerId> otherPeers)
+        /// <summary>
+        /// Return a stack of bitfields corresponding to rarest pieces found in the region between startindex and endindex
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="otherPeers"></param>
+        /// <param name="startIndex">Starting index of constrained piece region.</param>
+        /// <param name="endIndex">Ending index of constrained piece region</param>
+        /// <returns></returns>
+        protected Stack<BitField> GenerateRarestFirst(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex)
         {
             Priority highestPriority = Priority.DoNotDownload;
             Stack<BitField> bitfields = new Stack<BitField>();
@@ -321,6 +339,13 @@ namespace MonoTorrent.Client
                     }
                 }
 				
+                // set all pieces outside of what we want to false, meaning that we don't want them
+                for (int i = 0; i < startIndex; i++)
+                    current[i] = false;
+
+                for (int i = endIndex + 1; i < current.Length; i++)
+                    current[i] = false;
+
                 // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
                 if (!id.Peer.IsSeeder)
                     current.AndFast(id.BitField);
@@ -370,7 +395,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private RequestMessage GetSuggestedPiece(PeerId id)
+        protected RequestMessage GetSuggestedPiece(PeerId id)
         {
             int requestIndex;
             // Remove any pieces that we already have
@@ -394,7 +419,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        private Priority HighestPriorityAvailable(BitField bitField)
+        protected Priority HighestPriorityAvailable(BitField bitField)
         {
             Priority highestFound = Priority.DoNotDownload;
 
@@ -477,7 +502,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void CancelTimedOutRequests()
+        protected void CancelTimedOutRequests()
         {
             foreach (Piece p in requests)
                 for (int i = 0; i < p.BlockCount; i++)
@@ -505,7 +530,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void RemoveRequests(PeerId id, RequestMessage message)
+        protected void RemoveRequests(PeerId id, RequestMessage message)
         {
             lock (this.requests)
             {
@@ -634,5 +659,28 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+        public override List<Piece> ExportActiveRequests()
+        {
+            return new List<Piece>(requests);
+        }
+
+        public override void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        {
+            this.myBitfield = ownBitfield;
+            this.torrentFiles = files;
+
+            this.previousBitfields = new List<BitField>();
+            this.previousBitfields.Add(new BitField(myBitfield.Length));
+            this.priorities = (int[])Enum.GetValues(typeof(Priority));
+            this.requests = new MonoTorrentCollection<Piece>(16);
+
+            // Order the priorities in decending order of priority. i.e. Immediate is first, and DoNotDownload is last
+            Array.Sort<int>(this.priorities);
+            Array.Reverse(this.priorities);
+
+            this.requests.AddRange(requests);
+            this.unhashedPieces = unhashedPieces.Clone();
+        }
     }
 }

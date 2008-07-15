@@ -36,12 +36,13 @@ using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    internal abstract class PiecePickerBase
+    public abstract class PiecePickerBase
     {
         #region Private Fields
 
         protected BitField myBitfield;
         private bool linearPickingEnabled;
+        protected BitField unhashedPieces;
 
         #endregion Private Fields
 
@@ -58,12 +59,19 @@ namespace MonoTorrent.Client
             set { linearPickingEnabled = value; }
         }
 
+        public BitField UnhashedPieces
+        {
+            get { return unhashedPieces; }
+        }
+
         #endregion Properties
 
         #region Abstract Methods
 
         public abstract int CurrentRequestCount();
+        public abstract List<Piece> ExportActiveRequests();
         public abstract bool IsInteresting(PeerId id);
+        public abstract void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces);
         public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
         public abstract void ReceivedChokeMessage(PeerId id);
         public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);

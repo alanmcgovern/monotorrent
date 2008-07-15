@@ -605,7 +605,8 @@ namespace SampleClient.Stats
                     AppendFormat(sb, "Disk Write Rate:      {0:0.00} kB/s", this.manager.Engine.DiskManager.WriteRate / 1024.0);
                     AppendFormat(sb, "Total Read:           {0:0.00} kB", this.manager.Engine.DiskManager.TotalRead / 1024.0);
                     AppendFormat(sb, "Total Written:        {0:0.00} kB", this.manager.Engine.DiskManager.TotalWritten / 1024.0);
-                    AppendFormat(sb, "Rounds Complete:       {0}", this.manager.PeerReviewRoundsComplete);
+                    AppendFormat(sb, "Rounds Complete:      {0}", this.manager.PeerReviewRoundsComplete);
+                    AppendFormat(sb, "Time Elapsed:         {0}", this.stopwatch.Elapsed);
 
                     this.milliSeconds = this.stopwatch.ElapsedMilliseconds;
                     this.bytesDownloaded = this.manager.Monitor.DataBytesDownloaded;
@@ -643,12 +644,15 @@ namespace SampleClient.Stats
                             totalInterested++;
 
                         PeerInfo p = null;
-                        foreach (PeerInfo pi in this.peerList)
+                        lock (this.peerList)
                         {
-                            if (pi.Uri.Equals(pIdInternal.Peer.ConnectionUri))
+                            foreach (PeerInfo pi in this.peerList)
                             {
-                                p = pi;
-                                break;
+                                if (pi.Uri.Equals(pIdInternal.Peer.ConnectionUri))
+                                {
+                                    p = pi;
+                                    break;
+                                }
                             }
                         }
 
@@ -656,7 +660,11 @@ namespace SampleClient.Stats
                         {
                             p = new PeerInfo(pIdInternal);
 
-                            Utils.PerformControlOperation(this.dataGridView1, delegate { this.peerList.Add(p); });
+                            Utils.PerformControlOperation(this.dataGridView1, delegate
+                            {
+                                lock (this.peerList)
+                                    this.peerList.Add(p);
+                            });
                         }
                         else
                         {
@@ -696,7 +704,6 @@ namespace SampleClient.Stats
                     AppendFormat(sb, "Tracker Status:       {0}", this.manager.TrackerManager.CurrentTracker.State);
                     AppendFormat(sb, "Warning Message:      {0}", this.manager.TrackerManager.CurrentTracker.WarningMessage);
                     AppendFormat(sb, "Failure Message:      {0}", this.manager.TrackerManager.CurrentTracker.FailureMessage);
-                    //AppendFormat( sb, "Piece Picker:         {0}", this.manager.PieceManager.GetWindow() );
                     AppendFormat(sb, "Total Connections:    {0}", this.manager.OpenConnections);
                     AppendFormat(sb, "Half Open Connections: {0}", this.engine.ConnectionManager.HalfOpenConnections);
                     AppendFormat(sb, "Seeds:                {0}", this.manager.Peers.Seeds);
@@ -709,13 +716,14 @@ namespace SampleClient.Stats
                 // log the statistics every 30 seconds
                 if (this.milliSeconds - this.lastStatsWrite > 30000)
                 {
+                    SlidingWindowPicker swp = this.manager.PieceManager.PiecePicker as SlidingWindowPicker;
+
                     //statsLog.Info(" Time Percent Playback Total-Down Total-Up Download-Speed Upload-Speed Peers Choked"
                     //+ " Unchoked Interested Choking-Us Unchoking-Us Optimistically-Unchoking Interested-In-Us");
                     statsLog.InfoFormat("{0,5} {1,7} {2,8} {3,10} {4,8} {5,14} {6,12} {7,5} {8,6} {9,8} {10,10} {11,10} {12,12} {13,24} {14,16}",
                         this.milliSeconds / 1000, this.manager.Progress.ToString("#0.##"),
-                        // useless data till the SlidingWindowPicker code hits SVN
-                        0, 0,
-                        //(((double)this.manager.PieceManager.HighPrioritySetStart / (double)this.manager.Torrent.Pieces.Count) * 100).ToString("#0.##"),
+                        swp == null ? "0" :
+                        (((double)swp.HighPrioritySetStart / (double)this.manager.Torrent.Pieces.Count) * 100).ToString("#0.##"),
                         this.bytesDownloaded, this.bytesUploaded, this.downloadSpeed, this.uploadSpeed, this.peers, this.totalChoked,
                         this.totalUnchoked, this.totalInterested, this.totalChokingUs, this.totalUnchokingUs,
                         this.totalOptimisticallyUnchokingUs, this.totalInterestedInUs);

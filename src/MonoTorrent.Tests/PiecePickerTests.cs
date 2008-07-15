@@ -49,7 +49,8 @@ namespace MonoTorrent.Tests
             // Yes, this is horrible. Deal with it.
             rig = new TestRig("");
             peers = new List<PeerId>();
-            picker = new StandardPicker(rig.Manager.Bitfield, rig.Torrent.Files);
+            picker = new StandardPicker();
+            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));
             peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
             {
