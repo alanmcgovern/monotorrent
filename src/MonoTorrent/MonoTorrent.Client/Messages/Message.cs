@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Messages
 
         static public short ReadShort(byte[] buffer, int offset)
         {
-            return ReadShort(buffer, offset);
+            return ReadShort(buffer, ref offset);
         }
 
         static public short ReadShort(byte[] buffer, ref int offset)
