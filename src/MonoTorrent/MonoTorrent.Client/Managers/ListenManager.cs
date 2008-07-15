@@ -92,6 +92,11 @@ namespace MonoTorrent.Client
 
         private void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
+            if (engine.ConnectionManager.ShouldBanPeer(e.Peer))
+            {
+                e.Connection.Dispose();
+                return;
+            }
             PeerId id = new PeerId(e.Peer, e.TorrentManager);
             id.Connection = e.Connection;
 

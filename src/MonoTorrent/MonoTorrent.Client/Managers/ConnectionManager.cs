@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
     {
         #region Events
 
-        public event EventHandler<AttemptConnectionEventArgs> AttemptConnection;
+        public event EventHandler<AttemptConnectionEventArgs> BanPeer;
 
         /// <summary>
         /// Event that's fired every time a message is sent or Received from a Peer
@@ -1060,6 +1060,16 @@ namespace MonoTorrent.Client
             return 0;
         }
 
+        internal bool ShouldBanPeer(Peer peer)
+        {
+            if (BanPeer == null)
+                return false;
+
+            AttemptConnectionEventArgs e = new AttemptConnectionEventArgs(peer);
+            BanPeer(this, e);
+            return e.BanPeer;
+        }
+
         internal void TryConnect()
         {
             try
@@ -1101,17 +1111,10 @@ namespace MonoTorrent.Client
 
                     // Save the manager we're using so we can place it to the end of the list
                     m = manager;
-                    
-                    if (AttemptConnection != null)
-                    {
-                        AttemptConnectionEventArgs args = new AttemptConnectionEventArgs(peer);
-                        AttemptConnection(this, args);
 
-                        // Drop the peers details if they are to be banned
-                        // i.e. through an IP address filter or whatever
-                        if (args.BanPeer)
-                            return;
-                    }
+                    if (ShouldBanPeer(peer))
+                        return;
+
                     // Connect to the peer
                     ConnectToPeer(manager, peer);
                     break;
