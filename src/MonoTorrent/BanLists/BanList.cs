@@ -48,16 +48,13 @@ namespace MonoTorrent.Client
 
         public void AddRange(IEnumerable<AddressRange> range)
         {
-            foreach (AddressRange address in range)
-                addresses.Add(address);
+            addresses.AddRange(range);
             addresses.Sort(comparer);
         }
 
         public bool IsBanned(IPAddress address)
         {
             AddressRange range = new AddressRange(address, address);
-
-            Remove(range);
             int ret = addresses.BinarySearch(range, new RangeComparer());
             return ret >= 0;
         }
@@ -68,27 +65,26 @@ namespace MonoTorrent.Client
             if (index < 0)
                 return;
 
-            AddressRange target = addresses[index];
-            if (target.Start == target.End && target.Start == range.Start)
+            if (addresses[index].Start == addresses[index].End && addresses[index].Start == range.Start)
             {
                 addresses.RemoveAt(index);
                 return;
             }
 
-            if (target.Start == range.Start)
+            if (addresses[index].Start == range.Start)
             {
-                target.Start++;
+                addresses[index] = new AddressRange(addresses[index].Start + 1, addresses[index].End);
             }
-            else if (target.End == range.Start)
+            else if (addresses[index].End == range.Start)
             {
-                target.End--;
+                addresses[index] = new AddressRange(addresses[index].Start, addresses[index].End - 1);
             }
             else
             {
                 // Split the existing range into two new ranges, the old max and min are the same
                 // but the 'range' is removed from the middle.
-                AddressRange lower = new AddressRange(target.Start, range.Start - 1);
-                AddressRange upper = new AddressRange(range.Start + 1, target.End);
+                AddressRange lower = new AddressRange(addresses[index].Start, range.Start - 1);
+                AddressRange upper = new AddressRange(range.Start + 1, addresses[index].End);
 
                 addresses.RemoveAt(index);
                 addresses.Insert(index, lower);
@@ -98,8 +94,7 @@ namespace MonoTorrent.Client
 
         public void Remove(IPAddress address)
         {
-            int val = (int)(IPAddress.NetworkToHostOrder(address.Address) >> 32);
-            AddressRange range = new AddressRange(val, val);
+            AddressRange range = new AddressRange(address, address);
             Remove(range);
         }
 
