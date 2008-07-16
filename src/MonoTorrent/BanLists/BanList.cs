@@ -7,19 +7,19 @@ namespace MonoTorrent.Client
 {
     public struct AddressRange
     {
-        public uint Start;
-        public uint End;
+        public int Start;
+        public int End;
 
         public AddressRange(int start, int end)
         {
-            Start = (uint)start;
-            End = (uint)end;
+            Start = start;
+            End = end;
         }
 
         public AddressRange(IPAddress start, IPAddress end)
         {
-            Start = (uint)(IPAddress.NetworkToHostOrder(start.Address) >> 32);
-            End = (uint)(IPAddress.NetworkToHostOrder(end.Address) >> 32);
+            Start = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(start.GetAddressBytes(), 0)));
+            End = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(end.GetAddressBytes(), 0)));
         }
     }
 
@@ -29,7 +29,7 @@ namespace MonoTorrent.Client
 
         public void Add(AddressRange address)
         {
-            for (uint i = address.End; i > address.Start; i--)
+            for (int i = address.End; i > address.Start; i--)
                 addresses.Add(i);
             addresses.Add(address.Start);
         }
@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
 
         private void Remove(AddressRange range)
         {
-            for (uint i = range.Start; i <= range.End; i++)
+            for (int i = range.Start; i <= range.End; i++)
                 addresses.Remove(i);
         }
 

@@ -23,17 +23,17 @@ namespace MonoTorrent.Client
                 {
                     AddressRange range = new AddressRange();
                     string[] s = collection[0].Captures[0].Value.Split('.');
-                    range.Start = (uint)((int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3])));
+                    range.Start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
                     range.End = range.Start;
                     yield return range;
                 }
                 else if (collection.Count == 2)
                 {
                     string[] s = collection[0].Captures[0].Value.Split('.');
-                    uint start = (uint)((int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3])));
+                    int start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
 
                     s = collection[1].Captures[0].Value.Split('.');
-                    uint end = (uint)((int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3])));
+                    int end = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) | (int.Parse(s[3]));
 
                     AddressRange range = new AddressRange();
                     range.Start = start;

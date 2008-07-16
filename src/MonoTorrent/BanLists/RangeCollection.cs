@@ -49,50 +49,20 @@ namespace Hyena.Collections
  class RangeCollection :
         ICloneable,
 #if NET_2_0
- ICollection<long>
+ ICollection<int>
 #else
         ICollection
 #endif
     {
-        public struct Range :
-#if NET_2_0
- IComparable<Range>
-#else
-            IComparable
-#endif
+        public struct Range
         {
-            public long Start;
-            public long End;
+            public int Start;
+            public int End;
 
-            public Range(long start, long end)
+            public Range(int start, int end)
             {
                 Start = start;
                 End = end;
-            }
-
-#if !NET_2_0
-            public int CompareTo (object o)
-            {
-                return CompareTo ((Range)o);
-            }
-#endif
-
-            public int CompareTo(Range x)
-            {
-                // When End == -1, a comparison is created to
-                // match an index inside of a range; otherwise
-                // two actual ranges are being compared
-                if (x.End == -1)
-                    return -x.CompareTo(this);
-
-                return End == -1
-                    ? (Start >= x.Start
-                        ? (Start <= x.End
-                            ? 0   // In Range
-                            : 1)  // Above Range
-                        : -1)     // Below Range
-                    : (Start + (End - Start)).CompareTo(
-                        x.Start + (x.End - x.Start));
             }
 
             public override string ToString()
@@ -102,7 +72,7 @@ namespace Hyena.Collections
 
             public int Count
             {
-                get { return (int)( End - Start + 1); }
+                get { return End - Start + 1; }
             }
         }
 
@@ -111,7 +81,7 @@ namespace Hyena.Collections
         private int range_count;
         private int index_count;
         private int generation;
-        private long[] indexes_cache;
+        private int[] indexes_cache;
         private int indexes_cache_generation;
 
         public RangeCollection()
@@ -121,7 +91,7 @@ namespace Hyena.Collections
 
         #region Private Array Logic
 
-        private void Shift(long start, int delta)
+        private void Shift(int start, int delta)
         {
             if (delta < 0)
             {
@@ -155,7 +125,7 @@ namespace Hyena.Collections
 #endif
         }
 
-        private void Insert(long position, Range range)
+        private void Insert(int position, Range range)
         {
             if (range_count == ranges.Length)
             {
@@ -166,7 +136,7 @@ namespace Hyena.Collections
             ranges[position] = range;
         }
 
-        private void RemoveAt(long position)
+        private void RemoveAt(int position)
         {
             Shift(position, -1);
             Array.Clear(ranges, range_count, 1);
@@ -176,9 +146,9 @@ namespace Hyena.Collections
 
         #region Private Range Logic
 
-        private bool RemoveIndexFromRange(long index)
+        private bool RemoveIndexFromRange(int index)
         {
-            long range_index = FindRangeIndexForValue(index);
+            int range_index = FindRangeIndexForValue(index);
             if (range_index < 0)
             {
                 return false;
@@ -210,7 +180,7 @@ namespace Hyena.Collections
 
         private void InsertRange(Range range)
         {
-            long position = FindInsertionPosition(range);
+            int position = FindInsertionPosition(range);
             bool merged_left = MergeLeft(range, position);
             bool merged_right = MergeRight(range, position);
 
@@ -225,9 +195,9 @@ namespace Hyena.Collections
             }
         }
 
-        private bool MergeLeft(Range range, long position)
+        private bool MergeLeft(Range range, int position)
         {
-            long left = position - 1;
+            int left = position - 1;
             if (left >= 0 && ranges[left].End + 1 == range.Start)
             {
                 ranges[left].End = range.Start;
@@ -237,7 +207,7 @@ namespace Hyena.Collections
             return false;
         }
 
-        private bool MergeRight(Range range, long position)
+        private bool MergeRight(Range range, int position)
         {
             if (position < range_count && ranges[position].Start - 1 == range.End)
             {
@@ -248,6 +218,11 @@ namespace Hyena.Collections
             return false;
         }
 
+        private int CompareRanges(Range a, Range b)
+        {
+            return (a.Start + (a.End - a.Start)).CompareTo(b.Start + (b.End - b.Start));
+        }
+
         private int FindInsertionPosition(Range range)
         {
             int min = 0;
@@ -256,7 +231,7 @@ namespace Hyena.Collections
             while (min <= max)
             {
                 int mid = min + ((max - min) / 2);
-                int cmp = ranges[mid].CompareTo(range);
+                int cmp = CompareRanges(ranges[mid], range);
 
                 if (cmp == 0)
                 {
@@ -264,7 +239,7 @@ namespace Hyena.Collections
                 }
                 else if (cmp > 0)
                 {
-                    if (mid > 0 && ranges[mid - 1].CompareTo(range) < 0)
+                    if (mid > 0 && CompareRanges(ranges[mid - 1], range) < 0)
                     {
                         return mid;
                     }
@@ -280,9 +255,30 @@ namespace Hyena.Collections
             return min;
         }
 
-        public int FindRangeIndexForValue(long value)
+        public int FindRangeIndexForValue(int value)
         {
-            return Array.BinarySearch(ranges, 0, range_count, new Range(value, -1));
+            int min = 0;
+            int max = range_count - 1;
+
+            while (min <= max)
+            {
+                int mid = min + ((max - min) / 2);
+                Range range = ranges[mid];
+                if (value >= range.Start && value <= range.End)
+                {
+                    return mid;    // In Range
+                }
+                else if (value < range.Start)
+                {
+                    max = mid - 1; // Below Range
+                }
+                else
+                {
+                    min = mid + 1; // Above Range
+                }
+            }
+
+            return ~min;
         }
 
         #endregion
@@ -307,7 +303,7 @@ namespace Hyena.Collections
 #if NET_2_0
         [Obsolete("Do not use the Indexes property in 2.0 profiles if enumerating only; Indexes allocates an array to avoid boxing in the 1.1 profile")]
 #endif
-        public long[] Indexes
+        public int[] Indexes
         {
             get
             {
@@ -316,12 +312,12 @@ namespace Hyena.Collections
                     return indexes_cache;
                 }
 
-                indexes_cache = new long[Count];
+                indexes_cache = new int[Count];
                 indexes_cache_generation = generation;
 
                 for (int i = 0, j = 0; i < range_count; i++)
                 {
-                    for (long k = ranges[i].Start; k <= ranges[i].End; j++, k++)
+                    for (int k = ranges[i].Start; k <= ranges[i].End; j++, k++)
                     {
                         indexes_cache[j] = k;
                     }
@@ -331,9 +327,9 @@ namespace Hyena.Collections
             }
         }
 
-        public long IndexOf(int value)
+        public int IndexOf(int value)
         {
-            long offset = 0;
+            int offset = 0;
 
             foreach (Range range in ranges)
             {
@@ -348,7 +344,7 @@ namespace Hyena.Collections
             return -1;
         }
 
-        public long this[int index]
+        public int this[int index]
         {
             get
             {
@@ -368,7 +364,7 @@ namespace Hyena.Collections
 
         #region ICollection Implementation
 
-        public bool Add(long value)
+        public bool Add(int value)
         {
             if (!Contains(value))
             {
@@ -383,16 +379,16 @@ namespace Hyena.Collections
 
         void
 #if NET_2_0
- ICollection<long>.
+ ICollection<int>.
 #else
         ICollection.
 #endif
-Add(long value)
+Add(int value)
         {
             Add(value);
         }
 
-        public bool Remove(long value)
+        public bool Remove(int value)
         {
             generation++;
             return RemoveIndexFromRange(value);
@@ -406,12 +402,12 @@ Add(long value)
             ranges = new Range[MIN_CAPACITY];
         }
 
-        public bool Contains(long value)
+        public bool Contains(int value)
         {
             return FindRangeIndexForValue(value) >= 0;
         }
 
-        public void CopyTo(long[] array, int index)
+        public void CopyTo(int[] array, int index)
         {
             throw new NotImplementedException();
         }
@@ -455,11 +451,11 @@ Add(long value)
         #region IEnumerable Implementation
 
 #if NET_2_0
-        public IEnumerator<long> GetEnumerator()
+        public IEnumerator<int> GetEnumerator()
         {
             for (int i = 0; i < range_count; i++)
             {
-                for (long j = ranges[i].Start; j <= ranges[i].End; j++)
+                for (int j = ranges[i].Start; j <= ranges[i].End; j++)
                 {
                     yield return j;
                 }
