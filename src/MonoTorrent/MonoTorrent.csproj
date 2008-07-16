@@ -89,6 +89,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
+    <Compile Include="BanLists\RangeCollection.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptionTypes.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\AttemptConnectionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
