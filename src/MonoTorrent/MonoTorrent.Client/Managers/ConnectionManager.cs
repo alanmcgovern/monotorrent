@@ -41,6 +41,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -106,9 +107,17 @@ namespace MonoTorrent.Client
         /// </summary>
         public int OpenConnections
         {
-            get { return this.openConnections; }
+            get
+            {
+                DelegateTask task = new DelegateTask(delegate {
+                    return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) {
+                        return m.Peers.ConnectedPeers.Count;
+                    });
+                });
+                ClientEngine.MainLoop.QueueWait(delegate { task.Execute(); });
+                return (int)task.Result;
+            }
         }
-        private int openConnections;
 
 
         /// <summary>
@@ -232,7 +241,7 @@ namespace MonoTorrent.Client
             try
             {
                 // If we have too many open connections, close the connection
-                if (this.openConnections > this.MaxOpenConnections)
+                if (OpenConnections > this.MaxOpenConnections)
                 {
                     Logger.Log(id.Connection, "ConnectionManager - Too many connections");
                     reason = "Too many connections";
@@ -243,7 +252,6 @@ namespace MonoTorrent.Client
                 // Increase the count of the "open" connections
                 EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
                 
-                System.Threading.Interlocked.Increment(ref this.openConnections);
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
             }
             catch (Exception)
@@ -778,7 +786,6 @@ namespace MonoTorrent.Client
                 Logger.Log(id.Connection, "Cleanup Reason : " + message);
 
                 Logger.Log(id.Connection, "*******Cleaning up*******");
-                System.Threading.Interlocked.Decrement(ref this.openConnections);
                 id.TorrentManager.PieceManager.RemoveRequests(id);
                 id.Peer.CleanedUpCount++;
 
@@ -849,7 +856,6 @@ namespace MonoTorrent.Client
 
             try
             {
-                Interlocked.Increment(ref this.openConnections);
                 if (!succeeded)
                 {
                     cleanUp = true;
@@ -888,7 +894,7 @@ namespace MonoTorrent.Client
 
                 id.TorrentManager.RaisePeerConnected(new PeerConnectionEventArgs(id.TorrentManager, id, Direction.Incoming));
 
-                if (this.openConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
+                if (OpenConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
                 {
                     reason = "Too many peers";
                     cleanUp = true;
@@ -1079,7 +1085,7 @@ namespace MonoTorrent.Client
                 TorrentManager m = null;
 
                 // If we have already reached our max connections globally, don't try to connect to a new peer
-                if ((this.openConnections >= this.MaxOpenConnections) || this.HalfOpenConnections >= this.MaxHalfOpenConnections)
+                if ((OpenConnections >= this.MaxOpenConnections) || this.HalfOpenConnections >= this.MaxHalfOpenConnections)
                     return;
 
                 // Check each torrent manager in turn to see if they have any peers we want to connect to

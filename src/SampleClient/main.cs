@@ -189,9 +189,8 @@ namespace MonoTorrent
                     AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", engine.DiskManager.WriteRate / 1024.0);
                     AppendFormat(sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead / 1024.0);
                     AppendFormat(sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
-                    AppendFormat(sb, "Open Connections:    {0}", Toolbox.Accumulate<TorrentManager>(torrents,
-                        delegate(TorrentManager m) { return m.OpenConnections; }));
-
+                    AppendFormat(sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
+                    
                     foreach (TorrentManager manager in torrents)
                     {
                         AppendSeperator(sb);
