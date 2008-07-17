@@ -82,6 +82,16 @@ namespace MonoTorrent.Client
             set { piecePicker.LinearPickingEnabled = value; }
         }
 
+
+        /// <summary>
+        /// Get the PiecePicker instance that is currently being used by the PieceManager
+        /// </summary>
+        public PiecePickerBase PiecePicker
+        {
+            get { return this.piecePicker; }
+        }
+
+
         #endregion Properties
 
 
