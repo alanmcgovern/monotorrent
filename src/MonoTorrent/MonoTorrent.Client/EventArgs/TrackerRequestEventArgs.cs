@@ -32,6 +32,7 @@ namespace MonoTorrent.Client.Tracker
             if (tracker == null)
                 throw new ArgumentNullException("tracker");
 
+            this.successful = successful;
             this.tracker = tracker;
         }
     }
