@@ -61,7 +61,6 @@ namespace MonoTorrent.Client
             Engine = engine;
             Locker = new object();
             listeners = new MonoTorrentCollection<ConnectionListenerBase>();
-            listeners.IsReadOnly = true;
             peerHandshakeReceived = onPeerHandshakeReceived;
             endCheckEncryptionCallback = EndCheckEncryption;
         }
