@@ -528,7 +528,7 @@ namespace MonoTorrent.Client
         internal int HaveMessagesReceived
         {
             get { return this.haveMessagesReceived; }
-            set { this.haveMessagesReceived++; }
+            set { this.haveMessagesReceived = value; }
         }
 
         /// <summary>
