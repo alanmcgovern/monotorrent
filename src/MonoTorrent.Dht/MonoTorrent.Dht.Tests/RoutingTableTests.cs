@@ -5,7 +5,7 @@ using MonoTorrent.Dht;
 using NUnit.Framework;
 using System.Net;
 
-namespace MonoTorrent.Dht.MessageTests
+namespace MonoTorrent.Dht.Tests
 {
     [TestFixture]
     public class RoutingTableTests
@@ -21,6 +21,7 @@ namespace MonoTorrent.Dht.MessageTests
             id[1] = 128;
             n = new Node(new NodeId(id), new System.Net.IPEndPoint(IPAddress.Any, 0));
             table = new RoutingTable(n);
+            table.Add(n);//the local node is no more in routing table so add it to show test is still ok
         }
 
         [Test]
@@ -39,7 +40,7 @@ namespace MonoTorrent.Dht.MessageTests
             {
                 if (i == 1)
                 {
-                    Assert.AreEqual(6, table.Buckets[1].Nodes.Count, "#3.a"+i);
+                    Assert.AreEqual(Bucket.MaxCapacity, table.Buckets[1].Nodes.Count, "#3.a"+i);
                     Assert.IsNotNull(table.Buckets[i].Replacement, "#3.b" + i);
                 }
                 else
@@ -65,8 +66,8 @@ namespace MonoTorrent.Dht.MessageTests
             Assert.AreEqual(8, table.Buckets.Count, "#1");
             Assert.AreEqual(5, table.Buckets[0].Nodes.Count);
             Assert.AreEqual(4, table.Buckets[1].Nodes.Count);
-            Assert.AreEqual(6, table.Buckets[2].Nodes.Count);
-            Assert.AreEqual(6, table.Buckets[3].Nodes.Count);
+            Assert.AreEqual(8, table.Buckets[2].Nodes.Count);
+            Assert.AreEqual(8, table.Buckets[3].Nodes.Count);
             Assert.AreEqual(0, table.Buckets[4].Nodes.Count);
             Assert.AreEqual(0, table.Buckets[5].Nodes.Count);
             Assert.AreEqual(0, table.Buckets[6].Nodes.Count);
@@ -74,6 +75,22 @@ namespace MonoTorrent.Dht.MessageTests
             CheckBuckets();
         }
         
+        [Test]
+        public void Replacement()
+        {
+            for (int i = 0; i < Bucket.MaxCapacity * 4; i++)
+            {
+                byte[] id = (byte[])this.id.Clone();
+                id[0] += (byte)i;
+                table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
+            }
+            Assert.AreEqual(8, table.Buckets.Count, "#1");
+            Assert.IsNotNull(table.Buckets[3].Replacement , "#2");
+            Node r = table.Buckets[3].Replacement;
+            table.Buckets[3].Replace(table.Buckets[3].Nodes[0]);
+            Assert.IsNull(table.Buckets[3].Replacement, "#3");
+            Assert.IsTrue(table.Buckets[3].Nodes.Contains(r), "#4");
+        }
 
         [Test]
         public void GetClosestTest()

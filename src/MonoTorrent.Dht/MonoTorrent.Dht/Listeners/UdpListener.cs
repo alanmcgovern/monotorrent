@@ -74,7 +74,7 @@ namespace MonoTorrent.Dht.Listeners
         {
             try
             {
-                if (endpoint.Address != IPAddress.Any)
+               if (endpoint.Address != IPAddress.Any)
                     client.Send(buffer, buffer.Length, endpoint);
             }
             catch(Exception ex)

@@ -110,7 +110,6 @@ namespace MonoTorrent.Dht.Messages
         {
             if (!base.Handle(engine, source))
                 return false;
-            Console.WriteLine("getpeerresponse.handle start");
             //null have ever been check in base.Handle
             Node node = engine.RoutingTable.FindNode(Id);
 
@@ -128,9 +127,9 @@ namespace MonoTorrent.Dht.Messages
                     Node p = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
                     peers.Add(p);
                 }
+                //when get peers announce to the node who send peer that we are peer for thin infohash too!
                 AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, node.Token);
                 engine.MessageLoop.EnqueueSend(apmsg, node);
-                Console.WriteLine("getpeerresponse.peer");
                 engine.RaisePeersFound(((GetPeers)queryMessage).InfoHash, new List<Node>(peers));//make a copy
             }
             else if (Parameters.ContainsKey(NodesKey))
@@ -139,6 +138,7 @@ namespace MonoTorrent.Dht.Messages
                 for (int i = 0; (i + 26) <= b.Length; i += 26)
                 {
                     Node n = Node.FromCompactNode(b, i);
+                    //forward get peers to new nodes until get peers and not node
                     if (engine.RoutingTable.FindNode(n.Id) == null)
                     {
                         engine.Add(n);
@@ -146,9 +146,7 @@ namespace MonoTorrent.Dht.Messages
                         engine.MessageLoop.EnqueueSend(gpmsg, n);
                     }
                 }
-                Console.WriteLine("getpeerresponse.nodes");
             }
-            Console.WriteLine("getpeerresponse.handle stop");
             return true;
         }
     }

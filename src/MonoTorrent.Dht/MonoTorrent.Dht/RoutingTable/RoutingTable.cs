@@ -64,7 +64,6 @@ namespace MonoTorrent.Dht
             this.localNode = localNode;
             localNode.Seen();
             Add(new Bucket());
-            Add(localNode);
         }
 
         public void Add(Node node)
@@ -72,9 +71,8 @@ namespace MonoTorrent.Dht
             Bucket bucket = buckets.Find(delegate(Bucket b) { return node.Id >= b.Min && node.Id < b.Max; });
 
             bool added = bucket.Add(node);
-            if (!added && bucket.Nodes.Contains(LocalNode))
-                if (Split(bucket))
-                    Add(node);
+            if (!added && bucket.Min <= LocalNode.Id && bucket.Max > LocalNode.Id)
+                Split(bucket);
         }
 
         private void Add(Bucket bucket)
@@ -98,11 +96,11 @@ namespace MonoTorrent.Dht
             buckets.Remove(bucket);
         }
 
-        private bool Split(Bucket bucket)
+        private void Split(Bucket bucket)
         {
-            if (bucket.Max - bucket.Min < 6)
-                return false;
-
+            if (bucket.Max - bucket.Min < Bucket.MaxCapacity)
+                return;//to avoid infinit loop when add same node
+            
             NodeId median = (bucket.Min + bucket.Max) / 2;
             Bucket left = new Bucket(bucket.Min, median);
             Bucket right = new Bucket(median, bucket.Max);
@@ -113,11 +111,20 @@ namespace MonoTorrent.Dht
 
             foreach (Node n in bucket.Nodes)
                 Add(n);
-
-            Add(bucket.Replacement);
-            return true;
+            
+            Node node = bucket.Replacement;
+            bucket.Replacement = null;            
+            Add(node);
         }
 
+        public int CountNodes()
+        {
+            int r = 0;
+            foreach (Bucket b in buckets)
+                r += b.Nodes.Count;
+            return r;
+        }
+        
         public IList<Node> GetClosest(NodeId Target)
         {
             SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);

@@ -39,7 +39,7 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
-    public class Node : IComparable, IComparable<Node>
+    public class Node : IComparable<Node>
     {
         public const int MaxFailures = 4;
 
@@ -49,7 +49,14 @@ namespace MonoTorrent.Dht
         int failedCount;
         DateTime lastSeen;
         BEncodedString token;
-
+        Bucket bucket;
+        
+        internal Bucket Bucket
+        {
+            get {return bucket;}
+            set { bucket = value; }
+        }
+        
         internal bool CurrentlyPinging
         {
             get { return currentlyPinging; }
@@ -166,16 +173,14 @@ namespace MonoTorrent.Dht
             return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
 
+        //To order by last seen in bucket
         public int CompareTo(Node other)
         {
             if (other == null)
                 return 1;
-            return id.CompareTo(other.id);
-        }
-
-        public int CompareTo(object obj)
-        {
-            return CompareTo(obj as Node);
+            
+            //max last seen first
+            return other.lastSeen.CompareTo(this.lastSeen);
         }
     }
 }

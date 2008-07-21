@@ -63,7 +63,8 @@ namespace MonoTorrent.Dht
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
         Thread thread;
         ManualResetEvent waitHandle = new ManualResetEvent(false);
-
+        Random rand;
+        
         private bool CanSend
         {
             get { return activeSends.Count < 5 && sendQueue.Count > 0 && (Environment.TickCount - lastSent) > 5; }
@@ -76,6 +77,7 @@ namespace MonoTorrent.Dht
             listener.MessageReceived += new MessageReceived(MessageReceived);
             thread = new Thread(Loop);
             thread.IsBackground = true;
+            rand = new Random();
 
             thread.Start();
         }
@@ -87,9 +89,16 @@ namespace MonoTorrent.Dht
                 // I should check the IP address matches as well as the transaction id
                 // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
                 // and return an error message (if that's what the spec allows)
-                Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
-                receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
-                waitHandle.Set();
+                try {
+                    Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
+                    receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
+                    waitHandle.Set();
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("IP:"+endpoint.Address.ToString() + "bad transaction:" + e.Message);
+                }
+                
             }
         }
 
@@ -121,9 +130,7 @@ namespace MonoTorrent.Dht
                         {
                             if ((DateTime.Now - waitingResponse.Peek().Key).TotalMilliseconds > engine.TimeOut)
                             {
-								timedOut = waitingResponse.Dequeue().Value;
-							    if (MessageFactory.UnregisterSend(timedOut))
-                                    timedOut = null;
+                                timedOut = waitingResponse.Dequeue().Value;
                             }
                         }
                     }
@@ -145,7 +152,7 @@ namespace MonoTorrent.Dht
                             {
                                 m.Handle(engine, source);
                             }
-                            catch (MessageException ex)
+                            catch (MessageException)
                             {
                                 // Normal operation (FIXME: do i need to send a response error message?) 
                             }
@@ -159,19 +166,17 @@ namespace MonoTorrent.Dht
                     if (timedOut != null)
                         timedOut.TimedOut(engine);
 
-                    if ((Environment.TickCount - lastTrigger) > 1000)
+                    if ((Environment.TickCount - lastTrigger) > 1000 || 
+                        (Environment.TickCount < lastTrigger && ((Environment.TickCount + int.MaxValue - lastTrigger) > 1000)))//25 days will bug because tickcount restart...
                     {
                         lastTrigger = Environment.TickCount;
                         DhtEngine.MainLoop.QueueWait(delegate {
                             foreach (Bucket b in engine.RoutingTable.Buckets)
                             {
-                                foreach (Node n in b.Nodes)
+                                if ((DateTime.Now - b.LastChanged).TotalMinutes > 15)
                                 {
-                                    if (!n.CurrentlyPinging && (n.State == NodeState.Unknown || n.State == NodeState.Questionable))
-                                    {
-                                        n.CurrentlyPinging = true;
-                                        EnqueueSend(new Ping(n.Id), n.EndPoint);
-                                    }
+                                    Node no = b.Nodes[rand.Next(b.Nodes.Count-1)];
+                                    EnqueueSend(new FindNode(engine.RoutingTable.LocalNode.Id, no.Id), no);
                                 }
                             }
                         });

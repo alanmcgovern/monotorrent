@@ -40,7 +40,6 @@ namespace MonoTorrent.Dht.Messages
     
     internal static class MessageFactory
     {
-        private static BEncodedString IdKey = "id";
         private static readonly string QueryNameKey = "q";
         private static BEncodedString MessageTypeKey = "y";
         private static BEncodedString TransactionIdKey = "t";
@@ -86,7 +85,7 @@ namespace MonoTorrent.Dht.Messages
             {
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
                 if (!messages.TryGetValue(key, out msg))
-                    throw new Exception("FIX THIS EXCEPTION");
+                    throw new Exception("Response message with bas transaction:" + key+ "full message:"+dictionary);
                 messages.Remove(key);
             }
 

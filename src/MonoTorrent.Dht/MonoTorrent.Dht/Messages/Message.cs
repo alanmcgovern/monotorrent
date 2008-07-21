@@ -74,13 +74,6 @@ namespace MonoTorrent.Dht.Messages
             properties = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length);
         }
 
-        public byte[] Encode()
-        {
-            byte[] buffer = new byte[ByteLength];
-            Encode(buffer, 0);
-            return buffer;
-        }
-
         public override int Encode(byte[] buffer, int offset)
         {
             return properties.Encode(buffer, offset);

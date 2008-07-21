@@ -18,10 +18,8 @@ namespace SampleClient
             if (File.Exists("mynodes"))
                 engine.LoadNodes(File.ReadAllBytes("mynodes"));
 
-            Console.CancelKeyPress += delegate { File.WriteAllBytes("mynodes", engine.SaveNodes()); };
-
-            engine.Start();
             listener.Start();
+            engine.Start();            
             
             Random random = new Random();
             byte[] b = new byte[20];
@@ -30,8 +28,9 @@ namespace SampleClient
             System.Threading.Thread.Sleep(10000);
             engine.Announce(b);
             
-            while (true)
-                System.Threading.Thread.Sleep(100);
+            while (Console.ReadLine() != "q")
+            {}
+            File.WriteAllBytes("mynodes", engine.SaveNodes());
         }
     }
 }

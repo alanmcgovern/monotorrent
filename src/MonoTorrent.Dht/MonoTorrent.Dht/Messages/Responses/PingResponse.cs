@@ -56,11 +56,20 @@ namespace MonoTorrent.Dht.Messages
 
             Node node = engine.RoutingTable.FindNode(Id);
             if (node != null)
+            {
                 node.CurrentlyPinging = false;
-
-            FindNode find = new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id);
-            engine.MessageLoop.EnqueueSend(find, source);
+                if (node.Bucket  != null)
+                {
+                    node.Bucket.LastChanged = DateTime.Now;
+                    if (node.Bucket.Replacement != null)
+                        node.Bucket.PingForReplace(engine);
+                }
+                // find node closer to itself from first node connected and closer nodes
+                if (engine.Bootstrap)
+                    engine.MessageLoop.EnqueueSend(new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id), node);
+            }
             return true;
         }
     }
 }
+

@@ -72,6 +72,11 @@ namespace MonoTorrent.Dht.Messages
             Node n = engine.RoutingTable.FindNode(this.Id);
             if (n != null)
                 n.CurrentlyPinging = false;
+
+            //if become bad else base will ping again
+            if (n.Bucket != null && n.Bucket.Replacement != null && n.State == NodeState.Bad)
+                n.Bucket.Replace (n); 
+            
             return true;
         }
     }

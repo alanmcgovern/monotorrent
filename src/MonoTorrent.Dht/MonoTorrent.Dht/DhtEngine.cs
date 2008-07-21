@@ -74,6 +74,11 @@ namespace MonoTorrent.Dht
             set { port = value; }
         }
         
+        internal bool Bootstrap
+        {
+            get { return (RoutingTable.CountNodes() <= 1); }
+        }
+        
         internal MessageLoop MessageLoop
         {
             get { return messageLoop; }
@@ -126,12 +131,12 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            messageLoop.EnqueueSend(new Ping(node.Id), node);
+            messageLoop.EnqueueSend(new Ping(RoutingTable.LocalNode.Id), node);
         }
 
         public void Start()
         {
-            if (this.RoutingTable.Buckets.Count == 1 && RoutingTable.Buckets[0].Nodes.Count == 1)
+            if (Bootstrap)
             {
                 Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
                 Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
@@ -169,11 +174,11 @@ namespace MonoTorrent.Dht
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
                     foreach (Node n in b.Nodes)
-                        if (n != RoutingTable.LocalNode && n.State != NodeState.Bad)
+                        if (n.State != NodeState.Bad)
                             details.Add(n.CompactNode());
 
                     if (b.Replacement != null)
-                        if (b.Replacement != RoutingTable.LocalNode && b.Replacement.State != NodeState.Bad)
+                        if (b.Replacement.State != NodeState.Bad)
                             details.Add(b.Replacement.CompactNode());
                 }
             });

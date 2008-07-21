@@ -46,12 +46,13 @@ namespace MonoTorrent.Dht
         DateTime lastChanged = DateTime.Now;
         NodeId max;
         NodeId min;
-		List<Node> nodes = new List<Node>(MaxCapacity + 2);
-        private Node replacement;
+		List<Node> nodes = new List<Node>(MaxCapacity);
+        Node replacement;
 
         public DateTime LastChanged
         {
             get { return lastChanged; }
+            set { lastChanged = value; }
         }
 
         public NodeId Max
@@ -72,6 +73,7 @@ namespace MonoTorrent.Dht
         internal Node Replacement
         {
             get { return replacement; }
+            set { replacement = value; }
         }
 
         //TODO avoid calcul and made it with hardcoded const NodeIdDefaultMaxBuffer = 
@@ -87,16 +89,17 @@ namespace MonoTorrent.Dht
 			this.max = max;
 		}
 		
-		public bool Add(Node node)
-		{
-			// if the current bucket is not full we directly add the Node
-			if (nodes.Count < 6)
+        public bool Add(Node node)
+        {
+            // if the current bucket is not full we directly add the Node
+            if (nodes.Count < MaxCapacity)
             {
                 nodes.Add(node);
-				lastChanged = DateTime.Now;
-				return true;
-			}
-
+                node.Bucket = this;
+                lastChanged = DateTime.Now;
+                return true;
+            }
+            //test replace
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
                 if (nodes[i].State != NodeState.Bad)
@@ -104,21 +107,38 @@ namespace MonoTorrent.Dht
 
                 nodes.RemoveAt(i);
                 nodes.Add(node);
+                node.Bucket = this;
                 lastChanged = DateTime.Now;
                 return true;
             }
-
-            // Ping the least recently seen node now!
-            // Store this one as a temp
-            if (replacement == null)
-            {
-                replacement = node;
-                return true;
-            }
-
+            //queue for replace fresh node
+            replacement = node;
+            node.Bucket = this;
             return false;
 		}
 
+        public void Replace (Node oldNode)
+        {
+            nodes.Remove(oldNode);
+            nodes.Add(replacement);
+            lastChanged = DateTime.Now;
+            this.replacement = null;
+        }
+        
+        internal void PingForReplace(DhtEngine engine)
+        {
+            Nodes.Sort();//max to min last seen
+            foreach (Node n in Nodes)
+            {
+                if (!n.CurrentlyPinging && (n.State == NodeState.Unknown || n.State == NodeState.Questionable))
+                {
+                    n.CurrentlyPinging = true;
+                    engine.MessageLoop.EnqueueSend(new Messages.Ping(engine.RoutingTable.LocalNode.Id), n);
+                    return;//ping only the first questionnable of bucket
+                }
+            }
+        }
+        
         public int CompareTo(Bucket other)
         {
             return min.CompareTo(other.min);

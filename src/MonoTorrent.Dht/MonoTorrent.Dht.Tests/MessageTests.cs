@@ -6,7 +6,7 @@ using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Dht.MessageTests
+namespace MonoTorrent.Dht.Tests
 {
     [TestFixture]
     public class MessageTests

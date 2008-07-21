@@ -7,22 +7,15 @@ namespace MonoTorrent.Dht
     public class MessageException : Exception
     {
         private eErrorCode errorCode;
-        private string message;
 
         public eErrorCode ErrorCode
         {
             get { return errorCode; }
         }
 
-        public string Message
-        {
-            get { return message; }
-        }
-
-        public MessageException(eErrorCode errorCode, string message)
+        public MessageException(eErrorCode errorCode, string message) : base(message)
         {
             this.errorCode = errorCode;
-            this.message = message;
         }
     }
 }

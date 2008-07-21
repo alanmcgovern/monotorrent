@@ -88,6 +88,8 @@ namespace MonoTorrent.Dht.Messages
             {
                 node = new Node(Id, source);
                 engine.RoutingTable.Add(node);
+                if (node.Bucket != null && node.Bucket.Replacement != null)
+                    node.Bucket.PingForReplace(engine);
             }
             node.Seen();
 
@@ -96,8 +98,6 @@ namespace MonoTorrent.Dht.Messages
 
         public virtual bool TimedOut(DhtEngine engine)
         {
-            MessageFactory.UnregisterSend(this);
-
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
                 return false;
@@ -106,6 +106,8 @@ namespace MonoTorrent.Dht.Messages
 
             if (node.FailedCount < Node.MaxFailures)
                 engine.MessageLoop.EnqueueSend(this, node);
+            else if (!MessageFactory.UnregisterSend(this))
+                return false;
 
             return true;
         }

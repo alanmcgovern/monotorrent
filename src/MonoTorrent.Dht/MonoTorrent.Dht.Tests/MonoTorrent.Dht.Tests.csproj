@@ -1,11 +1,12 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8BE20CF2-D48D-426F-8A66-255AFED7B5C9}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>
@@ -21,7 +22,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <OutputType>Exe</OutputType>
-    <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
@@ -34,7 +34,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <OutputType>Exe</OutputType>
-    <AssemblyName>MonoTorrent.Dht.Tests</AssemblyName>
     <DebugSymbols>true</DebugSymbols>
     <RootNamespace>MonoTorrent.Dht.Tests</RootNamespace>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -67,8 +66,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
-      <Project>{7A2A7E73-FD43-4171-AA34-DA413D35459E}</Project>
-      <Name>monotorrent-dht</Name>
+      <Project>{8BE20CF2-D48D-426F-8A66-255AFED7B5C9}</Project>
+      <Name>MonoTorrent.Dht</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
