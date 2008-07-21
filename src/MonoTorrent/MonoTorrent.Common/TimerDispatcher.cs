@@ -32,7 +32,7 @@ using System.Threading;
 
 namespace Mono.Ssdp.Internal
 {
-    public delegate void TimeoutHandler ();
+    public delegate bool TimeoutHandler ();
 
     public class TimeoutDispatcher
     {
@@ -41,6 +41,7 @@ namespace Mono.Ssdp.Internal
         private struct TimeoutItem : IComparable<TimeoutItem>
         {
             public uint Id;
+            public TimeSpan Timeout;
             public DateTime Trigger;
             public TimeoutHandler Handler;
             
@@ -60,12 +61,13 @@ namespace Mono.Ssdp.Internal
 
         private List<TimeoutItem> timeouts = new List<TimeoutItem> ();
         
-        public uint Enqueue (DateTime expire, TimeoutHandler handler)
+        public uint Enqueue (TimeSpan timeout, TimeoutHandler handler)
         {
             lock (this) {
                 TimeoutItem item = new TimeoutItem ();
                 item.Id = timeout_ids++;
-                item.Trigger = expire;
+                item.Timeout = timeout;
+                item.Trigger = DateTime.Now.Add(timeout);
                 item.Handler = handler;
                 
                 Enqueue (ref item);
@@ -125,7 +127,11 @@ namespace Mono.Ssdp.Internal
                 TimeSpan interval = item.Trigger - DateTime.Now;
                 if (interval >= TimeSpan.Zero) {
                     if (!wait.WaitOne (interval, false)) {
-                        item.Handler ();
+                        Dequeue (item.Id);
+                        if(item.Handler ()) {
+                            item.Trigger = DateTime.Now.Add(item.Timeout);
+                            Enqueue(ref item);
+                        }
                     } else {
                         restart = true;
                     }

@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using MonoTorrent.Client.Tasks;
+using Mono.Ssdp.Internal;
 
 namespace MonoTorrent.Client
 {
@@ -39,6 +40,7 @@ namespace MonoTorrent.Client
     public delegate void MainLoopTask();
     public class MainLoop
     {
+        TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         AutoResetEvent handle = new AutoResetEvent(false);
         Queue<Task> tasks = new Queue<Task>();
         internal Thread thread;
@@ -105,6 +107,24 @@ namespace MonoTorrent.Client
 
             t.Handle.WaitOne();
             t.Handle.Close();
+        }
+
+        public uint QueueTimeout(TimeSpan span, MainLoopTask task)
+        {
+            return QueueTimeout(span, task, false);
+        }
+
+        public uint QueueTimeout(TimeSpan span, MainLoopTask task, bool autoRepeat)
+        {
+            return dispatcher.Enqueue(span, delegate {
+                Queue(task);
+                return autoRepeat;
+            });
+        }
+
+        public void CancelQueued(uint handle)
+        {
+            // FIXME: Get aaron to implement this ;)
         }
     }
 }
