@@ -29,7 +29,6 @@
 
 
 using System;
-using System.Timers;
 using System.Collections.Generic;
 
 using MonoTorrent.Client.Messages.Libtorrent;
@@ -46,7 +45,6 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private PeerId id;
-        private Timer timer;
         private List<Peer> addedPeers;
         private List<Peer> droppedPeers;
         private bool disposed = false;
@@ -77,10 +75,12 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            timer = new Timer();
-            timer.Elapsed += delegate { ClientEngine.MainLoop.Queue(OnTick); };
-            timer.Interval=60000;//1 minute
-            timer.Enabled=true;
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
+                if(disposed)
+                    return false;
+                ClientEngine.MainLoop.QueueWait(delegate { OnTick(); });
+                return true;
+            });
         }
 
         internal void OnTick()
@@ -114,23 +114,13 @@ namespace MonoTorrent.Client
             id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
         }
 
-        protected void Dispose(bool disposing)
-        {
-            if(!this.disposed)
-            {
-                if(disposing)
-                {
-                    timer.Dispose();
-                    id.TorrentManager.OnPeerFound -= new EventHandler<PeerAddedEventArgs>(OnAdd);
-                }
-                disposed = true;
-            }
-        }
-
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            if(disposed)
+                return;
+
+            disposed = true;
+            id.TorrentManager.OnPeerFound -= new EventHandler<PeerAddedEventArgs>(OnAdd);
         }
 
         #endregion

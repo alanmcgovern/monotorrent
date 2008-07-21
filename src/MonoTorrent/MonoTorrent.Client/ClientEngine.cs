@@ -32,7 +32,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
-using System.Timers;
 using System.Net;
 using System.IO;
 using System.Threading;
@@ -83,11 +82,11 @@ namespace MonoTorrent.Client
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
         private DiskManager diskManager;
+        private bool isRunning;
         private ConnectionListenerBase listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private readonly string peerId;
         private EngineSettings settings;
-        private System.Timers.Timer timer;      // The timer used to call the logic methods for the torrent managers
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
         internal RateLimiter uploadLimiter;
@@ -115,7 +114,7 @@ namespace MonoTorrent.Client
 
         public bool IsRunning
         {
-            get { return this.timer.Enabled; }
+            get { return this.isRunning; }
         }
 
         public string PeerId
@@ -173,9 +172,12 @@ namespace MonoTorrent.Client
             this.connectionManager = new ConnectionManager(this);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
-            this.timer = new System.Timers.Timer(TickLength);
+            MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
+                if (IsRunning)
+                    MainLoop.QueueWait(LogicTick);
+                return true;
+            });
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.timer.Elapsed += delegate { MainLoop.Queue(LogicTick); };
             this.downloadLimiter = new RateLimiter();
             this.uploadLimiter = new RateLimiter();
             this.peerId = GeneratePeerId();
@@ -216,7 +218,6 @@ namespace MonoTorrent.Client
         {
             this.diskManager.Dispose();
             this.listenManager.Dispose();
-            this.timer.Dispose();
         }
 
         private static string GeneratePeerId()
@@ -381,15 +382,14 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            if (!timer.Enabled)
-                timer.Enabled = true;       // Start logic ticking
+            isRunning = true;
         }
 
 
         internal void Stop()
         {
             // If all the torrents are stopped, stop ticking
-            timer.Enabled = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
+            isRunning = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
         }
 
         #endregion
