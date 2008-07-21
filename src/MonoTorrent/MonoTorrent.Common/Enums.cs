@@ -32,7 +32,6 @@ using System;
 
 namespace MonoTorrent.Common
 {
-    [Flags]
     public enum PeerStatus
     {
         Available,
