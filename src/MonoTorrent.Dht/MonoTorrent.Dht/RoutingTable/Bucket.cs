@@ -76,7 +76,6 @@ namespace MonoTorrent.Dht
             set { replacement = value; }
         }
 
-        //TODO avoid calcul and made it with hardcoded const NodeIdDefaultMaxBuffer = 
         public Bucket()
             : this(new NodeId(0), new NodeId(2).Pow(160))
         {
@@ -117,26 +116,19 @@ namespace MonoTorrent.Dht
             return false;
 		}
 
-        public void Replace (Node oldNode)
+        public bool CanContain(Node node)
         {
-            nodes.Remove(oldNode);
-            nodes.Add(replacement);
-            lastChanged = DateTime.Now;
-            this.replacement = null;
+            if (node == null)
+                throw new ArgumentNullException("node");
+            return CanContain(node.Id);
         }
-        
-        internal void PingForReplace(DhtEngine engine)
+
+        public bool CanContain(NodeId id)
         {
-            Nodes.Sort();//max to min last seen
-            foreach (Node n in Nodes)
-            {
-                if (!n.CurrentlyPinging && (n.State == NodeState.Unknown || n.State == NodeState.Questionable))
-                {
-                    n.CurrentlyPinging = true;
-                    engine.MessageLoop.EnqueueSend(new Messages.Ping(engine.RoutingTable.LocalNode.Id), n);
-                    return;//ping only the first questionnable of bucket
-                }
-            }
+            if (id == null)
+                throw new ArgumentNullException("id");
+
+            return Min <= id && Max > id;
         }
         
         public int CompareTo(Bucket other)

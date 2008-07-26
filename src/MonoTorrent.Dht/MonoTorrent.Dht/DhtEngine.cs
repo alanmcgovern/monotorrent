@@ -41,6 +41,7 @@ using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Client.Tasks;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
@@ -138,12 +139,13 @@ namespace MonoTorrent.Dht
         {
             if (Bootstrap)
             {
-                Node utorrent = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
-                Add(utorrent);
-                Add(node2);
+                new InitialiseTask(this).Execute(this);
+                RaiseStateChanged(State.Initialising);
             }
-            RaiseStateChanged(State.Initialising);
+            else
+            {
+                RaiseStateChanged(State.Ready);
+            }
         }
         
         #region event

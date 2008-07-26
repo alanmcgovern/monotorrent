@@ -87,7 +87,8 @@ namespace MonoTorrent.Dht.Tests
             Assert.AreEqual(8, table.Buckets.Count, "#1");
             Assert.IsNotNull(table.Buckets[3].Replacement , "#2");
             Node r = table.Buckets[3].Replacement;
-            table.Buckets[3].Replace(table.Buckets[3].Nodes[0]);
+            // FIXME: Replace doesnt exist.
+            //table.Buckets[3].Replace(table.Buckets[3].Nodes[0]);
             Assert.IsNull(table.Buckets[3].Replacement, "#3");
             Assert.IsTrue(table.Buckets[3].Nodes.Contains(r), "#4");
         }

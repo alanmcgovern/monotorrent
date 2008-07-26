@@ -86,10 +86,18 @@ namespace MonoTorrent.Dht.Messages
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
             {
+                //FIXME: I shouldn't use this endpoint! I can't add a peer using this because the port which they
+                // *send* the message on does not have to be the same as the port they're listening from messages on.
+                // Generally speaking, the send port is always different.
+
+                // When i receive a query message from a peer i don't know, how do i get their correct listen port for DHT messages? 
                 node = new Node(Id, source);
                 engine.RoutingTable.Add(node);
-                if (node.Bucket != null && node.Bucket.Replacement != null)
-                    node.Bucket.PingForReplace(engine);
+               
+                // FIXME: Ping for replacing should be handled with the RefreshBucketTask (or a PingToReplaceTask)
+               
+                //if (node.Bucket != null && node.Bucket.Replacement != null)
+                    ///node.Bucket.PingForReplace(engine);
             }
             node.Seen();
 

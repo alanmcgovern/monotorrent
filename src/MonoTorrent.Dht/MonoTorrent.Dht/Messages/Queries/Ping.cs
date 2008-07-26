@@ -70,13 +70,26 @@ namespace MonoTorrent.Dht.Messages
                 return false;
 
             Node n = engine.RoutingTable.FindNode(this.Id);
-            if (n != null)
-                n.CurrentlyPinging = false;
+            if (n == null)
+                return false;
+            
+            // FIXME: This should probably be handled in a Ping task (or something)
+            // Idea - Do something like this:
+
+            // 1) To ping a node, create a SendMessageTask
+            // 2) This task will have a constructor like: public SendMessageTask (Node targetNode, QueryMessage message)
+            // 3) If a response is not received, the message should time out immediately, a resend will not be attempted
+            // 4) The SendMessageTask can have a configurable number of retries and it will
+            //    decide if a resend should be attempted or not.
+
+            // The code below is commented out while i figure out where the best place to put it is...
+            // probably in a SendMessageTask type of thing
+
 
             //if become bad else base will ping again
-            if (n.Bucket != null && n.Bucket.Replacement != null && n.State == NodeState.Bad)
-                n.Bucket.Replace (n); 
-            
+            //if (n.Bucket != null && n.Bucket.Replacement != null && n.State == NodeState.Bad)
+            //    n.Bucket.Replace (n); 
+
             return true;
         }
     }

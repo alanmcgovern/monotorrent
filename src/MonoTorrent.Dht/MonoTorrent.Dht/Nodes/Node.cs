@@ -57,7 +57,7 @@ namespace MonoTorrent.Dht
             set { bucket = value; }
         }
         
-        internal bool CurrentlyPinging
+        private bool CurrentlyPinging
         {
             get { return currentlyPinging; }
             set { currentlyPinging = value; }
