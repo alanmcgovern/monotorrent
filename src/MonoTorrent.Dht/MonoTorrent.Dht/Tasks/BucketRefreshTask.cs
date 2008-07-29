@@ -12,28 +12,28 @@ namespace MonoTorrent.Dht
     	public BucketRefreshTask(DhtEngine engine, Bucket bucket)
     	{
             rand = new Random();
-    		this.engine = engine;
-    		this.bucket = bucket;
+            this.engine = engine;
+            this.bucket = bucket;
     	}
     	
     	public void MessageReceive(ResponseMessage m)
     	{
-    		Complete(new TaskCompleteEventArgs(true));
+            Complete(new TaskCompleteEventArgs(true));
     	}
     	
     	public void MessageTimedout(QueryMessage m)
     	{
-    		Complete(new TaskCompleteEventArgs(false));    		
+            Complete(new TaskCompleteEventArgs(false));    		
     	}
     
         public override void Execute ()
     	{
-    		if (!Active)
-    			return;
+            if (!Active)
+                return;
     			
             Node n = bucket.Nodes[rand.Next(bucket.Nodes.Count-1)];
-    		FindNode msg = new FindNode(engine.RoutingTable.LocalNode.Id, n.Id);
-    		msg.Task = this;
+            FindNode msg = new FindNode(engine.RoutingTable.LocalNode.Id, n.Id);
+            msg.Task = this;
             engine.MessageLoop.EnqueueSend(msg, n);
     	}
     }
