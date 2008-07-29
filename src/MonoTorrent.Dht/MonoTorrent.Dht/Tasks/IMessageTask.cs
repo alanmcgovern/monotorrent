@@ -1,10 +1,9 @@
-//
-// PingResponse.cs
+// IMessageTask.cs.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Olivier Dufour <olivier.duff@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2008 Olivier Dufour
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -25,32 +24,16 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-
+//
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
-using System.Net;
+using MonoTorrent.Dht.Messages;
 
-namespace MonoTorrent.Dht.Messages
+namespace MonoTorrent.Dht
 {
-    class PingResponse : ResponseMessage
+    internal interface IMessageTask
     {
-        public PingResponse(NodeId id)
-            : base(id)
-        {
-        }
-
-        public PingResponse(BEncodedDictionary d, QueryMessage m)
-            :base(d, m)
-        {
-        }
-
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            node.CurrentlyPinging = false;
-            return true;
-        }
+        void MessageReceive(ResponseMessage m);
+    	void MessageTimedout(QueryMessage m);
     }
 }

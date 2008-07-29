@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -78,14 +78,16 @@
     <Compile Include="Nodes\Node.cs" />
     <Compile Include="RoutingTable\RoutingTable.cs" />
     <Compile Include="State.cs" />
-    <Compile Include="Tasks\FindPeersTask.cs" />
     <Compile Include="Tasks\InitialiseTask.cs" />
-    <Compile Include="Tasks\ITask.cs" />
-    <Compile Include="Tasks\RefreshBucketTask.cs" />
     <Compile Include="Tasks\Task.cs" />
     <Compile Include="TransactionId.cs" />
     <Compile Include="Nodes\TokenManager.cs" />
     <Compile Include="EventArgs\PeersFoundEventArgs.cs" />
+    <Compile Include="EventArgs\NodeFoundEventArgs.cs" />
+    <Compile Include="Tasks\AnnounceTask.cs" />
+    <Compile Include="Tasks\BucketRefreshTask.cs" />
+    <Compile Include="Tasks\IMessageTask.cs" />
+    <Compile Include="Tasks\ReplacementTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
@@ -98,4 +100,11 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <GtkDesignInfo gtkVersion="2.12.2" />
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
 </Project>

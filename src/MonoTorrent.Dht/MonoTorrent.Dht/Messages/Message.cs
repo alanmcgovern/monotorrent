@@ -79,6 +79,8 @@ namespace MonoTorrent.Dht.Messages
             return properties.Encode(buffer, offset);
         }
 
-        public abstract bool Handle(DhtEngine engine, IPEndPoint source);
+        public abstract bool Handle(DhtEngine engine, Node node);
+		
+        public abstract bool HandleInternal(DhtEngine engine, IPEndPoint source);
     }
 }

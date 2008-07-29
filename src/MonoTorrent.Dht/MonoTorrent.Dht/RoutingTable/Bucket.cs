@@ -94,11 +94,11 @@ namespace MonoTorrent.Dht
             if (nodes.Count < MaxCapacity)
             {
                 nodes.Add(node);
-                node.Bucket = this;
                 lastChanged = DateTime.Now;
                 return true;
             }
             //test replace
+
             for (int i = nodes.Count - 1; i >= 0; i--)
             {
                 if (nodes[i].State != NodeState.Bad)
@@ -106,13 +106,9 @@ namespace MonoTorrent.Dht
 
                 nodes.RemoveAt(i);
                 nodes.Add(node);
-                node.Bucket = this;
                 lastChanged = DateTime.Now;
                 return true;
             }
-            //queue for replace fresh node
-            replacement = node;
-            node.Bucket = this;
             return false;
 		}
 

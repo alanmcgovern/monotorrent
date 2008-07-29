@@ -73,25 +73,21 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
-            if (!base.Handle(engine, source))
-                return false;
-
             if (!engine.Torrents.ContainsKey(InfoHash))
                 engine.Torrents.Add(InfoHash, new List<Node>());
 
-            Node n = engine.RoutingTable.FindNode(Id);
             Message response;
-            if (engine.TokenManager.VerifyToken(n, Token))
+            if (engine.TokenManager.VerifyToken(node, Token))
 			{
-                engine.Torrents[InfoHash].Add(n);
+                engine.Torrents[InfoHash].Add(node);
 				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id);
 		    }
 			else
 			    response = new ErrorMessage(eErrorCode.ProtocolError, "Token not valid!");
 				
-			engine.MessageLoop.EnqueueSend(response, source);
+			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
             return true;
         }
     }

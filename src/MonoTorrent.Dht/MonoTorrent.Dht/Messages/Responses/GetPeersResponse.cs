@@ -38,9 +38,9 @@ namespace MonoTorrent.Dht.Messages
 {
     class GetPeersResponse : ResponseMessage
     {
-        private static readonly BEncodedString NodesKey = "nodes";
+        internal static readonly BEncodedString NodesKey = "nodes";
         private static readonly BEncodedString TokenKey = "token";
-        private static readonly BEncodedString ValuesKey = "values";
+        internal static readonly BEncodedString ValuesKey = "values";
 
         private GetPeers InitialMessage
         {
@@ -106,13 +106,8 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
-            if (!base.Handle(engine, source))
-                return false;
-            //null have ever been check in base.Handle
-            Node node = engine.RoutingTable.FindNode(Id);
-
             node.Token = Token;
             if (Parameters.ContainsKey(ValuesKey))
             {
@@ -127,10 +122,7 @@ namespace MonoTorrent.Dht.Messages
                     Node p = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
                     peers.Add(p);
                 }
-                //when get peers announce to the node who send peer that we are peer for thin infohash too!
-                AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, node.Token);
-                engine.MessageLoop.EnqueueSend(apmsg, node);
-                engine.RaisePeersFound(((GetPeers)queryMessage).InfoHash, new List<Node>(peers));//make a copy
+                engine.RaisePeersFound(node, infoHash, new List<Node>(peers));//make a copy
             }
             else if (Parameters.ContainsKey(NodesKey))
             {
@@ -142,8 +134,7 @@ namespace MonoTorrent.Dht.Messages
                     if (engine.RoutingTable.FindNode(n.Id) == null)
                     {
                         engine.Add(n);
-                        GetPeers gpmsg = new GetPeers(engine.RoutingTable.LocalNode.Id, InitialMessage.InfoHash);
-                        engine.MessageLoop.EnqueueSend(gpmsg, n);
+                        engine.RaiseNodeGot(n);
                     }
                 }
             }

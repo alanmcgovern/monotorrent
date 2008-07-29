@@ -41,7 +41,6 @@ using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Client.Tasks;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
@@ -61,6 +60,10 @@ namespace MonoTorrent.Dht
         
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         
+        internal event EventHandler<NodeFoundEventArgs> NodeFound;//from findNode response
+        
+        internal event EventHandler<NodeFoundEventArgs> NodeGot;//from getPeer response
+        
         int port = 6881;
         State state = State.NotReady;
         MessageLoop messageLoop;
@@ -79,7 +82,7 @@ namespace MonoTorrent.Dht
         {
             get { return (RoutingTable.CountNodes() <= 1); }
         }
-        
+               
         internal MessageLoop MessageLoop
         {
             get { return messageLoop; }
@@ -139,7 +142,7 @@ namespace MonoTorrent.Dht
         {
             if (Bootstrap)
             {
-                new InitialiseTask(this).Execute(this);
+                new InitialiseTask(this).Execute();
                 RaiseStateChanged(State.Initialising);
             }
             else
@@ -158,12 +161,24 @@ namespace MonoTorrent.Dht
                 StateChanged(this, EventArgs.Empty);
         }
         
-        internal void RaisePeersFound(NodeId infoHash, List<Node> peers)
+        internal void RaisePeersFound(Node sender, NodeId infoHash, List<Node> peers)
         {
             if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
+                PeersFound(sender, new PeersFoundEventArgs(infoHash.Bytes, peers));
+        }
+        
+        internal void RaiseNodeFound(Node n)
+        {
+            if (NodeFound != null)
+                NodeFound(this, new NodeFoundEventArgs(n));
         }
 
+        internal void RaiseNodeGot(Node n)
+        {
+            if (NodeGot != null)
+                NodeGot(this, new NodeFoundEventArgs(n));
+        }
+        
         #endregion
         
         #region Load/save
@@ -201,12 +216,7 @@ namespace MonoTorrent.Dht
         
         public void Announce(byte[] infoHash)
         {
-            NodeId target = new NodeId(infoHash);
-            IList<Node> nodes = table.GetClosest(target);
-            foreach(Node n in nodes)
-            {
-                messageLoop.EnqueueSend(new GetPeers(RoutingTable.LocalNode.Id, target), n);
-            }            
+            new AnnounceTask(infoHash, this).Execute();
         }
     }
 }

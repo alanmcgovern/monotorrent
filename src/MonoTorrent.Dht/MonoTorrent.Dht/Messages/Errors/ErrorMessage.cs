@@ -72,10 +72,16 @@ namespace MonoTorrent.Dht.Messages
         {
 
         }
-
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        
+        public override bool HandleInternal(DhtEngine engine, IPEndPoint source)
         {
             throw new MessageException(ErrorCode, Message);
+        }
+        
+        public override bool Handle(DhtEngine engine, Node node)
+        {
+            //do nothing here because handle internal done all
+            return true;
         }
     }
 }

@@ -1,34 +1,35 @@
+using MonoTorrent.Dht.Messages;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace MonoTorrent.Dht.Tasks
+namespace MonoTorrent.Dht
 {
-    abstract class Task : ITask
+    internal abstract class Task<T> where T : TaskCompleteEventArgs
     {
-        public event EventHandler<TaskCompleteEventArgs> Complete;
+    	private bool active;
 
-        private bool active;
+    	public Task()
+    	{
+            active = true;
+   	}
 
-        public bool Active
-        {
-            get { return active; }
-            protected set { active = value; }
-        }
+        public abstract void Execute ();
 
-        public virtual void Cancel()
-        {
+    	public event EventHandler<T> Completed;
+
+        public void Cancel ()
+    	{
             active = false;
-            RaiseComplete(new TaskCompleteEventArgs(false));
-        }
+            Complete(new TaskCompleteEventArgs(false));
+    	}
+    	
+    	internal void Complete<T>(T e)
+    	{
+    		active = false;
+    		if (Completed != null)
+    			Completed(this, e);
+    	}
 
-        public abstract void Execute(DhtEngine engine);
-
-        protected virtual void RaiseComplete(TaskCompleteEventArgs e)
-        {
-            EventHandler<TaskCompleteEventArgs> h = Complete;
-            if(h != null)
-                h(this, e);
-        }
+        public bool Active { get {return active;} }	
     }
 }
+

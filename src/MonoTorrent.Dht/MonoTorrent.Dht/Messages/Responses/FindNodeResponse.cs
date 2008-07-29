@@ -57,11 +57,8 @@ namespace MonoTorrent.Dht.Messages
         {
         }
 
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
-            if (!base.Handle(engine, source))
-                return false;
-
             byte[] b = Nodes.TextBytes;
             for (int i = 0; (i + 26) <= b.Length; i += 26)
             {
@@ -69,11 +66,7 @@ namespace MonoTorrent.Dht.Messages
                 if (engine.RoutingTable.FindNode(n.Id) == null)
                 {
                     engine.Add(n);
-                    if (engine.Bootstrap)
-                    {
-                        // if bootstrap we try to get node closer until no new nodes
-                         engine.MessageLoop.EnqueueSend(new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id), n);
-                    }
+                    engine.RaiseNodeFound(n);
                 }
             }
             return true;

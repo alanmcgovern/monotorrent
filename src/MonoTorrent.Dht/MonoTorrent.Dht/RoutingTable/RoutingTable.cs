@@ -72,7 +72,7 @@ namespace MonoTorrent.Dht
             Add(new Bucket());
         }
 
-        public void Add(Node node)
+        public void Add(DhtEngine engine, Node node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
@@ -81,7 +81,17 @@ namespace MonoTorrent.Dht
 
             bool added = bucket.Add(node);
             if (!added && bucket.CanContain(LocalNode))
-                Split(bucket);
+            {
+                if (Split(engine, bucket))
+                {
+                    Add(engine, node);
+                    return;
+                }
+            }
+            if (!added)
+            {
+                new ReplacementTask(engine, node, bucket).Execute();
+            }
         }
 
         private void Add(Bucket bucket)
@@ -105,10 +115,10 @@ namespace MonoTorrent.Dht
             buckets.Remove(bucket);
         }
 
-        private void Split(Bucket bucket)
+        private bool Split(DhtEngine engine, Bucket bucket)
         {
             if (bucket.Max - bucket.Min < Bucket.MaxCapacity)
-                return;//to avoid infinit loop when add same node
+                return false;//to avoid infinit loop when add same node
             
             NodeId median = (bucket.Min + bucket.Max) / 2;
             Bucket left = new Bucket(bucket.Min, median);
@@ -119,11 +129,8 @@ namespace MonoTorrent.Dht
             Add(right);
 
             foreach (Node n in bucket.Nodes)
-                Add(n);
-            
-            Node node = bucket.Replacement;
-            bucket.Replacement = null;            
-            Add(node);
+                Add(engine, n);
+            return true;
         }
 
         public int CountNodes()
@@ -131,8 +138,9 @@ namespace MonoTorrent.Dht
             int r = 0;
             foreach (Bucket b in buckets)
                 r += b.Nodes.Count;
-            return r;
+            return r;            
         }
+
         
         public IList<Node> GetClosest(NodeId Target)
         {

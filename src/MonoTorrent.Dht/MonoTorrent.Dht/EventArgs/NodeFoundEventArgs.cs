@@ -1,10 +1,9 @@
-//
-// PingResponse.cs
+// NodeFound.cs.cs
 //
 // Authors:
-//   Alan McGovern <alan.mcgovern@gmail.com>
+//   Olivier Dufour <olivier.duff@gmail.com>
 //
-// Copyright (C) 2008 Alan McGovern
+// Copyright (C) 2008 Olivier Dufour
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -25,32 +24,29 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-
+//
 
 using System;
+using System.IO;
+using System.Security.Cryptography;
 using System.Collections.Generic;
-using System.Text;
+
 using MonoTorrent.BEncoding;
-using System.Net;
 
-namespace MonoTorrent.Dht.Messages
+namespace MonoTorrent.Dht
 {
-    class PingResponse : ResponseMessage
+    public class NodeFoundEventArgs : EventArgs
     {
-        public PingResponse(NodeId id)
-            : base(id)
+        private Node node;
+        
+        public NodeFoundEventArgs(Node node)
         {
+            this.node = node;
         }
-
-        public PingResponse(BEncodedDictionary d, QueryMessage m)
-            :base(d, m)
+        
+        public Node Node
         {
-        }
-
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            node.CurrentlyPinging = false;
-            return true;
+            get { return node; }
         }
     }
 }

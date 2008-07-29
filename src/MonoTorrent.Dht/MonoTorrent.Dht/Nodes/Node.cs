@@ -49,15 +49,8 @@ namespace MonoTorrent.Dht
         int failedCount;
         DateTime lastSeen;
         BEncodedString token;
-        Bucket bucket;
-        
-        internal Bucket Bucket
-        {
-            get {return bucket;}
-            set { bucket = value; }
-        }
-        
-        private bool CurrentlyPinging
+
+        internal bool CurrentlyPinging
         {
             get { return currentlyPinging; }
             set { currentlyPinging = value; }

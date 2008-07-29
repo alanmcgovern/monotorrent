@@ -53,43 +53,17 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
-            if (!base.Handle(engine, source))
-                return false;
-
             PingResponse m = new PingResponse(engine.RoutingTable.LocalNode.Id);
             m.TransactionId = TransactionId;
-            engine.MessageLoop.EnqueueSend(m, source);
+            engine.MessageLoop.EnqueueSend(m, node.EndPoint);
             return true;
         }
 
-        public override bool TimedOut(DhtEngine engine)
+        public override bool TimedOut(DhtEngine engine, Node node)
         {
-            if (!base.TimedOut(engine))
-                return false;
-
-            Node n = engine.RoutingTable.FindNode(this.Id);
-            if (n == null)
-                return false;
-            
-            // FIXME: This should probably be handled in a Ping task (or something)
-            // Idea - Do something like this:
-
-            // 1) To ping a node, create a SendMessageTask
-            // 2) This task will have a constructor like: public SendMessageTask (Node targetNode, QueryMessage message)
-            // 3) If a response is not received, the message should time out immediately, a resend will not be attempted
-            // 4) The SendMessageTask can have a configurable number of retries and it will
-            //    decide if a resend should be attempted or not.
-
-            // The code below is commented out while i figure out where the best place to put it is...
-            // probably in a SendMessageTask type of thing
-
-
-            //if become bad else base will ping again
-            //if (n.Bucket != null && n.Bucket.Replacement != null && n.State == NodeState.Bad)
-            //    n.Bucket.Replace (n); 
-
+            node.CurrentlyPinging = false;
             return true;
         }
     }

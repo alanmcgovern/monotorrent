@@ -63,7 +63,6 @@ namespace MonoTorrent.Dht
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
         Thread thread;
         ManualResetEvent waitHandle = new ManualResetEvent(false);
-        Random rand;
         
         private bool CanSend
         {
@@ -77,8 +76,6 @@ namespace MonoTorrent.Dht
             listener.MessageReceived += new MessageReceived(MessageReceived);
             thread = new Thread(Loop);
             thread.IsBackground = true;
-            rand = new Random();
-
             thread.Start();
         }
 
@@ -150,7 +147,7 @@ namespace MonoTorrent.Dht
                             Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
                             try
                             {
-                                m.Handle(engine, source);
+                                m.HandleInternal(engine, source);
                             }
                             catch (MessageException)
                             {
@@ -164,7 +161,7 @@ namespace MonoTorrent.Dht
                         });
                     }
                     if (timedOut != null)
-                        timedOut.TimedOut(engine);
+                        timedOut.TimedOutInternal(engine);
 
                     if ((Environment.TickCount - lastTrigger) > 1000 || 
                         (Environment.TickCount < lastTrigger && ((Environment.TickCount + int.MaxValue - lastTrigger) > 1000)))//25 days will bug because tickcount restart...
@@ -175,8 +172,7 @@ namespace MonoTorrent.Dht
                             {
                                 if ((DateTime.Now - b.LastChanged).TotalMinutes > 15)
                                 {
-                                    Node no = b.Nodes[rand.Next(b.Nodes.Count-1)];
-                                    EnqueueSend(new FindNode(engine.RoutingTable.LocalNode.Id, no.Id), no);
+                                    new BucketRefreshTask(engine, b).Execute();
                                 }
                             }
                         });

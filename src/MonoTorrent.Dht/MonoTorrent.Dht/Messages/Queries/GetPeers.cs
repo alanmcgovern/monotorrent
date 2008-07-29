@@ -59,12 +59,8 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
-            if (!base.Handle(engine, source))
-                return false;
-
-            Node node = engine.RoutingTable.FindNode(Id);
             BEncodedString token = engine.TokenManager.GenerateToken(node);
             GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, token);
             response.TransactionId = TransactionId;
@@ -81,7 +77,7 @@ namespace MonoTorrent.Dht.Messages
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(InfoHash));
             }
 
-            engine.MessageLoop.EnqueueSend(response, source);
+            engine.MessageLoop.EnqueueSend(response, node.EndPoint);
             return true;
         }
     }

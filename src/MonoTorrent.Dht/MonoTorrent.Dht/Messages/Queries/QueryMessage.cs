@@ -42,7 +42,14 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
         private ResponseCreator responseCreator;
-
+		private IMessageTask task;
+        
+        internal IMessageTask Task
+        {
+            get {return task;}
+            set {task = value;}
+        }
+        
         internal NodeId Id
         {
             get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
@@ -81,7 +88,8 @@ namespace MonoTorrent.Dht.Messages
             ResponseCreator = responseCreator;
         }
 
-        public override bool Handle(DhtEngine engine, System.Net.IPEndPoint source)
+        
+        public override bool HandleInternal(DhtEngine engine, IPEndPoint source)
         {
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
@@ -92,19 +100,20 @@ namespace MonoTorrent.Dht.Messages
 
                 // When i receive a query message from a peer i don't know, how do i get their correct listen port for DHT messages? 
                 node = new Node(Id, source);
-                engine.RoutingTable.Add(node);
-               
-                // FIXME: Ping for replacing should be handled with the RefreshBucketTask (or a PingToReplaceTask)
-               
-                //if (node.Bucket != null && node.Bucket.Replacement != null)
-                    ///node.Bucket.PingForReplace(engine);
+                engine.RoutingTable.Add(engine, node);
+
             }
             node.Seen();
-
+            
+            return Handle(engine, node);
+        }
+        
+        public virtual bool TimedOut(DhtEngine engine, Node node)
+        {
             return true;
         }
 
-        public virtual bool TimedOut(DhtEngine engine)
+        public virtual bool TimedOutInternal(DhtEngine engine)
         {
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
@@ -113,9 +122,20 @@ namespace MonoTorrent.Dht.Messages
             node.FailedCount++;
 
             if (node.FailedCount < Node.MaxFailures)
+            {
                 engine.MessageLoop.EnqueueSend(this, node);
-            else if (!MessageFactory.UnregisterSend(this))
-                return false;
+            }
+            else
+            {
+                if (!MessageFactory.UnregisterSend(this))
+                    return false;
+                
+                if (!TimedOut(engine, node))
+                    return false;
+                    
+                if (Task != null)
+                        Task.MessageTimedout(this);
+            }
 
             return true;
         }

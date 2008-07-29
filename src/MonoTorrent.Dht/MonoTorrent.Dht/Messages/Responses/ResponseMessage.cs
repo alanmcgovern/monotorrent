@@ -63,18 +63,28 @@ namespace MonoTorrent.Dht.Messages
             queryMessage = m;
         }
 
-
-
-        public override bool Handle(DhtEngine engine, System.Net.IPEndPoint source)
+        public override bool Handle(DhtEngine engine, Node node)
         {
+            return true;
+        }
+
+
+        public override bool HandleInternal(DhtEngine engine, System.Net.IPEndPoint source)
+        {
+             
             Node node = engine.RoutingTable.FindNode(Id);
             if (node == null)
             {
                 node = new Node(Id, source);
-                engine.RoutingTable.Add(node);
+                engine.RoutingTable.Add(engine, node);
             }
-
             node.Seen();
+            
+            Handle(engine, node);
+            
+            if (queryMessage.Task != null)
+               queryMessage.Task.MessageReceive(this);
+
             return true;
         }
     }
