@@ -40,12 +40,6 @@
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
-      <Project>{19777ED5-79FD-4D05-B839-B178A875BF42}</Project>
-      <Name>MonoTorrent.Dht</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

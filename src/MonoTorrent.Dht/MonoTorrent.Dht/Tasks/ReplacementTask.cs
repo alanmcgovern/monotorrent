@@ -3,27 +3,27 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-    internal class ReplacementTask : Task<TaskCompleteEventArgs>, IMessageTask
+    internal class ReplacementTask : Task<TaskCompleteEventArgs>
     {
     	DhtEngine engine;
         Node replacement;
     	Bucket bucket;
         Node current;
     	
-    	public ReplacementTask(DhtEngine engine, Node replacement, Bucket bucket)
+    	public ReplacementTask(DhtEngine engine, Node replacement)
     	{
             this.engine = engine;
             this.replacement = replacement;
-            this.bucket = bucket;
+            this.bucket = engine.RoutingTable.Buckets.Find(delegate(Bucket b) { return b.CanContain(replacement); });
     	}
     	
-    	public void MessageReceive(ResponseMessage m)
+    	public void MessageReceive(object sender, EventArgs e)
     	{
             bucket.LastChanged = DateTime.Now;
        		PingForReplace();
     	}
     	
-    	public void MessageTimedout(QueryMessage m)
+    	public void MessageTimedout(object sender, EventArgs e)
     	{
             Replace ();
     	}
@@ -45,7 +45,8 @@ namespace MonoTorrent.Dht
                     current = n;
                     n.CurrentlyPinging = true;
                     Ping msg = new Ping(engine.RoutingTable.LocalNode.Id);
-                    msg.Task = this;
+                    msg.QueryTimedOut += MessageTimedout;
+                    msg.ResponseReceived += MessageReceive;
                     engine.MessageLoop.EnqueueSend(msg, n);
                     return;//ping only the first questionnable of bucket
                 }

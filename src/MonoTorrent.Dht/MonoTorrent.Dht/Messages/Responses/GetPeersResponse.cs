@@ -134,7 +134,7 @@ namespace MonoTorrent.Dht.Messages
                     if (engine.RoutingTable.FindNode(n.Id) == null)
                     {
                         engine.Add(n);
-                        engine.RaiseNodeGot(n);
+                        ((GetPeers)queryMessage).RaiseNodeFound(n);
                     }
                 }
             }

@@ -86,7 +86,6 @@
     <Compile Include="EventArgs\NodeFoundEventArgs.cs" />
     <Compile Include="Tasks\AnnounceTask.cs" />
     <Compile Include="Tasks\BucketRefreshTask.cs" />
-    <Compile Include="Tasks\IMessageTask.cs" />
     <Compile Include="Tasks\ReplacementTask.cs" />
   </ItemGroup>
   <ItemGroup>

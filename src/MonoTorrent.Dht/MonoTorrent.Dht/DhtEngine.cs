@@ -60,9 +60,7 @@ namespace MonoTorrent.Dht
         
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         
-        internal event EventHandler<NodeFoundEventArgs> NodeFound;//from findNode response
-        
-        internal event EventHandler<NodeFoundEventArgs> NodeGot;//from getPeer response
+        internal event EventHandler<NodeFoundEventArgs> NodeFound;
         
         int port = 6881;
         State state = State.NotReady;
@@ -172,13 +170,7 @@ namespace MonoTorrent.Dht
             if (NodeFound != null)
                 NodeFound(this, new NodeFoundEventArgs(n));
         }
-
-        internal void RaiseNodeGot(Node n)
-        {
-            if (NodeGot != null)
-                NodeGot(this, new NodeFoundEventArgs(n));
-        }
-        
+                
         #endregion
         
         #region Load/save

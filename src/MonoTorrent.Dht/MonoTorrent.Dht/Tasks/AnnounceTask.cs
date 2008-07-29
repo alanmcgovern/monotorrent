@@ -24,12 +24,12 @@ namespace MonoTorrent.Dht
     			return;
     			
             engine.PeersFound += PeerFound;
-            engine.NodeGot += NodeFound;
             
             IList<Node> nodes = engine.RoutingTable.GetClosest(infoHash);
             foreach(Node n in nodes)
             {
                 GetPeers m = new GetPeers(engine.RoutingTable.LocalNode.Id, infoHash);
+                m.NodeFound += NodeFound;
                 engine.MessageLoop.EnqueueSend(m, n);
             }
     	}
@@ -38,14 +38,13 @@ namespace MonoTorrent.Dht
         {
             AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, ((Node)sender).Token);
             engine.MessageLoop.EnqueueSend(apmsg, (Node)sender);
-            engine.PeersFound -= PeerFound;
-            engine.NodeGot -= NodeFound;
             Complete(new TaskCompleteEventArgs(true));
         }
         
         public void NodeFound(object sender, NodeFoundEventArgs e)
         {
             GetPeers gpmsg = new GetPeers(engine.RoutingTable.LocalNode.Id, infoHash);
+            gpmsg.NodeFound += NodeFound;
             engine.MessageLoop.EnqueueSend(gpmsg, e.Node);
         }    
     }

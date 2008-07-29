@@ -72,7 +72,7 @@ namespace MonoTorrent.Dht
             Add(new Bucket());
         }
 
-        public void Add(DhtEngine engine, Node node)
+        public bool Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
@@ -81,17 +81,10 @@ namespace MonoTorrent.Dht
 
             bool added = bucket.Add(node);
             if (!added && bucket.CanContain(LocalNode))
-            {
-                if (Split(engine, bucket))
-                {
-                    Add(engine, node);
-                    return;
-                }
-            }
-            if (!added)
-            {
-                new ReplacementTask(engine, node, bucket).Execute();
-            }
+                if (Split(bucket))
+                    return Add(node);
+            return added;
+
         }
 
         private void Add(Bucket bucket)
@@ -115,7 +108,7 @@ namespace MonoTorrent.Dht
             buckets.Remove(bucket);
         }
 
-        private bool Split(DhtEngine engine, Bucket bucket)
+        private bool Split(Bucket bucket)
         {
             if (bucket.Max - bucket.Min < Bucket.MaxCapacity)
                 return false;//to avoid infinit loop when add same node
@@ -129,7 +122,7 @@ namespace MonoTorrent.Dht
             Add(right);
 
             foreach (Node n in bucket.Nodes)
-                Add(engine, n);
+                Add(n);
             return true;
         }
 

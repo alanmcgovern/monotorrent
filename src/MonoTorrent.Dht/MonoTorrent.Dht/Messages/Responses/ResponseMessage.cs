@@ -76,15 +76,15 @@ namespace MonoTorrent.Dht.Messages
             if (node == null)
             {
                 node = new Node(Id, source);
-                engine.RoutingTable.Add(engine, node);
+                if (engine.RoutingTable.Add(node))
+                    new ReplacementTask(engine, node).Execute();
             }
             node.Seen();
             
             Handle(engine, node);
             
-            if (queryMessage.Task != null)
-               queryMessage.Task.MessageReceive(this);
-
+            queryMessage.RaiseResponseReceived(this);
+            
             return true;
         }
     }

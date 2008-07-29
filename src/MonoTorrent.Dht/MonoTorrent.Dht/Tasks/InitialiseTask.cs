@@ -1,52 +1,46 @@
 using MonoTorrent.Dht.Messages;
+using System;
 
 namespace MonoTorrent.Dht
 {
-    internal class InitialiseTask : Task<TaskCompleteEventArgs>, IMessageTask
+    internal class InitialiseTask : Task<TaskCompleteEventArgs>
     {
-    	DhtEngine engine;
-    	private int bootstrapCount;
-    	public InitialiseTask(DhtEngine engine)
-    	{
+        DhtEngine engine;
+        private int bootstrapCount;
+        public InitialiseTask(DhtEngine engine)
+        {
             this.engine = engine;
             bootstrapCount = 0;
-    	}
-    
-    	public void MessageReceive(ResponseMessage m)
-    	{
+        }
+        
+        public void MessageReceivedOrTimedout(object sender, EventArgs e)
+        {
             bootstrapCount--;
             if (bootstrapCount == 0 || !Active)
-            {
-                engine.NodeFound -= NodeAdded;
                 Complete(new TaskCompleteEventArgs(true));
-            }
-    	}
-    	
-    	public void MessageTimedout(QueryMessage m)
-    	{
-            bootstrapCount--;
-            if (bootstrapCount == 0 || !Active)
-            {
-                engine.NodeFound -= NodeAdded;
-                Complete(new TaskCompleteEventArgs(true));
-            }
-    	}
-    	
+        }
+        
         public override void Execute ()
-    	{
+        {
             if (!Active)
                 return;
-   		
-            engine.NodeFound += NodeAdded;
-    	}
-    	
-    	void NodeAdded(object sender, NodeFoundEventArgs e)
+            
+            engine.NodeFound += FirstNodeAdded;
+        }
+        void FirstNodeAdded(object sender, NodeFoundEventArgs e)
+        {
+            engine.NodeFound -= FirstNodeAdded;
+            NodeAdded(sender, e);
+        }
+        
+        void NodeAdded(object sender, NodeFoundEventArgs e)
         {
             bootstrapCount++;
             FindNode msg = new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id);
-            msg.Task = this;
+            msg.QueryTimedOut += MessageReceivedOrTimedout;
+            msg.ResponseReceived += MessageReceivedOrTimedout;
+            msg.NodeFound += NodeAdded;
             engine.MessageLoop.EnqueueSend(msg, e.Node);
-    	}
-    	
+        }
     }
 }

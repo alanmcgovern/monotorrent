@@ -42,14 +42,10 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
         private ResponseCreator responseCreator;
-		private IMessageTask task;
         
-        internal IMessageTask Task
-        {
-            get {return task;}
-            set {task = value;}
-        }
-        
+        public event EventHandler<EventArgs> QueryTimedOut;
+        public event EventHandler<EventArgs> ResponseReceived;
+       
         internal NodeId Id
         {
             get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
@@ -100,7 +96,8 @@ namespace MonoTorrent.Dht.Messages
 
                 // When i receive a query message from a peer i don't know, how do i get their correct listen port for DHT messages? 
                 node = new Node(Id, source);
-                engine.RoutingTable.Add(engine, node);
+                if (engine.RoutingTable.Add(node))
+                    new ReplacementTask(engine, node).Execute();
 
             }
             node.Seen();
@@ -133,11 +130,17 @@ namespace MonoTorrent.Dht.Messages
                 if (!TimedOut(engine, node))
                     return false;
                     
-                if (Task != null)
-                        Task.MessageTimedout(this);
+                if (QueryTimedOut != null)
+                        QueryTimedOut(this, null);
             }
 
             return true;
+        }
+        
+        internal void RaiseResponseReceived(ResponseMessage response)
+        {
+            if (ResponseReceived != null)
+                ResponseReceived(response, null);
         }
     }
 }

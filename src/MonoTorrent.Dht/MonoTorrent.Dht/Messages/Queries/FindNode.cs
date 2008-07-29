@@ -42,22 +42,30 @@ namespace MonoTorrent.Dht.Messages
         private static BEncodedString QueryName = "find_node";
         private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new FindNodeResponse(d, m); };
 
+        internal event EventHandler<NodeFoundEventArgs> NodeFound;
+
+        internal void RaiseNodeFound(Node n)
+        {
+            if (NodeFound != null)
+                NodeFound(this, new NodeFoundEventArgs(n));
+        }
+        
         public NodeId Target
         {
             get { return new NodeId((BEncodedString)Parameters[TargetKey]); }
         }
-
+        
         public FindNode(NodeId id, NodeId target)
             : base(id, QueryName, responseCreator)
         {
             Parameters.Add(TargetKey, target.BencodedString());
         }
-
+        
         public FindNode(BEncodedDictionary d)
             :base(d, responseCreator)
         {
         }
-
+        
         public override bool Handle(DhtEngine engine, Node node)
         {
             FindNodeResponse response = new FindNodeResponse(engine.RoutingTable.LocalNode.Id);
@@ -67,7 +75,7 @@ namespace MonoTorrent.Dht.Messages
                 response.Nodes = targetNode.CompactNode();
             else
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(Target));
-
+            
             engine.MessageLoop.EnqueueSend(response, node.EndPoint);
             return true;
         }
