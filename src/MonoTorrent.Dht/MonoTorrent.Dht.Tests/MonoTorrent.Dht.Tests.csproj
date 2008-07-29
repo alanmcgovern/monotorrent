@@ -27,7 +27,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
-      <Project>{7A2A7E73-FD43-4171-AA34-DA413D35459E}</Project>
+      <Project>{D82D61E2-9D86-45C0-AB13-C701FB64F1DD}</Project>
       <Name>MonoTorrent.Dht</Name>
     </ProjectReference>
   </ItemGroup>
@@ -52,7 +52,7 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <MonoDevelop>
-      <Properties xmlns="">
+      <Properties>
         <GtkDesignInfo gtkVersion="2.12.2" />
       </Properties>
     </MonoDevelop>
