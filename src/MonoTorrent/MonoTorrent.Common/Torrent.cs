@@ -280,7 +280,7 @@ namespace MonoTorrent.Common
 
         #region Constructors
 
-        private Torrent()
+        protected Torrent()
         {
             this.announceUrls = new List<MonoTorrentCollection<string>>();
             this.comment = string.Empty;
@@ -292,7 +292,7 @@ namespace MonoTorrent.Common
             this.publisherUrl = string.Empty;
             this.source = string.Empty;
             this.httpSeeds = new List<string>();
-            this.getRightHttpSeeds = new List<string> ();
+            this.getRightHttpSeeds = new List<string>();
         }
 
         #endregion
@@ -708,58 +708,74 @@ namespace MonoTorrent.Common
         public static Torrent Load(BEncodedDictionary torrentInformation)
         {
             Torrent t = new Torrent();
-            t.torrentPath = "";
+            t.LoadInternal(torrentInformation);
+
+            return t;
+        }
+
+        protected void LoadInternal(BEncodedDictionary torrentInformation)
+        {
+            torrentPath = "";
+
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in torrentInformation)
             {
                 switch (keypair.Key.Text)
                 {
                     case ("announce"):
-                        t.announceUrls.Add(new MonoTorrentCollection<string>());
-                        t.announceUrls[0].Add(keypair.Value.ToString());
+                        announceUrls.Add(new MonoTorrentCollection<string>());
+                        announceUrls[0].Add(keypair.Value.ToString());
                         break;
 
                     case ("creation date"):
-                        t.creationDate = t.creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
+                        try
+                        {
+                            creationDate = creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
+                        }
+                        catch (ArgumentOutOfRangeException aoore)
+                        {
+                            throw new BEncodingException("Argument out of range exception when adding seconds to creation date.",
+                                aoore);
+                        }
                         break;
 
                     case ("nodes"):
-                        t.nodes = (BEncodedList)keypair.Value;
+                        nodes = (BEncodedList)keypair.Value;
                         break;
 
                     case ("comment.utf-8"):
                         if (keypair.Value.ToString().Length != 0)
-                            t.comment = keypair.Value.ToString();       // Always take the UTF-8 version
+                            comment = keypair.Value.ToString();       // Always take the UTF-8 version
                         break;                                          // even if there's an existing value
 
                     case ("comment"):
-                        if (String.IsNullOrEmpty(t.comment))
-                            t.comment = keypair.Value.ToString();
+                        if (String.IsNullOrEmpty(comment))
+                            comment = keypair.Value.ToString();
                         break;
 
                     case ("publisher-url.utf-8"):                       // Always take the UTF-8 version
-                        t.publisherUrl = keypair.Value.ToString();      // even if there's an existing value
+                        publisherUrl = keypair.Value.ToString();      // even if there's an existing value
                         break;
 
                     case ("publisher-url"):
-                        if (String.IsNullOrEmpty(t.publisherUrl))
-                            t.publisherUrl = keypair.Value.ToString();
+                        if (String.IsNullOrEmpty(publisherUrl))
+                            publisherUrl = keypair.Value.ToString();
                         break;
 
                     case ("azureus_properties"):
-                        t.azureusProperties = keypair.Value;
+                        azureusProperties = keypair.Value;
                         break;
 
                     case ("created by"):
-                        t.createdBy = keypair.Value.ToString();
+                        createdBy = keypair.Value.ToString();
                         break;
 
                     case ("encoding"):
-                        t.encoding = keypair.Value.ToString();
+                        encoding = keypair.Value.ToString();
                         break;
 
                     case ("info"):
-                        t.infoHash = new SHA1Fast().ComputeHash(keypair.Value.Encode());
-                        t.ProcessInfo(((BEncodedDictionary)keypair.Value));
+                        infoHash = new SHA1Fast().ComputeHash(keypair.Value.Encode());
+                        ProcessInfo(((BEncodedDictionary)keypair.Value));
                         break;
 
                     case ("name"):                                               // Handled elsewhere
@@ -767,43 +783,47 @@ namespace MonoTorrent.Common
 
                     case ("announce-list"):
                         BEncodedList announces = (BEncodedList)keypair.Value;
-                        t.announceUrls = new List<MonoTorrentCollection<string>>(announces.Count);
 
                         for (int j = 0; j < announces.Count; j++)
                         {
-                            BEncodedList bencodedTier = (BEncodedList)announces[j];
-                            List<string> tier = new List<string>(bencodedTier.Count);
+                            if (announces[j] is BEncodedList)           // a little more lenient torrent handling
+                                                                        // TODO: make a setting that determines whether to allow slightly
+                                                                        // malformed torrent files to load?
+                            {
+                                BEncodedList bencodedTier = (BEncodedList)announces[j];
+                                List<string> tier = new List<string>(bencodedTier.Count);
 
-                            for (int k = 0; k < bencodedTier.Count; k++)
-                                tier.Add(bencodedTier[k].ToString());
+                                for (int k = 0; k < bencodedTier.Count; k++)
+                                    tier.Add(bencodedTier[k].ToString());
 
-                            Toolbox.Randomize<string>(tier);
+                                Toolbox.Randomize<string>(tier);
 
-                            MonoTorrentCollection<string> collection = new MonoTorrentCollection<string>(tier.Count);
-                            for (int k = 0; k < tier.Count; k++)
-                                collection.Add(tier[k]);
+                                MonoTorrentCollection<string> collection = new MonoTorrentCollection<string>(tier.Count);
+                                for (int k = 0; k < tier.Count; k++)
+                                    collection.Add(tier[k]);
 
-                            if (collection.Count != 0)
-                                t.announceUrls.Add(collection);
+                                if (collection.Count != 0)
+                                    announceUrls.Add(collection);
+                            }
                         }
                         break;
 
                     case ("httpseeds"):
                         foreach (BEncodedString str in ((BEncodedList)keypair.Value))
                         {
-                            t.HttpSeeds.Add (str.Text);
-                        }                        
+                            HttpSeeds.Add(str.Text);
+                        }
                         break;
 
                     case ("url-list"):
                         if (keypair.Value is BEncodedString)
                         {
-                            t.getRightHttpSeeds.Add(((BEncodedString)keypair.Value).Text);
+                            getRightHttpSeeds.Add(((BEncodedString)keypair.Value).Text);
                         }
                         else if (keypair.Value is BEncodedList)
                         {
                             foreach (BEncodedString str in (BEncodedList)keypair.Value)
-                                t.GetRightHttpSeeds.Add(str.Text);
+                                GetRightHttpSeeds.Add(str.Text);
                         }
                         break;
 
@@ -811,8 +831,6 @@ namespace MonoTorrent.Common
                         break;
                 }
             }
-
-            return t;
         }
 
         #endregion Loading methods
