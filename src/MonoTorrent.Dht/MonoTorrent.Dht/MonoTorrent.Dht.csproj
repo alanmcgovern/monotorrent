@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,6 +54,7 @@
     <Compile Include="BigInteger.cs" />
     <Compile Include="DhtEngine.cs" />
     <Compile Include="EventArgs\NodeAddedEventArgs.cs" />
+    <Compile Include="EventArgs\SendMessageEventArgs.cs" />
     <Compile Include="EventArgs\TaskCompleteEventArgs.cs" />
     <Compile Include="Listeners\IListener.cs" />
     <Compile Include="Listeners\UdpListener.cs" />
@@ -78,7 +79,12 @@
     <Compile Include="Nodes\Node.cs" />
     <Compile Include="RoutingTable\RoutingTable.cs" />
     <Compile Include="State.cs" />
+    <Compile Include="Tasks\FindPeersTask.cs" />
     <Compile Include="Tasks\InitialiseTask.cs" />
+    <Compile Include="Tasks\ITask.cs" />
+    <Compile Include="Tasks\RefreshBucketTask.cs" />
+    <Compile Include="Tasks\ReplaceNodeTask.cs" />
+    <Compile Include="Tasks\SendMessageTask.cs" />
     <Compile Include="Tasks\Task.cs" />
     <Compile Include="TransactionId.cs" />
     <Compile Include="Nodes\TokenManager.cs" />
@@ -105,5 +111,6 @@
         <GtkDesignInfo gtkVersion="2.12.2" />
       </Properties>
     </MonoDevelop>
+    <VisualStudio />
   </ProjectExtensions>
 </Project>

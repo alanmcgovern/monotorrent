@@ -123,6 +123,10 @@ namespace MonoTorrent.Dht
 
             foreach (Node n in bucket.Nodes)
                 Add(n);
+
+            if (bucket.Replacement != null)
+                Add(bucket.Replacement);
+
             return true;
         }
 

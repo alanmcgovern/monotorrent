@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -26,19 +26,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
-      <Project>{D82D61E2-9D86-45C0-AB13-C701FB64F1DD}</Project>
-      <Name>MonoTorrent.Dht</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="nunit.core, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
-    <Reference Include="nunit.framework, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" />
+    <Reference Include="nunit.core, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="MonoTorrent, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\MonoTorrent\bin\Debug\MonoTorrent.dll</HintPath>
     </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MessageHandlingTests.cs" />
@@ -46,8 +46,15 @@
     <Compile Include="NodeIdTests.cs" />
     <Compile Include="NodeTests.cs" />
     <Compile Include="RoutingTableTests.cs" />
+    <Compile Include="TaskTests.cs" />
     <Compile Include="TestListener.cs" />
     <Compile Include="TokenTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
+      <Project>{7A2A7E73-FD43-4171-AA34-DA413D35459E}</Project>
+      <Name>MonoTorrent.Dht</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
@@ -56,5 +63,6 @@
         <GtkDesignInfo gtkVersion="2.12.2" />
       </Properties>
     </MonoDevelop>
+    <VisualStudio />
   </ProjectExtensions>
 </Project>

@@ -41,13 +41,18 @@ namespace MonoTorrent.Dht.Messages
         internal static readonly BEncodedString ResponseType = "r";
         protected QueryMessage queryMessage;
 
-        public NodeId Id
+        internal override NodeId Id
         {
             get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
         }
         public BEncodedDictionary Parameters
         {
             get { return (BEncodedDictionary)properties[ReturnValuesKey]; }
+        }
+
+        public QueryMessage Query
+        {
+            get { return queryMessage; }
         }
 
         protected ResponseMessage(NodeId id)
@@ -61,31 +66,6 @@ namespace MonoTorrent.Dht.Messages
             : base(d)
         {
             queryMessage = m;
-        }
-
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            return true;
-        }
-
-
-        public override bool HandleInternal(DhtEngine engine, System.Net.IPEndPoint source)
-        {
-             
-            Node node = engine.RoutingTable.FindNode(Id);
-            if (node == null)
-            {
-                node = new Node(Id, source);
-                if (engine.RoutingTable.Add(node))
-                    new ReplacementTask(engine, node).Execute();
-            }
-            node.Seen();
-            
-            Handle(engine, node);
-            
-            queryMessage.RaiseResponseReceived(this);
-            
-            return true;
         }
     }
 }

@@ -60,13 +60,9 @@ namespace MonoTorrent.Dht.Messages
             messages.Add(message.TransactionId, message);
         }
 
-        public static bool UnregisterSend(Message message)
+        public static bool UnregisterSend(QueryMessage message)
         {
-            if (!messages.ContainsKey(message.TransactionId))
-                return false;
-				
-            messages.Remove(message.TransactionId);
-			return true;
+            return messages.Remove(message.TransactionId);
         }
 
         public static Message DecodeMessage(BEncodedDictionary dictionary)
@@ -77,7 +73,7 @@ namespace MonoTorrent.Dht.Messages
             {
                 return queryDecoders[(BEncodedString)dictionary[QueryNameKey]](dictionary);
             }
-            else if (dictionary[MessageTypeKey].Equals( ErrorMessage.ErrorType))
+            else if (dictionary[MessageTypeKey].Equals(ErrorMessage.ErrorType))
             {
                 return new ErrorMessage(dictionary);
             }
@@ -85,7 +81,8 @@ namespace MonoTorrent.Dht.Messages
             {
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
                 if (!messages.TryGetValue(key, out msg))
-                    throw new Exception("Response message with bas transaction:" + key+ "full message:"+dictionary);
+                    throw new MessageException(eErrorCode.GenericError, string.Format("{0}: {1}. {2}: {3}",
+                        "Response message with bad transaction:", key, "full message:", dictionary));
                 messages.Remove(key);
             }
 

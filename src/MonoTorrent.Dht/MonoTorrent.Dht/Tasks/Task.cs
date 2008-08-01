@@ -3,33 +3,25 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-    internal abstract class Task<T> where T : TaskCompleteEventArgs
+    internal abstract class Task : ITask
     {
-    	private bool active;
+        public event EventHandler<TaskCompleteEventArgs> Completed;
 
-    	public Task()
-    	{
-            active = true;
-   	}
+        private bool active;
 
-        public abstract void Execute ();
+        public bool Active
+        {
+            get { return active; }
+            protected set { active = value; }
+        }
 
-    	public event EventHandler<T> Completed;
+        public abstract void Execute();
 
-        public void Cancel ()
-    	{
-            active = false;
-            Complete(new TaskCompleteEventArgs(false));
-    	}
-    	
-    	internal void Complete<T>(T e)
-    	{
-    		active = false;
-    		if (Completed != null)
-    			Completed(this, e);
-    	}
-
-        public bool Active { get {return active;} }	
+        protected virtual void RaiseComplete(TaskCompleteEventArgs e)
+        {
+            EventHandler<TaskCompleteEventArgs> h = Completed;
+            if (h != null)
+                h(this, e);
+        }
     }
 }
-

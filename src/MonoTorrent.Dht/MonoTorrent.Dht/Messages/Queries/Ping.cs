@@ -53,18 +53,13 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, Node node)
+        public override void Handle(DhtEngine engine, Node node)
         {
+            base.Handle(engine, node);
+
             PingResponse m = new PingResponse(engine.RoutingTable.LocalNode.Id);
             m.TransactionId = TransactionId;
             engine.MessageLoop.EnqueueSend(m, node.EndPoint);
-            return true;
-        }
-
-        public override bool TimedOut(DhtEngine engine, Node node)
-        {
-            node.CurrentlyPinging = false;
-            return true;
         }
     }
 }

@@ -1,5 +1,5 @@
 //
-// Bucket.cs
+// Node.cs
 //
 // Authors:
 //   Jérémie Laval <jeremie.laval@gmail.com>
@@ -43,18 +43,11 @@ namespace MonoTorrent.Dht
     {
         public const int MaxFailures = 4;
 
-        bool currentlyPinging;
         IPEndPoint endpoint;
         NodeId id;
         int failedCount;
         DateTime lastSeen;
         BEncodedString token;
-
-        internal bool CurrentlyPinging
-        {
-            get { return currentlyPinging; }
-            set { currentlyPinging = value; }
-        }
 
         public IPEndPoint EndPoint
         {
@@ -75,6 +68,7 @@ namespace MonoTorrent.Dht
         public DateTime LastSeen
         {
             get { return lastSeen; }
+            internal set { lastSeen = value; }
         }
 
         // FIXME: State should be set properly as per specification.
@@ -90,7 +84,7 @@ namespace MonoTorrent.Dht
                 else if (lastSeen == DateTime.MinValue)
                     return NodeState.Unknown;
 
-                return (DateTime.Now - lastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
+                return (DateTime.UtcNow - lastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
 
@@ -109,7 +103,7 @@ namespace MonoTorrent.Dht
         internal void Seen()
         {
             failedCount = 0;
-            lastSeen = DateTime.Now;
+            lastSeen = DateTime.UtcNow;
         }
 
         internal BEncodedString CompactPort()
@@ -160,8 +154,7 @@ namespace MonoTorrent.Dht
         {
             byte[] id = new byte[20];
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            string s = string.Format("{0}.{1}.{2}.{3}", buffer[offset + 20], buffer[offset + 21], buffer[offset + 22], buffer[offset + 23]);
-            IPAddress address = IPAddress.Parse(s);
+            IPAddress address = new IPAddress(BitConverter.ToInt32(buffer, offset + 20));
             int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
             return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
@@ -172,8 +165,7 @@ namespace MonoTorrent.Dht
             if (other == null)
                 return 1;
             
-            //max last seen first
-            return other.lastSeen.CompareTo(this.lastSeen);
+            return lastSeen.CompareTo(other.lastSeen);
         }
     }
 }

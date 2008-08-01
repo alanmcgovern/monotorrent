@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MonoTorrent.Dht.Tasks
+namespace MonoTorrent.Dht
 {
     interface ITask
     {
-        event EventHandler<TaskCompleteEventArgs> Complete;
+        event EventHandler<TaskCompleteEventArgs> Completed;
 
         bool Active { get; }
-        void Cancel ();
-        void Execute(DhtEngine engine);
+        void Execute();
     }
 }

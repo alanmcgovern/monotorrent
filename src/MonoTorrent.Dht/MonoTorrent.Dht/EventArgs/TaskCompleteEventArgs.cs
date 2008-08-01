@@ -6,16 +6,17 @@ namespace MonoTorrent.Dht
 {
     class TaskCompleteEventArgs : EventArgs
     {
-        private bool successful;
+        private Task task;
 
-        public bool Successful
+        public Task Task
         {
-            get { return successful; }
+            get { return task; }
+            protected internal set { task = value; }
         }
 
-        public TaskCompleteEventArgs(bool successful)
+        public TaskCompleteEventArgs(Task task)
         {
-            this.successful = successful;
+            this.task = task;
         }
     }
 }

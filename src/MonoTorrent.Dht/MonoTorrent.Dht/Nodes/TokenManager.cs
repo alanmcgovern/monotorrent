@@ -40,11 +40,11 @@ namespace MonoTorrent.Dht
         private byte[] secret;
         private byte[] previousSecret;
         private DateTime LastSecretGeneration;
-        private Random random;
+        private RandomNumberGenerator random;
         private SHA1CryptoServiceProvider sha1;
-        private int timeout = 5 * 60;                   // 5 min timeout by default
+        private TimeSpan timeout = TimeSpan.FromMinutes(5);
 
-        internal int Timeout
+        internal TimeSpan Timeout
         {
             get { return timeout; }
             set { timeout = value; }
@@ -53,12 +53,12 @@ namespace MonoTorrent.Dht
         public TokenManager()
         {
             sha1 = new SHA1CryptoServiceProvider();
-            random = new Random();
+            random = RandomNumberGenerator.Create();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];
             previousSecret = new byte[10];
-            random.NextBytes(secret);
-            random.NextBytes(previousSecret);
+            random.GetNonZeroBytes(secret);
+            random.GetNonZeroBytes(previousSecret);
         }
         public BEncodedString GenerateToken(Node node)
         {
@@ -73,11 +73,11 @@ namespace MonoTorrent.Dht
         private BEncodedString GetToken(Node node, byte[] s)
         {
             //refresh secret needed
-            if (LastSecretGeneration.AddSeconds(timeout) < DateTime.Now)
+            if (LastSecretGeneration.Add(timeout) < DateTime.UtcNow)
             {
-                LastSecretGeneration = DateTime.Now;
+                LastSecretGeneration = DateTime.UtcNow;
                 secret.CopyTo(previousSecret, 0);
-                random.NextBytes(secret);
+                random.GetNonZeroBytes(secret);
             }
 
             byte[] n = node.CompactPort().TextBytes;
@@ -87,12 +87,5 @@ namespace MonoTorrent.Dht
 
             return (BEncodedString)sha1.Hash;
         }
-        /*public void PrintBuff(string str, byte[] bb)
-        {
-            Console.Write(str + "[");
-            foreach (byte b in bb)
-                Console.Write(b+", ");
-            Console.WriteLine("]");
-        }*/
     }
 }

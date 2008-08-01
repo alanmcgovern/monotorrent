@@ -42,14 +42,6 @@ namespace MonoTorrent.Dht.Messages
         private static BEncodedString QueryName = "get_peers";
         private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new GetPeersResponse(d, m); };
         
-        internal event EventHandler<NodeFoundEventArgs> NodeFound;
-        
-        internal void RaiseNodeFound(Node n)
-        {
-            if (NodeFound != null)
-                NodeFound(this, new NodeFoundEventArgs(n));
-        }
-        
         public NodeId InfoHash
         {
             get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
@@ -66,9 +58,11 @@ namespace MonoTorrent.Dht.Messages
         {
             
         }
-        
-        public override bool Handle(DhtEngine engine, Node node)
+
+        public override void Handle(DhtEngine engine, Node node)
         {
+            base.Handle(engine, node);
+
             BEncodedString token = engine.TokenManager.GenerateToken(node);
             GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, token);
             response.TransactionId = TransactionId;
@@ -86,7 +80,6 @@ namespace MonoTorrent.Dht.Messages
             }
             
             engine.MessageLoop.EnqueueSend(response, node.EndPoint);
-            return true;
         }
     }
 }

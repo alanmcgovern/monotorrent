@@ -43,7 +43,7 @@ namespace MonoTorrent.Dht
 	{
 		public const int MaxCapacity = 8;
 
-        DateTime lastChanged = DateTime.Now;
+        DateTime lastChanged = DateTime.UtcNow;
         NodeId max;
         NodeId min;
 		List<Node> nodes = new List<Node>(MaxCapacity);
@@ -94,7 +94,7 @@ namespace MonoTorrent.Dht
             if (nodes.Count < MaxCapacity)
             {
                 nodes.Add(node);
-                lastChanged = DateTime.Now;
+                lastChanged = DateTime.UtcNow;
                 return true;
             }
             //test replace
@@ -134,7 +134,12 @@ namespace MonoTorrent.Dht
 
         public override string ToString()
         {
-            return string.Format("Count: {2} Min: {0}  Max: {1}", min, max, this.nodes.Count);
+            return string.Format("Count: {2} Min: {0}  Max: {1}", min, max, nodes.Count);
+        }
+
+        internal void SortBySeen()
+        {
+            nodes.Sort();
         }
     }
 }

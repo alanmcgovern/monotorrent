@@ -41,6 +41,7 @@ using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Client.Tasks;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
@@ -54,21 +55,23 @@ namespace MonoTorrent.Dht
     
 	public class DhtEngine
 	{
-        internal static MainLoop MainLoop = new MainLoop();
-        
         public event EventHandler StateChanged;
-        
         public event EventHandler<PeersFoundEventArgs> PeersFound;
-        
         internal event EventHandler<NodeFoundEventArgs> NodeFound;
+
+        #region Fields
+
+        internal static MainLoop MainLoop = new MainLoop();
         
         int port = 6881;
         State state = State.NotReady;
         MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
-        int timeout;
+        TimeSpan timeout;
         Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
         TokenManager tokenManager;
+
+        #endregion Fields
 
         public int Port
         {
@@ -80,7 +83,14 @@ namespace MonoTorrent.Dht
         {
             get { return (RoutingTable.CountNodes() <= 1); }
         }
-               
+
+        public TimeSpan BucketRefreshTimeout = TimeSpan.FromMinutes(15);
+
+        public NodeId LocalId
+        {
+            get { return RoutingTable.LocalNode.Id; }
+        }
+
         internal MessageLoop MessageLoop
         {
             get { return messageLoop; }
@@ -101,7 +111,7 @@ namespace MonoTorrent.Dht
             get { return state; }
         }
 
-        internal int TimeOut
+        internal TimeSpan TimeOut
         {
             get { return timeout; }
             set { timeout = value; }
@@ -115,7 +125,7 @@ namespace MonoTorrent.Dht
         public DhtEngine(IListener listener)
         {
             messageLoop = new MessageLoop(this, listener);
-            timeout = 20 * 1000; // 20 second message timeout by default
+            timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
             tokenManager = new TokenManager();
         }
 
@@ -133,7 +143,8 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            messageLoop.EnqueueSend(new Ping(RoutingTable.LocalNode.Id), node);
+            SendQueryTask task = new SendQueryTask(this, new Ping(RoutingTable.LocalNode.Id), node);
+            task.Execute();
         }
 
         public void Start()
@@ -147,6 +158,20 @@ namespace MonoTorrent.Dht
             {
                 RaiseStateChanged(State.Ready);
             }
+
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(5), delegate
+            {
+                foreach (Bucket b in RoutingTable.Buckets)
+                {
+                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
+                    {
+                        b.LastChanged = DateTime.UtcNow;
+                        RefreshBucketTask task = new RefreshBucketTask(this, b);
+                        task.Execute();
+                    }
+                }
+                return true;
+             });
         }
         
         #region event

@@ -56,20 +56,5 @@ namespace MonoTorrent.Dht.Messages
             : base(d, m)
         {
         }
-
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            byte[] b = Nodes.TextBytes;
-            for (int i = 0; (i + 26) <= b.Length; i += 26)
-            {
-                Node n = Node.FromCompactNode(b, i);
-                if (engine.RoutingTable.FindNode(n.Id) == null)
-                {
-                    engine.Add(n);
-                    ((FindNode)queryMessage).RaiseNodeFound(n);
-                }
-            }
-            return true;
-        }
     }
 }

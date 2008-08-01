@@ -106,8 +106,10 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, Node node)
+        public override void Handle(DhtEngine engine, Node node)
         {
+            base.Handle(engine, node);
+
             node.Token = Token;
             if (Parameters.ContainsKey(ValuesKey))
             {
@@ -133,12 +135,11 @@ namespace MonoTorrent.Dht.Messages
                     //forward get peers to new nodes until get peers and not node
                     if (engine.RoutingTable.FindNode(n.Id) == null)
                     {
+                        engine.RaiseNodeFound(n);
                         engine.Add(n);
-                        ((GetPeers)queryMessage).RaiseNodeFound(n);
                     }
                 }
             }
-            return true;
         }
     }
 }

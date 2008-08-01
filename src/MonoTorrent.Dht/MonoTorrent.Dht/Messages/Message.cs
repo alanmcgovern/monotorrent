@@ -37,9 +37,15 @@ namespace MonoTorrent.Dht.Messages
 {
     public abstract class Message : MonoTorrent.Client.Messages.Message
     {
+        protected static readonly BEncodedString IdKey = "id";
         private static BEncodedString TransactionIdKey = "t";
         private static BEncodedString MessageTypeKey = "y";
         protected BEncodedDictionary properties = new BEncodedDictionary();
+
+        internal abstract NodeId Id
+        {
+            get;
+        }
 
         public BEncodedString MessageType
         {
@@ -79,8 +85,9 @@ namespace MonoTorrent.Dht.Messages
             return properties.Encode(buffer, offset);
         }
 
-        public abstract bool Handle(DhtEngine engine, Node node);
-		
-        public abstract bool HandleInternal(DhtEngine engine, IPEndPoint source);
+        public virtual void Handle(DhtEngine engine, Node node)
+        {
+            node.Seen();
+        }
     }
 }

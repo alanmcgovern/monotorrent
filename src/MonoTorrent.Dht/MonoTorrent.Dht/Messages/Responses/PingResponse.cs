@@ -46,11 +46,5 @@ namespace MonoTorrent.Dht.Messages
             :base(d, m)
         {
         }
-
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            node.CurrentlyPinging = false;
-            return true;
-        }
     }
 }

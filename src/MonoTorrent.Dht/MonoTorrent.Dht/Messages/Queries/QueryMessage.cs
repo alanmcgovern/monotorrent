@@ -37,16 +37,12 @@ namespace MonoTorrent.Dht.Messages
 {
     internal abstract class QueryMessage : Message
     {
-        private static readonly BEncodedString IdKey = "id";
         private static readonly BEncodedString QueryArgumentsKey = "a";
         private static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
         private ResponseCreator responseCreator;
-        
-        public event EventHandler<EventArgs> QueryTimedOut;
-        public event EventHandler<EventArgs> ResponseReceived;
-       
-        internal NodeId Id
+
+        internal override NodeId Id
         {
             get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
         }
@@ -82,65 +78,6 @@ namespace MonoTorrent.Dht.Messages
             : base(d)
         {
             ResponseCreator = responseCreator;
-        }
-
-        
-        public override bool HandleInternal(DhtEngine engine, IPEndPoint source)
-        {
-            Node node = engine.RoutingTable.FindNode(Id);
-            if (node == null)
-            {
-                //FIXME: I shouldn't use this endpoint! I can't add a peer using this because the port which they
-                // *send* the message on does not have to be the same as the port they're listening from messages on.
-                // Generally speaking, the send port is always different.
-
-                // When i receive a query message from a peer i don't know, how do i get their correct listen port for DHT messages? 
-                node = new Node(Id, source);
-                if (engine.RoutingTable.Add(node))
-                    new ReplacementTask(engine, node).Execute();
-
-            }
-            node.Seen();
-            
-            return Handle(engine, node);
-        }
-        
-        public virtual bool TimedOut(DhtEngine engine, Node node)
-        {
-            return true;
-        }
-
-        public virtual bool TimedOutInternal(DhtEngine engine)
-        {
-            Node node = engine.RoutingTable.FindNode(Id);
-            if (node == null)
-                return false;
-
-            node.FailedCount++;
-
-            if (node.FailedCount < Node.MaxFailures)
-            {
-                engine.MessageLoop.EnqueueSend(this, node);
-            }
-            else
-            {
-                if (!MessageFactory.UnregisterSend(this))
-                    return false;
-                
-                if (!TimedOut(engine, node))
-                    return false;
-                    
-                if (QueryTimedOut != null)
-                        QueryTimedOut(this, null);
-            }
-
-            return true;
-        }
-        
-        internal void RaiseResponseReceived(ResponseMessage response)
-        {
-            if (ResponseReceived != null)
-                ResponseReceived(response, null);
         }
     }
 }

@@ -36,6 +36,7 @@ using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
@@ -53,6 +54,8 @@ namespace MonoTorrent.Dht
             public Message Message;
             public DateTime SentAt;
         }
+
+        internal event EventHandler<SendQueryEventArgs> QuerySent;
 
         List<IAsyncResult> activeSends = new List<IAsyncResult>();
         DhtEngine engine;
@@ -86,28 +89,40 @@ namespace MonoTorrent.Dht
                 // I should check the IP address matches as well as the transaction id
                 // FIXME: This should throw an exception if the message doesn't exist, we need to handle this
                 // and return an error message (if that's what the spec allows)
-                try {
+                try
+                {
                     Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
                     receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
                     waitHandle.Set();
                 }
-                catch (Exception e)
+                catch (MessageException)
                 {
-                    throw new Exception("IP:"+endpoint.Address.ToString() + "bad transaction:" + e.Message);
+                    // Caused by bad transaction id usually - ignore
                 }
-                
+                catch (Exception)
+                {
+                    //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
+                }
             }
+        }
+
+        private void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
+        {
+            EventHandler<SendQueryEventArgs> h = QuerySent;
+            if (h != null)
+                h(this, new SendQueryEventArgs(endpoint, query, response));
         }
 
         void Loop()
         {
-            int lastTrigger = 0;
-            Queue<KeyValuePair<DateTime, QueryMessage>> waitingResponse = new Queue<KeyValuePair<DateTime, QueryMessage>>();
+            DateTime lastTrigger = DateTime.MinValue;
+            MonoTorrentCollection<KeyValuePair<DateTime, SendDetails>> waitingResponse;
+            waitingResponse = new MonoTorrentCollection<KeyValuePair<DateTime, SendDetails>>();
+
             while (true)
             {
                 KeyValuePair<IPEndPoint, Message>? receive = null;
                 SendDetails? send = null;
-                QueryMessage timedOut = null;
 
                 // FIXME: Should this just loop regardless of state?
                 if (engine.State != State.NotReady || true)
@@ -125,9 +140,11 @@ namespace MonoTorrent.Dht
 
                         if (waitingResponse.Count > 0)
                         {
-                            if ((DateTime.Now - waitingResponse.Peek().Key).TotalMilliseconds > engine.TimeOut)
+                            if ((DateTime.UtcNow - waitingResponse[0].Key) > engine.TimeOut)
                             {
-                                timedOut = waitingResponse.Dequeue().Value;
+                                SendDetails details = waitingResponse.Dequeue().Value;
+                                MessageFactory.UnregisterSend((QueryMessage)details.Message);
+                                RaiseMessageSent(details.Destination, (QueryMessage)details.Message, null);
                             }
                         }
                     }
@@ -136,18 +153,34 @@ namespace MonoTorrent.Dht
                     {
                         SendMessage(send.Value.Message, send.Value.Destination);
                         if (send.Value.Message is QueryMessage)
-                            waitingResponse.Enqueue(new KeyValuePair<DateTime, QueryMessage>(DateTime.Now, (QueryMessage)send.Value.Message));
+                            waitingResponse.Add(new KeyValuePair<DateTime, SendDetails>(DateTime.UtcNow, send.Value));
                     }
 
                     if (receive != null)
                     {
                         Message m = receive.Value.Value;
                         IPEndPoint source = receive.Value.Key;
-                        DhtEngine.MainLoop.Queue(delegate { 
+                        waitingResponse.RemoveAll(delegate (KeyValuePair<DateTime, SendDetails> msg) {
+                            return msg.Value.Message.TransactionId.Equals(m.TransactionId);
+                        });
+                        DhtEngine.MainLoop.Queue(delegate {
                             Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
                             try
                             {
-                                m.HandleInternal(engine, source);
+                                Node node = engine.RoutingTable.FindNode(m.Id);
+
+                                // What do i do with a null node?
+                                if (node == null)
+                                {
+                                    node = new Node(m.Id, source);
+                                    engine.RoutingTable.Add(node);
+                                }
+                                m.Handle(engine, node);
+                                ResponseMessage response = m as ResponseMessage;
+                                if (response != null)
+                                {
+                                    RaiseMessageSent(node.EndPoint, response.Query, response);
+                                }
                             }
                             catch (MessageException)
                             {
@@ -160,26 +193,9 @@ namespace MonoTorrent.Dht
                             }
                         });
                     }
-                    if (timedOut != null)
-                        timedOut.TimedOutInternal(engine);
 
-                    if ((Environment.TickCount - lastTrigger) > 1000 || 
-                        (Environment.TickCount < lastTrigger && ((Environment.TickCount + int.MaxValue - lastTrigger) > 1000)))//25 days will bug because tickcount restart...
-                    {
-                        lastTrigger = Environment.TickCount;
-                        DhtEngine.MainLoop.QueueWait(delegate {
-                            foreach (Bucket b in engine.RoutingTable.Buckets)
-                            {
-                                if ((DateTime.Now - b.LastChanged).TotalMinutes > 15)
-                                {
-                                    new BucketRefreshTask(engine, b).Execute();
-                                }
-                            }
-                        });
-                    }
+                    waitHandle.WaitOne(5, false);
                 }
-                // Wait timeout milliseconds or 1000, whichever is lower
-                waitHandle.WaitOne(5/*Math.Min(engine.TimeOut, 1000)*/, false);
             }
         }
 

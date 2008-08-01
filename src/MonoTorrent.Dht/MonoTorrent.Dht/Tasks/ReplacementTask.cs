@@ -3,7 +3,7 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-    internal class ReplacementTask : Task<TaskCompleteEventArgs>
+    internal class ReplacementTask : Task
     {
     	DhtEngine engine;
         Node replacement;
@@ -27,8 +27,8 @@ namespace MonoTorrent.Dht
     	{
             Replace ();
     	}
-    
-        public override void Execute ()
+
+        public override void Execute()
     	{
             if (!Active)
                 return;
@@ -37,6 +37,8 @@ namespace MonoTorrent.Dht
     	
     	internal void PingForReplace()
     	{
+            // FIXME: This is broke too
+            /*
             bucket.Nodes.Sort();//max to min last seen
             foreach (Node n in bucket.Nodes)
             {
@@ -51,7 +53,7 @@ namespace MonoTorrent.Dht
                     return;//ping only the first questionnable of bucket
                 }
             }
-            Complete(new TaskCompleteEventArgs(false));//do not succeed
+            Complete(new TaskCompleteEventArgs(this));//do not succeed*/
     	}
 
         public void Replace ()
@@ -59,7 +61,7 @@ namespace MonoTorrent.Dht
             bucket.Nodes.Remove(current);
             bucket.Nodes.Add(replacement);
             bucket.LastChanged = DateTime.Now;
-            Complete(new TaskCompleteEventArgs(true));
+            RaiseComplete(new TaskCompleteEventArgs(this));
         }
     }
 }

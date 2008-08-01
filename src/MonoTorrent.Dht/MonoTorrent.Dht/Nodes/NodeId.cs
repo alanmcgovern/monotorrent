@@ -156,6 +156,10 @@ namespace MonoTorrent.Dht
 
         public static bool operator ==(NodeId first, NodeId second)
         {
+            if ((object)first == null)
+                return (object)second == null;
+            if ((object)second == null)
+                return false;
             return first.value == second.value;
         }
 

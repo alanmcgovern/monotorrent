@@ -6,7 +6,7 @@ namespace MonoTorrent.Dht.Tasks
 {
     class FindPeersTask : Task
     {
-        public override void Execute(DhtEngine engine)
+        public override void Execute()
         {
             throw new Exception("The method or operation is not implemented.");
         }

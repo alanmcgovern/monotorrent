@@ -73,8 +73,10 @@ namespace MonoTorrent.Dht.Messages
 
         }
 
-        public override bool Handle(DhtEngine engine, Node node)
+        public override void Handle(DhtEngine engine, Node node)
         {
+            base.Handle(engine, node);
+
             if (!engine.Torrents.ContainsKey(InfoHash))
                 engine.Torrents.Add(InfoHash, new List<Node>());
 
@@ -85,10 +87,9 @@ namespace MonoTorrent.Dht.Messages
 				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id);
 		    }
 			else
-			    response = new ErrorMessage(eErrorCode.ProtocolError, "Token not valid!");
+			    response = new ErrorMessage(eErrorCode.ProtocolError, "Invalid or expired token received");
 				
 			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
-            return true;
         }
     }
 }

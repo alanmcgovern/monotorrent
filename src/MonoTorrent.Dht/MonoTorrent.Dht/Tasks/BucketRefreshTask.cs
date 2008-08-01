@@ -3,7 +3,7 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-    internal class BucketRefreshTask : Task<TaskCompleteEventArgs>
+    internal class BucketRefreshTask : Task
     {
         Random rand;
     	DhtEngine engine;
@@ -18,12 +18,12 @@ namespace MonoTorrent.Dht
     	
     	public void MessageReceive(object sender, EventArgs e)
     	{
-            Complete(new TaskCompleteEventArgs(true));
+            RaiseComplete(new TaskCompleteEventArgs(this));
     	}
     	
     	public void MessageTimedout(object sender, EventArgs e)
     	{
-            Complete(new TaskCompleteEventArgs(false));    		
+            RaiseComplete(new TaskCompleteEventArgs(this));    		
     	}
     
         public override void Execute ()
@@ -33,8 +33,6 @@ namespace MonoTorrent.Dht
     			
             Node n = bucket.Nodes[rand.Next(bucket.Nodes.Count-1)];
             FindNode msg = new FindNode(engine.RoutingTable.LocalNode.Id, n.Id);
-            msg.QueryTimedOut += MessageTimedout;
-            msg.ResponseReceived += MessageReceive;
             engine.MessageLoop.EnqueueSend(msg, n);
     	}
     }

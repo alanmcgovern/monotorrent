@@ -30,7 +30,6 @@ namespace MonoTorrent.Dht.Tests
             for (int i = 0; i < Bucket.MaxCapacity; i++)
             {
                 byte[] id = (byte[])this.id.Clone();
-                //id[id.Length - 1] += (byte)i;
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
@@ -41,7 +40,7 @@ namespace MonoTorrent.Dht.Tests
                 if (i == 1)
                 {
                     Assert.AreEqual(Bucket.MaxCapacity, table.Buckets[1].Nodes.Count, "#3.a"+i);
-                    Assert.IsNotNull(table.Buckets[i].Replacement, "#3.b" + i);
+                    //Assert.IsNotNull(table.Buckets[i].Replacement, "#3.b" + i);
                 }
                 else
                 {
@@ -73,24 +72,6 @@ namespace MonoTorrent.Dht.Tests
             Assert.AreEqual(0, table.Buckets[6].Nodes.Count);
             Assert.AreEqual(0, table.Buckets[7].Nodes.Count);
             CheckBuckets();
-        }
-        
-        [Test]
-        public void Replacement()
-        {
-            for (int i = 0; i < Bucket.MaxCapacity * 4; i++)
-            {
-                byte[] id = (byte[])this.id.Clone();
-                id[0] += (byte)i;
-                table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
-            }
-            Assert.AreEqual(8, table.Buckets.Count, "#1");
-            Assert.IsNotNull(table.Buckets[3].Replacement , "#2");
-            Node r = table.Buckets[3].Replacement;
-            // FIXME: Replace doesnt exist.
-            //table.Buckets[3].Replace(table.Buckets[3].Nodes[0]);
-            Assert.IsNull(table.Buckets[3].Replacement, "#3");
-            Assert.IsTrue(table.Buckets[3].Nodes.Contains(r), "#4");
         }
 
         [Test]

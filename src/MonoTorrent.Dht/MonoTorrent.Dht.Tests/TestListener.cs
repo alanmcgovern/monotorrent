@@ -23,11 +23,17 @@ namespace MonoTorrent.Dht.Tests
         {
             // Do nothing
         }
+        public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
+        {
+            RaiseMessageReceived(message.Encode(), endpoint);
+        }
 
         public void RaiseMessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
             if (MessageReceived != null)
-                MessageReceived(buffer, endpoint);
+                DhtEngine.MainLoop.Queue(delegate {
+                    MessageReceived(buffer, endpoint);
+                });
         }
 
         public void Start()

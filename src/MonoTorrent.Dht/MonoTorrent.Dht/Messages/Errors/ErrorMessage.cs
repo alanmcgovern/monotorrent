@@ -42,7 +42,11 @@ namespace MonoTorrent.Dht.Messages
     {
         private static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
-		
+
+        internal override NodeId Id
+        {
+            get { return new NodeId((BEncodedString)""); }
+        }
         private BEncodedList ErrorList
         {
             get { return (BEncodedList)properties[ErrorListKey]; }
@@ -73,15 +77,11 @@ namespace MonoTorrent.Dht.Messages
 
         }
         
-        public override bool HandleInternal(DhtEngine engine, IPEndPoint source)
+        public override void Handle(DhtEngine engine, Node node)
         {
+            base.Handle(engine, node);
+
             throw new MessageException(ErrorCode, Message);
-        }
-        
-        public override bool Handle(DhtEngine engine, Node node)
-        {
-            //do nothing here because handle internal done all
-            return true;
         }
     }
 }
