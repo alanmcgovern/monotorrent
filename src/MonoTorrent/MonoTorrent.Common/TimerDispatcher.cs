@@ -131,6 +131,7 @@ namespace Mono.Ssdp.Internal
                         if(item.Handler ()) {
                             item.Trigger = DateTime.Now.Add(item.Timeout);
                             Enqueue(ref item);
+                            restart = true;
                         }
                     } else {
                         restart = true;
