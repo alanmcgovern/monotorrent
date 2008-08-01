@@ -13,12 +13,13 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class TaskTests
     {
-        //static void Main(string[] args)
-        //{
-        //    TaskTests t = new TaskTests();
-        //    t.Setup();
-        //    t.SendQueryTaskSucceed();
-        //}
+        static void Main(string[] args)
+        {
+            TaskTests t = new TaskTests();
+            t.Setup();
+            t.ReplaceNodeTest();
+        }
+
         DhtEngine engine;
         TestListener listener;
         Node node;
@@ -134,6 +135,72 @@ namespace MonoTorrent.Dht.Tests
             task.Execute();
 
             Assert.IsTrue(handle.WaitOne(4000, false), "#10");
+        }
+
+        [Test]
+        public void BucketRefreshTest()
+        {
+            List<Node> nodes = new List<Node>();
+            for (int i = 0; i < 5; i++)
+                nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
+
+            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            engine.BucketRefreshTimeout = TimeSpan.FromMilliseconds(350);
+            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            {
+                DhtEngine.MainLoop.Queue(delegate
+                {
+                    if (!e.TimedOut)
+                        return;
+
+                    Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(e.EndPoint.Port); });
+                    
+                    if (e.Query is Ping)
+                    {
+                        PingResponse r = new PingResponse(current.Id);
+                        r.TransactionId = e.Query.TransactionId;
+                        listener.RaiseMessageReceived(r.Encode(), current.EndPoint);
+                    }
+                    else if (e.Query is FindNode)
+                    {
+                        FindNodeResponse response = new FindNodeResponse(current.Id);
+                        response.Nodes = "";
+                        response.TransactionId = e.Query.TransactionId;
+                        listener.RaiseMessageReceived(response, current.EndPoint);
+                    }
+                });
+            };
+
+            engine.Add(nodes);
+            engine.Start();
+
+            System.Threading.Thread.Sleep(2000);
+            foreach (Bucket b in engine.RoutingTable.Buckets)
+            {
+                Assert.Greater(b.LastChanged, DateTime.UtcNow.AddSeconds(-2));
+                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
+            }
+        }
+
+        [Test]
+        public void ReplaceNodeTest()
+        {
+            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
+            for(int i=0; i < 4; i++)
+            {
+                Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
+                node.LastSeen = DateTime.UtcNow.AddMinutes(-i);
+                engine.RoutingTable.Add(node);
+            }
+            Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
+
+            ReplaceNodeTask task = new ReplaceNodeTask(engine, engine.RoutingTable.Buckets[0], replacement);
+            task.Completed += delegate { handle.Set(); };
+            task.Execute();
+            handle.WaitOne();
+            Assert.IsFalse(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace), "#1");
+            Assert.IsTrue(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement), "#2");
         }
     }
 }

@@ -21,7 +21,6 @@ namespace MonoTorrent.Dht.Tasks
 
         public override void Execute()
         {
-            this.engine = engine;
             if (bucket.Nodes.Count == 0)
             {
                 RaiseComplete(new TaskCompleteEventArgs(this));
@@ -35,29 +34,39 @@ namespace MonoTorrent.Dht.Tasks
             bucket.LastChanged = DateTime.UtcNow;
             bucket.SortBySeen();
 
-            Node oldest = bucket.Nodes[0];
-            oldest.FailedCount++;
-            task = new SendQueryTask(engine, new Ping(engine.RoutingTable.LocalNode.Id), oldest);
-            task.Completed += new EventHandler<TaskCompleteEventArgs>(TaskComplete);
-            task.Execute();
+            if ((DateTime.UtcNow - bucket.Nodes[0].LastSeen) < TimeSpan.FromMinutes(3))
+            {
+                RaiseComplete(new TaskCompleteEventArgs(this));
+            }
+            else
+            {
+                Node oldest = bucket.Nodes[0];
+                task = new SendQueryTask(engine, new Ping(engine.LocalId), oldest);
+                task.Completed += TaskComplete;
+                task.Execute();
+            }
         }
 
         void TaskComplete(object sender, TaskCompleteEventArgs e)
         {
+            task.Completed -= TaskComplete;
+
             // I should raise the event with some eventargs saying which node was dead
             SendQueryEventArgs args = (SendQueryEventArgs)e;
-            task.Completed -= new EventHandler<TaskCompleteEventArgs>(TaskComplete);
             if (args.TimedOut)
             {
+                // If the node didn't respond and it's no longer in our bucket,
+                // we need to send a ping to the oldest node in the bucket
+                // Otherwise if we have a non-responder and it's still there, replace it!
                 int index = bucket.Nodes.IndexOf(task.Target);
-                if(index < 0)
+                if (index < 0)
                 {
                     SendPingToOldest();
                 }
                 else
                 {
-                bucket.Nodes[bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target)] = newNode;
-                RaiseComplete(new TaskCompleteEventArgs(this));
+                    bucket.Nodes[bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target)] = newNode;
+                    RaiseComplete(new TaskCompleteEventArgs(this));
                 }
             }
             else
@@ -65,30 +74,5 @@ namespace MonoTorrent.Dht.Tasks
                 SendPingToOldest();
             }
         }
-
-        /* More copied and pasted code - this came from the Bucket class */
-        /* This stuff should all be handled from within here             */
-
-        //public void Replace(Node oldNode)
-        //{
-        //    nodes.Remove(oldNode);
-        //    nodes.Add(replacement);
-        //    lastChanged = DateTime.Now;
-        //    this.replacement = null;
-        //}
-
-        //internal void PingForReplace(DhtEngine engine)
-        //{
-        //    Nodes.Sort();//max to min last seen
-        //    foreach (Node n in Nodes)
-        //    {
-        //        if (!n.CurrentlyPinging && (n.State == NodeState.Unknown || n.State == NodeState.Questionable))
-        //        {
-        //            n.CurrentlyPinging = true;
-        //            engine.MessageLoop.EnqueueSend(new Messages.Ping(engine.RoutingTable.LocalNode.Id), n);
-        //            return;//ping only the first questionnable of bucket
-        //        }
-        //    }
-        //}
     }
 }

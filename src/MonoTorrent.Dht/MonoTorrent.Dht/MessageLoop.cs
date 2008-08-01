@@ -175,6 +175,8 @@ namespace MonoTorrent.Dht
                                     node = new Node(m.Id, source);
                                     engine.RoutingTable.Add(node);
                                 }
+                                node.Seen();
+                                Console.WriteLine("Seen {0}", node.Id.ToString());
                                 m.Handle(engine, node);
                                 ResponseMessage response = m as ResponseMessage;
                                 if (response != null)

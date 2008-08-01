@@ -13,11 +13,12 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class MessageHandlingTests
     {
-        static void Main(string[] args)
-        {
-            MessageHandlingTests t = new MessageHandlingTests();
-            t.Setup();
-        }
+        //static void Main(string[] args)
+        //{
+        //    TaskTests t = new TaskTests();
+        //    t.Setup();
+        //    t.BucketRefreshTest();
+        //}
         BEncodedString transactionId = "cc";
         DhtEngine engine;
         Node node;
@@ -100,39 +101,6 @@ namespace MonoTorrent.Dht.Tests
             Assert.AreEqual(4, node.FailedCount, "#1");
             Assert.AreEqual(NodeState.Bad, node.State, "#2");
             Assert.AreEqual(lastSeen, node.LastSeen, "#3");
-        }
-
-        [Test]
-        public void BucketRefreshTest()
-        {
-            List<Node> nodes = new List<Node>();
-            for (int i = 0; i < 24; i++)
-                nodes.Add(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i)));
-
-            engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            engine.BucketRefreshTimeout = TimeSpan.FromSeconds(1);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e) {
-                DhtEngine.MainLoop.Queue(delegate {
-                    if (!e.TimedOut || !(e.Query is Ping))
-                        return;
-
-                    Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Equals(e.EndPoint); });
-                    PingResponse r = new PingResponse(current.Id);
-                    r.TransactionId = e.Query.TransactionId;
-                    listener.RaiseMessageReceived(r.Encode(), current.EndPoint);
-                });
-            };
-
-            engine.Add(nodes);
-
-            System.Threading.Thread.Sleep(4000);
-            foreach (Bucket b in engine.RoutingTable.Buckets)
-            {
-                Assert.Greater(b.LastChanged, DateTime.UtcNow.AddSeconds(-3));
-
-                foreach(Node n in b.Nodes)
-                    Assert.Greater(n.LastSeen, DateTime.UtcNow.AddSeconds(-3));
-            }
         }
 
         void FakePingResponse(object sender, SendQueryEventArgs e)

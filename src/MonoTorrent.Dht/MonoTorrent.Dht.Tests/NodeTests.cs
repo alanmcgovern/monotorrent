@@ -47,5 +47,22 @@ namespace MonoTorrent.Dht.Tests
             Assert.AreEqual(1, port.TextBytes[24], "#1");
             Assert.AreEqual(255, port.TextBytes[25], "#1");
         }
+
+        [Test]
+        public void SortByLastSeen()
+        {
+            List<Node> nodes = new List<Node>();
+            DateTime start = DateTime.Now;
+            for (int i = 0; i < 5; i++)
+            {
+                Node n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
+                n.LastSeen = start.AddDays(-i);
+                nodes.Add(n);
+            }
+
+            nodes.Sort();
+            Assert.AreEqual(start.AddDays(-4), nodes[0].LastSeen);
+            Assert.AreEqual(start, nodes[4].LastSeen);
+        }
     }
 }

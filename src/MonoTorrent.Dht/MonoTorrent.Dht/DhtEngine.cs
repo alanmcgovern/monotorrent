@@ -81,7 +81,7 @@ namespace MonoTorrent.Dht
         
         internal bool Bootstrap
         {
-            get { return (RoutingTable.CountNodes() <= 1); }
+            get { return false && (RoutingTable.CountNodes() <= 1); }
         }
 
         public TimeSpan BucketRefreshTimeout = TimeSpan.FromMinutes(15);
@@ -159,7 +159,7 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(State.Ready);
             }
 
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(5), delegate
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
             {
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
@@ -233,7 +233,7 @@ namespace MonoTorrent.Dht
         
         public void Announce(byte[] infoHash)
         {
-            new AnnounceTask(infoHash, this).Execute();
+            new AnnounceTask(this, infoHash).Execute();
         }
     }
 }
