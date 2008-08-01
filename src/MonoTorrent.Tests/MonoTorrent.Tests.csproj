@@ -55,6 +55,7 @@
     <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="PeerMessagesTest.cs" />
     <Compile Include="PiecePickerTests.cs" />
+    <Compile Include="SlidingWindowPickerTests.cs" />
     <Compile Include="PieceWriterTests.cs" />
     <Compile Include="TestEncryption.cs" />
     <Compile Include="TestRig.cs" />

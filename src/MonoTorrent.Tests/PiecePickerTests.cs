@@ -37,10 +37,10 @@ namespace MonoTorrent.Tests
             t.Setup();
             t.ChokeThenClose();
         }
-        PeerId peer;
-        List<PeerId> peers;
-        StandardPicker picker;
-        TestRig rig;
+        protected PeerId peer;
+        protected List<PeerId> peers;
+        protected StandardPicker picker;
+        protected TestRig rig;
 
 
         [SetUp]

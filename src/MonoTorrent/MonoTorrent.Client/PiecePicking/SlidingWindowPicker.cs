@@ -163,21 +163,6 @@ namespace MonoTorrent.Client
         #region Methods
 
         /// <summary>
-        /// Check both the overall bitfield and the unhashed pieces one for the piece with the given index
-        /// </summary>
-        /// <param name="index">Piece index</param>
-        /// <returns>Whether we already have this piece</returns>
-        private bool AlreadyHave(int index)
-        {
-            if (this.myBitfield[index])
-                return true;
-
-            lock (this.unhashedPieces)
-                return this.unhashedPieces[index];
-        }
-
-
-        /// <summary>
         /// Picks the first piece in the high priority window that the peer has.
         /// If the peer has no pieces in this window, get rarest piece in the 
         /// </summary>
