@@ -111,7 +111,11 @@ namespace MonoTorrent.Client
 
         public uint QueueTimeout(TimeSpan span, TimeoutHandler task)
         {
-            return dispatcher.Enqueue(span, task);
+            return dispatcher.Enqueue(span, delegate {
+                DelegateTask t = new DelegateTask(delegate { return task(); });
+                ClientEngine.MainLoop.QueueWait(delegate { t.Execute(); });
+                return (bool)t.Result;
+            });
         }
 
         public void CancelQueued(uint handle)
