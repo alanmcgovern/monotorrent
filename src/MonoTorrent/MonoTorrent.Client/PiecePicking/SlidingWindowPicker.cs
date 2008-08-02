@@ -99,6 +99,14 @@ namespace MonoTorrent.Client
             set { this.mediumPrioritySetSize = this.highPrioritySetSize * value; }
         }
 
+        /// <summary>
+        /// First piece of the medium priority set -- may be greater than BitField.Length, in which case
+        /// there is no medium priority set
+        /// </summary>
+        public int MediumPrioritySetStart
+        {
+            get { return this.highPrioritySetStart + this.highPrioritySetSize; }
+        }
 
         /// <summary>
         /// Read-only value for size of the medium priority set. To set the medium priority size, use MediumToHighRatio.
@@ -242,15 +250,15 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// Get the first non-requested piece from the high priority set, that the peer has
+        /// Get the first piece from the high priority set that hasn't finished downloading that the peer has.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         private RequestMessage GetHighPriority(PeerId id)
         {
             Piece p = null;
-            
-            for (int i = this.highPrioritySetStart; i < this.highPrioritySetStart + this.highPrioritySetSize && i < this.myBitfield.Length; i++)
+            int highPriorityEnd = this.highPrioritySetStart + this.highPrioritySetSize;
+            for (int i = this.highPrioritySetStart; i < highPriorityEnd && i < this.myBitfield.Length; i++)
             {
                 // if we still need this piece and they do not have it
                 if (!this.myBitfield[i] && id.BitField[i])

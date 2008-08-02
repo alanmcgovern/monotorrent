@@ -44,7 +44,7 @@ namespace MonoTorrent.Tests
 
 
         [SetUp]
-        public void Setup()
+        public virtual void Setup()
         {
             // Yes, this is horrible. Deal with it.
             rig = new TestRig("");

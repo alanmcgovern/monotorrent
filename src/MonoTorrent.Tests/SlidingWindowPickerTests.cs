@@ -17,22 +17,15 @@ namespace MonoTorrent.Tests
         private SlidingWindowPicker swp;
 
         [SetUp]
-        public void Setup()
+        public override void Setup()
         {
-            // Yes, this is horrible. Deal with it.
-            rig = new TestRig("");
-            peers = new List<PeerId>();
+            base.Setup();
+            
             picker = new SlidingWindowPicker(10);
             swp = picker as SlidingWindowPicker;
             picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));
-            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
-            for (int i = 0 ; i < 20 ; i++)
-            {
-                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
-                p.SupportsFastPeer = true;
-                peers.Add(p);
-            }
         }
+
 
         [Test]
         public void SetSizes()
@@ -41,7 +34,7 @@ namespace MonoTorrent.Tests
             {
                 swp.HighPrioritySetSize = high;
                 Assert.AreEqual(high, swp.HighPrioritySetSize);
-                
+
                 for (int ratio = 1 ; ratio < 10 ; ratio++)
                 {
                     swp.MediumToHighRatio = ratio;
@@ -53,8 +46,12 @@ namespace MonoTorrent.Tests
             }
         }
 
+
+        /// <summary>
+        /// Slide the high priority set start along the torrent and make sure pieces are downloaded in order
+        /// </summary>
         [Test]
-        public void PickPiece()
+        public void HighPriorityOnly()
         {
             swp.HighPrioritySetSize = 4;
             swp.MediumToHighRatio = 4;
@@ -66,36 +63,173 @@ namespace MonoTorrent.Tests
             peer.IsChoking = false;
             foreach (PeerId p in peers)
             {
+                p.BitField.SetAll(true);
                 p.IsChoking = false;
             }
 
-            int nextIndex = 0;
+            int curPiece = 0;
             int blocksRequested = 0;
             while (!rig.Manager.Bitfield.AllTrue)
             {
                 RequestMessage msg = swp.PickPiece(peer, peers);
 
-                Console.WriteLine(msg);
                 Assert.IsNotNull(msg);
-                Assert.IsTrue(msg.PieceIndex == nextIndex,
-                    String.Format("Next index: {0}, Piece Index: {1}", nextIndex, msg.PieceIndex));
+                Assert.IsTrue(msg.PieceIndex == curPiece,
+                    String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
 
-                Piece req = null;
-                foreach (Piece piece in swp.Requests)
-                {
-                    if (piece.Index == msg.PieceIndex)
-                        req = piece;
-                }
+                Piece req = GetPieceRequest(msg.PieceIndex);
                 Assert.IsNotNull(req);
-                    
-                if(++blocksRequested == req.BlockCount)     // all blocks requested
+
+                if (++blocksRequested == req.BlockCount)     // all blocks requested
                 {
                     // mark as received
-                    rig.Manager.Bitfield[nextIndex++] = true;
+                    rig.Manager.Bitfield[curPiece++] = true;
                     swp.HighPrioritySetSize++;
                     blocksRequested = 0;
                 }
             }
+        }
+
+
+        /// <summary>
+        /// Make sure high priority is requested first, then medium priority, then low
+        /// </summary>
+        [Test]
+        public void PriorityOrder()
+        {
+            swp.HighPrioritySetSize = 4;
+            swp.MediumToHighRatio = 4;
+
+            Assert.IsTrue(swp.HighPrioritySetSize * swp.MediumToHighRatio < this.rig.Torrent.Pieces.Count);
+            Console.WriteLine(rig.Torrent.Pieces.Count);
+
+            peer.BitField.SetAll(true);
+            peer.IsChoking = false;
+            foreach (PeerId p in peers)
+            {
+                p.BitField.SetAll(true);
+                p.IsChoking = false;
+            }
+
+            int curPiece = 0;
+            int blocksRequested = 0;
+            while (curPiece < swp.HighPrioritySetSize)
+            {
+                RequestMessage msg = swp.PickPiece(peer, peers);
+
+                Assert.IsNotNull(msg);
+                Assert.IsTrue(msg.PieceIndex == curPiece,
+                    String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
+
+                Piece req = GetPieceRequest(msg.PieceIndex);
+                Assert.IsNotNull(req);
+
+                if (++blocksRequested == req.BlockCount)     // all blocks requested
+                {
+                    // mark as received
+                    rig.Manager.Bitfield[curPiece++] = true;
+                    blocksRequested = 0;
+                }
+            }
+
+            curPiece = -1;
+            while (!rig.Manager.Bitfield.AllTrue)
+            {
+                RequestMessage msg = swp.PickPiece(peer, peers);
+
+                Assert.IsNotNull(msg);
+                Assert.IsTrue(msg.PieceIndex == curPiece || curPiece == -1,
+                    String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
+
+                if (msg.PieceIndex > swp.MediumPrioritySetStart + swp.MediumPrioritySetSize)
+                {
+                    for (int i = 0 ; i < swp.MediumPrioritySetSize ; i++)
+                    {
+                        int index = swp.MediumPrioritySetStart + i;
+                        Assert.IsTrue(index >= rig.Manager.Bitfield.Length || rig.Manager.Bitfield[i]);
+                    }
+                }
+
+                if (curPiece == -1)
+                    curPiece = msg.PieceIndex;
+
+                Piece req = GetPieceRequest(msg.PieceIndex);
+                Assert.IsNotNull(req);
+
+                if (++blocksRequested == req.BlockCount)     // all blocks requested
+                {
+                    // mark as received
+                    rig.Manager.Bitfield[curPiece] = true;
+                    curPiece = -1;
+                    blocksRequested = 0;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Put every piece on a different peer and make sure PriorityOrder still works
+        /// </summary>
+        [Test]
+        public void EfficientRequest()
+        {
+            peer.BitField.SetAll(false);
+            peer.IsChoking = false;
+            foreach (PeerId p in peers)
+            {
+                p.BitField.SetAll(false);
+                p.IsChoking = false;
+            }
+
+            List<PeerId> allPeers = new List<PeerId>(peers);
+            allPeers.Add(peer);
+
+            for (int i = 0 ; i < rig.Manager.Bitfield.Length ; i++)
+            {
+                allPeers[i % allPeers.Count].BitField[i] = true;
+            }
+
+            Dictionary<int, int> blocksRequested = new Dictionary<int, int>();
+            while (!rig.Manager.Bitfield.AllTrue)
+            {
+                RequestMessage msg = null;
+                foreach (PeerId p in allPeers)
+                {
+                    List<PeerId> otherPeers = new List<PeerId>(allPeers);
+                    otherPeers.Remove(p);
+                    msg = swp.PickPiece(p, otherPeers);
+
+                    if (msg != null)
+                        break;
+                }
+                Assert.IsNotNull(msg);
+
+                if (!blocksRequested.ContainsKey(msg.PieceIndex))
+                    blocksRequested.Add(msg.PieceIndex, 1);
+                else
+                    blocksRequested[msg.PieceIndex]++;
+
+                Piece req = GetPieceRequest(msg.PieceIndex);
+                Assert.IsNotNull(req);
+
+                if (blocksRequested[req.Index] == req.BlockCount)     // all blocks requested
+                {
+                    // mark as received
+                    rig.Manager.Bitfield[req.Index] = true;
+                }
+            }
+        }
+
+
+        private Piece GetPieceRequest(int index)
+        {
+            Piece req = null;
+            foreach (Piece piece in swp.Requests)
+            {
+                if (piece.Index == index)
+                    req = piece;
+            }
+            return req;
         }
     }
 }
