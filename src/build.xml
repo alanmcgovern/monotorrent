@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<project name="MonoTorrent" xmlns="http://nant.sf.net/schemas/nant.xsd">
+
+  <property name="nant.settings.currentframework" value="net-2.0" />
+
+  <target name="Clean">
+    <msbuild project="MonoTorrent.sln" target="Clean"/>
+  </target>
+
+  <target name="Debug">
+    <msbuild project="MonoTorrent.sln">
+      <property name="Configuration" value="Debug"/>
+    </msbuild>
+  </target>
+
+  <target name="Test-Debug" depends="Debug">
+    <nunit2 failonerror="true" verbose="true">
+      <formatter type="Xml" usefile="true" outputdir="." extension="xml"/>
+      <test assemblyname="MonoTorrent.Tests\bin\Debug\MonoTorrent.Tests.dll" haltonfailure-="false"/>
+    </nunit2>
+  </target>
+  
+</project>
