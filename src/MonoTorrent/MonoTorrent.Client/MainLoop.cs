@@ -31,7 +31,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
-using MonoTorrent.Client.Tasks;
 using Mono.Ssdp.Internal;
 
 namespace MonoTorrent.Client
@@ -40,16 +39,39 @@ namespace MonoTorrent.Client
     public delegate void MainLoopTask();
     public class MainLoop
     {
+        private class DelegateTask
+        {
+            public ManualResetEvent Handle;
+            private object result;
+            private MainLoopJob task;
+
+            public object Result
+            {
+                get { return result; }
+            }
+            public DelegateTask(MainLoopJob task)
+            {
+                this.task = task;
+            }
+
+            public void Execute()
+            {
+                result = task();
+                if (Handle != null)
+                    Handle.Set();
+            }
+        }
+
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         AutoResetEvent handle = new AutoResetEvent(false);
-        Queue<Task> tasks = new Queue<Task>();
+        Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
-        public MainLoop()
+        public MainLoop(string name)
         {
             thread = new Thread(Loop);
             thread.IsBackground = true;
-            thread.Name = "MainLoop";
+            thread.Name = name;
             thread.Start();
         }
 
@@ -57,8 +79,8 @@ namespace MonoTorrent.Client
         {
             while (true)
             {
-                Task task = null;
-
+                DelegateTask task = null;
+                
                 lock (tasks)
                 {
                     if (tasks.Count > 0)
@@ -76,7 +98,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void Queue(Task task)
+        private void Queue(DelegateTask task)
         {
             lock (tasks)
             {
@@ -87,18 +109,28 @@ namespace MonoTorrent.Client
 
         public void Queue(MainLoopTask task)
         {
-            DelegateTask t = new DelegateTask(delegate { 
+            Queue(new DelegateTask(delegate { 
                 task();
                 return null;
-            });
-
-            Queue(t);
+            }));
         }
 
         public void QueueWait(MainLoopTask task)
         {
-            DelegateTask t = new DelegateTask(delegate { task(); return null; });
-            t.Handle = new ManualResetEvent(false);
+            QueueWait(delegate { task(); return null; });
+        }
+
+        public object QueueWait(MainLoopJob task)
+        {
+            return QueueWait(new DelegateTask(task));
+        }
+
+        private object QueueWait(DelegateTask t)
+        {
+            if (t.Handle != null)
+                t.Handle.Reset();
+            else
+                t.Handle = new ManualResetEvent(false);
             
             if (Thread.CurrentThread == thread)
                 t.Execute();
@@ -107,14 +139,14 @@ namespace MonoTorrent.Client
 
             t.Handle.WaitOne();
             t.Handle.Close();
+
+            return t.Result;
         }
 
         public uint QueueTimeout(TimeSpan span, TimeoutHandler task)
         {
             return dispatcher.Enqueue(span, delegate {
-                DelegateTask t = new DelegateTask(delegate { return task(); });
-                ClientEngine.MainLoop.QueueWait(delegate { t.Execute(); });
-                return (bool)t.Result;
+                return (bool)ClientEngine.MainLoop.QueueWait(delegate { return task(); });
             });
         }
 

@@ -10,6 +10,23 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.TrackerTests
 {
+    public class CustomComparer : MonoTorrent.Tracker.IPeerComparer
+    {
+        public bool Equals(object left, object right)
+        {
+            return left.Equals(right);
+        }
+        public object GetKey(AnnounceParameters parameters)
+        {
+            return parameters.Uploaded;
+        }
+
+        public int GetHashCode(object obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
     public class CustomListener : ListenerBase
     {
         public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)

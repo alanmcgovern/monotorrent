@@ -55,6 +55,7 @@ namespace MonoTorrent.Tracker
         private Dictionary<object, Peer> peers;
         private Random random;
         private ITrackable trackable;
+        private Tracker tracker;
 
         #endregion Member Variables
 
@@ -107,14 +108,15 @@ namespace MonoTorrent.Tracker
 
         #region Constructors
 
-        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer)
+        public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer, Tracker tracker)
         {
             this.comparer = comparer;
             this.trackable = trackable;
+            this.tracker = tracker;
             complete = new BEncodedNumber(0);
             downloaded = new BEncodedNumber(0);
             incomplete = new BEncodedNumber(0);
-            peers = new Dictionary<object, Peer>(comparer);
+            peers = new Dictionary<object, Peer>();
             random = new Random();
         }
 
@@ -127,13 +129,13 @@ namespace MonoTorrent.Tracker
         /// Adds the peer to the tracker
         /// </summary>
         /// <param name="peer"></param>
-        internal void Add(object key, Peer peer)
+        internal void Add(Peer peer)
         {
             if (peer == null)
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Adding: {0}", peer.ClientAddress));
-            peers.Add(key, peer);
+            peers.Add(peer.DictionaryKey, peer);
             lock (buffer)
                 buffer.Clear();
             UpdateCounts();
@@ -189,17 +191,28 @@ namespace MonoTorrent.Tracker
             }
 
             if (compact)
-                response.Add(Tracker.peers, (BEncodedString)compactResponse);
+                response.Add(Tracker.PeersKey, (BEncodedString)compactResponse);
             else
-                response.Add(Tracker.peers, nonCompactResponse);
+                response.Add(Tracker.PeersKey, nonCompactResponse);
         }
 
         internal void ClearZombiePeers(DateTime cutoff)
         {
+            bool removed = false;
             lock (buffer)
             {
-                buffer.ForEach(delegate(Peer p) { if (p.LastAnnounceTime < cutoff) peers.Remove(p.ClientAddress.Address); });
-                buffer.Clear();
+                foreach (Peer p in buffer)
+                {
+                    if (p.LastAnnounceTime > cutoff)
+                        continue;
+
+                    tracker.RaisePeerTimedOut(new TimedOutEventArgs(p, this));
+                    peers.Remove(p.DictionaryKey);
+                    removed = true;
+                }
+
+                if (removed)
+                    buffer.Clear();
             }
         }
 
@@ -214,7 +227,7 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentNullException("peer");
 
             Debug.WriteLine(string.Format("Removing: {0}", peer.ClientAddress));
-            peers.Remove(peer.ClientAddress.Address);
+            peers.Remove(peer.DictionaryKey);
             lock (buffer)
                 buffer.Clear();
             UpdateCounts();
@@ -244,21 +257,24 @@ namespace MonoTorrent.Tracker
         internal void Update(AnnounceParameters par)
         {
             Peer peer;
-            if (!peers.TryGetValue(par.ClientAddress.Address, out peer))
+            object peerKey = comparer.GetKey(par);
+            if (!peers.TryGetValue(peerKey, out peer))
             {
-                peer = new Peer(par);
-                Add(comparer.GetKey(par), peer);
+                peer = new Peer(par, peerKey);
+                Add(peer);
             }
-
-            Debug.WriteLine(string.Format("Updating: {0}", peer.ClientAddress));
-            peer.Update(par);
-
+            else
+            {
+                Debug.WriteLine(string.Format("Updating: {0} with key {1}", peer.ClientAddress, peerKey));
+                peer.Update(par);
+            }
             if (par.Event == TorrentEvent.Completed)
                 System.Threading.Interlocked.Increment(ref downloaded.number);
 
             else if (par.Event == TorrentEvent.Stopped)
                 Remove(peer);
 
+            tracker.RaisePeerAnnounced(new AnnounceEventArgs(peer, this));
             UpdateCounts();
         }
 

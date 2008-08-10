@@ -13,30 +13,30 @@ namespace MonoTorrent.Tests
     [TestFixture]
     public class PiecePickerTests
     {
-        static void Main(string[] args)
-        {
-            PiecePickerTests t = new PiecePickerTests();
-            t.Setup();
-            t.RequestFastSeeder();
-            t.Setup();
-            t.RequestFastNotSeeder();
-            t.Setup();
-            t.RequestFastHaveEverything();
-            t.Setup();
-            t.RequestWhenSeeder();
-            t.Setup();
-            t.NoInterestingPieces();
-            t.Setup();
-            t.CancelRequests();
-            t.Setup();
-            t.RejectRequests();
-            t.Setup();
-            t.PeerChoked();
-            t.Setup();
-            t.FastPeerChoked();
-            t.Setup();
-            t.ChokeThenClose();
-        }
+        //static void Main(string[] args)
+        //{
+        //    PiecePickerTests t = new PiecePickerTests();
+        //    t.Setup();
+        //    t.RequestFastSeeder();
+        //    t.Setup();
+        //    t.RequestFastNotSeeder();
+        //    t.Setup();
+        //    t.RequestFastHaveEverything();
+        //    t.Setup();
+        //    t.RequestWhenSeeder();
+        //    t.Setup();
+        //    t.NoInterestingPieces();
+        //    t.Setup();
+        //    t.CancelRequests();
+        //    t.Setup();
+        //    t.RejectRequests();
+        //    t.Setup();
+        //    t.PeerChoked();
+        //    t.Setup();
+        //    t.FastPeerChoked();
+        //    t.Setup();
+        //    t.ChokeThenClose();
+        //}
         protected PeerId peer;
         protected List<PeerId> peers;
         protected StandardPicker picker;

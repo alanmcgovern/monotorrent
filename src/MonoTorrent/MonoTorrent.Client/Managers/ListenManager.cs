@@ -6,7 +6,6 @@ using MonoTorrent.Client.Encryption;
 using System.Net.Sockets;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {

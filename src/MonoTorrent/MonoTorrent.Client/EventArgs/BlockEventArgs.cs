@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         internal BlockEventArgs(BufferedIO data)
             : base(data.Id.TorrentManager)
         {
-            Block b = data.Piece[PiecePickerBase.GetBlockIndex(data.Piece.Blocks, data.PieceOffset, data.Count)];
+            Block b = data.Piece[Block.IndexOf(data.Piece.Blocks, data.PieceOffset, data.Count)];
             Init(b, data.Piece, data.Id);
         }
 

@@ -102,11 +102,11 @@ namespace TrackerApp
                 hashes.Add(infoHash);
 
                 ipAddress = 1;
-                peers = averagePeers;// random.Next((int)(averagePeers * 0.5), (int)(averagePeers * 1.5));
+                averagePeers = peers;
                 for (int j = 0; j < peers; j++)
                     listener.Handle(infoHash, new IPAddress(ipAddress++), true);
             }
-
+            
             threadSleepTime = (int)(20000.0 / requests + 0.5);
             threads = new Thread[20];
         }

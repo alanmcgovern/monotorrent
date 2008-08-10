@@ -240,7 +240,7 @@ namespace MonoTorrent.Client
                         if (p.Index != message.PieceIndex)
                             continue;
 
-                        int index = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
+                        int index = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
                         id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
                         break;
                     }

@@ -120,8 +120,6 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\DelegateTask.cs" />
-    <Compile Include="MonoTorrent.Client\Tasks\Task.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs" />
@@ -241,7 +239,9 @@
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />
+    <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\ByteComparer.cs" />
+    <Compile Include="MonoTorrent.Tracker\EventArgs\PeerEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\IIntervalAlgorithm.cs" />
     <Compile Include="MonoTorrent.Tracker\InfoHashTrackable.cs" />
     <Compile Include="MonoTorrent.Tracker\IPAddressComparer.cs" />
@@ -249,8 +249,10 @@
     <Compile Include="MonoTorrent.Tracker\Peer.cs" />
     <Compile Include="MonoTorrent.Tracker\RequestMonitor.cs" />
     <Compile Include="MonoTorrent.Tracker\RequestParameters.cs" />
+    <Compile Include="MonoTorrent.Tracker\EventArgs\ScrapeEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\SimpleTorrentManager.cs" />
     <Compile Include="MonoTorrent.Tracker\StaticIntervalAlgorithm.cs" />
+    <Compile Include="MonoTorrent.Tracker\EventArgs\TimedOutEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\Tracker.cs" />
     <Compile Include="MonoTorrent.Tracker\Exceptions\TrackerException.cs" />
     <Compile Include="MonoTorrent.Tracker\Frontend\AnnounceParameters.cs" />

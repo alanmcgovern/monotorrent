@@ -33,6 +33,7 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -73,6 +74,7 @@ namespace MonoTorrent.Client
         public abstract bool IsInteresting(PeerId id);
         public abstract void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces);
         public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
+        public abstract MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count);
         public abstract void ReceivedChokeMessage(PeerId id);
         public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
         public abstract PieceEvent ReceivedPieceMessage(BufferedIO data);
@@ -80,14 +82,5 @@ namespace MonoTorrent.Client
         public abstract void Reset();
 
         #endregion
-
-        #region Methods
-
-        internal static int GetBlockIndex(Block[] blocks, int startOffset, int blockLength)
-        {
-            return Array.FindIndex<Block>(blocks, delegate(Block b) { return b.RequestLength == blockLength && b.StartOffset == startOffset; });
-        }
-
-        #endregion Methods
     }
 }

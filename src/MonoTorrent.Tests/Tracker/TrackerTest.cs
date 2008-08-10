@@ -114,6 +114,21 @@ namespace MonoTorrent.TrackerTests
         }
 
         [Test]
+        public void CustomKeyTest()
+        {
+            rig.Tracker.Add(rig.Trackables[0], new CustomComparer());
+            rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
+
+            rig.Peers[0].ClientAddress = IPAddress.Loopback;
+            rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
+
+            rig.Peers[0].ClientAddress = IPAddress.Broadcast;
+            rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
+
+            Assert.AreEqual(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count, "#1");
+        }
+
+        [Test]
         public void TestReturnedPeers()
         {
             rig.Tracker.AllowNonCompact = true;

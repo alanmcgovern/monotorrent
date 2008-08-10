@@ -18,6 +18,12 @@ namespace MonoTorrent.Client.Messages
             messages = new List<PeerMessage>();
         }
 
+        public MessageBundle(PeerMessage message)
+            : this()
+        {
+            messages.Add(message);
+        }
+
         internal override void Handle(PeerId id)
         {
             throw new InvalidOperationException();

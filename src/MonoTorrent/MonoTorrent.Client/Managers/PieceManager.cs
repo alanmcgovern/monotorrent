@@ -35,6 +35,7 @@ using MonoTorrent.Client;
 using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -115,7 +116,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the request was added</returns>
         internal bool AddPieceRequest(PeerId id)
         {
-            RequestMessage msg;
+            PeerMessage msg;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
             int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
@@ -171,7 +172,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
+        internal PeerMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
             //if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
             //    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);

@@ -125,6 +125,16 @@ namespace Mono.Ssdp.Internal
                 
                 bool restart = false;
                 TimeSpan interval = item.Trigger - DateTime.Now;
+                if (interval < TimeSpan.Zero)
+                {
+                    Dequeue(item.Id);
+                    if (item.Handler())
+                    {
+                        item.Trigger = DateTime.Now.Add(item.Timeout);
+                        Enqueue(ref item);
+                        restart = true;
+                    }
+                }
                 if (interval >= TimeSpan.Zero) {
                     if (!wait.WaitOne (interval, false)) {
                         Dequeue (item.Id);

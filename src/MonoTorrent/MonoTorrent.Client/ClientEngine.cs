@@ -41,7 +41,6 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Managers;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -50,7 +49,7 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
-        internal static MainLoop MainLoop = new MainLoop();
+        internal static MainLoop MainLoop = new MainLoop("Client Engine Loop");
         private static Random random = new Random();
         #region Global Constants
 
@@ -174,7 +173,7 @@ namespace MonoTorrent.Client
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
                 if (IsRunning)
-                    MainLoop.QueueWait(LogicTick);
+                    MainLoop.QueueWait((MainLoopTask)LogicTick);
                 return true;
             });
             this.torrents = new MonoTorrentCollection<TorrentManager>();
@@ -211,13 +210,10 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            MainLoop.QueueWait(DisposeImpl);
-        }
-
-        internal void DisposeImpl()
-        {
-            this.diskManager.Dispose();
-            this.listenManager.Dispose();
+            MainLoop.QueueWait(delegate {
+                this.diskManager.Dispose();
+                this.listenManager.Dispose();
+            });
         }
 
         private static string GeneratePeerId()
@@ -236,7 +232,7 @@ namespace MonoTorrent.Client
         {
             MainLoop.QueueWait(delegate {
                 foreach (TorrentManager manager in torrents)
-                    manager.PauseImpl();
+                    manager.Pause();
             });
         }
 
@@ -245,29 +241,26 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("torrent");
 
-            MainLoop.QueueWait(delegate { RegisterImpl(manager); });
+            MainLoop.QueueWait(delegate {
+                if (manager.Engine != null)
+                    throw new TorrentException("This manager has already been registered");
+
+                if (Contains(manager.Torrent))
+                    throw new TorrentException("A manager for this torrent has already been registered");
+                this.torrents.Add(manager);
+                manager.PieceHashed += PieceHashed;
+                manager.Engine = this;
+            });
 
             if (TorrentRegistered != null)
                 TorrentRegistered(this, new TorrentEventArgs(manager));
-        }
-
-        internal void RegisterImpl(TorrentManager manager)
-        {
-            if (manager.Engine != null)
-                throw new TorrentException("This manager has already been registered");
-
-            if (Contains(manager.Torrent))
-                throw new TorrentException("A manager for this torrent has already been registered");
-            this.torrents.Add(manager);
-            manager.PieceHashed += PieceHashed;
-            manager.Engine = this;
         }
 
         public void StartAll()
         {
             MainLoop.QueueWait(delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    torrents[i].StartImpl();
+                    torrents[i].Start();
             });
         }
 
@@ -277,7 +270,7 @@ namespace MonoTorrent.Client
 
             MainLoop.QueueWait(delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    handles.Add(torrents[i].StopImpl());
+                    handles.Add(torrents[i].Stop());
             });
 
             return handles.ToArray();
@@ -304,24 +297,21 @@ namespace MonoTorrent.Client
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
-            MainLoop.QueueWait(delegate { UnregisterImpl(manager); });
+            MainLoop.QueueWait(delegate {
+                if (manager.Engine != this)
+                    throw new TorrentException("The manager has not been registered with this engine");
+
+                if (manager.State != TorrentState.Stopped)
+                    throw new TorrentException("The manager must be stopped before it can be unregistered");
+
+                this.torrents.Remove(manager);
+
+                manager.PieceHashed -= PieceHashed;
+                manager.Engine = null;
+            });
 
             if (TorrentUnregistered != null)
                 TorrentUnregistered(this, new TorrentEventArgs(manager));
-        }
-
-        internal void UnregisterImpl(TorrentManager manager)
-        {
-            if (manager.Engine != this)
-                throw new TorrentException("The manager has not been registered with this engine");
-
-            if (manager.State != TorrentState.Stopped)
-                throw new TorrentException("The manager must be stopped before it can be unregistered");
-
-            this.torrents.Remove(manager);
-
-            manager.PieceHashed -= PieceHashed;
-            manager.Engine = null;
         }
 
         #endregion

@@ -43,7 +43,6 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -425,7 +424,15 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool autoStart)
         {
-            ClientEngine.MainLoop.QueueWait(delegate { HashCheckImpl(autoStart); });
+            ClientEngine.MainLoop.QueueWait(delegate {
+                if (this.state != TorrentState.Stopped)
+                    throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
+
+                CheckRegistered();
+                this.startTime = DateTime.Now;
+                UpdateState(TorrentState.Hashing);
+                ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); }); 
+            });
         }
 
 
@@ -434,7 +441,17 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
-            ClientEngine.MainLoop.QueueWait(PauseImpl);
+            ClientEngine.MainLoop.QueueWait(delegate
+            {
+                CheckRegistered();
+                if (state != TorrentState.Downloading && state != TorrentState.Seeding)
+                    return;
+
+                // By setting the state to "paused", peers will not be dequeued from the either the
+                // sending or receiving queues, so no traffic will be allowed.
+                UpdateState(TorrentState.Paused);
+                this.SaveFastResume();
+            });
         }
 
 
@@ -443,7 +460,50 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            ClientEngine.MainLoop.QueueWait(StartImpl);
+            ClientEngine.MainLoop.QueueWait(delegate {
+                CheckRegistered();
+
+                this.engine.Start();
+                // If the torrent was "paused", then just update the state to Downloading and forcefully
+                // make sure the peers begin sending/receiving again
+                if (this.state == TorrentState.Paused)
+                {
+                    UpdateState(TorrentState.Downloading);
+                    this.ResumePeers();
+                    return;
+                }
+
+                // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
+                // before attempting to start again
+                if (!hashChecked)
+                {
+                    if (state != TorrentState.Hashing)
+                        HashCheck(true);
+                    return;
+                }
+
+                if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
+                    return;
+
+                if (this.Complete)
+                    UpdateState(TorrentState.Seeding);
+                else
+                    UpdateState(TorrentState.Downloading);
+
+                if (TrackerManager.CurrentTracker != null)
+                {
+                    if (this.trackerManager.CurrentTracker.CanScrape)
+                        this.TrackerManager.Scrape();
+                    this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+                }
+
+                this.startTime = DateTime.Now;
+                if (engine.ConnectionManager.IsRegistered(this))
+                    Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
+                else
+                    engine.ConnectionManager.RegisterManager(this);
+                this.pieceManager.Reset();
+            });
         }
 
 
@@ -452,134 +512,58 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-            DelegateTask t = new DelegateTask(delegate {
-                return StopImpl();
+            return (WaitHandle)ClientEngine.MainLoop.QueueWait(delegate {
+                CheckRegistered();
+
+                ManagerWaitHandle handle = new ManagerWaitHandle("Global");
+                try
+                {
+                    if (this.state == TorrentState.Stopped)
+                        return handle;
+
+                    if (this.state == TorrentState.Hashing)
+                    {
+                        hashingWaitHandle = new ManualResetEvent(false);
+                        handle.AddHandle(hashingWaitHandle, "Hashing");
+                        abortHashing = true;
+                        UpdateState(TorrentState.Stopped);
+                        return handle;
+                    }
+
+                    UpdateState(TorrentState.Stopped);
+
+                    if (trackerManager.CurrentTracker != null)
+                        handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
+
+                    foreach (PeerId id in Peers.ConnectedPeers)
+                        if (id.Connection != null)
+                            id.Connection.Dispose();
+
+                    this.peers.ClearAll();
+
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this), "DiskManager");
+
+                    if (this.hashChecked)
+                        this.SaveFastResume();
+                    this.monitor.Reset();
+                    this.pieceManager.Reset();
+                    if (this.engine.ConnectionManager.IsRegistered(this))
+                        this.engine.ConnectionManager.UnregisterManager(this);
+                    this.engine.Stop();
+                }
+                finally
+                {
+
+                }
+
+                return handle; ;
             });
-            ClientEngine.MainLoop.QueueWait(delegate { t.Execute(); });
-            return (WaitHandle)t.Result;
         }
 
         #endregion
 
 
         #region Internal Methods
-
-        internal void PauseImpl()
-        {
-            CheckRegistered();
-            if (state != TorrentState.Downloading && state != TorrentState.Seeding)
-                return;
-
-            // By setting the state to "paused", peers will not be dequeued from the either the
-            // sending or receiving queues, so no traffic will be allowed.
-            UpdateState(TorrentState.Paused);
-            this.SaveFastResume();
-        }
-
-        internal void StartImpl()
-        {
-            CheckRegistered();
-
-            this.engine.Start();
-            // If the torrent was "paused", then just update the state to Downloading and forcefully
-            // make sure the peers begin sending/receiving again
-            if (this.state == TorrentState.Paused)
-            {
-                UpdateState(TorrentState.Downloading);
-                this.ResumePeers();
-                return;
-            }
-
-            // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
-            // before attempting to start again
-            if (!hashChecked)
-            {
-                if (state != TorrentState.Hashing)
-                    HashCheck(true);
-                return;
-            }
-
-            if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
-                return;
-
-            if (this.Complete)
-                UpdateState(TorrentState.Seeding);
-            else
-                UpdateState(TorrentState.Downloading);
-
-            if (TrackerManager.CurrentTracker != null)
-            {
-                if (this.trackerManager.CurrentTracker.CanScrape)
-                    this.TrackerManager.Scrape();
-                this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-            }
-
-            this.startTime = DateTime.Now;
-            if (engine.ConnectionManager.IsRegistered(this))
-                Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
-            else
-                engine.ConnectionManager.RegisterManager(this);
-            this.pieceManager.Reset();
-        }
-
-        internal WaitHandle StopImpl()
-        {
-            CheckRegistered();
-
-            ManagerWaitHandle handle = new ManagerWaitHandle("Global");
-            try
-            {
-                if (this.state == TorrentState.Stopped)
-                    return handle;
-
-                if (this.state == TorrentState.Hashing)
-                {
-                    hashingWaitHandle = new ManualResetEvent(false);
-                    handle.AddHandle(hashingWaitHandle, "Hashing");
-                    abortHashing = true;
-                    UpdateState(TorrentState.Stopped);
-                    return handle;
-                }
-
-                UpdateState(TorrentState.Stopped);
-
-                if (trackerManager.CurrentTracker != null)
-                    handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
-
-                foreach (PeerId id in Peers.ConnectedPeers)
-                    if (id.Connection != null)
-                        id.Connection.Dispose();
-
-                this.peers.ClearAll();
-
-                handle.AddHandle(engine.DiskManager.CloseFileStreams(this), "DiskManager");
-
-                if (this.hashChecked)
-                    this.SaveFastResume();
-                this.monitor.Reset();
-                this.pieceManager.Reset();
-                if (this.engine.ConnectionManager.IsRegistered(this))
-                    this.engine.ConnectionManager.UnregisterManager(this);
-                this.engine.Stop();
-            }
-            finally
-            {
-
-            }
-
-            return handle;
-        }
-
-        internal void HashCheckImpl(bool autoStart)
-        {
-            if (this.state != TorrentState.Stopped)
-                throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
-
-            CheckRegistered();
-            this.startTime = DateTime.Now;
-            UpdateState(TorrentState.Hashing);
-            ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); });
-        }
 
         internal int AddPeers(Peer peer)
         {

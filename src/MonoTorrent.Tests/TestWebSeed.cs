@@ -13,13 +13,13 @@ namespace MonoTorrentTests
     [TestFixture]
     public class TestWebSeed
     {
-        //static void Main(string[] args)
-        //{
-        //    TestWebSeed s = new TestWebSeed();
-        //    s.Setup();
-        //    s.TestPieceRequest();
-        //    s.TearDown();
-        //}
+        static void Main(string[] args)
+        {
+            TestWebSeed s = new TestWebSeed();
+            s.Setup();
+            s.TestInactiveServer();
+            s.TearDown();
+        }
 
         bool partialData;
         public readonly int Count = 5;
@@ -51,7 +51,7 @@ namespace MonoTorrentTests
         [Test]
         public void TestPieceRequest()
         {
-            ThreadPool.QueueUserWorkItem(delegate {RequestPieces(); });
+            ThreadPool.QueueUserWorkItem(delegate { RequestPieces(); });
             byte[] buffer = new byte[1024 * 20];
             for (int j = 0; j < Count; j++)
             {
@@ -82,7 +82,7 @@ namespace MonoTorrentTests
         {
             partialData = true;
             TestPieceRequest();
-        }        
+        }
 
         [Test]
         [ExpectedException(typeof(WebException))]
@@ -94,10 +94,17 @@ namespace MonoTorrentTests
 
         private void RequestPieces()
         {
-            for (int i = 0; i < Count; i++)
+            try
             {
-                m = new RequestMessage(i, i * Piece.BlockSize, Piece.BlockSize);
-                connection.EndSend(connection.BeginSend(m.Encode(), 0, m.ByteLength, null, null));
+                for (int i = 0; i < Count; i++)
+                {
+                    m = new RequestMessage(i, i * Piece.BlockSize, Piece.BlockSize);
+                    connection.EndSend(connection.BeginSend(m.Encode(), 0, m.ByteLength, null, null));
+                }
+            }
+            catch
+            {
+                // This should happen
             }
         }
 

@@ -222,7 +222,12 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         protected RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers)
         {
-            return GetStandardRequest(id, otherPeers, 0, this.myBitfield.Length - 1);
+            return (RequestMessage)GetStandardRequest(id, otherPeers, 1).Messages[0];
+        }
+
+        protected MessageBundle GetStandardRequest(PeerId id, List<PeerId> otherPeers, int count)
+        {
+            return GetStandardRequest(id, otherPeers, 0, this.myBitfield.Length - 1, count);
         }
 
 
@@ -234,9 +239,40 @@ namespace MonoTorrent.Client
         /// <param name="startIndex">Starting point of allowed request piece range</param>
         /// <param name="endIndex">Ending point of allowed piece range</param>
         /// <returns></returns>
-        protected virtual RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex)
+        protected RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex)
         {
-            int checkIndex = 0;
+            return (RequestMessage)GetStandardRequest(id, otherPeers, startIndex, endIndex, 1).Messages[0];
+        }
+
+        private int CanRequest(BitField bitfield, int startIndex, int endIndex, int count)
+        {
+            // First we check all the places from midpoint -> end
+            // Then if we dont find anything we check from 0 -> midpoint
+            while ((startIndex = bitfield.FirstTrue(startIndex, endIndex)) != -1)
+            {
+                if (AlreadyHaveOrRequested(startIndex))
+                {
+                    startIndex++;
+                    continue;
+                }
+
+                for (int i = 1; i < count; i++)
+                {
+                    if (AlreadyHaveOrRequested(startIndex + i))
+                    {
+                        startIndex++;
+                        continue;
+                    }
+                }
+                return startIndex;
+            }
+            return -1;
+        }
+
+        protected virtual MessageBundle GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        {
+            int piecesNeeded = 1 + (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
+
             BitField current = null;
             Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers, startIndex, endIndex);
 
@@ -250,25 +286,10 @@ namespace MonoTorrent.Client
                     // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
                     // uninteresting. If we're doing linear searching, then the start index is 0.
                     int midPoint = random.Next(startIndex, endIndex + 1);
-                    checkIndex = midPoint;
 
-                    // First we check all the places from midpoint -> end
-                    // Then if we dont find anything we check from 0 -> midpoint
-                    while ((checkIndex = current.FirstTrue(checkIndex, endIndex)) != -1)
-                        if (AlreadyHaveOrRequested(checkIndex))
-                            checkIndex++;
-                        else
-                            break;
-
+                    int checkIndex = CanRequest(current, 0, midPoint, piecesNeeded);
                     if (checkIndex == -1)
-                    {
-                        checkIndex = 0;
-                        while ((checkIndex = current.FirstTrue(checkIndex, midPoint)) != -1)
-                            if (AlreadyHaveOrRequested(checkIndex))
-                                checkIndex++;
-                            else
-                                break;
-                    }
+                        checkIndex = CanRequest(current, midPoint, endIndex, piecesNeeded);
 
                     if (checkIndex == -1)
                     {
@@ -279,11 +300,20 @@ namespace MonoTorrent.Client
                         continue;
                     }
 
-                    // Request the piece
-                    Piece p = new Piece(checkIndex, id.TorrentManager.Torrent);
-                    requests.Add(p);
-                    p.Blocks[0].Requested = true;
-                    return p.Blocks[0].CreateRequest(id);
+                    MessageBundle bundle = new MessageBundle();
+                    for (int i = 0; i < piecesNeeded && bundle.Messages.Count < count ; i++)
+                    {
+                        // Request the piece
+                        Piece p = new Piece(checkIndex, id.TorrentManager.Torrent);
+                        requests.Add(p);
+
+                        for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
+                        {
+                            p.Blocks[j].Requested = true;
+                            bundle.Messages.Add(p.Blocks[0].CreateRequest(id));
+                        }
+                    }
+                    return bundle;
                 }
 
                 return null;
@@ -454,6 +484,12 @@ namespace MonoTorrent.Client
 
         public override RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers)
         {
+            MessageBundle bundle = PickPiece(id, otherPeers, 1);
+            return (RequestMessage)(bundle == null ? bundle : bundle.Messages[0]);
+        }
+
+        public override MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count)
+        {
             RequestMessage message = null;
             try
             {
@@ -462,25 +498,25 @@ namespace MonoTorrent.Client
                     // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
                     // requests that could be continued would be existing "Fast" pieces.
                     if ((message = ContinueExistingRequest(id)) != null)
-                        return message;
+                        return new MessageBundle(message);
 
                     // Then we check if there are any allowed "Fast" pieces to download
                     if (id.IsChoking && (message = GetFastPiece(id)) != null)
-                        return message;
+                        return new MessageBundle(message);
 
                     // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
                     if (id.IsChoking)
                         return null;
 
                     if ((message = ContinueAnyExisting(id)) != null)
-                        return message;
+                        return new MessageBundle(message);
 
                     // We see if the peer has suggested any pieces we should request
                     if ((message = GetSuggestedPiece(id)) != null)
-                        return message;
+                        return new MessageBundle(message);
 
                     // Now we see what pieces the peer has that we don't have and try and request one
-                    return GetStandardRequest(id, otherPeers);
+                    return GetStandardRequest(id, otherPeers, count);
                 }
             }
             finally
@@ -494,7 +530,7 @@ namespace MonoTorrent.Client
                         if (p.Index != message.PieceIndex)
                             continue;
                         
-                        int index = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
+                        int index = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
                         id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
                         break;
                     }
@@ -539,7 +575,7 @@ namespace MonoTorrent.Client
                     if (p.Index != message.PieceIndex)
                         continue;
 
-                    int blockIndex = PiecePickerBase.GetBlockIndex(p.Blocks, message.StartOffset, message.RequestLength);
+                    int blockIndex = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
                     if (blockIndex != -1)
                     {
                         if (p.Blocks[blockIndex].Requested && !p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
@@ -568,7 +604,7 @@ namespace MonoTorrent.Client
                 }
 
                 // Pick out the block that this piece message belongs to
-                int blockIndex = PiecePickerBase.GetBlockIndex(piece.Blocks, data.PieceOffset, data.Count);
+                int blockIndex = Block.IndexOf(piece.Blocks, data.PieceOffset, data.Count);
                 if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
                 {
                     Logger.Log(id.Connection, "Invalid block start offset returned");
@@ -637,7 +673,7 @@ namespace MonoTorrent.Client
                     if (p.Index != rejectRequestMessage.PieceIndex)
                         continue;
 
-                    int blockIndex = PiecePickerBase.GetBlockIndex(p.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
+                    int blockIndex = Block.IndexOf(p.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
                     if (blockIndex == -1)
                         return;
 

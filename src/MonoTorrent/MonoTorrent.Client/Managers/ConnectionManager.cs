@@ -41,7 +41,6 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Client.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -109,13 +108,11 @@ namespace MonoTorrent.Client
         {
             get
             {
-                DelegateTask task = new DelegateTask(delegate {
+                return (int)ClientEngine.MainLoop.QueueWait(delegate {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) {
                         return m.Peers.ConnectedPeers.Count;
                     });
                 });
-                ClientEngine.MainLoop.QueueWait(delegate { task.Execute(); });
-                return (int)task.Result;
             }
         }
 

@@ -41,7 +41,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// Minimum announce interval in seconds
         ///</summary> 
-        int MinInterval
+        TimeSpan MinInterval
         {
             get;
         }
@@ -49,7 +49,7 @@ namespace MonoTorrent.Tracker
         ///<summary>
         /// Regular announce interval in seconds
         ///</summary>
-        int Interval
+        TimeSpan Interval
         {
             get;
         }
@@ -57,7 +57,7 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// Peer timeout interval in seconds
         /// </summary>
-        int PeerTimeout
+        TimeSpan PeerTimeout
         {
             get;
         }
