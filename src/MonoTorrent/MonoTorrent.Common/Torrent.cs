@@ -83,7 +83,11 @@ namespace MonoTorrent.Common
         public static bool StrictDecoding
         {
             get { return strictDecoding; }
-            set { strictDecoding = value; }
+            set
+            {
+                strictDecoding = value;
+                BEncodedValue.StrictDecoding = value;
+            }
         }
 
 
@@ -751,7 +755,7 @@ namespace MonoTorrent.Common
                                 {
                                     if (strictDecoding)
                                         throw;
-                                    else if(e is ArgumentOutOfRangeException)
+                                    else if (e is ArgumentOutOfRangeException)
                                         creationDate = creationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
                                     else if (e is FormatException)
                                     {
