@@ -87,7 +87,7 @@ namespace MonoTorrent.Dht.Messages
 				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id);
 		    }
 			else
-			    response = new ErrorMessage(eErrorCode.ProtocolError, "Invalid or expired token received");
+			    response = new ErrorMessage(ErrorCode.ProtocolError, "Invalid or expired token received");
 				
 			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
         }

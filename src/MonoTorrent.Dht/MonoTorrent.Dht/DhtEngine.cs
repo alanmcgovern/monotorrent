@@ -38,14 +38,13 @@ using MonoTorrent.Client;
 using MonoTorrent.BEncoding;
 using System.IO;
 using MonoTorrent.Dht.Listeners;
-using MonoTorrent.Client.Tasks;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    public enum eErrorCode : int
+    public enum ErrorCode : int
     {
         GenericError = 201,
         ServerError = 202,
@@ -61,8 +60,9 @@ namespace MonoTorrent.Dht
 
         #region Fields
 
-        internal static MainLoop MainLoop = new MainLoop();
+        internal static MainLoop MainLoop = new MainLoop("DhtLoop");
         
+        TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         int port = 6881;
         State state = State.NotReady;
         MessageLoop messageLoop;
@@ -84,7 +84,11 @@ namespace MonoTorrent.Dht
             get { return false && (RoutingTable.CountNodes() <= 1); }
         }
 
-        public TimeSpan BucketRefreshTimeout = TimeSpan.FromMinutes(15);
+        public TimeSpan BucketRefreshTimeout
+        {
+            get { return bucketRefreshTimeout; }
+            set { bucketRefreshTimeout = value; }
+        }
 
         public NodeId LocalId
         {

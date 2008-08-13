@@ -241,7 +241,8 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         protected RequestMessage GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex)
         {
-            return (RequestMessage)GetStandardRequest(id, otherPeers, startIndex, endIndex, 1).Messages[0];
+            MessageBundle bundle = GetStandardRequest(id, otherPeers, startIndex, endIndex, 1);
+            return (RequestMessage)(bundle == null ? bundle : bundle.Messages[0]);
         }
 
         private int CanRequest(BitField bitfield, int startIndex, int endIndex, int count)
@@ -304,13 +305,13 @@ namespace MonoTorrent.Client
                     for (int i = 0; i < piecesNeeded && bundle.Messages.Count < count ; i++)
                     {
                         // Request the piece
-                        Piece p = new Piece(checkIndex, id.TorrentManager.Torrent);
+                        Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
                         requests.Add(p);
 
                         for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
                         {
                             p.Blocks[j].Requested = true;
-                            bundle.Messages.Add(p.Blocks[0].CreateRequest(id));
+                            bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
                         }
                     }
                     return bundle;
@@ -490,7 +491,8 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count)
         {
-            RequestMessage message = null;
+            RequestMessage message;
+            MessageBundle bundle = null;
             try
             {
                 lock (this.myBitfield)
@@ -498,41 +500,44 @@ namespace MonoTorrent.Client
                     // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
                     // requests that could be continued would be existing "Fast" pieces.
                     if ((message = ContinueExistingRequest(id)) != null)
-                        return new MessageBundle(message);
+                        return (bundle = new MessageBundle(message));
 
                     // Then we check if there are any allowed "Fast" pieces to download
                     if (id.IsChoking && (message = GetFastPiece(id)) != null)
-                        return new MessageBundle(message);
+                        return (bundle = new MessageBundle(message));
 
                     // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
                     if (id.IsChoking)
                         return null;
 
                     if ((message = ContinueAnyExisting(id)) != null)
-                        return new MessageBundle(message);
+                        return (bundle = new MessageBundle(message));
 
                     // We see if the peer has suggested any pieces we should request
                     if ((message = GetSuggestedPiece(id)) != null)
-                        return new MessageBundle(message);
+                        return (bundle = new MessageBundle(message));
 
                     // Now we see what pieces the peer has that we don't have and try and request one
-                    return GetStandardRequest(id, otherPeers, count);
+                    return (bundle = GetStandardRequest(id, otherPeers, count));
                 }
             }
             finally
             {
                 CancelTimedOutRequests();
 
-                if (message != null)
+                if (bundle != null)
                 {
-                    foreach (Piece p in requests)
+                    foreach (RequestMessage m in bundle.Messages)
                     {
-                        if (p.Index != message.PieceIndex)
-                            continue;
-                        
-                        int index = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
-                        id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
-                        break;
+                        foreach (Piece p in requests)
+                        {
+                            if (p.Index != m.PieceIndex)
+                                continue;
+
+                            int index = Block.IndexOf(p.Blocks, m.StartOffset, m.RequestLength);
+                            id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
+                            break;
+                        }
                     }
                 }
             }

@@ -72,10 +72,14 @@ namespace MonoTorrent.Tracker
 
         private bool allowScrape;
         private bool allowNonCompact;
+        private bool allowUnregisteredTorrents;
+        private TimeSpan announceInterval;
+        private TimeSpan minAnnounceInterval;
         private RequestMonitor monitor;
+        private TimeSpan timeoutInterval;
         private Dictionary<byte[], SimpleTorrentManager> torrents;
-        private StaticIntervalAlgorithm intervalAlgorithm;
         private BEncodedString trackerId;
+
 
         #endregion Fields
 
@@ -94,20 +98,38 @@ namespace MonoTorrent.Tracker
             set { allowScrape = value; }
         }
 
+        public bool AllowUnregisteredTorrents
+        {
+            get { return allowUnregisteredTorrents; }
+            set { allowUnregisteredTorrents = value; }
+        }
+
+        public TimeSpan AnnounceInterval
+        {
+            get { return announceInterval; }
+            set { announceInterval = value; }
+        }
+
         public int Count
         {
             get { return torrents.Count; }
         }
 
-        public StaticIntervalAlgorithm Intervals
+        public TimeSpan MinAnnounceInterval
         {
-            get { return intervalAlgorithm; }
-            set { intervalAlgorithm = value; }
+            get { return minAnnounceInterval; }
+            set { minAnnounceInterval = value; }
         }
 
         public RequestMonitor Requests
         {
             get { return monitor; }
+        }
+
+        public TimeSpan TimeoutInterval
+        {
+            get { return timeoutInterval; }
+            set { timeoutInterval = value; }
         }
 
         public BEncodedString TrackerId
@@ -133,10 +155,13 @@ namespace MonoTorrent.Tracker
         {
             allowNonCompact = true;
             allowScrape = true;
-            intervalAlgorithm = new StaticIntervalAlgorithm();
             monitor = new RequestMonitor();
             torrents = new Dictionary<byte[], SimpleTorrentManager>(new ByteComparer());
             this.trackerId = trackerId;
+
+            announceInterval = TimeSpan.FromMinutes(45);
+            minAnnounceInterval = TimeSpan.FromMinutes(10);
+            timeoutInterval = TimeSpan.FromMinutes(50);
         }
 
         #endregion Constructors
@@ -154,20 +179,25 @@ namespace MonoTorrent.Tracker
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
-            if (torrents.ContainsKey(trackable.InfoHash))
-                return false;
+            lock (torrents)
+            {
+                if (torrents.ContainsKey(trackable.InfoHash))
+                    return false;
+
+                torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable, comparer, this));
+            }
 
             Debug.WriteLine(string.Format("Tracking Torrent: {0}", trackable.Name));
-            torrents.Add(trackable.InfoHash, new SimpleTorrentManager(trackable, comparer, this));
             return true;
         }
 
         public bool Contains(ITrackable trackable)
         {
-            if(trackable == null)
+            if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
-            return torrents.ContainsKey(trackable.InfoHash);
+            lock (torrents)
+                return torrents.ContainsKey(trackable.InfoHash);
         }
 
         public SimpleTorrentManager GetManager(ITrackable trackable)
@@ -176,15 +206,17 @@ namespace MonoTorrent.Tracker
                 throw new ArgumentNullException("trackable");
 
             SimpleTorrentManager value;
-            if (torrents.TryGetValue(trackable.InfoHash, out value))
-                return value;
+            lock (torrents)
+                if (torrents.TryGetValue(trackable.InfoHash, out value))
+                    return value;
 
             return null;
         }
 
         public IEnumerator<SimpleTorrentManager> GetEnumerator()
         {
-            return this.torrents.Values.GetEnumerator();
+            lock (torrents)
+                return new List<SimpleTorrentManager>(this.torrents.Values).GetEnumerator();
         }
 
         public bool IsRegistered(ListenerBase listener)
@@ -201,10 +233,21 @@ namespace MonoTorrent.Tracker
             SimpleTorrentManager manager;
 
             // Check to see if we're monitoring the requested torrent
-            if (!torrents.TryGetValue(e.InfoHash, out manager))
+            lock (torrents)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
-                return;
+                if (!torrents.TryGetValue(e.InfoHash, out manager))
+                {
+                    if (AllowUnregisteredTorrents)
+                    {
+                        Add(new InfoHashTrackable(BitConverter.ToString(e.InfoHash), e.InfoHash));
+                        manager = torrents[e.InfoHash];
+                    }
+                    else
+                    {
+                        e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
+                        return;
+                    }
+                }
             }
 
             // If a non-compact response is expected and we do not allow non-compact responses
@@ -222,14 +265,14 @@ namespace MonoTorrent.Tracker
                 manager.Update(e);
 
                 // Clear any peers who haven't announced within the allowed timespan and may be inactive
-                manager.ClearZombiePeers(DateTime.Now.Add(-this.Intervals.PeerTimeout));
+                manager.ClearZombiePeers(DateTime.Now.Add(-TimeoutInterval));
 
                 // Fulfill the announce request
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact);
             }
 
-            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int)Intervals.Interval.TotalSeconds));
-            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int)Intervals.MinInterval.TotalSeconds));
+            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int)AnnounceInterval.TotalSeconds));
+            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int)MinAnnounceInterval.TotalSeconds));
             e.Response.Add(Tracker.TrackerIdKey, trackerId); // FIXME: Is this right?
             e.Response.Add(Tracker.CompleteKey, new BEncodedNumber(manager.Complete));
             e.Response.Add(Tracker.Incomplete, new BEncodedNumber(manager.Incomplete));
@@ -276,21 +319,21 @@ namespace MonoTorrent.Tracker
             e.Response.Add("files", files);
         }
 
-        protected internal virtual void RaisePeerAnnounced(AnnounceEventArgs e)
+        internal void RaisePeerAnnounced(AnnounceEventArgs e)
         {
             EventHandler<AnnounceEventArgs> h = PeerAnnounced;
             if (h != null)
                 h(this, e);
         }
 
-        protected internal virtual void RaisePeerScraped(ScrapeEventArgs e)
+        internal void RaisePeerScraped(ScrapeEventArgs e)
         {
             EventHandler<ScrapeEventArgs> h = PeerScraped;
             if (h != null)
                 h(this, e);
         }
 
-        protected internal virtual void RaisePeerTimedOut(TimedOutEventArgs e)
+        internal void RaisePeerTimedOut(TimedOutEventArgs e)
         {
             EventHandler<TimedOutEventArgs> h = PeerTimedOut;
             if (h != null)
@@ -315,7 +358,8 @@ namespace MonoTorrent.Tracker
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
-            torrents.Remove(trackable.InfoHash);
+            lock (torrents)
+                torrents.Remove(trackable.InfoHash);
         }
 
         public void UnregisterListener(ListenerBase listener)

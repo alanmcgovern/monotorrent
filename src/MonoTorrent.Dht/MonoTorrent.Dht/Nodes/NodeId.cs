@@ -116,42 +116,76 @@ namespace MonoTorrent.Dht
 
         public static NodeId operator -(NodeId first)
         {
+            CheckArguments(first);
             return new NodeId(first.value);
         }
 
         public static NodeId operator -(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return new NodeId(first.value - second.value);
         }
 
         public static bool operator >(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return first.value > second.value;
         }
 
         public static bool operator <(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return first.value < second.value;
         }
 
         public static bool operator <=(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return first < second || first == second;
         }
 
         public static bool operator >=(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return first > second || first == second;
         }
 
         public static NodeId operator +(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return new NodeId(first.value + second.value);
+        }
+
+        public static NodeId operator *(NodeId first, NodeId second)
+        {
+            CheckArguments(first, second);
+            return new NodeId(first.value * second.value);
         }
 
         public static NodeId operator /(NodeId first, NodeId second)
         {
+            CheckArguments(first, second);
             return new NodeId(first.value / second.value);
+        }
+
+        public static NodeId operator %(NodeId first, NodeId second)
+        {
+            CheckArguments(first, second);
+            return new NodeId(first.value % second.value);
+        }
+
+        private static void CheckArguments(NodeId first)
+        {
+            if (first == null)
+                throw new ArgumentNullException("first");
+        }
+
+        private static void CheckArguments(NodeId first, NodeId second)
+        {
+            if (first == null)
+                throw new ArgumentNullException("first");
+            if (second == null)
+                throw new ArgumentNullException("second");
         }
 
         public static bool operator ==(NodeId first, NodeId second)

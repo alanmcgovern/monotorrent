@@ -39,10 +39,11 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
+using System.Text.RegularExpressions;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class HttpConnection : IConnection
+    public partial class HttpConnection : IConnection
     {
         private class HttpResult : AsyncResult
         {
@@ -66,18 +67,25 @@ namespace MonoTorrent.Client.Connections
             }
         }
 
+        Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
+
         #region Member Variables
 
-        private int totalExpected;
-        private int length;
-        private bool writeHeader;
+        private HttpRequestData currentRequest;
         private Stream dataStream;
         private AsyncCallback getResponseCallback;
+        private int length;
         private TorrentManager manager;
         private HttpResult receiveResult;
-        private RequestMessage requestMessage;
+        private List<RequestMessage> requestMessages;
         private HttpResult sendResult;
+        private int totalExpected;
         private Uri uri;
+
+        public byte[] AddressBytes
+        {
+            get { return new byte[4]; }
+        }
 
         public bool CanReconnect
         {
@@ -87,6 +95,11 @@ namespace MonoTorrent.Client.Connections
         public bool Connected
         {
             get { return true; }
+        }
+
+        private HttpRequestData CurrentRequest
+        {
+            get { return currentRequest; }
         }
 
         EndPoint IConnection.EndPoint
@@ -105,6 +118,24 @@ namespace MonoTorrent.Client.Connections
             set { manager = value; }
         }
 
+        public Uri Uri
+        {
+            get { return uri; }
+        }
+
+        private bool WriteHeader
+        {
+            get
+            {
+                if (receiveResult.BytesTransferred != 0 || receiveResult.Offset == 4)
+                    return false;
+                int total = 0;
+                foreach (RequestMessage m in requestMessages)
+                    total += m.RequestLength;
+                return totalExpected == total;
+            }
+        }
+
         #endregion
 
 
@@ -119,6 +150,7 @@ namespace MonoTorrent.Client.Connections
 
             this.uri = uri;
             getResponseCallback = GotResponse;
+            requestMessages = new List<RequestMessage>();
         }
 
         #endregion Constructors
@@ -131,6 +163,11 @@ namespace MonoTorrent.Client.Connections
             return result;
         }
 
+        public void EndConnect(IAsyncResult result)
+        {
+            // Do nothing
+        }
+
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             Console.WriteLine("BeginReceive");
@@ -140,28 +177,44 @@ namespace MonoTorrent.Client.Connections
             receiveResult = new HttpResult(callback, state, buffer, offset, count);
             try
             {
-                if (SendLength())
-                    return receiveResult;
+                if (currentRequest != null && currentRequest.Complete)
+                    throw new MessageException("Should be impossible - current request is complete");
 
-                if (dataStream != null && requestMessage != null)
+                if (currentRequest == null && requestMessages.Count > 0)
                 {
+                    currentRequest = new HttpRequestData(requestMessages[0]);
+                    requestMessages.RemoveAt(0);
+                }
+
+                if (!currentRequest.SentLength)
+                {
+                    if (count != 4)
+                        throw new MessageException("More than 4 bytes requested yet message length has not been written");
+
+                    // The message length counts as the first four bytes
+                    currentRequest.SentLength = true;
+                    currentRequest.TotalReceived += 4;
+                    Message.Write(receiveResult.Buffer, receiveResult.Offset, currentRequest.TotalToReceive - currentRequest.TotalReceived);
+                    receiveResult.Complete(receiveResult.Count);
+                    return receiveResult;
+                }
+                else if (!currentRequest.SentHeader)
+                {
+                    currentRequest.SentHeader = true;
+
                     // We have *only* written the messageLength to the stream
                     // Now we need to write the rest of the PieceMessage header
-                    if (writeHeader)
-                    {
-                        writeHeader = false;
-                        int written = 0;
-                        written += Message.Write(buffer, offset + written, PieceMessage.MessageId);
-                        written += Message.Write(buffer, offset + written, requestMessage.PieceIndex);
-                        written += Message.Write(buffer, offset + written, requestMessage.StartOffset);
-                        count -= written;
-                        offset += written;
-                        //totalExpected -= written;
-                        receiveResult.BytesTransferred += written;
-                    }
-
-                    dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
+                    int written = 0;
+                    written += Message.Write(buffer, offset + written, PieceMessage.MessageId);
+                    written += Message.Write(buffer, offset + written, CurrentRequest.Request.PieceIndex);
+                    written += Message.Write(buffer, offset + written, CurrentRequest.Request.StartOffset);
+                    count -= written;
+                    offset += written;
+                    receiveResult.BytesTransferred += written;
+                    currentRequest.TotalReceived += written;
                 }
+
+                dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
             }
             catch (Exception ex)
             {
@@ -175,34 +228,12 @@ namespace MonoTorrent.Client.Connections
             return receiveResult;
         }
 
-        private void ReceivedChunk(IAsyncResult result)
+        public int EndReceive(IAsyncResult result)
         {
-            try
-            {
-                int received = dataStream.EndRead(result);
-                receiveResult.BytesTransferred += received;
-                totalExpected -= received;
-                receiveResult.Complete();
-            }
-            catch (Exception ex)
-            {
-                receiveResult.Complete(ex);
-            }
-            finally
-            {
-                if (totalExpected == 0)
-                    RequestCompleted();
-            }
-        }
-
-        private void RequestCompleted()
-        {
-            dataStream.Close();
-            dataStream = null;
-            requestMessage = null;
-
-            // Let MonoTorrent know we've finished requesting that piece
-            sendResult.Complete(sendResult.Count);
+            int r = CompleteTransfer(result, receiveResult);
+            receiveResult = null;
+            Console.WriteLine("EndReceive");
+            return r;
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -214,38 +245,34 @@ namespace MonoTorrent.Client.Connections
 
             try
             {
-                PeerMessage message = PeerMessage.DecodeMessage(buffer, offset, count, null);
-                if (message is RequestMessage)
+                List<PeerMessage> bundle = new List<PeerMessage>();
+                for (int i = offset; i < offset + count; )
                 {
-                    requestMessage = (RequestMessage)message;
-                    WebRequest r = CreateWebRequest(requestMessage);
+                    PeerMessage message = PeerMessage.DecodeMessage(buffer, i, count + offset - i, null);
+                    bundle.Add(message);
+                    i += message.ByteLength;
+                }
+
+                if (bundle.TrueForAll(delegate(PeerMessage m) { return m is RequestMessage; }))
+                {
+                    requestMessages.AddRange(bundle.ConvertAll<RequestMessage>(delegate(PeerMessage m) { return (RequestMessage)m; }));
+                    // The RequestMessages are always sequential
+                    RequestMessage start = (RequestMessage)bundle[0];
+                    RequestMessage end = (RequestMessage)bundle[bundle.Count - 1];
+                    WebRequest r = CreateWebRequest(start, end);
                     r.BeginGetResponse(getResponseCallback, r);
                 }
                 else
                 {
-                    // Pretend we sent all the data
                     sendResult.Complete(count);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 sendResult.Complete(ex);
             }
 
             return sendResult;
-        }
-
-        public void EndConnect(IAsyncResult result)
-        {
-            // Do nothing
-        }
-
-        public int EndReceive(IAsyncResult result)
-        {
-            int r = CompleteTransfer(result, receiveResult);
-            receiveResult = null;
-            Console.WriteLine("EndReceive");
-            return r;
         }
 
         public int EndSend(IAsyncResult result)
@@ -254,6 +281,45 @@ namespace MonoTorrent.Client.Connections
             sendResult = null;
             Console.WriteLine("EndSend");
             return r;
+        }
+
+
+
+
+        private void ReceivedChunk(IAsyncResult result)
+        {
+            try
+            {
+                int received = dataStream.EndRead(result);
+                receiveResult.BytesTransferred += received;
+                currentRequest.TotalReceived += received;
+
+                // We've received everything for this piece, so null it out
+                if (currentRequest.Complete)
+                    currentRequest = null;
+
+                totalExpected -= received;
+                receiveResult.Complete();
+            }
+            catch (Exception ex)
+            {
+                receiveResult.Complete(ex);
+            }
+            finally
+            {
+                // If there are no more requests pending, complete the Send call
+                if (currentRequest == null && requestMessages.Count == 0)
+                    RequestCompleted();
+            }
+        }
+
+        private void RequestCompleted()
+        {
+            dataStream.Close();
+            dataStream = null;
+
+            // Let MonoTorrent know we've finished requesting everything it asked for
+            sendResult.Complete(sendResult.Count);
         }
 
         private int CompleteTransfer(IAsyncResult supplied, HttpResult expected)
@@ -273,58 +339,7 @@ namespace MonoTorrent.Client.Connections
             return expected.BytesTransferred;
         }
 
-        public void Dispose()
-        {
-            //do nothing
-        }
-
-        public byte[] AddressBytes
-        {
-            get { return new byte[4]; }
-        }
-
-        private void GotResponse(IAsyncResult result)
-        {
-            WebRequest r = (WebRequest)result.AsyncState;
-            try
-            {
-                WebResponse response = r.EndGetResponse(result);
-                dataStream = response.GetResponseStream();
-                PieceMessage m = new PieceMessage(Manager, requestMessage.PieceIndex, requestMessage.StartOffset, requestMessage.RequestLength);
-                length = m.ByteLength - 4;
-                // Warning receive and send calls asynchronous. Need better signalling!
-                sendLength = true;
-                SendLength();
-            }
-            catch (Exception ex)
-            {
-                if (sendResult != null)
-                    sendResult.Complete(ex);
-
-                if (receiveResult != null)
-                    receiveResult.Complete(ex);
-            }
-        }
-        private bool sendLength;
-
-        private bool SendLength()
-        {
-            lock (this)
-            {
-                if (sendLength && receiveResult != null && requestMessage != null && receiveResult.Count == 4 && receiveResult.BytesTransferred == 0)
-                {
-                    sendLength = false;
-                    writeHeader = true;
-                    Message.Write(receiveResult.Buffer, receiveResult.Offset, length);
-                    receiveResult.Complete(receiveResult.Count);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private WebRequest CreateWebRequest(RequestMessage requestMessage)
+        private WebRequest CreateWebRequest(RequestMessage start, RequestMessage end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
@@ -334,9 +349,34 @@ namespace MonoTorrent.Client.Connections
                 u = new Uri(uri, Manager.Torrent.Name);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-            request.AddRange(requestMessage.StartOffset, requestMessage.StartOffset + requestMessage.RequestLength);
-            totalExpected = requestMessage.RequestLength;
+            int startOffset = start.PieceIndex * manager.Torrent.PieceLength + start.StartOffset;
+            int endOffset = end.PieceIndex * manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+            request.AddRange(startOffset, endOffset);
+            totalExpected = endOffset - startOffset;
             return request;
+        }
+
+        public void Dispose()
+        {
+            //do nothing
+        }
+
+        private void GotResponse(IAsyncResult result)
+        {
+            WebRequest r = (WebRequest)result.AsyncState;
+            try
+            {
+                WebResponse response = r.EndGetResponse(result);
+                dataStream = response.GetResponseStream();
+            }
+            catch (Exception ex)
+            {
+                if (sendResult != null)
+                    sendResult.Complete(ex);
+
+                if (receiveResult != null)
+                    receiveResult.Complete(ex);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ namespace MonoTorrent.Client.Connections
         private bool isIncoming;
         private Socket socket;
         private EndPoint endpoint;
+        private Uri uri;
 
         public IPV6Connection(Uri uri)
         {
@@ -22,6 +23,7 @@ namespace MonoTorrent.Client.Connections
 
             socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             endpoint = new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port);
+            this.uri = uri;
         }
 
         public IPV6Connection(Socket socket, bool isIncoming)
@@ -97,6 +99,11 @@ namespace MonoTorrent.Client.Connections
         public void Dispose()
         {
             socket.Close();
+        }
+
+        public Uri Uri
+        {
+            get { return uri; }
         }
     }
 }

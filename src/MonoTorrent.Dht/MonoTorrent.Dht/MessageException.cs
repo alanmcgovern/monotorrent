@@ -6,14 +6,14 @@ namespace MonoTorrent.Dht
 {
     public class MessageException : Exception
     {
-        private eErrorCode errorCode;
+        private ErrorCode errorCode;
 
-        public eErrorCode ErrorCode
+        public ErrorCode ErrorCode
         {
             get { return errorCode; }
         }
 
-        public MessageException(eErrorCode errorCode, string message) : base(message)
+        public MessageException(ErrorCode errorCode, string message) : base(message)
         {
             this.errorCode = errorCode;
         }

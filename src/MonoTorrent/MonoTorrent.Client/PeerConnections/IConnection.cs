@@ -31,5 +31,7 @@ namespace MonoTorrent.Client.Connections
 		
 		IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state);
 		int EndSend(IAsyncResult result);
+
+        Uri Uri { get; }
 	}
 }

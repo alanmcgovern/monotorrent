@@ -188,6 +188,16 @@ namespace MonoTorrentTests
         {
             return Name;
         }
+
+        #region IConnection Members
+
+
+        public Uri Uri
+        {
+            get { throw new Exception("The method or operation is not implemented."); }
+        }
+
+        #endregion
     }
 
     public class CustomListener : ConnectionListenerBase

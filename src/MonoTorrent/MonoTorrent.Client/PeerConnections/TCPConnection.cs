@@ -41,6 +41,7 @@ namespace MonoTorrent.Client.Connections
         private bool isIncoming;
         private IPEndPoint endPoint;
         private Socket socket;
+        private Uri uri;
 
         #region Member Variables
 
@@ -69,6 +70,11 @@ namespace MonoTorrent.Client.Connections
             get { return isIncoming; }
         }
 
+        public Uri Uri
+        {
+            get { return uri; }
+        }
+
         #endregion
 
 
@@ -79,7 +85,7 @@ namespace MonoTorrent.Client.Connections
                    new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
                    false)
         {
-
+            this.uri = uri;
         }
 
         public IPV4Connection(IPEndPoint endPoint)

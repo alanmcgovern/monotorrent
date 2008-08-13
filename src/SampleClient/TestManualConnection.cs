@@ -154,6 +154,11 @@ namespace SampleClient
         {
             s.Close();
         }
+
+        public Uri Uri
+        {
+            get { return null; }
+        }
     }
 
     public class CustomListener : ConnectionListenerBase

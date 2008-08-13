@@ -81,7 +81,7 @@ namespace MonoTorrent.Dht.Messages
             {
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
                 if (!messages.TryGetValue(key, out msg))
-                    throw new MessageException(eErrorCode.GenericError, string.Format("{0}: {1}. {2}: {3}",
+                    throw new MessageException(ErrorCode.GenericError, string.Format("{0}: {1}. {2}: {3}",
                         "Response message with bad transaction:", key, "full message:", dictionary));
                 messages.Remove(key);
             }

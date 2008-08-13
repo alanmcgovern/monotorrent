@@ -180,6 +180,11 @@ namespace MonoTorrent.Client
             return this.piecePicker.PickPiece(id, otherPeers);
         }
 
+        internal MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count)
+        {
+            return this.piecePicker.PickPiece(id, otherPeers, count);
+        }
+
 
         internal void ReceivedChokeMessage(PeerId id)
         {

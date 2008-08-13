@@ -139,7 +139,7 @@ namespace MonoTorrent.Dht
         }
 
         
-        public IList<Node> GetClosest(NodeId Target)
+        public IList<Node> GetClosest(NodeId target)
         {
             SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);
 						
@@ -147,7 +147,7 @@ namespace MonoTorrent.Dht
             {
                 foreach (Node n in b.Nodes)
                 {
-                    NodeId distance = n.Id.Xor(Target);
+                    NodeId distance = n.Id.Xor(target);
                     if (sortedNodes.Count == Bucket.MaxCapacity)
                     {
                         if (distance > sortedNodes.Keys[sortedNodes.Count-1])//maxdistance

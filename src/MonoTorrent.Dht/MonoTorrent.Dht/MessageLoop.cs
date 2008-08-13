@@ -191,7 +191,7 @@ namespace MonoTorrent.Dht
                             catch
                             {
                                 Console.WriteLine("Handle Error for message: {0}", m);
-                                this.EnqueueSend(new ErrorMessage(eErrorCode.GenericError, "Misshandle received message!"), source);
+                                this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
                             }
                         });
                     }

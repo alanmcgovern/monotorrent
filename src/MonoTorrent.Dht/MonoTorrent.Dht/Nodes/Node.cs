@@ -39,9 +39,9 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
-    public class Node : IComparable<Node>
+    public class Node : IComparable<Node>, IEquatable<Node>
     {
-        public const int MaxFailures = 4;
+        public static readonly int MaxFailures = 4;
 
         IPEndPoint endpoint;
         NodeId id;
@@ -166,6 +166,24 @@ namespace MonoTorrent.Dht
                 return 1;
             
             return lastSeen.CompareTo(other.lastSeen);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Node);
+        }
+
+        public bool Equals(Node other)
+        {
+            if (other == null)
+                return false;
+
+            return id.Equals(other.id);
+        }
+
+        public override int GetHashCode()
+        {
+            return id.GetHashCode();
         }
     }
 }
