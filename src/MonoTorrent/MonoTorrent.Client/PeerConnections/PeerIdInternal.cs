@@ -228,7 +228,7 @@ namespace MonoTorrent.Client
             set { this.disconnectReason = value; }
         }
 
-        internal IEncryption Encryptor
+        public IEncryption Encryptor
         {
             get { return this.encryptor; }
             set { this.encryptor = value; }
@@ -245,6 +245,11 @@ namespace MonoTorrent.Client
             set { extensionSupports = value; }
         }
 
+        public int HashFails
+        {
+            get { return peer.TotalHashFails; }
+        }
+        
         internal MonoTorrentCollection<int> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
@@ -257,12 +262,22 @@ namespace MonoTorrent.Client
             internal set { this.isChoking = value; }
         }
 
+        public bool IsConnected
+        {
+            get { return Connection != null; }
+        }
+        
         public bool IsInterested
         {
             get { return this.isInterested; }
             internal set { this.isInterested = value; }
         }
 
+        public bool IsSeeder
+        {
+            get { return bitField.AllTrue || peer.IsSeeder; }
+        }
+        
         public int IsRequestingPiecesCount
         {
             get { return this.isRequestingPiecesCount; }
@@ -316,6 +331,11 @@ namespace MonoTorrent.Client
             set { this.pexManager = value; }
         }
 
+        public string PeerID
+        {
+            get { return peer.PeerId; }
+        }
+        
         public int PiecesSent
         {
             get { return this.piecesSent; }
@@ -369,6 +389,11 @@ namespace MonoTorrent.Client
                     this.BitField = new BitField(value.Torrent.Pieces.Count);
                 }
             }
+        }
+        
+        public Uri Uri
+        {
+            get { return peer.ConnectionUri; }
         }
 
         #endregion Properties
