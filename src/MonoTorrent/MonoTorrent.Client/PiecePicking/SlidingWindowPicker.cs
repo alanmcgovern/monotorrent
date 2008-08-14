@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private int highPrioritySetSize;            // size of high priority set, in pieces
-        private int mediumPrioritySetSize;          // size of medium priority set, in pieces
+        private int ratio = 4;                      // ratio from medium priority to high priority set size
 
         private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
                                                     // this represents the last byte played in a video player, as the high priority
@@ -81,12 +81,7 @@ namespace MonoTorrent.Client
         public int HighPrioritySetSize
         {
             get { return this.highPrioritySetSize; }
-            set
-            {
-                int curRatio = this.mediumPrioritySetSize / this.highPrioritySetSize;
-                this.highPrioritySetSize = value;
-                this.mediumPrioritySetSize = value * curRatio;
-            }
+            set { this.highPrioritySetSize = value; }
         }
 
         /// <summary>
@@ -95,17 +90,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MediumToHighRatio
         {
-            get { return this.mediumPrioritySetSize / this.highPrioritySetSize; }
-            set { this.mediumPrioritySetSize = this.highPrioritySetSize * value; }
-        }
-
-        /// <summary>
-        /// First piece of the medium priority set -- may be greater than BitField.Length, in which case
-        /// there is no medium priority set
-        /// </summary>
-        public int MediumPrioritySetStart
-        {
-            get { return this.highPrioritySetStart + this.highPrioritySetSize; }
+            get { return ratio; }
+            set { ratio = value; }
         }
 
         /// <summary>
@@ -113,13 +99,21 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MediumPrioritySetSize
         {
-            get { return this.mediumPrioritySetSize; }
+            get { return this.highPrioritySetSize * ratio; }
         }
 
         #endregion Member Variables
 
 
         #region Constructors
+
+        /// <summary>
+        /// Empty constructor for changing piece pickers
+        /// </summary>
+        public SlidingWindowPicker()
+        {
+        }
+
 
         /// <summary>
         /// Creates a new piece picker with support for prioritization of files. The sliding window will be positioned to the start
@@ -148,9 +142,17 @@ namespace MonoTorrent.Client
             this.LinearPickingEnabled = false;
 
             this.highPrioritySetSize = highPrioritySetSize;
-            this.mediumPrioritySetSize = this.highPrioritySetSize * mediumToHighRatio;
+            this.ratio = mediumToHighRatio;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ownBitfield"></param>
+        /// <param name="files"></param>
+        /// <param name="requests"></param>
+        /// <param name="unhashedPieces"></param>
         public override void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
         {
             base.Initialise(ownBitfield, files, requests, unhashedPieces);
@@ -169,6 +171,21 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        /// <summary>
+        /// Check both the overall bitfield and the unhashed pieces one for the piece with the given index
+        /// </summary>
+        /// <param name="index">Piece index</param>
+        /// <returns>Whether we already have this piece</returns>
+        private bool AlreadyHave(int index)
+        {
+            if (this.myBitfield[index])
+                return true;
+
+            lock (this.unhashedPieces)
+                return this.unhashedPieces[index];
+        }
+
 
         /// <summary>
         /// Picks the first piece in the high priority window that the peer has.
@@ -215,7 +232,7 @@ namespace MonoTorrent.Client
                     return null;
 
                 if ((message = GetStandardRequest(id, otherPeers, mediumPrioritySetStart,
-                    Math.Min(this.myBitfield.Length - 1, mediumPrioritySetStart + this.mediumPrioritySetSize - 1))) != null)
+                    Math.Min(this.myBitfield.Length - 1, mediumPrioritySetStart + this.MediumPrioritySetSize - 1))) != null)
                     return message;
 
                 // We see if the peer has suggested any pieces we should request
@@ -223,8 +240,8 @@ namespace MonoTorrent.Client
                     return message;
 
                 // if there is room, GetRarestFirst over the rest of the file
-                if (mediumPrioritySetStart + this.mediumPrioritySetSize < this.myBitfield.Length)
-                    return GetStandardRequest(id, otherPeers, mediumPrioritySetStart + this.mediumPrioritySetSize,
+                if (mediumPrioritySetStart + this.MediumPrioritySetSize < this.myBitfield.Length)
+                    return GetStandardRequest(id, otherPeers, mediumPrioritySetStart + this.MediumPrioritySetSize,
                         this.myBitfield.Length - 1);
 
                 return null;
@@ -257,8 +274,8 @@ namespace MonoTorrent.Client
         private RequestMessage GetHighPriority(PeerId id)
         {
             Piece p = null;
-            int highPriorityEnd = this.highPrioritySetStart + this.highPrioritySetSize;
-            for (int i = this.highPrioritySetStart; i < highPriorityEnd && i < this.myBitfield.Length; i++)
+            
+            for (int i = this.highPrioritySetStart; i < this.highPrioritySetStart + this.highPrioritySetSize && i < this.myBitfield.Length; i++)
             {
                 // if we still need this piece and they do not have it
                 if (!this.myBitfield[i] && id.BitField[i])
@@ -295,7 +312,6 @@ namespace MonoTorrent.Client
             // no high priority piece to get, return null
             return null;
         }
-
 
         #endregion
 

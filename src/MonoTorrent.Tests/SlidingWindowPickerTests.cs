@@ -141,11 +141,11 @@ namespace MonoTorrent.Tests
                 Assert.IsTrue(msg.PieceIndex == curPiece || curPiece == -1,
                     String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
 
-                if (msg.PieceIndex > swp.MediumPrioritySetStart + swp.MediumPrioritySetSize)
+                if (msg.PieceIndex > swp.HighPrioritySetStart + swp.HighPrioritySetSize + swp.MediumPrioritySetSize)
                 {
                     for (int i = 0 ; i < swp.MediumPrioritySetSize ; i++)
                     {
-                        int index = swp.MediumPrioritySetStart + i;
+                        int index = swp.HighPrioritySetStart + swp.HighPrioritySetSize + i;
                         Assert.IsTrue(index >= rig.Manager.Bitfield.Length || rig.Manager.Bitfield[i]);
                     }
                 }
