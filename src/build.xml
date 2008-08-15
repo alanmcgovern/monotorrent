@@ -13,7 +13,9 @@
     </msbuild>
   </target>
 
-  <target name="Test-Debug" depends="Debug">
+  <target name="Test-Debug" >
+    <call target="Clean"/>
+    <call target="Debug"/>
     <nunit2 failonerror="true" verbose="true">
       <formatter type="Xml" usefile="true" outputdir="." extension="xml"/>
       <test assemblyname="MonoTorrent.Tests\bin\Debug\MonoTorrent.Tests.dll" haltonfailure-="false"/>
