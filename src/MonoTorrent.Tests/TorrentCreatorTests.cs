@@ -4,9 +4,9 @@ using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
-using MonoTorrentTests;
+using MonoTorrent.Client.Tests;
 
-namespace MonoTorrent.Common.TorrentCreatorTests
+namespace MonoTorrent.Common.Tests
 {
     [TestFixture]
     public class TorrentCreatorTests

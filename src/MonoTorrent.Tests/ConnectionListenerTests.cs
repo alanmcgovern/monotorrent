@@ -6,7 +6,7 @@ using MonoTorrent.Client;
 using System.Net;
 using System.Net.Sockets;
 
-namespace MonoTorrentTests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class ConnectionListenerTests

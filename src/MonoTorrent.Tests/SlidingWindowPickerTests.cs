@@ -5,11 +5,9 @@ using System.Text;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 
-using MonoTorrentTests;
-
 using NUnit.Framework;
 
-namespace MonoTorrent.Tests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class SlidingWindowPickerTests : PiecePickerTests

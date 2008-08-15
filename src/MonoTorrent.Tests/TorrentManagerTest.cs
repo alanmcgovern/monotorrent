@@ -7,9 +7,8 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
-using MonoTorrentTests;
 
-namespace MonoTorrent.Client.TorrentManagerTests
+namespace MonoTorrent.Client.Tests
 {
     public class TestWriter : PieceWriters.PieceWriter
     {

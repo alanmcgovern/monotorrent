@@ -6,9 +6,8 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Threading;
-using MonoTorrentTests;
 
-namespace MonoTorrent.Client.PieceWriterTests
+namespace MonoTorrent.Client.Tests
 {
 	public class NullWriter : PieceWriter
 	{

@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Client;
-using MonoTorrentTests;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.StandardMessageTests;
 
-namespace MonoTorrent.Tests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class PiecePickerTests

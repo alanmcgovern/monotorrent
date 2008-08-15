@@ -32,7 +32,7 @@ using System.IO;
 using NUnit.Framework;
 using System.Text;
 
-namespace MonoTorrent.Client.FileManagerTests
+namespace MonoTorrent.Client.Tests
 {
     /// <summary>
     /// 

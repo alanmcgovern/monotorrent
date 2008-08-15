@@ -11,7 +11,7 @@ using MonoTorrent.Client.Messages;
 using System.Text.RegularExpressions;
 using MonoTorrent.Common;
 
-namespace MonoTorrentTests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class TestWebSeed

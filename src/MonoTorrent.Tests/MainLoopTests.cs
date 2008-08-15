@@ -5,7 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using System.Threading;
 
-namespace MonoTorrentTests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class MainLoopTests

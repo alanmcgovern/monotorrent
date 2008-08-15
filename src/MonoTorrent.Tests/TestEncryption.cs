@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
-using MonoTorrentTests;
 using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Encryption;
 
-namespace MonoTorrent.Client.Encryption.EncryptionTests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class TestEncryption

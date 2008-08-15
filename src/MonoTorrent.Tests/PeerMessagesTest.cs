@@ -35,9 +35,8 @@ using MonoTorrent.Common;
 using System.Net;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrentTests;
 
-namespace MonoTorrent.Client.StandardMessageTests
+namespace MonoTorrent.Client.Tests
 {
     [TestFixture]
     public class PeerMessagesTest
