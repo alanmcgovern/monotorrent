@@ -19,10 +19,10 @@ namespace MonoTorrent.Client.Encryption.EncryptionTests
         //    {
         //        TestEncryption d = new TestEncryption();
         //        d.Setup();
-        //        try { d.EncrytorFactoryPeerAFullInitial(); }
+        //        try { d.EncryptorFactoryPeerAPlain(); }
         //        catch { Console.WriteLine("******** FAILURE ********"); }
         //        d.Teardown();
-        //        if (i == 100)
+        //        if (i++ == 100)
         //            break;
         //    }
         //}

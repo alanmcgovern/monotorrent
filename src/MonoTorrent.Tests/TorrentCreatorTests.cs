@@ -3,18 +3,27 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Common;
+using MonoTorrent.BEncoding;
+using MonoTorrentTests;
 
 namespace MonoTorrent.Common.TorrentCreatorTests
 {
     [TestFixture]
     public class TorrentCreatorTests
     {
+        //static void Main(string[] args)
+        //{
+        //    TorrentCreatorTests t = new TorrentCreatorTests();
+        //    t.Setup();
+        //}
         private TorrentCreator creator;
 
         [SetUp]
         public void Setup()
         {
+            TestRig rig = new TestRig("");
             creator = new TorrentCreator();
+            creator.Announces.Add(new List<string>(new string[] { "http://tracker1.com/announce1", "http://tracker2.com/announce2" }));
         }
 
         [Test]

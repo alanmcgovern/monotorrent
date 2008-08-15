@@ -403,7 +403,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public bool Equals(TorrentManager other)
         {
-            return (other == null) ? false : Toolbox.ByteMatch(this.torrent.infoHash, other.torrent.infoHash);
+            return (other == null) ? false : this.torrent.Equals(other.torrent);
         }
 
 

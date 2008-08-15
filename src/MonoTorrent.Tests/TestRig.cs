@@ -324,6 +324,23 @@ namespace MonoTorrentTests
             engine.Register(manager);
         }
 
+        private static void AddAnnounces(BEncodedDictionary dict)
+        {
+            BEncodedList announces = new BEncodedList();
+            BEncodedList tier1 = new BEncodedList();
+            BEncodedList tier2 = new BEncodedList();
+            announces.Add(tier1);
+            announces.Add(tier2);
+            tier1.Add((BEncodedString)"custom://tier1/announce1");
+            tier1.Add((BEncodedString)"custom://tier1/announce2");
+            tier2.Add((BEncodedString)"custom://tier2/announce1");
+            tier2.Add((BEncodedString)"custom://tier2/announce2");
+            tier2.Add((BEncodedString)"custom://tier2/announce3");
+
+            dict["announce"] = (BEncodedString)"custom://tier1/announce1";
+            dict["announce-list"] = announces;
+        }
+
         public void AddConnection(IConnection connection)
         {
             if (connection.IsIncoming)
@@ -334,24 +351,45 @@ namespace MonoTorrentTests
 
         private static BEncodedDictionary CreateTorrent(int pieceLength)
         {
-            BEncodedDictionary infoDict = new BEncodedDictionary();
-            infoDict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 25]);
-            infoDict[new BEncodedString("length")] = new BEncodedNumber(25 * pieceLength  - (pieceLength/2));
-            infoDict[new BEncodedString("name")] = new BEncodedString("test.files");
-
             BEncodedDictionary dict = new BEncodedDictionary();
-            dict[new BEncodedString("info")] = infoDict;
+            BEncodedDictionary infoDict = new BEncodedDictionary();
 
-            BEncodedList announceTier = new BEncodedList();
-            announceTier.Add(new BEncodedString("custom://transfers1/announce"));
-            announceTier.Add(new BEncodedString("custom://transfers2/announce"));
-            //announceTier.Add(new BEncodedString("http://transfers3/announce"));
-            BEncodedList announceList = new BEncodedList();
-            announceList.Add(announceTier);
-            dict[new BEncodedString("announce-list")] = announceList;
+            AddAnnounces(dict);
+            AddMultiFiles(infoDict, pieceLength);
+
+            dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
+            dict["encoding"] = (BEncodedString)"UTF-8";
+            dict["info"] = infoDict;
+
             return dict;
         }
 
+        private static void AddMultiFiles(BEncodedDictionary dict, int pieceLength)
+        {
+            BEncodedNumber[] sizes = new BEncodedNumber[] { (int)(pieceLength * 0.44), 
+                                                            (int)(pieceLength * 13.25),
+                                                            (int)(pieceLength * 23.68),
+                                                            (int)(pieceLength * 2.05) };
+
+            List<BEncodedList> paths = new List<BEncodedList>();
+            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "File1" }));
+            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "Dir2", "File2" }));
+            paths.Add(new BEncodedList(new BEncodedString[] { "File3" }));
+            paths.Add(new BEncodedList(new BEncodedString[] { "File4" }));
+
+            BEncodedList files = new BEncodedList();
+            for (int i = 0; i < paths.Count; i++)
+            {
+                BEncodedDictionary d = new BEncodedDictionary();
+                d["path"] = paths[i];
+                d["length"] = sizes[i];
+                files.Add(d);
+            }
+
+            dict[new BEncodedString("files")] = files;
+            dict[new BEncodedString("name")] = new BEncodedString("test.files");
+            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 25]);
+        }
     }
 }

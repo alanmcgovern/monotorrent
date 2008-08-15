@@ -282,7 +282,14 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
-                    connect.Connection.EndConnect(connect.Result);
+                    try
+                    {
+                        connect.Connection.EndConnect(connect.Result);
+                    }
+                    finally
+                    {
+                        connect.Result.AsyncWaitHandle.Close();
+                    }
                 }
             }
             catch
@@ -291,7 +298,6 @@ namespace MonoTorrent.Client
             }
 
             connect.Callback(succeeded, connect);
-            connect.Result.AsyncWaitHandle.Close();
         }
 
         private static void DoConnect(AsyncConnectState c)

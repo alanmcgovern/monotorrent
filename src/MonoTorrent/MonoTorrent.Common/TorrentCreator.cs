@@ -416,11 +416,11 @@ namespace MonoTorrent.Common
         ///</summary>
         private void AddCommonStuff(BEncodedDictionary torrent)
         {
-            Logger.Log(null, announces[0][0]);
-            torrent.Add("announce", new BEncodedString(announces[0][0]));
+            if (announces.Count > 0 && announces[0].Count > 0)
+                torrent.Add("announce", new BEncodedString(announces[0][0]));
 
             // If there is more than one tier or the first tier has more than 1 tracker
-            if (announces.Count > 1 || announces[0].Count > 0)
+            if (announces.Count > 1 || (announces.Count > 0 && announces[0].Count > 1))
             {
                 BEncodedList announceList = new BEncodedList();
                 for (int i = 0; i < this.announces.Count; i++)
@@ -549,31 +549,30 @@ namespace MonoTorrent.Common
 
         private void GetAllFilePaths(string directory, MonoTorrentCollection<string> paths)
         {
-            string[] subs = Directory.GetFileSystemEntries(directory);
+            string[] subs = Directory.GetDirectories(directory);
             foreach (string path in subs)
             {
-                if (Directory.Exists(path))
+                if (ignoreHiddenFiles)
                 {
-                    if (ignoreHiddenFiles)
-                    {
-                        DirectoryInfo info = new DirectoryInfo(path);
-                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-                            continue;
-                    }
-
-                    GetAllFilePaths(path, paths);
+                    DirectoryInfo info = new DirectoryInfo(path);
+                    if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                        continue;
                 }
-                else
+
+                GetAllFilePaths(path, paths);
+            }
+
+            subs = Directory.GetFiles(directory);
+            foreach (string path in subs)
+            {
+                if (ignoreHiddenFiles)
                 {
-                    if (ignoreHiddenFiles)
-                    {
-                        FileInfo info = new FileInfo(path);
-                        if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-                            continue;
-                    }
-
-                    paths.Add(path);
+                    FileInfo info = new FileInfo(path);
+                    if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                        continue;
                 }
+
+                paths.Add(path);
             }
         }
 

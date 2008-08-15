@@ -43,7 +43,7 @@ namespace MonoTorrent.Common
     /// The "Torrent" class for both Tracker and Client should inherit from this
     /// as it contains the fields that are common to both.
     /// </summary>
-    public class Torrent
+    public class Torrent : IEquatable<Torrent>
     {
         #region Private Fields
 
@@ -323,12 +323,15 @@ namespace MonoTorrent.Common
         /// <returns>True if they are equal</returns>
         public override bool Equals(object obj)
         {
-            Torrent torrent = obj as Torrent;
+            return Equals(obj as Torrent);
+        }
 
-            if (torrent == null)
+        public bool Equals(Torrent other)
+        {
+            if (other == null)
                 return false;
 
-            return Toolbox.ByteMatch(this.infoHash, torrent.infoHash);
+            return Toolbox.ByteMatch(this.infoHash, other.infoHash);
         }
 
 

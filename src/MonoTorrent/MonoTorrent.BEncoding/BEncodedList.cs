@@ -66,6 +66,14 @@ namespace MonoTorrent.BEncoding
 
         }
 
+        public BEncodedList(IEnumerable<BEncodedValue> list)
+        {
+            if (list == null)
+                throw new ArgumentNullException("list");
+ 
+            this.list = new List<BEncodedValue>(list);
+        }
+
         private BEncodedList(List<BEncodedValue> value)
         {
             this.list = value;

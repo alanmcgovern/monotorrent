@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
             if (torrent == null)
                 return false;
 
-            return torrents.Exists(delegate(TorrentManager m) { return Toolbox.ByteMatch(m.Torrent.infoHash, torrent.infoHash); });
+            return torrents.Exists(delegate(TorrentManager m) { return m.Torrent.Equals(torrent); });
         }
 
         public bool Contains(TorrentManager manager)

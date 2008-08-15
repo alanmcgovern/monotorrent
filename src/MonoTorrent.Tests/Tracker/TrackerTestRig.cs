@@ -12,7 +12,7 @@ namespace MonoTorrent.TrackerTests
 {
     public class CustomComparer : MonoTorrent.Tracker.IPeerComparer
     {
-        public bool Equals(object left, object right)
+        public new bool Equals(object left, object right)
         {
             return left.Equals(right);
         }
