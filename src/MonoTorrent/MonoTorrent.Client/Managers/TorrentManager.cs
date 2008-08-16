@@ -699,6 +699,27 @@ namespace MonoTorrent.Client
             if (chokeUnchoker == null)
                 chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
 
+            // FIXME: Hardcoded 15kB/sec - is this ok?
+            if ((DateTime.Now - startTime) > TimeSpan.FromMinutes(1) && Monitor.DownloadSpeed < 15 * 1024)
+            {
+                foreach (string s in this.torrent.GetRightHttpSeeds)
+                {
+                    Uri uri = new Uri(s);
+                    Peer peer = new Peer(new string('0', 20), uri);
+                    PeerId id = new PeerId(peer, this);
+                    HttpConnection connection = new HttpConnection(new Uri(s));
+                    connection.Manager = this;
+                    peer.IsSeeder = true;
+                    id.BitField.SetAll(true);
+                    id.IsChoking = false;
+                    id.Connection = connection;
+                    peers.ConnectedPeers.Add(id);
+                }
+
+                // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
+                // Add a boolean or something so that we don't add them twice.
+                torrent.GetRightHttpSeeds.Clear();
+            }
             chokeUnchoker.TimePassed();
         }
 

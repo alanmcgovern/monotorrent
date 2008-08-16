@@ -54,8 +54,8 @@ namespace MonoTorrent.Client
         #region Global Constants
 
         public static readonly bool SupportsInitialSeed = false;
-        public static readonly bool SupportsWebSeed = false;
-        public static readonly bool SupportsExtended = false;
+        public static readonly bool SupportsWebSeed = true;
+        public static readonly bool SupportsExtended = true;
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = false;
