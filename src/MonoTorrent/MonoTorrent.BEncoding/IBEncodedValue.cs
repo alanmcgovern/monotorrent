@@ -39,19 +39,6 @@ namespace MonoTorrent.BEncoding
     /// </summary>
     public abstract class BEncodedValue
     {
-        private static bool strictDecoding = true;
-
-        /// <summary>
-        /// General setting for saying whether certain decoding errors can be ignored in the interests of higher
-        /// percentage success. Similar to Torrent.StrictDecoding
-        /// TODO: Move stuff like this to a general library settings class?
-        /// </summary>
-        public static bool StrictDecoding
-        {
-            get { return strictDecoding; }
-            set { strictDecoding = value; }
-        }
-        
         internal abstract void DecodeInternal(BinaryReader reader);
 
         /// <summary>

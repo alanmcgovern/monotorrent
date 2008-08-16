@@ -83,11 +83,7 @@ namespace MonoTorrent.Common
         public static bool StrictDecoding
         {
             get { return strictDecoding; }
-            set
-            {
-                strictDecoding = value;
-                BEncodedValue.StrictDecoding = value;
-            }
+            set { strictDecoding = value; }
         }
 
 
@@ -714,7 +710,8 @@ namespace MonoTorrent.Common
         {
             try
             {
-                Torrent t = Torrent.Load(BEncodedValue.Decode<BEncodedDictionary>(stream));
+                //Torrent t = Torrent.Load(BEncodedValue.Decode<BEncodedDictionary>(stream));
+                Torrent t = Torrent.Load(BEncodedDictionary.DecodeTorrent(stream));
                 t.torrentPath = path;
                 return t;
             }
