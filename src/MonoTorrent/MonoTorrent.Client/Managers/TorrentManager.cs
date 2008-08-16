@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
         internal InitialSeed InitialSeed
         {
             get { 
-                if (InitialSeed == null)
+                if (initialSeed == null)
                     this.initialSeed = new InitialSeed (this);
                 return this.initialSeed;
             }
