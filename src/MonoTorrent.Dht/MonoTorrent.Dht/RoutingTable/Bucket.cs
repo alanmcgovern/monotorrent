@@ -39,7 +39,7 @@ namespace MonoTorrent.Dht
 	/// <summary>
 	/// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
 	/// </summary>
-	internal class Bucket : IComparable<Bucket>
+	internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>
 	{
 		public const int MaxCapacity = 8;
 
@@ -130,6 +130,24 @@ namespace MonoTorrent.Dht
         public int CompareTo(Bucket other)
         {
             return min.CompareTo(other.min);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as Bucket);
+        }
+
+        public bool Equals(Bucket other)
+        {
+            if (other == null)
+                return false;
+
+            return min.Equals(other.min) && max.Equals(other.max);
+        }
+
+        public override int GetHashCode()
+        {
+            return min.GetHashCode() ^ max.GetHashCode();
         }
 
         public override string ToString()
