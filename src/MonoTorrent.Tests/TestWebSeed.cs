@@ -23,7 +23,7 @@ namespace MonoTorrent.Client.Tests
             for (int i = 0; i < 50; i++)
             {
                 s.Setup();
-                s.SendFirst();
+                s.TestPartialData();
                 s.TearDown();
             }
         }
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client.Tests
         }
 
         [Test]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(WebException))]
         public void TestPartialData()
         {
             partialData = true;
@@ -167,22 +167,36 @@ namespace MonoTorrent.Client.Tests
                 int start = int.Parse(match.Groups[1].Captures[0].Value);
                 int end = int.Parse(match.Groups[2].Captures[0].Value);
 
-                long total = 0;
+
+                long globalStart = 0;
                 bool exists = false;
+                string p = c.Request.RawUrl.Substring(10);
                 foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 {
-                    if (start >= total && end <= (start + file.Length))
-                        exists = true;
-                    total += file.Length;
+                    if (file.Path.Replace('\\', '/') != p)
+                    {
+                        globalStart += file.Length;
+                        continue;
+                    }
+                    globalStart += start;
+                    exists = start < file.Length && end < file.Length;
+                    break;
                 }
 
-                Assert.IsTrue(exists, "The range is out of bounds! No file exists which has that data");
+                if (!exists)
+                {
+                    c.Response.StatusCode = (int) HttpStatusCode.RequestedRangeNotSatisfiable;
+                    c.Response.Close();
+                }
+                else
+                {
+                    byte[] data = partialData ? new byte[(end - start) / 2] : new byte[end - start + 1];
+                    for (int i = 0; i < data.Length; i++)
+                        data[i] = (byte)(globalStart + i);
 
-                byte[] data = partialData ? new byte[(end - start) / 2] : new byte[end - start];
-                for (int i = 0; i < data.Length; i++)
-                    data[i] = (byte)(start + i);
+                    c.Response.Close(data, false);
+                }
 
-                c.Response.Close(data, false);
                 listener.BeginGetContext(GotContext, null);
             }
             catch

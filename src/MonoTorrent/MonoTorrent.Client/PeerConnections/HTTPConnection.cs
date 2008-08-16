@@ -72,12 +72,7 @@ namespace MonoTorrent.Client.Connections
         #region Member Variables
 
         private HttpRequestData currentRequest;
-        private Stream d;
-        private Stream dataStream
-        {
-            get { return d; }
-            set { d = value; }
-        }
+        private Stream dataStream;
         private AsyncCallback getResponseCallback;
         private TorrentManager manager;
         private HttpResult receiveResult;
@@ -85,6 +80,7 @@ namespace MonoTorrent.Client.Connections
         private HttpResult sendResult;
         private int totalExpected;
         private Uri uri;
+        private Queue<KeyValuePair<WebRequest, int>> webRequests;
 
         public byte[] AddressBytes
         {
@@ -127,18 +123,6 @@ namespace MonoTorrent.Client.Connections
             get { return uri; }
         }
 
-        private bool WriteHeader
-        {
-            get
-            {
-                if (receiveResult.BytesTransferred != 0 || receiveResult.Offset == 4)
-                    return false;
-                int total = 0;
-                foreach (RequestMessage m in requestMessages)
-                    total += m.RequestLength;
-                return totalExpected == total;
-            }
-        }
 
         #endregion
 
@@ -155,6 +139,7 @@ namespace MonoTorrent.Client.Connections
             this.uri = uri;
             getResponseCallback = GotResponse;
             requestMessages = new List<RequestMessage>();
+            webRequests = new Queue<KeyValuePair<WebRequest, int>>();
         }
 
         #endregion Constructors
@@ -234,8 +219,11 @@ namespace MonoTorrent.Client.Connections
                     // The RequestMessages are always sequential
                     RequestMessage start = (RequestMessage)bundle[0];
                     RequestMessage end = (RequestMessage)bundle[bundle.Count - 1];
-                    WebRequest r = CreateWebRequest(start, end);
-                    r.BeginGetResponse(getResponseCallback, r);
+                    CreateWebRequests(start, end);
+
+                    KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
+                    totalExpected = r.Value;
+                    r.Key.BeginGetResponse(getResponseCallback, r.Key);
                 }
                 else
                 {
@@ -266,6 +254,9 @@ namespace MonoTorrent.Client.Connections
             try
             {
                 int received = dataStream.EndRead(result);
+                if (received == 0)
+                    throw new WebException("No futher data is available");
+
                 receiveResult.BytesTransferred += received;
                 currentRequest.TotalReceived += received;
 
@@ -314,7 +305,7 @@ namespace MonoTorrent.Client.Connections
             return expected.BytesTransferred;
         }
 
-        private WebRequest CreateWebRequest(RequestMessage start, RequestMessage end)
+        private void CreateWebRequests(RequestMessage start, RequestMessage end)
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
@@ -323,12 +314,40 @@ namespace MonoTorrent.Client.Connections
             if (uri.OriginalString.EndsWith("/"))
                 u = new Uri(uri, Manager.Torrent.Name);
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-            int startOffset = start.PieceIndex * manager.Torrent.PieceLength + start.StartOffset;
-            int endOffset = end.PieceIndex * manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
-            request.AddRange(startOffset, endOffset);
-            totalExpected = endOffset - startOffset;
-            return request;
+            // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
+            // stop at the correct byte when requesting the byte ranges from the server
+            long startOffset = (long)start.PieceIndex * manager.Torrent.PieceLength + start.StartOffset;
+            long endOffset = (long)end.PieceIndex * manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+
+            foreach (TorrentFile file in manager.Torrent.Files)
+            {
+                if (endOffset == 0)
+                    break;
+
+                // We want data from a later file
+                if (startOffset >= file.Length)
+                {
+                    startOffset -= file.Length;
+                    endOffset -= file.Length;
+                }
+                // We want data from the end of the current file and from the next few files
+                else if (endOffset >= file.Length)
+                {
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(uri, file.Path));
+                    request.AddRange((int)startOffset, (int)(file.Length - 1));
+                    webRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
+                    startOffset = 0;
+                    endOffset -= file.Length;
+                }
+                // All the data we want is from within this file
+                else
+                {
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(uri, file.Path));
+                    request.AddRange((int)startOffset, (int)(endOffset - 1));
+                    webRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
+                    endOffset = 0;
+                }
+            }
         }
 
         public void Dispose()
@@ -346,6 +365,14 @@ namespace MonoTorrent.Client.Connections
             {
                 currentRequest = new HttpRequestData(requestMessages[0]);
                 requestMessages.RemoveAt(0);
+            }
+
+            if (totalExpected == 0)
+            {
+                KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
+                totalExpected = r.Value;
+                r.Key.BeginGetResponse(getResponseCallback, r.Key);
+                return;
             }
 
             if (!currentRequest.SentLength)
