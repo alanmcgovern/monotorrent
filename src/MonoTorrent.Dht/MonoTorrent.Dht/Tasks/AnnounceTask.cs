@@ -35,8 +35,9 @@ namespace MonoTorrent.Dht
         
         public void PeerFound(object sender, PeersFoundEventArgs e)
         {
-            AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, ((Node)sender).Token);
-            engine.MessageLoop.EnqueueSend(apmsg, (Node)sender);
+            Node node = (Node)sender;
+            AnnouncePeer apmsg = new AnnouncePeer(engine.RoutingTable.LocalNode.Id, infoHash, engine.Port, node.Token);
+            engine.MessageLoop.EnqueueSend(apmsg, node);
             RaiseComplete(new TaskCompleteEventArgs(this));
         }
         
