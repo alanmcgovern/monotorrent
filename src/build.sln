@@ -1,11 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClient", "SampleClient\SampleClient.csproj", "{9CC2CC3A-4041-4857-AF8B-D58745FD3066}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackerApp", "TrackerApp\TrackerApp.csproj", "{7A647552-B5F0-419F-9395-4DC24990ED20}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Tests", "MonoTorrent.Tests\MonoTorrent.Tests.csproj", "{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}"
 EndProject
@@ -16,24 +12,12 @@ Global
 		Stats|Any CPU = Stats|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Stats|Any CPU.Build.0 = Stats|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Stats|Any CPU.Build.0 = Stats|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Stats|Any CPU.Build.0 = Stats|Any CPU
 		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
