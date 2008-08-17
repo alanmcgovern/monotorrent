@@ -2,14 +2,11 @@ using MonoTorrent.Dht.Messages;
 using System;
 using System.Net;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Dht.Tasks
 {
     internal class InitialiseTask : Task
     {
-        static readonly int NodesToFind = 50;
-        static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
-
-        private int nodesFound;
+        private int QuestionedNodeCount;
         private DhtEngine engine;
         private DateTime startTime;
 
@@ -23,34 +20,36 @@ namespace MonoTorrent.Dht
             if (Active)
                 return;
 
-            nodesFound = 0;
-            startTime = DateTime.UtcNow;
+            QuestionedNodeCount = 0;
             engine.RoutingTable.NodeAdded += NodeAdded;
-            DhtEngine.MainLoop.QueueTimeout(Timeout, delegate {
-                if (Active)
-                    RaiseComplete(new TaskCompleteEventArgs(this));
-                return false;
-            });
             Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
             Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
             engine.Add(utorrent);
             engine.Add(node2);
+            //issue here id this 2 node never answer we will never raise complete!
+            //but it seems logical because we will never init until we get a node to bootstrap!
         }
-
+        
+        void TaskComplete(object sender, TaskCompleteEventArgs e)
+        {
+            QuestionedNodeCount--;
+            //node added is call before this because handle is done before message sent
+            //so if we are back to 0, this mean that we have no node that we wait answer 
+            if (QuestionedNodeCount == 0)
+            {
+                RaiseComplete(e);
+            }
+        }
+        
         private void NodeAdded(object o, NodeAddedEventArgs e)
         {
-            nodesFound++;
+            QuestionedNodeCount++;
             // If we reached our target amount of nodes or we've run out of time, complete the task
             // Otherwise keep firing off FindNode requests to find nodes close to our own.
-            if ((DateTime.UtcNow - startTime) > Timeout || nodesFound >= NodesToFind)
-            {
-                RaiseComplete(new TaskCompleteEventArgs(this));
-            }
-            else
-            {
-                engine.MessageLoop.EnqueueSend(new FindNode(engine.RoutingTable.LocalNode.Id, engine.RoutingTable.LocalNode.Id), e.Node);
-            }
-        }
+             SendQueryTask task = new SendQueryTask(engine, new FindNode(engine.LocalId, engine.LocalId), e.Node);
+             task.Completed += TaskComplete;
+             task.Execute();            
+          }
 
         protected override void RaiseComplete(TaskCompleteEventArgs e)
         {

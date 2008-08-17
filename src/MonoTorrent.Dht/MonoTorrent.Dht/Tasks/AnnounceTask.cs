@@ -2,7 +2,7 @@ using MonoTorrent.Dht.Messages;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Dht.Tasks
 {
     internal class AnnounceTask : Task
     {
@@ -24,6 +24,7 @@ namespace MonoTorrent.Dht
         public override void Execute()
     	{
             engine.PeersFound += PeerFound;
+            engine.NodeFound += NodeFound;
             
             IList<Node> nodes = engine.RoutingTable.GetClosest(infoHash);
             foreach(Node n in nodes)
@@ -50,6 +51,7 @@ namespace MonoTorrent.Dht
         protected override void RaiseComplete(TaskCompleteEventArgs e)
         {
             engine.PeersFound -= PeerFound;
+            engine.NodeFound -= NodeFound;
             base.RaiseComplete(e);
         }
     }

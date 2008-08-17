@@ -10,7 +10,6 @@ namespace MonoTorrent.Dht.Tasks
         private Bucket bucket;
         private DhtEngine engine;
         private Node newNode;
-        private SendQueryTask task;
 
         public ReplaceNodeTask(DhtEngine engine, Bucket bucket, Node newNode)
         {
@@ -41,7 +40,7 @@ namespace MonoTorrent.Dht.Tasks
             else
             {
                 Node oldest = bucket.Nodes[0];
-                task = new SendQueryTask(engine, new Ping(engine.LocalId), oldest);
+                SendQueryTask task = new SendQueryTask(engine, new Ping(engine.LocalId), oldest);
                 task.Completed += TaskComplete;
                 task.Execute();
             }
@@ -49,23 +48,24 @@ namespace MonoTorrent.Dht.Tasks
 
         void TaskComplete(object sender, TaskCompleteEventArgs e)
         {
-            task.Completed -= TaskComplete;
+            e.Task.Completed -= TaskComplete;
 
             // I should raise the event with some eventargs saying which node was dead
             SendQueryEventArgs args = (SendQueryEventArgs)e;
+            
             if (args.TimedOut)
             {
                 // If the node didn't respond and it's no longer in our bucket,
                 // we need to send a ping to the oldest node in the bucket
                 // Otherwise if we have a non-responder and it's still there, replace it!
-                int index = bucket.Nodes.IndexOf(task.Target);
+                int index = bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target);
                 if (index < 0)
                 {
                     SendPingToOldest();
                 }
                 else
                 {
-                    bucket.Nodes[bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target)] = newNode;
+                    bucket.Nodes[index] = newNode;
                     RaiseComplete(new TaskCompleteEventArgs(this));
                 }
             }
