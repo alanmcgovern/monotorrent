@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<project name="MonoTorrent" xmlns="http://nant.sf.net/schemas/nant.xsd">
+  <target name="Dht-Clean">
+    <msbuild project="MonoTorrent.Dht\MonoTorrent.Dht.sln" target="Clean"/>
+  </target>
+
+  <target name="Dht-Debug">
+    <msbuild project="MonoTorrent.Dht\MonoTorrent.Dht.sln">
+      <property name="Configuration" value="Debug"/>
+    </msbuild>
+  </target>
+
+  <target name="Dht-Test-Debug">
+    <call target="Dht-Clean"/>
+    <call target="Dht-Debug"/>
+    <nunit failonerror="true" verbose="true">
+      <formatter type="Xml" usefile="true" outputdir="." extension="xml"/>
+      <test assemblyname="MonoTorrent.Dht\MonoTorrent.Dht.Tests\bin\Debug\MonoTorrent.Dht.Tests.dll"/>
+    </nunit>
+  </target>
+</project>
