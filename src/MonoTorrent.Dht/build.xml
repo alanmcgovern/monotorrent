@@ -14,7 +14,7 @@
     <call target="Dht-Clean"/>
     <call target="Dht-Debug"/>
     <nunit failonerror="true" verbose="true">
-      <formatter type="Xml" usefile="true" outputdir="." extension="xml"/>
+      <formatter type="Xml" usefile="true" outputdir="." extension=".xml"/>
       <test assemblyname="MonoTorrent.Dht\MonoTorrent.Dht.Tests\bin\Debug\MonoTorrent.Dht.Tests.dll"/>
     </nunit>
   </target>
