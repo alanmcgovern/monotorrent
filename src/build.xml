@@ -4,11 +4,11 @@
   <property name="nant.settings.currentframework" value="net-2.0" />
 
   <target name="Clean">
-    <msbuild project="MonoTorrent.sln" target="Clean"/>
+    <msbuild project="build.sln" target="Clean"/>
   </target>
 
   <target name="Debug">
-    <msbuild project="MonoTorrent.sln">
+    <msbuild project="build.sln">
       <property name="Configuration" value="Debug"/>
     </msbuild>
   </target>
