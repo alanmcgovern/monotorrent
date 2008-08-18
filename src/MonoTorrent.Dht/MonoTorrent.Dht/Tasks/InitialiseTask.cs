@@ -6,10 +6,10 @@ namespace MonoTorrent.Dht.Tasks
 {
     internal class InitialiseTask : Task
     {
-        private int QuestionedNodeCount;
-        private DhtEngine engine;
-        private DateTime startTime;
-
+        int QuestionedNodeCount;
+        DhtEngine engine;
+        bool ok;
+            
         public InitialiseTask(DhtEngine engine)
         {
             this.engine = engine;
@@ -21,6 +21,7 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             QuestionedNodeCount = 0;
+            ok = false;
             engine.RoutingTable.NodeAdded += NodeAdded;
             Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
             Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
@@ -32,10 +33,15 @@ namespace MonoTorrent.Dht.Tasks
         
         void TaskComplete(object sender, TaskCompleteEventArgs e)
         {
+            //we need to have at least one node who answer new nodes...
+            SendQueryEventArgs args = (SendQueryEventArgs)e;
+            if (!args.TimedOut)
+                ok = true;
+            
             QuestionedNodeCount--;
             //node added is call before this because handle is done before message sent
             //so if we are back to 0, this mean that we have no node that we wait answer 
-            if (QuestionedNodeCount == 0)
+            if (ok && (QuestionedNodeCount == 0))
             {
                 RaiseComplete(e);
             }
