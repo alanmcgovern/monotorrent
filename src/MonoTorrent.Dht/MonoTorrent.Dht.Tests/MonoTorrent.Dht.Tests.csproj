@@ -35,10 +35,6 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="MonoTorrent, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\!!Work\End\MonoTorrent\bin\Debug\MonoTorrent.dll</HintPath>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -53,6 +49,10 @@
     <Compile Include="TokenTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
+      <Name>MonoTorrent</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
       <Project>{7A2A7E73-FD43-4171-AA34-DA413D35459E}</Project>
       <Name>MonoTorrent.Dht</Name>
