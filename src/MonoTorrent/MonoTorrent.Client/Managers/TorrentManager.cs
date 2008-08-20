@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        internal BitField Bitfield
+        public BitField Bitfield
         {
             get { return this.bitfield; }
         }
