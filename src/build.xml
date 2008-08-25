@@ -14,6 +14,7 @@
   </target>
 
   <target name="Test-Debug" >
+    <delete file="MonoTorrent.Tests.dll-results.xml"/>
     <call target="Clean"/>
     <call target="Debug"/>
     <nunit2 failonerror="true" verbose="true">
@@ -33,12 +34,13 @@
   </target>
 
   <target name="Dht-Test-Debug">
+    <delete file="MonoTorrent.Dht.Tests.dll-results.xml"/>
     <call target="Dht-Clean"/>
     <call target="Dht-Debug"/>
-    <nunit failonerror="true" verbose="true">
+    <nunit2 failonerror="true" verbose="true">
       <formatter type="Xml" usefile="true" outputdir="." extension=".xml"/>
-      <test assemblyname="MonoTorrent.Dht\MonoTorrent.Dht.Tests\bin\Debug\MonoTorrent.Dht.Tests.dll"/>
-    </nunit>
+      <test assemblyname="MonoTorrent.Dht\MonoTorrent.Dht.Tests\bin\Debug\MonoTorrent.Dht.Tests.dll" haltonfailure="false"/>
+    </nunit2>
   </target>
 
 </project>
