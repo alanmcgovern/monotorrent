@@ -138,7 +138,10 @@ namespace MonoTorrent.BEncoding
             }
         }
 
-
+        public static BEncodedDictionary DecodeTorrent(byte[] bytes)
+        {
+            return DecodeTorrent(new MemoryStream(bytes));
+        }
 
         public static BEncodedDictionary DecodeTorrent(Stream s)
         {
