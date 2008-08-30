@@ -42,8 +42,21 @@ namespace MonoTorrent.Client.Tracker
             }
 
             AnnounceMessage m = new AnnounceMessage(connectionId, parameters);
-            tracker.Send(m.Encode(), m.ByteLength);
-            byte[] data = tracker.Receive(ref endpoint);
+            byte[] data = null;
+            try
+            {
+                tracker.Send(m.Encode(), m.ByteLength);
+                data = tracker.Receive(ref endpoint);
+            }
+            catch (SocketException)
+            {
+                TrackerConnectionID id = new TrackerConnectionID(this, false, MonoTorrent.Common.TorrentEvent.None, null);
+                AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+                e.Successful = false;
+                RaiseAnnounceComplete(e);
+                return null;
+            }
+
             UdpTrackerMessage message = UdpTrackerMessage.DecodeMessage(data, 0, data.Length);
 
             CompleteAnnounce(message);
@@ -74,9 +87,23 @@ namespace MonoTorrent.Client.Tracker
         private void Connect()
         {
             ConnectMessage message = new ConnectMessage();
-            tracker.Connect(announceUrl.Host, announceUrl.Port);
-            tracker.Send(message.Encode(), message.ByteLength);
-            byte[] response = tracker.Receive(ref endpoint);
+
+            byte[] response = null;
+            try
+            {
+                tracker.Connect(announceUrl.Host, announceUrl.Port);
+                tracker.Send(message.Encode(), message.ByteLength);
+                response = tracker.Receive(ref endpoint);
+            }
+            catch (SocketException)
+            {
+                TrackerConnectionID id = new TrackerConnectionID(this, false, MonoTorrent.Common.TorrentEvent.None, null);
+                AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+                e.Successful = false;
+                RaiseAnnounceComplete(e);
+                return;
+            }
+
             ConnectResponseMessage m = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(response, 0, response.Length);// new ConnectResponseMessage();
 
             connectionId = m.ConnectionId;
