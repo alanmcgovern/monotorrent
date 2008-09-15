@@ -355,7 +355,9 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            //do nothing
+            if (dataStream != null)
+                dataStream.Dispose();
+            dataStream = null;
         }
 
         private void DoReceive()
