@@ -31,6 +31,7 @@
 using System;
 using System.Net;
 using MonoTorrent.Common;
+using System.IO;
 
 namespace MonoTorrent.Client.Messages.Standard
 {
@@ -170,7 +171,8 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             id.PiecesReceived++;
 
-            BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager);
+            string path = id.TorrentManager.FileManager.SavePath;
+            BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Files, path);
             d.Id = id;
             id.TorrentManager.PieceManager.ReceivedPieceMessage(d);
 

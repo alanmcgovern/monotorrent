@@ -641,6 +641,12 @@ namespace MonoTorrent.Client
             this.ProcessQueue(id);
         }
 
+        internal void ReceiveMessage(PeerId id)
+        {
+            id.BytesToRecieve = 0;
+            ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, id.BytesToRecieve);
+            ReceiveMessage(id, id.BytesToRecieve, messageLengthReceivedCallback);
+        }
 
         /// <summary>
         /// Receives exactly length number of bytes from the specified peer connection and invokes the supplied callback if successful

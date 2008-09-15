@@ -18,20 +18,12 @@ namespace MonoTorrent.Common
 
         public int Rate
         {
-            get
-            {
-                Tick();
-                return this.speed;
-            }
+            get { return this.speed; }
         }
 
         public long Total
         {
-            get
-            {
-                Tick();
-                return this.total;
-            }
+            get { return this.total; }
         }
 
 
@@ -50,7 +42,6 @@ namespace MonoTorrent.Common
 
         public void AddDelta(int speed)
         {
-            Tick();
             this.total += speed;
             this.tempRecvCount += speed;
         }
@@ -109,16 +100,9 @@ namespace MonoTorrent.Common
 
         public void Tick()
         {
-            // Make sure we handle the case where the clock rolls over
-            // Ensure that TimePeriodPassed doesn't get executed by multiple threads
-            // This can happen if the UI triggers an update at the same time that
-            // the internals trigger an update.
-            lock (speeds)
-            {
-                long difference = (long)Environment.TickCount - lastUpdated;
-                if (difference >= 800 || difference < 0)
-                    TimePeriodPassed();
-            }
+            long difference = (long)Environment.TickCount - lastUpdated;
+            if (difference >= 800 || difference < 0)
+                TimePeriodPassed();
         }
     }
 }

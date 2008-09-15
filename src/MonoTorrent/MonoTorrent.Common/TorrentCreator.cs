@@ -39,6 +39,7 @@ using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
 using System.Threading;
 using MonoTorrent.Client;
+using MonoTorrent.Client.PieceWriters;
 
 
 namespace MonoTorrent.Common
@@ -470,30 +471,44 @@ namespace MonoTorrent.Common
         private byte[] CalcPiecesHash(MonoTorrentCollection<string> fullPaths)
         {
             SHA1 hasher = SHA1.Create();
-            byte[] piece = new byte[PieceLength];//holds one piece for sha1 calcing
-            int len = 0;        //holds the bytes read by the stream.Read() method
             byte[] piecesBuffer = new byte[GetPieceCount(fullPaths) * 20]; //holds all the pieces hashes
             int piecesBufferOffset = 0;
+            
+            TorrentFile[] files = ConvertPaths(fullPaths);
+            long totalLength = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return (int)f.Length; });
 
-            using (CatStreamReader reader = new CatStreamReader(fullPaths))
+            using (DiskWriter writer = new DiskWriter())
             {
-                //go through each path added earlier by AddAllInfoDicts
-                len = reader.Read(piece, 0, piece.Length);
-                while (len != 0)
+                while (totalLength > 0)
                 {
+                    int bytesToRead = Math.Min((int)totalLength, (int)PieceLength);
+                    ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[PieceLength]);
+                    BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, (int)PieceLength, files, "");
+                    io.WaitHandle = new ManualResetEvent(false);
+                    totalLength -= writer.ReadChunk(io);
+
                     // If we are using the synchronous version, result is null
                     if (result != null && result.Aborted)
                         return piecesBuffer;
 
-                    byte[] currentHash = hasher.ComputeHash(piece, 0, len);
-                    RaiseHashed(new TorrentCreatorEventArgs(reader.CurrentFile.Position, reader.CurrentFile.Length,
+                    byte[] currentHash = hasher.ComputeHash(buffer.Array, 0, io.ActualCount);
+                    RaiseHashed(new TorrentCreatorEventArgs(0, 0,//reader.CurrentFile.Position, reader.CurrentFile.Length,
                                                             piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
                     Buffer.BlockCopy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
                     piecesBufferOffset += currentHash.Length;
-                    len = reader.Read(piece, 0, piece.Length);
                 }
             }
             return piecesBuffer;
+        }
+
+        private TorrentFile[] ConvertPaths(MonoTorrentCollection<string> fullPaths)
+        {
+            TorrentFile[] files = new TorrentFile[fullPaths.Count];
+            
+            for (int i = 0; i < files.Length; i++)
+                files[i] = new TorrentFile(fullPaths[i], new FileInfo(fullPaths[i]).Length, 0, 0, null, null, null);
+            
+            return files;
         }
 
         ///<summary>
@@ -650,6 +665,8 @@ namespace MonoTorrent.Common
     ///<summary>
     internal class CatStreamReader : IDisposable
     {
+        DiskWriter writer = new DiskWriter();
+
         private MonoTorrentCollection<string> _files;
         private int _currentFile = 0;
         private FileStream _currentStream = null;
