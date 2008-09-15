@@ -415,21 +415,16 @@ namespace MonoTorrent.Client
 
             foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
-                lock (connectedPeer)
+                if (connectedPeer.Connection != null)
                 {
-                    if (connectedPeer.Connection != null)
-                    {
-                        // update tyrant stats
-                        connectedPeer.UpdateTyrantStats();
-
-                        sortedPeers.Add( connectedPeer );
-                    }
+                    // update tyrant stats
+                    connectedPeer.UpdateTyrantStats();
+                    sortedPeers.Add(connectedPeer);
                 }
             }
 
             // sort the list by BitTyrant ratio
-            sortedPeers.Sort( delegate( PeerId p1, PeerId p2 )
-            {
+            sortedPeers.Sort( delegate( PeerId p1, PeerId p2 ) {
                 return p2.Ratio.CompareTo( p1.Ratio );
             } );
 
