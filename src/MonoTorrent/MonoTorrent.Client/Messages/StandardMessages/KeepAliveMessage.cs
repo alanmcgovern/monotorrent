@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Messages.Standard
     public class KeepAliveMessage : PeerMessage
     {
         private const int messageLength = 0;   // has no payload
-        public const byte MessageId = 0;
+        internal static readonly byte MessageId = 0;
 		private static readonly byte[] payload = new byte[] { 0, 0, 0, 0 };
 
         #region Constructors

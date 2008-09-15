@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.Messages.Standard
 {
     public class RequestMessage : PeerMessage
     {
-        public const byte MessageId = 6;
+        internal static readonly byte MessageId = 6;
         private const int messageLength = 13;
 
         internal const int MaxSize = 65536;

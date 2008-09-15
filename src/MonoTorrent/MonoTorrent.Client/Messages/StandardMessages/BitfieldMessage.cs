@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     public class BitfieldMessage : PeerMessage
     {
-        public const byte MessageId = 5;
+        internal static readonly byte MessageId = 5;
 
         #region Member Variables
         /// <summary>

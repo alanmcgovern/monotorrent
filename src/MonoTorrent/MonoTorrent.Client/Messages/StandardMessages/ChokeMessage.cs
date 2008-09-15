@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
     public class ChokeMessage : PeerMessage
     {
         private const int messageLength = 1;
-        public const byte MessageId = 0;
+        internal static readonly byte MessageId = 0;
 
         #region Constructors
         /// <summary>

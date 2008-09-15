@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 {
     public class HaveNoneMessage : PeerMessage
     {
-        public const byte MessageId = 0x0F;
+        internal static readonly byte MessageId = 0x0F;
         private readonly int messageLength = 1;
 
         #region Constructors

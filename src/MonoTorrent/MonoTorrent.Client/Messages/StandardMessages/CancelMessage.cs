@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.Messages.Standard
     public class CancelMessage : PeerMessage
     {
         private const int messageLength = 13;
-        public const byte MessageId = 8;
+        internal static readonly byte MessageId = 8;
 
 
         #region Member Variables

@@ -10,7 +10,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// Hash code length (in bytes)
         /// </summary>
-        public const int HashCodeLength = 20;
+        internal static readonly int HashCodeLength = 20;
         #endregion
 
 

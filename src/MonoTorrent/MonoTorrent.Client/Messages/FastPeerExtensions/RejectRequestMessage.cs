@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 {
     public class RejectRequestMessage : PeerMessage
     {
-        public const byte MessageId = 0x10;
+        internal static readonly byte MessageId = 0x10;
         public readonly int messageLength = 13;
 
         #region Member Variables

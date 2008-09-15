@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
     public class NotInterestedMessage : PeerMessage
     {
         private const int messageLength = 1;
-        public const byte MessageId = 3;
+        internal static readonly byte MessageId = 3;
 
         #region Constructors
         /// <summary>

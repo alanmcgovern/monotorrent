@@ -45,9 +45,9 @@ namespace MonoTorrent.Client
 
     public class BufferManager
     {
-        public const int SmallMessageBufferSize = 1 << 8;               // 256 bytes
-        public const int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
-        public const int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
+        internal static readonly int SmallMessageBufferSize = 1 << 8;               // 256 bytes
+        internal static readonly int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
+        internal static readonly int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
         
         public static readonly ArraySegment<byte> EmptyBuffer = new System.ArraySegment<byte>(new byte[0]);
 

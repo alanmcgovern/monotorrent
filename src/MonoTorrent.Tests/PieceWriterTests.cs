@@ -59,10 +59,10 @@ namespace MonoTorrent.Client.Tests
         //    t.Setup();
         //    t.TestMemoryStandardReads();
         //}
-		public const int PieceCount = 2;
-		public const int BlockCount = 10;
-		public const int BlockSize = Piece.BlockSize;
-		public const int PieceSize = BlockCount * BlockSize;
+        public static readonly int PieceCount = 2;
+        public static readonly int BlockCount = 10;
+		public static readonly int BlockSize = Piece.BlockSize;
+        public static readonly int PieceSize = BlockCount * BlockSize;
 
 		public static BufferManager Buffer = new BufferManager();
 		TestRig rig;

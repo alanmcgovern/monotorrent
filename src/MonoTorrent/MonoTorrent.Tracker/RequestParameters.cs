@@ -9,8 +9,8 @@ namespace MonoTorrent.Tracker
 {
     public abstract class RequestParameters : EventArgs
     {
-        public const string FailureKey = "failure reason";
-        public const string WarningKey = "warning"; //FIXME: Check this, i know it's wrong!
+        protected internal static readonly string FailureKey = "failure reason";
+        protected internal static readonly string WarningKey = "warning"; //FIXME: Check this, i know it's wrong!
 
         private IPAddress remoteAddress;
         private bool handled;

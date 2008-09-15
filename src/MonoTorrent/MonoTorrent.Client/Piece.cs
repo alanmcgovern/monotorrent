@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
 {
     public class Piece
     {
-        public const int BlockSize = (1 << 14); // 16kB
+        internal static readonly int BlockSize = (1 << 14); // 16kB
 
         #region Member Variables
 

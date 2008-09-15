@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Messages.Standard
 {
     public class UnchokeMessage : PeerMessage
     {
-        public const byte MessageId = 1;
+        internal static readonly byte MessageId = 1;
         private const int messageLength = 1;
 
 
