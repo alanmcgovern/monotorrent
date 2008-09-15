@@ -55,7 +55,8 @@ namespace Mono.Ssdp.Internal
                 return String.Format ("{0} ({1})", Id, Trigger);
             }
         }
-        
+
+        private bool disposed;
         private readonly object wait_mutex = new object ();
         private AutoResetEvent wait;
 
@@ -108,16 +109,22 @@ namespace Mono.Ssdp.Internal
                 }
             }
         }
-        
+        Thread t;
         private void Start ()
         {
             wait = new AutoResetEvent (false);
-            ThreadPool.QueueUserWorkItem (TimerThread);
+            t = new Thread(TimerThread);
+            t.Name = "Timer Dispatcher!";
+            t.IsBackground = true;
+            t.Start();
         }
         
         private void TimerThread (object state)
         {
             while (timeouts.Count > 0) {
+                if (disposed)
+                    return;
+
                 TimeoutItem item;
                 lock (timeouts) {
                     item = timeouts[0];
@@ -160,6 +167,15 @@ namespace Mono.Ssdp.Internal
                     wait.Set ();
                 }
             }
+        }
+
+        internal void Dispose()
+        {
+            if (disposed)
+                return;
+            disposed = true;
+            Enqueue(TimeSpan.Zero, delegate { return false; });
+            t.Join(TimeSpan.FromSeconds(2));
         }
     }
 }
