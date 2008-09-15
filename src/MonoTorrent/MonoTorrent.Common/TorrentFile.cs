@@ -38,7 +38,7 @@ namespace MonoTorrent.Common
     /// This is the base class for the files available to download from within a .torrent.
     /// This should be inherited by both Client and Tracker "TorrentFile" classes
     /// </summary>
-    public class TorrentFile
+    public class TorrentFile : IEquatable<TorrentFile>
     {
         #region Private Fields
 
@@ -136,6 +136,11 @@ namespace MonoTorrent.Common
 
 
         #region Constructors
+        public TorrentFile(string path, long length)
+            : this(path, length, 0, 0, null, null, null)
+        {
+
+        }
 
         public TorrentFile(string path, long length, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
         {
@@ -154,6 +159,21 @@ namespace MonoTorrent.Common
 
 
         #region Methods
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as TorrentFile);
+        }
+
+        public bool Equals(TorrentFile other)
+        {
+            return other == null ? false : path == other.path && length == other.length; ;
+        }
+
+        public override int GetHashCode()
+        {
+            return path.GetHashCode();
+        }
 
         public override string ToString()
         {
