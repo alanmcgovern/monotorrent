@@ -12,8 +12,7 @@ namespace MonoTorrent.Client
         private int actualCount;
         private int count;
         private string path;
-        private int pieceIndex;
-        private int pieceOffset;
+        private long offset;
         private int pieceLength;
         private PeerId peerId;
         private TorrentFile[] files;
@@ -26,7 +25,7 @@ namespace MonoTorrent.Client
         }
         public int BlockIndex
         {
-            get { return pieceOffset / MonoTorrent.Client.Piece.BlockSize; }
+            get { return PieceOffset / MonoTorrent.Client.Piece.BlockSize; }
         }
         public ArraySegment<byte> Buffer
         {
@@ -48,17 +47,17 @@ namespace MonoTorrent.Client
         }
         public int PieceIndex
         {
-            get { return pieceIndex; }
+            get { return (int)(offset / pieceLength); }
         }
         public int PieceOffset
         {
-            get { return pieceOffset; }
-            set { pieceOffset = value; }
+            get { return (int)(offset % pieceLength); ; }
         }
         internal Piece Piece;
         public long Offset
         {
-            get { return (long)pieceIndex * pieceLength + pieceOffset; }
+            get { return offset; }
+            set { offset = value; }
         }
         public TorrentFile[] Files
         {
@@ -91,13 +90,12 @@ namespace MonoTorrent.Client
         {
             this.buffer = buffer;
             this.count = count;
-            pieceIndex = (int)(offset / pieceLength);
-            pieceOffset = (int)(offset % pieceLength);
+            this.offset = offset;
         }
 
         public override string ToString()
         {
-            return string.Format("Piece: {0} Block: {1} Count: {2}", pieceIndex, BlockIndex, count);
+            return string.Format("Piece: {0} Block: {1} Count: {2}", PieceIndex, BlockIndex, count);
         }
 
         object ICloneable.Clone()

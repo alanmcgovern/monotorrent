@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.PieceWriters
             {
                 read = Read(clone);
                 clone.buffer = new ArraySegment<byte>(clone.buffer.Array, clone.buffer.Offset + read, clone.buffer.Count - read);
-                clone.PieceOffset += read;
+                clone.Offset += read;
                 clone.Count -= read;
                 totalRead += read;
 
