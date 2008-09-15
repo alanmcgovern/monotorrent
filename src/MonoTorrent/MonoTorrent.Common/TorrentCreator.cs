@@ -149,20 +149,20 @@ namespace MonoTorrent.Common
         {
             get
             {
-                BEncodedValue val = Get(this.dict, new BEncodedString("publisher"));
+                BEncodedValue val = Get((BEncodedDictionary)this.dict["info"], new BEncodedString("publisher"));
                 return val == null ? string.Empty : val.ToString();
             }
-            set { Set(this.dict, "publisher", new BEncodedString(value)); }
+            set { Set((BEncodedDictionary)this.dict["info"], "publisher", new BEncodedString(value)); }
         }
 
         public string PublisherUrl
         {
             get
             {
-                BEncodedValue val = Get(this.dict, new BEncodedString("publisher-url"));
+                BEncodedValue val = Get((BEncodedDictionary)this.dict["info"], new BEncodedString("publisher-url"));
                 return val == null ? string.Empty : val.ToString();
             }
-            set { Set(this.dict, "publisher-url", new BEncodedString(value)); }
+            set { Set((BEncodedDictionary)this.dict["info"], "publisher-url", new BEncodedString(value)); }
         }
 
         public bool StoreMD5
@@ -220,25 +220,33 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public BEncodedDictionary Create()
         {
-            // Clone the base dictionary and fill the remaining data into the clone
-            BEncodedDictionary torrentDict = BEncodedDictionary.Decode<BEncodedDictionary>(dict.Encode());
+            if (!Directory.Exists(Path) && !File.Exists(Path))
+                throw new ArgumentException("no such file or directory", Path);
 
-            if (Directory.Exists(Path))
-            {
-                Logger.Log(null, "Creating multifile torrent from: {0}", Path);
-                CreateMultiFileTorrent(torrentDict);
-            }
-            else if (File.Exists(Path))
-            {
-                Logger.Log(null, "Creating singlefile torrent from: {0}", Path);
-                CreateSingleFileTorrent(torrentDict);
-            }
-            else
-            {
-                throw new ArgumentException("no such file or directory", "storagePath");
-            }
+            List<TorrentFile> files = new List<TorrentFile>();
+            LoadFiles(Path, files);
 
-            return torrentDict;
+            return Create(files.ToArray(), new DiskWriter(), GetDirName(Path));
+        }
+
+        private void LoadFiles(string path, List<TorrentFile> files)
+        {
+            if (Directory.Exists(path))
+            {
+                foreach(string subdir in System.IO.Directory.GetFileSystemEntries(path))
+                LoadFiles(subdir, files);
+            }
+            else if (File.Exists(path))
+            {
+                string filePath = path.Substring(Path.Length);
+                if (filePath[0] == System.IO.Path.DirectorySeparatorChar)
+                    filePath = filePath.Substring(1);
+
+                FileInfo info = new FileInfo(path);
+
+                if (!((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && IgnoreHiddenFiles))
+                    files.Add(new TorrentFile(filePath, info.Length, 0, 0, null, null, null));
+            }
         }
 
         ///<summary>
@@ -267,6 +275,30 @@ namespace MonoTorrent.Common
 
             byte[] data = torrentDict.Encode();
             stream.Write(data, 0, data.Length);
+        }
+
+
+        internal BEncodedDictionary Create(TorrentFile[] files, PieceWriter writer, string name)
+        {
+            this.path = name;
+            // Clone the base dictionary and fill the remaining data into the clone
+            BEncodedDictionary torrentDict = BEncodedDictionary.Decode<BEncodedDictionary>(dict.Encode());
+            Array.Sort<TorrentFile>(files, delegate(TorrentFile a, TorrentFile b) {
+                return String.CompareOrdinal(a.Path, b.Path);
+            });
+
+            if (files.Length > 1)
+            {
+                Logger.Log(null, "Creating multifile torrent from: {0}", Path);
+                CreateMultiFileTorrent(torrentDict, files, writer);
+            }
+            else
+            {
+                Logger.Log(null, "Creating singlefile torrent from: {0}", Path);
+                CreateSingleFileTorrent(torrentDict, files, writer);
+            }
+
+            return torrentDict;
         }
 
         /// <summary>
@@ -339,8 +371,10 @@ namespace MonoTorrent.Common
 
             if (Directory.Exists(this.path))
                 GetAllFilePaths(this.path, paths);
-            else
+            else if (File.Exists(this.path))
                 paths.Add(path);
+            else
+                return 64 * 1024;
 
             long size = 0;
             for (int i = 0; i < paths.Count; i++)
@@ -378,21 +412,6 @@ namespace MonoTorrent.Common
 
 
         #region Private Methods
-
-        ///<summary>
-        ///this method runs recursively through all subdirs under dir and ads information
-        ///from each file to the filesList. 
-        ///<summary>
-        ///<param name="dir">the top directory to start from</param>
-        ///<param name="filesList">the list to store the file information</param>
-        ///<param name="paths">a list of all files found. used for piece hashing later</param>
-        private void AddAllFileInfoDicts(string dir, BEncodedList filesList, MonoTorrentCollection<string> paths)
-        {
-            GetAllFilePaths(dir, paths);
-
-            for (int i = 0; i < paths.Count; i++)
-                filesList.Add(GetFileInfoDict(paths[i], dir));
-        }
 
         private void AsyncCreate()
         {
@@ -468,35 +487,30 @@ namespace MonoTorrent.Common
         ///<summary>
         ///calculates all hashes over the files which should be included in the torrent
         ///</summmary>
-        private byte[] CalcPiecesHash(MonoTorrentCollection<string> fullPaths)
+        private byte[] CalcPiecesHash(string path, TorrentFile[] files, PieceWriter writer)
         {
             SHA1 hasher = SHA1.Create();
-            byte[] piecesBuffer = new byte[GetPieceCount(fullPaths) * 20]; //holds all the pieces hashes
+            byte[] piecesBuffer = new byte[GetPieceCount(files) * 20]; //holds all the pieces hashes
             int piecesBufferOffset = 0;
             
-            TorrentFile[] files = ConvertPaths(fullPaths);
             long totalLength = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return (int)f.Length; });
 
-            using (DiskWriter writer = new DiskWriter())
+            while (totalLength > 0)
             {
-                while (totalLength > 0)
-                {
-                    int bytesToRead = Math.Min((int)totalLength, (int)PieceLength);
-                    ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[PieceLength]);
-                    BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, (int)PieceLength, files, "");
-                    io.WaitHandle = new ManualResetEvent(false);
-                    totalLength -= writer.ReadChunk(io);
+                int bytesToRead = Math.Min((int)totalLength, (int)PieceLength);
+                ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[PieceLength]);
+                BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, (int)PieceLength, files, "");
+                totalLength -= writer.ReadChunk(io);
 
-                    // If we are using the synchronous version, result is null
-                    if (result != null && result.Aborted)
-                        return piecesBuffer;
+                // If we are using the synchronous version, result is null
+                if (result != null && result.Aborted)
+                    return piecesBuffer;
 
-                    byte[] currentHash = hasher.ComputeHash(buffer.Array, 0, io.ActualCount);
-                    RaiseHashed(new TorrentCreatorEventArgs(0, 0,//reader.CurrentFile.Position, reader.CurrentFile.Length,
-                                                            piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
-                    Buffer.BlockCopy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
-                    piecesBufferOffset += currentHash.Length;
-                }
+                byte[] currentHash = hasher.ComputeHash(buffer.Array, 0, io.ActualCount);
+                RaiseHashed(new TorrentCreatorEventArgs(0, 0,//reader.CurrentFile.Position, reader.CurrentFile.Length,
+                                                        piecesBufferOffset * PieceLength, (piecesBuffer.Length - 20) * PieceLength));
+                Buffer.BlockCopy(currentHash, 0, piecesBuffer, piecesBufferOffset, currentHash.Length);
+                piecesBufferOffset += currentHash.Length;
             }
             return piecesBuffer;
         }
@@ -515,32 +529,31 @@ namespace MonoTorrent.Common
         ///used for creating multi file mode torrents.
         ///</summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected void CreateMultiFileTorrent(BEncodedDictionary dictionary)
+        protected void CreateMultiFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer)
         {
             AddCommonStuff(dictionary);
             BEncodedDictionary info = (BEncodedDictionary)dictionary["info"];
 
-            MonoTorrentCollection<string> fullPaths = new MonoTorrentCollection<string>();//store files to hash over
-            BEncodedList files = new BEncodedList();//the dict which hold the file infos
+            BEncodedList torrentFiles = new BEncodedList();//the dict which hold the file infos
 
+            for (int i = 0; i < files.Length; i++)
+                torrentFiles.Add(GetFileInfoDict(files[i]));
 
-            AddAllFileInfoDicts(Path, files, fullPaths);//do recursively
-
-            info.Add("files", files);
+            info.Add("files", torrentFiles);
 
             string name = GetDirName(Path);
 
 			Logger.Log(null, "Topmost directory: {0}", name);
             info.Add("name", new BEncodedString(name));
 
-            info.Add("pieces", new BEncodedString(CalcPiecesHash(fullPaths)));
+            info.Add("pieces", new BEncodedString(CalcPiecesHash(Path, files, writer)));
         }
 
         ///<summary>
         ///used for creating a single file torrent file
         ///<summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected void CreateSingleFileTorrent(BEncodedDictionary dictionary)
+        protected void CreateSingleFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer)
         {
             AddCommonStuff(dictionary);
 
@@ -552,9 +565,7 @@ namespace MonoTorrent.Common
 
             infoDict.Add("name", new BEncodedString(System.IO.Path.GetFileName(Path)));
 			Logger.Log(null, "name == {0}", System.IO.Path.GetFileName(Path));
-            MonoTorrentCollection<string> files = new MonoTorrentCollection<string>();
-            files.Add(Path);
-            infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(files)));
+            infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(Path, files, writer)));
         }
 
         private static BEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
@@ -606,36 +617,36 @@ namespace MonoTorrent.Common
         ///<param name="file">the file to report the informations for</param>
         ///<param name="basePath">used to subtract the absolut path information</param>
         ///</summary>
-        private BEncodedDictionary GetFileInfoDict(string file, string basePath)
+        private BEncodedDictionary GetFileInfoDict(TorrentFile file)
         {
             BEncodedDictionary fileDict = new BEncodedDictionary();
 
-            fileDict.Add("length", new BEncodedNumber(new FileInfo(file).Length));
+            fileDict.Add("length", new BEncodedNumber(file.Length));
 
-            if (StoreMD5)
-                AddMD5(fileDict, file);
+#warning Implement this again
+            //if (StoreMD5)
+                //AddMD5(fileDict, file);
 
-            file = file.Remove(0, Path.Length);
-			Logger.Log(null, "Without base[{0}]: {1}", basePath, file);
-            BEncodedList path = new BEncodedList();
-            string[] splittetPath = file.Split(System.IO.Path.DirectorySeparatorChar);
+			Logger.Log(null, "Without base: {0}", file.Path);
+            BEncodedList filePath = new BEncodedList();
+            string[] splittetPath = file.Path.Split(System.IO.Path.DirectorySeparatorChar);
 
             foreach (string s in splittetPath)
             {
                 if (s.Length > 0)//exclude empties
-                    path.Add(new BEncodedString(s));
+                    filePath.Add(new BEncodedString(s));
             }
 
-            fileDict.Add("path", path);
+            fileDict.Add("path", filePath);
 
             return fileDict;
         }
 
-        private long GetPieceCount(MonoTorrentCollection<string> fullPaths)
+        private long GetPieceCount(TorrentFile[] files)
         {
             long size = 0;
-            foreach (string file in fullPaths)
-                size += new FileInfo(file).Length;
+            foreach (TorrentFile file in files)
+                size += file.Length;
 
             //double count = (double)size/PieceLength;
             long pieceCount = size / PieceLength + (((size % PieceLength) != 0) ? 1 : 0);
@@ -657,55 +668,5 @@ namespace MonoTorrent.Common
         }
 
         #endregion Private Methods
-    }
-
-
-    ///<summary>
-    ///this class is used to concatenate all the files provided as parameter from the constructor.
-    ///<summary>
-    internal class CatStreamReader : IDisposable
-    {
-        DiskWriter writer = new DiskWriter();
-
-        private MonoTorrentCollection<string> _files;
-        private int _currentFile = 0;
-        private FileStream _currentStream = null;
-
-        public FileStream CurrentFile
-        {
-            get { return _currentStream; }
-        }
-
-        public CatStreamReader(MonoTorrentCollection<string> files)
-        {
-            _files = files;
-            _currentStream = new FileStream(files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
-        }
-
-        public int Read(byte[] data, int offset, int count)
-        {
-            int len = 0;
-
-            while (len != count)
-            {
-                int tmp = _currentStream.Read(data, offset + len, count - len);
-                len += tmp;
-                if (tmp == 0)
-                {
-                    if (_currentFile == _files.Count)
-                        return len;
-
-                    _currentStream.Close();
-                    _currentStream.Dispose();
-                    _currentStream = new FileStream(_files[_currentFile++], FileMode.Open, FileAccess.Read, FileShare.Read);
-                }
-            }
-            return len;
-        }
-
-        public void Dispose()
-        {
-            _currentStream.Dispose();
-        }
     }
 }

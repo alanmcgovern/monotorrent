@@ -64,15 +64,15 @@ namespace SampleClient
         {
         }
 
-        public override void Close(TorrentManager manager)
+        public override void Close(string path, TorrentFile[] files)
         {
 
         }
 
-        public override void Flush(TorrentManager manager)
+        public override void Flush(string path, TorrentFile[] files)
         {
         }
-        public override void Flush(TorrentManager manager, int pieceIndex)
+        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
         {
             
         }

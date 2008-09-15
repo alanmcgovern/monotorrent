@@ -14,6 +14,37 @@ using System.Threading;
 
 namespace MonoTorrent.Client.Tests
 {
+    public class TestWriter : PieceWriter
+    {
+        public override int Read(BufferedIO data)
+        {
+            for (int i = 0; i < data.Count; i++)
+                data.Buffer.Array[data.Buffer.Offset + i] = (byte)(data.Buffer.Offset + i);
+            data.ActualCount = data.Count;
+            return data.Count;
+        }
+
+        public override void Write(BufferedIO data)
+        {
+
+        }
+
+        public override void Close(string path, TorrentFile[] files)
+        {
+
+        }
+
+        public override void Flush(string path, TorrentFile[] files)
+        {
+
+        }
+
+        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
+        {
+
+        }
+    }
+
     public class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public CustomTracker(Uri uri)
@@ -51,7 +82,6 @@ namespace MonoTorrent.Client.Tests
             RaiseAnnounceComplete(e);
         }
     }
-
 
     public class CustomConnection : IConnection
     {
@@ -229,38 +259,6 @@ namespace MonoTorrent.Client.Tests
 
     public class TestRig : IDisposable
     {
-        private class TestWriter : PieceWriter
-        {
-            public override int Read(BufferedIO data)
-            {
-                for (int i = 0; i < data.Count; i++)
-                    data.Buffer.Array[data.Buffer.Offset + i] = (byte)((data.Buffer.Offset + i) % byte.MaxValue);
-                data.ActualCount = data.Count;
-                return data.Count;
-            }
-
-            public override void Write(BufferedIO data)
-            {
-
-            }
-
-            public override void Close(string path, TorrentFile[] files)
-            {
-
-            }
-
-            public override void Flush(string path, TorrentFile[] files)
-            {
-
-            }
-
-            public override void Flush(string path, TorrentFile[] files, int pieceIndex)
-            {
-
-            }
-        }
-
-
         private BEncodedDictionary torrentDict;
         private ClientEngine engine;
         private CustomListener listener;

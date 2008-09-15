@@ -52,13 +52,13 @@ namespace MonoTorrent.Client.Tests
 	[TestFixture]
 	public class PieceWriterTests
 	{
-        static void Main(string[] args)
-        {
-            PieceWriterTests t = new PieceWriterTests();
-            t.GlobalSetup();
-            t.Setup();
-            t.TestMemoryStandardReads();
-        }
+        //static void Main(string[] args)
+        //{
+        //    PieceWriterTests t = new PieceWriterTests();
+        //    t.GlobalSetup();
+        //    t.Setup();
+        //    t.TestMemoryStandardReads();
+        //}
 		public const int PieceCount = 2;
 		public const int BlockCount = 10;
 		public const int BlockSize = Piece.BlockSize;

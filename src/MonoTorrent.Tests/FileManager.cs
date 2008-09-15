@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Tests
     /// <summary>
     /// 
     /// </summary>
-    [TestFixture]
+    //[TestFixture]
     public class FileManagerTest
     {
         private string path = string.Empty;

@@ -10,103 +10,12 @@ using System.Threading;
 
 namespace MonoTorrent.Client.Tests
 {
-    public class TestWriter : PieceWriters.PieceWriter
-    {
-        private enum Access
-        {
-            Free,
-            Open
-        }
 
-        public TestWriter()
-        {
-
-        }
-
-        private TorrentFile[] files;
-        private KeyValuePair<FileManager, Access>[] access;
-        public override void Close(TorrentManager manager)
-        {
-            if (access == null)
-                return;
-
-            for (int i = 0; i < access.Length; i++)
-                if (access[i].Key == manager.FileManager)
-                    access[i] = new KeyValuePair<FileManager, Access>(access[i].Key, Access.Free);
-        }
-
-        public override void Flush(TorrentManager manager)
-        {
-            if (files == null)
-            {
-                this.files = manager.Torrent.Files;
-                access = new KeyValuePair<FileManager, Access>[files.Length];
-            }
-        }
-        public override void Flush(TorrentManager manager, int pieceIndex)
-        {
-            if (files == null)
-            {
-                this.files = manager.Torrent.Files;
-                access = new KeyValuePair<FileManager, Access>[files.Length];
-            }
-        }
-        public override int Read(BufferedIO data)
-        {
-            if (files == null)
-            {
-                this.files = data.Manager.FileManager.Files;
-                access = new KeyValuePair<FileManager, Access>[files.Length];
-            }
-            GetStream(data.Manager.FileManager, data.Offset);
-            return data.Count;
-        }
-
-        public override void Write(BufferedIO data)
-        {
-            if (files == null)
-            {
-                this.files = data.Manager.FileManager.Files;
-                access = new KeyValuePair<FileManager, Access>[files.Length];
-            }
-            GetStream(data.Manager.FileManager, data.Offset);
-        }
-
-        private void GetStream(FileManager manager, long offset)
-        {
-            for (int i = 0; i < files.Length; i++)
-            {
-                if (offset > files[i].Length)
-                {
-                    offset -= files[i].Length;
-                }
-                else
-                {
-                    if (access[i].Key != manager && access[i].Value == Access.Open)
-                        Assert.Fail("The file is still open!");
-
-                    access[i] = new KeyValuePair<FileManager, Access>(manager, Access.Open);
-                    break;
-                }
-            }
-        }
-    }
     [TestFixture]
     public class TorrentManagerTest
     {
         TestRig rig;
         ConnectionPair conn;
-
-        [TestFixtureSetUp]
-        public void FixtureSetup()
-        {
-            rig = new TestRig("", new TestWriter());
-        }
-        [TestFixtureTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Engine.Dispose();
-        }
 
         [SetUp]
         public void Setup()
@@ -117,7 +26,7 @@ namespace MonoTorrent.Client.Tests
         [TearDown]
         public void Teardown()
         {
-            rig.Engine.Dispose();
+            rig.Dispose();
             conn.Dispose();
         }
 
@@ -176,6 +85,7 @@ namespace MonoTorrent.Client.Tests
             };
             rig2.Manager.HashCheck(true);
             handle.WaitOne();
+            rig2.Dispose();
         }
 
         [Test]
