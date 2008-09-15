@@ -87,150 +87,36 @@ namespace MonoTorrent.Client
             public object State;
         }
 
-        static List<AsyncIO> sends = new List<AsyncIO>();
-        static List<AsyncIO> receives = new List<AsyncIO>();
-        static List<AsyncConnectState> pendingConnects = new List<AsyncConnectState>();
-
-        static ManualResetEvent handle;
-        static object locker = new object();
-        static List<AsyncConnectState> connects;
+        private static int halfOpens;
 
         public static int HalfOpens
         {
-            get { lock (locker) { return connects.Count + pendingConnects.Count; } }
+            get { return halfOpens; }
         }
 
-        static NetworkIO()
+        private static void EndConnect(IAsyncResult result)
         {
-            locker = new object();
-            connects = new List<AsyncConnectState>();
-            handle = new ManualResetEvent(false);
-
-            Thread t = new Thread((ThreadStart)delegate
+            Interlocked.Decrement(ref halfOpens);
+            ClientEngine.MainLoop.Queue(delegate
             {
-                while (true)
+                bool succeeded = true;
+                AsyncConnectState c = (AsyncConnectState)result.AsyncState;
+
+                try
                 {
-                    int waitTime = 1;
-                    AsyncConnectState beginConnect= null;
-                    AsyncConnectState c = null;
-                    AsyncIO r = null;
-                    AsyncIO s = null;
-
-                    lock (locker)
-                    {
-                        if (pendingConnects.Count > 0)
-                        {
-                            beginConnect = pendingConnects[0];
-                            pendingConnects.RemoveAt(0);
-                        }
-
-                        if (receives.Count > 0)
-                        {
-                            r = receives[0];
-                            receives.RemoveAt(0);
-                        }
-
-                        if (sends.Count > 0)
-                        {
-                            s = sends[0];
-                            sends.RemoveAt(0);
-                        }
-
-                        for (int i = 0; i < connects.Count; i++)
-                        {
-                            if (!connects[i].Result.IsCompleted && !connects[i].ShouldAbort)
-                                continue;
-
-                            c = connects[i];
-                            connects.RemoveAt(i);
-                            break;
-                        }
-
-                        if (s == null && r == null && beginConnect == null)
-                            handle.Reset();
-                    }
-                    
-                    if(beginConnect != null)
-                        DoConnect(beginConnect);
-
-                    if (r != null)
-                        DoReceive(r);
-
-                    if (s != null)
-                        DoSend(s);
-
-                    if (c != null)
-                        CompleteConnect(c);
-
-                    handle.WaitOne(1000, false);
+                    c.Connection.EndConnect(c.Result);
                 }
+                catch
+                {
+                    succeeded = false;
+                }
+                finally
+                {
+                    c.Result.AsyncWaitHandle.Close();
+                }
+
+                c.Callback(succeeded, c);
             });
-            t.IsBackground = true;
-            t.Name = "NetworkIO";
-            t.Start();
-        }
-
-        #region Asynchronous Sends
-
-        private static void DoSend(AsyncIO s)
-        {
-            try
-            {
-                s.Connection.BeginSend(s.Buffer, s.Offset, s.Count, EndSend, s);
-            }
-            catch
-            {
-                s.Callback(false, 0, s.State);
-            }
-        }
-
-        internal static void EndSend(IAsyncResult result)
-        {
-            int count = 0;
-            bool succeeded = true;
-            AsyncIO io = (AsyncIO)result.AsyncState;
-
-            try
-            {
-                count = io.Connection.EndSend(result);
-            }
-            catch
-            {
-                succeeded = false;
-            }
-
-            io.Callback(succeeded, count, io.State);
-        }
-
-        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
-        {
-            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
-        }
-
-        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
-        {
-            lock (locker)
-            {
-                sends.Add(new AsyncIO(connection, buffer, offset, count, callback, state));
-                handle.Set();
-            }
-        }
-
-        #endregion Asynchronous Sends
-
-
-        #region Asynchronous Receives
-
-        private static void DoReceive(AsyncIO io)
-        {
-            try
-            {
-                io.Connection.BeginReceive(io.Buffer, io.Offset, io.Count, EndReceive, io);
-            }
-            catch
-            {
-                io.Callback(false, 0, io.State);
-            }
         }
 
         internal static void EndReceive(IAsyncResult result)
@@ -251,6 +137,46 @@ namespace MonoTorrent.Client
             io.Callback(succeeded, count, io.State);
         }
 
+        internal static void EndSend(IAsyncResult result)
+        {
+            int count = 0;
+            bool succeeded = true;
+            AsyncIO io = (AsyncIO)result.AsyncState;
+
+            try
+            {
+                count = io.Connection.EndSend(result);
+            }
+            catch
+            {
+                succeeded = false;
+            }
+
+            io.Callback(succeeded, count, io.State);
+        }
+
+        internal static void EnqueueConnect(AsyncConnectState c)
+        {
+            Interlocked.Increment(ref halfOpens);
+            ClientEngine.MainLoop.Queue(delegate
+            {
+                try
+                {
+                    c.Result = c.Connection.BeginConnect(null, c);
+                    ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate
+                    {
+                        if (!c.Result.IsCompleted)
+                            c.Connection.Dispose();
+                        return false;
+                    });
+                }
+                catch
+                {
+                    c.Callback(false, c);
+                }
+            });
+        }
+
         internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
             EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
@@ -258,72 +184,38 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            lock (locker)
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
+            ClientEngine.MainLoop.Queue(delegate
             {
-                receives.Add(new AsyncIO(connection, buffer, offset, count, callback, state));
-                handle.Set();
-            }
-        }
-
-        #endregion Asynchronous Receives
-
-
-        #region Asynchronous Connections
-
-        private static void CompleteConnect(AsyncConnectState connect)
-        {
-            bool succeeded = true;
-            try
-            {
-                if (connect.ShouldAbort)
+                try
                 {
-                    connect.Connection.Dispose();
-                    succeeded = false;
+                    connection.BeginReceive(buffer, offset, count, EndReceive, io);
                 }
-                else
+                catch
                 {
-                    try
-                    {
-                        connect.Connection.EndConnect(connect.Result);
-                    }
-                    finally
-                    {
-                        connect.Result.AsyncWaitHandle.Close();
-                    }
+                    callback(false, 0, state);
                 }
-            }
-            catch
-            {
-                succeeded = false;
-            }
-
-            connect.Callback(succeeded, connect);
+            });
         }
 
-        private static void DoConnect(AsyncConnectState c)
+        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            try
-            {
-                c.StartTime = Environment.TickCount;
-                c.Result = c.Connection.BeginConnect(null, c);
-                lock (locker)
-                    connects.Add(c);
-            }
-            catch (Exception)
-            {
-                c.Callback(false, c);
-            }
+            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
         }
 
-        internal static void EnqueueConnect(AsyncConnectState connect)
+        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            lock (locker)
-            {
-                pendingConnects.Add(connect);
-                handle.Set();
-            }
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
+            ClientEngine.MainLoop.Queue(delegate {
+                try
+                {
+                    connection.BeginSend(buffer, offset, count, EndSend, io);
+                }
+                catch
+                {
+                    callback(false, 0, state);
+                }
+            });
         }
-
-        #endregion Asynchronous Connections
     }
 }
