@@ -66,12 +66,14 @@ namespace MonoTorrent.Client
 
         public override int CurrentRequestCount()
         {
-            int result = 0;
-            lock (this.requests)
+            return (int)ClientEngine.MainLoop.QueueWait(delegate {
+                int result = 0;
+
                 foreach (Piece p in this.requests)
                     result += p.TotalRequested - p.TotalReceived;
-            
-            return result;
+
+                return result;
+            });
         }
 
         internal MonoTorrentCollection<Piece> Requests
@@ -102,8 +104,9 @@ namespace MonoTorrent.Client
             if (requests.Exists(delegate (Piece p) { return p.Index == index; }))
                 return true;
 
-            lock (this.unhashedPieces)
+            return (bool)ClientEngine.MainLoop.QueueWait(delegate {
                 return this.unhashedPieces[index];
+            });
         }
 
         /// <summary>
@@ -257,7 +260,7 @@ namespace MonoTorrent.Client
                     continue;
                 }
 
-                for (int i = 1; i < count; i++)
+                for (int i = 1; i < count && (startIndex + i) <= endIndex; i++)
                 {
                     if (AlreadyHaveOrRequested(startIndex + i))
                     {
@@ -495,31 +498,28 @@ namespace MonoTorrent.Client
             MessageBundle bundle = null;
             try
             {
-                lock (this.myBitfield)
-                {
-                    // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
-                    // requests that could be continued would be existing "Fast" pieces.
-                    if ((message = ContinueExistingRequest(id)) != null)
-                        return (bundle = new MessageBundle(message));
+                // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
+                // requests that could be continued would be existing "Fast" pieces.
+                if ((message = ContinueExistingRequest(id)) != null)
+                    return (bundle = new MessageBundle(message));
 
-                    // Then we check if there are any allowed "Fast" pieces to download
-                    if (id.IsChoking && (message = GetFastPiece(id)) != null)
-                        return (bundle = new MessageBundle(message));
+                // Then we check if there are any allowed "Fast" pieces to download
+                if (id.IsChoking && (message = GetFastPiece(id)) != null)
+                    return (bundle = new MessageBundle(message));
 
-                    // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
-                    if (id.IsChoking)
-                        return null;
+                // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
+                if (id.IsChoking)
+                    return null;
 
-                    if ((message = ContinueAnyExisting(id)) != null)
-                        return (bundle = new MessageBundle(message));
+                if ((message = ContinueAnyExisting(id)) != null)
+                    return (bundle = new MessageBundle(message));
 
-                    // We see if the peer has suggested any pieces we should request
-                    if ((message = GetSuggestedPiece(id)) != null)
-                        return (bundle = new MessageBundle(message));
+                // We see if the peer has suggested any pieces we should request
+                if ((message = GetSuggestedPiece(id)) != null)
+                    return (bundle = new MessageBundle(message));
 
-                    // Now we see what pieces the peer has that we don't have and try and request one
-                    return (bundle = GetStandardRequest(id, otherPeers, count));
-                }
+                // Now we see what pieces the peer has that we don't have and try and request one
+                return (bundle = GetStandardRequest(id, otherPeers, count));
             }
             finally
             {
@@ -553,43 +553,37 @@ namespace MonoTorrent.Client
 
         public override void RemoveRequests(PeerId id)
         {
-            lock (this.requests)
+            foreach (Piece p in requests)
             {
-                foreach (Piece p in requests)
+                for (int i = 0; i < p.Blocks.Length; i++)
                 {
-                    for (int i = 0; i < p.Blocks.Length; i++)
+                    if (p.Blocks[i].Requested && !p.Blocks[i].Received && id.Equals(p.Blocks[i].RequestedOff))
                     {
-                        if (p.Blocks[i].Requested && !p.Blocks[i].Received && id.Equals(p.Blocks[i].RequestedOff))
-                        {
-                            p.Blocks[i].CancelRequest();
-                            id.AmRequestingPiecesCount--;
-                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[i], p, id));
-                        }
+                        p.Blocks[i].CancelRequest();
+                        id.AmRequestingPiecesCount--;
+                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[i], p, id));
                     }
                 }
-                requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
             }
+            requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
         }
 
         protected void RemoveRequests(PeerId id, RequestMessage message)
         {
-            lock (this.requests)
+            foreach (Piece p in requests)
             {
-                foreach (Piece p in requests)
-                {
-                    if (p.Index != message.PieceIndex)
-                        continue;
+                if (p.Index != message.PieceIndex)
+                    continue;
 
-                    int blockIndex = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
-                    if (blockIndex != -1)
+                int blockIndex = Block.IndexOf(p.Blocks, message.StartOffset, message.RequestLength);
+                if (blockIndex != -1)
+                {
+                    if (p.Blocks[blockIndex].Requested && !p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                     {
-                        if (p.Blocks[blockIndex].Requested && !p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
-                        {
-                            p.Blocks[blockIndex].CancelRequest();
-                            id.AmRequestingPiecesCount--;
-                            id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
-                            return;
-                        }
+                        p.Blocks[blockIndex].CancelRequest();
+                        id.AmRequestingPiecesCount--;
+                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
+                        return;
                     }
                 }
             }
@@ -598,55 +592,52 @@ namespace MonoTorrent.Client
         public override PieceEvent ReceivedPieceMessage(BufferedIO data)
         {
             PeerId id = data.Id;
-            lock (this.requests)
+            Piece piece = requests.Find(delegate(Piece p) { return p.Index == data.PieceIndex; });
+            data.Piece = piece;
+            if (piece == null)
             {
-                Piece piece = requests.Find(delegate(Piece p) { return p.Index == data.PieceIndex; });
-                data.Piece = piece;
-                if (piece == null)
-                {
-                    Logger.Log(data.Id.Connection, "Received block from unrequested piece");
-                    return PieceEvent.BlockNotRequested;
-                }
-
-                // Pick out the block that this piece message belongs to
-                int blockIndex = Block.IndexOf(piece.Blocks, data.PieceOffset, data.Count);
-                if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
-                {
-                    Logger.Log(id.Connection, "Invalid block start offset returned");
-                    return PieceEvent.BlockNotRequested;
-                }
-
-                if (piece.Blocks[blockIndex].Received)
-                {
-                    Logger.Log(id.Connection, "Block already received");
-                    return PieceEvent.BlockNotRequested;
-                }
-                //throw new MessageException("Block already received");
-
-                if (!piece.Blocks[blockIndex].Requested)
-                {
-                    Logger.Log(id.Connection, "Block was not requested");
-                    return PieceEvent.BlockNotRequested;
-                }
-                //throw new MessageException("Block was not requested");
-
-                piece.Blocks[blockIndex].Received = true;
-                id.AmRequestingPiecesCount--;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
-                id.TorrentManager.FileManager.QueueWrite(data);
-
-                if (piece.AllBlocksReceived)
-                {
-                    // FIXME review usage of the unhashedpieces variable
-                    lock (this.unhashedPieces)
-                        if (!this.myBitfield[piece.Index])
-                            this.unhashedPieces[piece.Index] = true;
-
-                    requests.Remove(piece);
-                }
-
-                return PieceEvent.BlockWriteQueued;
+                Logger.Log(data.Id.Connection, "Received block from unrequested piece");
+                return PieceEvent.BlockNotRequested;
             }
+
+            // Pick out the block that this piece message belongs to
+            int blockIndex = Block.IndexOf(piece.Blocks, data.PieceOffset, data.Count);
+            if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
+            {
+                Logger.Log(id.Connection, "Invalid block start offset returned");
+                return PieceEvent.BlockNotRequested;
+            }
+
+            if (piece.Blocks[blockIndex].Received)
+            {
+                Logger.Log(id.Connection, "Block already received");
+                return PieceEvent.BlockNotRequested;
+            }
+            //throw new MessageException("Block already received");
+
+            if (!piece.Blocks[blockIndex].Requested)
+            {
+                Logger.Log(id.Connection, "Block was not requested");
+                return PieceEvent.BlockNotRequested;
+            }
+            //throw new MessageException("Block was not requested");
+
+            piece.Blocks[blockIndex].Received = true;
+            id.AmRequestingPiecesCount--;
+            id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
+            id.TorrentManager.FileManager.QueueWrite(data);
+
+            if (piece.AllBlocksReceived)
+            {
+                // FIXME review usage of the unhashedpieces variable
+                ClientEngine.MainLoop.QueueWait(delegate {
+                    if (!this.myBitfield[piece.Index])
+                        this.unhashedPieces[piece.Index] = true;
+                });
+                requests.Remove(piece);
+            }
+
+            return PieceEvent.BlockWriteQueued;
         }
 
         public override void ReceivedChokeMessage(PeerId id)
@@ -671,25 +662,22 @@ namespace MonoTorrent.Client
 
         public override void ReceivedRejectRequest(PeerId id, RejectRequestMessage rejectRequestMessage)
         {
-            lock (this.requests)
+            foreach (Piece p in requests)
             {
-                foreach (Piece p in requests)
+                if (p.Index != rejectRequestMessage.PieceIndex)
+                    continue;
+
+                int blockIndex = Block.IndexOf(p.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
+                if (blockIndex == -1)
+                    return;
+
+                if (!p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
                 {
-                    if (p.Index != rejectRequestMessage.PieceIndex)
-                        continue;
-
-                    int blockIndex = Block.IndexOf(p.Blocks, rejectRequestMessage.StartOffset, rejectRequestMessage.RequestLength);
-                    if (blockIndex == -1)
-                        return;
-
-                    if (!p.Blocks[blockIndex].Received && id.Equals(p.Blocks[blockIndex].RequestedOff))
-                    {
-                        p.Blocks[blockIndex].CancelRequest();
-                        id.AmRequestingPiecesCount--;
-                        id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
-                    }
-                    break;
+                    p.Blocks[blockIndex].CancelRequest();
+                    id.AmRequestingPiecesCount--;
+                    id.TorrentManager.PieceManager.RaiseBlockRequestCancelled(new BlockEventArgs(id.TorrentManager, p.Blocks[blockIndex], p, id));
                 }
+                break;
             }
         }
 
