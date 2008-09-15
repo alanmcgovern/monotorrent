@@ -333,27 +333,6 @@ namespace MonoTorrent.Client
 
             if (ClientEngine.SupportsInitialSeed)
                 this.initialSeed = (settings.InitialSeedingEnabled ? (new InitialSeed(this)) : null);
-
-            if (ClientEngine.SupportsWebSeed)
-            {
-                foreach (string url in torrent.GetRightHttpSeeds)
-                {
-                    Peer peer = new Peer("", new Uri(url), EncryptionTypes.PlainText);
-                    PeerId id = new PeerId(peer, this);
-
-                    id.Connection = ConnectionFactory.Create(peer.ConnectionUri);
-
-                    peer.LastConnectionAttempt = DateTime.Now;
-                    id.LastMessageSent = DateTime.Now;
-                    id.LastMessageReceived = DateTime.Now;
-                    id.AmInterested = true;
-                    id.IsChoking = false;
-                    id.BitField.SetAll(true);
-                    
-                    //nothing more?
-                    Peers.ConnectedPeers.Add(id);
-                }
-            }
         }
 
 
@@ -541,7 +520,7 @@ namespace MonoTorrent.Client
 
                     this.peers.ClearAll();
 
-                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this), "DiskManager");
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(FileManager.SavePath, Torrent.Files), "DiskManager");
 
                     if (this.hashChecked)
                         this.SaveFastResume();
@@ -711,9 +690,12 @@ namespace MonoTorrent.Client
                     connection.Manager = this;
                     peer.IsSeeder = true;
                     id.BitField.SetAll(true);
+                    id.Encryptor = new PlainTextEncryption();
+                    id.Decryptor = new PlainTextEncryption();
                     id.IsChoking = false;
                     id.Connection = connection;
                     peers.ConnectedPeers.Add(id);
+                    engine.ConnectionManager.ReceiveMessage(id);
                 }
 
                 // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
@@ -906,7 +888,7 @@ namespace MonoTorrent.Client
             finally
             {
                 // Ensure file streams are all closed after hashing
-                engine.DiskManager.Writer.Close(this);
+                engine.DiskManager.Writer.Close(SavePath, this.torrent.Files);
 
                 if (abortHashing)
                 {
