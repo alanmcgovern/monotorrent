@@ -24,7 +24,7 @@ namespace MonoTorrent.Client.Tests
         [TestFixtureTearDown]
         public void GlobalTeardown()
         {
-            rig.Engine.Dispose();
+            rig.Dispose();
         }
 
         [SetUp]

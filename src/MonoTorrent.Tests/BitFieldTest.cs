@@ -70,7 +70,6 @@ namespace MonoTorrent.Common.Tests
             Assert.AreEqual(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf.TrueCount, "#1");
         }
 
-        [Test]
         [Ignore("This is deliberately broken to work around bugs in azureus")]
         public void InvalidBitfieldTest()
         {

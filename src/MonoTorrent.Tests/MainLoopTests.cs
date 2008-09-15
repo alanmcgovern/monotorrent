@@ -16,8 +16,11 @@ namespace MonoTorrent.Client.Tests
         //    t.FixtureSetup();
         //    t.Setup();
         //    t.TaskTest();
-        //    t.Setup();
-        //    t.RepeatedTask();
+        //    for (int i = 0; i < 1000; i++)
+        //    {
+        //        t.Setup();
+        //        t.RepeatedTask();
+        //    }
         //    t.Setup();
         //    t.LongRunningTask();
         //}
@@ -28,6 +31,12 @@ namespace MonoTorrent.Client.Tests
         public void FixtureSetup()
         {
             loop = new MainLoop("Test Loop");
+        }
+
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
+        {
+            loop.Dispose();
         }
 
         [SetUp]
@@ -52,14 +61,12 @@ namespace MonoTorrent.Client.Tests
             //Console.WriteLine("Starting");
             ManualResetEvent handle = new ManualResetEvent(false);
             loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
-                //Console.WriteLine(count);
                 this.count++;
                 if (count == 3)
                     handle.Set();
 
                 return count != 3;
             });
-            //Console.WriteLine("Queued.... now waiting");
             Assert.IsTrue(handle.WaitOne(5000, true), "#1");
             Assert.AreEqual(3, count, "#2");
             System.Threading.Thread.Sleep(50);

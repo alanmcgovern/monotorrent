@@ -21,10 +21,10 @@ namespace MonoTorrent.Common.Tests
         [SetUp]
         public void Setup()
         {
-            TestRig rig = new TestRig("");
             creator = new TorrentCreator();
             creator.Announces.Add(new List<string>(new string[] { "http://tracker1.com/announce1", "http://tracker2.com/announce2" }));
         }
+
 
         [Test]
         public void AddAnnouncesTest()

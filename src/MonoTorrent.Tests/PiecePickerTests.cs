@@ -58,6 +58,12 @@ namespace MonoTorrent.Client.Tests
             }
         }
 
+        [TearDown]
+        public void GlobalTeardown()
+        {
+            rig.Dispose();
+        }
+
         [Test]
         public void RequestFastSeeder()
         {

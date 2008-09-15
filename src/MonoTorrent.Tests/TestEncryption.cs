@@ -39,6 +39,14 @@ namespace MonoTorrent.Client.Tests
             conn.Outgoing.Name = "Outgoing";
         }
 
+        [TearDown]
+        public void Teardown()
+        {
+            conn.Dispose();
+            rig.Engine.StopAll()[0].WaitOne();
+            rig.Dispose();
+        }
+
         [Test]
         public void Full_FullTestNoInitial()
         {
@@ -187,14 +195,6 @@ namespace MonoTorrent.Client.Tests
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
-        }
- 
-        [TearDown]
-        public void Teardown()
-        {
-            conn.Dispose();
-            rig.Engine.StopAll()[0].WaitOne();
-            rig.Engine.Dispose();
         }
 
 

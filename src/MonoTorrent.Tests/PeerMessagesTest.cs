@@ -54,6 +54,12 @@ namespace MonoTorrent.Client.Tests
             testRig = new TestRig("Downloads");
         }
 
+        [TearDown]
+        public void GlobalTeardown()
+        {
+            testRig.Dispose();
+        }
+
 
         [Test]
         public void BitFieldEncoding()
@@ -86,7 +92,6 @@ namespace MonoTorrent.Client.Tests
                 Assert.IsFalse(msg.BitField[i], i.ToString());
         }
 
-        [Test]
         [ExpectedException(typeof(MessageException))]
         [Ignore("Deliberately broken to work around bugs in azureus")]
         public void BitfieldCorrupt()

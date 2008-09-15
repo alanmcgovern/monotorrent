@@ -6,6 +6,7 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Threading;
+using System.IO;
 
 namespace MonoTorrent.Client.Tests
 {
@@ -30,16 +31,16 @@ namespace MonoTorrent.Client.Tests
 			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
 		}
 
-		public override void Close(TorrentManager manager)
+		public override void Close(string path, TorrentFile[] files)
 		{
             
 		}
 
-		public override void Flush(TorrentManager manager)
+        public override void Flush(string path, TorrentFile[] files)
 		{
 
 		}
-        public override void Flush(TorrentManager manager, int pieceIndex)
+        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
         {
         }
 		public override void Dispose()
@@ -51,6 +52,13 @@ namespace MonoTorrent.Client.Tests
 	[TestFixture]
 	public class PieceWriterTests
 	{
+        static void Main(string[] args)
+        {
+            PieceWriterTests t = new PieceWriterTests();
+            t.GlobalSetup();
+            t.Setup();
+            t.TestMemoryStandardReads();
+        }
 		public const int PieceCount = 2;
 		public const int BlockCount = 10;
 		public const int BlockSize = Piece.BlockSize;
@@ -72,13 +80,12 @@ namespace MonoTorrent.Client.Tests
 		[TestFixtureTearDown]
 		public void GlobalTearDown()
 		{
-			rig.Engine.Dispose();
+			rig.Dispose();
 		}
 
 		[SetUp]
 		public void Setup()
 		{
-
 			blocks = new List<BufferedIO>();
 			level2 = new MemoryWriter(new NullWriter(this), (int)(PieceSize * 1.7));
 			level1 = new MemoryWriter(level2, (int)(PieceSize * 0.7));
@@ -94,7 +101,7 @@ namespace MonoTorrent.Client.Tests
 			Buffer.GetBuffer(ref b, BlockSize);
 			for (int i = 0; i < b.Count; i++)
 				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
-			return new BufferedIO(b, piece, block, BlockSize, rig.Manager);
+			return new BufferedIO(b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.FileManager.SavePath);
 		}
 
 		[Test]
@@ -129,7 +136,7 @@ namespace MonoTorrent.Client.Tests
 			{
 				for(int block = 0; block < BlockCount; block++)
 				{
-					BufferedIO io = new BufferedIO(buffer, piece, block, BlockSize, rig.Manager);
+					BufferedIO io = new BufferedIO(buffer, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.FileManager.SavePath);
 					level1.ReadChunk(io);
 
 					for (int i = 0; i < BlockSize; i++)
@@ -154,7 +161,7 @@ namespace MonoTorrent.Client.Tests
 			int piece = 0;
             int block = 0;
 
-			BufferedIO io = new BufferedIO(buffer, piece, block, PieceSize, rig.Manager);
+			BufferedIO io = new BufferedIO(buffer, piece, block, PieceSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.FileManager.SavePath);
 			level1.ReadChunk(io);
 			for (block = 0; block < 5; block++)
 			{
@@ -168,18 +175,5 @@ namespace MonoTorrent.Client.Tests
 			for (int i = 0; i < buffer.Count; i++)
 				buffer.Array[buffer.Offset + i] = 0;
 		}
-
-        //public static void Main(string[] args)
-        //{
-        //    PieceWriterTests t = new PieceWriterTests();
-        //    t.GlobalSetup();
-        //    t.Setup();
-        //    t.TestMemoryWrites();
-        //    t.Setup();
-        //    t.TestMemoryStandardReads();
-        //    t.Setup();
-        //    t.TestMemoryOffsetReads();
-        //    t.GlobalTearDown();
-        //}
 	}
 }

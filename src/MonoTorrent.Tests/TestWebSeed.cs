@@ -17,16 +17,16 @@ namespace MonoTorrent.Client.Tests
     public class TestWebSeed
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
-        static void Main(string[] args)
-        {
-            TestWebSeed s = new TestWebSeed();
-            for (int i = 0; i < 50; i++)
-            {
-                s.Setup();
-                s.TestPartialData();
-                s.TearDown();
-            }
-        }
+        //static void Main(string[] args)
+        //{
+        //    TestWebSeed s = new TestWebSeed();
+        //    for (int i = 0; i < 50; i++)
+        //    {
+        //        s.Setup();
+        //        s.TestPartialData();
+        //        s.TearDown();
+        //    }
+        //}
 
         bool partialData;
         public readonly int Count = 5;
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Tests
         public void TearDown()
         {
             listener.Close();
-            rig.Engine.Dispose();
+            rig.Dispose();
         }
 
         [Test]
@@ -143,12 +143,19 @@ namespace MonoTorrent.Client.Tests
                 
                 requests.Messages.RemoveAt(0);
 
-                receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
                 if (requests.Messages.Count == 0)
+                {
+                    receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+                    connection.EndSend(sendResult);
                     break;
+                }
+                else
+                {
+                    receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+                }
             }
 
-            connection.EndSend(sendResult);
+            
         }
 
         private void GotContext(IAsyncResult result)

@@ -227,7 +227,7 @@ namespace MonoTorrent.Client.Tests
         }
     }
 
-    public class TestRig
+    public class TestRig : IDisposable
     {
         private class TestWriter : PieceWriter
         {
@@ -244,17 +244,17 @@ namespace MonoTorrent.Client.Tests
 
             }
 
-            public override void Close(TorrentManager manager)
+            public override void Close(string path, TorrentFile[] files)
             {
 
             }
 
-            public override void Flush(TorrentManager manager)
+            public override void Flush(string path, TorrentFile[] files)
             {
 
             }
 
-            public override void Flush(TorrentManager manager, int pieceIndex)
+            public override void Flush(string path, TorrentFile[] files, int pieceIndex)
             {
 
             }
@@ -394,5 +394,14 @@ namespace MonoTorrent.Client.Tests
             dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
             dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 25]);
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            engine.Dispose();
+        }
+
+        #endregion
     }
 }
