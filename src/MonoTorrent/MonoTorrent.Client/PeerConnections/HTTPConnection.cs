@@ -74,6 +74,7 @@ namespace MonoTorrent.Client.Connections
         private HttpRequestData currentRequest;
         private Stream dataStream;
         private AsyncCallback getResponseCallback;
+        private AsyncCallback receivedChunkCallback;
         private TorrentManager manager;
         private HttpResult receiveResult;
         private List<RequestMessage> requestMessages;
@@ -137,7 +138,15 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentException("Scheme is not http");
 
             this.uri = uri;
-            getResponseCallback = GotResponse;
+            
+            getResponseCallback = delegate(IAsyncResult r) {
+                ClientEngine.MainLoop.Queue(delegate { GotResponse(r); });
+            };
+
+            receivedChunkCallback = delegate(IAsyncResult r) {
+                ClientEngine.MainLoop.Queue(delegate { ReceivedChunk(r); });
+            };
+
             requestMessages = new List<RequestMessage>();
             webRequests = new Queue<KeyValuePair<WebRequest, int>>();
         }
@@ -159,31 +168,27 @@ namespace MonoTorrent.Client.Connections
 
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
-            Console.WriteLine("BeginReceive");
             if (receiveResult != null)
                 throw new InvalidOperationException("Cannot call BeginReceive twice");
 
-            lock (getResponseCallback)
+            receiveResult = new HttpResult(callback, state, buffer, offset, count);
+            try
             {
-                receiveResult = new HttpResult(callback, state, buffer, offset, count);
-                try
-                {
-                    // BeginReceive has been called *before* we have sent a piece request.
-                    // Wait for a piece request to be sent before allowing this to complete.
-                    if (dataStream == null)
-                        return receiveResult;
-
-                    DoReceive();
+                // BeginReceive has been called *before* we have sent a piece request.
+                // Wait for a piece request to be sent before allowing this to complete.
+                if (dataStream == null)
                     return receiveResult;
-                }
-                catch (Exception ex)
-                {
-                    if (sendResult != null)
-                        sendResult.Complete(ex);
 
-                    if (receiveResult != null)
-                        receiveResult.Complete(ex);
-                }
+                DoReceive();
+                return receiveResult;
+            }
+            catch (Exception ex)
+            {
+                if (sendResult != null)
+                    sendResult.Complete(ex);
+
+                if (receiveResult != null)
+                    receiveResult.Complete(ex);
             }
             return receiveResult;
         }
@@ -192,13 +197,11 @@ namespace MonoTorrent.Client.Connections
         {
             int r = CompleteTransfer(result, receiveResult);
             receiveResult = null;
-            Console.WriteLine("EndReceive");
             return r;
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
-            Console.WriteLine("BeginSend");
             if (sendResult != null)
                 throw new InvalidOperationException("Cannot call BeginSend twice");
             sendResult = new HttpResult(callback, state, buffer, offset, count);
@@ -242,7 +245,6 @@ namespace MonoTorrent.Client.Connections
         {
             int r = CompleteTransfer(result, sendResult);
             sendResult = null;
-            Console.WriteLine("EndSend");
             return r;
         }
 
@@ -285,7 +287,8 @@ namespace MonoTorrent.Client.Connections
             dataStream = null;
 
             // Let MonoTorrent know we've finished requesting everything it asked for
-            sendResult.Complete(sendResult.Count);
+            if (sendResult != null)
+                sendResult.Complete(sendResult.Count);
         }
 
         private int CompleteTransfer(IAsyncResult supplied, HttpResult expected)
@@ -369,17 +372,21 @@ namespace MonoTorrent.Client.Connections
 
             if (totalExpected == 0)
             {
-                KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
-                totalExpected = r.Value;
-                r.Key.BeginGetResponse(getResponseCallback, r.Key);
+                if (webRequests.Count == 0)
+                {
+                    sendResult.Complete();
+                }
+                else
+                {
+                    KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
+                    totalExpected = r.Value;
+                    r.Key.BeginGetResponse(getResponseCallback, r.Key);
+                }
                 return;
             }
 
             if (!currentRequest.SentLength)
             {
-                //if (count != 4)
-                //    throw new MessageException("More than 4 bytes requested yet message length has not been written");
-
                 // The message length counts as the first four bytes
                 currentRequest.SentLength = true;
                 currentRequest.TotalReceived += 4;
@@ -403,30 +410,27 @@ namespace MonoTorrent.Client.Connections
                 currentRequest.TotalReceived += written;
             }
 
-            dataStream.BeginRead(buffer, offset, count, ReceivedChunk, null);
+            dataStream.BeginRead(buffer, offset, count, receivedChunkCallback, null);
         }
 
         private void GotResponse(IAsyncResult result)
         {
-            lock (getResponseCallback)
+            WebRequest r = (WebRequest)result.AsyncState;
+            try
             {
-                WebRequest r = (WebRequest)result.AsyncState;
-                try
-                {
-                    WebResponse response = r.EndGetResponse(result);
-                    dataStream = response.GetResponseStream();
-                    
-                    if (receiveResult != null)
-                        DoReceive();
-                }
-                catch (Exception ex)
-                {
-                    if (sendResult != null)
-                        sendResult.Complete(ex);
+                WebResponse response = r.EndGetResponse(result);
+                dataStream = response.GetResponseStream();
 
-                    if (receiveResult != null)
-                        receiveResult.Complete(ex);
-                }
+                if (receiveResult != null)
+                    DoReceive();
+            }
+            catch (Exception ex)
+            {
+                if (sendResult != null)
+                    sendResult.Complete(ex);
+
+                if (receiveResult != null)
+                    receiveResult.Complete(ex);
             }
         }
     }
