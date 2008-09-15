@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
-    public abstract class PieceWriter
+    public abstract class PieceWriter : IDisposable
     {
         protected PieceWriter()
         {
@@ -19,16 +19,16 @@ namespace MonoTorrent.Client.PieceWriters
                 yield return i;
         }
 
-        public abstract void Close(TorrentManager manager);
+        public abstract void Close(string path, TorrentFile[] files);
 
         public virtual void Dispose()
         {
 
         }
 
-        public abstract void Flush(TorrentManager manager);
+        public abstract void Flush(string path, TorrentFile[] files);
 
-        public abstract void Flush(TorrentManager manager, int pieceIndex);
+        public abstract void Flush(string path, TorrentFile[] files, int pieceIndex);
 
         public abstract int Read(BufferedIO data);
 

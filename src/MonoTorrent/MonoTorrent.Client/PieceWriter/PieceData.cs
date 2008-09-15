@@ -2,18 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public class BufferedIO : ICloneable
     {
         internal ArraySegment<byte> buffer;
-        private TorrentManager manager;
         private int actualCount;
         private int count;
+        private string path;
         private int pieceIndex;
         private int pieceOffset;
+        private int pieceLength;
         private PeerId peerId;
+        private TorrentFile[] files;
         private ManualResetEvent waitHandle;
 
         public int ActualCount
@@ -39,6 +42,10 @@ namespace MonoTorrent.Client
             get { return peerId; }
             set { peerId = value; }
         }
+        public string Path
+        {
+            get { return path; }
+        }
         public int PieceIndex
         {
             get { return pieceIndex; }
@@ -51,11 +58,11 @@ namespace MonoTorrent.Client
         internal Piece Piece;
         public long Offset
         {
-            get { return (long)pieceIndex * manager.Torrent.PieceLength + pieceOffset; }
+            get { return (long)pieceIndex * pieceLength + pieceOffset; }
         }
-        public TorrentManager Manager
+        public TorrentFile[] Files
         {
-            get { return manager; }
+            get { return files; }
         }
 
         public ManualResetEvent WaitHandle
@@ -64,29 +71,28 @@ namespace MonoTorrent.Client
             set { waitHandle = value; }
         }
 
-        internal BufferedIO(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
+        internal BufferedIO(ArraySegment<byte> buffer, long offset, int count, int pieceLength, TorrentFile[] files, string path)
         {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            Initialise(buffer, offset, count, manager);
+            this.path = path;
+            this.files = files;
+            this.pieceLength = pieceLength;
+            Initialise(buffer, offset, count);
         }
 
-        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, TorrentManager manager)
+        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files, string path)
         {
-            if (manager == null)
-                throw new ArgumentNullException("manager");
-
-            Initialise(buffer, (long)pieceIndex * manager.Torrent.PieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count, manager);
+            this.path = path;
+            this.files = files;
+            this.pieceLength = pieceLength;
+            Initialise(buffer, (long)pieceIndex * pieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count);
         }
 
-        private void Initialise(ArraySegment<byte> buffer, long offset, int count, TorrentManager manager)
+        private void Initialise(ArraySegment<byte> buffer, long offset, int count)
         {
             this.buffer = buffer;
             this.count = count;
-            this.manager = manager;
-            pieceIndex = (int)(offset / manager.Torrent.PieceLength);
-            pieceOffset = (int)(offset % manager.Torrent.PieceLength);
+            pieceIndex = (int)(offset / pieceLength);
+            pieceOffset = (int)(offset % pieceLength);
         }
 
         public override string ToString()

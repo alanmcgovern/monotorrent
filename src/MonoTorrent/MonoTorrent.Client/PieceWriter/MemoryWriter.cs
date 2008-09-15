@@ -81,20 +81,20 @@ namespace MonoTorrent.Client.PieceWriters
             memoryBuffer.Add(data);
         }
         
-        public override void Close(TorrentManager manager)
+        public override void Close(string path, TorrentFile[] files)
         {
-            Flush(manager);
-            writer.Close(manager);
+            Flush(path, files);
+            writer.Close(path, files);
         }
 
-        public override void Flush(TorrentManager manager)
+        public override void Flush(string path, TorrentFile[] files)
         {
-            Flush(delegate(BufferedIO io) { return io.Manager == manager; });
+            Flush(delegate(BufferedIO io) { return io.Files == files; });
         }
 
-        public override void Flush(TorrentManager manager, int pieceIndex)
+        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
         {
-            Flush(delegate(BufferedIO io) { return io.Manager == manager && io.PieceIndex == pieceIndex; });
+            Flush(delegate(BufferedIO io) { return io.Files == files && io.PieceIndex == pieceIndex; });
         }
 
         public void Flush(Predicate<BufferedIO> flush)

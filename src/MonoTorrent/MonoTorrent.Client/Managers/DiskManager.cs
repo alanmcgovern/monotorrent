@@ -12,35 +12,13 @@ namespace MonoTorrent.Client.Managers
 {
     public class DiskManager : IDisposable
     {
-        private class PieceFlush
-        {
-            public TorrentManager Manager;
-            public int PieceIndex;
-
-            public PieceFlush(TorrentManager manager, int pieceIndex)
-            {
-                Manager = manager;
-                PieceIndex = pieceIndex;
-            }
-        }
-        private class StreamClose
-        {
-            public ManualResetEvent Handle;
-            public TorrentManager Manager;
-
-            public StreamClose(ManualResetEvent handle, TorrentManager manager)
-            {
-                Handle = handle;
-                Manager = manager;
-            }
-        }
+        private MainLoop IOLoop = new MainLoop("Disk IO");
 
         #region Member Variables
 
-        Queue<PieceFlush> flushQueue;
-        Queue<StreamClose> closeStreams;
-        Queue<BufferedIO> bufferedReads;
-        Queue<BufferedIO> bufferedWrites;
+        private Queue<BufferedIO> bufferedReads;
+        private Queue<BufferedIO> bufferedWrites;
+        private bool disposed;
         private ClientEngine engine;
 
         private SpeedMonitor readMonitor;
@@ -51,17 +29,6 @@ namespace MonoTorrent.Client.Managers
         private PieceWriter writer;
 
         #endregion Member Variables
-
-
-        #region Old Variables
-
-        private bool ioActive;                                  // Used to signal when the IO thread is running
-        private Thread ioThread;                                // The dedicated thread used for reading/writing
-        private object queueLock;                               // Used to synchronise access on the IO thread
-        internal ReaderWriterLock streamsLock;
-        private ManualResetEvent threadWait;                    // Used to signal the IO thread when some data is ready for it to work on
-
-        #endregion Old Variables
 
 
         #region Properties
@@ -105,20 +72,42 @@ namespace MonoTorrent.Client.Managers
         {
             this.bufferedReads = new Queue<BufferedIO>();
             this.bufferedWrites = new Queue<BufferedIO>();
-            this.closeStreams = new Queue<StreamClose>();
-            this.flushQueue = new Queue<PieceFlush>();
             this.engine = engine;
-            this.ioActive = true;
-            this.ioThread = new Thread(new ThreadStart(RunIO));
-            this.queueLock = new object();
             this.readLimiter = new RateLimiter();
             this.readMonitor = new SpeedMonitor();
-            this.streamsLock = new ReaderWriterLock();
-            this.threadWait = new ManualResetEvent(false);
             this.writeMonitor = new SpeedMonitor();
             this.writeLimiter = new RateLimiter();
             this.writer = writer;
-            this.ioThread.Start();
+
+            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate
+            {
+                if (disposed)
+                    return false;
+
+                while (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
+                {
+                    BufferedIO write = this.bufferedWrites.Dequeue();
+                    Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
+                    PerformWrite(write);
+                }
+
+                while (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
+                {
+                    BufferedIO read = this.bufferedReads.Dequeue();
+                    Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
+                    PerformRead(read);
+                }
+                return true;
+            });
+
+            IOLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                if (disposed)
+                    return false;
+
+                readMonitor.Tick();
+                writeMonitor.Tick();
+                return true;
+            });
         }
 
         #endregion Constructors
@@ -126,30 +115,42 @@ namespace MonoTorrent.Client.Managers
 
         #region Methods
 
-        internal WaitHandle CloseFileStreams(TorrentManager manager)
+        internal WaitHandle CloseFileStreams(string path, TorrentFile[] files)
         {
-            lock (queueLock)
-            {
-                ManualResetEvent handle = new ManualResetEvent(false);
-                closeStreams.Enqueue(new StreamClose(handle, manager));
-                return handle;
-            }
-        }
+            ManualResetEvent handle = new ManualResetEvent(false);
 
+            IOLoop.Queue(delegate {
+                // Dump all buffered reads for the manager we're closing the streams for
+                List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
+                list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                bufferedReads = new Queue<BufferedIO>(list);
+
+                // Process all remaining writes
+                list = new List<BufferedIO>(bufferedWrites);
+                foreach (BufferedIO io in list)
+                    if (io.Files == files)
+                        PerformWrite(io);
+                writer.Close(path, files);
+                list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                bufferedWrites = new Queue<BufferedIO>(list);
+
+                handle.Set();
+            });
+
+            return handle;
+        }
 
         public void Dispose()
         {
-            ioActive = false;
-            this.threadWait.Set();
-            this.ioThread.Join();
-            this.writer.Dispose();
+            if (disposed)
+                return;
+
+            disposed = true;
+            // FIXME: Ensure everything is written to disk before killing the mainloop.
+            IOLoop.QueueWait((MainLoopTask)writer.Dispose);
+            IOLoop.Dispose();
         }
 
-
-        /// <summary>
-        /// Performs the buffered write
-        /// </summary>
-        /// <param name="bufferedFileIO"></param>
         private void PerformWrite(BufferedIO data)
         {
             PeerId id = data.Id;
@@ -160,11 +161,9 @@ namespace MonoTorrent.Client.Managers
             int index = data.PieceOffset / Piece.BlockSize;
 
             // Perform the actual write
-            lock (writer)
-            {
-                writer.Write(data);
-                writeMonitor.AddDelta(data.Count);
-            }
+            writer.Write(data);
+            writeMonitor.AddDelta(data.Count);
+
             piece.Blocks[index].Written = true;
             id.TorrentManager.FileManager.RaiseBlockWritten(new BlockEventArgs(data));
 
@@ -179,8 +178,10 @@ namespace MonoTorrent.Client.Managers
             // Hashcheck the piece as we now have all the blocks.
             bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
             id.TorrentManager.Bitfield[data.PieceIndex] = result;
-            lock (id.TorrentManager.PieceManager.UnhashedPieces)
+
+            ClientEngine.MainLoop.QueueWait(delegate {
                 id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
+            });
 
             id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
             List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
@@ -194,195 +195,54 @@ namespace MonoTorrent.Client.Managers
 
             // If the piece was successfully hashed, enqueue a new "have" message to be sent out
             if (result)
-                lock (id.TorrentManager.finishedPieces)
+            {
+                ClientEngine.MainLoop.Queue(delegate {
                     id.TorrentManager.finishedPieces.Enqueue(piece.Index);
+                });
+            }
         }
 
-
-        /// <summary>
-        /// Performs the buffered read
-        /// </summary>
-        /// <param name="bufferedFileIO"></param>
         private void PerformRead(BufferedIO io)
         {
-            lock (writer)
-            {
-                io.ActualCount = writer.ReadChunk(io);
-                readMonitor.AddDelta(io.ActualCount);
-            }
+            io.ActualCount = writer.ReadChunk(io);
+            readMonitor.AddDelta(io.ActualCount);
+
             if (io.WaitHandle != null)
                 io.WaitHandle.Set();
         }
 
-
         internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
         {
-            lock (writer)
-            {
-                readMonitor.AddDelta(bytesToRead);
-                ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
-                return writer.ReadChunk(new BufferedIO(b, pieceStartIndex, bytesToRead, manager));
-            }
-        }
-
-        /// <summary>
-        /// Queues a block of data to be written asynchronously
-        /// </summary>
-        /// <param name="id">The peer who sent the block</param>
-        /// <param name="recieveBuffer">The array containing the block</param>
-        /// <param name="message">The PieceMessage</param>
-        /// <param name="piece">The piece that the block to be written is part of</param>
-        internal void QueueWrite(BufferedIO data)
-        {
-            lock (this.queueLock)
-            {
-                if (Thread.CurrentThread == this.ioThread)
-                {
-                    PerformWrite(data);
-                }
-                else
-                {
-                    bufferedWrites.Enqueue(data);
-                    SetHandleState(true);
-                }
-            }
-        }
-
-
-        internal void QueueRead(BufferedIO io)
-        {
-            lock (this.queueLock)
-            {
-                if (Thread.CurrentThread == this.ioThread)
-                {
-                    PerformRead(io);
-                }
-                else
-                {
-                    bufferedReads.Enqueue(io);
-                    SetHandleState(true);
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// This method runs in a dedicated thread. It performs all the async reads and writes as they are queued
-        /// </summary>
-        private void RunIO()
-        {
-            try
-            {
-                BufferedIO write;
-                BufferedIO read;
-                PieceFlush flush;
-
-                while (ioActive || this.bufferedWrites.Count > 0 || this.closeStreams.Count > 0)
-                {
-                    flush = null;
-                    write = null;
-                    read = null;
-
-                    // Take a lock on the queue and dequeue any reads/writes that are available. Then lose the lock before
-                    // performing the actual read/write to avoid blocking other threads
-                    lock (this.queueLock)
-                    {
-                        if (this.closeStreams.Count > 0)
-                        {
-                            StreamClose close = closeStreams.Dequeue();
-
-                            try
-                            {
-                                // Dump all buffered reads for the manager we're closing the streams for
-                                List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
-                                list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
-                                bufferedReads = new Queue<BufferedIO>(list);
-
-                                // Process all remaining reads
-                                list = new List<BufferedIO>(bufferedWrites);
-                                foreach (BufferedIO io in list)
-                                    if (io.Manager == close.Manager)
-                                        PerformWrite(io);
-                                writer.Close(close.Manager);
-                                list.RemoveAll(delegate(BufferedIO io) { return io.Manager == close.Manager; });
-                                bufferedWrites = new Queue<BufferedIO>(list);
-                            }
-                            finally
-                            {
-                                close.Handle.Set();
-                            }
-                        }
-
-                        if (this.flushQueue.Count > 0)
-                            flush = flushQueue.Dequeue();
-
-                        if (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
-                        {
-                            write = this.bufferedWrites.Dequeue();
-                            Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
-                        }
-
-                        if (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
-                        {
-                            read = this.bufferedReads.Dequeue();
-                            Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
-                        }
-
-                        // If both the read queue and write queue are empty, then we unset the handle.
-                        // Or if we have reached the max read/write rate and can't dequeue something, we unset the handle
-                        if ((this.bufferedWrites.Count == 0 && this.bufferedReads.Count == 0) || (write == null && read == null))
-                            SetHandleState(false);
-                    }
-
-                    if (flush != null)
-                        writer.Flush(flush.Manager, flush.PieceIndex);
-
-                    if (write != null)
-                        PerformWrite(write);
-
-                    if (read != null)
-                        PerformRead(read);
-
-                    // Wait ~100 ms before trying to read/write something again to give the rate limiting a chance to recover
-                    this.threadWait.WaitOne(100, false);
-                }
-            }
-            catch (Exception ex)
-            {
-                engine.RaiseCriticalException(new CriticalExceptionEventArgs(ex, engine));
-            }
-        }
-
-
-        /// <summary>
-        /// Sets the wait handle to Signaled (true) or Non-Signaled(false)
-        /// </summary>
-        /// <param name="set"></param>
-        private void SetHandleState(bool set)
-        {
-            if (set)
-                this.threadWait.Set();
-            else
-                this.threadWait.Reset();
-        }
-
-        internal void TickMonitors()
-        {
-            readMonitor.Tick();
-            writeMonitor.Tick();
-        }
-
-        #endregion
-
-        internal void Flush(TorrentManager manager)
-        {
-            writer.Flush(manager);
+            string path = manager.FileManager.SavePath;
+            ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
+            BufferedIO io = new BufferedIO(b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
+            IOLoop.QueueWait(delegate {
+                PerformRead(io);
+            });
+            return io.ActualCount;
         }
 
         internal void QueueFlush(TorrentManager manager, int index)
         {
-            lock (queueLock)
-                this.flushQueue.Enqueue(new PieceFlush(manager, index));
+            IOLoop.Queue(delegate {
+                writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files, index);
+            });
         }
+
+        internal void QueueRead(BufferedIO io)
+        {
+            IOLoop.Queue(delegate {
+                bufferedReads.Enqueue(io);
+            });
+        }
+
+        internal void QueueWrite(BufferedIO io)
+        {
+            IOLoop.Queue(delegate { 
+                bufferedWrites.Enqueue(io);
+            });
+        }
+
+        #endregion
     }
 }

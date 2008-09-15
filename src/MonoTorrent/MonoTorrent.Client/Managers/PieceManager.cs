@@ -36,6 +36,7 @@ using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client
 {
@@ -128,13 +129,22 @@ namespace MonoTorrent.Client
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
                 if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
+#warning THIS IS A HACK - Need a better way of doing this
+            if (id.Connection is HttpConnection)
+                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, 50);
+            else
+                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
 
-            msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
             if (msg == null)
                 return false;
 
             id.Enqueue(msg);
-            id.AmRequestingPiecesCount++;
+
+            if (msg is RequestMessage)
+                id.AmRequestingPiecesCount++;
+            else
+                id.AmRequestingPiecesCount += ((MessageBundle)msg).Messages.Count;
+
             return true;
         }
 
