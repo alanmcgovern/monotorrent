@@ -117,6 +117,8 @@ namespace MonoTorrent.Client.PieceWriters
 
             // Dispose the held writer
             writer.Dispose();
+
+            base.Dispose();
         }
     }
 }

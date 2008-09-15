@@ -38,6 +38,7 @@ namespace MonoTorrent.Client.PieceWriters
         public override void Dispose()
         {
             streamsBuffer.Dispose();
+            base.Dispose();
         }
 
         protected virtual string GenerateFilePath(TorrentFile file, string path)

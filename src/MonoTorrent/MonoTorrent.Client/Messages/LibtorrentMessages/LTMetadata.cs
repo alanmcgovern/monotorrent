@@ -14,7 +14,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         private static readonly BEncodedString TotalSizeKey = "total_size";
         private static readonly int BLOCK_SIZE = 16000;
 
-        public enum eMessageType {
+        private enum eMessageType {
             Request = 0,
             Data = 1,
             Reject = 2

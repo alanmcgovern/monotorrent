@@ -36,7 +36,7 @@ namespace Mono.Ssdp.Internal
 
     public class TimeoutDispatcher
     {
-        private static uint timeout_ids = 1;
+        private uint timeout_ids = 1;
         
         private struct TimeoutItem : IComparable<TimeoutItem>
         {

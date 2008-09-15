@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            this.socket.Close();
+            ((IDisposable)socket).Dispose();
         }
 
         public void EndConnect(IAsyncResult result)

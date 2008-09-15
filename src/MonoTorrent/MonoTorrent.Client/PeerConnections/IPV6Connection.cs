@@ -98,7 +98,7 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            socket.Close();
+            ((IDisposable)socket).Dispose();
         }
 
         public Uri Uri

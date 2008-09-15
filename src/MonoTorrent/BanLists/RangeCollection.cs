@@ -40,11 +40,34 @@ namespace System.Collections
 namespace Hyena.Collections
 #endif
 {
+    public struct Range
+    {
+        public int Start;
+        public int End;
+
+        public Range(int start, int end)
+        {
+            Start = start;
+            End = end;
+        }
+
+        public override string ToString()
+        {
+            return String.Format("{0}-{1} ({2})", Start, End, Count);
+        }
+
+        public int Count
+        {
+            get { return End - Start + 1; }
+        }
+    }
+
 #if NET_1_1
     internal
 #else
     public
 #endif
+
 
  class RangeCollection :
         ICloneable,
@@ -54,27 +77,7 @@ namespace Hyena.Collections
         ICollection
 #endif
     {
-        public struct Range
-        {
-            public int Start;
-            public int End;
 
-            public Range(int start, int end)
-            {
-                Start = start;
-                End = end;
-            }
-
-            public override string ToString()
-            {
-                return String.Format("{0}-{1} ({2})", Start, End, Count);
-            }
-
-            public int Count
-            {
-                get { return End - Start + 1; }
-            }
-        }
 
         private const int MIN_CAPACITY = 16;
         private Range[] ranges;

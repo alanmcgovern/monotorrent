@@ -172,6 +172,7 @@ namespace MonoTorrent.Client
             dispatcher.Dispose();
             handle.Set();
             thread.Join(TimeSpan.FromSeconds(2));
+            ((IDisposable)handle).Dispose();
         }
     }
 }

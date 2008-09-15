@@ -132,7 +132,7 @@ namespace MonoTorrent.Client.Encryption
         protected byte[] PadC = null;
         protected byte[] PadD = null;
 
-        protected static readonly byte[] VerificationConstant = new byte[8];
+        protected byte[] VerificationConstant = new byte[8];
 
         protected byte[] CryptoProvide = new byte[] { 0x00, 0x00, 0x00, 0x03 };
 

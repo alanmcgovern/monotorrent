@@ -37,29 +37,29 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Encryption
 {
-    internal class EncryptorAsyncResult : AsyncResult
-    {
-        public byte[][] SKeys;
-        public int Available;
-        public byte[] Buffer;
-        public byte[] InitialData;
-        public IEncryptor EncSocket;
-        public PeerId Id;
-        public IEncryption Decryptor;
-        public IEncryption Encryptor;
-
-
-        public EncryptorAsyncResult(PeerId id, AsyncCallback callback, object state)
-            : base(callback, state)
-        {
-            Id = id;
-            Decryptor = new PlainTextEncryption();
-            Encryptor = new PlainTextEncryption();
-        }
-    }
-
     internal static class EncryptorFactory
     {
+        private class EncryptorAsyncResult : AsyncResult
+        {
+            public byte[][] SKeys;
+            public int Available;
+            public byte[] Buffer;
+            public byte[] InitialData;
+            public IEncryptor EncSocket;
+            public PeerId Id;
+            public IEncryption Decryptor;
+            public IEncryption Encryptor;
+
+
+            public EncryptorAsyncResult(PeerId id, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                Id = id;
+                Decryptor = new PlainTextEncryption();
+                Encryptor = new PlainTextEncryption();
+            }
+        }
+
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
         private static readonly AsyncTransfer HandshakeReceivedCallback = HandshakeReceived;
 

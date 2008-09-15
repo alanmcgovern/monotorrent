@@ -39,11 +39,11 @@ namespace MonoTorrent.Common
         /// <summary>
         /// Protocol string for version 1.0 of Bittorrent Protocol
         /// </summary>
-        public static string ProtocolStringV100 = "BitTorrent protocol";
+        public static readonly string ProtocolStringV100 = "BitTorrent protocol";
 
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static string ClientVersion = "-MO0200-";    // 'MO' for MonoTorrent then four digit version number
+        public static readonly string ClientVersion = "-MO0200-";    // 'MO' for MonoTorrent then four digit version number
     }
 }
