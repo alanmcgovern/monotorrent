@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    c.Result = c.Connection.BeginConnect(null, c);
+                    c.Result = c.Connection.BeginConnect(EndConnect, c);
                     ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate
                     {
                         if (!c.Result.IsCompleted)
