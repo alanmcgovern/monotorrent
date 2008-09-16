@@ -167,6 +167,9 @@ namespace MonoTorrent.Client.Managers
             piece.Blocks[index].Written = true;
             id.TorrentManager.FileManager.RaiseBlockWritten(new BlockEventArgs(data));
 
+            if (data.WaitHandle != null)
+                data.WaitHandle.Set();
+
             // Release the buffer back into the buffer manager.
             //ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
 #warning FIX THIS - don't free the buffer here anymore
@@ -175,31 +178,33 @@ namespace MonoTorrent.Client.Managers
             if (!piece.AllBlocksWritten)
                 return;
 
-            // Hashcheck the piece as we now have all the blocks.
-            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
-            id.TorrentManager.Bitfield[data.PieceIndex] = result;
+            IOLoop.Queue(delegate {
+                // Hashcheck the piece as we now have all the blocks.
+                bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
+                id.TorrentManager.Bitfield[data.PieceIndex] = result;
 
-            ClientEngine.MainLoop.QueueWait(delegate {
-                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
-            });
-
-            id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-            List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
-            for (int i = 0; i < piece.Blocks.Length; i++)
-                if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
-                    peers.Add(piece.Blocks[i].RequestedOff);
-
-            for (int i = 0; i < peers.Count; i++)
-                if (peers[i].Connection != null)
-                    id.Peer.HashedPiece(result);
-
-            // If the piece was successfully hashed, enqueue a new "have" message to be sent out
-            if (result)
-            {
-                ClientEngine.MainLoop.Queue(delegate {
-                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
+                ClientEngine.MainLoop.QueueWait(delegate {
+                    id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
                 });
-            }
+
+                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
+                List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
+                for (int i = 0; i < piece.Blocks.Length; i++)
+                    if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
+                        peers.Add(piece.Blocks[i].RequestedOff);
+
+                for (int i = 0; i < peers.Count; i++)
+                    if (peers[i].Connection != null)
+                        id.Peer.HashedPiece(result);
+
+                // If the piece was successfully hashed, enqueue a new "have" message to be sent out
+                if (result) 
+                {
+                    ClientEngine.MainLoop.Queue(delegate {
+                        id.TorrentManager.finishedPieces.Enqueue(piece.Index);
+                    });
+                }
+            });
         }
 
         private void PerformRead(BufferedIO io)
@@ -231,16 +236,22 @@ namespace MonoTorrent.Client.Managers
 
         internal void QueueRead(BufferedIO io)
         {
-            IOLoop.Queue(delegate {
-                bufferedReads.Enqueue(io);
-            });
+            if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+                PerformRead(io);
+            else
+                IOLoop.Queue(delegate {
+                    bufferedReads.Enqueue(io);
+                });
         }
 
         internal void QueueWrite(BufferedIO io)
         {
-            IOLoop.Queue(delegate { 
-                bufferedWrites.Enqueue(io);
-            });
+            if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+                PerformWrite(io);
+            else
+                IOLoop.Queue(delegate { 
+                    bufferedWrites.Enqueue(io);
+                });
         }
 
         #endregion
