@@ -74,6 +74,7 @@ namespace MonoTorrent.Dht.Tasks
             }
             else
             {
+                Target.LastSeen = DateTime.UtcNow;
                 RaiseComplete(e);
             }
         }
