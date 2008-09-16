@@ -67,6 +67,8 @@ namespace MonoTorrent.Dht.Tasks
             // send again. Otherwise we propagate the eventargs through the Complete event.
             if (e.TimedOut)
                 node.FailedCount++;
+            else
+                Target.LastSeen = DateTime.UtcNow;
 
             if (e.TimedOut && --retries > 0)
             {
@@ -74,7 +76,6 @@ namespace MonoTorrent.Dht.Tasks
             }
             else
             {
-                Target.LastSeen = DateTime.UtcNow;
                 RaiseComplete(e);
             }
         }
