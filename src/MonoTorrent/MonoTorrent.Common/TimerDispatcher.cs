@@ -32,11 +32,11 @@ using System.Threading;
 
 namespace Mono.Ssdp.Internal
 {
-    public delegate bool TimeoutHandler ();
+    internal delegate bool TimeoutHandler (object state, ref TimeSpan interval);
 
-    public class TimeoutDispatcher
+    internal class TimeoutDispatcher
     {
-        private uint timeout_ids = 1;
+        private static uint timeout_ids = 1;
         
         private struct TimeoutItem : IComparable<TimeoutItem>
         {
@@ -44,6 +44,7 @@ namespace Mono.Ssdp.Internal
             public TimeSpan Timeout;
             public DateTime Trigger;
             public TimeoutHandler Handler;
+            public object State;
             
             public int CompareTo (TimeoutItem item)
             {
@@ -55,23 +56,43 @@ namespace Mono.Ssdp.Internal
                 return String.Format ("{0} ({1})", Id, Trigger);
             }
         }
-
-        private bool disposed;
+        
         private readonly object wait_mutex = new object ();
         private AutoResetEvent wait;
 
         private List<TimeoutItem> timeouts = new List<TimeoutItem> ();
         
-        public uint Enqueue (TimeSpan timeout, TimeoutHandler handler)
+        public uint Add (uint timeoutMs, TimeoutHandler handler)
+        {
+            return Add (timeoutMs, handler, null);
+        }
+        
+        public uint Add (TimeSpan timeout, TimeoutHandler handler)
+        {
+            return Add (timeout, handler, null);
+        }
+        
+        public uint Add (uint timeoutMs, TimeoutHandler handler, object state)
+        {
+            return Add (TimeSpan.FromMilliseconds (timeoutMs), handler, state);
+        }
+        
+        public uint Add (DateTime timeout, TimeoutHandler handler, object state)
+        {
+            return Add (timeout - DateTime.Now, handler, state);
+        }
+        
+        public uint Add (TimeSpan timeout, TimeoutHandler handler, object state)
         {
             lock (this) {
                 TimeoutItem item = new TimeoutItem ();
                 item.Id = timeout_ids++;
                 item.Timeout = timeout;
-                item.Trigger = DateTime.Now.Add(timeout);
+                item.Trigger = DateTime.Now + timeout;
                 item.Handler = handler;
+                item.State = state;
                 
-                Enqueue (ref item);
+                Add (ref item);
                 
                 if (timeouts.Count == 1) {
                     Start ();
@@ -81,11 +102,12 @@ namespace Mono.Ssdp.Internal
             }
         }
         
-        private void Enqueue (ref TimeoutItem item)
+        private void Add (ref TimeoutItem item)
         {
             lock (timeouts) {
                 int index = timeouts.BinarySearch (item);
-                timeouts.Insert (index >= 0 ? index : ~index, item);
+                index = index >= 0 ? index : ~index;
+                timeouts.Insert (index, item);
                 
                 if (index == 0 && timeouts.Count > 1) {
                     lock (wait_mutex) {
@@ -97,69 +119,52 @@ namespace Mono.Ssdp.Internal
             }
         }
         
-        private void Dequeue (uint id)
+        public void Remove (uint id)
         {
             lock (timeouts) {
                 // FIXME: Comparer for BinarySearch
                 for (int i = 0; i < timeouts.Count; i++) {
                     if (timeouts[i].Id == id) {
                         timeouts.RemoveAt (i);
+                        if (i == 0) {
+                            lock (wait_mutex) {
+                                if (wait != null) {
+                                    wait.Set ();
+                                }
+                            }
+                        }
                         return;
                     }
                 }
             }
         }
-        Thread t;
+        
         private void Start ()
         {
             wait = new AutoResetEvent (false);
-            t = new Thread(TimerThread);
-            t.Name = "Timer Dispatcher!";
-            t.IsBackground = true;
-            t.Start();
+            ThreadPool.QueueUserWorkItem (TimerThread);
         }
         
         private void TimerThread (object state)
         {
             while (timeouts.Count > 0) {
-                if (disposed)
-                    return;
-
                 TimeoutItem item;
                 lock (timeouts) {
                     item = timeouts[0];
                 }
                 
-                bool restart = false;
                 TimeSpan interval = item.Trigger - DateTime.Now;
-                if (interval < TimeSpan.Zero)
-                {
-                    Dequeue(item.Id);
-                    if (item.Handler())
-                    {
-                        item.Trigger = DateTime.Now.Add(item.Timeout);
-                        Enqueue(ref item);
-                        restart = true;
-                    }
-                }
-                if (interval >= TimeSpan.Zero) {
-                    if (!wait.WaitOne (interval, false)) {
-                        Dequeue (item.Id);
-                        if(item.Handler ()) {
-                            item.Trigger = DateTime.Now.Add(item.Timeout);
-                            Enqueue(ref item);
-                            restart = true;
-                        }
-                    } else {
-                        restart = true;
-                    }
+                if (interval < TimeSpan.Zero) {
+                    interval = TimeSpan.Zero;
                 }
                 
-                if (restart) {
-                    continue;
+                if (!wait.WaitOne (interval, false)) {
+                    Remove (item.Id);
+                    if (item.Handler (item.State, ref item.Timeout)) {
+                        item.Trigger = DateTime.Now + item.Timeout;
+                        Add (ref item);
+                    }
                 }
-                
-                Dequeue (item.Id);
             }
             
             lock (wait_mutex) {
@@ -169,13 +174,16 @@ namespace Mono.Ssdp.Internal
             }
         }
 
-        internal void Dispose()
+        public void Clear ()
         {
-            if (disposed)
-                return;
-            disposed = true;
-            Enqueue(TimeSpan.Zero, delegate { return false; });
-            t.Join(TimeSpan.FromSeconds(2));
+            lock (timeouts) {
+                timeouts.Clear ();
+                lock (wait_mutex) {
+                    if (wait != null) {
+                        wait.Set ();
+                    }
+                }
+            }
         }
     }
 }

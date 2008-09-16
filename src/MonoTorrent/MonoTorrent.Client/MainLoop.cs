@@ -154,8 +154,11 @@ namespace MonoTorrent.Client
 
         public uint QueueTimeout(TimeSpan span, TimeoutHandler task)
         {
-            return dispatcher.Enqueue(span, delegate {
-                return (bool)QueueWait(delegate { return task(); });
+            return dispatcher.Add(span, delegate {
+                return (bool)QueueWait(delegate {
+                    TimeSpan s = TimeSpan.Zero;
+                    return task(null, ref s); 
+                });
             });
         }
 
