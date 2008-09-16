@@ -37,6 +37,8 @@ namespace MonoTorrent.Client
 {
     public delegate object MainLoopJob();
     public delegate void MainLoopTask();
+    public delegate bool TimeoutTask();
+
     public class MainLoop : IDisposable
     {
         private class DelegateTask
@@ -152,12 +154,12 @@ namespace MonoTorrent.Client
             return t.Result;
         }
 
-        public uint QueueTimeout(TimeSpan span, TimeoutHandler task)
+        public uint QueueTimeout(TimeSpan span, TimeoutTask task)
         {
             return dispatcher.Add(span, delegate {
                 return (bool)QueueWait(delegate {
                     TimeSpan s = TimeSpan.Zero;
-                    return task(null, ref s); 
+                    return task(); 
                 });
             });
         }
