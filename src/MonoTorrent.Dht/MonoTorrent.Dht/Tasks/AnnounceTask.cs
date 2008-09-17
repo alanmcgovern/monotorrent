@@ -24,7 +24,7 @@ namespace MonoTorrent.Dht.Tasks
         public override void Execute()
     	{
             engine.PeersFound += PeerFound;
-            engine.NodeFound += NodeFound;
+            engine.RoutingTable.NodeAdded += NodeFound;
             
             IList<Node> nodes = engine.RoutingTable.GetClosest(infoHash);
             foreach(Node n in nodes)
@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht.Tasks
             RaiseComplete(new TaskCompleteEventArgs(this));
         }
         
-        public void NodeFound(object sender, NodeFoundEventArgs e)
+        public void NodeFound(object sender, NodeAddedEventArgs e)
         {
             GetPeers gpmsg = new GetPeers(engine.RoutingTable.LocalNode.Id, infoHash);
             engine.MessageLoop.EnqueueSend(gpmsg, e.Node);
@@ -51,7 +51,7 @@ namespace MonoTorrent.Dht.Tasks
         protected override void RaiseComplete(TaskCompleteEventArgs e)
         {
             engine.PeersFound -= PeerFound;
-            engine.NodeFound -= NodeFound;
+            engine.RoutingTable.NodeAdded -= NodeFound;
             base.RaiseComplete(e);
         }
     }

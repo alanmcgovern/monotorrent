@@ -56,7 +56,6 @@ namespace MonoTorrent.Dht
 	{
         public event EventHandler StateChanged;
         public event EventHandler<PeersFoundEventArgs> PeersFound;
-        internal event EventHandler<NodeFoundEventArgs> NodeFound;
 
         #region Fields
 
@@ -192,12 +191,6 @@ namespace MonoTorrent.Dht
         {
             if (PeersFound != null)
                 PeersFound(sender, new PeersFoundEventArgs(infoHash.Bytes, peers));
-        }
-        
-        internal void RaiseNodeFound(Node n)
-        {
-            if (NodeFound != null)
-                NodeFound(this, new NodeFoundEventArgs(n));
         }
                 
         #endregion
