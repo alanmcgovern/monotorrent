@@ -173,11 +173,8 @@ namespace MonoTorrent.Client
         {
             if (disposed)
                 return;
-            disposed = true;
+
             dispatcher.Clear();
-            handle.Set();
-            //thread.Join(TimeSpan.FromSeconds(2));
-            //((IDisposable)handle).Dispose();
         }
     }
 }
