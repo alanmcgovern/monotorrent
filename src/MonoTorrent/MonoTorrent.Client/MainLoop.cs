@@ -77,10 +77,10 @@ namespace MonoTorrent.Client
 
         public MainLoop(string name)
         {
-            thread = new Thread(Loop);
-            thread.IsBackground = true;
-            thread.Name = name;
-            thread.Start();
+            ThreadPool.QueueUserWorkItem(delegate {
+                thread = Thread.CurrentThread;
+                Loop();
+            });
         }
 
         void Loop()
