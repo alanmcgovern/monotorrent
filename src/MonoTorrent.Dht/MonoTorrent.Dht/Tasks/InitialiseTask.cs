@@ -6,9 +6,9 @@ namespace MonoTorrent.Dht.Tasks
 {
     internal class InitialiseTask : Task
     {
-        int QuestionedNodeCount;
+        private const int MaxNodes = 50;
+        int nodesFound = 0;
         DhtEngine engine;
-        bool ok;
             
         public InitialiseTask(DhtEngine engine)
         {
@@ -20,8 +20,13 @@ namespace MonoTorrent.Dht.Tasks
             if (Active)
                 return;
 
-            QuestionedNodeCount = 0;
-            ok = false;
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
+                if (Active)
+                    RaiseComplete(new TaskCompleteEventArgs(this));
+                return false;
+            });
+
+            Active = true;
             engine.RoutingTable.NodeAdded += NodeAdded;
             Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
             Node node2 = new Node(NodeId.Create(), new IPEndPoint(Dns.GetHostEntry("router.utorrent.com").AddressList[0], 6881));
@@ -35,21 +40,18 @@ namespace MonoTorrent.Dht.Tasks
         {
             //we need to have at least one node who answer new nodes...
             SendQueryEventArgs args = (SendQueryEventArgs)e;
+            args.Task.Completed -= TaskComplete;
             if (!args.TimedOut)
-                ok = true;
-            
-            QuestionedNodeCount--;
+                nodesFound++;
+
             //node added is call before this because handle is done before message sent
             //so if we are back to 0, this mean that we have no node that we wait answer 
-            if (ok && (QuestionedNodeCount == 0))
-            {
-                RaiseComplete(e);
-            }
+            if (nodesFound >= MaxNodes)
+                RaiseComplete(new TaskCompleteEventArgs(this));
         }
         
         private void NodeAdded(object o, NodeAddedEventArgs e)
         {
-            QuestionedNodeCount++;
             // If we reached our target amount of nodes or we've run out of time, complete the task
             // Otherwise keep firing off FindNode requests to find nodes close to our own.
              SendQueryTask task = new SendQueryTask(engine, new FindNode(engine.LocalId, engine.LocalId), e.Node);
@@ -59,8 +61,11 @@ namespace MonoTorrent.Dht.Tasks
 
         protected override void RaiseComplete(TaskCompleteEventArgs e)
         {
-            if (Active)
-                engine.RoutingTable.NodeAdded -= NodeAdded;
+            if (!Active)
+                return;
+
+            Active = false;
+            engine.RoutingTable.NodeAdded -= NodeAdded;
             base.RaiseComplete(e);
         }
     }
