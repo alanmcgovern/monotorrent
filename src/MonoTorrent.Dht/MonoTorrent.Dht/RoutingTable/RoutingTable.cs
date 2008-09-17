@@ -74,17 +74,36 @@ namespace MonoTorrent.Dht
 
         public bool Add(Node node)
         {
+            return Add(node, true);
+        }
+
+        private bool Add(Node node, bool raiseNodeAdded)
+        {
             if (node == null)
                 throw new ArgumentNullException("node");
 
             Bucket bucket = buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
+            if (bucket.Nodes.Contains(node))
+                return false;
 
             bool added = bucket.Add(node);
+            if (added && raiseNodeAdded)
+            {
+                RaiseNodeAdded(node);
+            }
+
             if (!added && bucket.CanContain(LocalNode))
                 if (Split(bucket))
-                    return Add(node);
-            return added;
+                    return Add(node, raiseNodeAdded);
 
+            return added;
+        }
+
+        private void RaiseNodeAdded(Node node)
+        {
+            EventHandler<NodeAddedEventArgs> h = NodeAdded;
+            if (h != null)
+                h(this, new NodeAddedEventArgs(node));
         }
 
         private void Add(Bucket bucket)
@@ -122,10 +141,10 @@ namespace MonoTorrent.Dht
             Add(right);
 
             foreach (Node n in bucket.Nodes)
-                Add(n);
+                Add(n, false);
 
             if (bucket.Replacement != null)
-                Add(bucket.Replacement);
+                Add(bucket.Replacement, false);
 
             return true;
         }
@@ -159,6 +178,12 @@ namespace MonoTorrent.Dht
                 }
             }
             return sortedNodes.Values;
+        }
+
+        internal void Clear()
+        {
+            buckets.Clear();
+            Add(new Bucket());
         }
     }
 }
