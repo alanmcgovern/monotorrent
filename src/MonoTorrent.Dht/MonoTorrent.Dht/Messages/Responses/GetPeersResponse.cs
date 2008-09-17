@@ -128,16 +128,10 @@ namespace MonoTorrent.Dht.Messages
             }
             else if (Parameters.ContainsKey(NodesKey))
             {
-                byte[] b = Nodes.TextBytes;
-                for (int i = 0; (i + 26) <= b.Length; i += 26)
+                foreach(Node n in Node.FromCompactNode(Nodes.TextBytes))
                 {
-                    Node n = Node.FromCompactNode(b, i);
-                    //forward get peers to new nodes until get peers and not node
                     if (engine.RoutingTable.FindNode(n.Id) == null)
-                    {
-                        engine.RaiseNodeFound(n);
                         engine.Add(n);
-                    }
                 }
             }
         }

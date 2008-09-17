@@ -154,9 +154,15 @@ namespace MonoTorrent.Dht
         {
             byte[] id = new byte[20];
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress(BitConverter.ToInt32(buffer, offset + 20));
+            IPAddress address = new IPAddress((uint)BitConverter.ToInt32(buffer, offset + 20));
             int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
             return new Node(new NodeId(id), new IPEndPoint(address, port));
+        }
+
+        internal static IEnumerable<Node> FromCompactNode(byte[] buffer)
+        {
+            for (int i = 0; (i + 26) <= buffer.Length; i += 26)
+                yield return FromCompactNode(buffer, i);
         }
 
         //To order by last seen in bucket
