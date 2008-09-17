@@ -11,8 +11,8 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class MessageTests
     {
-        private NodeId id = new NodeId(new BigInteger(Encoding.UTF8.GetBytes("abcdefghij0123456789")));
-        private NodeId infohash = new NodeId(new BigInteger(Encoding.UTF8.GetBytes("mnopqrstuvwxyz123456")));
+        private NodeId id = new NodeId(Encoding.UTF8.GetBytes("abcdefghij0123456789"));
+        private NodeId infohash = new NodeId(Encoding.UTF8.GetBytes("mnopqrstuvwxyz123456"));
         private BEncodedString token = "aoeusnth";
         private BEncodedString transactionId = "aa";
 

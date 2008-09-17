@@ -36,6 +36,7 @@ using Mono.Math;
 using MonoTorrent.BEncoding;
 using System.Net;
 using MonoTorrent.Dht.Messages;
+using System.Text;
 
 namespace MonoTorrent.Dht
 {
@@ -165,6 +166,11 @@ namespace MonoTorrent.Dht
                 yield return FromCompactNode(buffer, i);
         }
 
+        internal static IEnumerable<Node> FromCompactNode(BEncodedString nodes)
+        {
+            return FromCompactNode(nodes.TextBytes);
+        }
+
         //To order by last seen in bucket
         public int CompareTo(Node other)
         {
@@ -190,6 +196,17 @@ namespace MonoTorrent.Dht
         public override int GetHashCode()
         {
             return id.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder(48);
+            for (int i = 0; i < id.Bytes.Length; i++)
+            {
+                sb.Append(id.Bytes[i]);
+                sb.Append("-");
+            }
+           return sb.ToString(0, sb.Length - 1);
         }
     }
 }

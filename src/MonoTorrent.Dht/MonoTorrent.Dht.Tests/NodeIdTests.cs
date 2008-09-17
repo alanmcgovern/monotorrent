@@ -54,8 +54,12 @@ namespace MonoTorrent.Dht.Tests
         [Test]
         public void CompareTest()
         {
-            NodeId one = new NodeId(1);
-            NodeId two = new NodeId(2);
+            byte[] i = new byte[20];
+            byte[] j = new byte[20];
+            i[19] = 1;
+            j[19] = 2;
+            NodeId one = new NodeId(i);
+            NodeId two = new NodeId(j);
             Assert.IsTrue(one.CompareTo(two) < 0);
             Assert.IsTrue(two.CompareTo(one) > 0);
             Assert.IsTrue(one.CompareTo(one) == 0);

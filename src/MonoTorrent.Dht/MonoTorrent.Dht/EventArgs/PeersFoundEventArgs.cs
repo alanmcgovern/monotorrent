@@ -38,15 +38,15 @@ namespace MonoTorrent.Dht
 {
     public class PeersFoundEventArgs : EventArgs
     {
-        private List<Node> peers;
+        private List<MonoTorrent.Client.Peer> peers;
         private byte[] infoHash;
         
-        public PeersFoundEventArgs(byte[] infoHash, List<Node> peers)
+        public PeersFoundEventArgs(byte[] infoHash, List<MonoTorrent.Client.Peer> peers)
         {
             this.peers = peers;
             this.infoHash = infoHash;
         }
-        public List<Node> Peers
+        public List<MonoTorrent.Client.Peer> Peers
         {
             get { return peers; }
         }

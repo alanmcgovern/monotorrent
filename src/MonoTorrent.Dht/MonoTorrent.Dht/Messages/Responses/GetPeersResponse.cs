@@ -57,10 +57,8 @@ namespace MonoTorrent.Dht.Messages
         {
             get
             {
-                if (Parameters.ContainsKey(ValuesKey))
-                    throw new InvalidOperationException("Already contains the values key");
-                if (!Parameters.ContainsKey(NodesKey))
-                    Parameters.Add(NodesKey, null);
+                if (Parameters.ContainsKey(ValuesKey) || !Parameters.ContainsKey(NodesKey))
+                    return null;
                 return (BEncodedString)Parameters[NodesKey];
             }
             set
@@ -77,10 +75,8 @@ namespace MonoTorrent.Dht.Messages
         {
             get
             {
-                if (Parameters.ContainsKey(NodesKey))
-                    throw new InvalidOperationException("Already contains the nodes key");
-                if (!Parameters.ContainsKey(ValuesKey))
-                    Parameters.Add(ValuesKey, new BEncodedList());
+                if (Parameters.ContainsKey(NodesKey) || !Parameters.ContainsKey(ValuesKey))
+                    return null;
                 return (BEncodedList)Parameters[ValuesKey];
             }
             set
@@ -109,31 +105,7 @@ namespace MonoTorrent.Dht.Messages
         public override void Handle(DhtEngine engine, Node node)
         {
             base.Handle(engine, node);
-
             node.Token = Token;
-            if (Parameters.ContainsKey(ValuesKey))
-            {
-                NodeId infoHash = InitialMessage.InfoHash;
-                if (!engine.Torrents.ContainsKey(infoHash))
-                    engine.Torrents.Add(infoHash, new List<Node>());
-
-                List<Node> peers = engine.Torrents[infoHash];
-
-                foreach (BEncodedValue val in Values)
-                {
-                    Node p = Node.FromCompactNode(((BEncodedString)val).TextBytes, 0);
-                    peers.Add(p);
-                }
-                engine.RaisePeersFound(node, infoHash, new List<Node>(peers));//make a copy
-            }
-            else if (Parameters.ContainsKey(NodesKey))
-            {
-                foreach(Node n in Node.FromCompactNode(Nodes.TextBytes))
-                {
-                    if (engine.RoutingTable.FindNode(n.Id) == null)
-                        engine.Add(n);
-                }
-            }
         }
     }
 }

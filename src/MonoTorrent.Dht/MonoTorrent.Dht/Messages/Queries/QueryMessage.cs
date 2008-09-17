@@ -44,7 +44,7 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
+            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
 
         internal ResponseCreator ResponseCreator

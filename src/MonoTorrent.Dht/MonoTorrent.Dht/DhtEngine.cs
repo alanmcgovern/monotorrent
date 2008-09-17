@@ -187,7 +187,7 @@ namespace MonoTorrent.Dht
                 StateChanged(this, EventArgs.Empty);
         }
         
-        internal void RaisePeersFound(Node sender, NodeId infoHash, List<Node> peers)
+        internal void RaisePeersFound(Node sender, NodeId infoHash, List<Peer> peers)
         {
             if (PeersFound != null)
                 PeersFound(sender, new PeersFoundEventArgs(infoHash.Bytes, peers));

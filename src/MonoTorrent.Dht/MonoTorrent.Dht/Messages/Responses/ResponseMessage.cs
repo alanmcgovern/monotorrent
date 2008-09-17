@@ -36,14 +36,13 @@ namespace MonoTorrent.Dht.Messages
 {
     internal abstract class ResponseMessage : Message
     {
-        protected static readonly BEncodedString IdKey = "id";
         private static readonly BEncodedString ReturnValuesKey = "r";
         internal static readonly BEncodedString ResponseType = "r";
         protected QueryMessage queryMessage;
 
         internal override NodeId Id
         {
-            get { return new NodeId(new BigInteger(((BEncodedString)Parameters[IdKey]).TextBytes)); }
+            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
         public BEncodedDictionary Parameters
         {

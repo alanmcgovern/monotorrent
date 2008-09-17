@@ -40,19 +40,20 @@ namespace MonoTorrent.Dht
         static readonly Random random = new Random();
 
         BigInteger value;
+        private byte[] bytes;
 
         internal byte[] Bytes
         {
-            get { return value.GetBytes(); }
+            get { return bytes; }
         }
 
         internal NodeId(byte[] value)
             : this(new BigInteger(value))
         {
-
+            this.bytes = value;
         }
 
-        internal NodeId(BigInteger value)
+        private NodeId(BigInteger value)
         {
             this.value = value;
         }
@@ -60,7 +61,7 @@ namespace MonoTorrent.Dht
         internal NodeId(BEncodedString value)
             : this(new BigInteger(value.TextBytes))
         {
-
+            this.bytes = value.TextBytes;
         }
 
         public override bool Equals(object obj)

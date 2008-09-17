@@ -158,7 +158,7 @@ namespace MonoTorrent.Dht
         }
 
         
-        public IList<Node> GetClosest(NodeId target)
+        public List<Node> GetClosest(NodeId target)
         {
             SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);
 						
@@ -177,7 +177,7 @@ namespace MonoTorrent.Dht
                     sortedNodes.Add(distance, n);
                 }
             }
-            return sortedNodes.Values;
+            return new List<Node>(sortedNodes.Values);
         }
 
         internal void Clear()
