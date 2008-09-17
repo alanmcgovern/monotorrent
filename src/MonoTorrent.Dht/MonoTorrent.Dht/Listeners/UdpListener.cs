@@ -66,8 +66,16 @@ namespace MonoTorrent.Dht.Listeners
                 Console.WriteLine(ex);
             }
 
-            // FIXME Figure out why the client appears to die occasionally
-            client.BeginReceive(EndReceive, null);
+            try
+            {
+                client.BeginReceive(EndReceive, null);
+            }
+            catch
+            {
+                client.Close();
+                client = new UdpClient(endpoint);
+                client.BeginReceive(EndReceive, null);
+            }
         }
 
         public void Send(byte[] buffer, IPEndPoint endpoint)
