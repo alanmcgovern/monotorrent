@@ -64,8 +64,7 @@ namespace MonoTorrent.Dht
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
-        Thread thread;
-        ManualResetEvent waitHandle = new ManualResetEvent(false);
+        MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
         
         private bool CanSend
         {
@@ -77,9 +76,12 @@ namespace MonoTorrent.Dht
             this.engine = engine;
             this.listener = listener;
             listener.MessageReceived += new MessageReceived(MessageReceived);
-            thread = new Thread(Loop);
-            thread.IsBackground = true;
-            thread.Start();
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
+                SendMessage();
+                ReceiveMessage();
+                TimeoutMessage();
+                return true;
+            });
         }
 
         void MessageReceived(byte[] buffer, IPEndPoint endpoint)
@@ -93,7 +95,6 @@ namespace MonoTorrent.Dht
                 {
                     Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
                     receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
-                    waitHandle.Set();
                 }
                 catch (MessageException)
                 {
@@ -113,90 +114,79 @@ namespace MonoTorrent.Dht
                 h(this, new SendQueryEventArgs(endpoint, query, response));
         }
 
-        void Loop()
+        private void SendMessage()
         {
-            DateTime lastTrigger = DateTime.MinValue;
-            MonoTorrentCollection<KeyValuePair<DateTime, SendDetails>> waitingResponse;
-            waitingResponse = new MonoTorrentCollection<KeyValuePair<DateTime, SendDetails>>();
+            SendDetails? send = null;
+            if (CanSend)
+                send = sendQueue.Dequeue();
 
-            while (true)
+            if (send != null)
             {
-                KeyValuePair<IPEndPoint, Message>? receive = null;
-                SendDetails? send = null;
+                SendMessage(send.Value.Message, send.Value.Destination);
+                SendDetails details = send.Value;
+                details.SentAt = DateTime.UtcNow;
+                if (details.Message is QueryMessage)
+                    waitingResponse.Add(details);
+            }
 
-                // FIXME: Should this just loop regardless of state?
-                if (engine.State != State.NotReady || true)
+        }
+
+        private void TimeoutMessage()
+        {
+            if (waitingResponse.Count > 0)
+            {
+                if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.TimeOut)
                 {
-                    lock (locker)
+                    SendDetails details = waitingResponse.Dequeue();
+                    MessageFactory.UnregisterSend((QueryMessage)details.Message);
+                    RaiseMessageSent(details.Destination, (QueryMessage)details.Message, null);
+                }
+            }
+        }
+
+        private void ReceiveMessage()
+        {
+            KeyValuePair<IPEndPoint, Message>? receive = null;
+
+            if (receiveQueue.Count > 0)
+                receive = receiveQueue.Dequeue();
+
+            if (receive != null)
+            {
+                Message m = receive.Value.Value;
+                IPEndPoint source = receive.Value.Key;
+                waitingResponse.RemoveAll(delegate(SendDetails msg) {
+                    return msg.Message.TransactionId.Equals(m.TransactionId);
+                });
+
+                Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
+                try
+                {
+                    Node node = engine.RoutingTable.FindNode(m.Id);
+
+                    // What do i do with a null node?
+                    if (node == null)
                     {
-                        if (CanSend)
-                            send = sendQueue.Dequeue();
-
-                        if (receiveQueue.Count > 0)
-                            receive = receiveQueue.Dequeue();
-
-                        if (receiveQueue.Count == 0 && !CanSend)
-                            waitHandle.Reset();
-
-                        if (waitingResponse.Count > 0)
-                        {
-                            if ((DateTime.UtcNow - waitingResponse[0].Key) > engine.TimeOut)
-                            {
-                                SendDetails details = waitingResponse.Dequeue().Value;
-                                MessageFactory.UnregisterSend((QueryMessage)details.Message);
-                                RaiseMessageSent(details.Destination, (QueryMessage)details.Message, null);
-                            }
-                        }
+                        node = new Node(m.Id, source);
+                        engine.RoutingTable.Add(node);
                     }
-
-                    if (send != null)
+                    node.Seen();
+                    Console.WriteLine("Seen {0}", node.Id.ToString());
+                    m.Handle(engine, node);
+                    ResponseMessage response = m as ResponseMessage;
+                    if (response != null)
                     {
-                        SendMessage(send.Value.Message, send.Value.Destination);
-                        if (send.Value.Message is QueryMessage)
-                            waitingResponse.Add(new KeyValuePair<DateTime, SendDetails>(DateTime.UtcNow, send.Value));
+                        RaiseMessageSent(node.EndPoint, response.Query, response);
                     }
-
-                    if (receive != null)
-                    {
-                        Message m = receive.Value.Value;
-                        IPEndPoint source = receive.Value.Key;
-                        waitingResponse.RemoveAll(delegate (KeyValuePair<DateTime, SendDetails> msg) {
-                            return msg.Value.Message.TransactionId.Equals(m.TransactionId);
-                        });
-                        DhtEngine.MainLoop.Queue(delegate {
-                            Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
-                            try
-                            {
-                                Node node = engine.RoutingTable.FindNode(m.Id);
-
-                                // What do i do with a null node?
-                                if (node == null)
-                                {
-                                    node = new Node(m.Id, source);
-                                    engine.RoutingTable.Add(node);
-                                }
-                                node.Seen();
-                                Console.WriteLine("Seen {0}", node.Id.ToString());
-                                m.Handle(engine, node);
-                                ResponseMessage response = m as ResponseMessage;
-                                if (response != null)
-                                {
-                                    RaiseMessageSent(node.EndPoint, response.Query, response);
-                                }
-                            }
-                            catch (MessageException)
-                            {
-                                // Normal operation (FIXME: do i need to send a response error message?) 
-                            }
-                            catch
-                            {
-                                Console.WriteLine("Handle Error for message: {0}", m);
-                                this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
-                            }
-                        });
-                    }
-
-                    waitHandle.WaitOne(5, false);
+                }
+                catch (MessageException)
+                {
+                    // Normal operation (FIXME: do i need to send a response error message?) 
+                }
+                catch
+                {
+                    Console.WriteLine("Handle Error for message: {0}", m);
+                    this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
                 }
             }
         }
@@ -226,7 +216,6 @@ namespace MonoTorrent.Dht
                     MessageFactory.RegisterSend((QueryMessage)message);
 
                 sendQueue.Enqueue(new SendDetails(endpoint, message));
-                waitHandle.Set();
             }
         }
 
