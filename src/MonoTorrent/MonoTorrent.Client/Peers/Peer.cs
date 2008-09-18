@@ -192,28 +192,35 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
+        public static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
         {
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
-            foreach (BEncodedDictionary dict in peers)
+            foreach (BEncodedValue value in peers)
             {
-                string peerId;
-
-                if (dict.ContainsKey("peer id"))
-                    peerId = dict["peer id"].ToString();
-                else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
-                    peerId = dict["peer_id"].ToString();
+                if (value is BEncodedDictionary)
+                    list.Add(DecodeFromDict((BEncodedDictionary)value));
                 else
-                    peerId = string.Empty;
-
-                Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
-                list.Add(new Peer(peerId, connectionUri, EncryptionTypes.All));
+                    list.Add(Decode((BEncodedString)value)[0]);
             }
-
             return list;
         }
 
-        internal static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
+        private static Peer DecodeFromDict(BEncodedDictionary dict)
+        {
+            string peerId;
+
+            if (dict.ContainsKey("peer id"))
+                peerId = dict["peer id"].ToString();
+            else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
+                peerId = dict["peer_id"].ToString();
+            else
+                peerId = string.Empty;
+
+            Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
+            return new Peer(peerId, connectionUri, EncryptionTypes.All);
+        }
+
+        public static MonoTorrentCollection<Peer> Decode(BEncodedString peers)
         {
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes
