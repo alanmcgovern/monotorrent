@@ -203,10 +203,10 @@ namespace MonoTorrent.Dht
         {
             if (message.TransactionId == null)
             {
-                if (message is QueryMessage)
-                    message.TransactionId = TransactionId.NextId();
-                else if (message is ResponseMessage)
+                if (message is ResponseMessage)
                     throw new ArgumentException("Message must have a transaction id");
+                else
+                    message.TransactionId = TransactionId.NextId();
             }
 
             lock (locker)
