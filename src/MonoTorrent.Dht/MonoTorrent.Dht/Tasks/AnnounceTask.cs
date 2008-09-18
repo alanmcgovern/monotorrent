@@ -9,8 +9,8 @@ namespace MonoTorrent.Dht.Tasks
     {
     	NodeId infoHash;
     	DhtEngine engine;
-        List<Node> nodes;
-    	
+        SortedList<NodeId, NodeId> closestNodes;
+
     	public AnnounceTask(DhtEngine engine, byte[] infohash)
             : this(engine, new NodeId(infohash))
     	{
@@ -21,7 +21,7 @@ namespace MonoTorrent.Dht.Tasks
         {
             this.engine = engine;
             this.infoHash = infohash;
-            this.nodes = new List<Node>(24);
+            this.closestNodes = new SortedList<NodeId, NodeId>(Bucket.MaxCapacity);
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
                 RaiseComplete(new TaskCompleteEventArgs(this));
                 return false;
@@ -34,15 +34,19 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = true;
-            engine.RoutingTable.NodeAdded += NodeFound;
-
+            
             foreach (Node n in engine.RoutingTable.GetClosest(infoHash))
+            {
+                closestNodes.Add(n.Id.Xor(infoHash), n.Id);
                 SendGetPeers(n);
+            }
         }
 
         private void SendGetPeers(Node n)
         {
-            nodes.Add(n);
+            if (!Active)
+                return;
+
             GetPeers m = new GetPeers(engine.RoutingTable.LocalNode.Id, infoHash);
             SendQueryTask task = new SendQueryTask(engine, m, n);
             task.Completed += GetPeersCompleted;
@@ -53,28 +57,45 @@ namespace MonoTorrent.Dht.Tasks
         {
             SendQueryEventArgs args = (SendQueryEventArgs)e;
             e.Task.Completed -= GetPeersCompleted;
-            
-            GetPeersResponse response = (GetPeersResponse)args.Response;
-            Node node = nodes.Find(delegate(Node n) { return n.Id == response.Id; });
-            nodes.Remove(node);
 
+            if (args.TimedOut)
+                return;
+
+            GetPeersResponse response = (GetPeersResponse)args.Response;
             if (response.Values != null)
             {
                 // We have actual peers!
-                engine.RaisePeersFound(node, infoHash, MonoTorrent.Client.Peer.Decode(response.Values));
+                engine.RaisePeersFound(infoHash, MonoTorrent.Client.Peer.Decode(response.Values));
             }
             else if (response.Nodes != null)
             {
+                if (!Active)
+                    return;
                 // We got a list of nodes which are closer
                 foreach (Node n in Node.FromCompactNode(response.Nodes))
+                {
+                    // If we attempt to add a node to the engine, if the
+                    // bucket is already full it will be silently dropped.
+                    // Therefore we should always just send a getpeers message
+                    // without bothering to verify the node is still alive
                     engine.Add(n);
+
+                    // Only bother pinging the node if it's closer
+                    // than everything else we've tried.
+                    NodeId distance = n.Id.Xor(infoHash);
+                    if (closestNodes.Count < Bucket.MaxCapacity)
+                    {
+                        closestNodes.Add(distance, n.Id);
+                        SendGetPeers(n);
+                    }
+                    else if(distance < closestNodes.Keys[closestNodes.Count - 1])
+                    {
+                        closestNodes.RemoveAt(closestNodes.Count - 1);
+                        closestNodes.Add(distance, n.Id);
+                        SendGetPeers(n);
+                    }
+                }
             }
-        }
-        
-        public void NodeFound(object sender, NodeAddedEventArgs e)
-        {
-            nodes.Add(e.Node);
-            SendGetPeers(e.Node);
         }
 
         protected override void RaiseComplete(TaskCompleteEventArgs e)
@@ -83,7 +104,6 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = false;
-            engine.RoutingTable.NodeAdded -= NodeFound;
             base.RaiseComplete(e);
         }
     }
