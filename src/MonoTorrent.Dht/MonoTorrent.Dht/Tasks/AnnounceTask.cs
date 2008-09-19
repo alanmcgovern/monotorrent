@@ -71,15 +71,10 @@ namespace MonoTorrent.Dht.Tasks
             {
                 if (!Active)
                     return;
+
                 // We got a list of nodes which are closer
                 foreach (Node n in Node.FromCompactNode(response.Nodes))
                 {
-                    // If we attempt to add a node to the engine, if the
-                    // bucket is already full it will be silently dropped.
-                    // Therefore we should always just send a getpeers message
-                    // without bothering to verify the node is still alive
-                    engine.Add(n);
-
                     // Only bother pinging the node if it's closer
                     // than everything else we've tried.
                     NodeId distance = n.Id.Xor(infoHash);

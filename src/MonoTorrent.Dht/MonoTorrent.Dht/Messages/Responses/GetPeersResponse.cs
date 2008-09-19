@@ -106,6 +106,8 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle(engine, node);
             node.Token = Token;
+            if (Nodes != null)
+                engine.Add(Node.FromCompactNode(Nodes));
         }
     }
 }
