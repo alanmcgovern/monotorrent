@@ -21,17 +21,10 @@ namespace MonoTorrent.Dht.Tasks
             if (Active)
                 return;
 
-            // This shouldn't be needed
-            //DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
-            //    if (Active)
-            //        RaiseComplete(new TaskCompleteEventArgs(this));
-            //    return false;
-            //});
-
             Active = true;
 
             Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-            SendFindNode(utorrent);
+            SendFindNode(new Node[] { utorrent });
         }
 
         private void FindNodeComplete(object sender, TaskCompleteEventArgs e)
@@ -43,8 +36,7 @@ namespace MonoTorrent.Dht.Tasks
             if (!args.TimedOut)
             {
                 FindNodeResponse response = (FindNodeResponse)args.Response;
-                foreach (Node n in Node.FromCompactNode(response.Nodes))
-                    SendFindNode(n);
+                SendFindNode(Node.FromCompactNode(response.Nodes));
             }
 
             if (activeRequests == 0)
@@ -60,27 +52,16 @@ namespace MonoTorrent.Dht.Tasks
             base.RaiseComplete(e);
         }
 
-        private void SendFindNode(Node node)
+        private void SendFindNode(IEnumerable<Node> newNodes)
         {
-            NodeId distance = node.Id.Xor(engine.LocalId);
-            if (nodes.Count < Bucket.MaxCapacity)
+            foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
             {
-                nodes.Add(distance, node.Id);
+                activeRequests++;
+                FindNode request = new FindNode(engine.LocalId, engine.LocalId);
+                SendQueryTask task = new SendQueryTask(engine, request, node);
+                task.Completed += FindNodeComplete;
+                task.Execute();
             }
-            else if (distance < nodes.Keys[nodes.Count - 1] && !nodes.Values.Contains(node.Id))
-            {
-                nodes.RemoveAt(nodes.Count - 1);
-                nodes.Add(distance, node.Id);
-            }
-            else
-            {
-                return;
-            }
-
-            activeRequests++;
-            FindNode request = new FindNode(engine.LocalId, engine.LocalId);
-            SendQueryTask task = new SendQueryTask(engine, request, node);
-            task.Completed += FindNodeComplete;
         }
     }
 }

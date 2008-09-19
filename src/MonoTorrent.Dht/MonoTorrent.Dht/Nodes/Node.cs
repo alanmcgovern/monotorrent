@@ -208,5 +208,27 @@ namespace MonoTorrent.Dht
             }
            return sb.ToString(0, sb.Length - 1);
         }
+
+        internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, NodeId> currentNodes, IEnumerable<Node> newNodes, int maxNodes)
+        {
+            foreach (Node node in newNodes)
+            {
+                NodeId distance = node.Id.Xor(target);
+                if (currentNodes.Count < maxNodes)
+                {
+                    currentNodes.Add(distance, node.Id);
+                }
+                else if (distance < currentNodes.Keys[currentNodes.Count - 1])
+                {
+                    currentNodes.RemoveAt(currentNodes.Count - 1);
+                    currentNodes.Add(distance, node.Id);
+                }
+                else
+                {
+                    continue;
+                }
+                yield return node;
+            }
+        }
     }
 }

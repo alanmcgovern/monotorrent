@@ -73,23 +73,9 @@ namespace MonoTorrent.Dht.Tasks
                     return;
 
                 // We got a list of nodes which are closer
-                foreach (Node n in Node.FromCompactNode(response.Nodes))
-                {
-                    // Only bother pinging the node if it's closer
-                    // than everything else we've tried.
-                    NodeId distance = n.Id.Xor(infoHash);
-                    if (closestNodes.Count < Bucket.MaxCapacity)
-                    {
-                        closestNodes.Add(distance, n.Id);
-                        SendGetPeers(n);
-                    }
-                    else if(distance < closestNodes.Keys[closestNodes.Count - 1])
-                    {
-                        closestNodes.RemoveAt(closestNodes.Count - 1);
-                        closestNodes.Add(distance, n.Id);
-                        SendGetPeers(n);
-                    }
-                }
+                IEnumerable<Node> newNodes = Node.FromCompactNode(response.Nodes);
+                foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
+                    SendGetPeers(n);
             }
         }
 
