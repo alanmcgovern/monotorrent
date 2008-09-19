@@ -213,6 +213,9 @@ namespace MonoTorrent.Dht
         {
             foreach (Node node in newNodes)
             {
+                if (currentNodes.ContainsValue(node.Id))
+                    continue;
+
                 NodeId distance = node.Id.Xor(target);
                 if (currentNodes.Count < maxNodes)
                 {
