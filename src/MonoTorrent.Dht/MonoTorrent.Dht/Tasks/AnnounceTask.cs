@@ -12,6 +12,12 @@ namespace MonoTorrent.Dht.Tasks
         private DhtEngine engine;
         private int port;
 
+        public AnnounceTask(DhtEngine engine, byte[] infoHash, int port)
+            : this(engine, new NodeId(infoHash), port)
+        {
+
+        }
+
         public AnnounceTask(DhtEngine engine, NodeId infoHash, int port)
         {
             this.engine = engine;
@@ -32,6 +38,8 @@ namespace MonoTorrent.Dht.Tasks
             GetPeersTask getpeers = (GetPeersTask)e.Task;
             foreach (Node n in getpeers.ClosestActiveNodes.Values)
             {
+                if (n.Token == null)
+                    continue;
                 AnnouncePeer query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
                 SendQueryTask task = new SendQueryTask(engine, query, n);
                 task.Completed += SentAnnounce;

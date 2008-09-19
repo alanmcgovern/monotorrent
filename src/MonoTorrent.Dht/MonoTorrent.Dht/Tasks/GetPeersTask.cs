@@ -38,17 +38,18 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = true;
-            foreach (Node n in engine.RoutingTable.GetClosest(infoHash))
-            {
-                closestNodes.Add(n.Id.Xor(infoHash), n.Id);
+            IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
+            foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
                 SendGetPeers(n);
-            }
         }
 
         private void SendGetPeers(Node n)
         {
+            NodeId distance = n.Id.Xor(infoHash);
+            queriedNodes.Add(distance, n);
+
             activeQueries++;
-            GetPeers m = new GetPeers(engine.RoutingTable.LocalNode.Id, infoHash);
+            GetPeers m = new GetPeers(engine.LocalId, infoHash);
             SendQueryTask task = new SendQueryTask(engine, m, n);
             task.Completed += GetPeersCompleted;
             task.Execute();
@@ -73,6 +74,11 @@ namespace MonoTorrent.Dht.Tasks
                     return;
 
                 GetPeersResponse response = (GetPeersResponse)args.Response;
+
+                // Ensure that the local Node object has the token. There may/may not be
+                // an additional copy in the routing table depending on whether or not
+                // it was able to fit into the table.
+                target.Token = response.Token;
                 if (response.Values != null)
                 {
                     // We have actual peers!

@@ -75,6 +75,7 @@
     <Compile Include="Nodes\Node.cs" />
     <Compile Include="RoutingTable\RoutingTable.cs" />
     <Compile Include="State.cs" />
+    <Compile Include="Tasks\AnnounceTask.cs" />
     <Compile Include="Tasks\GetPeersTask.cs" />
     <Compile Include="Tasks\InitialiseTask.cs" />
     <Compile Include="Tasks\ITask.cs" />

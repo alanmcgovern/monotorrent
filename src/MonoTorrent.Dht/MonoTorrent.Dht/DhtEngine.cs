@@ -228,8 +228,21 @@ namespace MonoTorrent.Dht
         
         #endregion
         
-        public void Announce(byte[] infoHash)
+        public void Announce(byte[] infoHash, int port)
         {
+            if (infoHash == null)
+                throw new ArgumentNullException("infoHash");
+            if (infoHash.Length != 20)
+                throw new ArgumentException("infoHash must be 20 bytes");
+            new AnnounceTask(this, infoHash, port).Execute();
+        }
+
+        public void GetPeers(byte[] infoHash)
+        {
+            if (infoHash == null)
+                throw new ArgumentNullException("infoHash");
+            if (infoHash.Length != 20)
+                throw new ArgumentException("infoHash must be 20 bytes");
             new GetPeersTask(this, infoHash).Execute();
         }
     }
