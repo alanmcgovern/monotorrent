@@ -63,14 +63,13 @@ namespace MonoTorrent.Dht.Tests
             }
 
             Assert.AreEqual(Bucket.MaxCapacity * 3 - 1, addedCount, "#1");
-            Assert.AreEqual(7, table.Buckets.Count, "#2");
+            Assert.AreEqual(6, table.Buckets.Count, "#2");
             Assert.AreEqual(8, table.Buckets[0].Nodes.Count, "#3");
             Assert.AreEqual(8, table.Buckets[1].Nodes.Count, "#4");
             Assert.AreEqual(8, table.Buckets[2].Nodes.Count, "#5");
             Assert.AreEqual(0, table.Buckets[3].Nodes.Count, "#6");
             Assert.AreEqual(0, table.Buckets[4].Nodes.Count, "#7");
             Assert.AreEqual(0, table.Buckets[5].Nodes.Count, "#8");
-            Assert.AreEqual(0, table.Buckets[6].Nodes.Count, "#9");
             CheckBuckets();
         }
 

@@ -11,6 +11,11 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class NodeTests
     {
+        //static void Main(string[] args)
+        //{
+        //    NodeTests t = new NodeTests();
+        //    t.CompactNode();
+        //}
         [Test]
         public void CompactPort()
         {

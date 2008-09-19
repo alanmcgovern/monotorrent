@@ -219,7 +219,7 @@ namespace MonoTorrent.Dht
             byte[] b = new byte[20];
             lock (random)
                 random.NextBytes(b);
-            return new NodeId(new BigInteger(b));
+            return new NodeId(b);
         }
     }
 }

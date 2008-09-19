@@ -11,6 +11,11 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class MessageTests
     {
+        //static void Main(string[] args)
+        //{
+        //    MessageTests t = new MessageTests();
+        //    t.GetPeersResponseEncode();
+        //}
         private NodeId id = new NodeId(Encoding.UTF8.GetBytes("abcdefghij0123456789"));
         private NodeId infohash = new NodeId(Encoding.UTF8.GetBytes("mnopqrstuvwxyz123456"));
         private BEncodedString token = "aoeusnth";
@@ -75,6 +80,7 @@ namespace MonoTorrent.Dht.Tests
         {
             GetPeersResponse m = new GetPeersResponse(id, token);
             m.TransactionId = transactionId;
+            m.Values = new BEncodedList();
             m.Values.Add((BEncodedString)"axje.u");
             m.Values.Add((BEncodedString)"idhtnm");
             Compare(m, "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re");
