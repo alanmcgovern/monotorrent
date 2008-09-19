@@ -215,7 +215,7 @@ namespace MonoTorrent.Client
             id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
-            AsyncTransfer callback = delegate(bool s, int c, object o) { engine.ConnectionManager.IncomingConnectionAccepted(s, c, o); };
+            AsyncTransfer callback = engine.ConnectionManager.IncomingConnectionAccepted;
             NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, id.BytesToSend,
                                     callback, id);
             id.ProcessingQueue = false;
