@@ -230,7 +230,7 @@ namespace MonoTorrent.Dht
         
         public void Announce(byte[] infoHash)
         {
-            new AnnounceTask(this, infoHash).Execute();
+            new GetPeersTask(this, infoHash).Execute();
         }
     }
 }

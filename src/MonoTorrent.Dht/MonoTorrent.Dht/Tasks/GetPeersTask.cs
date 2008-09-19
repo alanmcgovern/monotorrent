@@ -5,20 +5,20 @@ using System;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    internal class AnnounceTask : Task
+    internal class GetPeersTask : Task
     {
     	NodeId infoHash;
     	DhtEngine engine;
         int activeQueries;
         SortedList<NodeId, NodeId> closestNodes;
 
-    	public AnnounceTask(DhtEngine engine, byte[] infohash)
+    	public GetPeersTask(DhtEngine engine, byte[] infohash)
             : this(engine, new NodeId(infohash))
     	{
     		
     	}
 
-        public AnnounceTask(DhtEngine engine, NodeId infohash)
+        public GetPeersTask(DhtEngine engine, NodeId infohash)
         {
             this.engine = engine;
             this.infoHash = infohash;
