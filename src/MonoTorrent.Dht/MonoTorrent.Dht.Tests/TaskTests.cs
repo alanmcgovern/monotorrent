@@ -13,12 +13,12 @@ namespace MonoTorrent.Dht.Tests
     [TestFixture]
     public class TaskTests
     {
-        static void Main(string[] args)
-        {
-            TaskTests t = new TaskTests();
-            t.Setup();
-            t.ReplaceNodeTest();
-        }
+        //static void Main(string[] args)
+        //{
+        //    TaskTests t = new TaskTests();
+        //    t.Setup();
+        //    t.ReplaceNodeTest();
+        //}
 
         DhtEngine engine;
         TestListener listener;

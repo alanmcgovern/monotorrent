@@ -96,12 +96,14 @@ namespace MonoTorrent.Dht
                     Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
                     receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
                 }
-                catch (MessageException)
+                catch (MessageException ex)
                 {
+                    Console.WriteLine("Message Exception: {0}", ex);
                     // Caused by bad transaction id usually - ignore
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine("OMGZERS! {0}", ex);
                     //throw new Exception("IP:" + endpoint.Address.ToString() + "bad transaction:" + e.Message);
                 }
             }
@@ -179,13 +181,14 @@ namespace MonoTorrent.Dht
                         RaiseMessageSent(node.EndPoint, response.Query, response);
                     }
                 }
-                catch (MessageException)
+                catch (MessageException ex)
                 {
+                    Console.WriteLine("Incoming message barfed: {0}", ex);
                     // Normal operation (FIXME: do i need to send a response error message?) 
                 }
-                catch
+                catch(Exception ex)
                 {
-                    Console.WriteLine("Handle Error for message: {0}", m);
+                    Console.WriteLine("Handle Error for message: {0}", ex);
                     this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
                 }
             }
