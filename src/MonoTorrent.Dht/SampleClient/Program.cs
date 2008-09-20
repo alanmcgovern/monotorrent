@@ -5,6 +5,7 @@ using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using System.Net;
 using System.IO;
+using MonoTorrent.Common;
 
 namespace SampleClient
 {
@@ -12,6 +13,7 @@ namespace SampleClient
     {
         static void Main(string[] args)
         {
+            //Torrent t = Torrent.Load("Azureus3.1.1.0.jar.torrent");
             UdpListener listener = new UdpListener(15000);
             DhtEngine engine = new DhtEngine(listener);
             
@@ -25,8 +27,28 @@ namespace SampleClient
             byte[] b = new byte[20];
             lock (random)
                 random.NextBytes(b);
-            System.Threading.Thread.Sleep(10000);
-            engine.Announce(b);
+
+            for (int i = 0; i < 30; i++)
+            {
+                Console.WriteLine("Waiting: {0} seconds left", (30 - i));
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            // Get some peers for the torrent
+            //engine.GetPeers(t.infoHash);
+
+            engine.PeersFound += delegate(object o, PeersFoundEventArgs e) {
+                Console.WriteLine("I FOUND PEERS: {0}", e.Peers.Count);
+            };
+
+            for (int i = 0; i < 30; i++)
+            {
+                Console.WriteLine("Waiting: {0} seconds left", (30 - i));
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            // Add ourself to the DHT so people know we have the torrent too
+            //engine.Announce(t.infoHash, 25000);
             
             while (Console.ReadLine() != "q")
             {}
