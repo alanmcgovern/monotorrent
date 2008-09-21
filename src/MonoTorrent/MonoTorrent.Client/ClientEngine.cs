@@ -173,7 +173,7 @@ namespace MonoTorrent.Client
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
                 if (IsRunning)
-                    MainLoop.QueueWait((MainLoopTask)LogicTick);
+                    LogicTick();
                 return true;
             });
             this.torrents = new MonoTorrentCollection<TorrentManager>();
