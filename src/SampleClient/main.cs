@@ -20,6 +20,7 @@ namespace MonoTorrent
 {
     class main
     {
+        static string dhtNodeFile;
         static string basePath;
         static string downloadsPath;
         static string fastResumeFile;
@@ -35,6 +36,7 @@ namespace MonoTorrent
             torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
             downloadsPath = Path.Combine(basePath, "Downloads");			// This is the directory we will save downloads to
             fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
+            dhtNodeFile = Path.Combine(basePath, "DhtNodes");
             torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
             listener = new Top10Listener(10);
 
@@ -62,6 +64,9 @@ namespace MonoTorrent
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
+            engineSettings.PreferEncryption = false;
+            engineSettings.AllowedEncryption = EncryptionTypes.All;
+
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
             //engineSettings.MaxReadRate = 1 * 1024 * 1024;
@@ -76,6 +81,17 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
+
+            try
+            {
+                engine.DhtEngine.LoadNodes(File.ReadAllBytes(dhtNodeFile));
+                engine.DhtEngine.Start();
+                System.Threading.Thread.Sleep(10000);
+            }
+            catch
+            {
+                Console.WriteLine("No existing dht nodes could be loaded");
+            }
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
@@ -242,6 +258,7 @@ namespace MonoTorrent
                 fastResume.Add(torrents[i].Torrent.InfoHash, torrents[i].SaveFastResume().Encode());
             }
 
+            File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 

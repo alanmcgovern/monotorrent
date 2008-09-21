@@ -99,6 +99,14 @@ namespace MonoTorrent.Client
 		}
 		private int percentOfMaxRateToSkipReview = 90;
 
+        // FIXME: This value needs to be obeyed if it's changed
+        // while the torrent is running
+        public bool UseDht
+        {
+            get { return useDht; }
+        }
+        private bool useDht = true;
+
         #endregion
 
 

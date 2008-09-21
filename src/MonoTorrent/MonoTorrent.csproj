@@ -86,6 +86,126 @@
     <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\BigInteger.cs">
+      <Link>MonoTorrent.Dht\BigInteger.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\DhtEngine.cs">
+      <Link>MonoTorrent.Dht\DhtEngine.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\NodeAddedEventArgs.cs">
+      <Link>MonoTorrent.Dht\EventArgs\NodeAddedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\NodeFoundEventArgs.cs">
+      <Link>MonoTorrent.Dht\EventArgs\NodeFoundEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\PeersFoundEventArgs.cs">
+      <Link>MonoTorrent.Dht\EventArgs\PeersFoundEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\SendMessageEventArgs.cs">
+      <Link>MonoTorrent.Dht\EventArgs\SendMessageEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\TaskCompleteEventArgs.cs">
+      <Link>MonoTorrent.Dht\EventArgs\TaskCompleteEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Listeners\IListener.cs">
+      <Link>MonoTorrent.Dht\Listeners\IListener.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Listeners\UdpListener.cs">
+      <Link>MonoTorrent.Dht\Listeners\UdpListener.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\MessageException.cs">
+      <Link>MonoTorrent.Dht\MessageException.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\MessageLoop.cs">
+      <Link>MonoTorrent.Dht\MessageLoop.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Errors\ErrorMessage.cs">
+      <Link>MonoTorrent.Dht\Messages\Errors\ErrorMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Message.cs">
+      <Link>MonoTorrent.Dht\Messages\Message.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\MessageFactory.cs">
+      <Link>MonoTorrent.Dht\Messages\MessageFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Queries\AnnouncePeer.cs">
+      <Link>MonoTorrent.Dht\Messages\Queries\AnnouncePeer.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Queries\FindNode.cs">
+      <Link>MonoTorrent.Dht\Messages\Queries\FindNode.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Queries\GetPeers.cs">
+      <Link>MonoTorrent.Dht\Messages\Queries\GetPeers.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Queries\Ping.cs">
+      <Link>MonoTorrent.Dht\Messages\Queries\Ping.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Queries\QueryMessage.cs">
+      <Link>MonoTorrent.Dht\Messages\Queries\QueryMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Responses\AnnouncePeerResponse.cs">
+      <Link>MonoTorrent.Dht\Messages\Responses\AnnouncePeerResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Responses\FindNodeResponse.cs">
+      <Link>MonoTorrent.Dht\Messages\Responses\FindNodeResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Responses\GetPeersResponse.cs">
+      <Link>MonoTorrent.Dht\Messages\Responses\GetPeersResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Responses\PingResponse.cs">
+      <Link>MonoTorrent.Dht\Messages\Responses\PingResponse.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Messages\Responses\ResponseMessage.cs">
+      <Link>MonoTorrent.Dht\Messages\Responses\ResponseMessage.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Nodes\Node.cs">
+      <Link>MonoTorrent.Dht\Nodes\Node.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Nodes\NodeId.cs">
+      <Link>MonoTorrent.Dht\Nodes\NodeId.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Nodes\NodeState.cs">
+      <Link>MonoTorrent.Dht\Nodes\NodeState.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Nodes\TokenManager.cs">
+      <Link>MonoTorrent.Dht\Nodes\TokenManager.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\RoutingTable\Bucket.cs">
+      <Link>MonoTorrent.Dht\RoutingTable\Bucket.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\RoutingTable\RoutingTable.cs">
+      <Link>MonoTorrent.Dht\RoutingTable\RoutingTable.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\State.cs">
+      <Link>MonoTorrent.Dht\State.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\AnnounceTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\AnnounceTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\GetPeersTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\GetPeersTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\InitialiseTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\InitialiseTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\ITask.cs">
+      <Link>MonoTorrent.Dht\Tasks\ITask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\RefreshBucketTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\RefreshBucketTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\ReplaceNodeTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\ReplaceNodeTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\SendMessageTask.cs">
+      <Link>MonoTorrent.Dht\Tasks\SendMessageTask.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Tasks\Task.cs">
+      <Link>MonoTorrent.Dht\Tasks\Task.cs</Link>
+    </Compile>
+    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\TransactionId.cs">
+      <Link>MonoTorrent.Dht\TransactionId.cs</Link>
+    </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
@@ -240,6 +360,7 @@
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />
+    <Compile Include="MonoTorrent.Tracker\DhtTracker.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\ByteComparer.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\PeerEventArgs.cs" />

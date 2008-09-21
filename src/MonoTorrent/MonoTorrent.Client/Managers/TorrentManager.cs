@@ -43,6 +43,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Dht;
 
 namespace MonoTorrent.Client
 {
@@ -476,6 +477,32 @@ namespace MonoTorrent.Client
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
 
+                if (!torrent.IsPrivate && Settings.UseDht)
+                {
+                    engine.DhtEngine.PeersFound += DhtPeersFound;
+
+                    // First get some peers
+                    engine.DhtEngine.GetPeers(torrent.infoHash);
+
+                    // Second, get peers every 10 minutes (if we need them)
+                    ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
+                        
+                        // Torrent is no longer active
+                        if (State != TorrentState.Seeding && State != TorrentState.Downloading)
+                            return false;
+
+                        // Dht has been temporarily disabled, so don't request more peers this time.
+                        if (!Settings.UseDht)
+                            return true;
+
+                        if (OpenConnections < (int)(settings.MaxConnections * 0.8) &&
+                            peers.AvailablePeers.Count < (int)(settings.MaxConnections * 0.4))
+                        {
+                            engine.DhtEngine.GetPeers(torrent.InfoHash);
+                        }
+                        return true;
+                    });
+                }
                 this.startTime = DateTime.Now;
                 if (engine.ConnectionManager.IsRegistered(this))
                     Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
@@ -494,6 +521,7 @@ namespace MonoTorrent.Client
             return (WaitHandle)ClientEngine.MainLoop.QueueWait(delegate {
                 CheckRegistered();
 
+                engine.DhtEngine.PeersFound -= DhtPeersFound;
                 ManagerWaitHandle handle = new ManagerWaitHandle("Global");
                 try
                 {
@@ -846,6 +874,16 @@ namespace MonoTorrent.Client
         {
             if (engine == null)
                 throw new TorrentException("This manager has not been registed with an Engine");
+        }
+
+        private void DhtPeersFound(object o, PeersFoundEventArgs e)
+        {
+            if (Toolbox.ByteMatch(torrent.InfoHash, e.InfoHash))
+            {
+                ClientEngine.MainLoop.Queue(delegate {
+                    AddPeers(e.Peers);
+                });
+            }
         }
 
         private void PerformHashCheck(bool autoStart)

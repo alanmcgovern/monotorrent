@@ -61,6 +61,7 @@ namespace MonoTorrent.Dht
 
         internal static MainLoop MainLoop = new MainLoop("DhtLoop");
         
+        bool bootStrap = true;
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         int port = 6881;
         State state = State.NotReady;
@@ -80,7 +81,8 @@ namespace MonoTorrent.Dht
         
         internal bool Bootstrap
         {
-            get { return false && (RoutingTable.CountNodes() <= 1); }
+            get { return bootStrap; }
+            set { bootStrap = value; }
         }
 
         public TimeSpan BucketRefreshTimeout
@@ -132,7 +134,7 @@ namespace MonoTorrent.Dht
             tokenManager = new TokenManager();
         }
 
-        public void Add(IEnumerable<Node> nodes)
+        internal void Add(IEnumerable<Node> nodes)
         {
             if (nodes == null)
                 throw new ArgumentNullException("nodes");
@@ -141,7 +143,7 @@ namespace MonoTorrent.Dht
                 Add(n);
         }
 
-        public void Add(Node node)
+        internal void Add(Node node)
         {
             if (node == null)
                 throw new ArgumentNullException("node");
@@ -156,6 +158,7 @@ namespace MonoTorrent.Dht
             {
                 new InitialiseTask(this).Execute();
                 RaiseStateChanged(State.Initialising);
+                bootStrap = false;
             }
             else
             {

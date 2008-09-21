@@ -90,12 +90,6 @@
     <Compile Include="EventArgs\NodeFoundEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\MonoTorrent\MonoTorrent.csproj">
-      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
-      <Name>MonoTorrent</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

@@ -41,6 +41,8 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Managers;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Dht;
+using MonoTorrent.Dht.Listeners;
 
 namespace MonoTorrent.Client
 {
@@ -59,7 +61,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
         public static readonly bool SupportsEndgameMode = false;
-        public static readonly bool SupportsDht = false;
+        public static readonly bool SupportsDht = true;
         internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
        
         #endregion
@@ -80,6 +82,7 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
+        private DhtEngine dhtEngine;
         private DiskManager diskManager;
         private bool isRunning;
         private ConnectionListenerBase listener;
@@ -99,6 +102,11 @@ namespace MonoTorrent.Client
         public ConnectionManager ConnectionManager
         {
             get { return this.connectionManager; }
+        }
+
+        public DhtEngine DhtEngine
+        {
+            get { return dhtEngine; }
         }
 
         public DiskManager DiskManager
@@ -169,6 +177,9 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
+            UdpListener l = new UdpListener(settings.ListenPort);
+            l.Start();
+            this.dhtEngine = new DhtEngine(l);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
