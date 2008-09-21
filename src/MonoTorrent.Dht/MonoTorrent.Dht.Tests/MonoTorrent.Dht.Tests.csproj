@@ -45,6 +45,7 @@
     <Compile Include="NodeTests.cs" />
     <Compile Include="RoutingTableTests.cs" />
     <Compile Include="TaskTests.cs" />
+    <Compile Include="TestHelper.cs" />
     <Compile Include="TestListener.cs" />
     <Compile Include="TokenTest.cs" />
   </ItemGroup>

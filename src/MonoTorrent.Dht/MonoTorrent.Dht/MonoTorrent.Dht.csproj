@@ -49,6 +49,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BigInteger.cs" />
     <Compile Include="DhtEngine.cs" />
+    <Compile Include="DhtTracker.cs" />
     <Compile Include="EventArgs\NodeAddedEventArgs.cs" />
     <Compile Include="EventArgs\SendMessageEventArgs.cs" />
     <Compile Include="EventArgs\TaskCompleteEventArgs.cs" />

@@ -76,28 +76,9 @@ namespace MonoTorrent.Dht.Tests
         [Test]
         public void GetClosestTest()
         {
-            List<NodeId> nodes = new List<NodeId>();
-            byte[] id = new byte[20];
-            id[19] = 7;
-            table = new RoutingTable(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
-
-            for (int i = 0; i <= 30; i++)
-            {
-                if (i == 7)
-                    continue;
-
-                id = new byte[20];
-                id[19] = (byte)i;
-                nodes.Add(new NodeId(id));
-                table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
-            }
-
-            nodes.Sort(delegate(NodeId left, NodeId right)
-            {
-                NodeId dLeft = left.Xor(table.LocalNode.Id);
-                NodeId dRight = right.Xor(table.LocalNode.Id);
-                return dLeft.CompareTo(dRight);
-            });
+            List<NodeId> nodes;
+            TestHelper.ManyNodes(out table, out nodes);
+            
 
             List<Node> closest = table.GetClosest(table.LocalNode.Id);
             Assert.AreEqual(8, closest.Count, "#1");
