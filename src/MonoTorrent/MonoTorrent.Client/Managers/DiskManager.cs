@@ -178,28 +178,26 @@ namespace MonoTorrent.Client.Managers
             if (!piece.AllBlocksWritten)
                 return;
 
-            IOLoop.Queue(delegate {
-                // Hashcheck the piece as we now have all the blocks.
-                bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
-                id.TorrentManager.Bitfield[data.PieceIndex] = result;
+            // Hashcheck the piece as we now have all the blocks.
+            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
+            id.TorrentManager.Bitfield[data.PieceIndex] = result;
 
-                ClientEngine.MainLoop.Queue(delegate {
-                    id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
+            ClientEngine.MainLoop.Queue(delegate {
+                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
-                    id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-                    List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
-                    for (int i = 0; i < piece.Blocks.Length; i++)
-                        if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
-                            peers.Add(piece.Blocks[i].RequestedOff);
+                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
+                List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
+                for (int i = 0; i < piece.Blocks.Length; i++)
+                    if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
+                        peers.Add(piece.Blocks[i].RequestedOff);
 
-                    for (int i = 0; i < peers.Count; i++)
-                        if (peers[i].Connection != null)
-                            id.Peer.HashedPiece(result);
+                for (int i = 0; i < peers.Count; i++)
+                    if (peers[i].Connection != null)
+                        id.Peer.HashedPiece(result);
 
-                    // If the piece was successfully hashed, enqueue a new "have" message to be sent out
-                    if (result)
-                        id.TorrentManager.finishedPieces.Enqueue(piece.Index);
-                });
+                // If the piece was successfully hashed, enqueue a new "have" message to be sent out
+                if (result)
+                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
             });
         }
 
