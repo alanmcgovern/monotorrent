@@ -360,7 +360,6 @@
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />
-    <Compile Include="MonoTorrent.Tracker\DhtTracker.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\ByteComparer.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\PeerEventArgs.cs" />
