@@ -77,7 +77,7 @@ namespace MonoTorrent.Client
 
         private AsyncCallback endCheckEncryptionCallback;
         private AsyncConnect endCreateConnectionCallback;
-        private AsyncTransfer incomingConnectionAcceptedCallback;
+        internal AsyncTransfer incomingConnectionAcceptedCallback;
         private AsyncTransfer onEndReceiveMessageCallback;
         private AsyncTransfer onEndSendMessageCallback;
 
@@ -850,7 +850,7 @@ namespace MonoTorrent.Client
         /// This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
         /// <param name="result"></param>
-        internal void IncomingConnectionAccepted(bool succeeded, int count, object state)
+        private void IncomingConnectionAccepted(bool succeeded, int count, object state)
         {
             string reason = null;
             int bytesSent;
