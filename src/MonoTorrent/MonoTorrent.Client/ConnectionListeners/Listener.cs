@@ -27,6 +27,7 @@ namespace MonoTorrent.Client
 
         protected Listener(IPEndPoint endpoint)
         {
+            this.status = ListenerStatus.NotListening;
             this.endpoint = endpoint;
         }
 
