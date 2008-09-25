@@ -37,7 +37,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Common
 {
-	public delegate int Operation<T>(T target);
+	public delegate long Operation<T>(T target);
 
     public static class Toolbox
     {
@@ -53,9 +53,9 @@ namespace MonoTorrent.Common
 			return count;
 		}
 
-		public static int Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
+		public static long Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
 		{
-			int count = 0;
+            long count = 0;
 
 			foreach (T t in enumerable)
 				count += action(t);
