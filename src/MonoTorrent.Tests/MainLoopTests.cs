@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Tests
 
             ManualResetEvent handle = new ManualResetEvent(false);
             loop.QueueWait(delegate { handle.Set(); });
-            Assert.IsTrue(handle.WaitOne(100, true), "#2");
+            Assert.IsTrue(handle.WaitOne(5000, true), "#2");
         }
 
         [Test]
@@ -63,14 +63,15 @@ namespace MonoTorrent.Client.Tests
             loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
                 this.count++;
                 if (count == 3)
+                {
                     handle.Set();
+                    return false;
+                }
 
-                return count != 3;
+                return true;
             });
-            Assert.IsTrue(handle.WaitOne(5000, true), "#1");
+            Assert.IsTrue(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
             Assert.AreEqual(3, count, "#2");
-            System.Threading.Thread.Sleep(50);
-            Assert.AreEqual(3, count, "#3");
         }
 
         [Test]
@@ -80,10 +81,14 @@ namespace MonoTorrent.Client.Tests
             loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
                 System.Threading.Thread.Sleep(50);
                 if (++count == 3)
+                {
                     handle.Set();
-                return count != 3;
+                    return false;
+                }
+
+                return true;
             });
-            Assert.IsTrue(handle.WaitOne(1000, false), "#1");
+            Assert.IsTrue(handle.WaitOne(5000, false), "#1: Executed {0} times", count);
             Assert.AreEqual(3, count, "#2");
         }
     }
