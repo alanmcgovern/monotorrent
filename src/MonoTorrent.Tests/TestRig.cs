@@ -201,7 +201,7 @@ namespace MonoTorrent.Client.Tests
         #endregion
     }
 
-    public class CustomListener : ConnectionListenerBase
+    public class CustomListener : PeerListener
     {
         public override void Start()
         {
@@ -213,20 +213,15 @@ namespace MonoTorrent.Client.Tests
 
         }
 
+        public CustomListener()
+            :base(new IPEndPoint(IPAddress.Any, 0))
+        {
+        }
+
         public void Add(TorrentManager manager, IConnection connection)
         {
             MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.All);
             base.RaiseConnectionReceived(p, connection, manager);
-        }
-
-        public override void ChangePort(int port)
-        {
-
-        }
-
-        public override int ListenPort
-        {
-            get { return 0; }
         }
     }
 

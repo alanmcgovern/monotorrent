@@ -85,12 +85,13 @@ namespace MonoTorrent.Client
         private DhtEngine dhtEngine;
         private DiskManager diskManager;
         private bool isRunning;
-        private ConnectionListenerBase listener;
+        private PeerListener listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
         private readonly string peerId;
         private EngineSettings settings;
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
+        private UdpListener udpListener;
         internal RateLimiter uploadLimiter;
         internal RateLimiter downloadLimiter;
 
@@ -114,7 +115,7 @@ namespace MonoTorrent.Client
             get { return diskManager; }
         }
 
-        public ConnectionListenerBase Listener
+        public PeerListener Listener
         {
             get { return this.listener; }
         }
@@ -158,13 +159,13 @@ namespace MonoTorrent.Client
 
         }
 
-        public ClientEngine(EngineSettings settings, ConnectionListenerBase listener)
+        public ClientEngine(EngineSettings settings, PeerListener listener)
             : this (settings, listener, new DiskWriter())
         {
 
         }
 
-        public ClientEngine(EngineSettings settings, ConnectionListenerBase listener, PieceWriter writer)
+        public ClientEngine(EngineSettings settings, PeerListener listener, PieceWriter writer)
         {
             if (settings == null)
                 throw new ArgumentNullException("settings");
@@ -177,9 +178,9 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
-            UdpListener l = new UdpListener(settings.ListenPort);
-            l.Start();
-            this.dhtEngine = new DhtEngine(l);
+            udpListener = new UdpListener(new IPEndPoint(IPAddress.Any, settings.ListenPort));
+            udpListener.Start();
+            this.dhtEngine = new DhtEngine(udpListener);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
@@ -195,8 +196,8 @@ namespace MonoTorrent.Client
             listenManager.Register(listener);
 
             // This means we created the listener in the constructor
-            if (listener.ListenPort == 0)
-                listener.ChangePort(settings.ListenPort);
+            if (listener.Endpoint.Port == 0)
+                listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
 
             listener.Start();
         }
@@ -222,6 +223,7 @@ namespace MonoTorrent.Client
         public void Dispose()
         {
             MainLoop.QueueWait(delegate {
+                this.udpListener.Stop();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
             });
@@ -291,7 +293,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
+                return (int)(long)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
             }
         }
 
@@ -299,7 +301,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
+                return (int)(long)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
             }
         }
 

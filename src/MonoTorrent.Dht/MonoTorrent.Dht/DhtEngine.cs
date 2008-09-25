@@ -127,7 +127,7 @@ namespace MonoTorrent.Dht
             get { return torrents; }
         }
 
-        public DhtEngine(IListener listener)
+        public DhtEngine(DhtListener listener)
         {
             messageLoop = new MessageLoop(this, listener);
             timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default

@@ -60,7 +60,7 @@ namespace MonoTorrent.Dht
         List<IAsyncResult> activeSends = new List<IAsyncResult>();
         DhtEngine engine;
         int lastSent;
-        IListener listener;
+        DhtListener listener;
         private object locker = new object();
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht
             get { return activeSends.Count < 5 && sendQueue.Count > 0 && (Environment.TickCount - lastSent) > 5; }
         }
 
-        public MessageLoop(DhtEngine engine, IListener listener)
+        public MessageLoop(DhtEngine engine, DhtListener listener)
         {
             this.engine = engine;
             this.listener = listener;

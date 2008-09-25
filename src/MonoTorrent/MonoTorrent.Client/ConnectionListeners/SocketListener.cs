@@ -40,65 +40,16 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Accepts incoming connections and passes them off to the right TorrentManager
     /// </summary>
-    public class SocketListener : ConnectionListenerBase
+    public class SocketListener : PeerListener
     {
         private AsyncCallback endAcceptCallback;
-        private IPEndPoint listenEndPoint;
         private Socket listener;
 
-        public override int ListenPort
-        {
-            get { return listenEndPoint.Port; }
-        }
         public SocketListener(IPEndPoint endpoint)
+            : base(endpoint)
         {
-            if (endpoint == null)
-                throw new ArgumentNullException("endpoint");
-
-            this.listenEndPoint = endpoint;
-            this.endAcceptCallback = new AsyncCallback(EndAccept);
+            this.endAcceptCallback = EndAccept;
         }
-
-
-        public override void ChangePort(int port)
-        {
-            bool listening = State == ListenerStatus.Listening;
-
-            Stop();
-            listenEndPoint.Port = port;
-
-            if (listening)
-                Start();
-        }
-
-        public override void Start()
-        {
-            if (State == ListenerStatus.Listening)
-                return;
-
-            try
-            {
-                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                listener.Bind(listenEndPoint);
-                listener.Listen(6);
-                listener.BeginAccept(endAcceptCallback, this.listener);
-                RaiseStateChanged(ListenerStatus.Listening);
-            }
-            catch (SocketException)
-            {
-                RaiseStateChanged(ListenerStatus.PortNotFree);
-            }
-        }
-
-        public override void Stop()
-        {
-            if (State == ListenerStatus.Listening)
-                RaiseStateChanged(ListenerStatus.NotListening);
-
-            if (listener != null)
-                listener.Close();
-        }
-
 
         private void EndAccept(IAsyncResult result)
         {
@@ -134,13 +85,41 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    if (State == ListenerStatus.Listening)
+                    if (Status == ListenerStatus.Listening)
                         listener.BeginAccept(endAcceptCallback, listener);
                 }
-                catch(ObjectDisposedException)
+                catch (ObjectDisposedException)
                 {
+
                 }
             }
+        }
+
+        public override void Start()
+        {
+            if (Status == ListenerStatus.Listening)
+                return;
+
+            try
+            {
+                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                listener.Bind(Endpoint);
+                listener.Listen(6);
+                listener.BeginAccept(endAcceptCallback, listener);
+                RaiseStatusChanged(ListenerStatus.Listening);
+            }
+            catch (SocketException)
+            {
+                RaiseStatusChanged(ListenerStatus.PortNotFree);
+            }
+        }
+
+        public override void Stop()
+        {
+            RaiseStatusChanged(ListenerStatus.NotListening);
+
+            if (listener != null)
+                listener.Close();
         }
     }
 }

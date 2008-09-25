@@ -43,15 +43,15 @@ namespace MonoTorrent.Client.Tests
         public void ChangePortThree()
         {
             endpoint.Port++;
-            listener.ChangePort(endpoint.Port);
+            listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, endpoint.Port));
             AcceptThree();
 
             endpoint.Port++;
-            listener.ChangePort(endpoint.Port);
+            listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, endpoint.Port));
             AcceptThree();
 
             endpoint.Port++;
-            listener.ChangePort(endpoint.Port);
+            listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, endpoint.Port));
             AcceptThree();
         }
     }

@@ -34,51 +34,48 @@ using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Listeners
 {
-    public class UdpListener : IListener
+    public class UdpListener : DhtListener
     {
-        public event MessageReceived MessageReceived;
 
         private UdpClient client;
-        private IPEndPoint endpoint;
-        bool started;
 
-        public UdpListener(int port)
+        public UdpListener(IPEndPoint endpoint)
+            :base(endpoint)
         {
-            endpoint = new IPEndPoint(IPAddress.Any, port);
+            
         }
 
         private void EndReceive(IAsyncResult result)
         {
             try
             {
-                IPEndPoint e = new IPEndPoint(IPAddress.Any, endpoint.Port);
+                IPEndPoint e = new IPEndPoint(IPAddress.Any, Endpoint.Port);
                 byte[] buffer = client.EndReceive(result, ref e);
 
-                if (MessageReceived != null)
-                    MessageReceived(buffer, e);
-            }
-            catch (Exception ex)
-            {
-                // FIXME: This should be handled in a cleaner manner
-                Console.WriteLine(ex);
-            }
-
-            try
-            {
+                RaiseMessageReceived(buffer, e);
                 client.BeginReceive(EndReceive, null);
             }
-            catch
+            catch (ObjectDisposedException)
+            {
+                // Ignore, we're finished!
+            }
+            catch (SocketException)
             {
                 client.Close();
-                client = new UdpClient(endpoint);
-                client.BeginReceive(EndReceive, null);
+                if (Status == ListenerStatus.Listening)
+                {
+                    client = new UdpClient(Endpoint);
+                    client.BeginReceive(EndReceive, null);
+                }
             }
         }
 
-        public void Send(byte[] buffer, IPEndPoint endpoint)
+        public override void Send(byte[] buffer, IPEndPoint endpoint)
         {
             try
             {
@@ -91,21 +88,34 @@ namespace MonoTorrent.Dht.Listeners
             }
         }
 
-        public void Start()
+        public override void Start()
         {
-            client = new UdpClient(endpoint);
-            client.BeginReceive(EndReceive, null);
+            try
+            {
+                client = new UdpClient(Endpoint);
+                client.BeginReceive(EndReceive, null);
+                RaiseStatusChanged(ListenerStatus.Listening);
+            }
+            catch (SocketException ex)
+            {
+                RaiseStatusChanged(ListenerStatus.PortNotFree);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Do Nothing
+            }
         }
 
-        public void Stop()
+        public override void Stop()
         {
-            started = false;
-            client.Close();
-        }
-
-        public bool Started
-        {
-            get { return started; }
+            try
+            {
+                client.Close();
+            }
+            catch
+            {
+                // FIXME: Not needed
+            }
         }
     }
 }

@@ -32,6 +32,13 @@ using System;
 
 namespace MonoTorrent.Common
 {
+    public enum ListenerStatus
+    {
+        Listening,
+        PortNotFree,
+        NotListening
+    }
+
     public enum PeerStatus
     {
         Available,

@@ -107,9 +107,6 @@
     <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\EventArgs\TaskCompleteEventArgs.cs">
       <Link>MonoTorrent.Dht\EventArgs\TaskCompleteEventArgs.cs</Link>
     </Compile>
-    <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Listeners\IListener.cs">
-      <Link>MonoTorrent.Dht\Listeners\IListener.cs</Link>
-    </Compile>
     <Compile Include="..\MonoTorrent.Dht\MonoTorrent.Dht\Listeners\UdpListener.cs">
       <Link>MonoTorrent.Dht\Listeners\UdpListener.cs</Link>
     </Compile>
@@ -210,6 +207,9 @@
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
     <Compile Include="BanLists\RangeCollection.cs" />
+    <Compile Include="MonoTorrent.Client\ConnectionListeners\IListener.cs" />
+    <Compile Include="MonoTorrent.Client\ConnectionListeners\Listener.cs" />
+    <Compile Include="MonoTorrent.Client\ConnectionListeners\PeerListener.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptionTypes.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\AttemptConnectionEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
@@ -244,7 +244,6 @@
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs" />
-    <Compile Include="MonoTorrent.Client\ConnectionListeners\ConnectionListenerBase.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\SocketListener.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptedSocket.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\IEncryption\IEncryption.cs" />
@@ -360,6 +359,7 @@
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />
+    <Compile Include="MonoTorrent.Dht\Listeners\DhtListener.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\ByteComparer.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\PeerEventArgs.cs" />

@@ -12,7 +12,7 @@ namespace MonoTorrent.Client.Managers
 {
     public class DiskManager : IDisposable
     {
-        private MainLoop IOLoop = new MainLoop("Disk IO");
+        private static MainLoop IOLoop = new MainLoop("Disk IO");
 
         #region Member Variables
 

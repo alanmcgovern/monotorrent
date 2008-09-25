@@ -25,7 +25,7 @@ namespace MonoTorrent.Client
 
         private object locker;
         private ClientEngine engine;
-        private MonoTorrentCollection<ConnectionListenerBase> listeners;
+        private MonoTorrentCollection<PeerListener> listeners;
         private AsyncCallback endCheckEncryptionCallback;
 
         #endregion Member Variables
@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
 
         #region Properties
 
-        public MonoTorrentCollection<ConnectionListenerBase> Listeners
+        public MonoTorrentCollection<PeerListener> Listeners
         {
             get { return listeners; }
         }
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
         {
             Engine = engine;
             Locker = new object();
-            listeners = new MonoTorrentCollection<ConnectionListenerBase>();
+            listeners = new MonoTorrentCollection<PeerListener>();
             peerHandshakeReceived = onPeerHandshakeReceived;
             endCheckEncryptionCallback = EndCheckEncryption;
         }
@@ -73,12 +73,12 @@ namespace MonoTorrent.Client
         {
         }
 
-        public void Register(ConnectionListenerBase listener)
+        public void Register(PeerListener listener)
         {
             listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
 
-        public void Unregister(ConnectionListenerBase listener)
+        public void Unregister(PeerListener listener)
         {
             listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
         }
