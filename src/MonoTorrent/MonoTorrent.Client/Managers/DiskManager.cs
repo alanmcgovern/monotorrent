@@ -16,6 +16,7 @@ namespace MonoTorrent.Client.Managers
 
         #region Member Variables
 
+        private object bufferLock = new object();
         private Queue<BufferedIO> bufferedReads;
         private Queue<BufferedIO> bufferedWrites;
         private bool disposed;
@@ -86,14 +87,18 @@ namespace MonoTorrent.Client.Managers
 
                 while (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
                 {
-                    BufferedIO write = this.bufferedWrites.Dequeue();
+                    BufferedIO write;
+                    lock (bufferLock)
+                        write = this.bufferedWrites.Dequeue();
                     Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
                     PerformWrite(write);
                 }
 
                 while (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
                 {
-                    BufferedIO read = this.bufferedReads.Dequeue();
+                    BufferedIO read;
+                    lock(bufferLock)
+                        read = this.bufferedReads.Dequeue();
                     Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
                     PerformRead(read);
                 }
@@ -121,18 +126,29 @@ namespace MonoTorrent.Client.Managers
 
             IOLoop.Queue(delegate {
                 // Dump all buffered reads for the manager we're closing the streams for
-                List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
-                list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                bufferedReads = new Queue<BufferedIO>(list);
+                List<BufferedIO> writes = new List<BufferedIO>();
+                lock (bufferLock)
+                {
+                    List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
+                    list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                    bufferedReads = new Queue<BufferedIO>(list);
+
+                    list.Clear();
+                    list.AddRange(bufferedWrites);
+
+                    for (int i = 0; i < list.Count; i++)
+                        if (list[i].Files == files)
+                            writes.Add(list[i]);
+
+                    list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                    bufferedWrites = new Queue<BufferedIO>(list);
+                }
 
                 // Process all remaining writes
-                list = new List<BufferedIO>(bufferedWrites);
-                foreach (BufferedIO io in list)
+                foreach (BufferedIO io in writes)
                     if (io.Files == files)
                         PerformWrite(io);
                 writer.Close(path, files);
-                list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                bufferedWrites = new Queue<BufferedIO>(list);
 
                 handle.Set();
             });
@@ -233,9 +249,8 @@ namespace MonoTorrent.Client.Managers
             if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
                 PerformRead(io);
             else
-                IOLoop.Queue(delegate {
+                lock (bufferLock)
                     bufferedReads.Enqueue(io);
-                });
         }
 
         internal void QueueWrite(BufferedIO io)
@@ -243,9 +258,8 @@ namespace MonoTorrent.Client.Managers
             if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
                 PerformWrite(io);
             else
-                IOLoop.Queue(delegate { 
+                lock (bufferLock)
                     bufferedWrites.Enqueue(io);
-                });
         }
 
         #endregion
