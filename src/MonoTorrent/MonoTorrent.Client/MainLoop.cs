@@ -77,7 +77,8 @@ namespace MonoTorrent.Client
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         bool disposed;
         AutoResetEvent handle = new AutoResetEvent(false);
-        SortedList<Priority, DelegateTask> tasks = new SortedList<Priority, DelegateTask>(new ReverseComparer());
+        //SortedList<Priority, DelegateTask> tasks = new SortedList<Priority, DelegateTask>(new ReverseComparer());
+        Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
         public bool Disposed
@@ -103,8 +104,9 @@ namespace MonoTorrent.Client
                 {
                     if (tasks.Count > 0)
                     {
-                        task = tasks.Values[0];
-                        tasks.RemoveAt(0);
+                        task = tasks.Dequeue();
+                        //task = tasks.Values[0];
+                        //tasks.RemoveAt(0);
                     }
                 }
 
@@ -126,7 +128,8 @@ namespace MonoTorrent.Client
         {
             lock (tasks)
             {
-                tasks.Add(priority, task);
+                tasks.Enqueue(task);
+                //tasks.Add(priority, task);
                 handle.Set();
             }
         }
