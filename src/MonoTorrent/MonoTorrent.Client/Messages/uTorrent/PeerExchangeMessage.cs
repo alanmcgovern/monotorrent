@@ -65,7 +65,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            peerDict = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length);
+            peerDict = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length, false);
         }
 
         public override int Encode(byte[] buffer, int offset)

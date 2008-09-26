@@ -93,17 +93,12 @@ namespace MonoTorrent.BEncoding
         /// 
         /// </summary>
         /// <param name="reader"></param>
-        internal override void DecodeInternal(BinaryReader reader)
+        internal override void DecodeInternal(RawReader reader)
         {
-            DecodeInternal(reader, true);
+            DecodeInternal(reader, reader.StrictDecoding);
         }
 
-
-        /// <summary>
-        /// Decodes a BEncodedDictionary from the supplied StreamReader with option to ignore certain errors
-        /// </summary>
-        /// <param name="reader"></param>
-        internal void DecodeInternal(BinaryReader reader, bool strictDecoding)
+        private void DecodeInternal(RawReader reader, bool strictDecoding)
         {
             BEncodedString key = null;
             BEncodedValue value = null;
@@ -117,13 +112,13 @@ namespace MonoTorrent.BEncoding
                 while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
                 {
                     key = (BEncodedString)BEncodedValue.Decode(reader);         // keys have to be BEncoded strings
-                    
+
                     if (oldkey != null && oldkey.CompareTo(key) > 0)
                         if (strictDecoding)
                             throw new BEncodingException(String.Format(
                                 "Illegal BEncodedDictionary. The attributes are not ordered correctly. Old key: {0}, New key: {1}",
                                 oldkey, key));
-                    
+
                     oldkey = key;
                     value = BEncodedValue.Decode(reader);                     // the value is a BEncoded value
                     dictionary.Add(key, value);
@@ -132,7 +127,7 @@ namespace MonoTorrent.BEncoding
                 if (reader.ReadByte() != 'e')                                    // remove the trailing 'e'
                     throw new BEncodingException("Invalid data found. Aborting");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new BEncodingException("Couldn't decode dictionary", ex);
             }
@@ -145,7 +140,7 @@ namespace MonoTorrent.BEncoding
 
         public static BEncodedDictionary DecodeTorrent(Stream s)
         {
-            return DecodeTorrent(new BinaryReader(s));
+            return DecodeTorrent(new RawReader(s));
         }
 
 
@@ -154,7 +149,7 @@ namespace MonoTorrent.BEncoding
         /// overall torrent file, but imposes strict rules on the info dictionary.
         /// </summary>
         /// <returns></returns>
-        public static BEncodedDictionary DecodeTorrent(BinaryReader reader)
+        public static BEncodedDictionary DecodeTorrent(RawReader reader)
         {
             BEncodedString key = null;
             BEncodedValue value = null;

@@ -207,6 +207,7 @@
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
     <Compile Include="BanLists\RangeCollection.cs" />
+    <Compile Include="MonoTorrent.BEncoding\RawReader.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\IListener.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\Listener.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\PeerListener.cs" />

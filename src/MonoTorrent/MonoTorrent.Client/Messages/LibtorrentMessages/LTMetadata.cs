@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.BEncoding;
 using System.Security.Cryptography;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
@@ -59,7 +60,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                     else
                     { 
                         byte[] infoHash = new SHA1Managed().ComputeHash(metadata);
-                        if (id.TorrentManager.Torrent.InfoHash != infoHash)
+                        if (!Toolbox.ByteMatch(id.TorrentManager.Torrent.InfoHash, infoHash))
                             return;//invalid metadata received from other peers
 
                         BEncodedDictionary d = (BEncodedDictionary)BEncodedDictionary.Decode(metadata);
@@ -87,7 +88,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public override void Decode(byte[] buffer, int offset, int length)
         {
             BEncodedValue val;
-            BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(buffer, offset, length);
+            BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(buffer, offset, length, true);
             int totalSize = 0;
 
             if (d.TryGetValue(MessageTypeKey, out val))

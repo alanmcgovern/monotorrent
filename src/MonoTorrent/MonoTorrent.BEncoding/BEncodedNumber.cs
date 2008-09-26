@@ -96,10 +96,10 @@ namespace MonoTorrent.BEncoding
 
 
         /// <summary>
-        /// Decodes a BEncoded number from the supplied BinaryReader
+        /// Decodes a BEncoded number from the supplied RawReader
         /// </summary>
-        /// <param name="reader">BinaryReader containing a BEncoded Number</param>
-        internal override void DecodeInternal(BinaryReader reader)
+        /// <param name="reader">RawReader containing a BEncoded Number</param>
+        internal override void DecodeInternal(RawReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException("reader");

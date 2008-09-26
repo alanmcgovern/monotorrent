@@ -139,7 +139,7 @@ namespace MonoTorrent.BEncoding
         /// Decodes a BEncodedString from the supplied StreamReader
         /// </summary>
         /// <param name="reader">The StreamReader containing the BEncodedString</param>
-        internal override void DecodeInternal(BinaryReader reader)
+        internal override void DecodeInternal(RawReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException("reader");
