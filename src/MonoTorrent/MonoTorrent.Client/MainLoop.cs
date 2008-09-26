@@ -32,12 +32,22 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using Mono.Ssdp.Internal;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public delegate object MainLoopJob();
     public delegate void MainLoopTask();
     public delegate bool TimeoutTask();
+
+    internal class ReverseComparer : IComparer<Priority>
+    {
+        public int Compare(Priority x, Priority y)
+        {
+            // High priority will sort to the top of the list
+            return ((int)y).CompareTo((int)x);
+        }
+    }
 
     public class MainLoop : IDisposable
     {
@@ -67,7 +77,7 @@ namespace MonoTorrent.Client
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         bool disposed;
         AutoResetEvent handle = new AutoResetEvent(false);
-        Queue<DelegateTask> tasks = new Queue<DelegateTask>();
+        SortedList<Priority, DelegateTask> tasks = new SortedList<Priority, DelegateTask>(new ReverseComparer());
         internal Thread thread;
 
         public bool Disposed
@@ -92,7 +102,10 @@ namespace MonoTorrent.Client
                 lock (tasks)
                 {
                     if (tasks.Count > 0)
-                        task = tasks.Dequeue();
+                    {
+                        task = tasks.Values[0];
+                        tasks.RemoveAt(0);
+                    }
                 }
 
                 if (task == null)
@@ -109,11 +122,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void Queue(DelegateTask task)
+        private void Queue(DelegateTask task, Priority priority)
         {
             lock (tasks)
             {
-                tasks.Enqueue(task);
+                tasks.Add(priority, task);
                 handle.Set();
             }
         }
@@ -123,7 +136,7 @@ namespace MonoTorrent.Client
             Queue(new DelegateTask(delegate { 
                 task();
                 return null;
-            }));
+            }), Priority.Normal);
         }
 
         public void QueueWait(MainLoopTask task)
@@ -146,7 +159,7 @@ namespace MonoTorrent.Client
             if (Thread.CurrentThread == thread)
                 t.Execute();
             else
-                Queue(t);
+                Queue(t, Priority.Highest);
 
             t.Handle.WaitOne();
             t.Handle.Close();
