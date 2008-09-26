@@ -173,6 +173,7 @@ namespace MonoTorrent.Client
                 return task(); 
             });
             return dispatcher.Add(span, delegate {
+                dTask.Handle = null;
                 return (bool)QueueWait(dTask);
             });
         }
