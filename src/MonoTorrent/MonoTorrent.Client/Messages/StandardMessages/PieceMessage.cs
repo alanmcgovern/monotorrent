@@ -178,12 +178,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
-
-            if (!id.ProcessingQueue)
-            {
-                id.ProcessingQueue = true;
-                MessageHandler.EnqueueSend(id);
-            }
         }
 
         public override string ToString()

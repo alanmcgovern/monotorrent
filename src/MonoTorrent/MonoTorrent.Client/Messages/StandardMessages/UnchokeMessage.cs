@@ -72,13 +72,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
             // Add requests to the peers message queue
             while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
-
-            // If we're not already processing the send queue, start processing it now
-            if (!id.ProcessingQueue)
-            {
-                id.ProcessingQueue = true;
-                MessageHandler.EnqueueSend(id);
-            }
         }
 
         public override int ByteLength

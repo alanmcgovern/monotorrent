@@ -246,6 +246,7 @@ namespace MonoTorrent.Client
                     return;
                 }
 
+                id.ProcessingQueue = true;
                 // Increase the count of the "open" connections
                 EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
                 
@@ -387,8 +388,7 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
-                int bytesSent = count;
-                if (bytesSent == 0)
+                if (count == 0)
                 {
                     reason = "Sending error: Sent zero bytes";
                     Logger.Log(id.Connection, "ConnectionManager - Sent zero bytes when sending a message");
@@ -398,8 +398,8 @@ namespace MonoTorrent.Client
 
                 // Log the data sent in both the peers and torrentmangers connection monitors
                 TransferType type = (id.CurrentlySendingMessage is PieceMessage) ? TransferType.Data : TransferType.Protocol;
-                id.SentBytes(bytesSent, type);
-                id.TorrentManager.Monitor.BytesSent(bytesSent, type);
+                id.SentBytes(count, type);
+                id.TorrentManager.Monitor.BytesSent(count, type);
 
                 // If we havn't sent everything, send the rest of the data
                 if (id.BytesSent != id.BytesToSend)
@@ -853,7 +853,6 @@ namespace MonoTorrent.Client
         private void IncomingConnectionAccepted(bool succeeded, int count, object state)
         {
             string reason = null;
-            int bytesSent;
             bool cleanUp = false;
             PeerId id = (PeerId)state;
 
@@ -864,9 +863,8 @@ namespace MonoTorrent.Client
                     cleanUp = true;
                     return;
                 }
-                bytesSent = count;
-                id.BytesSent += bytesSent;
-                if (bytesSent != id.BytesToSend)
+                id.BytesSent += count;
+                if (count != id.BytesToSend)
                 {
                     NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent,
                                           id.BytesToSend - id.BytesSent, incomingConnectionAcceptedCallback, id);
@@ -973,7 +971,6 @@ namespace MonoTorrent.Client
             if (msg is PieceMessage)
                 id.PiecesSent++;
 
-            id.ProcessingQueue = true;
             try
             {
                 SendMessage(id, msg, this.messageSentCallback);

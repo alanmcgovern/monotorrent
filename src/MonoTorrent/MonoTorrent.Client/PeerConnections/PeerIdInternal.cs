@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
         private bool processingQueue;
         internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
         internal ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
-        private Queue<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
+        private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
         private bool supportsLTMessages;
@@ -415,7 +415,7 @@ namespace MonoTorrent.Client
             this.lastMessageSent = DateTime.Now;
             this.peer = peer;
             this.monitor = new ConnectionMonitor();
-            this.sendQueue = new Queue<PeerMessage>(12);
+            this.sendQueue = new MonoTorrentCollection<PeerMessage>(12);
             TorrentManager = manager;
             InitializeTyrant();
         }
@@ -440,23 +440,20 @@ namespace MonoTorrent.Client
 
         internal void Enqueue(PeerMessage msg)
         {
-            sendQueue.Enqueue(msg);
+            sendQueue.Add(msg);
+            if (!processingQueue)
+            {
+                processingQueue = true;
+                MessageHandler.EnqueueSend(this);
+            }
         }
 
         internal void EnqueueAt(PeerMessage message, int index)
         {
-            int length = this.sendQueue.Count;
-
-            if (length == 0)
-                this.sendQueue.Enqueue(message);
+            if (sendQueue.Count == 0 || index >= sendQueue.Count)
+                Enqueue(message);
             else
-                for (int i = 0; i < length; i++)
-                {
-                    if (i == index)
-                        this.sendQueue.Enqueue(message);
-
-                    this.sendQueue.Enqueue(this.sendQueue.Dequeue());
-                }
+                sendQueue.Insert(index, message);
         }
 
         public override bool Equals(object obj)
@@ -481,20 +478,16 @@ namespace MonoTorrent.Client
             this.monitor.BytesReceived(bytesRecieved, type);
         }
 
-        public void SendMessage(Message message)
+        public void SendMessage(PeerMessage message)
         {
             if (message == null)
                 throw new ArgumentNullException("message");
-            if (!(message is PeerMessage))
-                throw new ArgumentException("The message must be a peer message");
 
             ClientEngine.MainLoop.QueueWait(delegate {
                 if (Connection == null)
                     return;
-                
-                sendQueue.Enqueue((PeerMessage)message);
-                if (!processingQueue)
-                    this.torrentManager.Engine.ConnectionManager.ProcessQueue(this);
+
+                Enqueue(message);
             });
         }
 

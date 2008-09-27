@@ -664,12 +664,6 @@ namespace MonoTorrent.Client
                     engine.ConnectionManager.CleanupSocket(id, true, "Didn't send pieces");
                     continue;
                 }
-
-                if (!id.ProcessingQueue && id.QueueLength > 0)
-                {
-                    id.ProcessingQueue = true;
-                    MessageHandler.EnqueueSend(id);
-                }
             }
 
             if (counter % 100 == 0 && (state == TorrentState.Seeding || state == TorrentState.Downloading))
@@ -841,7 +835,6 @@ namespace MonoTorrent.Client
 
         internal void SetAmInterestedStatus(PeerId id, bool interesting)
         {
-            bool enqueued = false;
             if (interesting && !id.AmInterested)
             {
                 id.AmInterested = true;
@@ -849,19 +842,11 @@ namespace MonoTorrent.Client
 
                 // He's interesting, so attempt to queue up any FastPieces (if that's possible)
                 while (id.TorrentManager.pieceManager.AddPieceRequest(id)) { }
-                enqueued = true;
             }
             else if (!interesting && id.AmInterested)
             {
                 id.AmInterested = false;
                 id.Enqueue(new NotInterestedMessage());
-                enqueued = true;
-            }
-
-            if (enqueued && !id.ProcessingQueue)
-            {
-                id.ProcessingQueue = true;
-                MessageHandler.EnqueueSend(id);
             }
         }
 
