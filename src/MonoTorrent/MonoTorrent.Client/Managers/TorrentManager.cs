@@ -647,6 +647,12 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
+                if (Peers.ConnectedPeers[i].QueueLength > 0 && !Peers.ConnectedPeers[i].ProcessingQueue)
+                {
+                    Peers.ConnectedPeers[i].ProcessingQueue = true;
+                    MessageHandler.EnqueueSend(Peers.ConnectedPeers[i]);
+                }
+
                 if (nintySecondsAgo > id.LastMessageSent)
                 {
                     id.LastMessageSent = DateTime.Now;
