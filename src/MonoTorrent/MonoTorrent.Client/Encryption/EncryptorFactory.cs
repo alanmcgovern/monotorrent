@@ -162,25 +162,16 @@ namespace MonoTorrent.Client.Encryption
 
         private static void HandshakeReceived(bool succeeded, int count, object state)
         {
-            int received = count;
             EncryptorAsyncResult result = (EncryptorAsyncResult)state;
             IConnection connection = result.Id.Connection;
 
             try
             {
                 if (!succeeded)
-                {
-                    result.Complete(new EncryptionException("Couldn't receive the handshake"));
-                    return;
-                }
-                result.Available += received;
-
-                if (received == 0)
-                {
-                    result.Complete(new EncryptionException("Socket returned zero"));
-                    return;
-                }
-                if (received < result.Buffer.Length)
+                    throw new EncryptionException("Couldn't receive the handshake");
+                
+                result.Available += count;
+                if (count < result.Buffer.Length)
                 {
                     NetworkIO.EnqueueReceive(connection, result.Buffer, result.Available, result.Buffer.Length - result.Available,
                                     HandshakeReceivedCallback, result);

@@ -322,22 +322,13 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
-                int bytesReceived = count;
-                if (bytesReceived == 0)
-                {
-                    reason = "EndReceiveMessage: Received zero bytes";
-                    Logger.Log(id.Connection, "ConnectionManager - Received zero bytes instead of message");
-                    cleanUp = true;
-                    return;
-                }
-
                 // If the first byte is '7' and we're receiving more than 256 bytes (a made up number)
                 // then this is a piece message, so we add it as "data", not protocol. 256 bytes should filter out
                 // any non piece messages that happen to have '7' as the first byte.
                 // The We need to skip past the first 4 bytes, they are message length
                 TransferType type = (id.recieveBuffer.Array[id.recieveBuffer.Offset + 4] == PieceMessage.MessageId && id.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
-                id.ReceivedBytes(bytesReceived, type);
-                id.TorrentManager.Monitor.BytesReceived(bytesReceived, type);
+                id.ReceivedBytes(count, type);
+                id.TorrentManager.Monitor.BytesReceived(count, type);
 
                 // If we don't have the entire message, recieve the rest
                 if (id.BytesReceived < id.BytesToRecieve)
@@ -387,14 +378,6 @@ namespace MonoTorrent.Client
                 // If we have sent zero bytes, that is a sign the connection has been closed
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
-
-                if (count == 0)
-                {
-                    reason = "Sending error: Sent zero bytes";
-                    Logger.Log(id.Connection, "ConnectionManager - Sent zero bytes when sending a message");
-                    cleanup = true;
-                    return;
-                }
 
                 // Log the data sent in both the peers and torrentmangers connection monitors
                 TransferType type = (id.CurrentlySendingMessage is PieceMessage) ? TransferType.Data : TransferType.Protocol;

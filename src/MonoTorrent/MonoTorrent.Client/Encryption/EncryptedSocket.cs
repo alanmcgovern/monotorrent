@@ -331,16 +331,8 @@ namespace MonoTorrent.Client.Encryption
                 if (!succeeded)
                     throw new MessageException("Could not fill sync. bytes");
 
-                int read = count;
-                if (read == 0 || !socket.Connected)
-                {
-                    asyncResult.Complete(new EncryptionException("Socket received zero or disconnected"));
-                    return;
-                }
-
-                bytesReceived += read;
-
-                int filled = (int)state + read; // count of the bytes currently in synchronizeWindow
+                bytesReceived += count;
+                int filled = (int)state + count; // count of the bytes currently in synchronizeWindow
                 bool matched = true;
                 for (int i = 0; i < filled && matched; i++)
                     if (synchronizeData[i] != synchronizeWindow[i])
@@ -352,18 +344,13 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    if (bytesReceived > (syncStopPoint))
-                    {
-                        asyncResult.Complete(new EncryptionException("Could not resyncronise the stream"));
-                        return;
-                    }
+                    if (bytesReceived > syncStopPoint)
+                        throw new EncryptionException("Could not resyncronise the stream");
+
                     // Shuffle everything left by 1 and then receive one more byte at the end
                     // and try to match that
-                    else
-                    {
-                        Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
-                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
-                    }
+                    Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
+                    NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
                 }
             }
             catch (Exception ex)
@@ -433,19 +420,13 @@ namespace MonoTorrent.Client.Encryption
 
                 if (!succeeded)
                     throw new MessageException("Could not receive");
-                int received = count;
-                if (received == 0 || !socket.Connected)
-                {
-                    asyncResult.Complete(new EncryptionException("Received zero or not connected"));
-                    return;
-                }
 
-                bytesReceived += received;
-                if (received < length)
+                bytesReceived += count;
+                if (count < length)
                 {
-                    receiveData[2] = start + received;
-                    receiveData[3] = length - received;
-                    NetworkIO.EnqueueReceive(socket, buffer, start + received, length - received, doneReceiveCallback, receiveData);
+                    receiveData[2] = start + count;
+                    receiveData[3] = length - count;
+                    NetworkIO.EnqueueReceive(socket, buffer, start + count, length - count, doneReceiveCallback, receiveData);
                 }
                 else
                 {
@@ -483,18 +464,11 @@ namespace MonoTorrent.Client.Encryption
 
                 if (!succeeded)
                     throw new MessageException("Could not fill sync. bytes");
-                int sent = count;
-                if (sent == 0 || !socket.Connected)
+                if (count < length)
                 {
-                    asyncResult.Complete(new EncryptionException("Sent zero or not connected"));
-                    return;
-                }
-
-                if (sent < length)
-                {
-                    sendData[1] = start + sent;
-                    sendData[2] = length - sent;
-                    NetworkIO.EnqueueSend(socket, toSend, start + sent, length - sent, doneSendCallback, sendData);
+                    sendData[1] = start + count;
+                    sendData[2] = length - count;
+                    NetworkIO.EnqueueSend(socket, toSend, start + count, length - count, doneSendCallback, sendData);
                 }
             }
             catch (Exception ex)

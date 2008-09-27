@@ -161,23 +161,19 @@ namespace MonoTorrent.Client
         internal static void EnqueueConnect(AsyncConnectState c)
         {
             Interlocked.Increment(ref halfOpens);
-            ClientEngine.MainLoop.Queue(delegate
+            try
             {
-                try
-                {
-                    c.Result = c.Connection.BeginConnect(EndConnect, c);
-                    ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate
-                    {
-                        if (!c.Result.IsCompleted)
-                            c.Connection.Dispose();
-                        return false;
-                    });
-                }
-                catch
-                {
-                    c.Callback(false, c);
-                }
-            });
+                c.Result = c.Connection.BeginConnect(EndConnect, c);
+                ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate {
+                    if (!c.Result.IsCompleted)
+                        c.Connection.Dispose();
+                    return false;
+                });
+            }
+            catch
+            {
+                c.Callback(false, c);
+            }
         }
 
         internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
@@ -188,16 +184,14 @@ namespace MonoTorrent.Client
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
             AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
-            //ClientEngine.MainLoop.Queue(delegate {
-                try
-                {
-                    connection.BeginReceive(buffer, offset, count, EndReceiveCallback, io);
-                }
-                catch
-                {
-                    callback(false, 0, state);
-                }
-            //});
+            try
+            {
+                connection.BeginReceive(buffer, offset, count, EndReceiveCallback, io);
+            }
+            catch
+            {
+                callback(false, 0, state);
+            }
         }
 
         internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
@@ -208,16 +202,14 @@ namespace MonoTorrent.Client
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
             AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
-            //ClientEngine.MainLoop.Queue(delegate {
-                try
-                {
-                    connection.BeginSend(buffer, offset, count, EndSendCallback, io);
-                }
-                catch
-                {
-                    callback(false, 0, state);
-                }
-            //});
+            try
+            {
+                connection.BeginSend(buffer, offset, count, EndSendCallback, io);
+            }
+            catch
+            {
+                callback(false, 0, state);
+            }
         }
     }
 }
