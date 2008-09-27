@@ -138,6 +138,17 @@ namespace MonoTorrent.Common
     /// </summary>
     public struct Software
     {
+        static readonly Regex bow = new Regex("-BOWA");
+        static readonly Regex brahms = new Regex("M/d-/d-/d--");
+        static readonly Regex bitlord = new Regex("exbc..LORD");
+        static readonly Regex bittornado = new Regex(@"(([A-Za-z]{1})\d{2}[A-Za-z]{1})----*");
+        static readonly Regex bitcomet = new Regex("exbc");
+        static readonly Regex mldonkey = new Regex("-ML/d\\./d\\./d");
+        static readonly Regex opera = new Regex("OP/d{4}");
+        static readonly Regex queenbee = new Regex("Q/d-/d-/d--");
+        static readonly Regex standard = new Regex(@"-(([A-Za-z\~]{2})\d{4})-*");
+        static readonly Regex shadows = new Regex(@"(([A-Za-z]{1})\d{3})----*");
+        static readonly Regex xbt = new Regex("XBT/d/{3}");
         private Client client;
         private string peerId;
         private string shortId;
@@ -161,16 +172,12 @@ namespace MonoTorrent.Common
         internal Software(string peerId)
         {
             Match m;
-            Regex r;
 
             this.peerId = peerId;
 
             #region Standard style peers
-            r = new Regex(@"-(([A-Za-z\~]{2})\d{4})-*");
-            if (r.IsMatch(peerId))
+            if ((m = standard.Match(peerId)) !=null)
             {
-                m = r.Match(peerId);
-
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
@@ -320,10 +327,8 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Shadows Style
-            r = new Regex(@"(([A-Za-z]{1})\d{3})----*");
-            if (r.IsMatch(peerId))
+            if ((m = shadows.Match(peerId)) != null)
             {
-                m = r.Match(peerId);
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
@@ -361,8 +366,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Brams Client
-            r = new Regex("M/d-/d-/d--");
-            if (r.IsMatch(peerId))
+            if ((m = brahms.Match(peerId)) != null)
             {
                 this.shortId = "M";
                 this.client = Client.BitTorrent;
@@ -371,8 +375,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitLord
-            r = new Regex("exbc..LORD");
-            if (r.IsMatch(peerId))
+            if ((m = bitlord.Match(peerId)) != null)
             {
                 this.client = Client.BitLord;
                 this.shortId = "lord";
@@ -381,8 +384,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitComet
-            r = new Regex("exbc");
-            if (r.IsMatch(peerId))
+            if ((m = bitcomet.Match(peerId)) != null)
             {
                 this.client = Client.BitComet;
                 this.shortId = "BC";
@@ -391,8 +393,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region XBT
-            r = new Regex("XBT/d/{3}");
-            if (r.IsMatch(peerId))
+            if ((m = xbt.Match(peerId)) != null)
             {
                 this.client = Client.XBTClient;
                 this.shortId = "XBT";
@@ -401,8 +402,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Opera
-            r = new Regex("OP/d{4}");
-            if (r.IsMatch(peerId))
+            if ((m = opera.Match(peerId)) != null)
             {
                 this.client = Client.Opera;
                 this.shortId = "OP";
@@ -410,8 +410,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region MLDonkey
-            r = new Regex("-ML/d\\./d\\./d");
-            if (r.IsMatch(peerId))
+            if ((m = mldonkey .Match(peerId)) != null)
             {
                 this.client = Client.MLDonkey;
                 this.shortId = "ML";
@@ -420,8 +419,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Bits on wheels
-            r = new Regex("-BOWA");
-            if (r.IsMatch(peerId))
+            if ((m = bow.Match(peerId)) != null)
             {
                 this.client = Client.BitsOnWheels;
                 this.shortId = "BOW";
@@ -430,8 +428,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Queen Bee
-            r = new Regex("Q/d-/d-/d--");
-            if (r.IsMatch(peerId))
+            if ((m = queenbee.Match(peerId)) != null)
             {
                 this.client = Client.QueenBee;
                 this.shortId = "Q";
@@ -440,10 +437,8 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitTornado special style
-            r = new Regex(@"(([A-Za-z]{1})\d{2}[A-Za-z]{1})----*");
-            if(r.IsMatch(peerId))
+            if((m = bittornado.Match(peerId)) != null)
             {
-                m = r.Match(peerId);
                 this.shortId = m.Groups[1].Value;
                 this.client = Client.BitTornado;
                 return;
