@@ -136,10 +136,6 @@ namespace MonoTorrent.Client
             {
                 succeeded = false;
             }
-            finally
-            {
-                result.AsyncWaitHandle.Close();
-            }
 
             io.Callback(succeeded && count > 0, count, io.State);
         }
@@ -157,10 +153,6 @@ namespace MonoTorrent.Client
             catch
             {
                 succeeded = false;
-            }
-            finally
-            {
-                result.AsyncWaitHandle.Close();
             }
 
             io.Callback(succeeded && count > 0, count, io.State);
