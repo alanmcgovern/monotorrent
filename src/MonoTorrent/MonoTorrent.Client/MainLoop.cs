@@ -53,31 +53,85 @@ namespace MonoTorrent.Client
     {
         private class DelegateTask
         {
-            public ManualResetEvent Handle;
-            private object result;
-            private MainLoopJob task;
+            private ManualResetEvent handle;
+            private bool isBlocking;
+            private MainLoopJob job;
+            private object jobResult;
+            private MainLoopTask task;
+            private TimeoutTask timeout;
+            private bool timeoutResult;
 
-            public object Result
+            public bool IsBlocking
             {
-                get { return result; }
-            }
-            public DelegateTask(MainLoopJob task)
-            {
-                this.task = task;
+                get { return isBlocking; }
+                set { isBlocking = value; }
             }
 
+            public MainLoopJob Job
+            {
+                get { return job; }
+                set { job = value; }
+            }
+
+            public MainLoopTask Task
+            {
+                get { return task; }
+                set { task = value; }
+            }
+
+            public TimeoutTask Timeout
+            {
+                get { return timeout; }
+                set { timeout = value; }
+            }
+
+            public object JobResult
+            {
+                get { return jobResult; }
+            }
+
+            public bool TimeoutResult
+            {
+                get { return timeoutResult; }
+            }
+
+            public ManualResetEvent WaitHandle
+            {
+                get { return handle; }
+            }
+
+            public DelegateTask()
+            {
+                handle = new ManualResetEvent(false);
+            }
+            
             public void Execute()
             {
-                result = task();
-                if (Handle != null)
-                    Handle.Set();
+                if (job != null)
+                    jobResult = job();
+                else if (task != null)
+                    task();
+                else if (timeout != null)
+                    timeoutResult = timeout();
+
+                handle.Set();
+            }
+
+            public void Initialise()
+            {
+                isBlocking = false;
+                job = null;
+                jobResult = null;
+                task = null;
+                timeout = null;
+                timeoutResult = false;
             }
         }
 
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         bool disposed;
         AutoResetEvent handle = new AutoResetEvent(false);
-        //SortedList<Priority, DelegateTask> tasks = new SortedList<Priority, DelegateTask>(new ReverseComparer());
+        Queue<DelegateTask> spares = new Queue<DelegateTask>();
         Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
@@ -103,11 +157,7 @@ namespace MonoTorrent.Client
                 lock (tasks)
                 {
                     if (tasks.Count > 0)
-                    {
                         task = tasks.Dequeue();
-                        //task = tasks.Values[0];
-                        //tasks.RemoveAt(0);
-                    }
                 }
 
                 if (task == null)
@@ -120,8 +170,16 @@ namespace MonoTorrent.Client
                 else
                 {
                     task.Execute();
+                    if (!task.IsBlocking)
+                        lock (spares)
+                            spares.Enqueue(task);
                 }
             }
+        }
+
+        private void Queue(DelegateTask task)
+        {
+            Queue(task, Priority.Normal);
         }
 
         private void Queue(DelegateTask task, Priority priority)
@@ -129,61 +187,75 @@ namespace MonoTorrent.Client
             lock (tasks)
             {
                 tasks.Enqueue(task);
-                //tasks.Add(priority, task);
                 handle.Set();
             }
         }
 
         public void Queue(MainLoopTask task)
         {
-            Queue(new DelegateTask(delegate { 
-                task();
-                return null;
-            }), Priority.Normal);
+            DelegateTask dTask = GetSpare();
+            dTask.Task = task;
+            Queue(dTask);
         }
 
         public void QueueWait(MainLoopTask task)
         {
-            QueueWait(delegate { task(); return null; });
+            DelegateTask dTask = GetSpare();
+            dTask.Task = task;
+            dTask.IsBlocking = true;
+            try
+            {
+                QueueWait(dTask);
+            }
+            finally
+            {
+                lock (spares)
+                    spares.Enqueue(dTask);
+            }
         }
 
         public object QueueWait(MainLoopJob task)
         {
-            return QueueWait(new DelegateTask(task));
+            DelegateTask dTask = GetSpare();
+            dTask.Job = task;
+            dTask.IsBlocking = true;
+
+            try
+            {
+                return QueueWait(dTask);
+            }
+            finally
+            {
+                lock (spares)
+                    spares.Enqueue(dTask);
+            }
         }
 
         private object QueueWait(DelegateTask t)
         {
-            if (t.Handle != null)
-                t.Handle.Reset();
-            else
-                t.Handle = new ManualResetEvent(false);
-            
+            t.WaitHandle.Reset();
             if (Thread.CurrentThread == thread)
                 t.Execute();
             else
                 Queue(t, Priority.Highest);
 
-            t.Handle.WaitOne();
-            t.Handle.Close();
-
-            return t.Result;
+            t.WaitHandle.WaitOne();
+            return t.JobResult;
         }
 
         public uint QueueTimeout(TimeSpan span, TimeoutTask task)
         {
-            DelegateTask dTask = new DelegateTask(delegate {
-                return task(); 
-            });
-            return dispatcher.Add(span, delegate {
-                dTask.Handle = null;
-                return (bool)QueueWait(dTask);
-            });
-        }
+            DelegateTask dTask = GetSpare();
+            dTask.Timeout = task;
+            dTask.IsBlocking = true;
 
-        public void CancelQueued(uint handle)
-        {
-            // FIXME: Get aaron to implement this ;)
+            return dispatcher.Add(span, delegate {
+                QueueWait(dTask);
+                bool result = dTask.TimeoutResult;
+                if (!result)
+                    spares.Enqueue(dTask);
+                return result;
+            });
         }
 
         public void Dispose()
@@ -192,6 +264,20 @@ namespace MonoTorrent.Client
                 return;
 
             dispatcher.Clear();
+        }
+
+        private DelegateTask GetSpare()
+        {
+            DelegateTask task = null;
+            lock (spares)
+                if (spares.Count > 0)
+                    task = spares.Dequeue();
+
+            if (task == null)
+                task = new DelegateTask();
+
+            task.Initialise();
+            return task;
         }
     }
 }
