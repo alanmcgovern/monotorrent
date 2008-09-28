@@ -280,7 +280,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
+                return (int)(long)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.DownloadSpeed; });
             }
         }
 
@@ -288,7 +288,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
+                return (int)(long)Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) { return m.Monitor.UploadSpeed; });
             }
         }
 

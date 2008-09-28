@@ -1,3 +1,7 @@
+2008-09-28  Alan McGovern <alan.mcgovern@gmail.com> 
+
+	* ClientEngine.cs: Backport fix for casting a boxed long
+
 2008-03-29  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* Tracker/TrackerFactory.cs: Added try/catch to prevent an invalid address

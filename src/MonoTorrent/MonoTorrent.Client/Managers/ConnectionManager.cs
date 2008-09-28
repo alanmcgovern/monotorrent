@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)ClientEngine.MainLoop.QueueWait(delegate {
+                return (int)(long)ClientEngine.MainLoop.QueueWait(delegate {
                     return Toolbox.Accumulate<TorrentManager>(torrents, delegate(TorrentManager m) {
                         return m.Peers.ConnectedPeers.Count;
                     });
