@@ -32,6 +32,7 @@ using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 using System.Net;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Messages
 {
@@ -39,8 +40,16 @@ namespace MonoTorrent.Dht.Messages
     {
         protected static readonly BEncodedString IdKey = "id";
         private static BEncodedString TransactionIdKey = "t";
+        private static BEncodedString VersionKey = "v";
         private static BEncodedString MessageTypeKey = "y";
+        private static BEncodedString DhtVersion = VersionInfo.DhtClientVersion;
+
         protected BEncodedDictionary properties = new BEncodedDictionary();
+
+        public BEncodedString ClientVersion
+        {
+            get { return (BEncodedString)properties[VersionKey]; }
+        }
 
         internal abstract NodeId Id
         {
@@ -63,11 +72,14 @@ namespace MonoTorrent.Dht.Messages
         {
             properties.Add(TransactionIdKey, null);
             properties.Add(MessageTypeKey, messageType);
+            properties.Add(MessageTypeKey, DhtVersion);
         }
 
         protected Message(BEncodedDictionary dictionary)
         {
             properties = dictionary;
+            if (!properties.ContainsKey(VersionKey))
+                properties.Add(VersionKey, null);
         }
 
         public override int ByteLength
