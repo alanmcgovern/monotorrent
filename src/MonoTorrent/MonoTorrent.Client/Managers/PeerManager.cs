@@ -25,6 +25,11 @@ namespace MonoTorrent.Client
 
         #region Properties
 
+        public int Available
+        {
+            get { return AvailablePeers.Count; }
+        }
+
         /// <summary>
         /// Returns the number of Leechs we are currently connected to
         /// </summary>
