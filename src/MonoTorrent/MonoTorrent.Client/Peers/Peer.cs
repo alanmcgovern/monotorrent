@@ -228,12 +228,13 @@ namespace MonoTorrent.Client
             byte[] byteOrderedData = peers.TextBytes;
             int i = 0;
             UInt16 port;
-            StringBuilder sb = new StringBuilder(16);
+            StringBuilder sb = new StringBuilder(27);
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
             while (i < byteOrderedData.Length)
             {
                 sb.Remove(0, sb.Length);
 
+                sb.Append("tcp://");
                 sb.Append(byteOrderedData[i++]);
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);
@@ -247,7 +248,7 @@ namespace MonoTorrent.Client
                 sb.Append(':');
                 sb.Append(port);
 
-                Uri uri = new Uri("tcp://" + sb.ToString());
+                Uri uri = new Uri(sb.ToString());
                 list.Add(new Peer("", uri, EncryptionTypes.All));
             }
 
