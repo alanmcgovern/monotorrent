@@ -48,6 +48,7 @@ namespace MonoTorrent.Client.Tests
     public class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
         public CustomTracker(Uri uri)
+            : base(uri)
         {
             this.CanScrape = false;
         }

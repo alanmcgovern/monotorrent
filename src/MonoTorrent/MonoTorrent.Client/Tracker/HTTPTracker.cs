@@ -44,14 +44,11 @@ namespace MonoTorrent.Client.Tracker
     {
         private static readonly BEncodedString CustomErrorKey = (BEncodedString)"custom error";
 
-        private Uri announceUrl;
-
         private Uri scrapeUrl;
 
         public HTTPTracker(Uri announceUrl)
-            : base()
+            : base(announceUrl)
         {
-            this.announceUrl = announceUrl;
             int index = announceUrl.OriginalString.LastIndexOf('/');
             string part = (index + 9 <= announceUrl.OriginalString.Length) ? announceUrl.OriginalString.Substring(index + 1, 8) : "";
             if (part.Equals("announce", StringComparison.OrdinalIgnoreCase))
@@ -124,8 +121,8 @@ namespace MonoTorrent.Client.Tracker
             base.UpdateSucceeded = true;        // If the update ends up failing, reset this to false.
             //base.LastUpdated = DateTime.Now;
             // FIXME: This method should be tidied up. I don't like the way it current works
-            sb.Append(this.announceUrl);
-            sb.Append((this.announceUrl.OriginalString.IndexOf('?') == -1) ? '?' : '&');
+            sb.Append(this.Uri);
+            sb.Append((this.Uri.OriginalString.IndexOf('?') == -1) ? '?' : '&');
             sb.Append("info_hash=");
             sb.Append(HttpUtility.UrlEncode(parameters.Infohash));
             sb.Append("&peer_id=");
@@ -377,17 +374,17 @@ namespace MonoTorrent.Client.Tracker
                 return false;
 
             // If the announce URL matches, then CanScrape and the scrape URL must match too
-            return (this.announceUrl == tracker.announceUrl);
+            return (this.Uri.Equals(tracker.Uri));
         }
 
         public override int GetHashCode()
         {
-            return this.announceUrl.GetHashCode();
+            return this.Uri.GetHashCode();
         }
 
         public override string ToString()
         {
-            return this.announceUrl.OriginalString;
+            return this.Uri.ToString();
         }
     }
 }

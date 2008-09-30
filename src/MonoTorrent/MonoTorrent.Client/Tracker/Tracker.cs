@@ -69,6 +69,7 @@ namespace MonoTorrent.Client.Tracker
         private string trackerId;
         private int updateInterval;
         private bool updateSucceeded;
+        private Uri uri;
         private string warningMessage;
 
         #endregion Fields
@@ -146,6 +147,11 @@ namespace MonoTorrent.Client.Tracker
             protected set { updateInterval = value; }
         }
 
+        public Uri Uri
+        {
+            get { return uri; }
+        }
+
         public bool UpdateSucceeded
         {
             get { return this.updateSucceeded; }
@@ -163,8 +169,10 @@ namespace MonoTorrent.Client.Tracker
 
         #region Constructors
 
-        protected Tracker()
+        protected Tracker(Uri uri)
         {
+            this.uri = uri;
+
             this.state = TrackerState.Unknown;
             this.lastUpdated = DateTime.Now.AddDays(-1);    // Forces an update on the first timertick.
             this.updateInterval = 300;                      // Update every 300 seconds.
@@ -213,6 +221,11 @@ namespace MonoTorrent.Client.Tracker
         private void RaiseStateChanged(TrackerStateChangedEventArgs e)
         {
             Toolbox.RaiseAsyncEvent<TrackerStateChangedEventArgs>(StateChanged, this, e);
+        }
+
+        public override string ToString()
+        {
+            return uri.ToString();
         }
 
         #endregion

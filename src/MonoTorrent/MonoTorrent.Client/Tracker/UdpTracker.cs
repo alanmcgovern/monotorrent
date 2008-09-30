@@ -14,14 +14,13 @@ namespace MonoTorrent.Client.Tracker
         private AnnounceParameters storedParams;
         private long connectionId;
         private UdpClient tracker;
-        private Uri announceUrl;
         private IPEndPoint endpoint;
         bool hasConnected;
         bool amConnecting;
 
         public UdpTracker(Uri announceUrl)
+            :base(announceUrl)
         {
-            this.announceUrl = announceUrl;
             CanScrape = false;
             tracker = new UdpClient(announceUrl.Host, announceUrl.Port);
             endpoint = (IPEndPoint)tracker.Client.RemoteEndPoint;
@@ -91,7 +90,7 @@ namespace MonoTorrent.Client.Tracker
             byte[] response = null;
             try
             {
-                tracker.Connect(announceUrl.Host, announceUrl.Port);
+                tracker.Connect(Uri.Host, Uri.Port);
                 tracker.Send(message.Encode(), message.ByteLength);
                 response = tracker.Receive(ref endpoint);
             }

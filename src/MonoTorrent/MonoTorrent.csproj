@@ -213,8 +213,11 @@
     <Compile Include="MonoTorrent.Client\ConnectionListeners\PeerListener.cs" />
     <Compile Include="MonoTorrent.Client\Encryption\EncryptionTypes.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\AttemptConnectionEventArgs.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\DhtPeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerConnectionFailedEventArgs.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\PeerExchangePeersAdded.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\TrackerPeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\InitialSeed\InitialSeed.cs" />
     <Compile Include="MonoTorrent.BEncoding\BEncodedDictionary.cs" />
     <Compile Include="MonoTorrent.BEncoding\BEncodedList.cs" />

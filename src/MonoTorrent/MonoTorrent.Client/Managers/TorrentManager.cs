@@ -872,7 +872,8 @@ namespace MonoTorrent.Client
             if (Toolbox.ByteMatch(torrent.InfoHash, e.InfoHash))
             {
                 ClientEngine.MainLoop.Queue(delegate {
-                    AddPeers(e.Peers);
+                    int count = AddPeers(e.Peers);
+                    RaisePeersFound(new DhtPeersAdded(this, count));
                 });
             }
         }

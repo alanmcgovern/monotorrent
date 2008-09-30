@@ -1,10 +1,10 @@
 //
-// PeersAddedEventArgs.cs
+// TrackerPeersAdded.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2008 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,40 +26,28 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
 using System;
-using MonoTorrent.Common;
+using System.Collections.Generic;
+using System.Text;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// Provides the data needed to handle a PeersAdded event
-    /// </summary>
-    public abstract class PeersAddedEventArgs : TorrentEventArgs
+    public class TrackerPeersAdded : PeersAddedEventArgs
     {
-        #region Member Variables
-        /// <summary>
-        /// The number of peers that were added in the last update
-        /// </summary>
-        public int Count
-        {
-            get { return this.count; }
-        }
-        private int count;
-        #endregion
+        MonoTorrent.Client.Tracker.Tracker tracker;
 
-
-        #region Constructors
-        /// <summary>
-        /// Creates a new PeersAddedEventArgs
-        /// </summary>
-        /// <param name="peersAdded">The number of peers just added</param>
-        protected PeersAddedEventArgs(TorrentManager manager, int peersAdded)
-            : base(manager)
+        public MonoTorrent.Client.Tracker.Tracker Tracker
         {
-            this.count = peersAdded;
+            get { return tracker; }
         }
-        #endregion
+
+        public TrackerPeersAdded(TorrentManager manager, int peersAdded, MonoTorrent.Client.Tracker.Tracker tracker)
+            :base (manager, peersAdded)
+        {
+            if (tracker == null)
+                throw new ArgumentNullException("tracker");
+
+            this.tracker = tracker;
+        }
     }
 }

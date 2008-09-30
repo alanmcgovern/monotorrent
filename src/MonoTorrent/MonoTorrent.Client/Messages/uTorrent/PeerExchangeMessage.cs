@@ -55,7 +55,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         internal override void Handle(PeerId id)
         {
-            id.TorrentManager.AddPeers(Peer.Decode((BEncodedString)peerDict[AddedKey]));
+            int count = id.TorrentManager.AddPeers(Peer.Decode((BEncodedString)peerDict[AddedKey]));
+            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, id));
         }
 
         public override int ByteLength

@@ -17,6 +17,7 @@ namespace SampleClient
     public class CustomTracker : Tracker
     {
         public CustomTracker(Uri uri)
+            :base(uri)
         {
             this.CanScrape = false;
         }

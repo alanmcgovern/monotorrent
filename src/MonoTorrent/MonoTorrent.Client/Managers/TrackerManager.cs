@@ -241,7 +241,8 @@ namespace MonoTorrent.Client.Tracker
                 Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
 
                 ClientEngine.MainLoop.QueueWait(delegate {
-                    manager.AddPeers(e.Peers);
+                    int count = manager.AddPeers(e.Peers);
+                    manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Tracker));
                 });
             }
             else
