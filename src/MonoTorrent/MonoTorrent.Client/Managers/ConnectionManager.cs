@@ -513,7 +513,10 @@ namespace MonoTorrent.Client
                     id.Enqueue(new AllowedFastMessage(id.AmAllowedFastPieces[i]));
 
             // Allow the auto processing of the send queue to commence
-            id.ProcessingQueue = false;
+            if (id.QueueLength > 0)
+                MessageHandler.EnqueueSend(id);
+            else
+                id.ProcessingQueue = false;
 
             ReceiveMessage(id, 4, this.messageLengthReceivedCallback);
         }
