@@ -197,10 +197,19 @@ namespace MonoTorrent.Client
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
             foreach (BEncodedValue value in peers)
             {
-                if (value is BEncodedDictionary)
-                    list.Add(DecodeFromDict((BEncodedDictionary)value));
-                else
-                    list.Add(Decode((BEncodedString)value)[0]);
+                try
+                {
+                    if (value is BEncodedDictionary)
+                        list.Add(DecodeFromDict((BEncodedDictionary)value));
+                    else if (value is BEncodedString)
+                        foreach (Peer p in Decode((BEncodedString)value))
+                            list.Add(p);
+                }
+                catch
+                {
+                    // If something is invalid and throws an exception, ignore it
+                    // and continue decoding the rest of the peers
+                }
             }
             return list;
         }
@@ -216,7 +225,7 @@ namespace MonoTorrent.Client
             else
                 peerId = string.Empty;
 
-            Uri connectionUri = new Uri("tcp://" + IPAddress.Parse(dict["ip"].ToString() + int.Parse(dict["port"].ToString())));
+            Uri connectionUri = new Uri("tcp://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
             return new Peer(peerId, connectionUri, EncryptionTypes.All);
         }
 
@@ -228,12 +237,13 @@ namespace MonoTorrent.Client
             byte[] byteOrderedData = peers.TextBytes;
             int i = 0;
             UInt16 port;
-            StringBuilder sb = new StringBuilder(16);
+            StringBuilder sb = new StringBuilder(27);
             MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
-            while (i < byteOrderedData.Length)
+            while ((i + 5) < byteOrderedData.Length)
             {
                 sb.Remove(0, sb.Length);
 
+                sb.Append("tcp://");
                 sb.Append(byteOrderedData[i++]);
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);
@@ -247,7 +257,7 @@ namespace MonoTorrent.Client
                 sb.Append(':');
                 sb.Append(port);
 
-                Uri uri = new Uri("tcp://" + sb.ToString());
+                Uri uri = new Uri(sb.ToString());
                 list.Add(new Peer("", uri, EncryptionTypes.All));
             }
 
