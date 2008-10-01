@@ -9,12 +9,12 @@ namespace MonoTorrent.Client.Tests
     [TestFixture]
     public class PeerTests
     {
-        static void Main(string[] args)
-        {
-            PeerTests t = new PeerTests();
-            t.Setup();
-            t.CorruptList();
-        }
+        //static void Main(string[] args)
+        //{
+        //    PeerTests t = new PeerTests();
+        //    t.Setup();
+        //    t.CorruptList();
+        //}
         private List<Peer> peers;
 
         [SetUp]
@@ -26,10 +26,10 @@ namespace MonoTorrent.Client.Tests
                 Uri uri = new Uri(string.Format("tcp://192.168.0.{0}:1", i));
                 peers.Add(new Peer(new string(i.ToString()[0], 20), uri));
             }
-            //peers.Add(new Peer(new string('a', 20), new Uri("tcp://255.255.255.255:6530")));
-            //peers.Add(new Peer(new string('b', 20), new Uri("tcp://255.0.0.0:123")));
-            //peers.Add(new Peer(new string('c', 20), new Uri("tcp://0.0.255.0:312")));
-            //peers.Add(new Peer(new string('a', 20), new Uri("tcp://0.0.0.255:3454")));
+            peers.Add(new Peer(new string('a', 20), new Uri("tcp://255.255.255.255:6530")));
+            peers.Add(new Peer(new string('b', 20), new Uri("tcp://255.0.0.0:123")));
+            peers.Add(new Peer(new string('c', 20), new Uri("tcp://0.0.255.0:312")));
+            peers.Add(new Peer(new string('a', 20), new Uri("tcp://0.0.0.255:3454")));
         }
 
         [Test]
