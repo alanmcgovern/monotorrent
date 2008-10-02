@@ -223,7 +223,6 @@ namespace MonoTorrent.Client
         {
             DelegateTask dTask = GetSpare();
             dTask.Task = task;
-            dTask.IsBlocking = true;
             try
             {
                 QueueWait(dTask);
@@ -239,11 +238,11 @@ namespace MonoTorrent.Client
         {
             DelegateTask dTask = GetSpare();
             dTask.Job = task;
-            dTask.IsBlocking = true;
 
             try
             {
-                return QueueWait(dTask);
+                QueueWait(dTask);
+                return dTask.JobResult;
             }
             finally
             {
@@ -252,9 +251,10 @@ namespace MonoTorrent.Client
             }
         }
 
-        private object QueueWait(DelegateTask t)
+        private void QueueWait(DelegateTask t)
         {
             t.WaitHandle.Reset();
+            t.IsBlocking = true;
             if (Thread.CurrentThread == thread)
                 t.Execute();
             else
@@ -264,15 +264,12 @@ namespace MonoTorrent.Client
 
             if (t.StoredException != null)
                 throw t.StoredException;
-            
-            return t.JobResult;
         }
 
         public uint QueueTimeout(TimeSpan span, TimeoutTask task)
         {
             DelegateTask dTask = GetSpare();
             dTask.Timeout = task;
-            dTask.IsBlocking = true;
 
             return dispatcher.Add(span, delegate {
                 QueueWait(dTask);
