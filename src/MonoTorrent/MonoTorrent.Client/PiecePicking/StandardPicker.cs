@@ -203,7 +203,7 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < list.Count; i++)
                 {
-                    if (AlreadyHaveOrRequested((int)list[i]))
+                    if (list[i] >= MyBitField.Length || AlreadyHaveOrRequested((int)list[i]))
                     {
                         list.RemoveAt(i);
                         removed = true;
