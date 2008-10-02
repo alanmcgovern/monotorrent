@@ -45,7 +45,13 @@ namespace MonoTorrent.Client
         {
             public ManualResetEvent Handle;
             private object result;
+            private Exception storedException;
             private MainLoopJob task;
+
+            public Exception StoredException
+            {
+                get { return storedException; }
+            }
 
             public object Result
             {
@@ -58,7 +64,15 @@ namespace MonoTorrent.Client
 
             public void Execute()
             {
-                result = task();
+                try
+                {
+                    result = task();
+                }
+                catch (Exception ex)
+                {
+                    storedException = ex;
+                }
+
                 if (Handle != null)
                     Handle.Set();
             }
@@ -150,6 +164,9 @@ namespace MonoTorrent.Client
 
             t.Handle.WaitOne();
             t.Handle.Close();
+
+            if (t.StoredException != null)
+                throw t.StoredException;
 
             return t.Result;
         }
