@@ -249,5 +249,37 @@ namespace MonoTorrent.Client.Tests
             for (int i = 0; i < messages.Count; i++)
                 Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
         }
+
+        [Test]
+        public void RequestBlock()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            for (int i = 0; i < 1000; i++)
+            {
+                picker.PickPiece(peer, peers, i);
+                picker.RemoveRequests(peer);
+            }
+        }
+
+        [Test]
+        public void InvalidFastPiece()
+        {
+            peer.IsChoking = true;
+            peer.SupportsFastPeer = true;
+            peer.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.BitField.SetAll(true);
+            picker.PickPiece(peer, peers);
+        }
+
+        [Test]
+        public void InvalidSuggestPiece()
+        {
+            peer.IsChoking = true;
+            peer.SupportsFastPeer = true;
+            peer.SuggestedPieces.AddRange(new int[] { 1, 2, 5, 55, 62, 235, 42624 });
+            peer.BitField.SetAll(true);
+            picker.PickPiece(peer, peers);
+        }
     }
 }
