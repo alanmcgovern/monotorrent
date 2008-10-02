@@ -57,6 +57,7 @@ namespace MonoTorrent.Client
             private bool isBlocking;
             private MainLoopJob job;
             private object jobResult;
+            private Exception storedException;
             private MainLoopTask task;
             private TimeoutTask timeout;
             private bool timeoutResult;
@@ -71,6 +72,12 @@ namespace MonoTorrent.Client
             {
                 get { return job; }
                 set { job = value; }
+            }
+
+            public Exception StoredException
+            {
+                get { return storedException; }
+                set { storedException = value; }
             }
 
             public MainLoopTask Task
@@ -107,12 +114,25 @@ namespace MonoTorrent.Client
             
             public void Execute()
             {
-                if (job != null)
-                    jobResult = job();
-                else if (task != null)
-                    task();
-                else if (timeout != null)
-                    timeoutResult = timeout();
+                try
+                {
+                    if (job != null)
+                        jobResult = job();
+                    else if (task != null)
+                        task();
+                    else if (timeout != null)
+                        timeoutResult = timeout();
+                }
+                catch (Exception ex)
+                {
+                    storedException = ex;
+
+                    // FIXME: I assume this case can't happen. The only user interaction
+                    // with the mainloop is with blocking tasks. Internally it's a big bug
+                    // if i allow an exception to propagate to the mainloop.
+                    if (!IsBlocking)
+                        throw;
+                }
 
                 handle.Set();
             }
@@ -122,6 +142,7 @@ namespace MonoTorrent.Client
                 isBlocking = false;
                 job = null;
                 jobResult = null;
+                storedException = null;
                 task = null;
                 timeout = null;
                 timeoutResult = false;
@@ -240,6 +261,10 @@ namespace MonoTorrent.Client
                 Queue(t, Priority.Highest);
 
             t.WaitHandle.WaitOne();
+
+            if (t.StoredException != null)
+                throw t.StoredException;
+            
             return t.JobResult;
         }
 
