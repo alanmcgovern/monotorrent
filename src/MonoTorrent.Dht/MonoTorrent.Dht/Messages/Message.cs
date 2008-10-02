@@ -72,7 +72,7 @@ namespace MonoTorrent.Dht.Messages
         {
             properties.Add(TransactionIdKey, null);
             properties.Add(MessageTypeKey, messageType);
-            properties.Add(MessageTypeKey, DhtVersion);
+            properties.Add(DhtVersion, DhtVersion);
         }
 
         protected Message(BEncodedDictionary dictionary)
