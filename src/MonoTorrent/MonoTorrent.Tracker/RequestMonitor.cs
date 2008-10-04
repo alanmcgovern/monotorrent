@@ -57,14 +57,24 @@ namespace MonoTorrent.Tracker
 
         internal void AnnounceReceived()
         {
-            announces.AddDelta(1);
+            lock (announces)
+                announces.AddDelta(1);
         }
 
         internal void ScrapeReceived()
         {
-            scrapes.AddDelta(1);
+            lock (announces)
+                scrapes.AddDelta(1);
         }
 
         #endregion Methods
+
+        internal void Tick()
+        {
+            lock (announces)
+                this.announces.Tick();
+            lock (scrapes)
+                this.scrapes.Tick();
+        }
     }
 }
