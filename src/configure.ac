@@ -51,10 +51,6 @@ dnl package checks, per config
 
 AC_CONFIG_FILES([
 Makefile
-SampleClient/Makefile
-TrackerApp/Makefile
-SampleClient/sampleclient
-TrackerApp/trackerapp
 MonoTorrent/Makefile
 MonoTorrent/monotorrent.pc
 
