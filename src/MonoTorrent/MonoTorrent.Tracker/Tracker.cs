@@ -148,7 +148,10 @@ namespace MonoTorrent.Tracker
         public Tracker()
             : this(new BEncodedString("monotorrent-tracker"))
         {
-
+            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                Requests.Tick();
+                return true;
+            });
         }
 
         public Tracker(BEncodedString trackerId)
