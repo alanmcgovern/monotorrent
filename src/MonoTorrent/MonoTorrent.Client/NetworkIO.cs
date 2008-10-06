@@ -67,16 +67,18 @@ namespace MonoTorrent.Client
 
     internal static class NetworkIO
     {
+        
         private class AsyncIO
         {
-            public AsyncIO(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
+            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state)
             {
                 Connection = connection;
                 Buffer = buffer;
                 Offset = offset;
-                Count = count;
+                Count = 0;
                 Callback = callback;
                 State = state;
+                Total = total;
             }
 
             public byte[] Buffer;
@@ -85,6 +87,7 @@ namespace MonoTorrent.Client
             public int Count;
             public int Offset;
             public object State;
+            public int Total;
         }
 
         static readonly AsyncCallback EndReceiveCallback = EndReceive;
@@ -124,38 +127,48 @@ namespace MonoTorrent.Client
 
         internal static void EndReceive(IAsyncResult result)
         {
-            int count = 0;
-            bool succeeded = true;
             AsyncIO io = (AsyncIO)result.AsyncState;
 
             try
             {
-                count = io.Connection.EndReceive(result);
+                int count = io.Connection.EndReceive(result);
+                io.Count += count;
+                
+                if (count > 0 && io.Count < io.Total)
+                {
+                    io.Connection.BeginReceive (io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndReceiveCallback, io);
+                    return;
+                }
             }
             catch
             {
-                succeeded = false;
+                // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
-            io.Callback(succeeded && count > 0, count, io.State);
+            io.Callback(io.Count == io.Total, io.Count, io.State);
         }
 
         internal static void EndSend(IAsyncResult result)
         {
-            int count = 0;
-            bool succeeded = true;
             AsyncIO io = (AsyncIO)result.AsyncState;
 
             try
             {
-                count = io.Connection.EndSend(result);
+                int count = io.Connection.EndSend(result);
+                io.Count += count;
+
+                if (count > 0 && io.Count < io.Total)
+                {
+                    io.Connection.BeginSend (io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndSendCallback, io);
+                    return;
+                }
             }
             catch
             {
-                succeeded = false;
+                // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
-            io.Callback(succeeded && count > 0, count, io.State);
+            io.Callback(io.Count == io.Total, io.Count, io.State);
         }
 
         internal static void EnqueueConnect(AsyncConnectState c)
