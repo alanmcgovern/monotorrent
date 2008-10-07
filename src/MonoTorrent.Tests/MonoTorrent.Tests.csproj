@@ -64,6 +64,7 @@
     <Compile Include="TestWebSeed.cs" />
     <Compile Include="TorrentCreatorTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />
+    <Compile Include="TrackerTests.cs" />
     <Compile Include="Tracker\TrackerTest.cs" />
     <Compile Include="Tracker\TrackerTestRig.cs" />
   </ItemGroup>

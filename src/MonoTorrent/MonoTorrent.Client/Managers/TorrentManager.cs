@@ -406,7 +406,7 @@ namespace MonoTorrent.Client
         {
             ClientEngine.MainLoop.QueueWait(delegate {
                 if (this.state != TorrentState.Stopped)
-                    throw new TorrentException("A hashcheck can only be performed when the manager is stopped");
+                    throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", state));
 
                 CheckRegistered();
                 this.startTime = DateTime.Now;
