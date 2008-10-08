@@ -125,8 +125,13 @@ namespace MonoTorrent.Client.Tracker
             {
                 foreach (Tracker tracker in tier)
                 {
-                    tracker.AnnounceComplete += new EventHandler<AnnounceResponseEventArgs>(OnAnnounceComplete);
-                    tracker.ScrapeComplete += new EventHandler<ScrapeResponseEventArgs>(OnScrapeComplete);
+                    tracker.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e) {
+                        ClientEngine.MainLoop.Queue(delegate { OnAnnounceComplete(o, e); });
+                    };
+
+                    tracker.ScrapeComplete += delegate(object o, ScrapeResponseEventArgs e) {
+                        ClientEngine.MainLoop.Queue(delegate { OnScrapeComplete(o, e); });
+                    };
                 }
             }
         }
@@ -240,10 +245,8 @@ namespace MonoTorrent.Client.Tracker
                 // FIXME: Figure out why manually firing the event throws an exception here
                 Toolbox.Switch<Tracker>(e.TrackerId.Tracker.Tier.Trackers, 0, e.TrackerId.Tracker.Tier.IndexOf(e.Tracker));
 
-                ClientEngine.MainLoop.QueueWait(delegate {
-                    int count = manager.AddPeers(e.Peers);
-                    manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Tracker));
-                });
+                int count = manager.AddPeers(e.Peers);
+                manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Tracker));
             }
             else
             {
