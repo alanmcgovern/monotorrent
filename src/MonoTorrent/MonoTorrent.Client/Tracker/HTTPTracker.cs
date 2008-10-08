@@ -43,6 +43,7 @@ namespace MonoTorrent.Client.Tracker
     public class HTTPTracker : Tracker
     {
         private static readonly BEncodedString CustomErrorKey = (BEncodedString)"custom error";
+        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
         private Uri scrapeUrl;
 
@@ -79,7 +80,13 @@ namespace MonoTorrent.Client.Tracker
             UpdateState(TrackerState.Scraping);
             try
             {
-                h = request.BeginGetResponse(ScrapeReceived, parameters.Id).AsyncWaitHandle;
+                IAsyncResult result = request.BeginGetResponse(ScrapeReceived, parameters.Id);
+                h = result.AsyncWaitHandle;
+                ClientEngine.MainLoop.QueueTimeout(RequestTimeout, delegate {
+                    if (!result.IsCompleted)
+                        request.Abort();
+                    return false;
+                });
             }
             catch (Exception ex)
             {
@@ -101,7 +108,13 @@ namespace MonoTorrent.Client.Tracker
             UpdateState(TrackerState.Announcing);
             try
             {
-                h = request.BeginGetResponse(AnnounceReceived, parameters.Id).AsyncWaitHandle;
+                IAsyncResult result = request.BeginGetResponse(AnnounceReceived, parameters.Id);
+                h = result.AsyncWaitHandle;
+                ClientEngine.MainLoop.QueueTimeout(RequestTimeout, delegate {
+                    if (!result.IsCompleted)
+                        request.Abort();
+                    return;
+                });
             }
             catch (Exception ex)
             {
