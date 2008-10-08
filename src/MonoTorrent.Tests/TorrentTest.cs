@@ -41,7 +41,12 @@ namespace MonoTorrent.Common.Test
     [TestFixture]
     public class TorrentTest
     {
+        //static void Main(string[] args)
+        //{
+        //    TorrentTest t = new TorrentTest();
+        //    t.StartUp();
 
+        //}
         private Torrent torrent;
         private long creationTime;
         private System.Security.Cryptography.SHA1Managed sha = new System.Security.Cryptography.SHA1Managed();
@@ -70,8 +75,7 @@ namespace MonoTorrent.Common.Test
             torrentInfo.Add("announce-list", new BEncodedList());            //FIXME: Get support for this
             torrentInfo.Add("info", CreateInfoDict());
             torrentInfo.Add("private", new BEncodedString("1"));
-            torrent = new Torrent();
-            torrent.LoadTorrent(torrentInfo);
+            torrent = Torrent.Load(torrentInfo);
         }
         private BEncodedDictionary CreateInfoDict()
         {
@@ -89,7 +93,7 @@ namespace MonoTorrent.Common.Test
             dict.Add("announce-list", new BEncodedList());        //FIXME What is this
             dict.Add("piece length", new BEncodedNumber(512));
             dict.Add("private", new BEncodedString("1"));
-
+            dict.Add("pieces", new BEncodedString(new byte[((26000 + 512) / 512) * 20])); // Total size is 26000, piecelength is 512
             return dict;
         }
         private BEncodedList CreateFiles()
@@ -211,7 +215,7 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void ED2K()
         {
-            Assert.IsTrue(ToolBox.ByteMatch(torrent.ED2K, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
+            Assert.IsTrue(Toolbox.ByteMatch(torrent.ED2K, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
         }
 
         /// <summary>
@@ -313,7 +317,7 @@ namespace MonoTorrent.Common.Test
         [Test]
         public void SHA1()
         {
-            Assert.IsTrue(ToolBox.ByteMatch(torrent.SHA1, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
+            Assert.IsTrue(Toolbox.ByteMatch(torrent.SHA1, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
         }
     }
 }

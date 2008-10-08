@@ -56,6 +56,7 @@
     <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="MainLoopTests.cs" />
     <Compile Include="PeerMessagesTest.cs" />
+    <Compile Include="PeerTest.cs" />
     <Compile Include="PeerTests.cs" />
     <Compile Include="PiecePickerTests.cs" />
     <Compile Include="SlidingWindowPickerTests.cs" />
@@ -63,8 +64,11 @@
     <Compile Include="TestEncryption.cs" />
     <Compile Include="TestRig.cs" />
     <Compile Include="TestWebSeed.cs" />
+    <Compile Include="TorrentCreatorSingleFileTest.cs" />
+    <Compile Include="TorrentCreatorTest.cs" />
     <Compile Include="TorrentCreatorTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />
+    <Compile Include="TorrentTest.cs" />
     <Compile Include="TrackerTests.cs" />
     <Compile Include="Tracker\TrackerTest.cs" />
     <Compile Include="Tracker\TrackerTestRig.cs" />
