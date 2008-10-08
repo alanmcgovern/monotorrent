@@ -107,9 +107,7 @@ namespace MonoTorrent.Client
             if (requests.Exists(delegate (Piece p) { return p.Index == index; }))
                 return true;
 
-            return (bool)ClientEngine.MainLoop.QueueWait(delegate {
-                return this.unhashedPieces[index];
-            });
+            return this.unhashedPieces[index];
         }
 
         /// <summary>
@@ -631,10 +629,8 @@ namespace MonoTorrent.Client
             if (piece.AllBlocksReceived)
             {
                 // FIXME review usage of the unhashedpieces variable
-                ClientEngine.MainLoop.QueueWait(delegate {
-                    if (!this.myBitfield[piece.Index])
-                        this.unhashedPieces[piece.Index] = true;
-                });
+                if (!this.myBitfield[piece.Index])
+                    this.unhashedPieces[piece.Index] = true;
                 requests.Remove(piece);
             }
 

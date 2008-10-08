@@ -479,7 +479,7 @@ namespace MonoTorrent.Client
 
                 if (!torrent.IsPrivate && Settings.UseDht)
                 {
-                    engine.DhtEngine.PeersFound += DhtPeersFound;
+                    engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
 
                     // First get some peers
                     engine.DhtEngine.GetPeers(torrent.infoHash);
@@ -869,13 +869,11 @@ namespace MonoTorrent.Client
 
         private void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
-            if (Toolbox.ByteMatch(torrent.InfoHash, e.InfoHash))
-            {
-                ClientEngine.MainLoop.Queue(delegate {
-                    int count = AddPeers(e.Peers);
-                    RaisePeersFound(new DhtPeersAdded(this, count));
-                });
-            }
+            if (!Toolbox.ByteMatch(torrent.InfoHash, e.InfoHash))
+                return;
+
+            int count = AddPeers(e.Peers);
+            RaisePeersFound(new DhtPeersAdded(this, count));
         }
 
         private void PerformHashCheck(bool autoStart)

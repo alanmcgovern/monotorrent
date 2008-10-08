@@ -103,26 +103,23 @@ namespace MonoTorrent.Client
         private static void EndConnect(IAsyncResult result)
         {
             Interlocked.Decrement(ref halfOpens);
-            ClientEngine.MainLoop.Queue(delegate
+            bool succeeded = true;
+            AsyncConnectState c = (AsyncConnectState)result.AsyncState;
+
+            try
             {
-                bool succeeded = true;
-                AsyncConnectState c = (AsyncConnectState)result.AsyncState;
+                c.Connection.EndConnect(c.Result);
+            }
+            catch
+            {
+                succeeded = false;
+            }
+            finally
+            {
+                c.Result.AsyncWaitHandle.Close();
+            }
 
-                try
-                {
-                    c.Connection.EndConnect(c.Result);
-                }
-                catch
-                {
-                    succeeded = false;
-                }
-                finally
-                {
-                    c.Result.AsyncWaitHandle.Close();
-                }
-
-                c.Callback(succeeded, c);
-            });
+            c.Callback(succeeded, c);
         }
 
         internal static void EndReceive(IAsyncResult result)

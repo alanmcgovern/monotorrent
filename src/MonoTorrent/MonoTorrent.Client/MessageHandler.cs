@@ -27,25 +27,18 @@ namespace MonoTorrent.Client
             details.Count = count;
             details.StartOffset = 0;
 
-            ClientEngine.MainLoop.Queue(delegate {
-                HandleMessage(id, details);
-            });
+            HandleMessage(id, details);
         }
 
         internal static void EnqueueSend(PeerId id)
         {
-            ClientEngine.MainLoop.Queue(delegate {
-                if (id.Connection != null)
-                    id.ConnectionManager.ProcessQueue(id);
-            });
+            if (id.Connection != null)
+                id.ConnectionManager.ProcessQueue(id);
         }
 
         internal static void EnqueueCleanup(PeerId id)
         {
-            ConnectionManager manager = id.ConnectionManager;
-            ClientEngine.MainLoop.Queue(delegate {
-                manager.AsyncCleanupSocket(id, true, id.DisconnectReason);
-            });
+            id.ConnectionManager.AsyncCleanupSocket(id, true, id.DisconnectReason);
         }
 
         private static void HandleMessage(PeerId id, AsyncMessageDetails messageDetails)
