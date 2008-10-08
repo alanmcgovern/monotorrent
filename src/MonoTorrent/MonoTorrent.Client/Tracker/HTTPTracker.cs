@@ -113,7 +113,7 @@ namespace MonoTorrent.Client.Tracker
                 ClientEngine.MainLoop.QueueTimeout(RequestTimeout, delegate {
                     if (!result.IsCompleted)
                         request.Abort();
-                    return;
+                    return false;
                 });
             }
             catch (Exception ex)
