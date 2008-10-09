@@ -179,12 +179,7 @@ namespace MonoTorrent.BEncoding
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(32);
-
-            for (int i = 0; i < list.Count; i++)
-                sb.Append(list[i].ToString());
-
-            return sb.ToString();
+            return System.Text.Encoding.UTF8.GetString(Encode());
         }
         #endregion
 

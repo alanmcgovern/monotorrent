@@ -251,15 +251,7 @@ namespace MonoTorrent.BEncoding
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(32);
-
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dictionary)
-            {
-                sb.Append(keypair.Key.ToString());
-                sb.Append(keypair.Value.ToString());
-            }
-
-            return sb.ToString();
+            return System.Text.Encoding.UTF8.GetString(Encode());
         }
         #endregion
 
