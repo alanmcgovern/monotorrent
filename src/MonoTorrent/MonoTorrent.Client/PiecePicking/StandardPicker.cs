@@ -104,8 +104,9 @@ namespace MonoTorrent.Client
             if (this.myBitfield[index])
                 return true;
 
-            if (requests.Exists(delegate (Piece p) { return p.Index == index; }))
-                return true;
+            for (int i = 0; i < requests.Count; i++)
+                if (requests[i].Index == index)
+                    return true;
 
             return this.unhashedPieces[index];
         }
