@@ -34,22 +34,35 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int ReadChunk(BufferedIO data)
         {
-            BufferedIO clone = (BufferedIO)((ICloneable)data).Clone();
+            // Copy the inital buffer, offset and count so the values won't
+            // be lost when doing the reading.
+            ArraySegment<byte> orig = data.buffer;
+            long origOffset = data.Offset;
+            int origCount = data.Count;
+
             int read = 0;
             int totalRead = 0;
 
+            // Read the data in chunks. For every chunk we read,
+            // advance the offset and subtract from the count. This
+            // way we can keep filling in the buffer correctly.
             while (totalRead != data.Count)
             {
-                read = Read(clone);
-                clone.buffer = new ArraySegment<byte>(clone.buffer.Array, clone.buffer.Offset + read, clone.buffer.Count - read);
-                clone.Offset += read;
-                clone.Count -= read;
+                read = Read(data);
+                data.buffer = new ArraySegment<byte>(data.buffer.Array, data.buffer.Offset + read, data.buffer.Count - read);
+                data.Offset += read;
+                data.Count -= read;
                 totalRead += read;
 
-                if (read == 0 || totalRead == data.Count)
+                if (read == 0 || data.Count == 0)
                     break;
             }
 
+            // Restore the original values so the object remains unchanged
+            // as compared to when the user passed it in.
+            data.buffer = orig;
+            data.Offset = origOffset;
+            data.Count = origCount;
             data.ActualCount = totalRead;
             return totalRead;
         }
