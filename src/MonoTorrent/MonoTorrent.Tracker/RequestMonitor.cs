@@ -63,7 +63,7 @@ namespace MonoTorrent.Tracker
 
         internal void ScrapeReceived()
         {
-            lock (announces)
+            lock (scrapes)
                 scrapes.AddDelta(1);
         }
 
