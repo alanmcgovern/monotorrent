@@ -351,8 +351,7 @@ namespace MonoTorrent.Client
 
             catch (Exception ex)
             {
-                Logger.Log(id.Connection, "Exception recieving message" + ex.ToString());
-                reason = String.Format("Exception receiving: {0} - {1}", ex.ToString(), ex.Message);
+                reason = "Exception receiving: " + ex.Message;
                 cleanUp = true;
             }
             finally
@@ -554,7 +553,6 @@ namespace MonoTorrent.Client
             // Otherwise queue the peer in the Receive buffer and try to resume downloading off him
             else
             {
-                Logger.Log(id.Connection, "Recieving message: {0} bytes", messageBodyLength.ToString());
                 ReceiveMessage(id, messageBodyLength, this.messageReceivedCallback);
             }
         }
@@ -622,7 +620,6 @@ namespace MonoTorrent.Client
             RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)id.CurrentlySendingMessage, Direction.Outgoing, id));
 
             //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
-            Logger.Log(id.Connection, "ConnectionManager - Sent message: " + id.CurrentlySendingMessage.ToString());
             id.LastMessageSent = DateTime.Now;
             this.ProcessQueue(id);
         }
@@ -651,7 +648,6 @@ namespace MonoTorrent.Client
 
                 if (length > RequestMessage.MaxSize)
                 {
-                    Logger.Log(id.Connection, "Tried to send too much data: {0} bytes", length.ToString());
                     cleanUp = true;
                     return;
                 }
@@ -906,8 +902,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception e)
             {
-                reason = String.Format("Exception for incoming connection: {0} - {1}", e.ToString(), e.Message);
-                Logger.Log(id.Connection, "Socket exception when accepting peer");
+                reason = "Exception for incoming connection: {0}" + e.Message;
                 cleanUp = true;
             }
             finally
@@ -960,12 +955,10 @@ namespace MonoTorrent.Client
             try
             {
                 SendMessage(id, msg, this.messageSentCallback);
-                Logger.Log(id.Connection, "ConnectionManager - Sending message from queue: {0}", msg.ToString());
             }
             catch (Exception e)
             {
-                Logger.Log(id.Connection, "ConnectionManager - Socket exception dequeuing message");
-                CleanupSocket(id, String.Format("Exception calling SendMessage: {0} - {1}", e.ToString(), e.Message));
+                CleanupSocket(id, "Exception calling SendMessage: " + e.Message);
             }
         }
 

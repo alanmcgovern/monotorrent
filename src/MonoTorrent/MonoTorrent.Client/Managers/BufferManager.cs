@@ -175,7 +175,6 @@ namespace MonoTorrent.Client
                         else
                             massiveBuffers.Enqueue(buffer);
 
-                    Logger.Log(null, "Allocating a massive buffer: " + minCapacity.ToString());
                     buffer = new ArraySegment<byte>(new byte[minCapacity], 0, minCapacity);
                 }
             }

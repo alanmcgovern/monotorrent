@@ -622,10 +622,7 @@ namespace MonoTorrent.Client
             {
                 id = this.Peers.ConnectedPeers[i];
                 if (id.Connection == null)
-                {
-                    //Console.WriteLine("Nulled out: " + id.Peer.ConnectionUri.ToString());
                     continue;
-                }
 
                 if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
                     id.Monitor.Tick();
