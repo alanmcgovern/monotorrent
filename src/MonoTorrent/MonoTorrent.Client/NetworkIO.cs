@@ -108,15 +108,11 @@ namespace MonoTorrent.Client
 
             try
             {
-                c.Connection.EndConnect(c.Result);
+                c.Connection.EndConnect(result);
             }
             catch
             {
                 succeeded = false;
-            }
-            finally
-            {
-                c.Result.AsyncWaitHandle.Close();
             }
 
             c.Callback(succeeded, c);
