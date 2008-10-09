@@ -49,7 +49,7 @@ namespace MonoTorrent.Common.Test
         //}
         private Torrent torrent;
         private long creationTime;
-        private System.Security.Cryptography.SHA1Managed sha = new System.Security.Cryptography.SHA1Managed();
+        private System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
 
         /// <summary>
         /// 

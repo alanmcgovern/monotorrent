@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.Encryption
         public EncryptedSocket(EncryptionTypes allowedEncryption)
         {
             random = RNGCryptoServiceProvider.Create();
-            hasher = new SHA1Fast();
+            hasher = SHA1.Create();
 
             GenerateX();
             GenerateY();

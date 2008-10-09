@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
         /// <param name="fileAccess">The access level for the files</param>
         internal FileManager(TorrentManager manager, TorrentFile[] files, int pieceLength, string savePath, string baseDirectory)
         {
-            this.hasher = new SHA1Fast();
+            this.hasher = SHA1.Create();
             this.manager = manager;
             this.savePath = Path.Combine(savePath, baseDirectory);
             this.files = files;

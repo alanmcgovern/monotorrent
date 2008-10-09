@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht
         private byte[] previousSecret;
         private DateTime LastSecretGeneration;
         private RandomNumberGenerator random;
-        private SHA1CryptoServiceProvider sha1;
+        private SHA1 sha1;
         private TimeSpan timeout = TimeSpan.FromMinutes(5);
 
         internal TimeSpan Timeout
@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht
 
         public TokenManager()
         {
-            sha1 = new SHA1CryptoServiceProvider();
+            sha1 = SHA1.Create();
             random = RandomNumberGenerator.Create();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];

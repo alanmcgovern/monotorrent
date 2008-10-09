@@ -58,10 +58,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                         id.Enqueue(this);
                     }
                     else
-                    { 
-                        byte[] infoHash = new SHA1Managed().ComputeHash(metadata);
-                        if (!Toolbox.ByteMatch(id.TorrentManager.Torrent.InfoHash, infoHash))
-                            return;//invalid metadata received from other peers
+                    {
+                        using (SHA1 s = SHA1.Create())
+                            if (!Toolbox.ByteMatch(id.TorrentManager.Torrent.InfoHash, s.ComputeHash(metadata)))
+                                return;//invalid metadata received from other peers
 
                         BEncodedDictionary d = (BEncodedDictionary)BEncodedDictionary.Decode(metadata);
                         //id.TorrentManager.Torrent.ProcessInfo (d);
