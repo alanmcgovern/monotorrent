@@ -811,15 +811,25 @@ public class TorrentCurses {
 
         static void cm_PeerDisconnected(object sender, PeerConnectionEventArgs e)
         {
+		if (e.PeerID == null)
+			return;
 		lock (queue){
-			queue.Add ("Disconnected: " + e.PeerID.Location + " - " + e.ConnectionDirection.ToString());
+			queue.Add (String.Format("{0} peer at {1}. Reason: {2}",
+                    		e.ConnectionDirection == Direction.Incoming ? "Got disconnected from" : "Disconnected from",
+                    		e.PeerID.Uri, e.Message));
 		}
         }
 
         static void cm_PeerConnected(object sender, PeerConnectionEventArgs e)
         {
+		if (e.PeerID == null)
+			return;
+
 		lock (queue){
-			queue.Add ("Connected: " + e.PeerID.Location + " - " + e.ConnectionDirection.ToString());
+			queue.Add (String.Format("{0} peer at {1}",
+				e.ConnectionDirection == Direction.Incoming ? "Accepted connection from" : "Connected to",
+				e.PeerID.Uri));
+
 		}
         }
 
