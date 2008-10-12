@@ -133,8 +133,10 @@ namespace MonoTorrent.Client
                     if (!IsBlocking)
                         throw;
                 }
-
-                handle.Set();
+                finally
+                {
+                    handle.Set();
+                }
             }
 
             public void Initialise()
@@ -192,8 +194,7 @@ namespace MonoTorrent.Client
                 {
                     task.Execute();
                     if (!task.IsBlocking)
-                        lock (spares)
-                            spares.Enqueue(task);
+                        AddSpare(task);
                 }
             }
         }
@@ -229,8 +230,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                lock (spares)
-                    spares.Enqueue(dTask);
+                AddSpare(dTask);
             }
         }
 
@@ -246,8 +246,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                lock (spares)
-                    spares.Enqueue(dTask);
+                AddSpare(dTask);
             }
         }
 
@@ -275,7 +274,7 @@ namespace MonoTorrent.Client
                 QueueWait(dTask);
                 bool result = dTask.TimeoutResult;
                 if (!result)
-                    spares.Enqueue(dTask);
+                    AddSpare(dTask);
                 return result;
             });
         }
@@ -288,18 +287,20 @@ namespace MonoTorrent.Client
             dispatcher.Clear();
         }
 
+        private void AddSpare(DelegateTask task)
+        {
+            task.Initialise();
+            spares.Enqueue(task);
+        }
+
         private DelegateTask GetSpare()
         {
-            DelegateTask task = null;
             lock (spares)
-                if (spares.Count > 0)
-                    task = spares.Dequeue();
+                spares.Clear();
+                //if (spares.Count > 0)
+                //    return spares.Dequeue();
 
-            if (task == null)
-                task = new DelegateTask();
-
-            task.Initialise();
-            return task;
+            return new DelegateTask();
         }
     }
 }
