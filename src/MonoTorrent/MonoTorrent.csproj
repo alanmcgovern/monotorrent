@@ -244,6 +244,7 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
+    <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
