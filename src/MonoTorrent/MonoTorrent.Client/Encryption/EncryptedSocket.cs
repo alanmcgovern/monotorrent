@@ -347,10 +347,25 @@ namespace MonoTorrent.Client.Encryption
                     if (bytesReceived > syncStopPoint)
                         throw new EncryptionException("Could not resyncronise the stream");
 
-                    // Shuffle everything left by 1 and then receive one more byte at the end
-                    // and try to match that
-                    Buffer.BlockCopy(synchronizeWindow, 1, synchronizeWindow, 0, synchronizeWindow.Length - 1);
-                    NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - 1, 1, fillSynchronizeBytesCallback, synchronizeWindow.Length - 1);
+                    // See if the current window contains the first byte of the expected synchronize data
+                    // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
+                    int shift = -1;
+                    for (int i = 1; i < synchronizeWindow.Length && shift == -1; i++)
+                        if (synchronizeWindow[i] == synchronizeData[0])
+                            shift = i;
+
+                    // The current data is all useless, so read an entire new window of data
+                    if (shift == -1 )
+                    {
+                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, 0, synchronizeWindow.Length, fillSynchronizeBytesCallback, 0);
+                    }
+                    else
+                    {
+                        // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
+                        Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, synchronizeWindow.Length - shift);
+                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - shift,
+                                                 shift, fillSynchronizeBytesCallback, synchronizeWindow.Length - shift);
+                    }
                 }
             }
             catch (Exception ex)
