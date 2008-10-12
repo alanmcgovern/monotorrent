@@ -272,10 +272,7 @@ namespace MonoTorrent.Client
 
             return dispatcher.Add(span, delegate {
                 QueueWait(dTask);
-                bool result = dTask.TimeoutResult;
-                if (!result)
-                    AddSpare(dTask);
-                return result;
+                return dTask.TimeoutResult;
             });
         }
 
@@ -296,9 +293,8 @@ namespace MonoTorrent.Client
         private DelegateTask GetSpare()
         {
             lock (spares)
-                spares.Clear();
-                //if (spares.Count > 0)
-                //    return spares.Dequeue();
+                if (spares.Count > 0)
+                    return spares.Dequeue();
 
             return new DelegateTask();
         }
