@@ -62,6 +62,9 @@ namespace MonoTorrent.Client
 
             if (s == null)
             {
+                if (!File.Exists(filePath))
+                    SparseFile.CreateSparse(filePath, file.Length);
+
                 s = new TorrentFileStream(filePath, FileMode.OpenOrCreate, access, FileShare.Read);
                 Add(s);
             }
