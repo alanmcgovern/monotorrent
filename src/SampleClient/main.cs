@@ -12,10 +12,6 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
 
-#if STATS
-using SampleClient.Stats;
-#endif
-
 namespace MonoTorrent
 {
     class main
@@ -181,11 +177,6 @@ namespace MonoTorrent
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 manager.Start();
             }
-
-#if STATS
-            System.Windows.Forms.Application.Run(new DebugStatistics(engine, torrents[0]));
-            return;
-#endif
 
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.
