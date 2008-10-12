@@ -186,11 +186,15 @@ namespace MonoTorrent.Client.Tracker
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
+            IPEndPoint reportedAddress = engine.Settings.ReportedAddress;
+            string ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
+            int port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
+
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
                                                 (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
                                                 clientEvent, this.infoHash, id, requireEncryption, manager.Engine.PeerId,
-                                                null, manager.Engine.Listener.Endpoint.Port);
+                                                ip, port);
             p.SupportsEncryption = supportsEncryption;
             tracker.Announce(p);
             return id.WaitHandle;

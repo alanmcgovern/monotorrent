@@ -31,6 +31,7 @@
 using MonoTorrent.Client.Encryption;
 using System.Reflection;
 using System;
+using System.Net;
 
 namespace MonoTorrent.Client
 {
@@ -53,6 +54,7 @@ namespace MonoTorrent.Client
         private int maxReadRate;                        // The maximum read rate from the harddisk (for all active torrentmanagers)
         private int maxWriteRate;                       // The maximum write rate to the harddisk (for all active torrentmanagers)
         private bool preferEncryption;                  // If encrypted and unencrypted connections are enabled, specifies if encryption should be chosen first
+        private IPEndPoint reportedEndpoint;            // The IPEndpoint reported to the tracker
         private string savePath;                        // The path that torrents will be downloaded to by default
 
         #endregion Private Fields
@@ -118,6 +120,12 @@ namespace MonoTorrent.Client
         {
             get { return maxWriteRate; }
             set { maxWriteRate = value; }
+        }
+
+        public IPEndPoint ReportedAddress
+        {
+            get { return reportedEndpoint; }
+            set { reportedEndpoint = value; }
         }
 
         public bool PreferEncryption
