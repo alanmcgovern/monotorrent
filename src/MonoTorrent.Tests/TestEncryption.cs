@@ -43,7 +43,7 @@ namespace MonoTorrent.Client.Tests
         public void Teardown()
         {
             conn.Dispose();
-            rig.Engine.StopAll()[0].WaitOne();
+            Assert.IsTrue (rig.Engine.StopAll()[0].WaitOne(4000), "Couldn't dispose");
             rig.Dispose();
         }
 
@@ -160,7 +160,7 @@ namespace MonoTorrent.Client.Tests
 
             rig.AddConnection(conn.Incoming);
             IAsyncResult result = a.BeginHandshake(conn.Outgoing, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000000, true))
+            if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.Fail("Handshake timed out");
             a.EndHandshake(result);
 
@@ -183,7 +183,7 @@ namespace MonoTorrent.Client.Tests
 
             PeerBEncryption a = new PeerBEncryption(new byte[][] { rig.Manager.Torrent.InfoHash }, encryption);
             IAsyncResult result = a.BeginHandshake(conn.Incoming, null, null);
-            if(!result.AsyncWaitHandle.WaitOne(5000, true))
+            if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.Fail("Handshake timed out");
             a.EndHandshake(result);
 
@@ -216,12 +216,17 @@ namespace MonoTorrent.Client.Tests
             IAsyncResult resultA = a.BeginHandshake(conn.Outgoing, null, null);
             IAsyncResult resultB = b.BeginHandshake(conn.Incoming, null, null);
 
-            while (!resultA.AsyncWaitHandle.WaitOne(10, true) || !resultB.AsyncWaitHandle.WaitOne())
+            int count = 4;
+            while (!resultA.AsyncWaitHandle.WaitOne(1000, true) || !resultB.AsyncWaitHandle.WaitOne(1000, true))
             {
+                Console.WriteLine("Ticking");
                 if (!doneA && (doneA = resultA.IsCompleted))
                     a.EndHandshake(resultA);
                 if (!doneB && (doneB = resultB.IsCompleted))
                     b.EndHandshake(resultB);
+
+                if (count-- == 0)
+                    Assert.Fail("Could not handshake");
             }
             if (!doneA)
                 a.EndHandshake(resultA);
