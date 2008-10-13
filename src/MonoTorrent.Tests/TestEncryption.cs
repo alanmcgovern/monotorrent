@@ -43,7 +43,9 @@ namespace MonoTorrent.Client.Tests
         public void Teardown()
         {
             conn.Dispose();
-            Assert.IsTrue (rig.Engine.StopAll()[0].WaitOne(4000), "Couldn't dispose");
+            WaitHandle[] handles = rig.Engine.StopAll();
+            Assert.IsTrue(handles.Length == 1, "Expected 1 handle");
+            Assert.IsTrue(handles[0].WaitOne(4000, true), "Timed out waiting for handle");
             rig.Dispose();
         }
 
