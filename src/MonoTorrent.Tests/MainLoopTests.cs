@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.Tests
         {
             //Console.WriteLine("Starting");
             ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
+            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate {
                 this.count++;
                 if (count == 3)
                 {
