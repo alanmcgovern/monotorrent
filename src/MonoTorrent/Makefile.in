@@ -181,7 +181,9 @@ FILES = \
 	MonoTorrent.Client/TorrentFileStream.cs \
 	MonoTorrent.Client/TransferType.cs \
 	\
-	MonoTorrent.Client/ConnectionListeners/ConnectionListenerBase.cs \
+	MonoTorrent.Client/ConnectionListeners/IListener.cs \
+	MonoTorrent.Client/ConnectionListeners/Listener.cs \
+	MonoTorrent.Client/ConnectionListeners/PeerListener.cs \
 	MonoTorrent.Client/ConnectionListeners/SocketListener.cs \
 	MonoTorrent.Client/Encryption/BigInteger/BigInteger.cs \
 	MonoTorrent.Client/Encryption/EncryptedSocket.cs \
@@ -270,10 +272,10 @@ FILES = \
 	MonoTorrent.Client/Messages/UnknownMessage.cs \
 	MonoTorrent.Client/PeerConnections/ConnectionFactory.cs \
 	MonoTorrent.Client/PeerConnections/HTTPConnection.cs \
+	MonoTorrent.Client/PeerConnections/HttpRequestData.cs \
 	MonoTorrent.Client/PeerConnections/IConnection.cs \
 	MonoTorrent.Client/PeerConnections/IPV6Connection.cs \
-	MonoTorrent.Client/PeerConnections/PeerConnectionBase.cs \
-	MonoTorrent.Client/PeerConnections/PeerId.cs \
+	MonoTorrent.Client/PeerConnections/IConnection.cs \
 	MonoTorrent.Client/PeerConnections/PeerIdInternal.cs \
 	MonoTorrent.Client/PeerConnections/TCPConnection.cs \
 	MonoTorrent.Client/Peers/Peer.cs \
@@ -322,7 +324,6 @@ FILES = \
 	MonoTorrent.Tracker/Exceptions/TrackerException.cs \
 	MonoTorrent.Tracker/Frontend/AnnounceParameters.cs \
 	MonoTorrent.Tracker/Frontend/ScrapeParameters.cs \
-	MonoTorrent.Tracker/IIntervalAlgorithm.cs \
 	MonoTorrent.Tracker/InfoHashTrackable.cs \
 	MonoTorrent.Tracker/IPAddressComparer.cs \
 	MonoTorrent.Tracker/ITrackable.cs \
@@ -333,7 +334,6 @@ FILES = \
 	MonoTorrent.Tracker/RequestMonitor.cs \
 	MonoTorrent.Tracker/RequestParameters.cs \
 	MonoTorrent.Tracker/SimpleTorrentManager.cs \
-	MonoTorrent.Tracker/StaticIntervalAlgorithm.cs \
 	MonoTorrent.Tracker/Tracker.cs
 
 DATA_FILES = 
