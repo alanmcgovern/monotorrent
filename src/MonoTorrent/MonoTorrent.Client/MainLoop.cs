@@ -192,8 +192,9 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
+                    bool reuse = !task.IsBlocking;
                     task.Execute();
-                    if (!task.IsBlocking)
+                    if (reuse)
                         AddSpare(task);
                 }
             }
