@@ -67,16 +67,19 @@ namespace MonoTorrent.Client
 
     internal static class NetworkIO
     {
-        
+        private static MonoTorrentCollection<AsyncIO> receiveQueue = new MonoTorrentCollection<AsyncIO>();
+        private static MonoTorrentCollection<AsyncIO> sendQueue = new MonoTorrentCollection<AsyncIO>();
+
         private class AsyncIO
         {
-            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state)
+            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter)
             {
                 Connection = connection;
                 Buffer = buffer;
                 Offset = offset;
                 Count = 0;
                 Callback = callback;
+                RateLimiter = limiter;
                 State = state;
                 Total = total;
             }
@@ -86,12 +89,50 @@ namespace MonoTorrent.Client
             public IConnection Connection;
             public int Count;
             public int Offset;
+            public RateLimiter RateLimiter;
             public object State;
             public int Total;
         }
 
         static readonly AsyncCallback EndReceiveCallback = EndReceive;
         static readonly AsyncCallback EndSendCallback = EndSend;
+
+        static NetworkIO()
+        {
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(50), delegate {
+                lock (sendQueue)
+                {
+                    for (int i = 0; i < sendQueue.Count;)
+                    {
+                        if (sendQueue[i].RateLimiter.Chunks > 0)
+                        {
+                            EnqueueSend(sendQueue[i]);
+                            sendQueue.RemoveAt(i);
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                }
+                lock (receiveQueue)
+                {
+                    for (int i = 0; i < receiveQueue.Count;)
+                    {
+                        if (receiveQueue[i].RateLimiter.Chunks > 0)
+                        {
+                            EnqueueReceive(receiveQueue[i]);
+                            receiveQueue.RemoveAt(i);
+                        }
+                        else
+                        {
+                            i++;
+                        }
+                    }
+                }
+                return true;
+            });
+        }
 
         private static int halfOpens;
 
@@ -129,7 +170,7 @@ namespace MonoTorrent.Client
                 
                 if (count > 0 && io.Count < io.Total)
                 {
-                    io.Connection.BeginReceive (io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndReceiveCallback, io);
+                    EnqueueReceive(io);
                     return;
                 }
             }
@@ -152,7 +193,7 @@ namespace MonoTorrent.Client
 
                 if (count > 0 && io.Count < io.Total)
                 {
-                    io.Connection.BeginSend (io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndSendCallback, io);
+                    EnqueueSend(io);
                     return;
                 }
             }
@@ -184,37 +225,97 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
+            EnqueueReceive(connection, buffer, offset, count, callback, state, null);
         }
 
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
+            EnqueueReceive(connection, buffer, offset, count, callback, state, null);
+        }
+
+        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        {
+            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter);
+        }
+
+        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        {
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter);
+            EnqueueReceive(io);
+        }
+
+        private static void EnqueueReceive(AsyncIO io)
+        {
             try
             {
-                connection.BeginReceive(buffer, offset, count, EndReceiveCallback, io);
+                if (io.RateLimiter == null)
+                {
+                    io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndReceiveCallback, io);
+                }
+                else if (io.RateLimiter.Chunks > 0)
+                {
+                    // Receive in 2kB (or less) chunks to allow rate limiting to work
+                    io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndReceiveCallback, io);
+                    if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
+                        Interlocked.Decrement(ref io.RateLimiter.Chunks);
+                }
+                else
+                {
+                    lock (receiveQueue)
+                        receiveQueue.Add(io);
+                }
             }
             catch
             {
-                callback(false, 0, state);
+                io.Callback(false, 0, io.State);
             }
         }
 
         internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state);
+            EnqueueSend(connection, buffer, offset, count, callback, state, null);
+        }
+
+        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        {
+            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter);
         }
 
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state);
+            EnqueueSend(connection, buffer, offset, count, callback, state, null);
+        }
+
+        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        {
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter);
+            EnqueueSend(io);
+        }
+
+        private static void EnqueueSend(AsyncIO io)
+        {
             try
             {
-                connection.BeginSend(buffer, offset, count, EndSendCallback, io);
+                if (io.RateLimiter == null)
+                {
+                    io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndSendCallback, io);
+                }
+                else if (io.RateLimiter.Chunks > 0)
+                {
+                    // Receive in 2kB (or less) chunks to allow rate limiting to work
+                    io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndSendCallback, io);
+                    if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
+                        Interlocked.Decrement(ref io.RateLimiter.Chunks);
+                }
+                else
+                {
+                    lock (sendQueue)
+                        sendQueue.Add(io);
+                }
             }
             catch
             {
-                callback(false, 0, state);
+                io.Callback(false, 0, io.State);
             }
         }
     }

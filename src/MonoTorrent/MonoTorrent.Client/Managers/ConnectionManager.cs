@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
 
         #region Member Variables
         private ClientEngine engine;
-        internal static readonly int ChunkLength = 2096;   // Download in 2kB chunks to allow for better rate limiting
+        internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
         // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
         private MessagingCallback bitfieldSentCallback;
@@ -688,8 +688,10 @@ namespace MonoTorrent.Client
 
                 if (alreadyReceived < length)
                 {
-                    id.TorrentManager.downloadQueue.Add(id);
-                    id.TorrentManager.ResumePeers();
+                    RateLimiter limiter = engine.Settings.GlobalMaxDownloadSpeed > 0 ? engine.downloadLimiter : null;
+                    limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
+                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, id.BytesReceived,
+                                            id.BytesToRecieve - id.BytesReceived, onEndReceiveMessageCallback, id, limiter);
                 }
                 else
                 {
@@ -735,8 +737,9 @@ namespace MonoTorrent.Client
                 id.BytesToSend = message.Encode(id.sendBuffer, 0);
                 id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
-                id.TorrentManager.uploadQueue.Add(id);
-                id.TorrentManager.ResumePeers();
+                RateLimiter limiter = engine.Settings.GlobalMaxUploadSpeed > 0 ? engine.uploadLimiter : null;
+                limiter = limiter ?? (id.TorrentManager.Settings.MaxUploadSpeed > 0 ? id.TorrentManager.uploadLimiter : null);
+                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, onEndSendMessageCallback, id, limiter);
             }
             catch (Exception)
             {

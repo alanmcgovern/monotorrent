@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
         {
             lock (spares)
                 if (spares.Count > 0)
-                    return spares.Dequeue();
+                    return spares.Dequeue() ?? new DelegateTask();
 
             return new DelegateTask();
         }

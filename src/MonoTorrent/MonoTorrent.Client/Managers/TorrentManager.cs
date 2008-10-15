@@ -85,8 +85,8 @@ namespace MonoTorrent.Client
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
-        private RateLimiter uploadLimiter;        // Contains the logic to decide how many chunks we can download
-        private RateLimiter downloadLimiter;        // Contains the logic to decide how many chunks we can download
+        internal RateLimiter uploadLimiter;        // Contains the logic to decide how many chunks we can download
+        internal RateLimiter downloadLimiter;        // Contains the logic to decide how many chunks we can download
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
