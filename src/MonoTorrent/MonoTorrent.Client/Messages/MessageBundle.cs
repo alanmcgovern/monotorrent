@@ -34,7 +34,8 @@ namespace MonoTorrent.Client.Messages
             get
             {
                 int total = 0;
-                messages.ForEach(delegate(PeerMessage m) { total += m.ByteLength; });
+                for (int i = 0; i < messages.Count; i++)
+                    total += messages[i].ByteLength;
                 return total;
             }
         }
@@ -47,7 +48,9 @@ namespace MonoTorrent.Client.Messages
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
-            messages.ForEach(delegate(PeerMessage m) { written += m.Encode(buffer, written); });
+            
+            for (int i = 0; i < messages.Count; i++)
+                written += messages[i].Encode(buffer, written);
             
             CheckWritten(written - offset);
             return written - offset;
