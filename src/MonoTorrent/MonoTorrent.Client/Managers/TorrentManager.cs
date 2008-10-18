@@ -814,17 +814,6 @@ namespace MonoTorrent.Client
                 upSpeed = engine.Settings.GlobalMaxUploadSpeed;
                 uploader = engine.uploadLimiter;
             }
-
-            // While there are peers queued in the list and i haven't used my download allowance, resume downloading
-            // from that peer. Don't resume if there are more than 20 queued writes in the download queue.
-            while (this.downloadQueue.Count > 0 && ((downloader.Chunks > 0) || downSpeed == 0) && this.engine.DiskManager.QueuedWrites < 20)
-            {
-                if (engine.ConnectionManager.ResumePeer(this.downloadQueue.Dequeue(), true) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref downloader.Chunks);
-            }
-            while (this.uploadQueue.Count > 0 && ((uploader.Chunks > 0) || upSpeed == 0))
-                if (engine.ConnectionManager.ResumePeer(this.uploadQueue.Dequeue(), false) > ConnectionManager.ChunkLength / 2.0)
-                    Interlocked.Decrement(ref uploader.Chunks);
         }
 
         internal void SeedingLogic(int counter)

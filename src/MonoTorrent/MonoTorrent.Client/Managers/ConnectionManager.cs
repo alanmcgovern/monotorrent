@@ -1003,51 +1003,6 @@ namespace MonoTorrent.Client
             TryConnect();
         }
 
-
-        /// <summary>
-        /// Makes a peer start downloading/uploading
-        /// </summary>
-        /// <param name="id">The peer to resume</param>
-        /// <param name="downloading">True if you want to resume downloading, false if you want to resume uploading</param>
-        internal int ResumePeer(PeerId id, bool downloading)
-        {
-            // We attempt to send/receive 'bytecount' number of bytes
-            int byteCount;
-            bool cleanUp = false;
-
-            try
-            {
-                if (id.Connection == null)
-                {
-                    cleanUp = true;
-                    return 0;
-                }
-                if (downloading)
-                {
-                    byteCount = (id.BytesToRecieve - id.BytesReceived) > ChunkLength ? ChunkLength : id.BytesToRecieve - id.BytesReceived;
-                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, id.BytesReceived, byteCount, onEndReceiveMessageCallback, id);
-                }
-                else
-                {
-                    byteCount = (id.BytesToSend - id.BytesSent) > ChunkLength ? ChunkLength : (id.BytesToSend - id.BytesSent);
-                    NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, byteCount, this.onEndSendMessageCallback, id);
-                }
-
-                return byteCount;
-            }
-            catch (Exception)
-            {
-                Logger.Log(id.Connection, "ConnectionManager - SocketException resuming");
-                cleanUp = true;
-            }
-            finally
-            {
-                if (cleanUp)
-                    CleanupSocket(id, "Exception resuming");
-            }
-            return 0;
-        }
-
         internal bool ShouldBanPeer(Peer peer)
         {
             if (BanPeer == null)
