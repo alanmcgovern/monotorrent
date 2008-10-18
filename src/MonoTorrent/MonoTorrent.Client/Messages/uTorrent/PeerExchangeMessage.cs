@@ -20,9 +20,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             peerDict = new BEncodedDictionary();
         }
         //TODO done a new ctor with List<Peer> or uri
-        public PeerExchangeMessage(byte[] added, byte[] addedDotF, byte[] dropped)
+        public PeerExchangeMessage(byte id, byte[] added, byte[] addedDotF, byte[] dropped)
             : this()
         {
+            MessageId = id;
             if (added == null)
                 added = ZeroArray;
             if (addedDotF == null)
@@ -75,7 +76,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
             written += Write(buffer, offset, ByteLength - 4);
             written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
-            written += Write(buffer, written, Support.MessageId);
+            written += Write(buffer, written, MessageId);
             written += peerDict.Encode(buffer, written);
             
             CheckWritten(written - offset);

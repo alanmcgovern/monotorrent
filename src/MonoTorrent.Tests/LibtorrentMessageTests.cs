@@ -42,9 +42,9 @@ namespace MonoTorrent.Client.Tests
             byte[] encoded = m.Encode();
 
             Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Equals(PeerExchangeMessage.Support); }), "#2");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Equals(LTChat.Support); }), "#3");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Equals(LTMetadata.Support); }), "#4");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(PeerExchangeMessage.Support.Name); }), "#2");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTChat.Support.Name); }), "#3");
+            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTMetadata.Support.Name); }), "#4");
         }
 
         [Test]
@@ -81,7 +81,9 @@ namespace MonoTorrent.Client.Tests
             // Decodes as: 192.168.0.1:100
             byte[] peer = new byte[] { 192, 168, 0, 1, 100, 0 };
             byte[] supports = new byte[] { (byte)(1 | 2) }; // 1 == encryption, 2 == seeder
-            PeerExchangeMessage message = new PeerExchangeMessage(peer, supports, null);
+
+            byte id = MonoTorrent.Client.Messages.Libtorrent.PeerExchangeMessage.Support.MessageId;
+            PeerExchangeMessage message = new PeerExchangeMessage(id, peer, supports, null);
 
             byte[] buffer = message.Encode();
             PeerExchangeMessage m = (PeerExchangeMessage)PeerMessage.DecodeMessage(buffer, 0, buffer.Length, this.rig.Manager);

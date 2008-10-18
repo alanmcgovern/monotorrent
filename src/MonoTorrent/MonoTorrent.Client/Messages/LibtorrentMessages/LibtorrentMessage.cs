@@ -9,10 +9,17 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     {
         private static readonly byte HandshakeMessageId = 0;
         private static Dictionary<byte, CreateMessage> messageDict;
+        private static byte nextId;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport>();
 
-        private static byte nextId;
+        private byte messageId;
+
+        public byte MessageId
+        {
+            get { return messageId; }
+            set { messageId = value; }
+        }
 
         static ExtensionMessage()
         {

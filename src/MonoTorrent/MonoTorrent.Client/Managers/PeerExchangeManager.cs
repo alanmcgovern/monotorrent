@@ -49,6 +49,7 @@ namespace MonoTorrent.Client
         private List<Peer> droppedPeers;
         private bool disposed = false;
         private const int MAX_PEERS = 50;
+        private byte messageId;
 
         #endregion Member Variables
 
@@ -57,6 +58,11 @@ namespace MonoTorrent.Client
         internal PeerExchangeManager(PeerId id)
         {
             this.id = id;
+
+			for (int i = 0; i < id.ExtensionSupports.Count; i++)
+				if (id.ExtensionSupports[i].Name == PeerExchangeMessage.Support.Name)
+					messageId = id.ExtensionSupports[i].MessageId;
+
 			this.addedPeers = new List<Peer>();
 			this.droppedPeers = new List<Peer>();
             id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
@@ -75,7 +81,7 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate {
                 if(disposed)
                     return false;
                 OnTick ();
@@ -111,7 +117,7 @@ namespace MonoTorrent.Client
                 droppedPeers[i].CompactPeer(dropped, i * 6);
 
             droppedPeers.RemoveRange(0, len);
-            id.Enqueue(new PeerExchangeMessage(added, addedDotF, dropped));
+            id.Enqueue(new PeerExchangeMessage(messageId, added, addedDotF, dropped));
         }
 
         public void Dispose()
