@@ -49,8 +49,6 @@ namespace MonoTorrent.Client
 {
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
-        internal MonoTorrentCollection<PeerId> downloadQueue = new MonoTorrentCollection<PeerId>();
-        internal MonoTorrentCollection<PeerId> uploadQueue = new MonoTorrentCollection<PeerId>();
         private bool abortHashing;
         private ManualResetEvent hashingWaitHandle;
 
@@ -449,7 +447,6 @@ namespace MonoTorrent.Client
                 if (this.state == TorrentState.Paused)
                 {
                     UpdateState(TorrentState.Downloading);
-                    this.ResumePeers();
                     return;
                 }
 
@@ -604,10 +601,6 @@ namespace MonoTorrent.Client
         internal void PreLogicTick(int counter)
         {
             PeerId id;
-
-            // First attempt to resume downloading (just in case we've stalled for whatever reason)
-            if (this.downloadQueue.Count > 0 || this.uploadQueue.Count > 0)
-                this.ResumePeers();
 
             engine.ConnectionManager.TryConnect();
 
@@ -780,40 +773,6 @@ namespace MonoTorrent.Client
         internal void RaiseConnectionAttemptFailed(PeerConnectionFailedEventArgs args)
         {
             Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
-        }
-
-        internal void ResumePeers()
-        {
-            int downSpeed;
-            int upSpeed;
-            RateLimiter downloader;
-            RateLimiter uploader;
-
-            if (this.state == TorrentState.Paused)
-                return;
-
-            // If the global limit is zero, use the local speed limit and ratelimiters
-            // otherwise use the global speed limits and ratelimiters
-            if (engine.Settings.GlobalMaxDownloadSpeed == 0)
-            {
-                downSpeed = settings.MaxDownloadSpeed;
-                downloader = downloadLimiter;
-            }
-            else
-            {
-                downSpeed = engine.Settings.GlobalMaxDownloadSpeed;
-                downloader = engine.downloadLimiter;
-            }
-            if (engine.Settings.GlobalMaxUploadSpeed == 0)
-            {
-                upSpeed = settings.MaxUploadSpeed;
-                uploader = uploadLimiter;
-            }
-            else
-            {
-                upSpeed = engine.Settings.GlobalMaxUploadSpeed;
-                uploader = engine.uploadLimiter;
-            }
         }
 
         internal void SeedingLogic(int counter)

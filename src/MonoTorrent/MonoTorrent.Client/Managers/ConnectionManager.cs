@@ -330,23 +330,13 @@ namespace MonoTorrent.Client
                 id.ReceivedBytes(count, type);
                 id.TorrentManager.Monitor.BytesReceived(count, type);
 
-                // If we don't have the entire message, recieve the rest
-                if (id.BytesReceived < id.BytesToRecieve)
-                {
-                    id.TorrentManager.downloadQueue.Add(id);
-                    id.TorrentManager.ResumePeers();
-                    return;
-                }
+                // Invoke the callback we were told to invoke once the message had been received fully
+                ArraySegment<byte> b = id.recieveBuffer;
+                if (id.MessageReceivedCallback == messageLengthReceivedCallback)
+                    id.Decryptor.Decrypt(b.Array, b.Offset, id.BytesToRecieve);
                 else
-                {
-                    // Invoke the callback we were told to invoke once the message had been received fully
-                    ArraySegment<byte> b = id.recieveBuffer;
-                    if (id.MessageReceivedCallback == messageLengthReceivedCallback)
-                        id.Decryptor.Decrypt(b.Array, b.Offset, id.BytesToRecieve);
-                    else
-                        id.Decryptor.Decrypt(b.Array, b.Offset + 4, id.BytesToRecieve - 4);
-                    id.MessageReceivedCallback(id);
-                }
+                    id.Decryptor.Decrypt(b.Array, b.Offset + 4, id.BytesToRecieve - 4);
+                id.MessageReceivedCallback(id);
             }
 
             catch (Exception ex)
@@ -383,18 +373,8 @@ namespace MonoTorrent.Client
                 id.SentBytes(count, type);
                 id.TorrentManager.Monitor.BytesSent(count, type);
 
-                // If we havn't sent everything, send the rest of the data
-                if (id.BytesSent != id.BytesToSend)
-                {
-                    id.TorrentManager.uploadQueue.Add(id);
-                    id.TorrentManager.ResumePeers();
-                    return;
-                }
-                else
-                {
-                    // Invoke the callback which we were told to invoke after we sent this message
-                    id.MessageSentCallback(id);
-                }
+                // Invoke the callback which we were told to invoke after we sent this message
+                id.MessageSentCallback(id);
             }
             catch (Exception)
             {
@@ -789,8 +769,6 @@ namespace MonoTorrent.Client
                 id.Connection.Dispose();
                 id.Connection = null;
 
-                id.TorrentManager.uploadQueue.RemoveAll(delegate(PeerId other) { return id == other; });
-                id.TorrentManager.downloadQueue.RemoveAll(delegate(PeerId other) { return id == other; });
                 id.TorrentManager.Peers.ConnectedPeers.RemoveAll(delegate(PeerId other) { return id == other; });
 
                 if (id.TorrentManager.Peers.ActivePeers.Contains(id.Peer))
