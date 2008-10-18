@@ -254,10 +254,11 @@ namespace MonoTorrent.Client
                 }
                 else if (io.RateLimiter.Chunks > 0)
                 {
-                    // Receive in 2kB (or less) chunks to allow rate limiting to work
-                    io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndReceiveCallback, io);
                     if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
                         Interlocked.Decrement(ref io.RateLimiter.Chunks);
+
+                    // Receive in 2kB (or less) chunks to allow rate limiting to work
+                    io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndReceiveCallback, io);
                 }
                 else
                 {
@@ -302,10 +303,11 @@ namespace MonoTorrent.Client
                 }
                 else if (io.RateLimiter.Chunks > 0)
                 {
-                    // Receive in 2kB (or less) chunks to allow rate limiting to work
-                    io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndSendCallback, io);
                     if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
                         Interlocked.Decrement(ref io.RateLimiter.Chunks);
+
+                    // Receive in 2kB (or less) chunks to allow rate limiting to work
+                    io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndSendCallback, io);
                 }
                 else
                 {
