@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate {
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(1), delegate {
                 if(disposed)
                     return false;
                 OnTick ();
