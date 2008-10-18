@@ -195,8 +195,7 @@ namespace MonoTorrent.Client
                     bool reuse = !task.IsBlocking;
                     task.Execute();
                     if (reuse)
-                        lock (spares)
-                            AddSpare(task);
+                        AddSpare(task);
                 }
             }
         }
@@ -289,7 +288,8 @@ namespace MonoTorrent.Client
         private void AddSpare(DelegateTask task)
         {
             task.Initialise();
-            spares.Enqueue(task);
+            lock (spares)
+                spares.Enqueue(task);
         }
 
         private DelegateTask GetSpare()
