@@ -84,6 +84,7 @@ namespace MonoTorrent.Client
         private ConnectionManager connectionManager;
         private DhtEngine dhtEngine;
         private DiskManager diskManager;
+        private bool disposed;
         private bool isRunning;
         private PeerListener listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
@@ -113,6 +114,11 @@ namespace MonoTorrent.Client
         public DiskManager DiskManager
         {
             get { return diskManager; }
+        }
+
+        public bool Disposed
+        {
+            get { return disposed; }
         }
 
         public PeerListener Listener
@@ -184,9 +190,9 @@ namespace MonoTorrent.Client
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
-                if (IsRunning)
+                if (IsRunning && !disposed)
                     LogicTick();
-                return true;
+                return !disposed;
             });
             this.torrents = new MonoTorrentCollection<TorrentManager>();
             this.downloadLimiter = new RateLimiter();
@@ -207,8 +213,15 @@ namespace MonoTorrent.Client
 
         #region Methods
 
+        private void CheckDisposed()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
         public bool Contains(Torrent torrent)
         {
+            CheckDisposed();
             if (torrent == null)
                 return false;
 
@@ -217,11 +230,16 @@ namespace MonoTorrent.Client
 
         public bool Contains(TorrentManager manager)
         {
+            CheckDisposed();
             return manager == null ? false : Contains(manager.Torrent);
         }
 
         public void Dispose()
         {
+            if (disposed)
+                return;
+
+            disposed = true;
             MainLoop.QueueWait(delegate {
                 this.udpListener.Stop();
                 this.diskManager.Dispose();
@@ -243,6 +261,7 @@ namespace MonoTorrent.Client
 
         public void PauseAll()
         {
+            CheckDisposed();
             MainLoop.QueueWait(delegate {
                 foreach (TorrentManager manager in torrents)
                     manager.Pause();
@@ -251,6 +270,7 @@ namespace MonoTorrent.Client
 
         public void Register(TorrentManager manager)
         {
+            CheckDisposed();
             if (manager == null)
                 throw new ArgumentNullException("torrent");
 
@@ -271,6 +291,7 @@ namespace MonoTorrent.Client
 
         public void StartAll()
         {
+            CheckDisposed();
             MainLoop.QueueWait(delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     torrents[i].Start();
@@ -279,6 +300,7 @@ namespace MonoTorrent.Client
 
         public WaitHandle[] StopAll()
         {
+            CheckDisposed();
             List<WaitHandle> handles = new List<WaitHandle>();
 
             MainLoop.QueueWait(delegate {
@@ -307,6 +329,7 @@ namespace MonoTorrent.Client
 
         public void Unregister(TorrentManager manager)
         {
+            CheckDisposed();
             if (manager == null)
                 throw new ArgumentNullException("manager");
 
