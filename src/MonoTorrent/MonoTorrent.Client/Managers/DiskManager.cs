@@ -34,6 +34,11 @@ namespace MonoTorrent.Client.Managers
 
         #region Properties
 
+        public bool Disposed
+        {
+            get { return disposed; }
+        }
+
         public int QueuedWrites
         {
             get { return this.bufferedWrites.Count; }
