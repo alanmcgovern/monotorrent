@@ -42,7 +42,7 @@ using MonoTorrent.Tracker.Listeners;
 
 namespace MonoTorrent.Tracker
 {
-    public class Tracker : IEnumerable<SimpleTorrentManager>
+    public class Tracker : IEnumerable<SimpleTorrentManager>, IDisposable
     {
         #region Static BEncodedStrings
 
@@ -74,6 +74,7 @@ namespace MonoTorrent.Tracker
         private bool allowNonCompact;
         private bool allowUnregisteredTorrents;
         private TimeSpan announceInterval;
+        private bool disposed;
         private TimeSpan minAnnounceInterval;
         private RequestMonitor monitor;
         private TimeSpan timeoutInterval;
@@ -115,6 +116,11 @@ namespace MonoTorrent.Tracker
             get { return torrents.Count; }
         }
 
+        public bool Disposed
+        {
+            get { return disposed; }
+        }
+
         public TimeSpan MinAnnounceInterval
         {
             get { return minAnnounceInterval; }
@@ -148,10 +154,7 @@ namespace MonoTorrent.Tracker
         public Tracker()
             : this(new BEncodedString("monotorrent-tracker"))
         {
-            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
-                Requests.Tick();
-                return true;
-            });
+
         }
 
         public Tracker(BEncodedString trackerId)
@@ -165,6 +168,11 @@ namespace MonoTorrent.Tracker
             announceInterval = TimeSpan.FromMinutes(45);
             minAnnounceInterval = TimeSpan.FromMinutes(10);
             timeoutInterval = TimeSpan.FromMinutes(50);
+
+            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                Requests.Tick();
+                return !disposed;
+            });
         }
 
         #endregion Constructors
@@ -179,6 +187,7 @@ namespace MonoTorrent.Tracker
 
         public bool Add(ITrackable trackable, IPeerComparer comparer)
         {
+            CheckDisposed();
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
@@ -194,8 +203,15 @@ namespace MonoTorrent.Tracker
             return true;
         }
 
+        private void CheckDisposed()
+        {
+            if (disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
         public bool Contains(ITrackable trackable)
         {
+            CheckDisposed();
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
@@ -205,7 +221,8 @@ namespace MonoTorrent.Tracker
 
         public SimpleTorrentManager GetManager(ITrackable trackable)
         {
-            if(trackable == null)
+            CheckDisposed();
+            if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
             SimpleTorrentManager value;
@@ -218,12 +235,14 @@ namespace MonoTorrent.Tracker
 
         public IEnumerator<SimpleTorrentManager> GetEnumerator()
         {
+            CheckDisposed();
             lock (torrents)
                 return new List<SimpleTorrentManager>(this.torrents.Values).GetEnumerator();
         }
 
         public bool IsRegistered(ListenerBase listener)
         {
+            CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
             
@@ -232,6 +251,12 @@ namespace MonoTorrent.Tracker
 
         private void ListenerReceivedAnnounce(object sender, AnnounceParameters e)
         {
+            if (disposed)
+            {
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                return;
+            }
+
             monitor.AnnounceReceived();
             SimpleTorrentManager manager;
 
@@ -287,6 +312,12 @@ namespace MonoTorrent.Tracker
 
         private void ListenerReceivedScrape(object sender, ScrapeParameters e)
         {
+            if (disposed)
+            {
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                return;
+            }
+
             monitor.ScrapeReceived();
             if (!AllowScrape)
             {
@@ -345,6 +376,7 @@ namespace MonoTorrent.Tracker
 
         public void RegisterListener(ListenerBase listener)
         {
+            CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
@@ -358,6 +390,7 @@ namespace MonoTorrent.Tracker
 
         public void Remove(ITrackable trackable)
         {
+            CheckDisposed();
             if (trackable == null)
                 throw new ArgumentNullException("trackable");
 
@@ -367,6 +400,7 @@ namespace MonoTorrent.Tracker
 
         public void UnregisterListener(ListenerBase listener)
         {
+            CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
@@ -384,5 +418,13 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Methods
+
+        public void Dispose()
+        {
+            if (disposed)
+                return;
+
+            disposed = true;
+        }
     }
 }
