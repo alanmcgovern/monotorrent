@@ -43,6 +43,7 @@ namespace MonoTorrent.Client
 
         private SpeedMonitor dataDown;
         private SpeedMonitor dataUp;
+        private object locker = new object();
         private SpeedMonitor protocolDown;
         private SpeedMonitor protocolUp;
 
@@ -107,34 +108,46 @@ namespace MonoTorrent.Client
 
         internal void BytesSent(int bytesUploaded, TransferType type)
         {
-            if (type == TransferType.Data)
-                dataUp.AddDelta(bytesUploaded);
-            else
-                protocolUp.AddDelta(bytesUploaded);
+            lock (locker)
+            {
+                if (type == TransferType.Data)
+                    dataUp.AddDelta(bytesUploaded);
+                else
+                    protocolUp.AddDelta(bytesUploaded);
+            }
         }
 
         internal void BytesReceived(int bytesDownloaded, TransferType type)
         {
-            if (type == TransferType.Data)
-                dataDown.AddDelta(bytesDownloaded);
-            else
-                protocolDown.AddDelta(bytesDownloaded);
+            lock (locker)
+            {
+                if (type == TransferType.Data)
+                    dataDown.AddDelta(bytesDownloaded);
+                else
+                    protocolDown.AddDelta(bytesDownloaded);
+            }
         }
 
         internal void Reset()
         {
-            dataDown.Reset();
-            dataUp.Reset();
-            protocolDown.Reset();
-            protocolUp.Reset();
+            lock (locker)
+            {
+                dataDown.Reset();
+                dataUp.Reset();
+                protocolDown.Reset();
+                protocolUp.Reset();
+            }
         }
 
         internal void Tick()
         {
-            dataDown.Tick();
-            dataUp.Tick();
-            protocolDown.Tick();
-            protocolUp.Tick();
+            lock (locker)
+            {
+                dataDown.Tick();
+                dataUp.Tick();
+                protocolDown.Tick();
+                protocolUp.Tick();
+            }
         }
 
         #endregion

@@ -472,12 +472,6 @@ namespace MonoTorrent.Client
             get { return this.sendQueue.Count; }
         }
 
-        internal void ReceivedBytes(int bytesRecieved, TransferType type)
-        {
-            this.bytesReceived += bytesRecieved;
-            this.monitor.BytesReceived(bytesRecieved, type);
-        }
-
         public void SendMessage(PeerMessage message)
         {
             if (message == null)
@@ -489,12 +483,6 @@ namespace MonoTorrent.Client
 
                 Enqueue(message);
             });
-        }
-
-        internal void SentBytes(int bytesSent, TransferType type)
-        {
-            this.bytesSent += bytesSent;
-            this.monitor.BytesSent(bytesSent, type);
         }
 
         public override string ToString()

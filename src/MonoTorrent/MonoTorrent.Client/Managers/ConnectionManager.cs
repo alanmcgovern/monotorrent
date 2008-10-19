@@ -322,14 +322,6 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
-                // If the first byte is '7' and we're receiving more than 256 bytes (a made up number)
-                // then this is a piece message, so we add it as "data", not protocol. 256 bytes should filter out
-                // any non piece messages that happen to have '7' as the first byte.
-                // The We need to skip past the first 4 bytes, they are message length
-                TransferType type = (id.recieveBuffer.Array[id.recieveBuffer.Offset + 4] == PieceMessage.MessageId && id.BytesToRecieve > 256) ? TransferType.Data : TransferType.Protocol;
-                id.ReceivedBytes(count, type);
-                id.TorrentManager.Monitor.BytesReceived(count, type);
-
                 // Invoke the callback we were told to invoke once the message had been received fully
                 ArraySegment<byte> b = id.recieveBuffer;
                 if (id.MessageReceivedCallback == messageLengthReceivedCallback)
@@ -367,11 +359,6 @@ namespace MonoTorrent.Client
                 // If we have sent zero bytes, that is a sign the connection has been closed
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
-
-                // Log the data sent in both the peers and torrentmangers connection monitors
-                TransferType type = (id.CurrentlySendingMessage is PieceMessage) ? TransferType.Data : TransferType.Protocol;
-                id.SentBytes(count, type);
-                id.TorrentManager.Monitor.BytesSent(count, type);
 
                 // Invoke the callback which we were told to invoke after we sent this message
                 id.MessageSentCallback(id);
@@ -671,7 +658,7 @@ namespace MonoTorrent.Client
                     RateLimiter limiter = engine.Settings.GlobalMaxDownloadSpeed > 0 ? engine.downloadLimiter : null;
                     limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
                     NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, id.BytesReceived,
-                                            id.BytesToRecieve - id.BytesReceived, onEndReceiveMessageCallback, id, limiter);
+                                            id.BytesToRecieve - id.BytesReceived, onEndReceiveMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
                 }
                 else
                 {
@@ -719,7 +706,7 @@ namespace MonoTorrent.Client
 
                 RateLimiter limiter = engine.Settings.GlobalMaxUploadSpeed > 0 ? engine.uploadLimiter : null;
                 limiter = limiter ?? (id.TorrentManager.Settings.MaxUploadSpeed > 0 ? id.TorrentManager.uploadLimiter : null);
-                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, onEndSendMessageCallback, id, limiter);
+                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, onEndSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)
             {

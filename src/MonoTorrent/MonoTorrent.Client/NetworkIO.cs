@@ -72,13 +72,15 @@ namespace MonoTorrent.Client
 
         private class AsyncIO
         {
-            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter)
+            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
             {
                 Connection = connection;
                 Buffer = buffer;
                 Offset = offset;
                 Count = 0;
                 Callback = callback;
+                ManagerMonitor = managerMonitor;
+                PeerMonitor = peerMonitor;
                 RateLimiter = limiter;
                 State = state;
                 Total = total;
@@ -87,8 +89,10 @@ namespace MonoTorrent.Client
             public byte[] Buffer;
             public AsyncTransfer Callback;
             public IConnection Connection;
+            public ConnectionMonitor ManagerMonitor;
             public int Count;
             public int Offset;
+            public ConnectionMonitor PeerMonitor;
             public RateLimiter RateLimiter;
             public object State;
             public int Total;
@@ -167,6 +171,10 @@ namespace MonoTorrent.Client
             {
                 int count = io.Connection.EndReceive(result);
                 io.Count += count;
+                if(io.PeerMonitor != null)
+                    io.PeerMonitor.BytesReceived(count, io.Total > Piece.BlockSize / 2 ? TransferType.Data : TransferType.Protocol);
+                if (io.ManagerMonitor != null)
+                    io.ManagerMonitor.BytesReceived(count, io.Total > Piece.BlockSize / 2 ? TransferType.Data : TransferType.Protocol);
                 
                 if (count > 0 && io.Count < io.Total)
                 {
@@ -190,6 +198,10 @@ namespace MonoTorrent.Client
             {
                 int count = io.Connection.EndSend(result);
                 io.Count += count;
+                if(io.PeerMonitor != null)
+                    io.PeerMonitor.BytesSent(count, io.Total > Piece.BlockSize / 2 ? TransferType.Data : TransferType.Protocol);
+                if (io.ManagerMonitor != null)
+                    io.ManagerMonitor.BytesSent(count, io.Total > Piece.BlockSize / 2 ? TransferType.Data : TransferType.Protocol);
 
                 if (count > 0 && io.Count < io.Total)
                 {
@@ -225,22 +237,22 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueReceive(connection, buffer, offset, count, callback, state, null);
+            EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
+        }
+
+        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        {
+            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
         }
 
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueReceive(connection, buffer, offset, count, callback, state, null);
+            EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
-            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter);
-        }
-
-        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
-        {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter);
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueReceive(io);
         }
 
@@ -274,22 +286,22 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueSend(connection, buffer, offset, count, callback, state, null);
+            EnqueueSend(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
-            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter);
+            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
         }
 
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
-            EnqueueSend(connection, buffer, offset, count, callback, state, null);
+            EnqueueSend(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter)
+        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter);
+            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueSend(io);
         }
 
