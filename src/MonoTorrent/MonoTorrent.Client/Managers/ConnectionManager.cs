@@ -322,6 +322,7 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
+                id.BytesReceived += count;
                 // Invoke the callback we were told to invoke once the message had been received fully
                 ArraySegment<byte> b = id.recieveBuffer;
                 if (id.MessageReceivedCallback == messageLengthReceivedCallback)
@@ -360,6 +361,7 @@ namespace MonoTorrent.Client
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
+                id.BytesSent += count;
                 // Invoke the callback which we were told to invoke after we sent this message
                 id.MessageSentCallback(id);
             }
