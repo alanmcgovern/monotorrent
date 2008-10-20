@@ -72,6 +72,7 @@
     <Compile Include="TrackerTests.cs" />
     <Compile Include="Tracker\TrackerTest.cs" />
     <Compile Include="Tracker\TrackerTestRig.cs" />
+    <Compile Include="TransferTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
