@@ -309,6 +309,10 @@ namespace MonoTorrent.Client
                     MessageBundle bundle = new MessageBundle();
                     for (int i = 0; i < piecesNeeded && bundle.Messages.Count < count ; i++)
                     {
+                        // Don't create a RequestMessage for pieces which don't exist
+                        if (checkIndex + i >= myBitfield.Length)
+                            break;
+
                         // Request the piece
                         Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
                         requests.Add(p);

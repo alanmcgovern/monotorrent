@@ -5,6 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Tests
 {
@@ -257,7 +258,8 @@ namespace MonoTorrent.Client.Tests
             peer.BitField.SetAll(true);
             for (int i = 0; i < 1000; i++)
             {
-                picker.PickPiece(peer, peers, i);
+                MessageBundle b = picker.PickPiece(peer, peers, i);
+                Assert.AreEqual(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
                 picker.RemoveRequests(peer);
             }
         }
@@ -269,7 +271,15 @@ namespace MonoTorrent.Client.Tests
             peer.SupportsFastPeer = true;
             peer.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll(true);
-            picker.PickPiece(peer, peers);
+            for (int i = 0; i < rig.BlocksPerPiece * 3; i++)
+            {
+                RequestMessage m = picker.PickPiece(peer, peers);
+                Assert.IsNotNull(m, "#1." + i.ToString());
+                Assert.IsTrue(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5, "#2");
+            }
+
+            for (int i = 0; i < 10; i++)
+                Assert.IsNull(picker.PickPiece(peer, peers), "#3");
         }
 
         [Test]

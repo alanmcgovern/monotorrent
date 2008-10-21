@@ -261,6 +261,26 @@ namespace MonoTorrent.Client.Tests
         private TorrentManager manager;
         private Torrent torrent;
 
+        public int BlocksPerPiece
+        {
+            get { return torrent.PieceLength / (16 * 1024); }
+        }
+
+        public int TotalBlocks
+        {
+            get
+            {
+                int count = 0;
+                long size = torrent.Size;
+                while (size > 0)
+                {
+                    count++;
+                    size -= Piece.BlockSize;
+                }
+                return count;
+            }
+        }
+
         public ClientEngine Engine
         {
             get { return engine; }
@@ -386,7 +406,7 @@ namespace MonoTorrent.Client.Tests
             dict[new BEncodedString("files")] = files;
             dict[new BEncodedString("name")] = new BEncodedString("test.files");
             dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 25]);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
         }
 
         #region IDisposable Members
