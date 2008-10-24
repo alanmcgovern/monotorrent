@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Client.Tests;
+using MonoTorrent.Client;
+using System.Threading;
 
 namespace MonoTorrent.Tests
 {
@@ -14,10 +17,10 @@ namespace MonoTorrent.Tests
             TrackerTests t = new TrackerTests();
             t.FixtureSetup();
             t.Setup();
-            t.MultipleAnnounce();
+            t.AnnounceToMany();
             t.FixtureTeardown();
         }
-        Uri uri = new Uri("http://121.1.4.203:23456/");
+        Uri uri = new Uri("http://127.0.0.1:23456/");
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Client.Tracker.HTTPTracker tracker;
@@ -26,16 +29,16 @@ namespace MonoTorrent.Tests
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            //listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
-            //server = new MonoTorrent.Tracker.Tracker();
-            //server.RegisterListener(listener);
-            //listener.Start();
+            listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
+            server = new MonoTorrent.Tracker.Tracker();
+            server.RegisterListener(listener);
+            listener.Start();
         }
 
         [TestFixtureTearDown]
         public void FixtureTeardown()
         {
-            //listener.Stop();
+            listener.Stop();
         }
 
         [SetUp]
@@ -69,6 +72,49 @@ namespace MonoTorrent.Tests
             System.Threading.Thread.Sleep(20000);
             Console.WriteLine("All completed: {0}", 20 == announceCount);
             Assert.AreEqual(20, announceCount);
+        }
+
+        [Test]
+        [Ignore ("This hasn't been completed yet")]
+        public void AnnounceToMany()
+        {
+            List<Uri> uris = new List<Uri>();
+            List<MonoTorrent.Tracker.Tracker> servers = new List<MonoTorrent.Tracker.Tracker>();
+            for (int i = 0; i < 50; i++)
+            {
+                Uri uri = new Uri(string.Format ("http://localhost:{0}/announce/", 42123 + i));
+               // MonoTorrent.Tracker.Tracker t = new MonoTorrent.Tracker.Tracker();
+               // MonoTorrent.Tracker.Listeners.HttpListener listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.ToString());
+               // t.RegisterListener(listener);
+               //  listener.Start();
+                uris.Add(uri);
+            }
+
+            using (TestRig rig = new TestRig(""))
+            {
+                rig.Torrent.AnnounceUrls.Clear();
+                for (int i = 0; i < uris.Count; i++)
+                {
+                    rig.Torrent.AnnounceUrls.Add(new MonoTorrent.Common.MonoTorrentCollection<string>());
+                    rig.Torrent.AnnounceUrls[i].Add(uris[i].ToString());
+                }
+
+                rig.Engine.Unregister(rig.Manager);
+                TorrentManager manager = new TorrentManager(rig.Torrent, "", new TorrentSettings());
+                rig.Engine.Register(manager);
+
+                List<MonoTorrent.Client.Tracker.Tracker> trackers = new List<MonoTorrent.Client.Tracker.Tracker>();
+                foreach (TrackerTier tier in manager.TrackerManager.TrackerTiers)
+                    trackers.AddRange(tier.Trackers);
+
+                foreach (MonoTorrent.Client.Tracker.Tracker t in trackers)
+                {
+                    ManualResetEvent handle = new ManualResetEvent(false);
+                    t.AnnounceComplete += delegate { handle.Set(); };
+                    manager.TrackerManager.Announce(t);
+                    Assert.IsTrue(handle.WaitOne(10000), "Announce didn't complete");
+                }
+            }
         }
     }
 }

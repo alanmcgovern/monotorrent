@@ -47,13 +47,13 @@ namespace MonoTorrent.Client.Tests
     [TestFixture]
     public class TransferTest
     {
-        static void Main(string[] args)
-        {
-            TransferTest t = new TransferTest();
-            t.Setup();
-            t.TestHandshake();
-            t.Teardown();
-        }
+        //static void Main(string[] args)
+        //{
+        //    TransferTest t = new TransferTest();
+        //    t.Setup();
+        //    t.TestHandshake();
+        //    t.Teardown();
+        //}
         private ConnectionPair pair;
         private TestRig rig;
 
