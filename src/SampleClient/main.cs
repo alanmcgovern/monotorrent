@@ -81,8 +81,8 @@ namespace MonoTorrent
             try
             {
                 engine.DhtEngine.LoadNodes(File.ReadAllBytes(dhtNodeFile));
-                engine.DhtEngine.Start();
-                System.Threading.Thread.Sleep(10000);
+                //engine.DhtEngine.Start();
+                //System.Threading.Thread.Sleep(10000);
             }
             catch
             {

@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PeerTests

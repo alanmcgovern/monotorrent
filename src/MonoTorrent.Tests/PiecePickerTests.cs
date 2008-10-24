@@ -7,7 +7,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PiecePickerTests

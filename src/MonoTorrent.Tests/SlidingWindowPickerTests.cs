@@ -7,7 +7,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class SlidingWindowPickerTests : PiecePickerTests

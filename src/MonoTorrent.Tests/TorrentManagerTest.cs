@@ -8,7 +8,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
 
     [TestFixture]

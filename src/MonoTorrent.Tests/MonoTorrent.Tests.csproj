@@ -64,8 +64,6 @@
     <Compile Include="TestEncryption.cs" />
     <Compile Include="TestRig.cs" />
     <Compile Include="TestWebSeed.cs" />
-    <Compile Include="TorrentCreatorSingleFileTest.cs" />
-    <Compile Include="TorrentCreatorTest.cs" />
     <Compile Include="TorrentCreatorTests.cs" />
     <Compile Include="TorrentManagerTest.cs" />
     <Compile Include="TorrentTest.cs" />

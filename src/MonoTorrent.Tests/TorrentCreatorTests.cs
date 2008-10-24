@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tests;
+using MonoTorrent.Client;
 using System.IO;
 
 namespace MonoTorrent.Common

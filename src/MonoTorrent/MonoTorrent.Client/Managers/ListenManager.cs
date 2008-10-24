@@ -115,7 +115,13 @@ namespace MonoTorrent.Client
                 EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
             }
             else
+            {
+                // FIXME I saw this once - how did it happen?
+                // Probably the connection was cleaned up before
+                // the delegate was invoked on the main thread.
+                //if (id.Engine == null)
                 ClientEngine.MainLoop.Queue(delegate { id.ConnectionManager.ProcessFreshConnection(id); });
+            }
         }
 
         private void EndCheckEncryption(IAsyncResult result)

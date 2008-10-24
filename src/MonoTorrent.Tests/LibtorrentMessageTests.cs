@@ -6,7 +6,7 @@ using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class LibtorrentMessageTests

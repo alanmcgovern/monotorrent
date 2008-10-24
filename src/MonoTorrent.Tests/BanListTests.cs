@@ -5,7 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using System.Net;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class BanListTests

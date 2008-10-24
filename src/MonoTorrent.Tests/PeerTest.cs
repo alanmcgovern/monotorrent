@@ -33,7 +33,7 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using NUnit.Framework;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PeerTest

@@ -8,7 +8,7 @@ using System.Net;
 using System.Web;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.TrackerTests
+namespace MonoTorrent.Tracker
 {
     public class CustomComparer : MonoTorrent.Tracker.IPeerComparer
     {
@@ -97,7 +97,7 @@ namespace MonoTorrent.TrackerTests
         private Random r = new Random(1000);
 
         public CustomListener Listener;
-        public Tracker.Tracker Tracker;
+        public Tracker Tracker;
 
         public List<PeerDetails> Peers;
         public List<Trackable> Trackables;

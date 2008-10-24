@@ -7,7 +7,7 @@ using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using System.Net;
 
-namespace MonoTorrent.TrackerTests
+namespace MonoTorrent.Tracker
 {
     [TestFixture]
     public class TrackerTest

@@ -12,7 +12,7 @@ using System.Net;
 using MonoTorrent.Client.Encryption;
 using System.Threading;
 
-namespace MonoTorrent.Client.Tests
+namespace MonoTorrent.Client
 {
     public class TestWriter : PieceWriter
     {
