@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Contains the logic for choosing what piece to download next
     /// </summary>
-    public class PieceManager
+    public class PieceManager : IDisposable
     {
         #region Internal Constants
 
@@ -253,7 +253,17 @@ namespace MonoTorrent.Client
         internal void ChangePicker(PiecePickerBase picker, TorrentFile[] files)
         {
             picker.Initialise(piecePicker.MyBitField, files, piecePicker.ExportActiveRequests(), piecePicker.UnhashedPieces);
+            piecePicker.Dispose();
             piecePicker = picker;
         }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            piecePicker.Dispose();
+        }
+
+        #endregion
     }
 }

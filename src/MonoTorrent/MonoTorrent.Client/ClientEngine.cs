@@ -241,6 +241,7 @@ namespace MonoTorrent.Client
 
             disposed = true;
             MainLoop.QueueWait(delegate {
+                this.dhtEngine.Dispose();
                 this.udpListener.Stop();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();

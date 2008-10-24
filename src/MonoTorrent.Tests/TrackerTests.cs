@@ -36,6 +36,7 @@ namespace MonoTorrent.Tracker
         public void FixtureTeardown()
         {
             listener.Stop();
+            server.Dispose();
         }
 
         [SetUp]

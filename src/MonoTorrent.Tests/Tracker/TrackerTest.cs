@@ -23,6 +23,12 @@ namespace MonoTorrent.Tracker
             rig = new TrackerTestRig();
         }
 
+        [TearDown]
+        public void Teardown()
+        {
+            rig.Dispose();
+        }
+
         [Test]
         public void AddTrackableTest()
         {

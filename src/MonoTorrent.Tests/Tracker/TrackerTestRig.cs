@@ -92,7 +92,7 @@ namespace MonoTorrent.Tracker
         public ITrackable trackable;
     }
 
-    public class TrackerTestRig
+    public class TrackerTestRig : IDisposable
     {
         private Random r = new Random(1000);
 
@@ -137,6 +137,12 @@ namespace MonoTorrent.Tracker
                 d.Uploaded = r.Next(10000, 100000);
                 Peers.Add(d);
             }
+        }
+
+        public void Dispose()
+        {
+            Tracker.Dispose();
+            Listener.Stop();
         }
     }
 }

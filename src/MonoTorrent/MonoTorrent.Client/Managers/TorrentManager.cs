@@ -348,7 +348,7 @@ namespace MonoTorrent.Client
         }
         public void Dispose()
         {
-            // Do nothing?
+            pieceManager.Dispose();
         }
 
 
@@ -506,6 +506,13 @@ namespace MonoTorrent.Client
                 else
                     engine.ConnectionManager.RegisterManager(this);
                 this.pieceManager.Reset();
+
+                ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
+                    if (State != TorrentState.Downloading && State != TorrentState.Seeding)
+                        return false;
+                    pieceManager.PiecePicker.CancelTimedOutRequests();
+                    return true;
+                });
             });
         }
 

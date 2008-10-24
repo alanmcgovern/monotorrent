@@ -62,6 +62,7 @@ namespace MonoTorrent.Client
         [TearDown]
         public void GlobalTeardown()
         {
+            picker.Dispose();
             rig.Dispose();
         }
 

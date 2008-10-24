@@ -37,10 +37,11 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    public abstract class PiecePickerBase
+    public abstract class PiecePickerBase : IDisposable
     {
         #region Private Fields
 
+        private bool disposed;
         protected BitField myBitfield;
         private bool linearPickingEnabled;
         protected BitField unhashedPieces;
@@ -48,6 +49,11 @@ namespace MonoTorrent.Client
         #endregion Private Fields
 
         #region Properties
+
+        public bool Disposed
+        {
+            get { return disposed; }
+        }
 
         public BitField MyBitField
         {
@@ -70,6 +76,12 @@ namespace MonoTorrent.Client
         #region Abstract Methods
 
         public abstract int CurrentRequestCount();
+        public virtual void Dispose()
+        {
+            disposed = true;
+        }
+
+        public abstract void CancelTimedOutRequests();
         public abstract List<Piece> ExportActiveRequests();
         public abstract bool IsInteresting(PeerId id);
         public abstract void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces);

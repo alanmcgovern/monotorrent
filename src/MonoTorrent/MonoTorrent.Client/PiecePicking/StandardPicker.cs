@@ -88,10 +88,7 @@ namespace MonoTorrent.Client
 
         public StandardPicker()
         {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
-                CancelTimedOutRequests();
-                return true;
-            });
+
         }
 
         #endregion
@@ -547,7 +544,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        protected void CancelTimedOutRequests()
+        public override void CancelTimedOutRequests()
         {
             foreach (Piece p in requests)
                 for (int i = 0; i < p.BlockCount; i++)
