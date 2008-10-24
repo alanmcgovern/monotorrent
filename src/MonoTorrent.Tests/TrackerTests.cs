@@ -12,14 +12,14 @@ namespace MonoTorrent.Tests
     [TestFixture]
     public class TrackerTests
     {
-        static void Main(string[] args)
-        {
-            TrackerTests t = new TrackerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.AnnounceToMany();
-            t.FixtureTeardown();
-        }
+        //static void Main(string[] args)
+        //{
+        //    TrackerTests t = new TrackerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.AnnounceToMany();
+        //    t.FixtureTeardown();
+        //}
         Uri uri = new Uri("http://127.0.0.1:23456/");
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         MonoTorrent.Tracker.Tracker server;

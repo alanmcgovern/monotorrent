@@ -36,7 +36,7 @@ using System.Diagnostics;
 using System.IO;
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Common.Test
+namespace MonoTorrent.Common
 {
     [TestFixture]
     public class TorrentTest
