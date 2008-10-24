@@ -72,7 +72,6 @@ namespace MonoTorrent.Common
             torrentInfo.Add("azureus_properties", new BEncodedDictionary()); //FIXME: What is this?
             torrentInfo.Add("created by", new BEncodedString("MonoTorrent/" + VersionInfo.ClientVersion));
             torrentInfo.Add("encoding", new BEncodedString("UTF-8"));
-            torrentInfo.Add("announce-list", new BEncodedList());            //FIXME: Get support for this
             torrentInfo.Add("info", CreateInfoDict());
             torrentInfo.Add("private", new BEncodedString("1"));
             torrent = Torrent.Load(torrentInfo);
@@ -90,7 +89,6 @@ namespace MonoTorrent.Common
             dict.Add("files", CreateFiles());
             dict.Add("name.utf-8", new BEncodedString("MyBaseFolder"));
             dict.Add("name", new BEncodedString("MyBaseFolder"));
-            dict.Add("announce-list", new BEncodedList());        //FIXME What is this
             dict.Add("piece length", new BEncodedNumber(512));
             dict.Add("private", new BEncodedString("1"));
             dict.Add("pieces", new BEncodedString(new byte[((26000 + 512) / 512) * 20])); // Total size is 26000, piecelength is 512

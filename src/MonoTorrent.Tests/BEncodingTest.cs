@@ -191,7 +191,7 @@ namespace MonoTorrent.Common
             using (Stream stream = new MemoryStream(data))
             {
                 BEncodedValue result = BEncodedValue.Decode(stream);
-                Assert.AreEqual(result.ToString(), "testteststested");
+                Assert.AreEqual(result.ToString(), "l4:test5:tests6:testede");
                 Assert.AreEqual(result is BEncodedList, true);
                 BEncodedList list = (BEncodedList)result;
 
@@ -265,7 +265,7 @@ namespace MonoTorrent.Common
             using (Stream stream = new MemoryStream(data))
             {
                 BEncodedValue result = BEncodedValue.Decode(stream);
-                Assert.AreEqual(result.ToString(), "spamab");
+                Assert.AreEqual(result.ToString(), "d4:spaml1:a1:bee");
                 Assert.AreEqual(result is BEncodedDictionary, true);
 
                 BEncodedDictionary dict = (BEncodedDictionary)result;

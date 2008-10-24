@@ -12,12 +12,6 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentCreatorTests
     {
-        static void Main(string[] args)
-        {
-            TorrentCreatorTests t = new TorrentCreatorTests();
-            t.Setup();
-            t.CreateSingleTest();
-        }
         private string Comment = "My Comment";
         private string CreatedBy = "Created By MonoTorrent";
         private int PieceLength = 64 * 1024;

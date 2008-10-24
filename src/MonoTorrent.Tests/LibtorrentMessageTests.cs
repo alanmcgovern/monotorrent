@@ -66,8 +66,7 @@ namespace MonoTorrent.Client.Tests
         [Test]
         public void LTChatDecodeTest()
         {
-            LTChat m = new LTChat();
-            m.Message = "This Is My Message";
+            LTChat m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
 
             byte[] data = m.Encode();
             LTChat decoded = (LTChat)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
