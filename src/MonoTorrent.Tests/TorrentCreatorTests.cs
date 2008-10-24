@@ -23,6 +23,7 @@ namespace MonoTorrent.Common
         List<List<string>> announces;
         private TorrentCreator creator;
         TorrentFile[] files;
+        TestWriter writer;
 
         [SetUp]
         public void Setup()
@@ -40,12 +41,14 @@ namespace MonoTorrent.Common
             creator.PublisherUrl = PublisherUrl;
             creator.AddCustom(CustomKey, CustomValue);
             files = new TorrentFile[] { 
-                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), 15 * 5136, 0, 1),
-                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), 42 * 2461, 1, 3),
-                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir2"), "File3"), 145 * 4151, 3, 12),
-                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir1"), "File4"), 262 * 835, 12, 15),
-                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir2"), "File5"), 16 * 123, 15, 15),
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), (int)(PieceLength * 2.30), 0, 1),
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), (int)(PieceLength * 36.5), 1, 3),
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir2"), "File3"), (int)(PieceLength * 3.17), 3, 12),
+                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir1"), "File4"), (int)(PieceLength * 1.22), 12, 15),
+                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir2"), "File5"), (int)(PieceLength * 6.94), 15, 15),
             };
+
+            writer = new TestWriter();
         }
 
         [Test]
@@ -81,6 +84,37 @@ namespace MonoTorrent.Common
             VerifyCommonParts(torrent);
             Assert.AreEqual(1, torrent.Files.Length, "#1");
             Assert.AreEqual(f, torrent.Files[0], "#2");
+        }
+        [Test]
+        public void CheckPaths()
+        {
+            creator.Path = Environment.CurrentDirectory;
+            Environment.CurrentDirectory = Path.GetPathRoot(Environment.CurrentDirectory);
+            BEncodedValue val =  creator.Create(files, writer, "TopDir");
+
+            Assert.AreEqual(files.Length, writer.Paths.Count, "#1");
+            foreach(TorrentFile f in files)
+                Assert.IsTrue(writer.Paths.Contains(Path.Combine(creator.Path, f.Path)), "#2");
+        }
+
+        [Test]
+        public void CreateFromFolder()
+        {
+            creator.Path = Environment.CurrentDirectory;
+            Environment.CurrentDirectory = Path.GetPathRoot(Environment.CurrentDirectory);
+            BEncodedDictionary dict = creator.Create();
+            Torrent t = Torrent.Load(dict);
+
+            string[] parts = creator.Path.Split(new char[] { Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+
+            Assert.AreEqual(parts[parts.Length - 1], t.Name);
+
+            string[] files = Directory.GetFiles(creator.Path, "*", SearchOption.AllDirectories);
+            Assert.AreEqual(t.Files.Length, files.Length, "#1");
+            foreach (TorrentFile f in t.Files)
+                Assert.IsTrue(Array.Exists<string>(files, delegate (string s) {
+                    return s.Equals (Path.Combine(creator.Path, f.Path));
+                }), "#2");
         }
 
         void VerifyCommonParts (Torrent torrent)

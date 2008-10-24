@@ -16,8 +16,25 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : PieceWriter
     {
+        public List<String> Paths = new List<string>();
         public override int Read(BufferedIO data)
         {
+            long idx = data.Offset;
+            for (int i = 0; i < data.Files.Length; i++)
+            {
+                if (idx < data.Files[i].Length)
+                {
+                    string path = System.IO.Path.Combine(data.Path, data.Files[i].Path);
+                    if (!Paths.Contains(path))
+                        Paths.Add(path);
+                    break;
+                }
+                else
+                {
+                    idx -= data.Files[i].Length;
+                }
+            }
+             
             for (int i = 0; i < data.Count; i++)
                 data.Buffer.Array[data.Buffer.Offset + i] = (byte)(data.Buffer.Offset + i);
             data.ActualCount = data.Count;
