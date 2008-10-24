@@ -52,7 +52,7 @@ namespace MonoTorrent.Dht
         MethodUnknown = 204//Method Unknown
     }
     
-	public class DhtEngine
+	public class DhtEngine : IDisposable
 	{
         public event EventHandler StateChanged;
         public event EventHandler<PeersFoundEventArgs> PeersFound;
@@ -63,6 +63,7 @@ namespace MonoTorrent.Dht
         
         bool bootStrap = true;
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
+        bool disposed;
         int port = 6881;
         State state = State.NotReady;
         MessageLoop messageLoop;
@@ -89,6 +90,11 @@ namespace MonoTorrent.Dht
         {
             get { return bucketRefreshTimeout; }
             set { bucketRefreshTimeout = value; }
+        }
+
+        public bool Disposed
+        {
+            get { return disposed; }
         }
 
         public NodeId LocalId
@@ -154,6 +160,7 @@ namespace MonoTorrent.Dht
 
         public void Start()
         {
+            CheckDisposed();
             if (Bootstrap)
             {
                 new InitialiseTask(this).Execute();
@@ -165,8 +172,10 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(State.Ready);
             }
 
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
-            {
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate {
+                if (Disposed)
+                    return false;
+
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
                     if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
@@ -176,11 +185,9 @@ namespace MonoTorrent.Dht
                         task.Execute();
                     }
                 }
-                return true;
+                return !Disposed;
              });
         }
-        
-        #region event
         
         private void RaiseStateChanged(State newState)
         {
@@ -196,10 +203,6 @@ namespace MonoTorrent.Dht
                 PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
         }
                 
-        #endregion
-        
-        #region Load/save
-        
         public byte[] SaveNodes()
         {
             BEncodedList details = new BEncodedList();
@@ -222,17 +225,18 @@ namespace MonoTorrent.Dht
 
         public void LoadNodes(byte[] nodes)
         {
-            MainLoop.QueueWait(delegate {
+            CheckDisposed();
+            MainLoop.QueueWait(delegate
+            {
                 BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
                 foreach (BEncodedString s in list)
                     Add(Node.FromCompactNode(s.TextBytes, 0));
             });
         }
         
-        #endregion
-        
         public void Announce(byte[] infoHash, int port)
         {
+            CheckDisposed();
             if (infoHash == null)
                 throw new ArgumentNullException("infoHash");
             if (infoHash.Length != 20)
@@ -240,8 +244,20 @@ namespace MonoTorrent.Dht
             new AnnounceTask(this, infoHash, port).Execute();
         }
 
+        void CheckDisposed()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
+        public void Dispose()
+        {
+            disposed = true;
+        }
+
         public void GetPeers(byte[] infoHash)
         {
+            CheckDisposed();
             if (infoHash == null)
                 throw new ArgumentNullException("infoHash");
             if (infoHash.Length != 20)
