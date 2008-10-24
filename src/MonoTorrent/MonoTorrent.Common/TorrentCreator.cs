@@ -192,7 +192,7 @@ namespace MonoTorrent.Common
         #endregion Constructors
 
 
-        #region Public Methods
+        #region Methods
 
         /// <summary>
         /// Adds a custom value to the main bencoded dictionary
@@ -214,27 +214,12 @@ namespace MonoTorrent.Common
             return result;
         }
 
-        /// <summary>
-        /// Creates a Torrent and returns it in it's dictionary form
-        /// </summary>
-        /// <returns></returns>
-        public BEncodedDictionary Create()
-        {
-            if (!Directory.Exists(Path) && !File.Exists(Path))
-                throw new ArgumentException("no such file or directory", Path);
-
-            List<TorrentFile> files = new List<TorrentFile>();
-            LoadFiles(Path, files);
-
-            return Create(files.ToArray(), new DiskWriter(), GetDirName(Path));
-        }
-
         private void LoadFiles(string path, List<TorrentFile> files)
         {
             if (Directory.Exists(path))
             {
-                foreach(string subdir in System.IO.Directory.GetFileSystemEntries(path))
-                LoadFiles(subdir, files);
+                foreach (string subdir in System.IO.Directory.GetFileSystemEntries(path))
+                    LoadFiles(subdir, files);
             }
             else if (File.Exists(path))
             {
@@ -247,6 +232,25 @@ namespace MonoTorrent.Common
                 if (!((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && IgnoreHiddenFiles))
                     files.Add(new TorrentFile(filePath, info.Length, 0, 0, null, null, null));
             }
+        }
+
+        /// <summary>
+        /// Creates a Torrent and returns it in it's dictionary form
+        /// </summary>
+        /// <returns></returns>
+        public BEncodedDictionary Create()
+        {
+            if (!Directory.Exists(Path) && !File.Exists(Path))
+                throw new ArgumentException("no such file or directory", Path);
+
+            List<TorrentFile> files = new List<TorrentFile>();
+            LoadFiles(Path, files);
+
+            if(files.Count == 0)
+                throw new TorrentException ("There were no files in the specified directory");
+
+            string name = files.Count == 1 ? System.IO.Path.GetFileName(path) : System.IO.Path.GetDirectoryName(path);
+            return Create(files.ToArray(), new DiskWriter(), name);
         }
 
         ///<summary>
@@ -277,10 +281,8 @@ namespace MonoTorrent.Common
             stream.Write(data, 0, data.Length);
         }
 
-
         internal BEncodedDictionary Create(TorrentFile[] files, PieceWriter writer, string name)
         {
-            this.path = name;
             // Clone the base dictionary and fill the remaining data into the clone
             BEncodedDictionary torrentDict = BEncodedDictionary.Decode<BEncodedDictionary>(dict.Encode());
             Array.Sort<TorrentFile>(files, delegate(TorrentFile a, TorrentFile b) {
@@ -290,12 +292,12 @@ namespace MonoTorrent.Common
             if (files.Length > 1)
             {
                 Logger.Log(null, "Creating multifile torrent from: {0}", Path);
-                CreateMultiFileTorrent(torrentDict, files, writer);
+                CreateMultiFileTorrent(torrentDict, files, writer, name);
             }
             else
             {
                 Logger.Log(null, "Creating singlefile torrent from: {0}", Path);
-                CreateSingleFileTorrent(torrentDict, files, writer);
+                CreateSingleFileTorrent(torrentDict, files, writer, name);
             }
 
             return torrentDict;
@@ -408,10 +410,8 @@ namespace MonoTorrent.Common
             this.dict.Remove(key);
         }
 
-        #endregion Public Methods
+        #endregion Methods
 
-
-        #region Private Methods
 
         private void AsyncCreate()
         {
@@ -529,7 +529,7 @@ namespace MonoTorrent.Common
         ///used for creating multi file mode torrents.
         ///</summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected void CreateMultiFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer)
+        protected void CreateMultiFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer, string name)
         {
             AddCommonStuff(dictionary);
             BEncodedDictionary info = (BEncodedDictionary)dictionary["info"];
@@ -541,8 +541,6 @@ namespace MonoTorrent.Common
 
             info.Add("files", torrentFiles);
 
-            string name = GetDirName(Path);
-
 			Logger.Log(null, "Topmost directory: {0}", name);
             info.Add("name", new BEncodedString(name));
 
@@ -553,18 +551,18 @@ namespace MonoTorrent.Common
         ///used for creating a single file torrent file
         ///<summary>
         ///<returns>the dictionary representing which is stored in the torrent file</returns>
-        protected void CreateSingleFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer)
+        protected void CreateSingleFileTorrent(BEncodedDictionary dictionary, TorrentFile[] files, PieceWriter writer, string name)
         {
             AddCommonStuff(dictionary);
 
             BEncodedDictionary infoDict = (BEncodedDictionary)dictionary["info"];
+            infoDict.Add("length", new BEncodedNumber(files[0].Length));
+            infoDict.Add("name", (BEncodedString)name);
 
-            infoDict.Add("length", new BEncodedNumber(new FileInfo(Path).Length));
             if (StoreMD5)
                 AddMD5(infoDict, Path);
 
-            infoDict.Add("name", new BEncodedString(System.IO.Path.GetFileName(Path)));
-			Logger.Log(null, "name == {0}", System.IO.Path.GetFileName(Path));
+            Logger.Log(null, "name == {0}", System.IO.Path.GetFileName(Path));
             infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(Path, files, writer)));
         }
 
@@ -600,15 +598,6 @@ namespace MonoTorrent.Common
 
                 paths.Add(path);
             }
-        }
-
-        private string GetDirName(string path)
-        {
-            string[] pathEntries = path.Split(new char[] { System.IO.Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-            int i = pathEntries.Length - 1;
-            while (String.IsNullOrEmpty(pathEntries[i]))
-                i--;
-            return pathEntries[i];
         }
 
         ///<summary>
@@ -666,7 +655,5 @@ namespace MonoTorrent.Common
             else
                 dictionary.Add(key, value);
         }
-
-        #endregion Private Methods
     }
 }

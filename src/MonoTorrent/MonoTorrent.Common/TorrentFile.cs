@@ -142,6 +142,12 @@ namespace MonoTorrent.Common
 
         }
 
+        public TorrentFile(string path, long length, int startIndex, int endIndex)
+            : this(path, length, startIndex, endIndex, null, null, null)
+        {
+
+        }
+
         public TorrentFile(string path, long length, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
         {
             this.bitfield = new BitField(endIndex - startIndex + 1);

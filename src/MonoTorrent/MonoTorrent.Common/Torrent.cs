@@ -740,6 +740,9 @@ namespace MonoTorrent.Common
                     switch (keypair.Key.Text)
                     {
                         case ("announce"):
+                            // Ignore this if we have an announce-list
+                            if (torrentInformation.ContainsKey("announce-list"))
+                                break;
                             announceUrls.Add(new MonoTorrentCollection<string>());
                             announceUrls[0].Add(keypair.Value.ToString());
                             break;
