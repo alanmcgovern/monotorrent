@@ -38,7 +38,9 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueCleanup(PeerId id)
         {
-            id.ConnectionManager.AsyncCleanupSocket(id, true, id.DisconnectReason);
+            ClientEngine.MainLoop.Queue(delegate {
+                id.ConnectionManager.AsyncCleanupSocket(id, true, id.DisconnectReason);
+            });
         }
 
         private static void HandleMessage(PeerId id, AsyncMessageDetails messageDetails)
