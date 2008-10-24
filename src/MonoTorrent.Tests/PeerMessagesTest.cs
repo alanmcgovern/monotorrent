@@ -66,20 +66,22 @@ namespace MonoTorrent.Client.Tests
         {
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true,
                                        false, true, false, false, false, true, true, true, false, false,
-                                       false, true, false, true, false };
+                                       false, true, false, true, false, false, true, false, true, false,
+                                       true, true, false, false, true, false, false, true, true, false };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
             BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
+            Assert.AreEqual(data.Length, m.BitField.Length, "#1");
+            for (int i = 0; i < data.Length; i++)
+                Assert.AreEqual(data[i], m.BitField[i], "#2." + i);
         }
+
         [Test]
         public void BitFieldDecoding()
         {
-            byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08, 0xAA, 0xE3 };
+            byte[] buffer = new byte[] { 0x00, 0x00, 0x00, 0x04, 0x05, 0xff, 0x08, 0xAA, 0xE3, 0x00 };
             Console.WriteLine("Pieces: " + testRig.Manager.Torrent.Pieces.Count);
             BitfieldMessage msg = (BitfieldMessage)PeerMessage.DecodeMessage(buffer, 0, 8, this.testRig.Manager);
-            Console.WriteLine(msg.BitField.Length);
-            for (int i = 0; i < msg.BitField.Length; i++)
-                Console.WriteLine(msg.BitField[i] + " " + i);
 
             for (int i = 0; i < 8; i++)
                 Assert.IsTrue(msg.BitField[i], i.ToString());
