@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.Tracker
         static TrackerFactory()
         {
             // Register builtin tracker clients
-            Register("udp", typeof(UdpTracker));
+            //Register("udp", typeof(UdpTracker));
             Register("http", typeof(HTTPTracker));
             Register("https", typeof(HTTPTracker));
         }
