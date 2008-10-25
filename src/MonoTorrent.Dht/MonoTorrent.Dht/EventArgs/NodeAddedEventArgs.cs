@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    public class NodeAddedEventArgs : EventArgs
+    internal class NodeAddedEventArgs : EventArgs
     {
         private Node node;
 

@@ -36,7 +36,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Messages
 {
-    public abstract class Message : MonoTorrent.Client.Messages.Message
+    internal abstract class Message : MonoTorrent.Client.Messages.Message
     {
         protected static readonly BEncodedString IdKey = "id";
         private static BEncodedString TransactionIdKey = "t";

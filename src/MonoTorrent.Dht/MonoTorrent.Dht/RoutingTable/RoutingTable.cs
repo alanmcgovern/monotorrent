@@ -38,7 +38,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    public class RoutingTable
+    internal class RoutingTable
     {
         public event EventHandler<NodeAddedEventArgs> NodeAdded;
 

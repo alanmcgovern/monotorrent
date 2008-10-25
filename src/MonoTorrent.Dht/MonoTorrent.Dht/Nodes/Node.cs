@@ -40,7 +40,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    public class Node : IComparable<Node>, IEquatable<Node>
+    internal class Node : IComparable<Node>, IEquatable<Node>
     {
         public static readonly int MaxFailures = 4;
 

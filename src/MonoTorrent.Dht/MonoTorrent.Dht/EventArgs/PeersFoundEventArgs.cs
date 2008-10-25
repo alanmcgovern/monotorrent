@@ -33,20 +33,21 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht
 {
     public class PeersFoundEventArgs : EventArgs
     {
-        private List<MonoTorrent.Client.Peer> peers;
+        private List<Peer> peers;
         private byte[] infoHash;
         
-        public PeersFoundEventArgs(byte[] infoHash, List<MonoTorrent.Client.Peer> peers)
+        public PeersFoundEventArgs(byte[] infoHash, List<Peer> peers)
         {
             this.peers = peers;
             this.infoHash = infoHash;
         }
-        public List<MonoTorrent.Client.Peer> Peers
+        public List<Peer> Peers
         {
             get { return peers; }
         }

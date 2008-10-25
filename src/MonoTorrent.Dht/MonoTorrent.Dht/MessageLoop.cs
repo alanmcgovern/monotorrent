@@ -40,7 +40,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
-    public class MessageLoop
+    internal class MessageLoop
     {
         private struct SendDetails
         {

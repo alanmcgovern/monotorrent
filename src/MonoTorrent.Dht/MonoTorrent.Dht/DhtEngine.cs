@@ -44,7 +44,7 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    public enum ErrorCode : int
+    internal enum ErrorCode : int
     {
         GenericError = 201,
         ServerError = 202,
@@ -97,7 +97,7 @@ namespace MonoTorrent.Dht
             get { return disposed; }
         }
 
-        public NodeId LocalId
+        internal NodeId LocalId
         {
             get { return RoutingTable.LocalNode.Id; }
         }

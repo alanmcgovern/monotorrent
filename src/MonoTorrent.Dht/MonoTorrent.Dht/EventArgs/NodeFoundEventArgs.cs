@@ -35,7 +35,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    public class NodeFoundEventArgs : EventArgs
+    internal class NodeFoundEventArgs : EventArgs
     {
         private Node node;
         

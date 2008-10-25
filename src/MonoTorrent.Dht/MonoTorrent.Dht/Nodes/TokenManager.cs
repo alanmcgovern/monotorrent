@@ -35,7 +35,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    public class TokenManager
+    internal class TokenManager
     {
         private byte[] secret;
         private byte[] previousSecret;
