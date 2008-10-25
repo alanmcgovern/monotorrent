@@ -51,8 +51,8 @@ namespace MonoTorrent.Dht
         ProtocolError = 203,// malformed packet, invalid arguments, or bad token
         MethodUnknown = 204//Method Unknown
     }
-    
-	public class DhtEngine : IDisposable
+
+    public class DhtEngine : IDisposable
     {
         #region Events
 
@@ -64,7 +64,7 @@ namespace MonoTorrent.Dht
         #region Fields
 
         internal static MainLoop MainLoop = new MainLoop("DhtLoop");
-        
+
         bool bootStrap = true;
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         bool disposed;
@@ -86,7 +86,7 @@ namespace MonoTorrent.Dht
             set { bootStrap = value; }
         }
 
-        public TimeSpan BucketRefreshTimeout
+        internal TimeSpan BucketRefreshTimeout
         {
             get { return bucketRefreshTimeout; }
             set { bucketRefreshTimeout = value; }
@@ -105,12 +105,6 @@ namespace MonoTorrent.Dht
         internal MessageLoop MessageLoop
         {
             get { return messageLoop; }
-        }
-
-        public int Port
-        {
-            get { return port; }
-            set { port = value; }
         }
 
         internal RoutingTable RoutingTable
@@ -145,6 +139,9 @@ namespace MonoTorrent.Dht
 
         public DhtEngine(DhtListener listener)
         {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+
             messageLoop = new MessageLoop(this, listener);
             timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
             tokenManager = new TokenManager();
@@ -203,52 +200,7 @@ namespace MonoTorrent.Dht
             new GetPeersTask(this, infoHash).Execute();
         }
 
-        public void LoadNodes(byte[] nodes)
-        {
-            CheckDisposed();
-            MainLoop.QueueWait(delegate
-            {
-                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
-                foreach (BEncodedString s in list)
-                    Add(Node.FromCompactNode(s.TextBytes, 0));
-            });
-        }
-
-        void RaiseStateChanged(State newState)
-        {
-            state = newState;
-
-            if (StateChanged != null)
-                StateChanged(this, EventArgs.Empty);
-        }
-        
-        internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
-        {
-            if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
-        }
-                
-        public byte[] SaveNodes()
-        {
-            BEncodedList details = new BEncodedList();
-
-            MainLoop.QueueWait(delegate {
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    foreach (Node n in b.Nodes)
-                        if (n.State != NodeState.Bad)
-                            details.Add(n.CompactNode());
-
-                    if (b.Replacement != null)
-                        if (b.Replacement.State != NodeState.Bad)
-                            details.Add(b.Replacement.CompactNode());
-                }
-            });
-
-            return details.Encode();
-        }
-
-        public void Start()
+        public void Initialise()
         {
             CheckDisposed();
             if (Bootstrap)
@@ -278,6 +230,51 @@ namespace MonoTorrent.Dht
                 }
                 return !Disposed;
             });
+        }
+
+        public void LoadNodes(byte[] nodes)
+        {
+            CheckDisposed();
+            MainLoop.QueueWait(delegate
+            {
+                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
+                foreach (BEncodedString s in list)
+                    Add(Node.FromCompactNode(s.TextBytes, 0));
+            });
+        }
+
+        void RaiseStateChanged(State newState)
+        {
+            state = newState;
+
+            if (StateChanged != null)
+                StateChanged(this, EventArgs.Empty);
+        }
+
+        internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
+        {
+            if (PeersFound != null)
+                PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
+        }
+
+        public byte[] SaveNodes()
+        {
+            BEncodedList details = new BEncodedList();
+
+            MainLoop.QueueWait(delegate {
+                foreach (Bucket b in RoutingTable.Buckets)
+                {
+                    foreach (Node n in b.Nodes)
+                        if (n.State != NodeState.Bad)
+                            details.Add(n.CompactNode());
+
+                    if (b.Replacement != null)
+                        if (b.Replacement.State != NodeState.Bad)
+                            details.Add(b.Replacement.CompactNode());
+                }
+            });
+
+            return details.Encode();
         }
 
         #endregion Methods
