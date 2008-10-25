@@ -1,0 +1,102 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MonoTorrent.Tests</RootNamespace>
+    <AssemblyName>MonoTorrent.Tests</AssemblyName>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Stats\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="nunit.framework, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Client\AllowedFastAlgorithmTest.cs" />
+    <Compile Include="Client\BanListTests.cs" />
+    <Compile Include="Client\ConnectionListenerTests.cs" />
+    <Compile Include="Client\FileManager.cs" />
+    <Compile Include="Client\LibtorrentMessageTests.cs" />
+    <Compile Include="Client\MainLoopTests.cs" />
+    <Compile Include="Client\PeerMessagesTest.cs" />
+    <Compile Include="Client\PeerTest.cs" />
+    <Compile Include="Client\PeerTests.cs" />
+    <Compile Include="Client\PiecePickerTests.cs" />
+    <Compile Include="Client\PieceWriterTests.cs" />
+    <Compile Include="Client\SlidingWindowPickerTests.cs" />
+    <Compile Include="Client\TestEncryption.cs" />
+    <Compile Include="Client\TestRig.cs" />
+    <Compile Include="Client\TestWebSeed.cs" />
+    <Compile Include="Client\TorrentManagerTest.cs" />
+    <Compile Include="Client\TransferTest.cs" />
+    <Compile Include="Common\BEncodingTest.cs" />
+    <Compile Include="Common\BitFieldTest.cs" />
+    <Compile Include="Common\TorrentCreatorTests.cs" />
+    <Compile Include="Common\TorrentTest.cs" />
+    <Compile Include="Dht\AssemblyInfo.cs" />
+    <Compile Include="Dht\MessageHandlingTests.cs" />
+    <Compile Include="Dht\MessageTests.cs" />
+    <Compile Include="Dht\NodeIdTests.cs" />
+    <Compile Include="Dht\NodeTests.cs" />
+    <Compile Include="Dht\RoutingTableTests.cs" />
+    <Compile Include="Dht\TaskTests.cs" />
+    <Compile Include="Dht\TestHelper.cs" />
+    <Compile Include="Dht\TestListener.cs" />
+    <Compile Include="Dht\TokenTest.cs" />
+    <Compile Include="Tracker\TrackerTest.cs" />
+    <Compile Include="Tracker\TrackerTestRig.cs" />
+    <Compile Include="Tracker\TrackerTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
+      <Name>MonoTorrent</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
