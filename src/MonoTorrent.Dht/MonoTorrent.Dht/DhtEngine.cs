@@ -53,9 +53,13 @@ namespace MonoTorrent.Dht
     }
     
 	public class DhtEngine : IDisposable
-	{
-        public event EventHandler StateChanged;
+    {
+        #region Events
+
         public event EventHandler<PeersFoundEventArgs> PeersFound;
+        public event EventHandler StateChanged;
+
+        #endregion Events
 
         #region Fields
 
@@ -64,9 +68,9 @@ namespace MonoTorrent.Dht
         bool bootStrap = true;
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         bool disposed;
+        MessageLoop messageLoop;
         int port = 6881;
         State state = State.NotReady;
-        MessageLoop messageLoop;
         RoutingTable table = new RoutingTable();
         TimeSpan timeout;
         Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
@@ -74,12 +78,8 @@ namespace MonoTorrent.Dht
 
         #endregion Fields
 
-        public int Port
-        {
-            get { return port; }
-            set { port = value; }
-        }
-        
+        #region Properties
+
         internal bool Bootstrap
         {
             get { return bootStrap; }
@@ -107,11 +107,12 @@ namespace MonoTorrent.Dht
             get { return messageLoop; }
         }
 
-        internal TokenManager TokenManager
+        public int Port
         {
-            get { return tokenManager; }
+            get { return port; }
+            set { port = value; }
         }
-        
+
         internal RoutingTable RoutingTable
         {
             get { return table; }
@@ -128,10 +129,19 @@ namespace MonoTorrent.Dht
             set { timeout = value; }
         }
 
+        internal TokenManager TokenManager
+        {
+            get { return tokenManager; }
+        }
+
         internal Dictionary<NodeId, List<Node>> Torrents
         {
             get { return torrents; }
         }
+
+        #endregion Properties
+
+        #region Constructors
 
         public DhtEngine(DhtListener listener)
         {
@@ -139,6 +149,10 @@ namespace MonoTorrent.Dht
             timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
             tokenManager = new TokenManager();
         }
+
+        #endregion Constructors
+
+        #region Methods
 
         internal void Add(IEnumerable<Node> nodes)
         {
@@ -158,38 +172,49 @@ namespace MonoTorrent.Dht
             task.Execute();
         }
 
-        public void Start()
+        public void Announce(byte[] infoHash, int port)
         {
             CheckDisposed();
-            if (Bootstrap)
-            {
-                new InitialiseTask(this).Execute();
-                RaiseStateChanged(State.Initialising);
-                bootStrap = false;
-            }
-            else
-            {
-                RaiseStateChanged(State.Ready);
-            }
-
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate {
-                if (Disposed)
-                    return false;
-
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
-                    {
-                        b.LastChanged = DateTime.UtcNow;
-                        RefreshBucketTask task = new RefreshBucketTask(this, b);
-                        task.Execute();
-                    }
-                }
-                return !Disposed;
-             });
+            if (infoHash == null)
+                throw new ArgumentNullException("infoHash");
+            if (infoHash.Length != 20)
+                throw new ArgumentException("infoHash must be 20 bytes");
+            new AnnounceTask(this, infoHash, port).Execute();
         }
-        
-        private void RaiseStateChanged(State newState)
+
+        void CheckDisposed()
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
+        public void Dispose()
+        {
+            disposed = true;
+        }
+
+        public void GetPeers(byte[] infoHash)
+        {
+            CheckDisposed();
+            if (infoHash == null)
+                throw new ArgumentNullException("infoHash");
+            if (infoHash.Length != 20)
+                throw new ArgumentException("infoHash must be 20 bytes");
+            new GetPeersTask(this, infoHash).Execute();
+        }
+
+        public void LoadNodes(byte[] nodes)
+        {
+            CheckDisposed();
+            MainLoop.QueueWait(delegate
+            {
+                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
+                foreach (BEncodedString s in list)
+                    Add(Node.FromCompactNode(s.TextBytes, 0));
+            });
+        }
+
+        void RaiseStateChanged(State newState)
         {
             state = newState;
 
@@ -223,46 +248,38 @@ namespace MonoTorrent.Dht
             return details.Encode();
         }
 
-        public void LoadNodes(byte[] nodes)
+        public void Start()
         {
             CheckDisposed();
-            MainLoop.QueueWait(delegate
+            if (Bootstrap)
             {
-                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
-                foreach (BEncodedString s in list)
-                    Add(Node.FromCompactNode(s.TextBytes, 0));
+                new InitialiseTask(this).Execute();
+                RaiseStateChanged(State.Initialising);
+                bootStrap = false;
+            }
+            else
+            {
+                RaiseStateChanged(State.Ready);
+            }
+
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
+            {
+                if (Disposed)
+                    return false;
+
+                foreach (Bucket b in RoutingTable.Buckets)
+                {
+                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
+                    {
+                        b.LastChanged = DateTime.UtcNow;
+                        RefreshBucketTask task = new RefreshBucketTask(this, b);
+                        task.Execute();
+                    }
+                }
+                return !Disposed;
             });
         }
-        
-        public void Announce(byte[] infoHash, int port)
-        {
-            CheckDisposed();
-            if (infoHash == null)
-                throw new ArgumentNullException("infoHash");
-            if (infoHash.Length != 20)
-                throw new ArgumentException("infoHash must be 20 bytes");
-            new AnnounceTask(this, infoHash, port).Execute();
-        }
 
-        void CheckDisposed()
-        {
-            if (Disposed)
-                throw new ObjectDisposedException(GetType().Name);
-        }
-
-        public void Dispose()
-        {
-            disposed = true;
-        }
-
-        public void GetPeers(byte[] infoHash)
-        {
-            CheckDisposed();
-            if (infoHash == null)
-                throw new ArgumentNullException("infoHash");
-            if (infoHash.Length != 20)
-                throw new ArgumentException("infoHash must be 20 bytes");
-            new GetPeersTask(this, infoHash).Execute();
-        }
+        #endregion Methods
     }
 }
