@@ -2,29 +2,42 @@ using MonoTorrent.Dht.Messages;
 using System;
 using System.Net;
 using System.Collections.Generic;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Tasks
 {
     class InitialiseTask : Task
     {
         int activeRequests = 0;
+        byte[] initialNodes;
         SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
         DhtEngine engine;
             
-        public InitialiseTask(DhtEngine engine)
+        public InitialiseTask(DhtEngine engine, byte[] initialNodes)
         {
             this.engine = engine;
+            this.initialNodes = initialNodes;
         }
         
-        public override void Execute ()
+        public override void Execute()
         {
             if (Active)
                 return;
 
             Active = true;
 
-            Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-            SendFindNode(new Node[] { utorrent });
+            // If we were given a list of nodes to load at the start, use them
+            if (initialNodes != null)
+            {
+                BEncodedList list = (BEncodedList)BEncodedValue.Decode(initialNodes);
+                foreach (BEncodedString s in list)
+                    engine.Add(Node.FromCompactNode(s.TextBytes, 0));
+            }
+            else
+            {
+                Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                SendFindNode(new Node[] { utorrent });
+            }
         }
 
         private void FindNodeComplete(object sender, TaskCompleteEventArgs e)
@@ -48,7 +61,16 @@ namespace MonoTorrent.Dht.Tasks
             if (!Active)
                 return;
 
-            engine.RaiseStateChanged(State.Ready);
+            // If we were given a list of initial nodes and they were all dead,
+            // initialise again except use the utorrent router.
+            if (nodes != null && engine.RoutingTable.CountNodes() < 10)
+            {
+                new InitialiseTask(engine, null);
+            }
+            else
+            {
+                engine.RaiseStateChanged(State.Ready);
+            }
 
             Active = false;
             base.RaiseComplete(e);

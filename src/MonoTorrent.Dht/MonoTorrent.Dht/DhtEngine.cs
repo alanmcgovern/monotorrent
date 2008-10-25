@@ -200,17 +200,6 @@ namespace MonoTorrent.Dht
             new GetPeersTask(this, infoHash).Execute();
         }
 
-        public void LoadNodes(byte[] nodes)
-        {
-            CheckDisposed();
-            MainLoop.QueueWait(delegate
-            {
-                BEncodedList list = (BEncodedList)BEncodedValue.Decode(nodes);
-                foreach (BEncodedString s in list)
-                    Add(Node.FromCompactNode(s.TextBytes, 0));
-            });
-        }
-
         internal void RaiseStateChanged(State newState)
         {
             state = newState;
@@ -247,11 +236,17 @@ namespace MonoTorrent.Dht
 
         public void Start()
         {
+            Start(null);
+        }
+
+        public void Start(byte[] initialNodes)
+        {
             CheckDisposed();
+
             messageLoop.Start();
             if (Bootstrap)
             {
-                new InitialiseTask(this).Execute();
+                new InitialiseTask(this, initialNodes).Execute();
                 RaiseStateChanged(State.Initialising);
                 bootStrap = false;
             }
