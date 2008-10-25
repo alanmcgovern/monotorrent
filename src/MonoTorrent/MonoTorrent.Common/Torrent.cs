@@ -69,7 +69,6 @@ namespace MonoTorrent.Common
         private string source;
         private TorrentFile[] torrentFiles;
         private string torrentPath;
-        private List<string> httpSeeds;
         private List<string> getRightHttpSeeds;
 
         #endregion Private Fields
@@ -272,14 +271,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// This is the http-based seeding (webseed protocole)
-        /// </summary>
-        public List<string> HttpSeeds
-        {
-            get { return this.httpSeeds; }
-        }
-
-        /// <summary>
         /// This is the http-based seeding (getright protocole)
         /// </summary>
         public List<string> GetRightHttpSeeds
@@ -303,7 +294,6 @@ namespace MonoTorrent.Common
             this.publisher = string.Empty;
             this.publisherUrl = string.Empty;
             this.source = string.Empty;
-            this.httpSeeds = new List<string>();
             this.getRightHttpSeeds = new List<string>();
         }
 
@@ -857,10 +847,7 @@ namespace MonoTorrent.Common
                             break;
 
                         case ("httpseeds"):
-                            foreach (BEncodedString str in ((BEncodedList)keypair.Value))
-                            {
-                                HttpSeeds.Add(str.Text);
-                            }
+                            // This form of web-seeding is not supported.
                             break;
 
                         case ("url-list"):
