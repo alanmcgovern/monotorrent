@@ -309,14 +309,10 @@ namespace MonoTorrent.Client
         /// <param name="baseDirectory">In the case of a multi-file torrent, the name of the base directory containing the files. Defaults to Torrent.Name</param>
         public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory, FastResume fastResumeData)
         {
-            if (torrent == null)
-                throw new ArgumentNullException("torrent");
-
-            if (savePath == null)
-                throw new ArgumentNullException("savePath");
-
-            if (settings == null)
-                throw new ArgumentNullException("settings");
+            Check.Torrent(torrent);
+            Check.SavePath(savePath);
+            Check.Settings(settings);
+            Check.BaseDirectory(baseDirectory);
 
             this.bitfield = new BitField(torrent.Pieces.Count);
             this.fileManager = new FileManager(this, torrent.Files, torrent.PieceLength, savePath, baseDirectory);
@@ -346,6 +342,8 @@ namespace MonoTorrent.Client
 
         public void ChangePicker(PiecePickerBase picker)
         {
+            Check.Picker(picker);
+
             ClientEngine.MainLoop.QueueWait(delegate {
                 this.pieceManager.ChangePicker(picker, torrent.Files);
             });

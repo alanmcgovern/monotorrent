@@ -548,8 +548,7 @@ namespace MonoTorrent.Common
         /// <param name="path">The path to load the .torrent file from</param>
         public static Torrent Load(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                throw new ArgumentException("path cannot be null or empty");
+            Check.Path(path);
 
             using (Stream s = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 return Torrent.Load(s, path);
@@ -562,6 +561,8 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public static Torrent Load(byte[] data)
         {
+            Check.Data(data);
+
             using (MemoryStream s = new MemoryStream(data))
                 return Load(s, "");
         }
@@ -573,6 +574,8 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public static Torrent Load(Stream stream)
         {
+            Check.Stream(stream);
+
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
@@ -587,10 +590,8 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public static Torrent Load(Uri url, string location)
         {
-            if (url == null)
-                throw new ArgumentNullException("url");
-            if (location == null)
-                throw new ArgumentNullException("location");
+            Check.Url(url);
+            Check.Location(location);
 
             try
             {
@@ -614,6 +615,8 @@ namespace MonoTorrent.Common
         /// <returns>True if successful</returns>
         public static bool TryLoad(string path, out Torrent torrent)
         {
+            Check.Path(path);
+
             try
             {
                 torrent = Torrent.Load(path);
@@ -635,6 +638,8 @@ namespace MonoTorrent.Common
         /// <returns>True if successful</returns>
         public static bool TryLoad(byte[] data, out Torrent torrent)
         {
+            Check.Data(data);
+
             try
             {
                 torrent = Torrent.Load(data);
@@ -656,6 +661,8 @@ namespace MonoTorrent.Common
         /// <returns>True if successful</returns>
         public static bool TryLoad(Stream stream, out Torrent torrent)
         {
+            Check.Stream(stream);
+            
             try
             {
                 torrent = Torrent.Load(stream);
@@ -678,6 +685,9 @@ namespace MonoTorrent.Common
         /// <returns>True if successful</returns>
         public static bool TryLoad(Uri url, string location, out Torrent torrent)
         {
+            Check.Url(url);
+            Check.Location(location);
+            
             try
             {
                 torrent = Torrent.Load(url, location);
@@ -698,6 +708,9 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         private static Torrent Load(Stream stream, string path)
         {
+            Check.Stream(stream);
+            Check.Path(path);
+
             try
             {
                 //Torrent t = Torrent.Load(BEncodedValue.Decode<BEncodedDictionary>(stream));
@@ -713,6 +726,8 @@ namespace MonoTorrent.Common
 
         public static Torrent Load(BEncodedDictionary torrentInformation)
         {
+            Check.TorrentInformation(torrentInformation);
+
             Torrent t = new Torrent();
             t.LoadInternal(torrentInformation);
 
@@ -721,6 +736,7 @@ namespace MonoTorrent.Common
 
         protected void LoadInternal(BEncodedDictionary torrentInformation)
         {
+            Check.TorrentInformation(torrentInformation);
             torrentPath = "";
 
             try

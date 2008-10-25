@@ -173,12 +173,9 @@ namespace MonoTorrent.Client
 
         public ClientEngine(EngineSettings settings, PeerListener listener, PieceWriter writer)
         {
-            if (settings == null)
-                throw new ArgumentNullException("settings");
-            if (listener == null)
-                throw new ArgumentNullException("listener");
-            if (writer == null)
-                throw new ArgumentNullException("writer");
+            Check.Settings(settings);
+            Check.Listener(listener);
+            Check.Writer(writer);
 
             this.listener = listener;
             this.settings = settings;
@@ -228,6 +225,8 @@ namespace MonoTorrent.Client
 
         public void ChangeListenEndpoint(IPEndPoint endpoint)
         {
+            Check.Endpoint(endpoint);
+
             Settings.ListenPort = endpoint.Port;
             dhtListener.ChangeEndpoint(endpoint);
             listenManager.Listeners[0].ChangeEndpoint(endpoint);
@@ -251,7 +250,9 @@ namespace MonoTorrent.Client
         public bool Contains(TorrentManager manager)
         {
             CheckDisposed();
-            return manager == null ? false : Contains(manager.Torrent);
+            Check.Manager(manager);
+            
+            return Contains(manager.Torrent);
         }
 
         public void Dispose()
@@ -292,8 +293,7 @@ namespace MonoTorrent.Client
         public void Register(TorrentManager manager)
         {
             CheckDisposed();
-            if (manager == null)
-                throw new ArgumentNullException("torrent");
+            Check.Manager(manager);
 
             MainLoop.QueueWait(delegate {
                 if (manager.Engine != null)
@@ -351,8 +351,7 @@ namespace MonoTorrent.Client
         public void Unregister(TorrentManager manager)
         {
             CheckDisposed();
-            if (manager == null)
-                throw new ArgumentNullException("manager");
+            Check.Manager(manager);
 
             MainLoop.QueueWait(delegate {
                 if (manager.Engine != this)

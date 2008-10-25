@@ -264,8 +264,7 @@ namespace MonoTorrent.Common
         ///<param name="storagePath">The path (including filename) where the new Torrent will be written to</param>
         public void Create(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                throw new ArgumentNullException("path");
+            Check.PathNotEmpty(path);
 
             using (FileStream stream = new FileStream(path, FileMode.Create))
                 Create(stream);
@@ -277,8 +276,7 @@ namespace MonoTorrent.Common
         /// <param name="stream">The stream to write the torrent to</param>
         public void Create(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
+            Check.Stream(stream);
 
             BEncodedDictionary torrentDict = Create();
 
@@ -315,8 +313,7 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public BEncodedDictionary EndCreate(IAsyncResult result)
         {
-            if (result == null)
-                throw new ArgumentNullException("result");
+            Check.Result(result);
 
             if (result != this.result)
                 throw new ArgumentException("The supplied async result does not correspond to currently active async result");
