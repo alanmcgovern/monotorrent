@@ -200,38 +200,6 @@ namespace MonoTorrent.Dht
             new GetPeersTask(this, infoHash).Execute();
         }
 
-        public void Initialise()
-        {
-            CheckDisposed();
-            if (Bootstrap)
-            {
-                new InitialiseTask(this).Execute();
-                RaiseStateChanged(State.Initialising);
-                bootStrap = false;
-            }
-            else
-            {
-                RaiseStateChanged(State.Ready);
-            }
-
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
-            {
-                if (Disposed)
-                    return false;
-
-                foreach (Bucket b in RoutingTable.Buckets)
-                {
-                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
-                    {
-                        b.LastChanged = DateTime.UtcNow;
-                        RefreshBucketTask task = new RefreshBucketTask(this, b);
-                        task.Execute();
-                    }
-                }
-                return !Disposed;
-            });
-        }
-
         public void LoadNodes(byte[] nodes)
         {
             CheckDisposed();
@@ -275,6 +243,44 @@ namespace MonoTorrent.Dht
             });
 
             return details.Encode();
+        }
+
+        public void Start()
+        {
+            CheckDisposed();
+            messageLoop.Start();
+            if (Bootstrap)
+            {
+                new InitialiseTask(this).Execute();
+                RaiseStateChanged(State.Initialising);
+                bootStrap = false;
+            }
+            else
+            {
+                RaiseStateChanged(State.Ready);
+            }
+
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
+            {
+                if (Disposed)
+                    return false;
+
+                foreach (Bucket b in RoutingTable.Buckets)
+                {
+                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
+                    {
+                        b.LastChanged = DateTime.UtcNow;
+                        RefreshBucketTask task = new RefreshBucketTask(this, b);
+                        task.Execute();
+                    }
+                }
+                return !Disposed;
+            });
+        }
+
+        public void Stop()
+        {
+            messageLoop.Stop();
         }
 
         #endregion Methods

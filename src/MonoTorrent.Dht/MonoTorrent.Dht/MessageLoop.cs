@@ -137,6 +137,18 @@ namespace MonoTorrent.Dht
 
         }
 
+        internal void Start()
+        {
+            if (listener.Status != ListenerStatus.Listening)
+                listener.Start();
+        }
+
+        internal void Stop()
+        {
+            if (listener.Status != ListenerStatus.NotListening)
+                listener.Stop();
+        }
+
         private void TimeoutMessage()
         {
             if (waitingResponse.Count > 0)

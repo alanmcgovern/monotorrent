@@ -185,7 +185,6 @@ namespace MonoTorrent.Client
 
             this.connectionManager = new ConnectionManager(this);
             this.dhtListener = new UdpListener(new IPEndPoint(IPAddress.Any, settings.ListenPort));
-            this.dhtListener.Start();
             this.dhtEngine = new DhtEngine(dhtListener);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
