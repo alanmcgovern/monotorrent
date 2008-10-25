@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
     [TestFixture]
     public class NodeIdTests

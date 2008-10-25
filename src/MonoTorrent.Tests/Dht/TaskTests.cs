@@ -8,7 +8,7 @@ using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
 using System.Threading;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
     [TestFixture]
     public class TaskTests

@@ -52,6 +52,16 @@
     <Compile Include="BEncodingTest.cs" />
     <Compile Include="BitFieldTest.cs" />
     <Compile Include="ConnectionListenerTests.cs" />
+    <Compile Include="Dht\AssemblyInfo.cs" />
+    <Compile Include="Dht\MessageHandlingTests.cs" />
+    <Compile Include="Dht\MessageTests.cs" />
+    <Compile Include="Dht\NodeIdTests.cs" />
+    <Compile Include="Dht\NodeTests.cs" />
+    <Compile Include="Dht\RoutingTableTests.cs" />
+    <Compile Include="Dht\TaskTests.cs" />
+    <Compile Include="Dht\TestHelper.cs" />
+    <Compile Include="Dht\TestListener.cs" />
+    <Compile Include="Dht\TokenTest.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="LibtorrentMessageTests.cs" />
     <Compile Include="MainLoopTests.cs" />

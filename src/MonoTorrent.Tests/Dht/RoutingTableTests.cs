@@ -5,7 +5,7 @@ using MonoTorrent.Dht;
 using NUnit.Framework;
 using System.Net;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
     [TestFixture]
     public class RoutingTableTests

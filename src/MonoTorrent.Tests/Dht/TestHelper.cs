@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
 	static class TestHelper
 	{

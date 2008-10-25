@@ -6,7 +6,7 @@ using System.Net;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
     [TestFixture]
     public class NodeTests

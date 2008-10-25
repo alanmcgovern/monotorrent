@@ -6,7 +6,7 @@ using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 using System.Net;
 
-namespace MonoTorrent.Dht.Tests
+namespace MonoTorrent.Dht
 {
     internal class TestListener : DhtListener
     {
