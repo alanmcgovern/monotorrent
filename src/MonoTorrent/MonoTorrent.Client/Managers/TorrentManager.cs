@@ -104,6 +104,10 @@ namespace MonoTorrent.Client
             get { return this.bitfield; }
         }
 
+        public bool CanUseDht
+        {
+            get { return !torrent.IsPrivate && settings.UseDht; }
+        }
 
         public bool Complete
         {
@@ -474,7 +478,7 @@ namespace MonoTorrent.Client
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
 
-                if (!torrent.IsPrivate && Settings.UseDht)
+                if (!torrent.IsPrivate)
                 {
                     engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
 
@@ -483,19 +487,15 @@ namespace MonoTorrent.Client
 
                     // Second, get peers every 10 minutes (if we need them)
                     ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
-                        
                         // Torrent is no longer active
                         if (State != TorrentState.Seeding && State != TorrentState.Downloading)
                             return false;
 
-                        // Dht has been temporarily disabled, so don't request more peers this time.
-                        if (!Settings.UseDht)
-                            return true;
-
-                        if (OpenConnections < (int)(settings.MaxConnections * 0.8) &&
-                            peers.AvailablePeers.Count < (int)(settings.MaxConnections * 0.4))
+                        // Only use DHT if it hasn't been (temporarily?) disabled in settings
+                        if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
                         {
-                            engine.DhtEngine.GetPeers(torrent.InfoHash);
+                            engine.DhtEngine.Announce(torrent.infoHash, engine.Settings.ListenPort);
+                            engine.DhtEngine.GetPeers(torrent.infoHash);
                         }
                         return true;
                     });

@@ -200,6 +200,20 @@ namespace MonoTorrent.Client
 
             listenManager.Register(listener);
 
+            dhtEngine.StateChanged += delegate {
+                if (dhtEngine.State != State.Ready)
+                    return;
+                MainLoop.Queue(delegate {
+                    foreach (TorrentManager manager in torrents)
+                    {
+                        if (!manager.CanUseDht)
+                            continue;
+
+                        dhtEngine.Announce(manager.Torrent.infoHash, Listener.Endpoint.Port);
+                        dhtEngine.GetPeers(manager.Torrent.infoHash);
+                    }
+                });
+            };
             // This means we created the listener in the constructor
             if (listener.Endpoint.Port == 0)
                 listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
