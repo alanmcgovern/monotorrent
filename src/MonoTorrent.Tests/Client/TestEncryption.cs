@@ -30,10 +30,14 @@ namespace MonoTorrent.Client
         private TestRig rig;
         private ConnectionPair conn;
 
+        [TestFixtureSetUp]
+        public void FixtureSetup()
+        {
+            rig = new TestRig("");
+        }
         [SetUp]
         public void Setup()
         {
-            rig = new TestRig("");
             conn = new ConnectionPair(13253);
             conn.Incoming.Name = "Incoming";
             conn.Outgoing.Name = "Outgoing";
@@ -46,6 +50,11 @@ namespace MonoTorrent.Client
             WaitHandle[] handles = rig.Engine.StopAll();
             Assert.IsTrue(handles.Length == 1, "Expected 1 handle");
             Assert.IsTrue(handles[0].WaitOne(4000, true), "Timed out waiting for handle");
+        }
+
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
+        {
             rig.Dispose();
         }
 
