@@ -5,7 +5,7 @@ using System;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    internal class GetPeersTask : Task
+    class GetPeersTask : Task
     {
     	NodeId infoHash;
     	DhtEngine engine;

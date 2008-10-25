@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    internal class InitialiseTask : Task
+    class InitialiseTask : Task
     {
         int activeRequests = 0;
         SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();

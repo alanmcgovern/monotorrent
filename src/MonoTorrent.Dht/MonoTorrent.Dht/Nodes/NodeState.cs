@@ -31,7 +31,7 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-	public enum NodeState
+	internal enum NodeState
 	{
 		Unknown,
 		Good,

@@ -5,7 +5,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    public static class TransactionId
+    internal static class TransactionId
     {
         private static byte[] current = new byte[2];
 
