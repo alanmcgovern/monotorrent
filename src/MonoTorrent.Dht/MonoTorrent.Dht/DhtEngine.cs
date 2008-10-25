@@ -169,7 +169,7 @@ namespace MonoTorrent.Dht
             task.Execute();
         }
 
-        public void Announce(byte[] infoHash, int port)
+        internal void Announce(byte[] infoHash, int port)
         {
             CheckDisposed();
             if (infoHash == null)
