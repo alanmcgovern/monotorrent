@@ -352,7 +352,6 @@
     <Compile Include="MonoTorrent.Common\Enums.cs" />
     <Compile Include="MonoTorrent.Common\Hashes.cs" />
     <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs" />
-    <Compile Include="MonoTorrent.Common\Peer.cs" />
     <Compile Include="MonoTorrent.Common\PeerID.cs" />
     <Compile Include="MonoTorrent.Common\SpeedMonitor.cs" />
     <Compile Include="MonoTorrent.Common\TimerDispatcher\TimeoutDispatcher.cs" />
