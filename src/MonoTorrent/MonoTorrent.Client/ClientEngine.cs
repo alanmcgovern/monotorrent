@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
         private EngineSettings settings;
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
-        private UdpListener udpListener;
+        private DhtListener dhtListener;
         internal RateLimiter uploadLimiter;
         internal RateLimiter downloadLimiter;
 
@@ -184,9 +184,9 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
-            udpListener = new UdpListener(new IPEndPoint(IPAddress.Any, settings.ListenPort));
-            udpListener.Start();
-            this.dhtEngine = new DhtEngine(udpListener);
+            this.dhtListener = new UdpListener(new IPEndPoint(IPAddress.Any, settings.ListenPort));
+            this.dhtListener.Start();
+            this.dhtEngine = new DhtEngine(dhtListener);
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
@@ -212,6 +212,13 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        public void ChangeListenEndpoint(IPEndPoint endpoint)
+        {
+            Settings.ListenPort = endpoint.Port;
+            dhtListener.ChangeEndpoint(endpoint);
+            listenManager.Listeners[0].ChangeEndpoint(endpoint);
+        }
 
         private void CheckDisposed()
         {
@@ -242,7 +249,7 @@ namespace MonoTorrent.Client
             disposed = true;
             MainLoop.QueueWait(delegate {
                 this.dhtEngine.Dispose();
-                this.udpListener.Stop();
+                this.dhtListener.Stop();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
             });
