@@ -48,6 +48,8 @@ namespace MonoTorrent.Dht.Tasks
             if (!Active)
                 return;
 
+            engine.RaiseStateChanged(State.Ready);
+
             Active = false;
             base.RaiseComplete(e);
         }

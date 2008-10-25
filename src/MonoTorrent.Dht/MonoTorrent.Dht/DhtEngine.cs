@@ -211,7 +211,7 @@ namespace MonoTorrent.Dht
             });
         }
 
-        void RaiseStateChanged(State newState)
+        internal void RaiseStateChanged(State newState)
         {
             state = newState;
 
