@@ -190,7 +190,7 @@ namespace MonoTorrent.Dht
             disposed = true;
         }
 
-        public void GetPeers(byte[] infoHash)
+        internal void GetPeers(byte[] infoHash)
         {
             CheckDisposed();
             if (infoHash == null)
