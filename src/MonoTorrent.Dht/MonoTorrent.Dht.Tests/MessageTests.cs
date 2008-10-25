@@ -23,6 +23,18 @@ namespace MonoTorrent.Dht.Tests
 
         private QueryMessage message;
 
+        [SetUp]
+        public void Setup()
+        {
+            Message.UseVersionKey = false;
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            Message.UseVersionKey = true;
+        }
+        
         #region Encode Tests
 
         [Test]

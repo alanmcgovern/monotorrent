@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht.Tests
                     counter++;
                     PingResponse response = new PingResponse(node.Id);
                     response.TransactionId = transactionId;
-                    listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
+                    listener.RaiseMessageReceived(response, node.EndPoint);
                 }
             };
 
@@ -122,7 +122,7 @@ namespace MonoTorrent.Dht.Tests
                     {
                         //System.Threading.Thread.Sleep(100);
                         Console.WriteLine("Faking the receive");
-                        listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
+                        listener.RaiseMessageReceived(response, node.EndPoint);
                     });
                     nodeCount++;
                 }
@@ -154,12 +154,14 @@ namespace MonoTorrent.Dht.Tests
                         return;
 
                     Node current = nodes.Find(delegate(Node n) { return n.EndPoint.Port.Equals(e.EndPoint.Port); });
-                    
+                    if (current == null)
+                        return;
+
                     if (e.Query is Ping)
                     {
                         PingResponse r = new PingResponse(current.Id);
                         r.TransactionId = e.Query.TransactionId;
-                        listener.RaiseMessageReceived(r.Encode(), current.EndPoint);
+                        listener.RaiseMessageReceived(r, current.EndPoint);
                     }
                     else if (e.Query is FindNode)
                     {

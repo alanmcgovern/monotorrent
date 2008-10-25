@@ -77,17 +77,17 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
-
+            byte[] nodes = null;
             try
             {
-                engine.DhtEngine.LoadNodes(File.ReadAllBytes(dhtNodeFile));
-                //engine.DhtEngine.Start();
-                //System.Threading.Thread.Sleep(10000);
+                nodes = File.ReadAllBytes(dhtNodeFile);
             }
             catch
             {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
+
+            engine.DhtEngine.Start(nodes);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))

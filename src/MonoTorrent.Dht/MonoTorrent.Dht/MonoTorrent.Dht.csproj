@@ -53,7 +53,7 @@
     <Compile Include="EventArgs\NodeAddedEventArgs.cs" />
     <Compile Include="EventArgs\SendMessageEventArgs.cs" />
     <Compile Include="EventArgs\TaskCompleteEventArgs.cs" />
-    <Compile Include="Listeners\IListener.cs" />
+    <Compile Include="Listeners\DhtListener.cs" />
     <Compile Include="Listeners\UdpListener.cs" />
     <Compile Include="MessageException.cs" />
     <Compile Include="MessageLoop.cs" />

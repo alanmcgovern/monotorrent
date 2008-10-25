@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.IO;
 
 [assembly: InternalsVisibleTo("SampleClient")]
+[assembly: InternalsVisibleTo("MonoTorrent.Dht.Tests")]
 [assembly: InternalsVisibleTo("MonoTorrent.Tests")]
 [assembly: AssemblyCopyright("Alan McGovern, Gregor Buguer;  MIT X11 Licensed")]
 [assembly: AssemblyDescription("MonoTorrent Utilities")]

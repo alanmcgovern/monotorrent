@@ -38,6 +38,9 @@ namespace MonoTorrent.Dht.Messages
 {
     internal abstract class Message : MonoTorrent.Client.Messages.Message
     {
+        internal static bool UseVersionKey = true;
+
+        private static BEncodedString EmptyString = "";
         protected static readonly BEncodedString IdKey = "id";
         private static BEncodedString TransactionIdKey = "t";
         private static BEncodedString VersionKey = "v";
@@ -48,7 +51,13 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedString ClientVersion
         {
-            get { return (BEncodedString)properties[VersionKey]; }
+            get
+            {
+                BEncodedValue val;
+                if (properties.TryGetValue(VersionKey, out val))
+                    return (BEncodedString)val;
+                return EmptyString;
+            }
         }
 
         internal abstract NodeId Id
@@ -72,14 +81,13 @@ namespace MonoTorrent.Dht.Messages
         {
             properties.Add(TransactionIdKey, null);
             properties.Add(MessageTypeKey, messageType);
-            properties.Add(VersionKey, DhtVersion);
+            if (UseVersionKey)
+                properties.Add(VersionKey, DhtVersion);
         }
 
         protected Message(BEncodedDictionary dictionary)
         {
             properties = dictionary;
-            if (!properties.ContainsKey(VersionKey))
-                properties.Add(VersionKey, null);
         }
 
         public override int ByteLength

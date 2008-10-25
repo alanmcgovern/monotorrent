@@ -27,11 +27,16 @@ namespace MonoTorrent.Dht.Tests
         [SetUp]
         public void Setup()
         {
-
             listener = new TestListener();
             node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
             engine = new DhtEngine(listener);
             //engine.Add(node);
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            engine.Dispose();
         }
 
         [Test]
@@ -49,7 +54,7 @@ namespace MonoTorrent.Dht.Tests
 
                 PingResponse response = new PingResponse(node.Id);
                 response.TransactionId = e.Query.TransactionId;
-                listener.RaiseMessageReceived(response.Encode(), e.EndPoint);
+                listener.RaiseMessageReceived(response, e.EndPoint);
             };
 
             Assert.AreEqual(NodeState.Unknown, node.State, "#1");
@@ -80,7 +85,7 @@ namespace MonoTorrent.Dht.Tests
             // Receive response
             PingResponse response = new PingResponse(node.Id);
             response.TransactionId = transactionId;
-            listener.RaiseMessageReceived(response.Encode(), node.EndPoint);
+            listener.RaiseMessageReceived(response, node.EndPoint);
 
             Assert.IsTrue(handle.WaitOne(1000, true), "#0");
 
@@ -110,7 +115,7 @@ namespace MonoTorrent.Dht.Tests
 
             SendQueryTask task = (SendQueryTask)e.Task;
             PingResponse response = new PingResponse(task.Target.Id);
-            listener.RaiseMessageReceived(response.Encode(), task.Target.EndPoint);
+            listener.RaiseMessageReceived(response, task.Target.EndPoint);
         }
     }
 }
