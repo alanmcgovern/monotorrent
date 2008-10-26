@@ -63,7 +63,7 @@ namespace MonoTorrent.Dht
             Assert.IsTrue(handle.WaitOne(1000, false), "#1a");
             Node nnnn = node;
             node = engine.RoutingTable.FindNode(nnnn.Id);
-            Assert.Less(lastSeen, node.LastSeen, "#2");
+            Assert.IsTrue (lastSeen < node.LastSeen, "#2");
             Assert.AreEqual(NodeState.Good, node.State, "#3");
         }
 

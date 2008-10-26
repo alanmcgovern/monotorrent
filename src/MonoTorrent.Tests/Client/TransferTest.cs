@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         {
             byte[] b = message.Encode();
             IAsyncResult result = pair.Incoming.BeginSend(b, 0, b.Length, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000))
+            if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message didn't send correctly");
             pair.Incoming.EndSend(result);
         }
@@ -121,7 +121,7 @@ namespace MonoTorrent.Client
         {
             byte[] buffer = new byte[4];
             IAsyncResult result = pair.Incoming.BeginReceive(buffer, 0, 4, null, null);
-            if(!result.AsyncWaitHandle.WaitOne (5000))
+            if(!result.AsyncWaitHandle.WaitOne (5000, true))
                 throw new Exception("Message length didn't receive correctly");
             pair.Incoming.EndReceive(result);
 
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy(buffer, 0, message, 0, 4);
 
             result = pair.Incoming.BeginReceive(message, 4, count, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000))
+            if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message body didn't receive correctly");
             pair.Incoming.EndReceive(result);
 

@@ -83,7 +83,7 @@ namespace MonoTorrent.Dht
             Assert.AreEqual(1, counter, "#2");
             Node n = engine.RoutingTable.FindNode(this.node.Id);
             Assert.IsNotNull(n, "#3");
-            Assert.Greater(n.LastSeen, DateTime.UtcNow.AddSeconds(-2));
+            Assert.IsTrue(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
         }
 
         int nodeCount = 0;
@@ -179,7 +179,7 @@ namespace MonoTorrent.Dht
             System.Threading.Thread.Sleep(500);
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
-                Assert.Greater(b.LastChanged, DateTime.UtcNow.AddSeconds(-2));
+                Assert.IsTrue(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
                 Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
             }
         }

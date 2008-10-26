@@ -68,7 +68,7 @@ namespace MonoTorrent.Tracker
                 tier.Trackers[0].Announce(parameters);
             }
 
-            Assert.IsTrue(handle.WaitOne(5000), "Some of the responses weren't received");
+            Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");
         }
     }
 }

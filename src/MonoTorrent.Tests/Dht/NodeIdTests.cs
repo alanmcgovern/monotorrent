@@ -26,12 +26,12 @@ namespace MonoTorrent.Dht
         [Test]
         public void GreaterLessThanTest()
         {
-            Assert.Less(nodes[0], nodes[1], "#1");
-            Assert.Greater(nodes[1], nodes[0], "#2");
+            Assert.IsTrue(nodes[0] < nodes[1], "#1");
+            Assert.IsTrue(nodes[1] > nodes[0], "#2");
             Assert.IsTrue(nodes[0] == nodes[0], "#3");
             Assert.AreEqual(nodes[0], nodes[0], "#4");
-            Assert.Greater(nodes[2], nodes[1], "#5");
-            Assert.Less(nodes[15], nodes[10], "#6");
+            Assert.IsTrue(nodes[2] > nodes[1], "#5");
+            Assert.IsTrue(nodes[15] < nodes[10], "#6");
         }
 
         [Test]
@@ -45,7 +45,7 @@ namespace MonoTorrent.Dht
             NodeId r = one.Xor(zero);
             Assert.AreEqual(one, r, "#1");
             Assert.IsTrue(one > zero, "#2");
-            Assert.Greater(one, zero, "#3");
+            Assert.IsTrue(one.CompareTo(zero) > 0, "#3");
 
             NodeId z = one.Xor(r);
             Assert.AreEqual(zero, z, "#4");

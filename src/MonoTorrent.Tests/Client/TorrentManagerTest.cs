@@ -45,11 +45,12 @@ namespace MonoTorrent.Client
             conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
 
             try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
-            catch { }
+            catch {
+            	Assert.IsFalse(conn.Incoming.Connected, "#1");
+            	return;
+            }
 
-            System.Threading.Thread.Sleep(100);
-            Assert.IsFalse(conn.Incoming.Connected, "#1");
-            Assert.IsFalse(conn.Outgoing.Connected, "#2");
+            Assert.Fail ("The outgoing connection should've thrown an exception");
         }
 
         [Test]
