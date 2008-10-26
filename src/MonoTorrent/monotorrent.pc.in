@@ -1,8 +1,7 @@
 Name: MonoTorrent
 Description: MonoTorrent
-Version: @VERSION@
+Version: 0.6
 
 Requires: 
 Libraries=@expanded_libdir@/@PACKAGE@/MonoTorrent.dll
 Libs: -r:MonoTorrent.dll
-
