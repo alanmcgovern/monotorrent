@@ -222,12 +222,18 @@ namespace MonoTorrent.Common
             }
             else if (File.Exists(path))
             {
-                string filePath = path.Substring(Path.Length);
-                if (filePath[0] == System.IO.Path.DirectorySeparatorChar)
-                    filePath = filePath.Substring(1);
-
+                string filePath;
+                if (path == Path)
+                {
+                	filePath = System.IO.Path.GetFileName (path);
+                }
+                else
+                {
+                    filePath = path.Substring(Path.Length);
+                    if (filePath[0] == System.IO.Path.DirectorySeparatorChar)
+                        filePath = filePath.Substring(1);
+                }
                 FileInfo info = new FileInfo(path);
-
                 if (!((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden && IgnoreHiddenFiles))
                     files.Add(new TorrentFile(filePath, info.Length, 0, 0, null, null, null));
             }
@@ -460,7 +466,7 @@ namespace MonoTorrent.Common
 
             DateTime epocheStart = new DateTime(1970, 1, 1);
             TimeSpan span = DateTime.Now - epocheStart;
-			Logger.Log(null, "creation date: {0} - {1} = {2}:{3}", DateTime.Now, epocheStart, span, span.TotalSeconds);
+            Logger.Log(null, "creation date: {0} - {1} = {2}:{3}", DateTime.Now, epocheStart, span, span.TotalSeconds);
             torrent.Add("creation date", new BEncodedNumber((long)span.TotalSeconds));
         }
 
@@ -481,7 +487,7 @@ namespace MonoTorrent.Common
                     hex = hex.Length > 1 ? hex : "0" + hex;
                     sb.Append(hex);
                 }
-				Logger.Log(null, "Sum for: '{0}' = {1}", fileName, sb.ToString());
+                Logger.Log(null, "Sum for: '{0}' = {1}", fileName, sb.ToString());
             }
             dict.Add("md5sum", new BEncodedString(sb.ToString()));
         }
@@ -543,7 +549,7 @@ namespace MonoTorrent.Common
 
             info.Add("files", torrentFiles);
 
-			Logger.Log(null, "Topmost directory: {0}", name);
+            Logger.Log(null, "Topmost directory: {0}", name);
             info.Add("name", new BEncodedString(name));
 
             info.Add("pieces", new BEncodedString(CalcPiecesHash(Path, files, writer)));
@@ -618,7 +624,7 @@ namespace MonoTorrent.Common
             //if (StoreMD5)
                 //AddMD5(fileDict, file);
 
-			Logger.Log(null, "Without base: {0}", file.Path);
+            Logger.Log(null, "Without base: {0}", file.Path);
             BEncodedList filePath = new BEncodedList();
             string[] splittetPath = file.Path.Split(System.IO.Path.DirectorySeparatorChar);
 
@@ -641,7 +647,7 @@ namespace MonoTorrent.Common
 
             //double count = (double)size/PieceLength;
             long pieceCount = size / PieceLength + (((size % PieceLength) != 0) ? 1 : 0);
-			Logger.Log(null, "Piece Count: {0}", pieceCount);
+            Logger.Log(null, "Piece Count: {0}", pieceCount);
             return pieceCount;
         }
 

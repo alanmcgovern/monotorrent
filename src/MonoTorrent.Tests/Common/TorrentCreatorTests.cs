@@ -86,6 +86,20 @@ namespace MonoTorrent.Common
             Assert.AreEqual(f, torrent.Files[0], "#2");
         }
         [Test]
+        public void CreateSingleFromFolder ()
+        {
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly ();
+            creator.Path = Path.GetFullPath (assembly.Location);
+            BEncodedDictionary dict = creator.Create ();
+
+            Torrent t = Torrent.Load (dict);
+
+            Assert.AreEqual (1, t.Files.Length, "#1");
+            Assert.AreEqual (Path.GetFileName (assembly.Location), t.Name, "#2");
+            Assert.AreEqual (Path.GetFileName (assembly.Location), t.Files[0].Path, "#3");
+        }
+        
+        [Test]
         public void CheckPaths()
         {
             creator.Path = Environment.CurrentDirectory;
