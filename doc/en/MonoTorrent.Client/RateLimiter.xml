@@ -4,6 +4,7 @@
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -14,33 +15,57 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
-    
-    
     <Member MemberName=".ctor">
       <MemberSignature Language="C#" Value="public RateLimiter ();" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
       <Parameters />
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Chunks">
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Chunks">
       <MemberSignature Language="C#" Value="public int Chunks;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="UpdateChunks">
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int32</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="UpdateChunks">
       <MemberSignature Language="C#" Value="public void UpdateChunks (int maxRate, int actualRate);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Void</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="maxRate" Type="System.Int32" /><Parameter Name="actualRate" Type="System.Int32" /></Parameters>
-      <Docs><param name="maxRate">To be added.</param><param name="actualRate">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="maxRate" Type="System.Int32" />
+        <Parameter Name="actualRate" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="maxRate">To be added.</param>
+        <param name="actualRate">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
     </Member>
   </Members>
 </Type>

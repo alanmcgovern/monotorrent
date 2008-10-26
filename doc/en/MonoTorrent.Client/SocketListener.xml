@@ -1,12 +1,13 @@
 <Type Name="SocketListener" FullName="MonoTorrent.Client.SocketListener">
-  <TypeSignature Language="C#" Value="public class SocketListener : MonoTorrent.Client.ConnectionListenerBase" />
+  <TypeSignature Language="C#" Value="public class SocketListener : MonoTorrent.Client.PeerListener" />
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
-    <BaseTypeName>MonoTorrent.Client.ConnectionListenerBase</BaseTypeName>
+    <BaseTypeName>MonoTorrent.Client.PeerListener</BaseTypeName>
   </Base>
   <Interfaces />
   <Docs>
@@ -20,10 +21,18 @@
       <MemberSignature Language="C#" Value="public SocketListener (System.Net.IPEndPoint endpoint);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <Parameters><Parameter Name="endpoint" Type="System.Net.IPEndPoint" /></Parameters>
-      <Docs><param name="endpoint">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="endpoint" Type="System.Net.IPEndPoint" />
+      </Parameters>
+      <Docs>
+        <param name="endpoint">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
     </Member>
   </Members>
 </Type>

@@ -4,6 +4,7 @@
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
@@ -14,52 +15,90 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
-    
-    
-    
     <Member MemberName="Count">
       <MemberSignature Language="C#" Value="public int Count { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int32</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             Number of Hashes (equivalent to number of Pieces)
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="HashCodeLength">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="HashCodeLength">
       <MemberSignature Language="C#" Value="public const int HashCodeLength = 20;" />
       <MemberType>Field</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int32</ReturnType>
+      </ReturnValue>
       <MemberValue>20</MemberValue>
-      <Docs><summary>
+      <Docs>
+        <summary>
             Hash code length (in bytes)
-            </summary><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="IsValid">
+            </summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="IsValid">
       <MemberSignature Language="C#" Value="public bool IsValid (byte[] hash, int hashIndex);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="hash" Type="System.Byte[]" /><Parameter Name="hashIndex" Type="System.Int32" /></Parameters>
-      <Docs><param name="hash">Hash code to check</param><param name="hashIndex">Index of hash/piece to verify against</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="hash" Type="System.Byte[]" />
+        <Parameter Name="hashIndex" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="hash">Hash code to check</param>
+        <param name="hashIndex">Index of hash/piece to verify against</param>
+        <summary>
             Determine whether a calculated hash is equal to our stored hash
-            </summary><returns>true iff hash is equal to our stored hash, false otherwise</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="ReadHash">
+            </summary>
+        <returns>true iff hash is equal to our stored hash, false otherwise</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ReadHash">
       <MemberSignature Language="C#" Value="public byte[] ReadHash (int hashIndex);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="hashIndex" Type="System.Int32" /></Parameters>
-      <Docs><param name="hashIndex">Piece/hash index to return</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Byte[]</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="hashIndex" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="hashIndex">Piece/hash index to return</param>
+        <summary>
             Returns the hash for a specific piece
-            </summary><returns>byte[] (length HashCodeLength) containing hashdata</returns><remarks>To be added.</remarks></Docs>
+            </summary>
+        <returns>byte[] (length HashCodeLength) containing hashdata</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
     </Member>
   </Members>
 </Type>

@@ -1,6 +1,6 @@
 <Overview>
   <Assemblies>
-    <Assembly Name="MonoTorrent" Version="0.40.0.0">
+    <Assembly Name="MonoTorrent" Version="0.60.0.0">
       <Attributes>
         <Attribute>
           <AttributeName>System.Runtime.CompilerServices.RuntimeCompatibility(WrapNonExceptionThrows=true)</AttributeName>
@@ -12,10 +12,10 @@
           <AttributeName>System.Reflection.AssemblyProduct("MonoTorrent Common Library")</AttributeName>
         </Attribute>
         <Attribute>
-          <AttributeName>System.Reflection.AssemblyInformationalVersion("0.40")</AttributeName>
+          <AttributeName>System.Reflection.AssemblyInformationalVersion("0.60")</AttributeName>
         </Attribute>
         <Attribute>
-          <AttributeName>System.Reflection.AssemblyFileVersion("0.40")</AttributeName>
+          <AttributeName>System.Reflection.AssemblyFileVersion("0.60")</AttributeName>
         </Attribute>
         <Attribute>
           <AttributeName>System.Reflection.AssemblyDescription("MonoTorrent Utilities")</AttributeName>
@@ -26,202 +26,242 @@
         <Attribute>
           <AttributeName>System.Runtime.CompilerServices.InternalsVisibleTo("MonoTorrent.Tests")</AttributeName>
         </Attribute>
+        <Attribute>
+          <AttributeName>System.Runtime.CompilerServices.InternalsVisibleTo("SampleClient")</AttributeName>
+        </Attribute>
       </Attributes>
     </Assembly>
   </Assemblies>
   <Remarks>To be added.</Remarks>
   <Copyright>To be added.</Copyright>
   <Types>
+    <Namespace Name="Hyena.Collections">
+      <Type Name="Range" Kind="Structure" />
+      <Type Name="RangeCollection" Kind="Class" />
+    </Namespace>
     <Namespace Name="MonoTorrent.BEncoding">
-      <Type Name="BEncodedDictionary" />
-      <Type Name="BEncodedList" />
-      <Type Name="BEncodedNumber" />
-      <Type Name="BEncodedString" />
-      <Type Name="BEncodedValue" />
-      <Type Name="BEncodingException" />
+      <Type Name="BEncodedDictionary" Kind="Class" />
+      <Type Name="BEncodedList" Kind="Class" />
+      <Type Name="BEncodedNumber" Kind="Class" />
+      <Type Name="BEncodedString" Kind="Class" />
+      <Type Name="BEncodedValue" Kind="Class" />
+      <Type Name="BEncodingException" Kind="Class" />
+      <Type Name="RawReader" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client">
-      <Type Name="AllowedFastAlgorithm" />
-      <Type Name="AnnounceResponseEventArgs" />
-      <Type Name="Block" />
-      <Type Name="BlockEventArgs" />
-      <Type Name="BufferedIO" />
-      <Type Name="BufferManager" />
-      <Type Name="BufferType" />
-      <Type Name="ClientEngine" />
-      <Type Name="ConnectionException" />
+      <Type Name="AddressRange" Kind="Structure" />
+      <Type Name="AllowedFastAlgorithm" Kind="Class" />
+      <Type Name="AnnounceResponseEventArgs" Kind="Class" />
+      <Type Name="AttemptConnectionEventArgs" Kind="Class" />
+      <Type Name="BanList" Kind="Class" />
+      <Type Name="Block" Kind="Structure" />
+      <Type Name="BlockEventArgs" Kind="Class" />
+      <Type Name="BlocklistParser" Kind="Class" />
+      <Type Name="BufferedIO" Kind="Class" />
+      <Type Name="BufferManager" Kind="Class" />
+      <Type Name="BufferType" Kind="Enumeration" />
+      <Type Name="ClientEngine" Kind="Class" />
+      <Type Name="ConnectionException" Kind="Class" />
       <Type Name="ConnectionListenerBase" />
-      <Type Name="ConnectionManager" />
-      <Type Name="ConnectionMonitor" />
-      <Type Name="CriticalExceptionEventArgs" />
-      <Type Name="EngineSettings" />
-      <Type Name="FastResume" />
-      <Type Name="FileManager" />
-      <Type Name="ListenerException" />
-      <Type Name="ListenerStatus" />
-      <Type Name="ListenManager" />
-      <Type Name="Logger" />
-      <Type Name="ManagerWaitHandle" />
-      <Type Name="MessageException" />
-      <Type Name="NewConnectionEventArgs" />
-      <Type Name="Peer" />
-      <Type Name="PeerAddedEventArgs" />
-      <Type Name="PeerConnectionEventArgs" />
-      <Type Name="PeerExchangeManager" />
-      <Type Name="PeerId" />
-      <Type Name="PeerManager" />
-      <Type Name="PeerMessageEventArgs" />
-      <Type Name="PeersAddedEventArgs" />
-      <Type Name="Piece" />
-      <Type Name="PieceHashedEventArgs" />
-      <Type Name="PieceManager" />
-      <Type Name="ProtocolException" />
-      <Type Name="RateLimiter" />
-      <Type Name="SocketListener" />
-      <Type Name="StatsUpdateEventArgs" />
-      <Type Name="TorrentEventArgs" />
-      <Type Name="TorrentLoadException" />
-      <Type Name="TorrentManager" />
-      <Type Name="TorrentSettings" />
-      <Type Name="TorrentStateChangedEventArgs" />
-      <Type Name="TransferType" />
+      <Type Name="ConnectionManager" Kind="Class" />
+      <Type Name="ConnectionMonitor" Kind="Class" />
+      <Type Name="CriticalExceptionEventArgs" Kind="Class" />
+      <Type Name="DhtPeersAdded" Kind="Class" />
+      <Type Name="EngineSettings" Kind="Class" />
+      <Type Name="FastResume" Kind="Class" />
+      <Type Name="FileManager" Kind="Class" />
+      <Type Name="IListener" Kind="Interface" />
+      <Type Name="Listener" Kind="Class" />
+      <Type Name="ListenerException" Kind="Class" />
+      <Type Name="ListenManager" Kind="Class" />
+      <Type Name="Logger" Kind="Class" />
+      <Type Name="MainLoop" Kind="Class" />
+      <Type Name="MainLoopJob" Kind="Delegate" />
+      <Type Name="MainLoopTask" Kind="Delegate" />
+      <Type Name="ManagerWaitHandle" Kind="Class" />
+      <Type Name="MessageException" Kind="Class" />
+      <Type Name="NewConnectionEventArgs" Kind="Class" />
+      <Type Name="Peer" Kind="Class" />
+      <Type Name="PeerAddedEventArgs" Kind="Class" />
+      <Type Name="PeerConnectionEventArgs" Kind="Class" />
+      <Type Name="PeerConnectionFailedEventArgs" Kind="Class" />
+      <Type Name="PeerExchangeManager" Kind="Class" />
+      <Type Name="PeerExchangePeersAdded" Kind="Class" />
+      <Type Name="PeerId" Kind="Class" />
+      <Type Name="PeerListener" Kind="Class" />
+      <Type Name="PeerManager" Kind="Class" />
+      <Type Name="PeerMessageEventArgs" Kind="Class" />
+      <Type Name="PeersAddedEventArgs" Kind="Class" />
+      <Type Name="Piece" Kind="Class" />
+      <Type Name="PieceHashedEventArgs" Kind="Class" />
+      <Type Name="PieceManager" Kind="Class" />
+      <Type Name="PiecePickerBase" Kind="Class" />
+      <Type Name="ProtocolException" Kind="Class" />
+      <Type Name="RateLimiter" Kind="Class" />
+      <Type Name="SlidingWindowPicker" Kind="Class" />
+      <Type Name="SocketListener" Kind="Class" />
+      <Type Name="StandardPicker" Kind="Class" />
+      <Type Name="StatsUpdateEventArgs" Kind="Class" />
+      <Type Name="TimeoutTask" Kind="Delegate" />
+      <Type Name="TorrentEventArgs" Kind="Class" />
+      <Type Name="TorrentLoadException" Kind="Class" />
+      <Type Name="TorrentManager" Kind="Class" />
+      <Type Name="TorrentSettings" Kind="Class" />
+      <Type Name="TorrentStateChangedEventArgs" Kind="Class" />
+      <Type Name="TrackerPeersAdded" Kind="Class" />
+      <Type Name="TransferType" Kind="Enumeration" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Connections">
-      <Type Name="ConnectionFactory" />
-      <Type Name="HttpConnection" />
-      <Type Name="IConnection" />
-      <Type Name="IPV4Connection" />
-      <Type Name="IPV6Connection" />
+      <Type Name="ConnectionFactory" Kind="Class" />
+      <Type Name="HttpConnection" Kind="Class" />
+      <Type Name="IConnection" Kind="Interface" />
+      <Type Name="IPV4Connection" Kind="Class" />
+      <Type Name="IPV6Connection" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Encryption">
-      <Type Name="EncryptedSocket" />
-      <Type Name="EncryptionException" />
-      <Type Name="EncryptionTypes" />
-      <Type Name="IEncryption" />
-      <Type Name="IEncryptor" />
-      <Type Name="PeerAEncryption" />
-      <Type Name="PeerBEncryption" />
-      <Type Name="PlainTextEncryption" />
-      <Type Name="RC4" />
-      <Type Name="RC4Header" />
+      <Type Name="EncryptedSocket" Kind="Class" />
+      <Type Name="EncryptionException" Kind="Class" />
+      <Type Name="EncryptionTypes" Kind="Enumeration" />
+      <Type Name="IEncryption" Kind="Interface" />
+      <Type Name="IEncryptor" Kind="Interface" />
+      <Type Name="PeerAEncryption" Kind="Class" />
+      <Type Name="PeerBEncryption" Kind="Class" />
+      <Type Name="PlainTextEncryption" Kind="Class" />
+      <Type Name="RC4" Kind="Class" />
+      <Type Name="RC4Header" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Managers">
-      <Type Name="DiskManager" />
+      <Type Name="DiskManager" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Messages">
-      <Type Name="CreateMessage" />
-      <Type Name="Message" />
-      <Type Name="MessageBundle" />
-      <Type Name="PeerMessage" />
-      <Type Name="UnknownMessage" />
+      <Type Name="CreateMessage" Kind="Delegate" />
+      <Type Name="Message" Kind="Class" />
+      <Type Name="MessageBundle" Kind="Class" />
+      <Type Name="PeerMessage" Kind="Class" />
+      <Type Name="UnknownMessage" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Messages.FastPeer">
-      <Type Name="AllowedFastMessage" />
-      <Type Name="HaveAllMessage" />
-      <Type Name="HaveNoneMessage" />
-      <Type Name="RejectRequestMessage" />
-      <Type Name="SuggestPieceMessage" />
+      <Type Name="AllowedFastMessage" Kind="Class" />
+      <Type Name="HaveAllMessage" Kind="Class" />
+      <Type Name="HaveNoneMessage" Kind="Class" />
+      <Type Name="RejectRequestMessage" Kind="Class" />
+      <Type Name="SuggestPieceMessage" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Messages.Libtorrent">
-      <Type Name="ExtendedHandshakeMessage" />
-      <Type Name="ExtensionMessage" />
-      <Type Name="ExtensionSupport" />
-      <Type Name="LTChat" />
-      <Type Name="LTMetadata" />
+      <Type Name="ExtendedHandshakeMessage" Kind="Class" />
+      <Type Name="ExtensionMessage" Kind="Class" />
+      <Type Name="ExtensionSupport" Kind="Structure" />
+      <Type Name="LTChat" Kind="Class" />
+      <Type Name="LTMetadata" Kind="Class" />
       <Type Name="LTMetadata+eMessageType" />
-      <Type Name="PeerExchangeMessage" />
+      <Type Name="PeerExchangeMessage" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Messages.Standard">
-      <Type Name="BitfieldMessage" />
-      <Type Name="CancelMessage" />
-      <Type Name="ChokeMessage" />
-      <Type Name="HandshakeMessage" />
-      <Type Name="HaveMessage" />
-      <Type Name="InterestedMessage" />
-      <Type Name="KeepAliveMessage" />
-      <Type Name="NotInterestedMessage" />
-      <Type Name="PieceMessage" />
-      <Type Name="PortMessage" />
-      <Type Name="RequestMessage" />
-      <Type Name="UnchokeMessage" />
+      <Type Name="BitfieldMessage" Kind="Class" />
+      <Type Name="CancelMessage" Kind="Class" />
+      <Type Name="ChokeMessage" Kind="Class" />
+      <Type Name="HandshakeMessage" Kind="Class" />
+      <Type Name="HaveMessage" Kind="Class" />
+      <Type Name="InterestedMessage" Kind="Class" />
+      <Type Name="KeepAliveMessage" Kind="Class" />
+      <Type Name="NotInterestedMessage" Kind="Class" />
+      <Type Name="PieceMessage" Kind="Class" />
+      <Type Name="PortMessage" Kind="Class" />
+      <Type Name="RequestMessage" Kind="Class" />
+      <Type Name="UnchokeMessage" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Messages.UdpTracker">
-      <Type Name="ConnectMessage" />
-      <Type Name="UdpTrackerMessage" />
+      <Type Name="ConnectMessage" Kind="Class" />
+      <Type Name="UdpTrackerMessage" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.PieceWriters">
-      <Type Name="DiskWriter" />
-      <Type Name="MemoryWriter" />
-      <Type Name="PieceWriter" />
+      <Type Name="DiskWriter" Kind="Class" />
+      <Type Name="MemoryWriter" Kind="Class" />
+      <Type Name="PieceWriter" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Client.Tracker">
-      <Type Name="AnnounceParameters" />
-      <Type Name="HTTPTracker" />
-      <Type Name="ScrapeParameters" />
-      <Type Name="ScrapeResponseEventArgs" />
-      <Type Name="Tracker" />
-      <Type Name="TrackerConnectionID" />
-      <Type Name="TrackerFactory" />
-      <Type Name="TrackerManager" />
-      <Type Name="TrackerResponseEventArgs" />
-      <Type Name="TrackerStateChangedEventArgs" />
-      <Type Name="TrackerTier" />
-      <Type Name="UdpTracker" />
+      <Type Name="AnnounceParameters" Kind="Class" />
+      <Type Name="HTTPTracker" Kind="Class" />
+      <Type Name="ScrapeParameters" Kind="Class" />
+      <Type Name="ScrapeResponseEventArgs" Kind="Class" />
+      <Type Name="Tracker" Kind="Class" />
+      <Type Name="TrackerConnectionID" Kind="Class" />
+      <Type Name="TrackerFactory" Kind="Class" />
+      <Type Name="TrackerManager" Kind="Class" />
+      <Type Name="TrackerResponseEventArgs" Kind="Class" />
+      <Type Name="TrackerStateChangedEventArgs" Kind="Class" />
+      <Type Name="TrackerTier" Kind="Class" />
+      <Type Name="UdpTracker" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Common">
-      <Type Name="AsyncResult" />
-      <Type Name="BitField" />
-      <Type Name="Client" />
-      <Type Name="Direction" />
-      <Type Name="Hashes" />
-      <Type Name="MonoTorrentCollection`1" DisplayName="MonoTorrentCollection&lt;T&gt;" />
-      <Type Name="Operation`1" DisplayName="Operation&lt;T&gt;" />
-      <Type Name="PeerConnectionEvent" />
-      <Type Name="PeerListType" />
-      <Type Name="PeerStatus" />
-      <Type Name="PieceEvent" />
-      <Type Name="Priority" />
-      <Type Name="Software" />
-      <Type Name="SpeedMonitor" />
-      <Type Name="Toolbox" />
-      <Type Name="Torrent" />
-      <Type Name="TorrentCreator" />
-      <Type Name="TorrentCreatorAsyncResult" />
-      <Type Name="TorrentCreatorEventArgs" />
-      <Type Name="TorrentEvent" />
-      <Type Name="TorrentException" />
-      <Type Name="TorrentFile" />
-      <Type Name="TorrentState" />
-      <Type Name="TrackerState" />
-      <Type Name="VersionInfo" />
+      <Type Name="AsyncResult" Kind="Class" />
+      <Type Name="BitField" Kind="Class" />
+      <Type Name="Client" Kind="Enumeration" />
+      <Type Name="Direction" Kind="Enumeration" />
+      <Type Name="Hashes" Kind="Class" />
+      <Type Name="ListenerStatus" Kind="Enumeration" />
+      <Type Name="MonoTorrentCollection`1" DisplayName="MonoTorrentCollection&lt;T&gt;" Kind="Class" />
+      <Type Name="Operation`1" DisplayName="Operation&lt;T&gt;" Kind="Delegate" />
+      <Type Name="PeerConnectionEvent" Kind="Enumeration" />
+      <Type Name="PeerListType" Kind="Enumeration" />
+      <Type Name="PeerStatus" Kind="Enumeration" />
+      <Type Name="PieceEvent" Kind="Enumeration" />
+      <Type Name="Priority" Kind="Enumeration" />
+      <Type Name="Software" Kind="Structure" />
+      <Type Name="SpeedMonitor" Kind="Class" />
+      <Type Name="Toolbox" Kind="Class" />
+      <Type Name="Torrent" Kind="Class" />
+      <Type Name="TorrentCreator" Kind="Class" />
+      <Type Name="TorrentCreatorAsyncResult" Kind="Class" />
+      <Type Name="TorrentCreatorEventArgs" Kind="Class" />
+      <Type Name="TorrentEvent" Kind="Enumeration" />
+      <Type Name="TorrentException" Kind="Class" />
+      <Type Name="TorrentFile" Kind="Class" />
+      <Type Name="TorrentState" Kind="Enumeration" />
+      <Type Name="TrackerState" Kind="Enumeration" />
+      <Type Name="VersionInfo" Kind="Class" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Dht">
+      <Type Name="DhtEngine" Kind="Class" />
+      <Type Name="PeersFoundEventArgs" Kind="Class" />
+      <Type Name="State" Kind="Enumeration" />
+    </Namespace>
+    <Namespace Name="MonoTorrent.Dht.Listeners">
+      <Type Name="DhtListener" Kind="Class" />
+      <Type Name="MessageReceived" Kind="Delegate" />
+      <Type Name="UdpListener" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.TorrentWatcher">
-      <Type Name="ITorrentWatcher" />
-      <Type Name="TorrentFolderWatcher" />
-      <Type Name="TorrentWatcherEventArgs" />
-      <Type Name="TorrentWatchers" />
+      <Type Name="ITorrentWatcher" Kind="Interface" />
+      <Type Name="TorrentFolderWatcher" Kind="Class" />
+      <Type Name="TorrentWatcherEventArgs" Kind="Class" />
+      <Type Name="TorrentWatchers" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Tracker">
-      <Type Name="AnnounceParameters" />
-      <Type Name="ByteComparer" />
+      <Type Name="AnnounceEventArgs" Kind="Class" />
+      <Type Name="AnnounceParameters" Kind="Class" />
+      <Type Name="ByteComparer" Kind="Class" />
       <Type Name="IIntervalAlgorithm" />
-      <Type Name="InfoHashTrackable" />
-      <Type Name="IPAddressComparer" />
-      <Type Name="IPeerComparer" />
-      <Type Name="ITrackable" />
-      <Type Name="Peer" />
-      <Type Name="RequestMonitor" />
-      <Type Name="RequestParameters" />
-      <Type Name="ScrapeParameters" />
-      <Type Name="SimpleTorrentManager" />
+      <Type Name="InfoHashTrackable" Kind="Class" />
+      <Type Name="IPAddressComparer" Kind="Class" />
+      <Type Name="IPeerComparer" Kind="Interface" />
+      <Type Name="ITrackable" Kind="Interface" />
+      <Type Name="Peer" Kind="Class" />
+      <Type Name="PeerEventArgs" Kind="Class" />
+      <Type Name="RequestMonitor" Kind="Class" />
+      <Type Name="RequestParameters" Kind="Class" />
+      <Type Name="ScrapeEventArgs" Kind="Class" />
+      <Type Name="ScrapeParameters" Kind="Class" />
+      <Type Name="SimpleTorrentManager" Kind="Class" />
       <Type Name="StaticIntervalAlgorithm" />
-      <Type Name="Tracker" />
-      <Type Name="TrackerException" />
+      <Type Name="TimedOutEventArgs" Kind="Class" />
+      <Type Name="Tracker" Kind="Class" />
+      <Type Name="TrackerException" Kind="Class" />
     </Namespace>
     <Namespace Name="MonoTorrent.Tracker.Listeners">
-      <Type Name="HttpListener" />
-      <Type Name="ListenerBase" />
-      <Type Name="ManualListener" />
+      <Type Name="HttpListener" Kind="Class" />
+      <Type Name="ListenerBase" Kind="Class" />
+      <Type Name="ManualListener" Kind="Class" />
     </Namespace>
   </Types>
   <Title>MonoTorrent</Title>

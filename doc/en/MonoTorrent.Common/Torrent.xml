@@ -1,14 +1,19 @@
 <Type Name="Torrent" FullName="MonoTorrent.Common.Torrent">
-  <TypeSignature Language="C#" Value="public class Torrent" />
+  <TypeSignature Language="C#" Value="public class Torrent : IEquatable&lt;MonoTorrent.Common.Torrent&gt;" />
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>System.Object</BaseTypeName>
   </Base>
-  <Interfaces />
+  <Interfaces>
+    <Interface>
+      <InterfaceName>System.IEquatable&lt;MonoTorrent.Common.Torrent&gt;</InterfaceName>
+    </Interface>
+  </Interfaces>
   <Docs>
     <summary>
             The "Torrent" class for both Tracker and Client should inherit from this
@@ -17,360 +22,710 @@
     <remarks>To be added.</remarks>
   </Docs>
   <Members>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="protected Torrent ();" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
     <Member MemberName="AnnounceUrls">
       <MemberSignature Language="C#" Value="public System.Collections.Generic.List&lt;MonoTorrent.Common.MonoTorrentCollection&lt;string&gt;&gt; AnnounceUrls { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Collections.Generic.List&lt;MonoTorrent.Common.MonoTorrentCollection&lt;System.String&gt;&gt;</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.List&lt;MonoTorrent.Common.MonoTorrentCollection&lt;System.String&gt;&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The announce URLs contained within the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="AzureusProperties">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="AzureusProperties">
       <MemberSignature Language="C#" Value="public MonoTorrent.BEncoding.BEncodedValue AzureusProperties { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.BEncoding.BEncodedValue</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             FIXME: No idea what this is.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Comment">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Comment">
       <MemberSignature Language="C#" Value="public string Comment { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The comment contained within the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="CreatedBy">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="CreatedBy">
       <MemberSignature Language="C#" Value="public string CreatedBy { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The optional string showing who/what created the .torrent
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="CreationDate">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="CreationDate">
       <MemberSignature Language="C#" Value="public DateTime CreationDate { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.DateTime</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.DateTime</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The creation date of the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="ED2K">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ED2K">
       <MemberSignature Language="C#" Value="public byte[] ED2K { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Byte[]</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The optional ED2K hash contained within the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Encoding">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Encoding">
       <MemberSignature Language="C#" Value="public string Encoding { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The encoding used by the client that created the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Files">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Equals">
+      <MemberSignature Language="C#" Value="public bool Equals (MonoTorrent.Common.Torrent other);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="other" Type="MonoTorrent.Common.Torrent" />
+      </Parameters>
+      <Docs>
+        <param name="other">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Files">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.TorrentFile[] Files { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.TorrentFile[]</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.TorrentFile[]</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The list of files contained within the .torrent which are available for download
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="GetRightHttpSeeds">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetRightHttpSeeds">
       <MemberSignature Language="C#" Value="public System.Collections.Generic.List&lt;string&gt; GetRightHttpSeeds { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Collections.Generic.List&lt;System.String&gt;</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.List&lt;System.String&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             This is the http-based seeding (getright protocole)
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="HttpSeeds">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="HttpSeeds">
       <MemberSignature Language="C#" Value="public System.Collections.Generic.List&lt;string&gt; HttpSeeds { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Collections.Generic.List&lt;System.String&gt;</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.List&lt;System.String&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             This is the http-based seeding (webseed protocole)
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="InfoHash">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="InfoHash">
       <MemberSignature Language="C#" Value="public byte[] InfoHash { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Byte[]</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             This is the infohash that is generated by putting the "Info" section of a .torrent
             through a ManagedSHA1 hasher.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="IsPrivate">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="IsPrivate">
       <MemberSignature Language="C#" Value="public bool IsPrivate { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             Shows whether DHT is allowed or not. If it is a private torrent, no peer
             sharing should be allowed.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Load">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Load">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Common.Torrent Load (MonoTorrent.BEncoding.BEncodedDictionary torrentInformation);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="torrentInformation" Type="MonoTorrent.BEncoding.BEncodedDictionary" /></Parameters>
-      <Docs><param name="torrentInformation">To be added.</param><summary>To be added.</summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Load">
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="torrentInformation" Type="MonoTorrent.BEncoding.BEncodedDictionary" />
+      </Parameters>
+      <Docs>
+        <param name="torrentInformation">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Load">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Common.Torrent Load (byte[] data);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="data" Type="System.Byte[]" /></Parameters>
-      <Docs><param name="data">The byte[] containing the data</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="data" Type="System.Byte[]" />
+      </Parameters>
+      <Docs>
+        <param name="data">The byte[] containing the data</param>
+        <summary>
             Loads a torrent from a byte[] containing the bencoded data
-            </summary><returns /><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Load">
+            </summary>
+        <returns />
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Load">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Common.Torrent Load (System.IO.Stream stream);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="stream" Type="System.IO.Stream" /></Parameters>
-      <Docs><param name="stream">The stream containing the data to load</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="stream" Type="System.IO.Stream" />
+      </Parameters>
+      <Docs>
+        <param name="stream">The stream containing the data to load</param>
+        <summary>
             Loads a .torrent from the supplied stream
-            </summary><returns /><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Load">
+            </summary>
+        <returns />
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Load">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Common.Torrent Load (string path);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="path" Type="System.String" /></Parameters>
-      <Docs><param name="path">The path to load the .torrent file from</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="path" Type="System.String" />
+      </Parameters>
+      <Docs>
+        <param name="path">The path to load the .torrent file from</param>
+        <summary>
             This method loads a .torrent file from the specified path.
-            </summary><returns>To be added.</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Load">
+            </summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Load">
       <MemberSignature Language="C#" Value="public static MonoTorrent.Common.Torrent Load (Uri url, string location);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Torrent</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="url" Type="System.Uri" /><Parameter Name="location" Type="System.String" /></Parameters>
-      <Docs><param name="url">The URL to download the .torrent from</param><param name="location">The path to download the .torrent to before it gets loaded</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Torrent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="url" Type="System.Uri" />
+        <Parameter Name="location" Type="System.String" />
+      </Parameters>
+      <Docs>
+        <param name="url">The URL to download the .torrent from</param>
+        <param name="location">The path to download the .torrent to before it gets loaded</param>
+        <summary>
             Loads a .torrent file from the specified URL
-            </summary><returns /><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Name">
+            </summary>
+        <returns />
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="LoadInternal">
+      <MemberSignature Language="C#" Value="protected void LoadInternal (MonoTorrent.BEncoding.BEncodedDictionary torrentInformation);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="torrentInformation" Type="MonoTorrent.BEncoding.BEncodedDictionary" />
+      </Parameters>
+      <Docs>
+        <param name="torrentInformation">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Name">
       <MemberSignature Language="C#" Value="public string Name { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             In the case of a single file torrent, this is the name of the file.
             In the case of a multi file torrent, it is the name of the root folder.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Nodes">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Nodes">
       <MemberSignature Language="C#" Value="public MonoTorrent.BEncoding.BEncodedList Nodes { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.BEncoding.BEncodedList</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.BEncoding.BEncodedList</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             FIXME: No idea what this is.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="PieceLength">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="PieceLength">
       <MemberSignature Language="C#" Value="public int PieceLength { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Int32</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int32</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The length of each piece in bytes.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Pieces">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Pieces">
       <MemberSignature Language="C#" Value="public MonoTorrent.Common.Hashes Pieces { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>MonoTorrent.Common.Hashes</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Hashes</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             This is the array of hashes contained within the torrent.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Publisher">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Publisher">
       <MemberSignature Language="C#" Value="public string Publisher { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The name of the Publisher
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="PublisherUrl">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="PublisherUrl">
       <MemberSignature Language="C#" Value="public string PublisherUrl { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The Url of the publisher of either the content or the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="SHA1">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="SHA1">
       <MemberSignature Language="C#" Value="public byte[] SHA1 { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Byte[]</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Byte[]</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The optional SHA1 hash contained within the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Size">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Size">
       <MemberSignature Language="C#" Value="public long Size { set; get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Int64</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int64</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The total size of all the files that have to be downloaded.
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="Source">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Source">
       <MemberSignature Language="C#" Value="public string Source { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             The source of the .torrent file
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="TorrentPath">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="StrictDecoding">
+      <MemberSignature Language="C#" Value="public static bool StrictDecoding { set; get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="TorrentPath">
       <MemberSignature Language="C#" Value="public string TorrentPath { get; }" />
       <MemberType>Property</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.String</ReturnType></ReturnValue>
-      <Docs><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.String</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>
             This is the path at which the .torrent file is located
-            </summary><value>To be added.</value><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="TryLoad">
+            </summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="TryLoad">
       <MemberSignature Language="C#" Value="public static bool TryLoad (byte[] data, out MonoTorrent.Common.Torrent torrent);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="data" Type="System.Byte[]" /><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" /></Parameters>
-      <Docs><param name="data">The byte[] to load the .torrent from</param><param name="torrent">If loading was successful, it contains the Torrent</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="data" Type="System.Byte[]" />
+        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" />
+      </Parameters>
+      <Docs>
+        <param name="data">The byte[] to load the .torrent from</param>
+        <param name="torrent">If loading was successful, it contains the Torrent</param>
+        <summary>
             Loads a .torrent from the specified byte[]. A return value indicates
             whether the operation was successful.
-            </summary><returns>True if successful</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="TryLoad">
+            </summary>
+        <returns>True if successful</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="TryLoad">
       <MemberSignature Language="C#" Value="public static bool TryLoad (System.IO.Stream stream, out MonoTorrent.Common.Torrent torrent);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="stream" Type="System.IO.Stream" /><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" /></Parameters>
-      <Docs><param name="stream">The stream containing the data to load</param><param name="torrent">If the loading was succesful it is assigned the Torrent</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="stream" Type="System.IO.Stream" />
+        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" />
+      </Parameters>
+      <Docs>
+        <param name="stream">The stream containing the data to load</param>
+        <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        <summary>
             Loads a .torrent from the supplied stream. A return value indicates
             whether the operation was successful.
-            </summary><returns>True if successful</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="TryLoad">
+            </summary>
+        <returns>True if successful</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="TryLoad">
       <MemberSignature Language="C#" Value="public static bool TryLoad (string path, out MonoTorrent.Common.Torrent torrent);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="path" Type="System.String" /><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" /></Parameters>
-      <Docs><param name="path">The path to load the .torrent file from</param><param name="torrent">If the loading was succesful it is assigned the Torrent</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="path" Type="System.String" />
+        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" />
+      </Parameters>
+      <Docs>
+        <param name="path">The path to load the .torrent file from</param>
+        <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        <summary>
             Loads a .torrent from the specificed path. A return value indicates
             whether the operation was successful.
-            </summary><returns>True if successful</returns><remarks>To be added.</remarks></Docs>
-    </Member><Member MemberName="TryLoad">
+            </summary>
+        <returns>True if successful</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="TryLoad">
       <MemberSignature Language="C#" Value="public static bool TryLoad (Uri url, string location, out MonoTorrent.Common.Torrent torrent);" />
       <MemberType>Method</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <ReturnValue><ReturnType>System.Boolean</ReturnType></ReturnValue>
-      <Parameters><Parameter Name="url" Type="System.Uri" /><Parameter Name="location" Type="System.String" /><Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" /></Parameters>
-      <Docs><param name="url">The URL to download the .torrent from</param><param name="location">The path to download the .torrent to before it gets loaded</param><param name="torrent">If the loading was succesful it is assigned the Torrent</param><summary>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="url" Type="System.Uri" />
+        <Parameter Name="location" Type="System.String" />
+        <Parameter Name="torrent" Type="MonoTorrent.Common.Torrent&amp;" RefType="out" />
+      </Parameters>
+      <Docs>
+        <param name="url">The URL to download the .torrent from</param>
+        <param name="location">The path to download the .torrent to before it gets loaded</param>
+        <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
+        <summary>
             Loads a .torrent file from the specified URL. A return value indicates
             whether the operation was successful.
-            </summary><returns>True if successful</returns><remarks>To be added.</remarks></Docs>
+            </summary>
+        <returns>True if successful</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
     </Member>
   </Members>
 </Type>

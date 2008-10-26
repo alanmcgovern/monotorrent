@@ -1,12 +1,13 @@
 <Type Name="Operation&lt;T&gt;" FullName="MonoTorrent.Common.Operation&lt;T&gt;">
-  <TypeSignature Language="C#" Value="public delegate int Operation&lt;T&gt;(T target);" />
+  <TypeSignature Language="C#" Value="public delegate long Operation&lt;T&gt;(T target);" />
   <AssemblyInfo>
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <TypeParameters>
-    <TypeParameter>T</TypeParameter>
+    <TypeParameter Name="T" />
   </TypeParameters>
   <Base>
     <BaseTypeName>System.Delegate</BaseTypeName>
@@ -15,7 +16,7 @@
     <Parameter Name="target" Type="T" />
   </Parameters>
   <ReturnValue>
-    <ReturnType>System.Int32</ReturnType>
+    <ReturnType>System.Int64</ReturnType>
   </ReturnValue>
   <Docs>
     <typeparam name="T">To be added.</typeparam>

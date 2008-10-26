@@ -1,1 +1,1 @@
-monodocer -importslashdoc:../src/MonoTorrent/bin/Debug/MonoTorrent.xml -assembly:../src/MonoTorrent/bin/Debug/MonoTorrent.dll -path:en
+monodocer -pretty -assembly:../src/MonoTorrent/bin/Debug/MonoTorrent.dll -path:en

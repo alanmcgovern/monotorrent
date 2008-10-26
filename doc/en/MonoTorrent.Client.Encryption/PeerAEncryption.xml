@@ -4,6 +4,7 @@
     <AssemblyName>MonoTorrent</AssemblyName>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
     <AssemblyVersion>0.40.0.0</AssemblyVersion>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
   </AssemblyInfo>
   <Base>
     <BaseTypeName>MonoTorrent.Client.Encryption.EncryptedSocket</BaseTypeName>
@@ -20,10 +21,20 @@
       <MemberSignature Language="C#" Value="public PeerAEncryption (byte[] InfoHash, MonoTorrent.Client.Encryption.EncryptionTypes allowedEncryption);" />
       <MemberType>Constructor</MemberType>
       <AssemblyInfo>
-        
-      <AssemblyVersion>0.0.0.0</AssemblyVersion><AssemblyVersion>0.40.0.0</AssemblyVersion></AssemblyInfo>
-      <Parameters><Parameter Name="InfoHash" Type="System.Byte[]" /><Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" /></Parameters>
-      <Docs><param name="InfoHash">To be added.</param><param name="allowedEncryption">To be added.</param><summary>To be added.</summary><remarks>To be added.</remarks></Docs>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <AssemblyVersion>0.40.0.0</AssemblyVersion>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="InfoHash" Type="System.Byte[]" />
+        <Parameter Name="allowedEncryption" Type="MonoTorrent.Client.Encryption.EncryptionTypes" />
+      </Parameters>
+      <Docs>
+        <param name="InfoHash">To be added.</param>
+        <param name="allowedEncryption">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
     </Member>
   </Members>
 </Type>
