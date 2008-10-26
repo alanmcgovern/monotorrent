@@ -185,7 +185,7 @@ namespace MonoTorrent.Common
         {
             StringBuilder sb = new StringBuilder(32);
             sb.Append("File: ");
-            sb.Append(System.IO.Path.GetFileName(path));
+            sb.Append(path);
             sb.Append(" StartIndex: ");
             sb.Append(StartPieceIndex);
             sb.Append(" EndIndex: ");
