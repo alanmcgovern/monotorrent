@@ -13,7 +13,6 @@ namespace MonoTorrent.Client
     {
         TestRig rig;
         byte[] buffer;
-        int offset = 2362;
 
         [TestFixtureSetUp]
         public void GlobalSetup()

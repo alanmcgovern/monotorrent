@@ -45,7 +45,7 @@ namespace TrackerApp
             if (started)
                 collection.Add("event", "started");
 
-            BEncodedValue response = base.Handle(collection, address, false);
+            base.Handle(collection, address, false);
             // Just ditch the response, this is only stress testing
         }
     }
@@ -124,7 +124,6 @@ namespace TrackerApp
 
         private void StartTest()
         {
-            long time = Environment.TickCount;
             while (true)
             {
                 int torrent = random.Next(0, hashes.Count - 1);

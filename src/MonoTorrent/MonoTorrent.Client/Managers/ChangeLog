@@ -1,5 +1,12 @@
 2008-10-26  Alan McGovern  <alan.mcgovern@gmail.com>
 
+	* PeerManager.cs:
+	* DiskManager.cs:
+	* ListenManager.cs:
+	* TorrentManager.cs: Fix a lot of build warnings
+
+2008-10-26  Alan McGovern  <alan.mcgovern@gmail.com>
+
 	* TrackerManager.cs: Ensure that empty tiers are not added.
 
 2008-06-05  Alan McGovern <alan.mcgovern@gmail.com> 

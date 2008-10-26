@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
         [TestFixtureTearDown]
         public void FixtureTeardown()
         {
-            loop.Dispose();
+            //loop.Dispose();
         }
 
         [SetUp]

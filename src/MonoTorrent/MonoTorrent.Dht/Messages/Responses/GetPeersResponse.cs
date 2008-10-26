@@ -42,11 +42,6 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString TokenKey = "token";
         internal static readonly BEncodedString ValuesKey = "values";
 
-        private GetPeers InitialMessage
-        {
-            get { return (GetPeers)queryMessage; }
-        }
-
         public BEncodedString Token
         {
             get { return (BEncodedString)Parameters[TokenKey]; }

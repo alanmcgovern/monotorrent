@@ -196,10 +196,10 @@ namespace MonoTorrent.Client
                 return 0;
             }
         }
-        private bool disposed;
+        //private bool disposed;
         public void Dispose()
         {
-            disposed = true;
+           // disposed = true;
             s.Close();
         }
 

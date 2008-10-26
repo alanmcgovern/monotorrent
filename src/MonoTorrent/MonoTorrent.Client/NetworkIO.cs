@@ -52,17 +52,11 @@ namespace MonoTorrent.Client
             Callback = callback;
         }
 
-        public bool ShouldAbort
-        {
-            get { return (Environment.TickCount - StartTime) > 10000; }
-        }
-
         public AsyncConnect Callback;
         public IConnection Connection;
         public TorrentManager Manager;
         public Peer Peer;
         public IAsyncResult Result;
-        public int StartTime;
     }
 
     internal static class NetworkIO

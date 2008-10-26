@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
+            PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
         }
 
 
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceEncoding()
         {
-            int length = new PieceMessage(testRig.Manager, 15, 1024, 16384).Encode(buffer, offset);
+            new PieceMessage(testRig.Manager, 15, 1024, 16384).Encode(buffer, offset);
         }
         [Test]
         public void PieceDecoding()

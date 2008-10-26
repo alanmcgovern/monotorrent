@@ -523,16 +523,6 @@ namespace MonoTorrent.Common
             return piecesBuffer;
         }
 
-        private TorrentFile[] ConvertPaths(MonoTorrentCollection<string> fullPaths)
-        {
-            TorrentFile[] files = new TorrentFile[fullPaths.Count];
-            
-            for (int i = 0; i < files.Length; i++)
-                files[i] = new TorrentFile(fullPaths[i], new FileInfo(fullPaths[i]).Length, 0, 0, null, null, null);
-            
-            return files;
-        }
-
         ///<summary>
         ///used for creating multi file mode torrents.
         ///</summary>

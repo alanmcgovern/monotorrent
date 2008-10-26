@@ -65,9 +65,7 @@ namespace MonoTorrent.Client.Connections
                 this.BytesTransferred = bytes;
                 base.Complete();
             }
-        }
-
-        Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
+		}
 
         #region Member Variables
 

@@ -69,7 +69,6 @@ namespace MonoTorrent.Dht
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         bool disposed;
         MessageLoop messageLoop;
-        int port = 6881;
         State state = State.NotReady;
         RoutingTable table = new RoutingTable();
         TimeSpan timeout;

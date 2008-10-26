@@ -92,8 +92,9 @@ namespace MonoTorrent.Client
             SendIncoming (new BitfieldMessage(rig.Manager.Bitfield));
 
             // 3) Receive remote bitfield - have none
-            HaveNoneMessage message = (HaveNoneMessage)ReceiveIncoming();
-
+            PeerMessage message = (HaveNoneMessage)ReceiveIncoming();
+			Assert.IsTrue (message is HaveNoneMessage, "HaveNone");
+			
             // 4) Send a few allowed fast
             SendIncoming(new AllowedFastMessage(1));
             SendIncoming(new AllowedFastMessage(2));

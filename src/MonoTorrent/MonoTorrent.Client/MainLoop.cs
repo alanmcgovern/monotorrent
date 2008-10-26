@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    public class MainLoop : IDisposable
+    public class MainLoop
     {
         private class DelegateTask
         {
@@ -152,16 +152,10 @@ namespace MonoTorrent.Client
         }
 
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
-        bool disposed;
         AutoResetEvent handle = new AutoResetEvent(false);
         Queue<DelegateTask> spares = new Queue<DelegateTask>();
         Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
-
-        public bool Disposed
-        {
-            get { return disposed; }
-        }
 
         public MainLoop(string name)
         {
@@ -185,9 +179,6 @@ namespace MonoTorrent.Client
 
                 if (task == null)
                 {
-                    if (disposed)
-                        return;
-
                     handle.WaitOne();
                 }
                 else
@@ -275,14 +266,6 @@ namespace MonoTorrent.Client
                 QueueWait(dTask);
                 return dTask.TimeoutResult;
             });
-        }
-
-        public void Dispose()
-        {
-            if (disposed)
-                return;
-
-            dispatcher.Clear();
         }
 
         private void AddSpare(DelegateTask task)

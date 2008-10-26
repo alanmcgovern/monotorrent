@@ -320,7 +320,7 @@ namespace MonoTorrent.Client
             this.hashingWaitHandle = new ManualResetEvent(false);
             this.monitor = new ConnectionMonitor();
             this.settings = settings;
-            this.peers = new PeerManager(engine, this);
+            this.peers = new PeerManager();
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this);

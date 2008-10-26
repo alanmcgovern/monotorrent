@@ -109,7 +109,6 @@ namespace MonoTorrent.Client.Encryption
         private int initialBufferCount;
 
         // State information to be checked against abort conditions
-        private DateTime lastActivity;
         private int bytesReceived;
 
         // Callbacks
@@ -160,7 +159,6 @@ namespace MonoTorrent.Client.Encryption
             doneSynchronizeCallback = delegate { doneSynchronize(); };
             fillSynchronizeBytesCallback = fillSynchronizeBytes;
 
-            lastActivity = DateTime.Now;
             bytesReceived = 0;
 
             SetMinCryptoAllowed(allowedEncryption);
@@ -326,7 +324,6 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                lastActivity = DateTime.Now;
 
                 if (!succeeded)
                     throw new MessageException("Could not fill sync. bytes");
@@ -424,8 +421,6 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                lastActivity = DateTime.Now;
-
                 object[] receiveData = (object[])state;
 
                 AsyncCallback callback = (AsyncCallback)receiveData[0];

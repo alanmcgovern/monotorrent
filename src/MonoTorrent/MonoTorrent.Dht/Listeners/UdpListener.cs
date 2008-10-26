@@ -96,7 +96,7 @@ namespace MonoTorrent.Dht.Listeners
                 client.BeginReceive(EndReceive, null);
                 RaiseStatusChanged(ListenerStatus.Listening);
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 RaiseStatusChanged(ListenerStatus.PortNotFree);
             }

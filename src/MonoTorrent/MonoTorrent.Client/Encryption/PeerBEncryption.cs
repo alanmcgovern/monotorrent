@@ -46,7 +46,6 @@ namespace MonoTorrent.Client.Encryption
 
         private AsyncCallback gotVerificationCallback;
         private AsyncCallback gotPadCCallback;
-        private AsyncCallback gotInitialPayloadCallback;
 
         public PeerBEncryption(byte[][] possibleSKEYs, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
@@ -55,7 +54,6 @@ namespace MonoTorrent.Client.Encryption
 
             gotVerificationCallback = new AsyncCallback(gotVerification);
             gotPadCCallback = new AsyncCallback(gotPadC);
-            gotInitialPayloadCallback = new AsyncCallback(gotInitialPayload);
         }
 
         protected override void doneReceiveY()

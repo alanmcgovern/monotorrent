@@ -13,15 +13,8 @@ namespace MonoTorrent.Tracker
         protected internal static readonly string WarningKey = "warning"; //FIXME: Check this, i know it's wrong!
 
         private IPAddress remoteAddress;
-        private bool handled;
         private NameValueCollection parameters;
         private BEncodedDictionary response;
-
-        private bool Handled
-        {
-            get { return handled; }
-            set { handled = value; }
-        }
 
         public abstract bool IsValid { get; }
         

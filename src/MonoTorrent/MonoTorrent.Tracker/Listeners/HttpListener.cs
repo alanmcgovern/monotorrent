@@ -81,8 +81,6 @@ namespace MonoTorrent.Tracker.Listeners
             if (string.IsNullOrEmpty(httpPrefix))
                 throw new ArgumentNullException("httpPrefix");
 
-            listener = new System.Net.HttpListener();
-            listener.Prefixes.Add(httpPrefix);
             this.prefix = httpPrefix;
         }
 
@@ -96,9 +94,13 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Start()
         {
+			if (listener != null)
+				return;
+			
+			listener = new System.Net.HttpListener();
+            listener.Prefixes.Add(prefix);
             listener.Start();
-            listener.BeginGetContext(EndGetRequest, null);
-
+            listener.BeginGetContext(EndGetRequest, listener);
         }
 
         /// <summary>
@@ -106,12 +108,18 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Stop()
         {
+			if (listener == null)
+				return;
+			
             listener.Stop();
+			listener = null;
         }
 
         private void EndGetRequest(IAsyncResult result)
         {
-            HttpListenerContext context = null;
+			HttpListenerContext context = null;
+			System.Net.HttpListener listener = (System.Net.HttpListener) result.AsyncState;
+            
             try
             {
                 context = listener.EndGetContext(result);

@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
         TestRig rig;
         HttpConnection connection;
         HttpListener listener;
-        private RequestMessage m;
+        //private RequestMessage m;
         private string listenerURL = "http://127.0.0.1:12{0}/announce/";
 
         PeerId id;

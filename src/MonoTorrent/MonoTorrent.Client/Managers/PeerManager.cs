@@ -9,9 +9,6 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private ClientEngine engine;
-        private TorrentManager manager;
-
         internal List<PeerId> ConnectedPeers = new List<PeerId>();
         internal List<Peer> ConnectingToPeers = new List<Peer>();
 
@@ -63,10 +60,8 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public PeerManager(ClientEngine engine, TorrentManager manager)
+        public PeerManager()
         {
-            this.engine = engine;
-            this.manager = manager;
             this.ActivePeers = new List<Peer>();
             this.AvailablePeers = new List<Peer>();
             this.BannedPeers = new List<Peer>();

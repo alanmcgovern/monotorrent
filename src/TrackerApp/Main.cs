@@ -163,33 +163,6 @@ namespace SampleTracker
             watcher.ForceScan();
         }
 
-        void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e)
-        {
-            //try
-            //{
-            //    TrackerEngine.Instance.Tracker.Remove(e.TorrentPath);
-            //}
-            //catch(Exception ex)
-            //{
-            //    Console.WriteLine("Couldn't remove torrent: {0}", e.TorrentPath);
-            //    Console.WriteLine("Reason: {0}", ex.Message);
-            //}
-        }
-
-        void watcher_TorrentFound(object sender, TorrentWatcherEventArgs e)
-        {
-            //try
-            //{
-            //    Torrent t = Torrent.Load(e.TorrentPath);
-            //    TrackerEngine.Instance.Tracker.Add(t);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Couldn't load {0}.", e.TorrentPath);
-            //    Console.WriteLine("Reason: {0}", ex.Message);
-            //}
-        }
-
         public void OnProcessExit(object sender, EventArgs e)
         {
             //Console.Write("shutting down the Tracker...");

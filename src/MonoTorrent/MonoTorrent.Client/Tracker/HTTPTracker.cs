@@ -327,7 +327,6 @@ namespace MonoTorrent.Client.Tracker
         private void ScrapeReceived(IAsyncResult result)
         {
             BEncodedDictionary d;
-            TrackerConnectionID id = (TrackerConnectionID)result.AsyncState;
             BEncodedDictionary dict = DecodeResponse(result);
 
             bool successful = !dict.ContainsKey("custom error");

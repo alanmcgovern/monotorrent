@@ -108,14 +108,14 @@ namespace MonoTorrent.Dht
             Assert.AreEqual(lastSeen, node.LastSeen, "#3");
         }
 
-        void FakePingResponse(object sender, SendQueryEventArgs e)
-        {
-            if (!e.TimedOut || !(e.Query is Ping))
-                return;
-
-            SendQueryTask task = (SendQueryTask)e.Task;
-            PingResponse response = new PingResponse(task.Target.Id);
-            listener.RaiseMessageReceived(response, task.Target.EndPoint);
-        }
+//        void FakePingResponse(object sender, SendQueryEventArgs e)
+//        {
+//            if (!e.TimedOut || !(e.Query is Ping))
+//                return;
+//
+//            SendQueryTask task = (SendQueryTask)e.Task;
+//            PingResponse response = new PingResponse(task.Target.Id);
+//            listener.RaiseMessageReceived(response, task.Target.EndPoint);
+//        }
     }
 }

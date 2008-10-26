@@ -168,13 +168,11 @@ namespace MonoTorrent.Client.Managers
             disposed = true;
             // FIXME: Ensure everything is written to disk before killing the mainloop.
             IOLoop.QueueWait((MainLoopTask)writer.Dispose);
-            IOLoop.Dispose();
         }
 
         private void PerformWrite(BufferedIO data)
         {
             PeerId id = data.Id;
-            ArraySegment<byte> recieveBuffer = data.buffer;
             Piece piece = data.Piece;
 
             // Find the block that this data belongs to and set it's state to "Written"

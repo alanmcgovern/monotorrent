@@ -1,3 +1,7 @@
+2008-10-26  Alan McGovern  <alan.mcgovern@gmail.com>
+
+	* SlidingWindowPicker.cs: Fix a lot of build warnings
+
 2008-03-30  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* StandardPicker.cs: If priority is set to 'Do Not Download', ensure all

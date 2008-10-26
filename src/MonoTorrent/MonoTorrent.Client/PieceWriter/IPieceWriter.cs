@@ -13,12 +13,6 @@ namespace MonoTorrent.Client.PieceWriters
             //pressures = new List<Pressure>();
         }
 
-        private IEnumerable<int> AllBlocks(TorrentManager manager)
-        {
-            for (int i = 0; i < manager.Torrent.PieceLength / Piece.BlockSize; i++)
-                yield return i;
-        }
-
         public abstract void Close(string path, TorrentFile[] files);
 
         public virtual void Dispose()

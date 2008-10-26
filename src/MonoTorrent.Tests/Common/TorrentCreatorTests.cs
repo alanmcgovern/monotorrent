@@ -67,6 +67,8 @@ namespace MonoTorrent.Common
         public void NoTrackersTest()
         {
             BEncodedDictionary dict = creator.Create(files, new TestWriter(), "TorrentName");
+			Torrent t = Torrent.Load (dict);
+			Assert.AreEqual (0, t.AnnounceUrls.Count, "#1");
         }
         [Test]
         public void CreateSingleTest()
@@ -104,10 +106,10 @@ namespace MonoTorrent.Common
         {
             creator.Path = Environment.CurrentDirectory;
             Environment.CurrentDirectory = Path.GetPathRoot(Environment.CurrentDirectory);
-            BEncodedValue val =  creator.Create(files, writer, "TopDir");
+            creator.Create(files, writer, "TopDir");
 
             Assert.AreEqual(files.Length, writer.Paths.Count, "#1");
-            foreach(TorrentFile f in files)
+            foreach (TorrentFile f in files)
                 Assert.IsTrue(writer.Paths.Contains(Path.Combine(creator.Path, f.Path)), "#2");
         }
 

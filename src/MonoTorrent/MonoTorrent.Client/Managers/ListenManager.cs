@@ -14,13 +14,6 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ListenManager : IDisposable
     {
-        #region old members
-
-        private AsyncTransfer peerHandshakeReceived; // The callback to invoke when we receive a peer handshake.
-
-        #endregion old members
-
-
         #region Member Variables
 
         private object locker;
@@ -60,7 +53,6 @@ namespace MonoTorrent.Client
             Engine = engine;
             Locker = new object();
             listeners = new MonoTorrentCollection<PeerListener>();
-            peerHandshakeReceived = onPeerHandshakeReceived;
             endCheckEncryptionCallback = EndCheckEncryption;
         }
 
