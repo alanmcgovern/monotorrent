@@ -823,7 +823,7 @@ namespace MonoTorrent.Client
                 return;
 
             int count = AddPeers(e.Peers);
-            RaisePeersFound(new DhtPeersAdded(this, count));
+            RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
         }
 
         private void PerformHashCheck(bool autoStart)

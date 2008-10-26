@@ -1,3 +1,11 @@
+2008-10-26  Alan McGovern  <alan.mcgovern@gmail.com>
+
+	* DhtPeersAdded.cs:
+	* TrackerPeersAdded.cs:
+	* PeersAddedEventArgs.cs:
+	* PeerExchangePeersAdded.cs: Display the number of number of new peers
+	added as well as the number of peers which already existed.
+
 2008-01-12  Alan McGovern <alan.mcgovern@gmail.com> 
 
 	* TrackerRequestEventArgs.cs, AnnounceResponseEventArgs.cs: internal ->
