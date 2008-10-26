@@ -119,5 +119,18 @@ namespace MonoTorrent.Client
             Assert.IsTrue(manager.Stop().WaitOne(10000, true), "#1");
             Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
         }
+
+		[Test]
+		public void UnsupportedTrackers ()
+		{
+			MonoTorrentCollection<string> tier = new MonoTorrentCollection<string> ();
+			tier.Add ("fake://123.123.123.2:5665");
+			rig.Torrent.AnnounceUrls.Add (tier);
+			TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
+			foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager.TrackerTiers)
+			{
+				Assert.IsTrue (t.Trackers.Count > 0, "#1");
+			}
+		}
     }
 }

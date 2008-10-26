@@ -117,10 +117,12 @@ namespace MonoTorrent.Client.Tracker
             Buffer.BlockCopy(manager.Torrent.infoHash, 0, infoHash, 0, 20);
 
             // Check if this tracker supports scraping
-            this.trackerTiers = new TrackerTier[manager.Torrent.AnnounceUrls.Count];
+            List<TrackerTier> tiers = new List<TrackerTier> ();
             for (int i = 0; i < manager.Torrent.AnnounceUrls.Count; i++)
-                this.trackerTiers[i] = new TrackerTier(manager.Torrent.AnnounceUrls[i]);
+                tiers.Add (new TrackerTier(manager.Torrent.AnnounceUrls[i]));
 
+            tiers.RemoveAll(delegate (TrackerTier t) { return t.Trackers.Count == 0; });
+            trackerTiers = tiers.ToArray ();
             foreach (TrackerTier tier in trackerTiers)
             {
                 foreach (Tracker tracker in tier)
