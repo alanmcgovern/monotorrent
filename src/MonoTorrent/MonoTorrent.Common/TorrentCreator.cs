@@ -225,7 +225,7 @@ namespace MonoTorrent.Common
                 string filePath;
                 if (path == Path)
                 {
-                	filePath = System.IO.Path.GetFileName (path);
+                    filePath = System.IO.Path.GetFileName (path);
                 }
                 else
                 {
@@ -507,7 +507,7 @@ namespace MonoTorrent.Common
             {
                 int bytesToRead = Math.Min((int)totalLength, (int)PieceLength);
                 ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[PieceLength]);
-                BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, (int)PieceLength, files, Path);
+                BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, (int)PieceLength, files, path);
                 totalLength -= writer.ReadChunk(io);
 
                 // If we are using the synchronous version, result is null
@@ -560,8 +560,9 @@ namespace MonoTorrent.Common
             if (StoreMD5)
                 AddMD5(infoDict, Path);
 
-            Logger.Log(null, "name == {0}", System.IO.Path.GetFileName(Path));
-            infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(Path, files, writer)));
+            Logger.Log(null, "name == {0}", name);
+            string path = System.IO.Path.GetDirectoryName (Path);
+            infoDict.Add("pieces", new BEncodedString(CalcPiecesHash(path, files, writer)));
         }
 
         private static BEncodedValue Get(BEncodedDictionary dictionary, BEncodedString key)
