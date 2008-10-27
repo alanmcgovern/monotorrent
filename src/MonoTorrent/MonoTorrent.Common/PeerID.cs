@@ -48,7 +48,6 @@ namespace MonoTorrent.Common
     public enum Client
     {
         ABC,
-        AllPeers,
         Ares,
         Artemis,
         Artic,
@@ -62,74 +61,45 @@ namespace MonoTorrent.Common
         BitPump,
         BitRocket,
         BitsOnWheels,
+        BTSlave,
         BitSpirit,
         BitTornado,
         BitTorrent,
         BitTorrentX,
-        BitTyrant,
-        BramsClient,
         BTG,
-        BTNextEvolution,
-        BTQueue,
-        BTSlave,
+        EnhancedCTorrent,
         CTorrent,
         DelugeTorrent,
         EBit,
         ElectricSheep,
-        EnhancedCTorrent,
-        FileCroc,
-        FireTorrent,
-        FlashGet,
-        FoxTorrent,
-        G3Torrent,
-        GSTorrent,
-        Halit,
-        Hydranode,
-        KGet,
         KTorrent,
-        LHABC,
-        LibTorrent,
-        LimeWire,
         Lphant,
-        Miro,
+        LibTorrent,
         MLDonkey,
-        MonoTorrent,
-        MoonlightTorrent,
         MooPolice,
-        NetTransport,
-        OmegaTorrent,
+        MoonlightTorrent,
+        MonoTorrent,
         Opera,
         OspreyPermaseed,
-        Pando,
-        PropagateDataClient,
         qBittorrent,
-        QQDownload,
-        Qt4Torrent,
         QueenBee,
+        Qt4Torrent,
         Retriever,
-        Rufus,
         ShadowsClient,
-        Shareaza,
-        SharkTorrent,
-        SwarmScope,
         Swiftbit,
-        SymTorrent,
+        SwarmScope,
+        Shareaza,
         TorrentDotNET,
-        Torrentstorm,
-        TorrentTopia,
         Transmission,
         Tribler,
-        TuoTu,
+        Torrentstorm,
         uLeecher,
         Unknown,
-        UPnPNatBitTorrent,
         uTorrent,
-        Vagaa,
+        UPnPNatBitTorrent,
         Vuze,
         XanTorrent,
         XBTClient,
-        XTorrent,
-        Xunlei,
         ZipTorrent
     }
 
@@ -153,22 +123,38 @@ namespace MonoTorrent.Common
         private string peerId;
         private string shortId;
 
+        /// <summary>
+        /// The name of the torrent software being used
+        /// </summary>
+        /// <value>The client.</value>
         public Client Client
         {
             get { return this.client; }
         }
 
+        /// <summary>
+        /// The peer's ID
+        /// </summary>
+        /// <value>The peer id.</value>
         internal string PeerId
         {
             get { return this.peerId; }
         }
 
+        /// <summary>
+        /// A shortened version of the peers ID
+        /// </summary>
+        /// <value>The short id.</value>
         public string ShortId
         {
             get { return this.shortId; }
         }
 
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Software"/> class.
+        /// </summary>
+        /// <param name="peerId">The peer id.</param>
         internal Software(string peerId)
         {
             Match m;
