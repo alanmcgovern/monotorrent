@@ -229,5 +229,10 @@ namespace MonoTorrent.Client
             }
             return req;
         }
+
+        public override void CancelRequests()
+        {
+            // This test won't work for the sliding window picker
+        }
     }
 }
