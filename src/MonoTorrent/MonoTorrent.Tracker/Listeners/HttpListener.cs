@@ -56,7 +56,7 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override bool Running
         {
-            get { return listener.IsListening; }
+            get { return listener != null; }
         }
 
         #endregion Properties
@@ -94,7 +94,7 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Start()
         {
-			if (listener != null)
+			if (Running)
 				return;
 			
 			listener = new System.Net.HttpListener();
@@ -108,7 +108,7 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Stop()
         {
-			if (listener == null)
+			if (!Running)
 				return;
 			
             listener.Stop();
@@ -135,7 +135,7 @@ namespace MonoTorrent.Tracker.Listeners
                     context.Response.Close();
 
                 if (listener.IsListening)
-                    listener.BeginGetContext(EndGetRequest, null);
+                    listener.BeginGetContext(EndGetRequest, listener);
             }
         }
 
