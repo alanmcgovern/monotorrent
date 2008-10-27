@@ -72,7 +72,6 @@ namespace MonoTorrent.Common
         }
         
         [Test]
-        [Ignore("Doesn't work right")]
         public void CreateSingleTest()
         {
             creator.Announces.AddRange(announces);
@@ -82,6 +81,7 @@ namespace MonoTorrent.Common
                                             files[0].StartPieceIndex,
                                             files[0].EndPieceIndex);
 
+            creator.Path = f.Path;
             BEncodedDictionary dict = creator.Create(new TorrentFile[] { f }, new TestWriter(), f.Path);
             Torrent torrent = Torrent.Load(dict);
             
