@@ -248,35 +248,48 @@ namespace MonoTorrent.Client
             return (RequestMessage)(bundle == null ? bundle : bundle.Messages[0]);
         }
 
-        private int CanRequest(BitField bitfield, int startIndex, int endIndex, int count)
+        private int CanRequest(BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
-            // First we check all the places from midpoint -> end
-            // Then if we dont find anything we check from 0 -> midpoint
-            while ((startIndex = bitfield.FirstTrue(startIndex, endIndex)) != -1)
-            {
-                if (AlreadyHaveOrRequested(startIndex))
-                {
-                    startIndex++;
-                    continue;
-                }
+            int count = -1;
+            int start = -1;
 
-                for (int i = 1; i < count && (startIndex + i) <= endIndex; i++)
+            while ((pieceStartIndex = bitfield.FirstTrue(pieceStartIndex, pieceEndIndex)) != -1)
+            {
+                if (AlreadyHaveOrRequested(pieceStartIndex) || !bitfield[pieceStartIndex])
                 {
-                    if (AlreadyHaveOrRequested(startIndex + i))
-                    {
-                        startIndex++;
-                        continue;
-                    }
+                    pieceStartIndex++;
                 }
-                return startIndex;
+                else
+                {
+                    for (int i = 1; i < pieceCount; i++)
+                    {
+                        if ((pieceStartIndex + i) != bitfield.Length && !AlreadyHaveOrRequested(pieceStartIndex + i) && bitfield[pieceStartIndex + i])
+                            continue;
+
+                        // The peer does NOT have the piece or we already have it. Store the largest range
+                        // found so far.
+                        if (i > count)
+                        {
+                            count = i;
+                            start = pieceStartIndex;
+                        }
+
+                        break;
+                    }
+
+                    if (count == -1)
+                        return pieceStartIndex;
+                    
+                    pieceStartIndex++;
+                }
             }
-            return -1;
+
+            pieceCount = count;
+            return start;
         }
 
         protected virtual MessageBundle GetStandardRequest(PeerId id, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
-            int piecesNeeded = 1 + (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
-
             BitField current = null;
             Stack<BitField> rarestFirstBitfields = GenerateRarestFirst(id, otherPeers, startIndex, endIndex);
 
@@ -286,42 +299,14 @@ namespace MonoTorrent.Client
                 {
                     current = rarestFirstBitfields.Pop();
 
-                    // When picking the piece, we start at a random index and then scan forwards to select the first available piece.
-                    // If none is found, we scan from the start up until that random index. If nothing is found, the peer is actually
-                    // uninteresting. If we're doing linear searching, then the start index is 0.
-                    int midPoint = random.Next(startIndex, endIndex + 1);
-
-                    int checkIndex = CanRequest(current, 0, midPoint, piecesNeeded);
-                    if (checkIndex == -1)
-                        checkIndex = CanRequest(current, midPoint, endIndex, piecesNeeded);
-
-                    if (checkIndex == -1)
+                    if (count > 1)
                     {
-                        // FIXME: This might be optimisable. I've already checked all the indices in the
-                        // current bitfield and they weren't interesting, so i could NAND it against all the
-                        // other bitfields so i don't recheck the same indices over and over. It should be faster
-                        ClientEngine.BufferManager.FreeBitfield(ref current);
-                        continue;
+                        return PickRegularPiece(id, current, startIndex, endIndex, count);
                     }
-
-                    MessageBundle bundle = new MessageBundle();
-                    for (int i = 0; i < piecesNeeded && bundle.Messages.Count < count ; i++)
+                    else
                     {
-                        // Don't create a RequestMessage for pieces which don't exist
-                        if (checkIndex + i >= myBitfield.Length)
-                            break;
-
-                        // Request the piece
-                        Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
-                        requests.Add(p);
-
-                        for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
-                        {
-                            p.Blocks[j].Requested = true;
-                            bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
-                        }
+                        return PickRandomPiece(id, current, startIndex, endIndex, count);
                     }
-                    return bundle;
                 }
 
                 return null;
@@ -338,6 +323,42 @@ namespace MonoTorrent.Client
                     ClientEngine.BufferManager.FreeBitfield(ref popped);
                 }
             }
+        }
+
+        private MessageBundle PickRegularPiece(PeerId id, BitField current, int startIndex, int endIndex, int count)
+        {
+            int piecesNeeded = 1 + (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
+            int checkIndex = CanRequest(current, startIndex, endIndex, ref piecesNeeded);
+
+            // Nothing to request.
+            if (checkIndex == -1)
+                return null;
+
+            MessageBundle bundle = new MessageBundle();
+            for (int i = 0; bundle.Messages.Count < count && i < piecesNeeded; i++)
+            {
+                // Request the piece
+                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
+                requests.Add(p);
+
+                for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
+                {
+                    p.Blocks[j].Requested = true;
+                    bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
+                }
+            }
+            return bundle;
+        }
+
+        private MessageBundle PickRandomPiece(PeerId id, BitField current, int startIndex, int endIndex, int count)
+        {
+            MessageBundle bundle;
+            int midPoint = random.Next(startIndex, endIndex + 1);
+
+            if ((bundle = PickRegularPiece(id, current, startIndex, midPoint, count)) != null)
+                return bundle;
+
+            return PickRegularPiece(id, current, midPoint, endIndex, count);
         }
 
         /// <summary>
@@ -515,7 +536,9 @@ namespace MonoTorrent.Client
                 if (id.IsChoking)
                     return null;
 
-                if ((message = ContinueAnyExisting(id)) != null)
+                // If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
+                // to request the full amount first, then try to continue any existing.
+                if (count == 1 && (message = ContinueAnyExisting(id)) != null)
                     return (bundle = new MessageBundle(message));
 
                 // We see if the peer has suggested any pieces we should request
@@ -523,7 +546,14 @@ namespace MonoTorrent.Client
                     return (bundle = new MessageBundle(message));
 
                 // Now we see what pieces the peer has that we don't have and try and request one
-                return (bundle = GetStandardRequest(id, otherPeers, count));
+                if ((bundle = GetStandardRequest(id, otherPeers, count)) != null)
+                    return bundle;
+
+                // If all else fails, ignore how many we're requesting and try to continue any existing
+                if ((message = ContinueAnyExisting(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                return null;
             }
             finally
             {

@@ -69,14 +69,20 @@ namespace MonoTorrent.Client
         [Test]
         public void RequestFastSeeder()
         {
+            int[] allowedFast = new int[] { 1, 2, 3, 5, 8, 13, 21 };
             peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
+            peers[0].IsAllowedFastPieces.AddRange((int[])allowedFast.Clone());
 
             peers[0].BitField.SetAll(true); // Lets pretend he has everything
             for (int i = 0; i < 7; i++)
+            {
                 for (int j = 0; j < 16; j++)
-                    Assert.IsNotNull(picker.PickPiece(peers[0], peers));
-
+                {
+                    RequestMessage msg = picker.PickPiece(peers[0], peers);
+                    Assert.IsNotNull(msg, "#1." + j);
+                    Assert.IsTrue(Array.IndexOf<int>(allowedFast, msg.PieceIndex) > -1, "#2." + j);
+                }
+            }
             Assert.IsNull(picker.PickPiece(peers[0], peers));
         }
         [Test]
@@ -141,7 +147,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void CancelRequests()
+        public virtual void CancelRequests()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
             peer.IsChoking = false;
@@ -151,6 +157,8 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages.Add(m);
 
+            picker.PickPiece(peer, peers);
+            Assert.AreEqual(rig.TotalBlocks, messages.Count, "#0");
             picker.RemoveRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
@@ -291,6 +299,65 @@ namespace MonoTorrent.Client
             peer.SuggestedPieces.AddRange(new int[] { 1, 2, 5, 55, 62, 235, 42624 });
             peer.BitField.SetAll(true);
             picker.PickPiece(peer, peers);
+        }
+
+        [Test]
+        public void PickBundle()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+
+            MessageBundle bundle;
+            List<PeerMessage> messages = new List<PeerMessage>();
+            
+            while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
+            {
+                Assert.IsTrue(bundle.Messages.Count == rig.BlocksPerPiece * 5
+                              || (bundle.Messages.Count + messages.Count) == rig.TotalBlocks, "#1");
+                messages.AddRange(bundle.Messages);
+            }
+            Assert.AreEqual(rig.TotalBlocks, messages.Count, "#2");
+        }
+
+        [Test]
+        public void PickBundle_2()
+        {
+            peer.IsChoking = false;
+
+            for (int i = 0; i < 7; i++)
+                peer.BitField[i] = true;
+            
+            MessageBundle bundle;
+            List<PeerMessage> messages = new List<PeerMessage>();
+
+            while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
+            {
+                Assert.IsTrue(bundle.Messages.Count == rig.BlocksPerPiece * 5
+                              || (bundle.Messages.Count + messages.Count) == rig.BlocksPerPiece * 7, "#1");
+                messages.AddRange(bundle.Messages);
+            }
+            Assert.AreEqual(rig.BlocksPerPiece * 7, messages.Count, "#2");
+        }
+
+        [Test]
+        public void PickBundle_3()
+        {
+            List<PeerMessage> messages = new List<PeerMessage>();
+            peers[2].IsChoking = false;
+            peers[2].BitField.SetAll(true);
+            messages.Add(picker.PickPiece(peers[2], peers));
+
+            peer.IsChoking = false;
+
+            for (int i = 0; i < 7; i++)
+                peer.BitField[i] = true;
+
+            MessageBundle bundle;
+
+            while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
+                messages.AddRange(bundle.Messages);
+
+            Assert.AreEqual(rig.BlocksPerPiece * 7, messages.Count, "#2");
         }
     }
 }
