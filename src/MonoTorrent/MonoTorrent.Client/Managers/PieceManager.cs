@@ -129,12 +129,21 @@ namespace MonoTorrent.Client
             if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
                 if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
                     return false;
-#warning THIS IS A HACK - Need a better way of doing this
-            if (id.Connection is HttpConnection)
-                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, 50);
-            else
-                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
 
+            if (id.Connection is HttpConnection)
+            {
+                // Number of pieces which fit into 1 MB *or* 1 piece, whichever is bigger
+                int count = (1 * 1024 * 1024) / id.TorrentManager.Torrent.PieceLength;
+                count = Math.Max(count, id.TorrentManager.Torrent.PieceLength);
+
+                int blocksPerPiece = id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
+
+                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count * blocksPerPiece);
+            }
+            else
+            {
+                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
+            }
             if (msg == null)
                 return false;
 
