@@ -126,7 +126,8 @@ namespace MonoTorrent.Client
             {
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
-                if ((p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0) || p.AllBlocksRequested || !id.BitField[p.Index])
+                if (p.AllBlocksRequested || !id.BitField[p.Index] ||
+                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0))
                     continue;
 
                 for (int i = 0; i < p.Blocks.Length; i++)
@@ -146,7 +147,7 @@ namespace MonoTorrent.Client
             {
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
-                if (!id.Equals(p.Blocks[0].RequestedOff) || p.AllBlocksRequested)
+                if (p.AllBlocksRequested || !id.Equals(p.Blocks[0].RequestedOff))
                     continue;
 
                 for (int i = 0; i < p.BlockCount; i++)
