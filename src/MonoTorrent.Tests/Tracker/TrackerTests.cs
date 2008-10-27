@@ -27,6 +27,7 @@ namespace MonoTorrent.Tracker
         public void FixtureSetup()
         {
             listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
+            listener.Start();
             server = new MonoTorrent.Tracker.Tracker();
             server.RegisterListener(listener);
             listener.Start();
