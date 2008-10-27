@@ -459,7 +459,7 @@ namespace MonoTorrent.Client
         public override bool Equals(object obj)
         {
             PeerId id = obj as PeerId;
-            return id == null ? false : this.peer.ConnectionUri.Equals(id.peer.ConnectionUri);
+            return id == null ? false : this.peer.Equals(id.peer);
         }
 
         public override int GetHashCode()
