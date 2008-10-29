@@ -404,7 +404,7 @@ namespace MonoTorrent.Common
 
             // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
             // For the case when endIndex == 0, we need to ensure we don't go negative
-            int loopEnd = (endIndex / 32) - ((endIndex % 32 == 0) ? 1 : 0);
+            int loopEnd = Math.Min((endIndex / 32), array.Length - 1);
             loopEnd = Math.Max(loopEnd, 0);
             for (int i = (startIndex / 32); i <= loopEnd; i++)
             {
