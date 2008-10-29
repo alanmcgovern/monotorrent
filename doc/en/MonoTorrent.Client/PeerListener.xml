@@ -1,0 +1,68 @@
+<Type Name="PeerListener" FullName="MonoTorrent.Client.PeerListener">
+  <TypeSignature Language="C#" Value="public abstract class PeerListener : MonoTorrent.Client.Listener" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Client.Listener</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="protected PeerListener (System.Net.IPEndPoint endpoint);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="endpoint" Type="System.Net.IPEndPoint" />
+      </Parameters>
+      <Docs>
+        <param name="endpoint">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ConnectionReceived">
+      <MemberSignature Language="C#" Value="public event EventHandler&lt;MonoTorrent.Client.NewConnectionEventArgs&gt; ConnectionReceived;" />
+      <MemberType>Event</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.EventHandler&lt;MonoTorrent.Client.NewConnectionEventArgs&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="RaiseConnectionReceived">
+      <MemberSignature Language="C#" Value="protected virtual void RaiseConnectionReceived (MonoTorrent.Client.Peer peer, MonoTorrent.Client.Connections.IConnection connection, MonoTorrent.Client.TorrentManager manager);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="peer" Type="MonoTorrent.Client.Peer" />
+        <Parameter Name="connection" Type="MonoTorrent.Client.Connections.IConnection" />
+        <Parameter Name="manager" Type="MonoTorrent.Client.TorrentManager" />
+      </Parameters>
+      <Docs>
+        <param name="peer">To be added.</param>
+        <param name="connection">To be added.</param>
+        <param name="manager">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>
