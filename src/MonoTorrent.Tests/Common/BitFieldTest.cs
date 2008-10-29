@@ -98,6 +98,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void FirstTrue_2()
+        {
+            BitField b = new BitField(1025);
+            b[1024] = true;
+            Assert.AreEqual(1024, b.FirstTrue(0, 1025));
+        }
+
+        [Test]
         public void LongByteArrayTest()
         {
             List<byte> list = new List<byte>(initialByteValues);
