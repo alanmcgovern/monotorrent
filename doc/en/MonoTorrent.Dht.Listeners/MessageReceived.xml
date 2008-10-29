@@ -1,0 +1,23 @@
+<Type Name="MessageReceived" FullName="MonoTorrent.Dht.Listeners.MessageReceived">
+  <TypeSignature Language="C#" Value="public delegate void MessageReceived(byte[] buffer, IPEndPoint endpoint);" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>System.Delegate</BaseTypeName>
+  </Base>
+  <Parameters>
+    <Parameter Name="buffer" Type="System.Byte[]" />
+    <Parameter Name="endpoint" Type="System.Net.IPEndPoint" />
+  </Parameters>
+  <ReturnValue>
+    <ReturnType>System.Void</ReturnType>
+  </ReturnValue>
+  <Docs>
+    <param name="buffer">To be added.</param>
+    <param name="endpoint">To be added.</param>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+</Type>

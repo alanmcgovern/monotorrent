@@ -1,0 +1,360 @@
+<Type Name="PiecePickerBase" FullName="MonoTorrent.Client.PiecePickerBase">
+  <TypeSignature Language="C#" Value="public abstract class PiecePickerBase : IDisposable" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>System.Object</BaseTypeName>
+  </Base>
+  <Interfaces>
+    <Interface>
+      <InterfaceName>System.IDisposable</InterfaceName>
+    </Interface>
+  </Interfaces>
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="protected PiecePickerBase ();" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="CancelTimedOutRequests">
+      <MemberSignature Language="C#" Value="public abstract void CancelTimedOutRequests ();" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="CurrentRequestCount">
+      <MemberSignature Language="C#" Value="public abstract int CurrentRequestCount ();" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Int32</ReturnType>
+      </ReturnValue>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Dispose">
+      <MemberSignature Language="C#" Value="public virtual void Dispose ();" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Disposed">
+      <MemberSignature Language="C#" Value="public bool Disposed { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ExportActiveRequests">
+      <MemberSignature Language="C#" Value="public abstract System.Collections.Generic.List&lt;MonoTorrent.Client.Piece&gt; ExportActiveRequests ();" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.List&lt;MonoTorrent.Client.Piece&gt;</ReturnType>
+      </ReturnValue>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Initialise">
+      <MemberSignature Language="C#" Value="public abstract void Initialise (MonoTorrent.Common.BitField ownBitfield, MonoTorrent.Common.TorrentFile[] files, System.Collections.Generic.IEnumerable&lt;MonoTorrent.Client.Piece&gt; requests, MonoTorrent.Common.BitField unhashedPieces);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="ownBitfield" Type="MonoTorrent.Common.BitField" />
+        <Parameter Name="files" Type="MonoTorrent.Common.TorrentFile[]" />
+        <Parameter Name="requests" Type="System.Collections.Generic.IEnumerable&lt;MonoTorrent.Client.Piece&gt;" />
+        <Parameter Name="unhashedPieces" Type="MonoTorrent.Common.BitField" />
+      </Parameters>
+      <Docs>
+        <param name="ownBitfield">To be added.</param>
+        <param name="files">To be added.</param>
+        <param name="requests">To be added.</param>
+        <param name="unhashedPieces">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="IsInteresting">
+      <MemberSignature Language="C#" Value="public abstract bool IsInteresting (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="LinearPickingEnabled">
+      <MemberSignature Language="C#" Value="public bool LinearPickingEnabled { set; get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="myBitfield">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Common.BitField myBitfield;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.BitField</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="MyBitField">
+      <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField MyBitField { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.BitField</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="PickPiece">
+      <MemberSignature Language="C#" Value="public abstract MonoTorrent.Client.Messages.Standard.RequestMessage PickPiece (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="PickPiece">
+      <MemberSignature Language="C#" Value="public abstract MonoTorrent.Client.Messages.MessageBundle PickPiece (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers, int count);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.MessageBundle</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+        <Parameter Name="count" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <param name="count">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ReceivedChokeMessage">
+      <MemberSignature Language="C#" Value="public abstract void ReceivedChokeMessage (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ReceivedPieceMessage">
+      <MemberSignature Language="C#" Value="public abstract MonoTorrent.Common.PieceEvent ReceivedPieceMessage (MonoTorrent.Client.BufferedIO data);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.PieceEvent</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="data" Type="MonoTorrent.Client.BufferedIO" />
+      </Parameters>
+      <Docs>
+        <param name="data">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ReceivedRejectRequest">
+      <MemberSignature Language="C#" Value="public abstract void ReceivedRejectRequest (MonoTorrent.Client.PeerId id, MonoTorrent.Client.Messages.FastPeer.RejectRequestMessage message);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="message" Type="MonoTorrent.Client.Messages.FastPeer.RejectRequestMessage" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="message">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="RemoveRequests">
+      <MemberSignature Language="C#" Value="public abstract void RemoveRequests (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Reset">
+      <MemberSignature Language="C#" Value="public abstract void Reset ();" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="unhashedPieces">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Common.BitField unhashedPieces;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.BitField</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="UnhashedPieces">
+      <MemberSignature Language="C#" Value="public MonoTorrent.Common.BitField UnhashedPieces { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.BitField</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

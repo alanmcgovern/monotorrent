@@ -1,0 +1,344 @@
+<Type Name="StandardPicker" FullName="MonoTorrent.Client.StandardPicker">
+  <TypeSignature Language="C#" Value="public class StandardPicker : MonoTorrent.Client.PiecePickerBase" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Client.PiecePickerBase</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public StandardPicker ();" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters />
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="AlreadyHaveOrRequested">
+      <MemberSignature Language="C#" Value="protected bool AlreadyHaveOrRequested (int index);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Boolean</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="index" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="index">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ContinueAnyExisting">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage ContinueAnyExisting (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="ContinueExistingRequest">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage ContinueExistingRequest (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GenerateRarestFirst">
+      <MemberSignature Language="C#" Value="protected System.Collections.Generic.Stack&lt;MonoTorrent.Common.BitField&gt; GenerateRarestFirst (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers, int startIndex, int endIndex);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.Stack&lt;MonoTorrent.Common.BitField&gt;</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+        <Parameter Name="startIndex" Type="System.Int32" />
+        <Parameter Name="endIndex" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <param name="startIndex">To be added.</param>
+        <param name="endIndex">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetFastPiece">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage GetFastPiece (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetStandardRequest">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage GetStandardRequest (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetStandardRequest">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.MessageBundle GetStandardRequest (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers, int count);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.MessageBundle</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+        <Parameter Name="count" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <param name="count">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetStandardRequest">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage GetStandardRequest (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers, int startIndex, int endIndex);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+        <Parameter Name="startIndex" Type="System.Int32" />
+        <Parameter Name="endIndex" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <param name="startIndex">To be added.</param>
+        <param name="endIndex">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetStandardRequest">
+      <MemberSignature Language="C#" Value="protected virtual MonoTorrent.Client.Messages.MessageBundle GetStandardRequest (MonoTorrent.Client.PeerId id, System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt; otherPeers, int startIndex, int endIndex, int count);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.MessageBundle</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="otherPeers" Type="System.Collections.Generic.List&lt;MonoTorrent.Client.PeerId&gt;" />
+        <Parameter Name="startIndex" Type="System.Int32" />
+        <Parameter Name="endIndex" Type="System.Int32" />
+        <Parameter Name="count" Type="System.Int32" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="otherPeers">To be added.</param>
+        <param name="startIndex">To be added.</param>
+        <param name="endIndex">To be added.</param>
+        <param name="count">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="GetSuggestedPiece">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Client.Messages.Standard.RequestMessage GetSuggestedPiece (MonoTorrent.Client.PeerId id);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Messages.Standard.RequestMessage</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="HighestPriorityAvailable">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Common.Priority HighestPriorityAvailable (MonoTorrent.Common.BitField bitField);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.Priority</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="bitField" Type="MonoTorrent.Common.BitField" />
+      </Parameters>
+      <Docs>
+        <param name="bitField">To be added.</param>
+        <summary>To be added.</summary>
+        <returns>To be added.</returns>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="random">
+      <MemberSignature Language="C#" Value="protected Random random;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Random</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="RemoveOwnedPieces">
+      <MemberSignature Language="C#" Value="protected void RemoveOwnedPieces (MonoTorrent.Common.MonoTorrentCollection&lt;int&gt; list);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="list" Type="MonoTorrent.Common.MonoTorrentCollection&lt;System.Int32&gt;" />
+      </Parameters>
+      <Docs>
+        <param name="list">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="RemoveRequests">
+      <MemberSignature Language="C#" Value="protected void RemoveRequests (MonoTorrent.Client.PeerId id, MonoTorrent.Client.Messages.Standard.RequestMessage message);" />
+      <MemberType>Method</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Void</ReturnType>
+      </ReturnValue>
+      <Parameters>
+        <Parameter Name="id" Type="MonoTorrent.Client.PeerId" />
+        <Parameter Name="message" Type="MonoTorrent.Client.Messages.Standard.RequestMessage" />
+      </Parameters>
+      <Docs>
+        <param name="id">To be added.</param>
+        <param name="message">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="requests">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Common.MonoTorrentCollection&lt;MonoTorrent.Client.Piece&gt; requests;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.MonoTorrentCollection&lt;MonoTorrent.Client.Piece&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="torrentFiles">
+      <MemberSignature Language="C#" Value="protected MonoTorrent.Common.TorrentFile[] torrentFiles;" />
+      <MemberType>Field</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Common.TorrentFile[]</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

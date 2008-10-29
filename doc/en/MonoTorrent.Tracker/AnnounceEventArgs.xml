@@ -1,0 +1,34 @@
+<Type Name="AnnounceEventArgs" FullName="MonoTorrent.Tracker.AnnounceEventArgs">
+  <TypeSignature Language="C#" Value="public class AnnounceEventArgs : MonoTorrent.Tracker.PeerEventArgs" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Tracker.PeerEventArgs</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public AnnounceEventArgs (MonoTorrent.Tracker.Peer peer, MonoTorrent.Tracker.SimpleTorrentManager manager);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="peer" Type="MonoTorrent.Tracker.Peer" />
+        <Parameter Name="manager" Type="MonoTorrent.Tracker.SimpleTorrentManager" />
+      </Parameters>
+      <Docs>
+        <param name="peer">To be added.</param>
+        <param name="manager">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

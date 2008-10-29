@@ -1,0 +1,47 @@
+<Type Name="ScrapeEventArgs" FullName="MonoTorrent.Tracker.ScrapeEventArgs">
+  <TypeSignature Language="C#" Value="public class ScrapeEventArgs : EventArgs" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>System.EventArgs</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public ScrapeEventArgs (System.Collections.Generic.List&lt;MonoTorrent.Tracker.SimpleTorrentManager&gt; torrents);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="torrents" Type="System.Collections.Generic.List&lt;MonoTorrent.Tracker.SimpleTorrentManager&gt;" />
+      </Parameters>
+      <Docs>
+        <param name="torrents">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Torrents">
+      <MemberSignature Language="C#" Value="public System.Collections.Generic.List&lt;MonoTorrent.Tracker.SimpleTorrentManager&gt; Torrents { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>System.Collections.Generic.List&lt;MonoTorrent.Tracker.SimpleTorrentManager&gt;</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

@@ -1,0 +1,53 @@
+<Type Name="TrackerPeersAdded" FullName="MonoTorrent.Client.TrackerPeersAdded">
+  <TypeSignature Language="C#" Value="public class TrackerPeersAdded : MonoTorrent.Client.PeersAddedEventArgs" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Client.PeersAddedEventArgs</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public TrackerPeersAdded (MonoTorrent.Client.TorrentManager manager, int peersAdded, int total, MonoTorrent.Client.Tracker.Tracker tracker);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="manager" Type="MonoTorrent.Client.TorrentManager" />
+        <Parameter Name="peersAdded" Type="System.Int32" />
+        <Parameter Name="total" Type="System.Int32" />
+        <Parameter Name="tracker" Type="MonoTorrent.Client.Tracker.Tracker" />
+      </Parameters>
+      <Docs>
+        <param name="manager">To be added.</param>
+        <param name="peersAdded">To be added.</param>
+        <param name="total">To be added.</param>
+        <param name="tracker">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+    <Member MemberName="Tracker">
+      <MemberSignature Language="C#" Value="public MonoTorrent.Client.Tracker.Tracker Tracker { get; }" />
+      <MemberType>Property</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <ReturnValue>
+        <ReturnType>MonoTorrent.Client.Tracker.Tracker</ReturnType>
+      </ReturnValue>
+      <Docs>
+        <summary>To be added.</summary>
+        <value>To be added.</value>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>

@@ -1,0 +1,32 @@
+<Type Name="UdpListener" FullName="MonoTorrent.Dht.Listeners.UdpListener">
+  <TypeSignature Language="C#" Value="public class UdpListener : MonoTorrent.Dht.Listeners.DhtListener" />
+  <AssemblyInfo>
+    <AssemblyName>MonoTorrent</AssemblyName>
+    <AssemblyVersion>0.60.0.0</AssemblyVersion>
+  </AssemblyInfo>
+  <Base>
+    <BaseTypeName>MonoTorrent.Dht.Listeners.DhtListener</BaseTypeName>
+  </Base>
+  <Interfaces />
+  <Docs>
+    <summary>To be added.</summary>
+    <remarks>To be added.</remarks>
+  </Docs>
+  <Members>
+    <Member MemberName=".ctor">
+      <MemberSignature Language="C#" Value="public UdpListener (System.Net.IPEndPoint endpoint);" />
+      <MemberType>Constructor</MemberType>
+      <AssemblyInfo>
+        <AssemblyVersion>0.60.0.0</AssemblyVersion>
+      </AssemblyInfo>
+      <Parameters>
+        <Parameter Name="endpoint" Type="System.Net.IPEndPoint" />
+      </Parameters>
+      <Docs>
+        <param name="endpoint">To be added.</param>
+        <summary>To be added.</summary>
+        <remarks>To be added.</remarks>
+      </Docs>
+    </Member>
+  </Members>
+</Type>
