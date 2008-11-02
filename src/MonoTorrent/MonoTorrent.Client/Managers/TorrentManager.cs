@@ -386,6 +386,12 @@ namespace MonoTorrent.Client
             return (other == null) ? false : this.torrent.Equals(other.torrent);
         }
 
+        public List<Piece> GetActiveRequests()
+        {
+            return (List<Piece>)ClientEngine.MainLoop.QueueWait(delegate {
+                return this.pieceManager.PiecePicker.ExportActiveRequests();
+            });
+        }
 
         /// <summary>
         /// 
@@ -396,6 +402,12 @@ namespace MonoTorrent.Client
             return Toolbox.HashCode(this.torrent.infoHash);
         }
 
+        public List<Peer> GetPeers()
+        {
+            return (List<Peer>)ClientEngine.MainLoop.QueueWait(delegate {
+                return new List<Peer>(peers.ActivePeers);
+            });
+        }
 
         /// <summary>
         /// Starts a hashcheck. If forceFullScan is false, the library will attempt to load fastresume data
