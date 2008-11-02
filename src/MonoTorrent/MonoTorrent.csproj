@@ -118,7 +118,6 @@
     <Compile Include="MonoTorrent.Client\Logger.cs" />
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
-    <Compile Include="MonoTorrent.Client\MessageHandler.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
