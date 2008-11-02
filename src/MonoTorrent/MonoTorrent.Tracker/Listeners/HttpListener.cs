@@ -65,7 +65,7 @@ namespace MonoTorrent.Tracker.Listeners
         #region Constructors
 
         public HttpListener(IPAddress address, int port)
-            : this(string.Format("http://{0}:{1}/", address, port))
+            : this(string.Format("http://{0}:{1}/announce/", address, port))
         {
 
         }
