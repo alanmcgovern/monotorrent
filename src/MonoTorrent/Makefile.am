@@ -77,7 +77,6 @@ FILES = \
 	MonoTorrent.Client/Logger.cs \
 	MonoTorrent.Client/MainLoop.cs \
 	MonoTorrent.Client/ManagerWaitHandle.cs \
-	MonoTorrent.Client/MessageHandler.cs \
 	MonoTorrent.Client/NetworkIO.cs \
 	MonoTorrent.Client/PeerConnections/HttpRequestData.cs \
 	MonoTorrent.Client/PeerConnections/IPV6Connection.cs \
