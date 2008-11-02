@@ -444,7 +444,7 @@ namespace MonoTorrent.Client
             if (!processingQueue)
             {
                 processingQueue = true;
-                MessageHandler.EnqueueSend(this);
+                ConnectionManager.ProcessQueue(this);
             }
         }
 

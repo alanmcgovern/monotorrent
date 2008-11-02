@@ -642,10 +642,10 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
-                if (Peers.ConnectedPeers[i].QueueLength > 0 && !Peers.ConnectedPeers[i].ProcessingQueue)
+                if (id.QueueLength > 0 && !id.ProcessingQueue)
                 {
-                    Peers.ConnectedPeers[i].ProcessingQueue = true;
-                    MessageHandler.EnqueueSend(Peers.ConnectedPeers[i]);
+                    id.ProcessingQueue = true;
+                    id.ConnectionManager.ProcessQueue(id);
                 }
 
                 if (nintySecondsAgo > id.LastMessageSent)
@@ -656,13 +656,13 @@ namespace MonoTorrent.Client
 
                 if (onhundredAndEightySecondsAgo > id.LastMessageReceived)
                 {
-                    engine.ConnectionManager.CleanupSocket(id, true, "Inactivity");
+                    engine.ConnectionManager.CleanupSocket(id, "Inactivity");
                     continue;
                 }
 
                 if (thirtySecondsAgo > id.LastMessageReceived && id.AmRequestingPiecesCount > 0)
                 {
-                    engine.ConnectionManager.CleanupSocket(id, true, "Didn't send pieces");
+                    engine.ConnectionManager.CleanupSocket(id, "Didn't send pieces");
                     continue;
                 }
             }

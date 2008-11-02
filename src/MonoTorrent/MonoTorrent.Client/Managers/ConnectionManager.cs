@@ -482,7 +482,7 @@ namespace MonoTorrent.Client
 
             // Allow the auto processing of the send queue to commence
             if (id.QueueLength > 0)
-                MessageHandler.EnqueueSend(id);
+                id.ConnectionManager.ProcessQueue(id);
             else
                 id.ProcessingQueue = false;
 
@@ -536,12 +536,31 @@ namespace MonoTorrent.Client
             string reason = null;
             bool cleanUp = false;
 
+            if (id.Connection == null)
+                return;
+
             try
             {
-                if (id.Connection == null)
-                    return;
+                try
+                {
+                    PeerMessage message = PeerMessage.DecodeMessage(id.recieveBuffer, 0, id.BytesToRecieve, id.TorrentManager);
 
-                MessageHandler.EnqueueReceived(id, id.recieveBuffer, 0, id.BytesToRecieve);
+                    // Fire the event to say we recieved a new message
+                    PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, Direction.Incoming, id);
+                    id.ConnectionManager.RaisePeerMessageTransferred(e);
+
+                    message.Handle(id);
+                }
+                catch (Exception ex)
+                {
+                    // Should i nuke the peer with the dodgy message too?
+                    Logger.Log(null, "*CRITICAL EXCEPTION* - Error decoding message: {0}", ex);
+                }
+                finally
+                {
+                    ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+                }
+
 
                 //FIXME: I thought i was using 5 (i changed the check below from 3 to 5)...
                 // if the peer has sent us three bad pieces, we close the connection.
@@ -570,7 +589,7 @@ namespace MonoTorrent.Client
             finally
             {
                 if (cleanUp)
-                    CleanupSocket(id, true, reason);
+                    CleanupSocket(id, reason);
             }
         }
 
@@ -787,14 +806,9 @@ namespace MonoTorrent.Client
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerId id, string message)
         {
-            CleanupSocket(id, true, message);
-        }
-
-
-        internal void CleanupSocket(PeerId id, bool localClose, string message)
-        {
-            id.DisconnectReason = message;
-            MessageHandler.EnqueueCleanup(id);
+            ClientEngine.MainLoop.Queue(delegate {
+                id.ConnectionManager.AsyncCleanupSocket(id, true, message);
+            });
         }
 
 
