@@ -103,6 +103,7 @@ namespace SampleTracker
             Console.WriteLine("Listening at: {0}", listenpoint);
             ListenerBase listener = new HttpListener(listenpoint);
             tracker = new Tracker();
+            tracker.AllowUnregisteredTorrents = true;
             tracker.RegisterListener(listener);
             listener.Start();
 
@@ -111,14 +112,6 @@ namespace SampleTracker
 
             while (true)
             {
-                lock (tracker)
-                    foreach (SimpleTorrentManager m in tracker)
-                    {
-                        Console.Write("Name: {0}   ", m.Trackable.Name);
-                        Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Incomplete);
-                        Console.WriteLine();
-                    }
-
                 System.Threading.Thread.Sleep(10000);
             }
         }
@@ -174,51 +167,50 @@ namespace SampleTracker
         {
             Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
 
-
             Console.WriteLine("Welcome to the MonoTorrent tracker");
             Console.WriteLine("1. Start the tracker");
             Console.WriteLine("2. Start a benchmark");
             
             Console.Write("Choice: ");
+            
             int val = 0;
-            while (true)
-            {
-                if (int.TryParse(Console.ReadLine(), out val))
-                {
-                    if (val == 1 || val == 2)
-                        break;
-                }
-            }
+            while (val != 1 && val != 2)
+                val = GetInt();
 
             if (val == 1)
-            {
-                Debug.WriteLine("starting FrontendEngine");
-                new MySimpleTracker();
-            }
+                StartTracker();
             else
+                Benchmark();
+        }
+
+        private static void Benchmark()
+        {
+            Console.Clear();
+            Console.Write("How many active torrents will be simulated: ");
+            int torrents = GetInt();
+            Console.Write("How many active peers per torrent: ");
+            int peers = GetInt();
+            Console.Write("How many requests per second: ");
+            int requests = GetInt();
+
+            Console.Write("What is the tracker address: ");
+            string address = "http://127.0.0.1:9500/";
+
+            StressTest test = new StressTest(torrents, peers, requests);
+            test.Start(address);
+
+            while (true)
             {
-                Console.Clear();
-                Console.Write("How many active torrents will be simulated: ");
-                int torrents = GetInt();
-                Console.Write("How many active peers per torrent: ");
-                int peers = GetInt();
-                Console.Write("How many requests per second: ");
-                int requests = GetInt();
-
-                StressTest test = new StressTest();
-                test.Initialise(torrents, peers, requests);
-                test.StartThreadedStress();
-
-                while (true)
-                {
-                    Console.WriteLine("Measured announces/sec:  {0:0.00}", test.RequestRate);
-                    Console.WriteLine("Total Annoucne Requests: {0:0.00}", test.TotalTrackerRequests);
-                    Console.WriteLine("Actual announces/sec:    {0:0.00}", test.TotalRequests);
-                    Console.WriteLine(Environment.NewLine);
-                    test.TotalRequests = 0;
-                    System.Threading.Thread.Sleep(1000);
-                }
+                Console.WriteLine("Measured announces/sec:  {0}", test.RequestRate);
+                Console.WriteLine("Total announces: {0}", test.TotalTrackerRequests);
+                Console.WriteLine(Environment.NewLine);
+                System.Threading.Thread.Sleep(1000);
             }
+        }
+
+        private static void StartTracker()
+        {
+            new MySimpleTracker();
         }
 
         private static int GetInt()
