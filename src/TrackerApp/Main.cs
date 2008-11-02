@@ -194,7 +194,7 @@ namespace SampleTracker
             int requests = GetInt();
 
             Console.Write("What is the tracker address: ");
-            string address = "http://127.0.0.1:9500/";
+            string address = Console.ReadLine();
 
             StressTest test = new StressTest(torrents, peers, requests);
             test.Start(address);
