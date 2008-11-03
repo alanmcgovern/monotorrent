@@ -117,6 +117,7 @@
     <Compile Include="MonoTorrent.Client\FileStreamBuffer.cs" />
     <Compile Include="MonoTorrent.Client\Logger.cs" />
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
+    <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />

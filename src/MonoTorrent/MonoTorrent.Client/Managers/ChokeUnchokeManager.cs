@@ -9,7 +9,7 @@ using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    class ChokeUnchokeManager
+    internal class ChokeUnchokeManager
     {
         #region Private Fields
 

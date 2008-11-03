@@ -117,6 +117,7 @@ namespace MonoTorrent.Client
         private int isRequestingPiecesCount;
         private DateTime lastMessageReceived;
         private DateTime lastMessageSent;
+		private DateTime whenConnected;
         private MonoTorrentCollection<ExtensionSupport> extensionSupports;
         private int maxPendingRequests;
         private MessagingCallback messageReceivedCallback;
@@ -290,11 +291,17 @@ namespace MonoTorrent.Client
             set { this.lastMessageReceived = value; }
         }
 
-        internal DateTime LastMessageSent
-        {
-            get { return this.lastMessageSent; }
-            set { this.lastMessageSent = value; }
-        }
+		internal DateTime LastMessageSent
+		{
+			get { return this.lastMessageSent; }
+			set { this.lastMessageSent = value; }
+		}
+
+		internal DateTime WhenConnected
+		{
+			get { return this.whenConnected; }
+			set { this.whenConnected = value; }
+		}
 
         internal int MaxPendingRequests
         {

@@ -91,7 +91,8 @@ namespace MonoTorrent.Client
         private Torrent torrent;                // All the information from the physical torrent that was loaded
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
-        private ChokeUnchokeManager chokeUnchoker; //???AGH Used to choke and unchoke peers
+        private ChokeUnchokeManager chokeUnchoker; // Used to choke and unchoke peers
+		private InactivePeerManager inactivePeerManager; // Used to identify inactive peers we don't want to connect to
         private InitialSeed initialSeed;	//superseed class manager
 
         #endregion Member Variables
@@ -173,13 +174,22 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// The piecemanager for this TorrentManager
-        /// </summary>
-        public PieceManager PieceManager
-        {
-            get { return this.pieceManager; }
-        }
+		/// <summary>
+		/// The piecemanager for this TorrentManager
+		/// </summary>
+		public PieceManager PieceManager
+		{
+			get { return this.pieceManager; }
+		}
+
+
+		/// <summary>
+		/// The inactive peer manager for this TorrentManager
+		/// </summary>
+		internal InactivePeerManager InactivePeerManager
+		{
+			get { return this.inactivePeerManager; }
+		}
 
 
         /// <summary>
@@ -273,6 +283,14 @@ namespace MonoTorrent.Client
             }
         }
 
+		/// <summary>
+		/// Number of peers we have inactivated for this torrent
+		/// </summary>
+		public int InactivatedPeers
+		{
+			get { return inactivePeerManager.InactivatedPeers; }
+		}
+
         #endregion
 
 
@@ -320,6 +338,7 @@ namespace MonoTorrent.Client
             this.hashingWaitHandle = new ManualResetEvent(false);
             this.monitor = new ConnectionMonitor();
             this.settings = settings;
+			this.inactivePeerManager = new InactivePeerManager(this, settings.TimeToWaitUntilIdle);
             this.peers = new PeerManager();
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
@@ -593,6 +612,10 @@ namespace MonoTorrent.Client
                 if (this.peers.Contains(peer))
                     return 0;
 
+				// Ignore peers in the inactive list
+				if (this.inactivePeerManager.InactiveUris.Contains(peer.ConnectionUri))
+					return 0;
+
                 this.peers.AvailablePeers.Add(peer);
                 if (OnPeerFound != null)
                     OnPeerFound(this, new PeerAddedEventArgs(this, peer));
@@ -705,13 +728,9 @@ namespace MonoTorrent.Client
 
         internal void DownloadLogic(int counter)
         {
-            //???AGH if download is complete, set state to 'Seeding'
+            //If download is complete, set state to 'Seeding'
             if (this.Progress == 100.0 && this.State != TorrentState.Seeding)
                 UpdateState(TorrentState.Seeding);
-
-            //Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
-            if (chokeUnchoker == null)
-                chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);
 
             // FIXME: Hardcoded 15kB/sec - is this ok?
             if ((DateTime.Now - startTime) > TimeSpan.FromMinutes(1) && Monitor.DownloadSpeed < 15 * 1024)
@@ -737,7 +756,15 @@ namespace MonoTorrent.Client
                 // Add a boolean or something so that we don't add them twice.
                 torrent.GetRightHttpSeeds.Clear();
             }
-            chokeUnchoker.TimePassed();
+
+			// Remove inactive peers we haven't heard from if we're downloading
+			if (state == TorrentState.Downloading)
+				inactivePeerManager.TimePassed();
+
+			// Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
+			if (chokeUnchoker == null)
+				chokeUnchoker = new ChokeUnchokeManager(this, this.Settings.MinimumTimeBetweenReviews, this.Settings.PercentOfMaxRateToSkipReview);		
+			chokeUnchoker.TimePassed();
         }
 
         internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
