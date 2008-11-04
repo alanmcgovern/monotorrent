@@ -64,13 +64,30 @@ namespace MonoTorrent.Dht.Listeners
             {
                 // Ignore, we're finished!
             }
-            catch (SocketException)
+            catch (SocketException ex)
             {
-                client.Close();
-                if (Status == ListenerStatus.Listening)
+                // If the destination computer closes the connection
+                // we get error code 10054. We need to keep receiving on
+                // the socket until we clear all the error states
+                if (ex.ErrorCode == 10054)
                 {
-                    client = new UdpClient(Endpoint);
-                    client.BeginReceive(EndReceive, null);
+                    while (true)
+                    {
+                        try
+                        {
+                            client.BeginReceive(EndReceive, null);
+                            return;
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            return;
+                        }
+                        catch (SocketException e)
+                        {
+                            if (e.ErrorCode != 10054)
+                                return;
+                        }
+                    }
                 }
             }
         }
