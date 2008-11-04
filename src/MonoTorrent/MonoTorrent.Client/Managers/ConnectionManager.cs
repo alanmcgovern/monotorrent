@@ -559,7 +559,7 @@ namespace MonoTorrent.Client
                 }
                 finally
                 {
-                    ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+                    //ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                 }
 
 
