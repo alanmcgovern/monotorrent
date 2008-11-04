@@ -106,7 +106,9 @@ namespace MonoTorrent.Client
             ReceiveIncoming();
             ReceiveIncoming();
             ReceiveIncoming();
-
+            ReceiveIncoming();
+            ReceiveIncoming();
+            ReceiveIncoming();
         }
 
         private void SendIncoming(PeerMessage message)
