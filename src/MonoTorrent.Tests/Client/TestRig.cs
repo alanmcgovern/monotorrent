@@ -16,6 +16,7 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : PieceWriter
     {
+        public bool DontWrite;
         public List<String> Paths = new List<string>();
         public override int Read(BufferedIO data)
         {
@@ -35,9 +36,12 @@ namespace MonoTorrent.Client
                 }
             }
              
+            data.ActualCount = data.Count;
+            if (DontWrite)
+                return data.Count;
+
             for (int i = 0; i < data.Count; i++)
                 data.Buffer.Array[data.Buffer.Offset + i] = (byte)(data.Buffer.Offset + i);
-            data.ActualCount = data.Count;
             return data.Count;
         }
 

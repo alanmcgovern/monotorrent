@@ -70,6 +70,7 @@
     <Compile Include="Client\TransferTest.cs" />
     <Compile Include="Common\BEncodingTest.cs" />
     <Compile Include="Common\BitFieldTest.cs" />
+    <Compile Include="Common\SHA1Fake.cs" />
     <Compile Include="Common\TorrentCreatorTests.cs" />
     <Compile Include="Common\TorrentTest.cs" />
     <Compile Include="Dht\AssemblyInfo.cs" />
