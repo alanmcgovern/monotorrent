@@ -29,6 +29,7 @@ namespace MonoTorrent.Common
         public void Setup()
         {
             creator = new TorrentCreator();
+            creator.Hasher = new SHA1Fake();
             announces = new List<List<string>>();
 
             announces.Add(new List<string>(new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
@@ -49,6 +50,7 @@ namespace MonoTorrent.Common
             };
 
             writer = new TestWriter();
+            writer.DontWrite = true;
         }
 
         [Test]
@@ -138,6 +140,20 @@ namespace MonoTorrent.Common
                 Assert.IsTrue(Array.Exists<string>(files, delegate (string s) {
                     return s.Equals (Path.Combine(creator.Path, f.Path));
                 }), "#2");
+        }
+
+        [Test]
+        public void LargeMultiTorrent()
+        {
+            files = new TorrentFile[] { 
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), (long)(PieceLength * 200.30), 0, 1),
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), (long)(PieceLength * 42000.5), 1, 3),
+                new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir2"), "File3"), (long)(PieceLength * 300.17), 3, 12),
+                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir1"), "File4"), (long)(PieceLength * 100.22), 12, 15),
+                new TorrentFile(Path.Combine(Path.Combine("Dir2", "SDir2"), "File5"), (long)(PieceLength * 600.94), 15, 15),
+            };
+
+            creator.Create(files, writer, "BaseDir");
         }
 
         void VerifyCommonParts (Torrent torrent)
