@@ -422,7 +422,7 @@ namespace MonoTorrent.Client
                 id.ProcessingQueue = false;
 
             // Begin the infinite looping to receive messages
-            id.recieveBuffer = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
             NetworkIO.ReceiveMessage(id);
         }
 
