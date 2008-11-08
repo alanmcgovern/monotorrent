@@ -36,6 +36,8 @@ using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using System.Net.Sockets;
 using MonoTorrent.Client.Connections;
+using System.Net;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
@@ -324,6 +326,140 @@ namespace MonoTorrent.Client
             catch
             {
                 io.Callback(false, 0, io.State);
+            }
+        }
+
+
+        public static void ReceiveMessage(PeerId id)
+        {
+            IConnection connection = id.Connection;
+            if (connection == null)
+                return;
+
+            ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 4);
+            RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
+            limiter = limiter == null && id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null;
+            EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
+        }
+
+        static void MessageLengthReceived(bool succeeded, int count, object state)
+        {
+            PeerId id = (PeerId)state;
+            if (!succeeded)
+            {
+                id.ConnectionManager.CleanupSocket(id, "Couldn't receive message length");
+            }
+            else
+            {
+                IConnection connection = id.Connection;
+                if (connection == null)
+                    return;
+
+                // Decode the message length from the buffer. It is a big endian integer, so make sure
+                // it is converted to host endianness.
+                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
+                int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.recieveBuffer.Array, id.recieveBuffer.Offset));
+
+
+                // If bytes to receive is zero, it means we received a keep alive message
+                // so we just start receiving a new message length again
+                if (messageBodyLength == 0)
+                {
+                    id.LastMessageReceived = DateTime.Now;
+                    ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+                    ReceiveMessage(id);
+                }
+
+                // Otherwise queue the peer in the Receive buffer and try to resume downloading off him
+                else
+                {
+                    ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
+                    ClientEngine.BufferManager.GetBuffer(ref buffer, messageBodyLength + 4);
+                    Buffer.BlockCopy(id.recieveBuffer.Array, id.recieveBuffer.Offset, buffer.Array, buffer.Offset, 4);
+                    
+                    ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
+                    id.recieveBuffer = buffer;
+                    RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
+                    limiter = limiter == null && id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null;
+                    EnqueueReceive(connection, id.recieveBuffer, 4, messageBodyLength, MessageBodyReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
+                }
+            }
+        }
+
+        static void MessageBodyReceived(bool succeeded, int count, object state)
+        {
+            PeerId id = (PeerId)state;
+
+            if (!succeeded)
+            {
+                id.ConnectionManager.CleanupSocket(id, "Couldn't receive message body");
+            }
+            else
+            {
+                // The first 4 bytes are the already decrypted message length
+                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset + 4, count);
+
+                ArraySegment<byte> buffer = id.recieveBuffer;
+                id.recieveBuffer = BufferManager.EmptyBuffer;
+                ClientEngine.MainLoop.Queue(delegate {
+                    ProcessMessage(id, buffer, count);
+                });
+                
+                // Receive the next message
+                ReceiveMessage(id);
+            }
+        }
+
+        private static void ProcessMessage(PeerId id, ArraySegment<byte> buffer, int count)
+        {
+            string reason = "";
+            bool cleanUp = false;
+            try
+            {
+                try
+                {
+                    PeerMessage message = PeerMessage.DecodeMessage(buffer, 0, 4 + count, id.TorrentManager);
+
+                    // Fire the event to say we recieved a new message
+                    PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, Direction.Incoming, id);
+                    id.ConnectionManager.RaisePeerMessageTransferred(e);
+
+                    message.Handle(id);
+                }
+                catch (Exception ex)
+                {
+                    // Should i nuke the peer with the dodgy message too?
+                    Logger.Log(null, "*CRITICAL EXCEPTION* - Error decoding message: {0}", ex);
+                }
+                finally
+                {
+                    ClientEngine.BufferManager.FreeBuffer(ref buffer);
+                }
+
+
+                //FIXME: I thought i was using 5 (i changed the check below from 3 to 5)...
+                // if the peer has sent us three bad pieces, we close the connection.
+                if (id.Peer.TotalHashFails == 5)
+                {
+                    reason = "5 hashfails";
+                    Logger.Log(id.Connection, "ConnectionManager - 5 hashfails");
+                    cleanUp = true;
+                    return;
+                }
+
+                id.LastMessageReceived = DateTime.Now;
+            }
+            catch (TorrentException ex)
+            {
+                reason = ex.Message;
+                Logger.Log(id.Connection, "Invalid message recieved: {0}", ex.Message);
+                cleanUp = true;
+                return;
+            }
+            finally
+            {
+                if (cleanUp)
+                    id.ConnectionManager.CleanupSocket(id, reason);
             }
         }
     }
