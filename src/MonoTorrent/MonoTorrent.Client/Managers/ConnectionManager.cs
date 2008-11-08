@@ -234,7 +234,6 @@ namespace MonoTorrent.Client
                 EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
                 
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
-				id.WhenConnected = DateTime.Now;
             }
             catch (Exception)
             {
@@ -493,7 +492,7 @@ namespace MonoTorrent.Client
                     return;
 
 				// We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canResuse = id.Connection.CanReconnect && !id.TorrentManager.InactivePeerManager.InactiveUris.Contains(id.Uri);
+                bool canResuse = id.Connection.CanReconnect;
                 Logger.Log(id.Connection, "Cleanup Reason : " + message);
 
                 Logger.Log(id.Connection, "*******Cleaning up*******");
@@ -591,7 +590,6 @@ namespace MonoTorrent.Client
                 id.TorrentManager.Peers.AvailablePeers.Remove(id.Peer);
                 id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
-				id.WhenConnected = DateTime.Now;
 
                 //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
 
