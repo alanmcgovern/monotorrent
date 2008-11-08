@@ -220,34 +220,19 @@ namespace MonoTorrent.Client
         {
             Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
             if (type == BufferType.LargeMessageBuffer)
-                while (number > 0)
-				{
-					byte[] buffer = new byte[LargeMessageBufferSize * 6];
-					for(int i=0; i < 6; i++)
-						this.largeMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * LargeMessageBufferSize, LargeMessageBufferSize));
-					number -= 6;
-				}
+                while (number-- > 0)
+                    this.largeMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[LargeMessageBufferSize], 0, LargeMessageBufferSize));
 
             else if (type == BufferType.MediumMessageBuffer)
-                while (number > 0)
-				{
-					byte[] buffer = new byte[MediumMessageBufferSize * 6];
-					for(int i=0; i < 6; i++)
-						this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * MediumMessageBufferSize, MediumMessageBufferSize));
-					number -= 6;
-				}
+                while (number-- > 0)
+                    this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[MediumMessageBufferSize], 0, MediumMessageBufferSize));
 
             else if (type == BufferType.SmallMessageBuffer)
-                while (number > 0)
-				{
-					byte[] buffer = new byte[SmallMessageBufferSize * 6];
-					for(int i=0; i < 6; i++)
-						this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(buffer, i * SmallMessageBufferSize, SmallMessageBufferSize));
-					number -= 6;
-				}
+                while (number-- > 0)
+                        this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[SmallMessageBufferSize], 0, SmallMessageBufferSize));
 
             else
-                 throw new ArgumentException("Unsupported BufferType detected");
+                throw new ArgumentException("Unsupported BufferType detected");
         }
 
         internal BitField GetClonedBitfield(BitField bitfield)
