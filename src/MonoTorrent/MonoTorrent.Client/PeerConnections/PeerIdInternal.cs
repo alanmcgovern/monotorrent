@@ -426,8 +426,7 @@ namespace MonoTorrent.Client
 
         public void CloseConnection()
         {
-            ClientEngine.MainLoop.QueueWait(delegate
-            {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 if (Connection != null)
                     Connection.Dispose();
             });
@@ -477,7 +476,7 @@ namespace MonoTorrent.Client
             if (message == null)
                 throw new ArgumentNullException("message");
 
-            ClientEngine.MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 if (Connection == null)
                     return;
 

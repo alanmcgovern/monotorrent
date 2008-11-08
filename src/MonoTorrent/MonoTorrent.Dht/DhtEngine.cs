@@ -190,7 +190,7 @@ namespace MonoTorrent.Dht
                 return;
 
             // Ensure we don't break any threads actively running right now
-            DhtEngine.MainLoop.QueueWait(delegate {
+            DhtEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 disposed = true;
             });
         }
@@ -223,7 +223,7 @@ namespace MonoTorrent.Dht
         {
             BEncodedList details = new BEncodedList();
 
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
                     foreach (Node n in b.Nodes)

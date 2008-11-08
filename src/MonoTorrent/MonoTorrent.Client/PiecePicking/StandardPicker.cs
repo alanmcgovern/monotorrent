@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
 
         public override int CurrentRequestCount()
         {
-            return (int)ClientEngine.MainLoop.QueueWait(delegate {
+            return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
                 int result = 0;
 
                 foreach (Piece p in this.requests)

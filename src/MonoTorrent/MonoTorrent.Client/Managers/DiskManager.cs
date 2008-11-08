@@ -233,7 +233,7 @@ namespace MonoTorrent.Client.Managers
             string path = manager.FileManager.SavePath;
             ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
             BufferedIO io = new BufferedIO(b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
-            IOLoop.QueueWait(delegate {
+            IOLoop.QueueWait((MainLoopTask)delegate {
                 PerformRead(io);
             });
             return io.ActualCount;
