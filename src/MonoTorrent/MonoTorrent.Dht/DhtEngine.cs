@@ -186,7 +186,13 @@ namespace MonoTorrent.Dht
 
         public void Dispose()
         {
-            disposed = true;
+            if (disposed)
+                return;
+
+            // Ensure we don't break any threads actively running right now
+            DhtEngine.MainLoop.QueueWait(delegate {
+                disposed = true;
+            });
         }
 
         internal void GetPeers(byte[] infoHash)
