@@ -363,7 +363,7 @@ namespace MonoTorrent.Client
         {
             Check.Picker(picker);
 
-            ClientEngine.MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 this.pieceManager.ChangePicker(picker, torrent.Files);
             });
         }
@@ -407,7 +407,7 @@ namespace MonoTorrent.Client
 
         public List<Piece> GetActiveRequests()
         {
-            return (List<Piece>)ClientEngine.MainLoop.QueueWait(delegate {
+            return (List<Piece>)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
                 return this.pieceManager.PiecePicker.ExportActiveRequests();
             });
         }
@@ -423,7 +423,7 @@ namespace MonoTorrent.Client
 
         public List<Peer> GetPeers()
         {
-            return (List<Peer>)ClientEngine.MainLoop.QueueWait(delegate {
+            return (List<Peer>)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
                 return new List<Peer>(peers.ActivePeers);
             });
         }
@@ -435,7 +435,7 @@ namespace MonoTorrent.Client
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
         public void HashCheck(bool autoStart)
         {
-            ClientEngine.MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 if (this.state != TorrentState.Stopped)
                     throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", state));
 
@@ -452,8 +452,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Pause()
         {
-            ClientEngine.MainLoop.QueueWait(delegate
-            {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 CheckRegistered();
                 if (state != TorrentState.Downloading && state != TorrentState.Seeding)
                     return;
@@ -471,7 +470,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            ClientEngine.MainLoop.QueueWait(delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 CheckRegistered();
 
                 this.engine.Start();
@@ -551,7 +550,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public WaitHandle Stop()
         {
-            return (WaitHandle)ClientEngine.MainLoop.QueueWait(delegate {
+            return (WaitHandle)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
                 CheckRegistered();
 
                 engine.DhtEngine.PeersFound -= DhtPeersFound;

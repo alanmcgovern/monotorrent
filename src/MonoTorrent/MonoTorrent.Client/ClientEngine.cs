@@ -261,7 +261,7 @@ namespace MonoTorrent.Client
                 return;
 
             disposed = true;
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 this.dhtEngine.Dispose();
                 this.dhtListener.Stop();
                 this.diskManager.Dispose();
@@ -284,7 +284,7 @@ namespace MonoTorrent.Client
         public void PauseAll()
         {
             CheckDisposed();
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 foreach (TorrentManager manager in torrents)
                     manager.Pause();
             });
@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
             CheckDisposed();
             Check.Manager(manager);
 
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 if (manager.Engine != null)
                     throw new TorrentException("This manager has already been registered");
 
@@ -313,7 +313,7 @@ namespace MonoTorrent.Client
         public void StartAll()
         {
             CheckDisposed();
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     torrents[i].Start();
             });
@@ -324,7 +324,7 @@ namespace MonoTorrent.Client
             CheckDisposed();
             List<WaitHandle> handles = new List<WaitHandle>();
 
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     handles.Add(torrents[i].Stop());
             });
@@ -353,7 +353,7 @@ namespace MonoTorrent.Client
             CheckDisposed();
             Check.Manager(manager);
 
-            MainLoop.QueueWait(delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 if (manager.Engine != this)
                     throw new TorrentException("The manager has not been registered with this engine");
 
