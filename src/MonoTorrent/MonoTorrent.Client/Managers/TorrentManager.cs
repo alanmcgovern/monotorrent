@@ -749,7 +749,7 @@ namespace MonoTorrent.Client
                     id.IsChoking = false;
                     id.Connection = connection;
                     peers.ConnectedPeers.Add(id);
-                    engine.ConnectionManager.ReceiveMessage(id);
+                    NetworkIO.ReceiveMessage(id);
                 }
 
                 // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
