@@ -125,6 +125,7 @@ FILES = \
 	MonoTorrent.Client/Managers/ConnectionMonitor.cs \
 	MonoTorrent.Client/Managers/DiskManager.cs \
 	MonoTorrent.Client/Managers/FileManager.cs \
+	MonoTorrent.Client/Managers/InactivePeerManager.cs \
 	MonoTorrent.Client/Managers/ListenManager.cs \
 	MonoTorrent.Client/Managers/PeerManager.cs \
 	MonoTorrent.Client/Managers/PieceManager.cs \
