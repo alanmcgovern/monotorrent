@@ -30,6 +30,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace MonoTorrent.Common
@@ -44,8 +46,23 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static readonly string ClientVersion = "-MO0600-";    // 'MO' for MonoTorrent then four digit version number
+        public static readonly string ClientVersion = CreateClientVersion ();
 
         public static readonly string DhtClientVersion = "MO06";
+
+		static string CreateClientVersion ()
+		{
+			AssemblyInformationalVersionAttribute version;
+			Assembly assembly = Assembly.GetExecutingAssembly ();
+			version = (AssemblyInformationalVersionAttribute) assembly.GetCustomAttributes (typeof (AssemblyInformationalVersionAttribute), false)[0];
+			Version v = new Version(version.InformationalVersion);
+
+			    // 'MO' for MonoTorrent then four digit version number
+			return string.Format ("-MO{0}{1}{2}{3}-",
+			                      Math.Max (v.Major, 0),
+			                      Math.Max (v.Minor, 0), 
+			                      Math.Max (v.Build, 0),
+			                      Math.Max (v.Revision, 0));
+		}
     }
 }
