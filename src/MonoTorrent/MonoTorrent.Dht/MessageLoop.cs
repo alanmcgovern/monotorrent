@@ -220,16 +220,17 @@ namespace MonoTorrent.Dht
 
         internal void EnqueueSend(Message message, IPEndPoint endpoint)
         {
-            if (message.TransactionId == null)
-            {
-                if (message is ResponseMessage)
-                    throw new ArgumentException("Message must have a transaction id");
-                else
-                    message.TransactionId = TransactionId.NextId();
-            }
-
             lock (locker)
             {
+                if (message.TransactionId == null)
+                {
+                    if (message is ResponseMessage)
+                        throw new ArgumentException("Message must have a transaction id");
+                    do {
+                        message.TransactionId = TransactionId.NextId();
+                    } while (MessageFactory.IsRegistered(message.TransactionId));
+                }
+
                 // We need to be able to cancel a query message if we time out waiting for a response
                 if (message is QueryMessage)
                     MessageFactory.RegisterSend((QueryMessage)message);

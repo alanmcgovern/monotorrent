@@ -44,6 +44,11 @@ namespace MonoTorrent.Dht.Messages
         private static BEncodedString MessageTypeKey = "y";
         private static BEncodedString TransactionIdKey = "t";
 
+        public static int RegisteredMessages
+        {
+            get { return messages.Count; }
+        }
+
         static MessageFactory()
         {
             queryDecoders.Add("announce_peer", delegate(BEncodedDictionary d) { return new AnnouncePeer(d); });
@@ -54,6 +59,11 @@ namespace MonoTorrent.Dht.Messages
 
         private static Dictionary<BEncodedString, QueryMessage> messages = new Dictionary<BEncodedString, QueryMessage>();
         private static Dictionary<BEncodedString, Creator> queryDecoders = new Dictionary<BEncodedString, Creator>();
+
+        internal static bool IsRegistered(BEncodedString transactionId)
+        {
+            return messages.ContainsKey(transactionId);
+        }
 
         public static void RegisterSend(QueryMessage message)
         {
