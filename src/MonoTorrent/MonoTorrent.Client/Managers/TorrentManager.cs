@@ -439,7 +439,7 @@ namespace MonoTorrent.Client
                 if (this.state != TorrentState.Stopped)
                     throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", state));
 
-                CheckRegistered();
+                CheckRegisteredAndDisposed();
                 this.startTime = DateTime.Now;
                 UpdateState(TorrentState.Hashing);
                 ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); }); 
@@ -453,7 +453,7 @@ namespace MonoTorrent.Client
         public void Pause()
         {
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                CheckRegistered();
+                CheckRegisteredAndDisposed();
                 if (state != TorrentState.Downloading && state != TorrentState.Seeding)
                     return;
 
@@ -471,7 +471,7 @@ namespace MonoTorrent.Client
         public void Start()
         {
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                CheckRegistered();
+                CheckRegisteredAndDisposed();
 
                 this.engine.Start();
                 // If the torrent was "paused", then just update the state to Downloading and forcefully
@@ -551,7 +551,7 @@ namespace MonoTorrent.Client
         public WaitHandle Stop()
         {
             return (WaitHandle)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
-                CheckRegistered();
+                CheckRegisteredAndDisposed();
 
                 engine.DhtEngine.PeersFound -= DhtPeersFound;
                 ManagerWaitHandle handle = new ManagerWaitHandle("Global");
@@ -850,10 +850,12 @@ namespace MonoTorrent.Client
 
         #region Private Methods
 
-        private void CheckRegistered()
+        private void CheckRegisteredAndDisposed()
         {
             if (engine == null)
                 throw new TorrentException("This manager has not been registed with an Engine");
+            if (engine.Disposed)
+                throw new InvalidOperationException("The registered engine has been disposed");
         }
 
         private void DhtPeersFound(object o, PeersFoundEventArgs e)

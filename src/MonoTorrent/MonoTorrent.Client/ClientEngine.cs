@@ -427,12 +427,14 @@ namespace MonoTorrent.Client
 
         internal void Start()
         {
+            CheckDisposed();
             isRunning = true;
         }
 
 
         internal void Stop()
         {
+            CheckDisposed();
             // If all the torrents are stopped, stop ticking
             isRunning = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
         }
