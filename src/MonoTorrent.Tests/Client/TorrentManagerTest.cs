@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
             try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
             catch {
             	Assert.IsFalse(conn.Incoming.Connected, "#1");
+//                Assert.IsFalse(conn.Outgoing.Connected, "#2");
             	return;
             }
 
