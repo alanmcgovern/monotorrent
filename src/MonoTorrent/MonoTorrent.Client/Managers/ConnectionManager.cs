@@ -348,6 +348,7 @@ namespace MonoTorrent.Client
                     return;
 
                 // Decode the handshake and handle it
+                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
                 msg = new HandshakeMessage();
                 msg.Decode(id.recieveBuffer, 0, count);
                 msg.Handle(id);

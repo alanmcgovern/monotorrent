@@ -217,7 +217,7 @@ namespace MonoTorrent.Client
 
         public Uri Uri
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { return new Uri("tcp://127.0.0.1:1234"); }
         }
 
         #endregion
