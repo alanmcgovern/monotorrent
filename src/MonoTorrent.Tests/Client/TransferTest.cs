@@ -39,6 +39,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Encryption;
 
 
 namespace MonoTorrent.Client
@@ -53,6 +54,10 @@ namespace MonoTorrent.Client
         //    t.TestHandshake();
         //    t.Teardown();
         //}
+
+        IEncryption decryptor = new PlainTextEncryption();
+        IEncryption encryptor = new PlainTextEncryption();
+
         private ConnectionPair pair;
         private TestRig rig;
 
@@ -61,8 +66,6 @@ namespace MonoTorrent.Client
         {
             pair = new ConnectionPair(55432);
             rig = new TestRig("");
-
-            rig.AddConnection(pair.Outgoing);
         }
 
         [TearDown]
@@ -73,14 +76,51 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void TestHandshake()
+        public void UnencryptedTransfers()
+        {
+            rig.Engine.Settings.PreferEncryption = false;
+            PeerId id = new PeerId(new Peer("", pair.Incoming.Uri), rig.Manager);
+            id.Connection = pair.Incoming;
+            id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
+            byte[] data = id.recieveBuffer.Array;
+            id.BytesToRecieve = 68;
+            rig.AddConnection(pair.Outgoing);
+            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, null, null, new byte[][] { id.TorrentManager.Torrent.infoHash }), out data);
+            decryptor = id.Decryptor;
+            encryptor = id.Encryptor;
+            TestHandshake(data);
+        }
+
+        [Test]
+        public void TestEncrypted()
+        {
+            rig.Engine.Settings.PreferEncryption = true;
+            PeerId id = new PeerId(new Peer("", pair.Incoming.Uri), rig.Manager);
+            id.Connection = pair.Incoming;
+            id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
+            byte[] data = id.recieveBuffer.Array;
+            id.BytesToRecieve = 68;
+            rig.AddConnection(pair.Outgoing);
+            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, null, null, new byte[][] {id.TorrentManager.Torrent.infoHash }), out data);
+            decryptor = id.Decryptor;
+            encryptor = id.Encryptor;
+            TestHandshake(data);
+        }
+
+
+        public void TestHandshake(byte[] buffer)
         {
             // 1) Send local handshake
             SendIncoming (new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false));
 
             // 2) Receive remote handshake
-            byte[] buffer = new byte[68];
-            pair.Incoming.EndReceive(pair.Incoming.BeginReceive(buffer, 0, 68, null, null));
+            if (buffer == null || buffer.Length == 0)
+            {
+                buffer = new byte[68];
+                pair.Incoming.EndReceive(pair.Incoming.BeginReceive(buffer, 0, 68, null, null));
+                decryptor.Decrypt(buffer);
+            }
+
             HandshakeMessage handshake = new HandshakeMessage();
             handshake.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(rig.Engine.PeerId, handshake.PeerId, "#2");
@@ -114,6 +154,7 @@ namespace MonoTorrent.Client
         private void SendIncoming(PeerMessage message)
         {
             byte[] b = message.Encode();
+            encryptor.Encrypt(b);
             IAsyncResult result = pair.Incoming.BeginSend(b, 0, b.Length, null, null);
             if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message didn't send correctly");
@@ -127,6 +168,7 @@ namespace MonoTorrent.Client
             if(!result.AsyncWaitHandle.WaitOne (5000, true))
                 throw new Exception("Message length didn't receive correctly");
             pair.Incoming.EndReceive(result);
+            decryptor.Decrypt(buffer);
 
             int count = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
             byte[] message = new byte[count + 4];
@@ -136,6 +178,7 @@ namespace MonoTorrent.Client
             if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message body didn't receive correctly");
             pair.Incoming.EndReceive(result);
+            decryptor.Decrypt(message, 4, count);
 
             return PeerMessage.DecodeMessage(message, 0, message.Length, rig.Manager);
         }
