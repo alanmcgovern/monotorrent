@@ -701,18 +701,19 @@ namespace MonoTorrent.Client
                 }
             }
 
-            if (counter % 100 == 0 && (state == TorrentState.Seeding || state == TorrentState.Downloading))
+            Tracker.Tracker tracker = TrackerManager.CurrentTracker;
+            if (tracker != null && (state == TorrentState.Seeding || state == TorrentState.Downloading))
             {
                 // If the last connection succeeded, then update at the regular interval
                 if (this.trackerManager.UpdateSucceeded)
                 {
-                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].UpdateInterval)))
+                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(tracker.UpdateInterval)))
                     {
                         this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 // Otherwise update at the min interval
-                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(this.trackerManager.TrackerTiers[0].Trackers[0].MinUpdateInterval)))
+                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(tracker.MinUpdateInterval)))
                 {
                     this.trackerManager.Announce(TorrentEvent.None);
                 }

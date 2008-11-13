@@ -110,12 +110,20 @@ namespace MonoTorrent.Client
         public void NoAnnouncesTest()
         {
             rig.TorrentDict.Remove("announce-list");
+            rig.TorrentDict.Remove("announce");
             Torrent t = Torrent.Load(rig.TorrentDict);
             rig.Engine.Unregister(rig.Manager);
             TorrentManager manager = new TorrentManager(t, "", new TorrentSettings());
             rig.Engine.Register(manager);
+
+            ManualResetEvent handle = new ManualResetEvent(false);
+            manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {
+                if (e.NewState == TorrentState.Downloading)
+                    handle.Set();
+            };
             manager.Start();
-            System.Threading.Thread.Sleep(500);
+            handle.WaitOne();
+            System.Threading.Thread.Sleep(1000);
 
             Assert.IsTrue(manager.Stop().WaitOne(10000, true), "#1");
             Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
