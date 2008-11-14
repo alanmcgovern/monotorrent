@@ -127,6 +127,22 @@ namespace MonoTorrent.Client
 		}
 		private int timeToWaitUntilIdle = 600;
 
+		/// <summary>
+		/// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
+		/// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
+		/// </summary>
+		public long ConnectionRetentionFactor
+		{
+			get { return this.connectionRetentionFactor; }
+			set
+			{
+				if (value < 0)
+					throw new ArgumentOutOfRangeException();
+				this.connectionRetentionFactor = value;
+			}
+		}
+		private long connectionRetentionFactor = 2000;
+
         // FIXME: This value needs to be obeyed if it's changed
         // while the torrent is running
         public bool UseDht

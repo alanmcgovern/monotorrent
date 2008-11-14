@@ -68,9 +68,11 @@ namespace MonoTorrent.Client
 
 			// Look for a peer that has not given us any data and that is eligible for being marked inactive
 			// If we find one that is not interesting, disconnect it straightaway; otherwise disconnect the first interesting one we found
-			// This is a simplistic approach to start with
-			int indexOfFirstInterestingCandidate = -1; // -1 indicates we haven't found one yet
-			int indexOfFirstUninterestingCandidate = -1;
+			// If there are no eligible peers that have sent us no data, look for peers that have sent data but not for a while
+			int indexOfFirstUninterestingCandidate = -1; // -1 indicates we haven't found one yet
+			int indexOfFirstInterestingCandidate = -1;
+			int leastAttractiveCandidate = -1; // The least attractive peer that has sent us data
+			long longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
 			for (int i = 0; i < owningTorrent.Peers.ConnectedPeers.Count; i++)
 			{
 				PeerId nextPeer = owningTorrent.Peers.ConnectedPeers[i];
@@ -87,15 +89,37 @@ namespace MonoTorrent.Client
 					if (indexOfFirstInterestingCandidate < 0)
 						indexOfFirstInterestingCandidate = i;
 				}
+				else
+				{
+					// No point looking for inactive peers that have sent us data if we found a candidate that's sent us nothing or if we aren't allowed
+					// to disconnect peers that have sent us data
+					if (indexOfFirstInterestingCandidate < 0 && owningTorrent.Settings.ConnectionRetentionFactor > 0 && nextPeer.BytesReceived > 0 && nextPeer.LastMessageReceived != null)
+					{
+						// Calculate an inactive time.
+						// Base time is time since the last message (in seconds)
+						// Give the peer an extra second for every 'ConnectionRetentionFactor' bytes
+						TimeSpan secondsSinceLastMessage = DateTime.Now.Subtract(nextPeer.LastMessageReceived);
+						long calculatedInactiveTime = secondsSinceLastMessage.Seconds - Convert.ToInt64(nextPeer.BytesReceived / owningTorrent.Settings.ConnectionRetentionFactor);
+						// Register as the least attractive candidate if the calculated time is more than the idle wait time and more than any other candidate
+						if (calculatedInactiveTime > owningTorrent.Settings.TimeToWaitUntilIdle && calculatedInactiveTime > longestCalculatedInactiveTime)
+						{
+							longestCalculatedInactiveTime = calculatedInactiveTime - Convert.ToInt64(nextPeer.BytesReceived / owningTorrent.Settings.ConnectionRetentionFactor);
+							leastAttractiveCandidate = i;
+						}
+					}
+				}
 			}
 
 			// We've finished looking for a disconnect candidate
 			// Disconnect the uninteresting candidate if found;
 			// otherwise disconnect the interesting candidate if found;
+			// otherwise disconnect the least attractive candidate
 			// otherwise do nothing
 			int peerToDisconnect = indexOfFirstUninterestingCandidate;
 			if (peerToDisconnect < 0)
 				peerToDisconnect = indexOfFirstInterestingCandidate;
+			if (peerToDisconnect < 0)
+				peerToDisconnect = leastAttractiveCandidate;
 
 			if (peerToDisconnect < 0)
 				return;
