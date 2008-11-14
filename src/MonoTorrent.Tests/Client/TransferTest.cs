@@ -66,58 +66,73 @@ namespace MonoTorrent.Client
         {
             pair = new ConnectionPair(55432);
             rig = new TestRig("");
+            rig.Manager.Start();
         }
 
         [TearDown]
         public void Teardown()
         {
+            rig.Manager.Stop();
             pair.Dispose();
             rig.Dispose();
         }
 
         [Test]
-        public void UnencryptedTransfers()
+        public void IncomingEncrypted()
         {
-            rig.Engine.Settings.PreferEncryption = false;
-            PeerId id = new PeerId(new Peer("", pair.Incoming.Uri), rig.Manager);
-            id.Connection = pair.Incoming;
-            id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
-            byte[] data = id.recieveBuffer.Array;
-            id.BytesToRecieve = 68;
+            rig.Engine.Settings.PreferEncryption = true;
             rig.AddConnection(pair.Outgoing);
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, null, null, new byte[][] { id.TorrentManager.Torrent.infoHash }), out data);
-            decryptor = id.Decryptor;
-            encryptor = id.Encryptor;
-            TestHandshake(data);
+            InitiateTransfer(pair.Incoming);
         }
 
         [Test]
-        public void TestEncrypted()
+        public void IncomingUnencrypted()
+        {
+            rig.Engine.Settings.PreferEncryption = false;
+            rig.AddConnection(pair.Outgoing);
+            InitiateTransfer(pair.Incoming);
+        }
+
+        [Test]
+        public void OutgoingEncrypted()
         {
             rig.Engine.Settings.PreferEncryption = true;
-            PeerId id = new PeerId(new Peer("", pair.Incoming.Uri), rig.Manager);
-            id.Connection = pair.Incoming;
+            rig.AddConnection(pair.Incoming);
+            InitiateTransfer(pair.Outgoing);
+        }
+
+        [Test]
+        public void OutgoingUnencrypted()
+        {
+            rig.Engine.Settings.PreferEncryption = false;
+            rig.AddConnection(pair.Incoming);
+            InitiateTransfer(pair.Outgoing);
+        }
+
+        public void InitiateTransfer(CustomConnection connection)
+        {
+            PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
+            id.Connection = connection;
             id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
             byte[] data = id.recieveBuffer.Array;
             id.BytesToRecieve = 68;
-            rig.AddConnection(pair.Outgoing);
+            
             EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, null, null, new byte[][] {id.TorrentManager.Torrent.infoHash }), out data);
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
-            TestHandshake(data);
+            TestHandshake(data, connection);
         }
 
-
-        public void TestHandshake(byte[] buffer)
+        public void TestHandshake(byte[] buffer, CustomConnection connection)
         {
             // 1) Send local handshake
-            SendIncoming (new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false));
+            SendMessage(new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false), connection);
 
             // 2) Receive remote handshake
             if (buffer == null || buffer.Length == 0)
             {
                 buffer = new byte[68];
-                pair.Incoming.EndReceive(pair.Incoming.BeginReceive(buffer, 0, 68, null, null));
+                connection.EndReceive(connection.BeginReceive(buffer, 0, 68, null, null));
                 decryptor.Decrypt(buffer);
             }
 
@@ -129,55 +144,55 @@ namespace MonoTorrent.Client
             Assert.AreEqual(ClientEngine.SupportsExtended, handshake.SupportsExtendedMessaging, "#5");
 
             // 2) Send local bitfield
-            SendIncoming (new BitfieldMessage(rig.Manager.Bitfield));
+            SendMessage(new BitfieldMessage(rig.Manager.Bitfield), connection);
 
             // 3) Receive remote bitfield - have none
-            PeerMessage message = (HaveNoneMessage)ReceiveIncoming();
-			Assert.IsTrue (message is HaveNoneMessage, "HaveNone");
+            PeerMessage message = ReceiveMessage(connection);
+			Assert.IsTrue (message is HaveNoneMessage || message is BitfieldMessage, "HaveNone");
 			
             // 4) Send a few allowed fast
-            SendIncoming(new AllowedFastMessage(1));
-            SendIncoming(new AllowedFastMessage(2));
-            SendIncoming(new AllowedFastMessage(3));
-            SendIncoming(new AllowedFastMessage(0));
+            SendMessage(new AllowedFastMessage(1), connection);
+            SendMessage(new AllowedFastMessage(2), connection);
+            SendMessage(new AllowedFastMessage(3), connection);
+            SendMessage(new AllowedFastMessage(0), connection);
 
             // 5) Receive a few allowed fast
-            ReceiveIncoming();
-            ReceiveIncoming();
-            ReceiveIncoming();
-            ReceiveIncoming();
-            ReceiveIncoming();
-            ReceiveIncoming();
-            ReceiveIncoming();
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
         }
 
-        private void SendIncoming(PeerMessage message)
+        private void SendMessage(PeerMessage message, CustomConnection connection)
         {
             byte[] b = message.Encode();
             encryptor.Encrypt(b);
-            IAsyncResult result = pair.Incoming.BeginSend(b, 0, b.Length, null, null);
+            IAsyncResult result = connection.BeginSend(b, 0, b.Length, null, null);
             if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message didn't send correctly");
-            pair.Incoming.EndSend(result);
+            connection.EndSend(result);
         }
 
-        private PeerMessage ReceiveIncoming()
+        private PeerMessage ReceiveMessage(CustomConnection connection)
         {
             byte[] buffer = new byte[4];
-            IAsyncResult result = pair.Incoming.BeginReceive(buffer, 0, 4, null, null);
+            IAsyncResult result = connection.BeginReceive(buffer, 0, 4, null, null);
             if(!result.AsyncWaitHandle.WaitOne (5000, true))
                 throw new Exception("Message length didn't receive correctly");
-            pair.Incoming.EndReceive(result);
+            connection.EndReceive(result);
             decryptor.Decrypt(buffer);
 
             int count = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
             byte[] message = new byte[count + 4];
             Buffer.BlockCopy(buffer, 0, message, 0, 4);
 
-            result = pair.Incoming.BeginReceive(message, 4, count, null, null);
+            result = connection.BeginReceive(message, 4, count, null, null);
             if (!result.AsyncWaitHandle.WaitOne(5000, true))
                 throw new Exception("Message body didn't receive correctly");
-            pair.Incoming.EndReceive(result);
+            connection.EndReceive(result);
             decryptor.Decrypt(message, 4, count);
 
             return PeerMessage.DecodeMessage(message, 0, message.Length, rig.Manager);

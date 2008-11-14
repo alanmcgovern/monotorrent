@@ -617,8 +617,10 @@ namespace MonoTorrent.Client
                             id.Enqueue(new HaveMessage(pieceIndex));
                     }
                 }
+                foreach (int piece in id.AmAllowedFastPieces)
+                    id.Enqueue(new AllowedFastMessage(piece));
                 Logger.Log(id.Connection, "ConnectionManager - Recieving message length");
-                ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
+                ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                 NetworkIO.ReceiveMessage(id);
             }
             catch (Exception e)
