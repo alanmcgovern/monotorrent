@@ -291,8 +291,15 @@ namespace MonoTorrent.Client
 			get { return inactivePeerManager.InactivatedPeers; }
 		}
 
-        #endregion
+		/// <summary>
+		/// List of peers we have inactivated for this torrent
+		/// </summary>
+		public List<InactivePeer> InactivePeers
+		{
+			get { return inactivePeerManager.InactivePeers; }
+		}
 
+        #endregion
 
         #region Constructors
 
@@ -612,7 +619,7 @@ namespace MonoTorrent.Client
                     return 0;
 
 				// Ignore peers in the inactive list
-				if (this.inactivePeerManager.InactiveUris.Contains(peer.ConnectionUri))
+				if (this.inactivePeerManager.IsInactive(peer.ConnectionUri))
 					return 0;
 
                 this.peers.AvailablePeers.Add(peer);
