@@ -97,8 +97,9 @@ namespace MonoTorrent.Dht
                 // and return an error message (if that's what the spec allows)
                 try
                 {
-                    Message m = MessageFactory.DecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer));
-                    receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, m));
+                    Message message;
+                    if (MessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, false), out message))
+                        receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, message));
                 }
                 catch (MessageException ex)
                 {
@@ -164,55 +165,48 @@ namespace MonoTorrent.Dht
 
         private void ReceiveMessage()
         {
-            KeyValuePair<IPEndPoint, Message>? receive = null;
+            if (receiveQueue.Count == 0)
+                return;
 
-            if (receiveQueue.Count > 0)
-                receive = receiveQueue.Dequeue();
+            KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
+            Message m = receive.Value;
+            IPEndPoint source = receive.Key;
+            waitingResponse.RemoveAll(delegate(SendDetails msg) {
+                return msg.Message.TransactionId.Equals(m.TransactionId);
+            });
 
-            if (receive != null)
+            try
             {
-                Message m = receive.Value.Value;
-                IPEndPoint source = receive.Value.Key;
-                waitingResponse.RemoveAll(delegate(SendDetails msg) {
-                    return msg.Message.TransactionId.Equals(m.TransactionId);
-                });
+                Node node = engine.RoutingTable.FindNode(m.Id);
 
-                Console.WriteLine("Received: {0} from {1}", m.GetType().Name, source);
-                try
+                // What do i do with a null node?
+                if (node == null)
                 {
-                    Node node = engine.RoutingTable.FindNode(m.Id);
-
-                    // What do i do with a null node?
-                    if (node == null)
-                    {
-                        node = new Node(m.Id, source);
-                        engine.RoutingTable.Add(node);
-                    }
-                    node.Seen();
-                    Console.WriteLine("Seen {0}", node.Id.ToString());
-                    m.Handle(engine, node);
-                    ResponseMessage response = m as ResponseMessage;
-                    if (response != null)
-                    {
-                        RaiseMessageSent(node.EndPoint, response.Query, response);
-                    }
+                    node = new Node(m.Id, source);
+                    engine.RoutingTable.Add(node);
                 }
-                catch (MessageException ex)
+                node.Seen();
+                m.Handle(engine, node);
+                ResponseMessage response = m as ResponseMessage;
+                if (response != null)
                 {
-                    Console.WriteLine("Incoming message barfed: {0}", ex);
-                    // Normal operation (FIXME: do i need to send a response error message?) 
+                    RaiseMessageSent(node.EndPoint, response.Query, response);
                 }
-                catch(Exception ex)
-                {
-                    Console.WriteLine("Handle Error for message: {0}", ex);
-                    this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
-                }
+            }
+            catch (MessageException ex)
+            {
+                Console.WriteLine("Incoming message barfed: {0}", ex);
+                // Normal operation (FIXME: do i need to send a response error message?) 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Handle Error for message: {0}", ex);
+                this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
             }
         }
 
         private void SendMessage(Message message, IPEndPoint endpoint)
         {
-            Console.WriteLine("Sending: {0} to {1}", message.GetType().Name, endpoint);
             lastSent = Environment.TickCount;
             byte[] buffer = message.Encode();
             listener.Send(buffer, endpoint);

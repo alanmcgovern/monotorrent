@@ -52,8 +52,7 @@ namespace MonoTorrent.Dht
                 if (!e.TimedOut || !(e.Query is Ping))
                     return;
 
-                PingResponse response = new PingResponse(node.Id);
-                response.TransactionId = e.Query.TransactionId;
+                PingResponse response = new PingResponse(node.Id, e.Query.TransactionId);
                 listener.RaiseMessageReceived(response, e.EndPoint);
             };
 
@@ -83,8 +82,7 @@ namespace MonoTorrent.Dht
             task.Execute();
 
             // Receive response
-            PingResponse response = new PingResponse(node.Id);
-            response.TransactionId = transactionId;
+            PingResponse response = new PingResponse(node.Id, transactionId);
             listener.RaiseMessageReceived(response, node.EndPoint);
 
             Assert.IsTrue(handle.WaitOne(1000, true), "#0");
@@ -94,7 +92,7 @@ namespace MonoTorrent.Dht
 
             // Time out a ping
             ping = new Ping(node.Id);
-            ping.TransactionId = "ab";
+            ping.TransactionId = (BEncodedString)"ab";
 
             task = new SendQueryTask(engine, ping, node, 4);
             task.Completed += delegate { handle.Set(); };

@@ -68,8 +68,7 @@ namespace MonoTorrent.Dht
                 if (e.TimedOut)
                 {
                     counter++;
-                    PingResponse response = new PingResponse(node.Id);
-                    response.TransactionId = transactionId;
+                    PingResponse response = new PingResponse(node.Id, transactionId);
                     listener.RaiseMessageReceived(response, node.EndPoint);
                 }
             };
@@ -116,8 +115,7 @@ namespace MonoTorrent.Dht
                 {
                     Node n = b.Nodes.Find(delegate(Node no) { return no.EndPoint.Port == e.EndPoint.Port; });
                     n.Seen();
-                    PingResponse response = new PingResponse(n.Id);
-                    response.TransactionId = e.Query.TransactionId;
+                    PingResponse response = new PingResponse(n.Id, e.Query.TransactionId);
                     DhtEngine.MainLoop.Queue(delegate
                     {
                         //System.Threading.Thread.Sleep(100);
@@ -159,15 +157,13 @@ namespace MonoTorrent.Dht
 
                     if (e.Query is Ping)
                     {
-                        PingResponse r = new PingResponse(current.Id);
-                        r.TransactionId = e.Query.TransactionId;
+                        PingResponse r = new PingResponse(current.Id, e.Query.TransactionId);
                         listener.RaiseMessageReceived(r, current.EndPoint);
                     }
                     else if (e.Query is FindNode)
                     {
-                        FindNodeResponse response = new FindNodeResponse(current.Id);
+                        FindNodeResponse response = new FindNodeResponse(current.Id, e.Query.TransactionId);
                         response.Nodes = "";
-                        response.TransactionId = e.Query.TransactionId;
                         listener.RaiseMessageReceived(response, current.EndPoint);
                     }
                 });

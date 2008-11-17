@@ -54,11 +54,12 @@ namespace MonoTorrent.Dht.Messages
             get { return queryMessage; }
         }
 
-        protected ResponseMessage(NodeId id)
+        protected ResponseMessage(NodeId id, BEncodedValue transactionId)
             : base(ResponseType)
         {
             properties.Add(ReturnValuesKey, new BEncodedDictionary());
             Parameters.Add(IdKey, id.BencodedString());
+            TransactionId = transactionId;
         }
 
         protected ResponseMessage(BEncodedDictionary d, QueryMessage m)

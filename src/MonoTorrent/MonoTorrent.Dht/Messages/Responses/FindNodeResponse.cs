@@ -46,8 +46,8 @@ namespace MonoTorrent.Dht.Messages
             set { Parameters[NodesKey] = value; }
         }
 
-        public FindNodeResponse(NodeId id)
-            : base(id)
+        public FindNodeResponse(NodeId id, BEncodedValue transactionId)
+            : base(id, transactionId)
         {
             Parameters.Add(NodesKey, new BEncodedString());
         }

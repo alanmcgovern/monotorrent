@@ -13,17 +13,17 @@ namespace SampleClient
     {
         static void Main(string[] args)
         {
-            //Torrent t = Torrent.Load("Azureus3.1.1.0.jar.torrent");
-            UdpListener listener = new UdpListener(15000);
+            UdpListener listener = new UdpListener(new IPEndPoint(IPAddress.Parse("192.168.0.6"), 15000));
             DhtEngine engine = new DhtEngine(listener);
-            
+
+            byte[] nodes = null;
             if (File.Exists("mynodes"))
-                engine.LoadNodes(File.ReadAllBytes("mynodes"));
+                nodes = File.ReadAllBytes("mynodes");
 
             listener.Start();
-            engine.Start();            
+            engine.Start(nodes);            
             
-            Random random = new Random();
+            Random random = new Random(5);
             byte[] b = new byte[20];
             lock (random)
                 random.NextBytes(b);
@@ -35,7 +35,7 @@ namespace SampleClient
             }
 
             // Get some peers for the torrent
-            //engine.GetPeers(t.infoHash);
+            engine.GetPeers(b);
 
             engine.PeersFound += delegate(object o, PeersFoundEventArgs e) {
                 Console.WriteLine("I FOUND PEERS: {0}", e.Peers.Count);
@@ -49,9 +49,12 @@ namespace SampleClient
 
             // Add ourself to the DHT so people know we have the torrent too
             //engine.Announce(t.infoHash, 25000);
-            
+
             while (Console.ReadLine() != "q")
-            {}
+            {
+                random.NextBytes(b);
+                engine.GetPeers(b);
+            }
             File.WriteAllBytes("mynodes", engine.SaveNodes());
         }
     }

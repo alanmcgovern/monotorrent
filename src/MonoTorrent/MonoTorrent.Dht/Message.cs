@@ -70,9 +70,9 @@ namespace MonoTorrent.Dht.Messages
             get { return (BEncodedString)properties[MessageTypeKey]; }
         }
 
-        public BEncodedString TransactionId
+        public BEncodedValue TransactionId
         {
-            get { return (BEncodedString)properties[TransactionIdKey]; }
+            get { return properties[TransactionIdKey]; }
             set { properties[TransactionIdKey] = value; }
         }
 

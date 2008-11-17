@@ -37,8 +37,8 @@ namespace MonoTorrent.Dht.Messages
 {
     class PingResponse : ResponseMessage
     {
-        public PingResponse(NodeId id)
-            : base(id)
+        public PingResponse(NodeId id, BEncodedValue transactionId)
+            : base(id, transactionId)
         {
         }
 

@@ -85,8 +85,8 @@ namespace MonoTorrent.Dht.Messages
             }
         }
 
-        public GetPeersResponse(NodeId id, BEncodedString token)
-            : base(id)
+        public GetPeersResponse(NodeId id, BEncodedValue transactionId, BEncodedString token)
+            : base(id, transactionId)
         {
             Parameters.Add(TokenKey, token);
         }
