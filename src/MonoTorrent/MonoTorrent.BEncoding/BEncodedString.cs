@@ -216,13 +216,15 @@ namespace MonoTorrent.BEncoding
 
         public override bool Equals(object obj)
         {
+            if (obj == null)
+                return false;
+
             BEncodedString other;
             if (obj is string)
                 other = new BEncodedString((string)obj);
+            else if (obj is BEncodedString)
+                other = (BEncodedString)obj;
             else
-                other = obj as BEncodedString;
-
-            if (other == null)
                 return false;
 
             return Toolbox.ByteMatch(this.textBytes, other.textBytes);
