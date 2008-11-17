@@ -78,6 +78,10 @@ namespace MonoTorrent.BEncoding
                 return (Decode(stream));
         }
 
+        internal static BEncodedValue Decode(byte[] buffer, bool strictDecoding)
+        {
+            return Decode(buffer, 0, buffer.Length, strictDecoding);
+        }
 
         /// <summary>
         /// Decode BEncoded data in the given byte array
