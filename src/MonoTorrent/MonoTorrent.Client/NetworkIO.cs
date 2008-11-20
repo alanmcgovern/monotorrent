@@ -365,6 +365,11 @@ namespace MonoTorrent.Client
                     id.ConnectionManager.CleanupSocket(id, "Peer tried to send too much data");
                     return;
                 }
+                if (messageBodyLength < 0)
+                {
+                    id.ConnectionManager.CleanupSocket(id, "Peer tried to send a negative amount of data");
+                    return;
+                }
 
                 // If bytes to receive is zero, it means we received a keep alive message
                 // so we just start receiving a new message length again

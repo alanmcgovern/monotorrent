@@ -109,6 +109,36 @@ namespace MonoTorrent.Client
             InitiateTransfer(pair.Outgoing);
         }
 
+        [Test]
+        public void MassiveMessage()
+        {
+            rig.AddConnection(pair.Incoming);
+            InitiateTransfer(pair.Outgoing);
+            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
+            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
+            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+                Assert.Fail("Connection never closed");
+
+            int r = pair.Outgoing.EndReceive(result);
+            if (r != 0)
+                Assert.Fail("Connection should've been closed");
+        }
+
+        [Test]
+        public void NegativeData()
+        {
+            rig.AddConnection(pair.Incoming);
+            InitiateTransfer(pair.Outgoing);
+            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
+            IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
+            if (!result.AsyncWaitHandle.WaitOne(1000, true))
+                Assert.Fail("Connection never closed");
+
+            int r = pair.Outgoing.EndReceive(result);
+            if (r != 0)
+                Assert.Fail("Connection should've been closed");
+        }
+
         public void InitiateTransfer(CustomConnection connection)
         {
             PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
@@ -157,6 +187,9 @@ namespace MonoTorrent.Client
             SendMessage(new AllowedFastMessage(0), connection);
 
             // 5) Receive a few allowed fast
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
+            ReceiveMessage(connection);
             ReceiveMessage(connection);
             ReceiveMessage(connection);
             ReceiveMessage(connection);
