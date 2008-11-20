@@ -360,6 +360,11 @@ namespace MonoTorrent.Client
                 id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
                 int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.recieveBuffer.Array, id.recieveBuffer.Offset));
 
+                if (messageBodyLength > RequestMessage.MaxSize)
+                {
+                    id.ConnectionManager.CleanupSocket(id, "Peer tried to send too much data");
+                    return;
+                }
 
                 // If bytes to receive is zero, it means we received a keep alive message
                 // so we just start receiving a new message length again
