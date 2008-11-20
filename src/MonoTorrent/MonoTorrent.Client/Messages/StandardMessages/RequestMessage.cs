@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
         internal static readonly byte MessageId = 6;
         private const int messageLength = 13;
 
-        internal const int MaxSize = 65536;
+        internal const int MaxSize = 65536 + 64;
         internal const int MinSize = 4096;
 
         #region Private Fields
