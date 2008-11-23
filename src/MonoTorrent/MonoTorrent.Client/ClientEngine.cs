@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
 
             Settings.ListenPort = endpoint.Port;
             dhtListener.ChangeEndpoint(endpoint);
-            listenManager.Listeners[0].ChangeEndpoint(endpoint);
+            listener.ChangeEndpoint(endpoint);
         }
 
         private void CheckDisposed()
