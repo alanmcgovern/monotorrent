@@ -47,8 +47,6 @@ namespace MonoTorrent.Common
     {
         #region Private Fields
 
-        private static bool strictDecoding = true;
-
         private BEncodedValue azureusProperties;
         private List<MonoTorrentCollection<string>> announceUrls;
         private string comment;
@@ -75,16 +73,6 @@ namespace MonoTorrent.Common
 
 
         #region Properties
-
-        /// <summary>
-        /// If true, then the Torrent Load methods try to correct for some malformed torrents instead of throwing exceptions.
-        /// </summary>
-        public static bool StrictDecoding
-        {
-            get { return strictDecoding; }
-            set { strictDecoding = value; }
-        }
-
 
         /// <summary>
         /// The announce URLs contained within the .torrent file
@@ -762,15 +750,10 @@ namespace MonoTorrent.Common
                                 }
                                 catch (Exception e)
                                 {
-                                    if (strictDecoding)
-                                        throw;
-                                    else if (e is ArgumentOutOfRangeException)
+                                    if (e is ArgumentOutOfRangeException)
                                         creationDate = creationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
-                                    else if (e is FormatException)
-                                    {
-                                        // swallow it if lenient
-                                    }
-
+                                    else
+                                        throw;
                                 }
                             }
                             catch (Exception e)
@@ -829,8 +812,7 @@ namespace MonoTorrent.Common
                             break;
 
                         case ("announce-list"):
-                            if (keypair.Value is BEncodedString && !strictDecoding &&   // empty BES is allowed with lenient decoding
-                                (keypair.Value as BEncodedString).TextBytes.Length == 0)
+                            if (keypair.Value is BEncodedString)
                                 break;
                             BEncodedList announces = (BEncodedList)keypair.Value;
 
@@ -855,9 +837,8 @@ namespace MonoTorrent.Common
                                 }
                                 else
                                 {
-                                    if (strictDecoding)
-                                        throw new BEncodingException(String.Format("Non-BEncodedList found in announce-list (found {0})",
-                                            announces[j].GetType()));
+                                    throw new BEncodingException(String.Format("Non-BEncodedList found in announce-list (found {0})",
+                                      announces[j].GetType()));
                                 }
                             }
                             break;
