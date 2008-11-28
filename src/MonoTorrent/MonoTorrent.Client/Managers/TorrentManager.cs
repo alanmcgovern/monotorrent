@@ -93,6 +93,7 @@ namespace MonoTorrent.Client
         private int uploadingTo;                // The number of peers which we're currently uploading to
         private ChokeUnchokeManager chokeUnchoker; // Used to choke and unchoke peers
 		private InactivePeerManager inactivePeerManager; // Used to identify inactive peers we don't want to connect to
+		private DateTime lastCalledInactivePeerManager = DateTime.Now;
         private InitialSeed initialSeed;	//superseed class manager
 
         #endregion Member Variables
@@ -286,17 +287,17 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// Number of peers we have inactivated for this torrent
 		/// </summary>
-		public int InactivatedPeers
+		public int InactivePeers
 		{
-			get { return inactivePeerManager.InactivatedPeers; }
+			get { return inactivePeerManager.InactivePeers; }
 		}
 
 		/// <summary>
 		/// List of peers we have inactivated for this torrent
 		/// </summary>
-		public List<InactivePeer> InactivePeers
+		public List<InactivePeer> InactivePeerList
 		{
-			get { return inactivePeerManager.InactivePeers; }
+			get { return inactivePeerManager.InactivePeerList; }
 		}
 
         #endregion
@@ -345,7 +346,7 @@ namespace MonoTorrent.Client
             this.hashingWaitHandle = new ManualResetEvent(false);
             this.monitor = new ConnectionMonitor();
             this.settings = settings;
-			this.inactivePeerManager = new InactivePeerManager(this, settings.TimeToWaitUntilIdle);
+			this.inactivePeerManager = new InactivePeerManager(this);
             this.peers = new PeerManager();
             this.pieceManager = new PieceManager(bitfield, torrent.Files);
             this.torrent = torrent;
@@ -765,8 +766,11 @@ namespace MonoTorrent.Client
             }
 
 			// Remove inactive peers we haven't heard from if we're downloading
-			if (state == TorrentState.Downloading)
+			if (state == TorrentState.Downloading && lastCalledInactivePeerManager + TimeSpan.FromSeconds(5) < DateTime.Now)
+			{
 				inactivePeerManager.TimePassed();
+				lastCalledInactivePeerManager = DateTime.Now;
+			}
 
 			// Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
 			if (chokeUnchoker == null)

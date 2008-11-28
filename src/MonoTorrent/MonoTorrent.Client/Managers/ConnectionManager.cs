@@ -235,6 +235,8 @@ namespace MonoTorrent.Client
                 
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
 				id.WhenConnected = DateTime.Now;
+				// Baseline the time the last block was received
+				id.LastBlockReceived = DateTime.Now;
             }
             catch (Exception)
             {
@@ -593,6 +595,8 @@ namespace MonoTorrent.Client
                 id.TorrentManager.Peers.ActivePeers.Add(id.Peer);
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
 				id.WhenConnected = DateTime.Now;
+				// Baseline the time the last block was received
+				id.LastBlockReceived = DateTime.Now;
 
                 //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
 

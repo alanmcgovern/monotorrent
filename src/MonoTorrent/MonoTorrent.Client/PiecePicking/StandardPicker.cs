@@ -656,6 +656,7 @@ namespace MonoTorrent.Client
 
             piece.Blocks[blockIndex].Received = true;
             id.AmRequestingPiecesCount--;
+			id.LastBlockReceived = DateTime.Now;
             id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
             id.TorrentManager.FileManager.QueueWrite(data);
 

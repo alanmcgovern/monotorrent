@@ -8,25 +8,23 @@ namespace MonoTorrent.Client
 	{
 
 		#region Private Fields
-
-		private int timeToWaitBeforeIdle = 600; // If we've not got anything from a peer for this number of seconds, consider them as candidates for disconnection; 0 = disable inactivity checking
 		private TorrentManager owningTorrent; //The torrent to which this manager belongs
-		private List<InactivePeer> inactivePeers = new List<InactivePeer>();
+		private List<InactivePeer> inactivePeerList = new List<InactivePeer>();
 
 		/// <summary>
 		/// Provides access to the list of URIs we've marked as inactive
 		/// </summary>
-		public List<InactivePeer> InactivePeers
+		internal List<InactivePeer> InactivePeerList
 		{
-			get { return inactivePeers; }
+			get { return inactivePeerList; }
 		}
 
 		/// <summary>
 		/// The number of peers we have marked as inactive
 		/// </summary>
-		public int InactivatedPeers
+		internal int InactivePeers
 		{
-			get { return inactivePeers.Count; }
+			get { return inactivePeerList.Count; }
 		}
 
 		#endregion
@@ -38,10 +36,9 @@ namespace MonoTorrent.Client
 		/// </summary>
 		/// <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
 		/// <param name="TimeToWaitBeforeIdle">Number of seconds to protect a peer from being marked as inactive</param>
-        public InactivePeerManager(TorrentManager TorrentManager, int TimeToWaitBeforeIdle)
+        public InactivePeerManager(TorrentManager TorrentManager)
         {
             owningTorrent = TorrentManager;
-            timeToWaitBeforeIdle = TimeToWaitBeforeIdle;
         }
 
 		#endregion
@@ -55,7 +52,7 @@ namespace MonoTorrent.Client
 		{
 
 			// If peer inactivation is disabled, do nothing
-			if (timeToWaitBeforeIdle == 0)
+			if (owningTorrent.Settings.TimeToWaitUntilIdle.TotalSeconds == 0)
 				return;
 
 			// If we've not reached the maximum peers for this torrent, there's nothing for us to do
@@ -73,38 +70,52 @@ namespace MonoTorrent.Client
 			int indexOfFirstInterestingCandidate = -1;
 			int leastAttractiveCandidate = -1; // The least attractive peer that has sent us data
 			int longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
+			int candidateSecondsConnected = 0;
+			int candidateSecondsSinceLastBlock = -1;
+			int candidateDataBytes = -1;
 			for (int i = 0; i < owningTorrent.Peers.ConnectedPeers.Count; i++)
 			{
 				PeerId nextPeer = owningTorrent.Peers.ConnectedPeers[i];
-				if (nextPeer.BytesReceived == 0 && nextPeer.WhenConnected.AddSeconds(timeToWaitBeforeIdle) < DateTime.Now)
+				if (nextPeer.Monitor.DataBytesDownloaded == 0 && nextPeer.WhenConnected.Add(owningTorrent.Settings.TimeToWaitUntilIdle) < DateTime.Now)
 				{
 					// This one is eligible for marking as inactive
 					if (!nextPeer.AmInterested)
 					{
 						// This is an eligible peer and we're not interested in it so stop looking
 						indexOfFirstUninterestingCandidate = i;
+						candidateSecondsConnected = (int)(DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
 						break;
 					}
 					// This is an eligible peer, but we're interested in it; remember it for potential disconnection if it's the first one we found
 					if (indexOfFirstInterestingCandidate < 0)
+					{
 						indexOfFirstInterestingCandidate = i;
+						candidateSecondsConnected = (int)(DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+					}
 				}
 				else
 				{
 					// No point looking for inactive peers that have sent us data if we found a candidate that's sent us nothing or if we aren't allowed
-					// to disconnect peers that have sent us data
-					if (indexOfFirstInterestingCandidate < 0 && owningTorrent.Settings.ConnectionRetentionFactor > 0 && nextPeer.BytesReceived > 0 && nextPeer.LastMessageReceived != null)
+					// to disconnect peers that have sent us data.
+					// If the number of available peers is running low (less than max number of peer connections), don't try to inactivate peers that have given us data
+					if (indexOfFirstInterestingCandidate < 0 
+						&& owningTorrent.Settings.ConnectionRetentionFactor > 0
+						&& nextPeer.Monitor.DataBytesDownloaded > 0 
+						&& owningTorrent.Peers.Available >= owningTorrent.Settings.MaxConnections )
 					{
 						// Calculate an inactive time.
 						// Base time is time since the last message (in seconds)
 						// Give the peer an extra second for every 'ConnectionRetentionFactor' bytes
-						TimeSpan secondsSinceLastMessage = DateTime.Now.Subtract(nextPeer.LastMessageReceived);
-						int calculatedInactiveTime = Convert.ToInt32(secondsSinceLastMessage.TotalSeconds) - Convert.ToInt32(nextPeer.BytesReceived / owningTorrent.Settings.ConnectionRetentionFactor);
+						TimeSpan timeSinceLastBlock = DateTime.Now.Subtract(nextPeer.LastBlockReceived);
+						int calculatedInactiveTime = Convert.ToInt32(timeSinceLastBlock.TotalSeconds - Convert.ToInt32(nextPeer.Monitor.DataBytesDownloaded / owningTorrent.Settings.ConnectionRetentionFactor));
 						// Register as the least attractive candidate if the calculated time is more than the idle wait time and more than any other candidate
-						if (calculatedInactiveTime > owningTorrent.Settings.TimeToWaitUntilIdle && calculatedInactiveTime > longestCalculatedInactiveTime)
+						if (calculatedInactiveTime > owningTorrent.Settings.TimeToWaitUntilIdle.TotalSeconds  && calculatedInactiveTime > longestCalculatedInactiveTime)
 						{
-							longestCalculatedInactiveTime = calculatedInactiveTime - Convert.ToInt32(nextPeer.BytesReceived / owningTorrent.Settings.ConnectionRetentionFactor);
+							longestCalculatedInactiveTime = calculatedInactiveTime;
 							leastAttractiveCandidate = i;
+							candidateSecondsConnected = (int)(DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+							candidateSecondsSinceLastBlock = (int)(DateTime.Now.Subtract(nextPeer.LastBlockReceived)).TotalSeconds;
+							candidateDataBytes = (int)nextPeer.Monitor.DataBytesDownloaded;
 						}
 					}
 				}
@@ -126,16 +137,8 @@ namespace MonoTorrent.Client
 
 			// We've found a peer to disconnect
 			// Add it to the inactive list for this torrent and disconnect it
-			TimeSpan timeConnected = DateTime.Now.Subtract(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].WhenConnected);
-			if (owningTorrent.Peers.ConnectedPeers[peerToDisconnect].LastMessageReceived == null)
-				inactivePeers.Add(new InactivePeer(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri, timeConnected.Seconds));
-			else
-			{
-				TimeSpan timeSinceLastMessage = DateTime.Now.Subtract(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].LastMessageReceived);
-				inactivePeers.Add(new InactivePeer(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri, 
-												   owningTorrent.Peers.ConnectedPeers[peerToDisconnect].BytesReceived, 
-												   Convert.ToInt32(timeConnected.TotalSeconds), Convert.ToInt32(timeSinceLastMessage.TotalSeconds)));
-			}
+			inactivePeerList.Add(new InactivePeer(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri,
+											   candidateDataBytes, candidateSecondsConnected, candidateSecondsSinceLastBlock));
 			owningTorrent.Peers.ConnectedPeers[peerToDisconnect].ConnectionManager.CleanupSocket(owningTorrent.Peers.ConnectedPeers[peerToDisconnect], "Marked as inactive");
 
 		}
@@ -147,7 +150,7 @@ namespace MonoTorrent.Client
 		/// <returns>True if the peer is inactive, otherwise false</returns>
 		internal bool IsInactive(Uri PeerUri)
 		{
-			foreach (InactivePeer peer in inactivePeers)
+			foreach (InactivePeer peer in inactivePeerList)
 				if (peer.PeerUri == PeerUri)
 					return true;
 			return false;
@@ -156,6 +159,7 @@ namespace MonoTorrent.Client
 		#endregion
 	}
 
+	[Obsolete("This class will be removed once the inactive peer manager is stable.")]
 	public class InactivePeer
 	{
 
@@ -171,11 +175,11 @@ namespace MonoTorrent.Client
 			set { value = peerUri; }
 		}
 
-		private int bytesRead = 0;
+		private long bytesRead = 0;
 		/// <summary>
 		/// Number of bytes read from the peer at the time it became active
 		/// </summary>
-		public int BytesRead
+		public long BytesRead
 		{
 			get { return bytesRead; }
 			set { value = bytesRead; }
@@ -226,7 +230,7 @@ namespace MonoTorrent.Client
 		/// <param name="BytesRead">Number of bytes read from the peer</param>
 		/// <param name="SecondsConnected">Number of seconds we were connected</param>
 		/// <param name="SecondsInactive">Number of seconds since the last message from the peer</param>
-		public InactivePeer(Uri PeerUri, int BytesRead, int SecondsConnected, int SecondsInactive)
+		public InactivePeer(Uri PeerUri, long BytesRead, int SecondsConnected, int SecondsInactive)
 		{
 			peerUri = PeerUri;
 			bytesRead = BytesRead;

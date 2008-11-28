@@ -171,6 +171,13 @@ namespace MonoTorrent.Dht
             KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
             Message m = receive.Value;
             IPEndPoint source = receive.Key;
+			if (m.TransactionId == null)
+			{
+				if (m == null)
+					throw new Exception("m is null in Dht.MessageLoop");
+				else
+					throw new Exception("m.TransactionId is null in Dht.MessageLoop");
+			}
             waitingResponse.RemoveAll(delegate(SendDetails msg) {
                 return msg.Message.TransactionId.Equals(m.TransactionId);
             });

@@ -77,11 +77,17 @@ namespace MonoTorrent.Client
             set { this.lastReviewUploadRate = value; }
         }
 
-        internal bool FirstReviewPeriod
-        {
-            get { return this.firstReviewPeriod; }
-            set { this.firstReviewPeriod = value; }
-        }
+		internal bool FirstReviewPeriod
+		{
+			get { return this.firstReviewPeriod; }
+			set { this.firstReviewPeriod = value; }
+		}
+
+		internal DateTime LastBlockReceived
+		{
+			get { return this.lastBlockReceived; }
+			set { this.lastBlockReceived = value; }
+		}
 
         private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
         private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
@@ -90,6 +96,7 @@ namespace MonoTorrent.Client
         private double lastReviewDownloadRate = 0;    //Download rate determined at the end of the last full review period when this peer was unchoked
         private double lastReviewUploadRate = 0;      //Ditto for upload rate
         private bool firstReviewPeriod;               //Set true if this is the first review period since this peer was last unchoked
+		private DateTime lastBlockReceived = DateTime.Now;
 
         #endregion
 
