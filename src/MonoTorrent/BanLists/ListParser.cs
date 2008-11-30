@@ -35,7 +35,7 @@ using System.Text.RegularExpressions;
 
 namespace MonoTorrent.Client
 {
-    public class BlocklistParser
+    public class BanListParser
     {
         public IEnumerable<AddressRange> Parse(Stream stream)
         {

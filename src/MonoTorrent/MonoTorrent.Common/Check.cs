@@ -18,6 +18,20 @@ namespace MonoTorrent
                 throw new ArgumentException("Cannot be empty", name);
         }
 
+        internal static void Address(object address)
+        {
+            DoCheck(address, "address");
+        }
+
+        internal static void AddressRange(object addressRange)
+        {
+            DoCheck(addressRange, "addressRange");
+        }
+
+        internal static void AddressRanges(object addressRanges)
+        {
+            DoCheck(addressRanges, "addressRanges");
+        }
 
         internal static void BaseDirectory(object baseDirectory)
         {

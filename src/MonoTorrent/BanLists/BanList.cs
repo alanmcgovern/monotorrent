@@ -55,39 +55,49 @@ namespace MonoTorrent.Client
     {
         Hyena.Collections.RangeCollection addresses = new Hyena.Collections.RangeCollection();
 
-        public void Add(AddressRange address)
+        public void Add(IPAddress address)
         {
-            for (int i = address.End; i > address.Start; i--)
-                addresses.Add(i);
-            addresses.Add(address.Start);
+            Check.Address(address);
+            Add(new AddressRange(address, address));
         }
 
-        public void AddRange(IEnumerable<AddressRange> range)
+        public void Add(AddressRange addressRange)
         {
-            foreach (AddressRange address in range)
+            for (int i = addressRange.End; i > addressRange.Start; i--)
+                addresses.Add(i);
+            addresses.Add(addressRange.Start);
+        }
+
+        public void AddRange(IEnumerable<AddressRange> addressRanges)
+        {
+            Check.AddressRanges(addressRanges);
+            foreach (AddressRange address in addressRanges)
                 Add(address);
         }
 
         public bool IsBanned(IPAddress address)
         {
+            Check.Address(address);
             AddressRange range = new AddressRange(address, address);
             return addresses.Contains(range.Start);
         }
 
-        private void Remove(AddressRange range)
+        private void Remove(AddressRange addressRange)
         {
-            for (int i = range.Start; i <= range.End; i++)
+            for (int i = addressRange.Start; i <= addressRange.End; i++)
                 addresses.Remove(i);
         }
 
         public void Remove(IPAddress address)
         {
+            Check.Address(address);
             Remove(new AddressRange(address, address));
         }
 
-        public void Remove(IEnumerable<AddressRange> range)
+        public void Remove(IEnumerable<AddressRange> addressRanges)
         {
-            foreach (AddressRange address in range)
+            Check.AddressRanges(addressRanges);
+            foreach (AddressRange address in addressRanges)
                 Remove(address);
         }
     }
