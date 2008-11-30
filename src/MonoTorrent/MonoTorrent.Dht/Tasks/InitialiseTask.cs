@@ -27,9 +27,15 @@ namespace MonoTorrent.Dht.Tasks
             Active = true;
 
             // If we were given a list of nodes to load at the start, use them
+            BEncodedList list = new BEncodedList();
             if (initialNodes != null)
             {
-                BEncodedList list = (BEncodedList)BEncodedValue.Decode(initialNodes);
+                foreach (BEncodedString s in (BEncodedList)BEncodedValue.Decode(initialNodes))
+                    list.Add(s);
+            }
+
+            if (list.Count > 0)
+            {
                 foreach (BEncodedString s in list)
                     engine.Add(Node.FromCompactNode(s.TextBytes, 0));
             }
