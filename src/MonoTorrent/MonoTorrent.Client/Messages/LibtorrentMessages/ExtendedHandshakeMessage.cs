@@ -175,7 +175,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
             // FIXME : Find a way to be more elegant!
             foreach(ExtensionSupport support in supports) {
-                if (support.Name == "ut_pex" && id.PeerExchangeManager == null) {
+                if (support.Name == "ut_pex" && id.PeerExchangeManager == null && !id.TorrentManager.Torrent.IsPrivate) {
                     id.PeerExchangeManager = new PeerExchangeManager (id);
                     break;
                 }
