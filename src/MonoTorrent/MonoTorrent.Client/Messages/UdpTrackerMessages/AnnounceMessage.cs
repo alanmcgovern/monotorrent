@@ -26,6 +26,11 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             get { return 8 + 4 + 4 + 20 + 20 + 8 + 8 + 8 + 4 + 4 + 4 + 4 + 2; }
         }
 
+        public long ConnectionId
+        {
+            get { return connectionId; }
+        }
+
         public AnnounceMessage()
         {
             Action = 1;

@@ -69,6 +69,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual(1, m.Action);
             Assert.AreEqual(m.Action, d.Action);
             Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.AreEqual(12345, d.ConnectionId);
         }
 
         [Test]
@@ -86,6 +87,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual(1, m.Action);
             Assert.AreEqual(m.Action, d.Action);
             Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.AreEqual(12345, d.TransactionId);
         }
 
         [Test]
@@ -105,7 +107,7 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectResponseTest()
         {
-            ConnectResponseMessage m = new ConnectResponseMessage(12345, 5371);
+            ConnectResponseMessage m = new ConnectResponseMessage(5371, 12345);
             ConnectResponseMessage d = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
             
@@ -114,6 +116,9 @@ namespace MonoTorrent.Client
             Assert.AreEqual(m.ConnectionId, d.ConnectionId, "#2");
             Assert.AreEqual(m.TransactionId, d.TransactionId, "#3");
             Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
+            Assert.AreEqual(5371, d.ConnectionId);
+            Assert.AreEqual(12345, d.TransactionId);
+
         }
 
         [Test]
@@ -148,6 +153,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual(2, m.Action);
             Assert.AreEqual(m.Action, d.Action);
             Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.AreEqual(12345, d.TransactionId);
         }
 
         void Check(UdpTrackerMessage message, MessageType type)
