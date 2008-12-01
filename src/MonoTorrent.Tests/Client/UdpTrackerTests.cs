@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
         [Test]
         public void AnnounceTest()
         {
-            AnnounceMessage m = new AnnounceMessage(12345, announceparams);
+            AnnounceMessage m = new AnnounceMessage(0, 12345, announceparams);
             AnnounceMessage d = (AnnounceMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
 
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client
             peers.Add(new Peer(new string('2', 20), new Uri("tcp://127.0.0.1:2")));
             peers.Add(new Peer(new string('3', 20), new Uri("tcp://127.0.0.1:3")));
 
-            AnnounceResponseMessage m = new AnnounceResponseMessage(12345, 123, 43, 65, peers);
+            AnnounceResponseMessage m = new AnnounceResponseMessage(12345, TimeSpan.FromSeconds(10), 43, 65, peers);
             AnnounceResponseMessage d = (AnnounceResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
 
@@ -116,8 +116,8 @@ namespace MonoTorrent.Client
             Assert.AreEqual(m.ConnectionId, d.ConnectionId, "#2");
             Assert.AreEqual(m.TransactionId, d.TransactionId, "#3");
             Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
-            Assert.AreEqual(5371, d.ConnectionId);
-            Assert.AreEqual(12345, d.TransactionId);
+            Assert.AreEqual(12345, d.ConnectionId);
+            Assert.AreEqual(5371, d.TransactionId);
 
         }
 

@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.Tracker
                 return null;
             }
 
-            AnnounceMessage m = new AnnounceMessage(connectionId, parameters);
+            AnnounceMessage m = new AnnounceMessage(0, connectionId, parameters);
             byte[] data = null;
             try
             {
