@@ -205,7 +205,6 @@
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ConnectMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ConnectResponseMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ErrorMessage.cs" />
-    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\PeerDetailsMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeResponseMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\UdpTrackerMessage.cs" />
