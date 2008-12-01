@@ -38,15 +38,29 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class AnnounceResponseMessage : UdpTrackerMessage
     {
-        int interval;
+        TimeSpan interval;
         int leechers;
         int seeders;
-
-        List<Peer> peers = new List<Peer>();
+        List<Peer> peers;
 
         public override int ByteLength
         {
             get { return (4 * 5 + peers.Count * 6); }
+        }
+
+        public int Leechers
+        {
+            get { return leechers; }
+        }
+
+        public TimeSpan Interval
+        {
+            get { return interval; }
+        }
+
+        public int Seeders
+        {
+            get { return seeders; }
         }
 
         public List<Peer> Peers
@@ -55,12 +69,12 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public AnnounceResponseMessage()
-            : this(0, 0, 0, 0, new List<Peer>())
+            : this(0, TimeSpan.Zero, 0, 0, new List<Peer>())
         {
             
         }
 
-        public AnnounceResponseMessage(int transactionId, int interval, int leechers, int seeders, List<Peer> peers)
+        public AnnounceResponseMessage(int transactionId, TimeSpan interval, int leechers, int seeders, List<Peer> peers)
             :base(1, transactionId)
         {
             this.interval = interval;
@@ -74,7 +88,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             if (Action != ReadInt(buffer, offset))
                 ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, offset + 4);
-            interval = ReadInt(buffer, offset + 8);
+            interval = TimeSpan.FromSeconds(ReadInt(buffer, offset + 8));
             leechers = ReadInt(buffer, offset + 12);
             seeders = ReadInt(buffer, offset + 16);
 
@@ -97,7 +111,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, interval);
+            written += Write(buffer, written, (int)interval.TotalSeconds);
             written += Write(buffer, written, leechers);
             written += Write(buffer, written, seeders);
 

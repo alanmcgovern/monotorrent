@@ -45,6 +45,11 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             get { return 8 + 4 + 4 + infohashes.Count * 20; }
         }
 
+        public List<byte[]> InfoHashes
+        {
+            get { return infohashes; }
+        }
+
         public ScrapeMessage()
             : this(0, 0, new List<byte[]>())
         {

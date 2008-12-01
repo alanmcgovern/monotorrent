@@ -31,6 +31,66 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             get { return connectionId; }
         }
 
+        public long Downloaded
+        {
+            get { return downloaded; }
+            set { downloaded = value; }
+        }
+
+        public byte[] InfoHash
+        {
+            get { return infoHash; }
+            set { infoHash = value; }
+        }
+
+        public uint Ip
+        {
+            get { return ip; }
+            set { ip = value; }
+        }
+
+        public uint Key
+        {
+            get { return key; }
+            set { key = value; }
+        }
+
+        public long Left
+        {
+            get { return left; }
+            set { left = value; }
+        }
+
+        public int NumWanted
+        {
+            get { return numWanted; }
+            set { numWanted = value; }
+        }
+
+        public string PeerId
+        {
+            get { return peerId; }
+            set { peerId = value; }
+        }
+
+        public ushort Port
+        {
+            get { return port; }
+            set { port = value; }
+        }
+
+        public TorrentEvent TorrentEvent
+        {
+            get { return torrentEvent; }
+            set { torrentEvent = value; }
+        }
+
+        public long Uploaded
+        {
+            get { return uploaded; }
+            set { uploaded = value; }
+        }
+
         public AnnounceMessage()
             : this(0, 0, null)
         {
