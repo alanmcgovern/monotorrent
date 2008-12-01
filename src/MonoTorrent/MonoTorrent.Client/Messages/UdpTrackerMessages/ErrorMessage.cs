@@ -27,23 +27,25 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int ByteLength
         {
-            get { return 8 + Encoding.ASCII.GetByteCount(errorMessage); }
+            get { return 4 + 4 + Encoding.ASCII.GetByteCount(errorMessage); }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            action = ReadInt(buffer, offset); offset += 4;
-            transactionId = ReadInt(buffer, offset); offset += 4;
-            errorMessage = Encoding.ASCII.GetString(buffer, offset, length - offset);
+            action = ReadInt(buffer, ref offset);
+            transactionId = ReadInt(buffer, ref offset);
+            errorMessage = ReadString(buffer, ref offset, length - offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            offset += Write(buffer, offset, action);
-            offset += Write(buffer, offset, transactionId);
-            offset += Encoding.ASCII.GetBytes(errorMessage, 0, errorMessage.Length, buffer, offset);
-            
-            return ByteLength;
+            int written = offset;
+
+            written += Write(buffer, written, action);
+            written += Write(buffer, written, transactionId);
+            written += WriteAscii(buffer, written, errorMessage);
+
+            return written - offset; ;
         }
     }
 }

@@ -173,5 +173,10 @@ namespace MonoTorrent.Client.Messages
         {
             return Write(buffer, offset, value, 0, value.Length);
         }
+
+        static public int WriteAscii(byte[] buffer, int offset, string text)
+        {
+            return Encoding.ASCII.GetBytes(text, 0, text.Length, buffer, offset);
+        }
     }
 }

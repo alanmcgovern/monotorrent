@@ -67,24 +67,23 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int origOffset = offset;
-            offset += Write(buffer, offset, connectionId);
-            offset += Write(buffer, offset, Action);
-            offset += Write(buffer, offset, TransactionId);
-            offset += Write(buffer, offset, infoHash, 0, infoHash.Length);
-            byte[] b = new byte[20];
-            Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, b, 0);
-            offset += Write(buffer, offset, b, 0, b.Length);
-            offset += Write(buffer, offset, downloaded);
-            offset += Write(buffer, offset, left);
-            offset += Write(buffer, offset, uploaded);
-            offset += Write(buffer, offset, (int)torrentEvent);
-            offset += Write(buffer, offset, ip);
-            offset += Write(buffer, offset, key);
-            offset += Write(buffer, offset, numWanted);
-            offset += Write(buffer, offset, port);
+            int written = offset;
 
-            return offset - origOffset;
+            written += Write(buffer, written, connectionId);
+            written += Write(buffer, written, Action);
+            written += Write(buffer, written, TransactionId);
+            written += Write(buffer, written, infoHash, 0, infoHash.Length);
+            written += WriteAscii(buffer, written, peerId);
+            written += Write(buffer, written, downloaded);
+            written += Write(buffer, written, left);
+            written += Write(buffer, written, uploaded);
+            written += Write(buffer, written, (int)torrentEvent);
+            written += Write(buffer, written, ip);
+            written += Write(buffer, written, key);
+            written += Write(buffer, written, numWanted);
+            written += Write(buffer, written, port);
+
+            return written - offset;
         }
     }
 }
