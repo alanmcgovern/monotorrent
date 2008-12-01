@@ -77,6 +77,7 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
+            engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Loopback, port));
             byte[] nodes = null;
             try
             {
@@ -135,6 +136,7 @@ namespace MonoTorrent
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add(manager);
+                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
                 }
             }
 
@@ -219,6 +221,12 @@ namespace MonoTorrent
 
                 System.Threading.Thread.Sleep(500);
             }
+        }
+
+        static void manager_PeersFound(object sender, PeersAddedEventArgs e)
+        {
+            lock (listener)
+                listener.WriteLine(string.Format("Found {0} new peers and {1} existing peers", e.NewPeers, e.ExistingPeers ));//throw new Exception("The method or operation is not implemented.");
         }
 
         private static void AppendSeperator(StringBuilder sb)
