@@ -7,7 +7,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class ConnectResponseMessage : UdpTrackerMessage
     {
-        int action;
+        int action = 0;
         long connectionId;
         int transactionId;
 
@@ -30,6 +30,12 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         }
 
+        public ConnectResponseMessage(long connectionId, int transactionId)
+        {
+            this.connectionId = connectionId;
+            this.transactionId = transactionId;
+        }
+
         public override int ByteLength
         {
             get { return 8 + 4 + 4; }
@@ -37,16 +43,16 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            action = ReadInt(buffer, offset);
-            transactionId = ReadInt(buffer, offset + 4);
-            connectionId = ReadLong(buffer, offset + 8);
+            action = ReadInt(buffer, ref offset);
+            transactionId = ReadInt(buffer, ref offset);
+            connectionId = ReadLong(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            Write(buffer, offset, action);
-            Write(buffer, offset + 4, transactionId);
-            Write(buffer, offset + 8, connectionId);
+            Write(buffer, offset, Action);
+            Write(buffer, offset + 4, TransactionId);
+            Write(buffer, offset + 8, ConnectionId);
             
             return ByteLength;
         }

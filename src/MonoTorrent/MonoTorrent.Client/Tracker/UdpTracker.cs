@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Tracker
                 return null;
             }
 
-            UdpTrackerMessage message = UdpTrackerMessage.DecodeMessage(data, 0, data.Length);
+            UdpTrackerMessage message = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Response);
 
             CompleteAnnounce(message);
 
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Tracker
                 return;
             }
 
-            ConnectResponseMessage m = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(response, 0, response.Length);// new ConnectResponseMessage();
+            ConnectResponseMessage m = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(response, 0, response.Length, MessageType.Response);// new ConnectResponseMessage();
 
             connectionId = m.ConnectionId;
             hasConnected = true;

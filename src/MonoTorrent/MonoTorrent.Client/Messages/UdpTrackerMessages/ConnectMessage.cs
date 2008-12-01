@@ -9,29 +9,17 @@ namespace MonoTorrent.Client.Messages.UdpTracker
     public class ConnectMessage : UdpTrackerMessage
     {
         private long connectionId;
-        private int action;
-        private int transactionId;
-
-        public int Action
-        {
-            get { return action; }
-        }
 
         public long ConnectionId
         {
             get { return connectionId; }
         }
 
-        public int TransactionId
-        {
-            get { return transactionId; }
-        }
-
         public ConnectMessage()
         {
-            action = 0;                                                 // Connect message
+            Action = 0;                                                 // Connect message
             connectionId = IPAddress.NetworkToHostOrder(0x41727101980); // Init connectionId as per spec
-            transactionId = DateTime.Now.GetHashCode();                 // Random ID created from current datetime
+            TransactionId = DateTime.Now.GetHashCode();                 // Random ID created from current datetime
         }
 
         public override int ByteLength
@@ -41,18 +29,20 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            connectionId = ReadLong(buffer, offset);
-            action = ReadInt(buffer, offset + 8);
-            transactionId = ReadInt(buffer, offset + 12);
+            connectionId = ReadLong(buffer, ref offset);
+            Action = ReadInt(buffer, ref offset);
+            TransactionId = ReadInt(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            Write(buffer, offset, connectionId);
-            Write(buffer, offset + 8, action);
-            Write(buffer, offset + 12, transactionId);
+            int written = offset;
 
-            return ByteLength;
+            written += Write(buffer, written, connectionId);
+            written += Write(buffer, written, Action);
+            written += Write(buffer, written, TransactionId);
+
+            return written - offset;
         }
     }
 }

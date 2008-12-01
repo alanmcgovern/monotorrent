@@ -68,6 +68,7 @@
     <Compile Include="Client\TestWebSeed.cs" />
     <Compile Include="Client\TorrentManagerTest.cs" />
     <Compile Include="Client\TransferTest.cs" />
+    <Compile Include="Client\UdpTrackerTests.cs" />
     <Compile Include="Common\BEncodingTest.cs" />
     <Compile Include="Common\BitFieldTest.cs" />
     <Compile Include="Common\SHA1Fake.cs" />

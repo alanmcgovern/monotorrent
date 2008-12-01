@@ -8,7 +8,6 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class AnnounceResponseMessage : UdpTrackerMessage
     {
-        int action;
         int transactionId;
         int interval;
         int leechers;
@@ -18,7 +17,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int ByteLength
         {
-            get { return (4 * 5); }
+            get { return (4 * 5 + peers.Count * 6); }
         }
 
         public List<Peer> Peers
@@ -26,9 +25,24 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             get { return peers; }
         }
 
+        public AnnounceResponseMessage()
+        {
+            Action = 1;
+        }
+
+        public AnnounceResponseMessage(int transactionId, int interval, int leechers, int seeders, List<Peer> peers)
+            :this()
+        {
+            this.transactionId = transactionId;
+            this.interval = interval;
+            this.leechers = leechers;
+            this.seeders = seeders;
+            this.peers = peers;
+        }
+
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            action = ReadInt(buffer, offset);
+            Action = ReadInt(buffer, offset);
             transactionId = ReadInt(buffer, offset + 4);
             interval = ReadInt(buffer, offset + 8);
             leechers = ReadInt(buffer, offset + 12);
@@ -39,23 +53,28 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         private void LoadPeerDetails(byte[] buffer, int offset)
         {
-            for (int i = offset; i < buffer.Length; i += 6)
+            while(offset <= (buffer.Length - 6))
             {
-                int ip = IPAddress.HostToNetworkOrder(ReadInt(buffer, offset));
-                ushort port = (ushort)ReadShort(buffer, offset + 4);
-                peers.Add(new Peer("", new Uri("tcp://" + new IPAddress(BitConverter.GetBytes(ip)).ToString() + ":" + port.ToString())));
+                int ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
+                ushort port = (ushort)ReadShort(buffer, ref offset);
+                peers.Add(new Peer("", new Uri("tcp://" + new IPEndPoint(new IPAddress(ip), port).ToString())));
             }
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            offset += Write(buffer, offset, action);
-            offset += Write(buffer, offset, transactionId);
-            offset += Write(buffer, offset, interval);
-            offset += Write(buffer, offset, leechers);
-            offset += Write(buffer, offset, seeders);
+            int written = offset;
 
-            return ByteLength;
+            written += Write(buffer, written, Action);
+            written += Write(buffer, written, TransactionId);
+            written += Write(buffer, written, interval);
+            written += Write(buffer, written, leechers);
+            written += Write(buffer, written, seeders);
+
+            for (int i=0; i < peers.Count; i++)
+                Peers[i].CompactPeer(buffer, written + (i * 6));
+
+            return written - offset;
         }
     }
 }

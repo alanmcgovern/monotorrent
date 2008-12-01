@@ -119,6 +119,7 @@
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
     <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\MessageType.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
@@ -205,7 +206,6 @@
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ConnectResponseMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ErrorMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\PeerDetailsMessage.cs" />
-    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeDetails.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeResponseMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\UdpTrackerMessage.cs" />
