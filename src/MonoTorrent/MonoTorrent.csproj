@@ -120,6 +120,7 @@
     <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\MessageType.cs" />
+    <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeDetails.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
