@@ -7,15 +7,15 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     class ErrorMessage : UdpTrackerMessage
     {
-        int action;
-        int transactionId;
         string errorMessage;
 
         public ErrorMessage()
+            :this(0, "")
         {
         }
 
-        public ErrorMessage(string error)
+        public ErrorMessage(int transactionId, string error)
+            :base(3, transactionId)
         {
             this.errorMessage = error;
         }
@@ -32,8 +32,9 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            action = ReadInt(buffer, ref offset);
-            transactionId = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                ThrowInvalidActionException();
+            TransactionId = ReadInt(buffer, ref offset);
             errorMessage = ReadString(buffer, ref offset, length - offset);
         }
 
@@ -41,8 +42,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         {
             int written = offset;
 
-            written += Write(buffer, written, action);
-            written += Write(buffer, written, transactionId);
+            written += Write(buffer, written, Action);
+            written += Write(buffer, written, TransactionId);
             written += WriteAscii(buffer, written, errorMessage);
 
             return written - offset; ;

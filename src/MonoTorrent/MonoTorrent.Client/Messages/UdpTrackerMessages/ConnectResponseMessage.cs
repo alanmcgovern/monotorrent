@@ -20,11 +20,10 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         }
 
-        public ConnectResponseMessage(long connectionId, int transactionId)
+        public ConnectResponseMessage(int transactionId, long connectionId)
+            : base(0, transactionId)
         {
-            Action = 0;
             this.connectionId = connectionId;
-            TransactionId = transactionId;
         }
 
         public override int ByteLength
@@ -34,7 +33,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            Action = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
             connectionId = ReadLong(buffer, ref offset);
         }

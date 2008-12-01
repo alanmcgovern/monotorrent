@@ -16,10 +16,9 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public ConnectMessage()
+            : base(0, DateTime.Now.GetHashCode())
         {
-            Action = 0;                                                 // Connect message
             connectionId = IPAddress.NetworkToHostOrder(0x41727101980); // Init connectionId as per spec
-            TransactionId = DateTime.Now.GetHashCode();                 // Random ID created from current datetime
         }
 
         public override int ByteLength
@@ -30,7 +29,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public override void Decode(byte[] buffer, int offset, int length)
         {
             connectionId = ReadLong(buffer, ref offset);
-            Action = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
         }
 

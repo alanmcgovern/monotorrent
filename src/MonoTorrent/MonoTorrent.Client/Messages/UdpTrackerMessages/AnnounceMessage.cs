@@ -32,14 +32,18 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public AnnounceMessage()
+            : this(0, 0, null)
         {
-            Action = 1;
+
         }
 
-        public AnnounceMessage(long connectionId, AnnounceParameters parameters)
+        public AnnounceMessage(int transactionId, long connectionId, AnnounceParameters parameters)
+            :base(1, transactionId)
         {
-            Action = 1;
             this.connectionId = connectionId;
+            if (parameters == null)
+                return;
+
             this.downloaded = parameters.BytesDownloaded;
             this.infoHash = parameters.Infohash;
             this.ip = 0;
@@ -49,14 +53,14 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             this.peerId = parameters.PeerId;
             this.port = (ushort)parameters.Port;
             this.torrentEvent = parameters.ClientEvent;
-            this.TransactionId = DateTime.Now.GetHashCode();
             this.uploaded = parameters.BytesUploaded;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
             connectionId = ReadLong(buffer, ref offset);
-            Action = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
             infoHash = ReadBytes(buffer, ref offset, 20);
             peerId = ReadString(buffer, ref offset, 20);

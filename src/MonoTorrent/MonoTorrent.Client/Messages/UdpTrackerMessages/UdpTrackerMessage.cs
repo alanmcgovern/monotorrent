@@ -43,13 +43,18 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public int Action
         {
             get { return action; }
-            protected set { action = value; }
         }
 
         public int TransactionId
         {
             get { return transactionId; }
             protected set { transactionId = value; }
+        }
+
+        public UdpTrackerMessage(int action, int transactionId)
+        {
+            this.action = action;
+            this.transactionId = transactionId;
         }
 
         public static UdpTrackerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, MessageType type)
@@ -94,9 +99,14 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             }
             catch
             {
-                m = new ErrorMessage("Couldn't decode the tracker response");
+                m = new ErrorMessage(0, "Couldn't decode the tracker response");
             }
             return m;
+        }
+
+        protected static void ThrowInvalidActionException()
+        {
+            throw new MessageException("Invalid value for 'Action'");
         }
     }
 }

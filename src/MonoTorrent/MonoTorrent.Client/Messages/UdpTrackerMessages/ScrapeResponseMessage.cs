@@ -35,20 +35,6 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    public struct ScrapeDetails
-    {
-        public int Seeds;
-        public int Leeches;
-        public int Complete;
-
-        public ScrapeDetails(int seeds, int leeches, int complete)
-        {
-            Seeds = seeds;
-            Leeches = leeches;
-            Complete = complete;
-        }
-    }
-
     class ScrapeResponseMessage : UdpTrackerMessage
     {
         private List<ScrapeDetails> scrapes;
@@ -70,23 +56,22 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public ScrapeResponseMessage(int transactionId, List<ScrapeDetails> scrapes)
+            :base(2, transactionId)
         {
-            Action = 2;
-            TransactionId = transactionId;
             this.scrapes = scrapes;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            Action = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
             while (offset <= (buffer.Length - 12))
             {
-                ScrapeDetails d = new ScrapeDetails();
-                d.Seeds = ReadInt(buffer, ref offset);
-                d.Complete = ReadInt(buffer, ref offset);
-                d.Leeches = ReadInt(buffer, ref offset);
-                scrapes.Add(d);
+                int seeds = ReadInt(buffer, ref offset);
+                int complete = ReadInt(buffer, ref offset);
+                int leeches = ReadInt(buffer, ref offset);
+                scrapes.Add(new ScrapeDetails(seeds, leeches, complete));
             }
         }
 

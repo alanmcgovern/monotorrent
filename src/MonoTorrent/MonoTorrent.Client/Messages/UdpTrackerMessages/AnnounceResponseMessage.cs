@@ -25,14 +25,14 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public AnnounceResponseMessage()
+            : this(0, 0, 0, 0, new List<Peer>())
         {
-            Action = 1;
+            
         }
 
         public AnnounceResponseMessage(int transactionId, int interval, int leechers, int seeders, List<Peer> peers)
-            :this()
+            :base(1, transactionId)
         {
-            TransactionId = transactionId;
             this.interval = interval;
             this.leechers = leechers;
             this.seeders = seeders;
@@ -41,7 +41,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            Action = ReadInt(buffer, offset);
+            if (Action != ReadInt(buffer, offset))
+                ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, offset + 4);
             interval = ReadInt(buffer, offset + 8);
             leechers = ReadInt(buffer, offset + 12);

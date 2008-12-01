@@ -46,23 +46,23 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         }
 
         public ScrapeMessage()
+            : this(0, 0, new List<byte[]>())
         {
-            Action = 2;
-            infohashes = new List<byte[]>();
+
         }
 
-        public ScrapeMessage(long connectionId, int transactionId, List<byte[]> infohashes)
-            : this()
+        public ScrapeMessage(int transactionId, long connectionId, List<byte[]> infohashes)
+            : base (2, transactionId)
         {
             this.connectionId = connectionId;
-            this.TransactionId = transactionId;
             this.infohashes = infohashes;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
             connectionId = ReadLong(buffer, ref offset);
-            Action = ReadInt(buffer, ref offset);
+            if (Action != ReadInt(buffer, ref offset))
+                throw new MessageException("Udp message decoded incorrectly");
             TransactionId = ReadInt(buffer, ref offset);
             while(offset <= (length - 20))
                 infohashes.Add(ReadBytes(buffer, ref offset, 20));
