@@ -41,6 +41,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PeerMessagesTest
     {
+        static void Main()
+        {
+            PeerMessagesTest t = new PeerMessagesTest();
+            t.Setup();
+            t.BitFieldDecoding();
+        }
         TestRig testRig;
         byte[] buffer = new byte[100000];
         int offset = 2362;
@@ -92,6 +98,7 @@ namespace MonoTorrent.Client
             Assert.IsTrue(msg.BitField[12], 12.ToString());
             for (int i = 13; i < 15; i++)
                 Assert.IsFalse(msg.BitField[i], i.ToString());
+            EncodeDecode(msg);
         }
 
         [ExpectedException(typeof(MessageException))]
@@ -163,6 +170,7 @@ namespace MonoTorrent.Client
             HandshakeMessage dec = new HandshakeMessage();
             dec.Decode(buffer, offset, 68);
             Assert.IsTrue(orig.Equals(dec));
+            Assert.AreEqual(orig.Encode(), dec.Encode());
         }
 
 
@@ -207,7 +215,7 @@ namespace MonoTorrent.Client
         [Test]
         public void KeepAliveDecoding()
         {
-            // Keep alives aren't "decoded" as they have 0 message id and 0 body length
+            
         }
 
 
@@ -282,8 +290,10 @@ namespace MonoTorrent.Client
         private void EncodeDecode(Message orig)
         {
             orig.Encode(buffer, offset);
-            Message dec = PeerMessage.DecodeMessage(buffer, offset, orig.ByteLength, null);
+            Message dec = PeerMessage.DecodeMessage(buffer, offset, orig.ByteLength, testRig.Manager);
             Assert.IsTrue(orig.Equals(dec), string.Format("orig: {0}, new: {1}", orig, dec));
+
+            Assert.IsTrue(Toolbox.ByteMatch(orig.Encode(), PeerMessage.DecodeMessage(orig.Encode(), 0, orig.ByteLength, testRig.Manager).Encode()));
         }
     }
 }

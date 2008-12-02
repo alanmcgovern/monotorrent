@@ -83,9 +83,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
             written += Write(buffer, written, MessageId);
             written += peerDict.Encode(buffer, written);
-            
-            CheckWritten(written - offset);
-            return written - offset; ;
+
+            return CheckWritten(written - offset);
         }
 
         public override string ToString( )

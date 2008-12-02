@@ -56,10 +56,9 @@ namespace MonoTorrent.Client.Messages.Standard
         {
 			int written = offset;
 
-			written += Write(buffer, offset, payload, 0, payload.Length);
+            written += Write(buffer, written, payload);
 
-            CheckWritten(written - offset);
-            return written - offset;
+            return CheckWritten(written - offset);
         }
 
         public override void Decode(byte[] buffer, int offset, int length)

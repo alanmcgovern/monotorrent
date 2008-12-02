@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            this.port = (ushort)ReadShort(buffer, offset);
+            this.port = (ushort)ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
@@ -89,8 +89,7 @@ namespace MonoTorrent.Client.Messages.Standard
 			written += Write(buffer, written, MessageId);
 			written += Write(buffer, written, port);
 
-            CheckWritten(written - offset);
-            return written - offset;
+            return CheckWritten(written - offset);
         }
 
         public override bool Equals(object obj)

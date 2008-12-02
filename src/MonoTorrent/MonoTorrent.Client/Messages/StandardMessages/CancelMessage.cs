@@ -103,22 +103,21 @@ namespace MonoTorrent.Client.Messages.Standard
         public override int Encode(byte[] buffer, int offset)
         {
 			int written = offset;
-			
-			written += Write(buffer, offset, messageLength);
-            written += Write(buffer, offset + 4, MessageId);
-            written += Write(buffer, offset + 5, pieceIndex);
-            written += Write(buffer, offset + 9, startOffset);
-            written += Write(buffer, offset + 13, requestLength);
 
-            CheckWritten(written - offset);
-            return written - offset;
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, startOffset);
+            written += Write(buffer, written, requestLength);
+
+            return CheckWritten(written - offset);
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            pieceIndex = ReadInt(buffer, offset);
-            startOffset = ReadInt(buffer, offset + 4);
-            requestLength = ReadInt(buffer, offset + 8);
+            pieceIndex = ReadInt(buffer, ref offset);
+            startOffset = ReadInt(buffer, ref offset);
+            requestLength = ReadInt(buffer, ref offset);
         }
 
         /// <summary>

@@ -84,8 +84,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 			written += Write(buffer, written, MessageId);
 			written += Write(buffer, written, pieceIndex);
 
-            CheckWritten(written - offset);
-            return written - offset;
+            return CheckWritten(written - offset);
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
@@ -93,7 +92,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = ReadInt(buffer, offset);
+            this.pieceIndex = ReadInt(buffer, ref offset);
         }
 
         internal override void Handle(PeerId id)

@@ -115,10 +115,8 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            this.pieceIndex = ReadInt(buffer, offset);
-            offset += 4;
-            this.startOffset = ReadInt(buffer, offset);
-            offset += 4;
+            this.pieceIndex = ReadInt(buffer, ref offset);
+            this.startOffset = ReadInt(buffer, ref offset);
             this.requestLength = length - 8;
 
             this.dataOffset = offset;
@@ -146,8 +144,7 @@ namespace MonoTorrent.Client.Messages.Standard
                 throw new MessageException("Could not read required data");
             written += bytesRead;
 
-            CheckWritten(written - offset);
-            return written - offset;
+            return CheckWritten(written - offset);
         }
 
         public override bool Equals(object obj)

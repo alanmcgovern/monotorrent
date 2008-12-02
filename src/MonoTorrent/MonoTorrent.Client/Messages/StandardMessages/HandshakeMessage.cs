@@ -149,78 +149,43 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Methods
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, (byte)protocolString.Length);
-            
-            // Copy in the protocol string
-            written += System.Text.Encoding.ASCII.GetBytes(protocolString, 0, protocolString.Length, buffer, offset + written);
+            int written = offset;
 
-            // The 8 reserved bits are here. Make sure they are zeroed.
-            written += Write(buffer, offset + written, ZeroedBits, 0, ZeroedBits.Length);
-            
-            if (SupportsFastPeer)
-                buffer[offset + written - 1] |= FastPeersFlag;
+            written += Write(buffer, written, (byte)protocolString.Length);
+            written += WriteAscii(buffer, written, protocolString);
+            written += Write(buffer, written, ZeroedBits);
 
             if (SupportsExtendedMessaging)
-                buffer[offset + written - 3] |= ExtendedMessagingFlag;
+                buffer[written - 3] |= ExtendedMessagingFlag;
+            if (SupportsFastPeer)
+                buffer[written - 1] |= FastPeersFlag;
 
-            // Copy in the infohash
-            written += Write(buffer, offset + written, infoHash, 0, infoHash.Length); 
+            written += Write(buffer, written, infoHash); 
+            written += WriteAscii(buffer, written, peerId);
 
-            // Copy in the peerId
-            written += System.Text.Encoding.ASCII.GetBytes(peerId, 0, peerId.Length, buffer, offset + written);
-
-            CheckWritten(written);
-            return written;
+            return CheckWritten(written - offset);
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            int i = offset;
-            protocolStringLength = (int)buffer[i];                  // First byte is length
+            protocolStringLength = ReadByte(buffer, ref offset);                  // First byte is length
 
             // #warning Fix this hack - is there a better way of verifying the protocol string? Hack
             if (protocolStringLength != VersionInfo.ProtocolStringV100.Length)
                 protocolStringLength = VersionInfo.ProtocolStringV100.Length;
-            i++;
 
-            protocolString = System.Text.Encoding.ASCII.GetString(buffer, i, protocolStringLength);
-            i += protocolStringLength;                                // Next bytes are protocol string
-            i += 8;                                                   // 8 reserved bytes
-            this.infoHash = new byte[20];
-
-            Buffer.BlockCopy(buffer, i, this.infoHash, 0, infoHash.Length);
-            i += infoHash.Length;                                   // 20 byte infohash
-
-            peerId = System.Text.Encoding.ASCII.GetString(buffer, i, 20);
-            i += 20;                                                // 20 byte peerid
-
-            CheckForSupports(buffer, offset + protocolStringLength + 1);
+            protocolString = ReadString(buffer, ref offset, protocolStringLength);
+            CheckForSupports(buffer, ref offset);
+            infoHash = ReadBytes(buffer, ref offset, 20);
+            peerId = ReadString(buffer, ref offset, 20);
         }
 
-
-        private void CheckForSupports(byte[] buffer, int reservedBytesStartIndex)
+        private void CheckForSupports(byte[] buffer, ref int offset)
         {
-            this.extended = (ExtendedMessagingFlag & buffer[reservedBytesStartIndex + 5]) != 0;
-            this.supportsFastPeer = (FastPeersFlag & buffer[reservedBytesStartIndex + 7]) != 0;
-
-            //int bitNumber = 0;
-            //for (int i = reservedBytesStartIndex; i < reservedBytesStartIndex + 8; i++)
-            //{
-            //    if (buffer[i] != 0)
-            //    {
-            //        for (int j = 7; j >= 0; j--)
-            //        {
-            //            int temp = 1 << j;
-            //            if ((buffer[i] & temp) > 0)
-            //            {
-            //                int value = ((i - reservedBytesStartIndex) * 8 + 7 - j) + 1;
-            //                System.Diagnostics.Debug.Write("\n");
-            //                System.Diagnostics.Debug.Write(value.ToString());
-            //                System.Diagnostics.Debug.Write("\t" + this.PeerId);
-            //            }
-            //        }
-            //    }
-            //}
+            // Increment offset first so that the indices are consistent between Encoding and Decoding
+            offset += 8;
+            this.extended = (ExtendedMessagingFlag & buffer[offset - 3]) != 0;
+            this.supportsFastPeer = (FastPeersFlag & buffer[offset - 1]) != 0;
         }
 
 
