@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
     public class PeerMessagesTest
     {
         TestRig testRig;
-        byte[] buffer = new byte[100000];
+        byte[] buffer;
         int offset = 2362;
 
         [TestFixtureSetUp]
