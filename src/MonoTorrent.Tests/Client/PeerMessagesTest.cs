@@ -41,23 +41,28 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PeerMessagesTest
     {
-        static void Main()
-        {
-            PeerMessagesTest t = new PeerMessagesTest();
-            t.Setup();
-            t.BitFieldDecoding();
-        }
         TestRig testRig;
         byte[] buffer = new byte[100000];
         int offset = 2362;
 
+        [TestFixtureSetUp]
+        public void FixtureSetup()
+        {
+            buffer = new byte[100000];
+            testRig = new TestRig("Downloads");
+        }
+
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
+        {
+            testRig.Dispose();
+        }
+
         [SetUp]
         public void Setup()
         {
-            buffer = new byte[100000];
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
-            testRig = new TestRig("Downloads");
         }
 
         [TearDown]
@@ -65,7 +70,6 @@ namespace MonoTorrent.Client
         {
             testRig.Dispose();
         }
-
 
         [Test]
         public void BitFieldEncoding()
