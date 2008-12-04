@@ -46,7 +46,6 @@ namespace MonoTorrent.Common
         private int[] array;
         private int length;
         private int trueCount;
-        private bool valid;
 
         internal bool AllFalse
         {
@@ -125,6 +124,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 b.array[i] = this.array[i];
 
+            b.trueCount = trueCount;
             return b;
         }
 
@@ -148,7 +148,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
 
-            UpdateTrueCount();
+            Validate();
             return this;
         }
 
@@ -163,7 +163,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= ~value.array[i];
 
-            UpdateTrueCount();
+            Validate();
             return this;
         }
 
@@ -178,7 +178,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] |= value.array[i];
 
-            UpdateTrueCount();
+            Validate();
             return this;
         }
 
@@ -193,7 +193,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] ^= value.array[i];
 
-            UpdateTrueCount();
+            Validate();
             return this;
         }
 
@@ -289,17 +289,7 @@ namespace MonoTorrent.Common
             }
         }
 
-        internal void FromArray(int[] array, int length)
-        {
-            this.trueCount = 0;
-            this.length = length;
-            this.array = array;
-            for (int i = 0; i < this.length; i++)
-                if (this.Get(i))
-                    trueCount++;
-        }
-
-        internal bool Get(int index)
+        bool Get(int index)
         {
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
@@ -315,8 +305,7 @@ namespace MonoTorrent.Common
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            for (int i = 0; i < this.length; i++)
-                yield return Get(i);
+            return GetEnumerator();
         }
 
         public override int GetHashCode()
@@ -333,7 +322,7 @@ namespace MonoTorrent.Common
             get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
         }
 
-        internal void Set(int index, bool value)
+        void Set(int index, bool value)
         {
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
@@ -358,7 +347,7 @@ namespace MonoTorrent.Common
             {
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = ~0;
-                this.trueCount = this.length;
+                Validate();
             }
 
             else
@@ -367,14 +356,6 @@ namespace MonoTorrent.Common
                     this.array[i] = 0;
                 this.trueCount = 0;
             }
-        }
-
-        private void SetLastBitsFalse()
-        {
-            // clear out the remaining space
-            int end = ((int)((this.length + 31) / 32)) * 32;
-            for (int i = this.length; i < end; ++i)
-                this.array[i >> 5] &= ~(1 << (i & 31));
         }
 
         internal byte[] ToByteArray()
@@ -389,7 +370,7 @@ namespace MonoTorrent.Common
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
-            SetLastBitsFalse();
+            Validate();
 
             int byteindex = offset;
             byte temp = 0;
@@ -430,26 +411,22 @@ namespace MonoTorrent.Common
             get { return this.trueCount; }
         }
 
-        public void UpdateTrueCount()
+        private void Validate()
         {
+            // Zero the unused bits
+            int start = this.length % 32;
+            for (int i = start; i < 32; i++)
+                array[array.Length - 1] &= ~(1 << i);
+
+            // Update the population count
             trueCount = 0;
             for (int i = 0; i < array.Length; i++)
             {
                 uint v = (uint)array[i];
-                v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
-                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
-                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24); // count
+                v = v - ((v >> 1) & 0x55555555);
+                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24);
             }
-        }
-
-        private void Validate()
-        {
-            if (valid)
-                return;
-
-            UpdateTrueCount();
-            SetLastBitsFalse();
-            valid = true;
         }
 
         #endregion
