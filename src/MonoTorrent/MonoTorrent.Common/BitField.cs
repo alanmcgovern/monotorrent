@@ -42,33 +42,18 @@ namespace MonoTorrent.Common
     public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
-        /// <summary>
-        /// Returns the length of the BitField
-        /// </summary>
         public int Length
         {
             get { return this.length; }
         }
         private int length;
 
-
-        /// <summary>
-        /// The internal int array for the BitField
-        /// </summary>
         internal int[] Array
         {
             get { return this.array; }
         }
         private int[] array;
 
-
-        /// <summary>
-        /// Returns the number of elements in the array which are "true" (i.e. the bit is set to 1)
-        /// </summary>
-        //public int TrueCount
-       // {
-       //     get { return this.trueCount; }
-       // }
         private int trueCount;
         #endregion
 
@@ -80,10 +65,6 @@ namespace MonoTorrent.Common
             FromArray(array, 0, array.Length);
         }
 
-        /// <summary>
-        /// Creates a new BitField
-        /// </summary>
-        /// <param name="length">The length of the BitField</param>
         public BitField(int length)
         {
             if (length < 0)
@@ -105,11 +86,7 @@ namespace MonoTorrent.Common
 
 
         #region Methods BitArray
-        /// <summary>
-        /// Returns the value of the BitField at the specified index
-        /// </summary>
-        /// <param name="index">The index of the BitField to check</param>
-        /// <returns></returns>
+        
         public bool this[int index]
         {
             get { return this.Get(index); }
@@ -117,19 +94,11 @@ namespace MonoTorrent.Common
         }
 
 
-        /// <summary>
-        /// Clones the BitField
-        /// </summary>
-        /// <returns></returns>
         object ICloneable.Clone()
         {
             return Clone();
         }
 
-        /// <summary>
-        /// Clones the BitField
-        /// </summary>
-        /// <returns></returns>
         public BitField Clone()
         {
             BitField b = new BitField(this.length);
@@ -139,11 +108,6 @@ namespace MonoTorrent.Common
             return b;
         }
 
-
-        /// <summary>
-        /// Performs binary NOT on all the elements of the bitarray
-        /// </summary>
-        /// <returns>Itself</returns>
         public BitField Not()
         {
             for (int i = 0; i < this.array.Length; i++)
@@ -153,12 +117,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-
-        /// <summary>
-        /// Performs binary AND on all the elements of this BitField against the elements of the supplied BitField
-        /// </summary>
-        /// <param name="value">The BitField with which to perform the operation against</param>
-        /// <returns>Itself</returns>
         public BitField And(BitField value)
         {
             if (value == null)
@@ -174,11 +132,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-        /// <summary>
-        /// Performs binary NAND on all the elements of this bitarray against the elements of the supplied BitField
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
         internal BitField NAnd(BitField value)
         {
             if (value == null)
@@ -194,12 +147,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-
-        /// <summary>
-        /// Performs binary OR on all the elements of this BitField against the elements of the supplied BitField
-        /// </summary>
-        /// <param name="value">The BitField with which to perform the operation against</param>
-        /// <returns>Itself</returns>
         public BitField Or(BitField value)
         {
             if (value == null)
@@ -215,12 +162,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-
-        /// <summary>
-        /// Performs binary EXCLUSIVE OR on all the elements of this BitField against the elements of the supplied BitField
-        /// </summary>
-        /// <param name="value">The BitField with which to perform the operation against</param>
-        /// <returns>Itself</returns>
         public BitField Xor(BitField value)
         {
             if (value == null)
@@ -236,12 +177,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-
-        /// <summary>
-        /// Returns the value of the BitField at the specified index
-        /// </summary>
-        /// <param name="index">The index to return</param>
-        /// <returns></returns>
         internal bool Get(int index)
         {
             if (index < 0 || index >= length)
@@ -250,12 +185,6 @@ namespace MonoTorrent.Common
             return (this.array[index >> 5] & (1 << (index & 31))) != 0;
         }
 
-
-        /// <summary>
-        /// Sets the value of the BitField at the specified index
-        /// </summary>
-        /// <param name="index">The index to set</param>
-        /// <param name="value">The value to set</param>
         internal void Set(int index, bool value)
         {
             if (index < 0 || index >= length)
@@ -275,11 +204,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
-        /// <summary>
-        /// Sets all values in the BitArray to the specified value
-        /// </summary>
-        /// <param name="value"></param>
         internal void SetAll(bool value)
         {
             if (value)
@@ -297,7 +221,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
         private void SetLastBitsFalse()
         {
             // clear out the remaining space
@@ -305,23 +228,13 @@ namespace MonoTorrent.Common
             for (int i = this.length; i < end; ++i)
                 this.array[i >> 5] &= ~(1 << (i & 31));
         }
-        
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         public IEnumerator<bool> GetEnumerator()
         {
             for (int i = 0; i < this.length; i++)
                 yield return Get(i);
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
             for (int i = 0; i < this.length; i++)
@@ -332,41 +245,35 @@ namespace MonoTorrent.Common
 
         #region BitField specific methods
 
-        /// <summary>
-        /// Returns True if all the elements in the BitField are false
-        /// </summary>
-        /// <returns></returns>
         internal bool AllFalse
         {
             get { return this.trueCount == 0; }
         }
-
-
-        /// <summary>
-        /// Returns true if all the elements in the bitfield are true
-        /// </summary>
+        
         internal bool AllTrue
         {
             get { return this.trueCount == this.length; }
         }
 
+        public override bool Equals(object obj)
+        {
+            BitField bf = obj as BitField;
 
-        /// <summary>
-        /// Returns the first index of the BitField that is true. If no elements are true, returns -1
-        /// </summary>
-        /// <returns></returns>
+            if (bf == null || this.array.Length != bf.array.Length)
+                return false;
+
+            for (int i = 0; i < this.array.Length; i++)
+                if (array[i] != bf.array[i])
+                    return false;
+
+            return true;
+        }
+
         public int FirstTrue()
         {
             return this.FirstTrue(0, this.length);
         }
 
-
-        /// <summary>
-        /// Returns the first index of the BitField that is true between the start and end index
-        /// </summary>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
-        /// <returns></returns>
         public int FirstTrue(int startIndex, int endIndex)
         {
             int start;
@@ -396,13 +303,6 @@ namespace MonoTorrent.Common
             return -1;              // Nothing is true
         }
 
-
-        /// <summary>
-        /// Decodes a BitField from the supplied buffer
-        /// </summary>
-        /// <param name="buffer">The buffer containing the BitField</param>
-        /// <param name="offset">The offset at which to start decoding the BitField at</param>
-        /// <param name="length">The maximum number of bytes to read while decoding the BitField</param>
         internal void FromArray(byte[] buffer, int offset, int length)
         {
             byte p = 128;
@@ -447,11 +347,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="array"></param>
         internal void FromArray(int[] array, int length)
         {
             this.trueCount = 0;
@@ -462,30 +357,25 @@ namespace MonoTorrent.Common
                     trueCount++;
         }
 
+        public override int GetHashCode()
+        {
+            int count = 0;
+            for (int i = 0; i < this.array.Length; i++)
+                count += this.array[i];
 
-        /// <summary>
-        /// Returns the length of this message in bytes
-        /// </summary>
+            return count;
+        }
+
         public int LengthInBytes
         {
             get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
         }
 
-
-        /// <summary>
-        /// Returns the percentage of pieces that are true
-        /// </summary>
         public double PercentComplete
         {
             get { return (double)this.trueCount / this.length * 100.0; }
         }
 
-
-        /// <summary>
-        /// Encodes the bitfield to a byte array
-        /// </summary>
-        /// <param name="buffer">The buffer to encode the BitField to</param>
-        /// <param name="offset">The index to start encoding at</param>
         internal void ToByteArray(byte[] buffer, int offset)
         {
             if (buffer == null)
@@ -522,10 +412,6 @@ namespace MonoTorrent.Common
             return data;
         }
 
-        
-        /// <summary>
-        /// Updates the truecount after the bitfield has been altered through And(), Or() etc
-        /// </summary>
         public void UpdateTrueCount()
         {
             trueCount = 0;
@@ -538,42 +424,6 @@ namespace MonoTorrent.Common
             }
         }
 
-
-
-        public int TrueCount
-        {
-            get { return this.trueCount; }
-        }
-        #endregion
-
-
-        #region Overridden methods
-
-        public override bool Equals(object obj)
-        {
-            BitField bf = obj as BitField;
-
-            if (bf == null || this.array.Length != bf.array.Length)
-                return false;
-
-            for (int i = 0; i < this.array.Length; i++)
-                if (array[i] != bf.array[i])
-                    return false;
-
-            return true;
-        }
-
-
-        public override int GetHashCode()
-        {
-            int count = 0;
-            for (int i = 0; i < this.array.Length; i++)
-                count += this.array[i];
-
-            return count;
-        }
-
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(this.array.Length * 16);
@@ -585,6 +435,12 @@ namespace MonoTorrent.Common
 
             return sb.ToString(0, sb.Length - 1);
         }
+
+        public int TrueCount
+        {
+            get { return this.trueCount; }
+        }
+
         #endregion
     }
 }
