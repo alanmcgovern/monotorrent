@@ -42,19 +42,40 @@ namespace MonoTorrent.Common
     public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
+
+        private int[] array;
+        private int length;
+        private int trueCount;
+        private bool valid;
+
+        internal bool AllFalse
+        {
+            get { return this.trueCount == 0; }
+        }
+
+        internal bool AllTrue
+        {
+            get { return this.trueCount == this.length; }
+        }
+
+        internal int[] Array
+        {
+            get {
+                Validate();
+                return this.array;
+            }
+        }
+
         public int Length
         {
             get { return this.length; }
         }
-        private int length;
 
-        internal int[] Array
+        public double PercentComplete
         {
-            get { return this.array; }
+            get { return (double)this.trueCount / this.length * 100.0; }
         }
-        private int[] array;
 
-        private int trueCount;
         #endregion
 
 
@@ -86,13 +107,12 @@ namespace MonoTorrent.Common
 
 
         #region Methods BitArray
-        
+
         public bool this[int index]
         {
             get { return this.Get(index); }
             internal set { this.Set(index, value); }
         }
-
 
         object ICloneable.Clone()
         {
@@ -177,84 +197,6 @@ namespace MonoTorrent.Common
             return this;
         }
 
-        internal bool Get(int index)
-        {
-            if (index < 0 || index >= length)
-                throw new ArgumentOutOfRangeException("index");
-
-            return (this.array[index >> 5] & (1 << (index & 31))) != 0;
-        }
-
-        internal void Set(int index, bool value)
-        {
-            if (index < 0 || index >= length)
-                throw new ArgumentOutOfRangeException("index");
-
-            if (value)
-            {
-                if ((this.array[index >> 5] & (1 << (index & 31))) == 0)// If it's not already true
-                    trueCount++;                                        // Increase true count
-                this.array[index >> 5] |= (1 << (index & 31));
-            }
-            else
-            {
-                if ((this.array[index >> 5] & (1 << (index & 31))) != 0)// If it's not already false
-                    trueCount--;                                        // Decrease true count
-                this.array[index >> 5] &= ~(1 << (index & 31));
-            }
-        }
-
-        internal void SetAll(bool value)
-        {
-            if (value)
-            {
-                for (int i = 0; i < this.array.Length; i++)
-                    this.array[i] = ~0;
-                this.trueCount = this.length;
-            }
-
-            else
-            {
-                for (int i = 0; i < this.array.Length; i++)
-                    this.array[i] = 0;
-                this.trueCount = 0;
-            }
-        }
-
-        private void SetLastBitsFalse()
-        {
-            // clear out the remaining space
-            int end = ((int)((this.length + 31) / 32)) * 32;
-            for (int i = this.length; i < end; ++i)
-                this.array[i >> 5] &= ~(1 << (i & 31));
-        }
-
-        public IEnumerator<bool> GetEnumerator()
-        {
-            for (int i = 0; i < this.length; i++)
-                yield return Get(i);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            for (int i = 0; i < this.length; i++)
-                yield return Get(i);
-        }
-        #endregion
-
-
-        #region BitField specific methods
-
-        internal bool AllFalse
-        {
-            get { return this.trueCount == 0; }
-        }
-        
-        internal bool AllTrue
-        {
-            get { return this.trueCount == this.length; }
-        }
-
         public override bool Equals(object obj)
         {
             BitField bf = obj as BitField;
@@ -325,7 +267,7 @@ namespace MonoTorrent.Common
                 p = 128;
                 offset++;
             }
-            
+
             // If true, there are no extra bits
             if (this.length % 8 == 0)
                 return;
@@ -357,6 +299,26 @@ namespace MonoTorrent.Common
                     trueCount++;
         }
 
+        internal bool Get(int index)
+        {
+            if (index < 0 || index >= length)
+                throw new ArgumentOutOfRangeException("index");
+
+            return (this.array[index >> 5] & (1 << (index & 31))) != 0;
+        }
+
+        public IEnumerator<bool> GetEnumerator()
+        {
+            for (int i = 0; i < this.length; i++)
+                yield return Get(i);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            for (int i = 0; i < this.length; i++)
+                yield return Get(i);
+        }
+
         public override int GetHashCode()
         {
             int count = 0;
@@ -371,9 +333,55 @@ namespace MonoTorrent.Common
             get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
         }
 
-        public double PercentComplete
+        internal void Set(int index, bool value)
         {
-            get { return (double)this.trueCount / this.length * 100.0; }
+            if (index < 0 || index >= length)
+                throw new ArgumentOutOfRangeException("index");
+
+            if (value)
+            {
+                if ((this.array[index >> 5] & (1 << (index & 31))) == 0)// If it's not already true
+                    trueCount++;                                        // Increase true count
+                this.array[index >> 5] |= (1 << (index & 31));
+            }
+            else
+            {
+                if ((this.array[index >> 5] & (1 << (index & 31))) != 0)// If it's not already false
+                    trueCount--;                                        // Decrease true count
+                this.array[index >> 5] &= ~(1 << (index & 31));
+            }
+        }
+
+        internal void SetAll(bool value)
+        {
+            if (value)
+            {
+                for (int i = 0; i < this.array.Length; i++)
+                    this.array[i] = ~0;
+                this.trueCount = this.length;
+            }
+
+            else
+            {
+                for (int i = 0; i < this.array.Length; i++)
+                    this.array[i] = 0;
+                this.trueCount = 0;
+            }
+        }
+
+        private void SetLastBitsFalse()
+        {
+            // clear out the remaining space
+            int end = ((int)((this.length + 31) / 32)) * 32;
+            for (int i = this.length; i < end; ++i)
+                this.array[i >> 5] &= ~(1 << (i & 31));
+        }
+
+        internal byte[] ToByteArray()
+        {
+            byte[] data = new byte[LengthInBytes];
+            ToByteArray(data, 0);
+            return data;
         }
 
         internal void ToByteArray(byte[] buffer, int offset)
@@ -405,25 +413,6 @@ namespace MonoTorrent.Common
                 buffer[byteindex] = temp;
         }
 
-        internal byte[] ToByteArray()
-        {
-            byte[] data = new byte[LengthInBytes];
-            ToByteArray(data, 0);
-            return data;
-        }
-
-        public void UpdateTrueCount()
-        {
-            trueCount = 0;
-            for (int i = 0; i < array.Length; i++)
-            {
-                uint v = (uint)array[i];
-                v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
-                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
-                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24); // count
-            }
-        }
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(this.array.Length * 16);
@@ -439,6 +428,28 @@ namespace MonoTorrent.Common
         public int TrueCount
         {
             get { return this.trueCount; }
+        }
+
+        public void UpdateTrueCount()
+        {
+            trueCount = 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                uint v = (uint)array[i];
+                v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
+                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
+                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24); // count
+            }
+        }
+
+        private void Validate()
+        {
+            if (valid)
+                return;
+
+            UpdateTrueCount();
+            SetLastBitsFalse();
+            valid = true;
         }
 
         #endregion
