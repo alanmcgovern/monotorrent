@@ -407,7 +407,7 @@ namespace MonoTorrent.Client
 
                 // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
                 if (!id.Peer.IsSeeder)
-                    current.AndFast(id.BitField);
+                    current.And(id.BitField);
 
                 // Check the priority of the availabe pieces and record the highest one found
                 highestPriority = HighestPriorityAvailable(current);
@@ -434,11 +434,11 @@ namespace MonoTorrent.Client
                     // currentBitfield = currentBitfield & (!otherBitfield)
                     // This calculation finds the pieces this peer has that other peers *do not* have.
                     // i.e. the rarest piece.
-                    current.AndNotFast(otherPeers[i].BitField);
+                    current.And(otherPeers[i].BitField);
 
                     // If the bitfield now has no pieces or we've knocked out a file which is at
                     // a high priority then we've completed our task
-                    if (current.AllFalseSecure() || highestPriority != HighestPriorityAvailable(current))
+                    if (current.AllFalse || highestPriority != HighestPriorityAvailable(current))
                         break;
 
                     // Otherwise push the bitfield on the stack and clone it and iterate again.
@@ -499,8 +499,8 @@ namespace MonoTorrent.Client
                 Buffer.BlockCopy(myBitfield.Array, 0, bitfield.Array, 0, myBitfield.Array.Length * 4);
 
                 bitfield.Not();
-                bitfield.AndFast(id.BitField);
-                if (!bitfield.AllFalseSecure())
+                bitfield.And(id.BitField);
+                if (!bitfield.AllFalse)
                     return true;                            // He's interesting if he has a piece we want
 
                 return false;
