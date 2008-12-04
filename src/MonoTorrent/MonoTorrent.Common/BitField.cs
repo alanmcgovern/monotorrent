@@ -161,14 +161,6 @@ namespace MonoTorrent.Common
         /// <returns>Itself</returns>
         public BitField And(BitField value)
         {
-            AndFast(value);
-            UpdateTrueCount();
-            return this;
-        }
-
-
-        internal BitField AndFast(BitField value)
-        {
             if (value == null)
                 throw new ArgumentNullException("value");
 
@@ -178,19 +170,8 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
 
+            UpdateTrueCount();
             return this;
-        }
-
-        internal void AndNotFast(BitField bitField)
-        {
-            if (bitField == null)
-                throw new ArgumentNullException("bitField");
-
-            if (this.length != bitField.length)
-                throw new ArgumentException("BitFields are of different lengths", "value");
-
-            for (int i = 0; i < this.array.Length; i++)
-                this.array[i] &= ~bitField.array[i];
         }
 
         /// <summary>
@@ -358,17 +339,6 @@ namespace MonoTorrent.Common
         internal bool AllFalse
         {
             get { return this.trueCount == 0; }
-        }
-
-
-        internal bool AllFalseSecure()
-        {
-            SetLastBitsFalse();
-            for (int i = 0; i < this.array.Length; i++)
-                if (this.array[i] != 0)
-                    return false;
-
-            return true;
         }
 
 
@@ -556,34 +526,15 @@ namespace MonoTorrent.Common
         /// <summary>
         /// Updates the truecount after the bitfield has been altered through And(), Or() etc
         /// </summary>
-        private void UpdateTrueCount()
+        public void UpdateTrueCount()
         {
-            // The number of bits in each int
-            int capacity = 32;
-
-            // Reset the true count to zero, then start iterating
-            this.trueCount = 0;
-
-            for (int i = 0; i < this.array.Length; i++)
+            trueCount = 0;
+            for (int i = 0; i < array.Length; i++)
             {
-                // Fastpath - none of the bits are true
-                if (this.array[i] == 0)
-                    continue;
-                
-                // Fastpath  - all the bits are true
-                else if (this.array[i] == ~0)
-                    this.trueCount += capacity;
-        
-                else
-                {
-                    // Check each index
-                    int startIndex = i * 32;
-                    int endIndex = (i + 1) * 32;
-                    endIndex = endIndex > this.length ? this.length : endIndex;
-                    for (int j = startIndex; j < endIndex; j++)
-                        if (Get(j))
-                            trueCount++;
-                }
+                uint v = (uint)array[i];
+                v = v - ((v >> 1) & 0x55555555);                    // reuse input as temporary
+                v = (v & 0x33333333) + ((v >> 2) & 0x33333333);     // temp
+                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24); // count
             }
         }
 
