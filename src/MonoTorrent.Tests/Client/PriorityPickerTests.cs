@@ -40,13 +40,13 @@ namespace MonoTorrent.Tests.Client
     [TestFixture]
     public class PriorityPickerTests
     {
-        static void Main()
-        {
-            PriorityPickerTests t = new PriorityPickerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.PriorityMix();
-        }
+        //static void Main()
+        //{
+        //    PriorityPickerTests t = new PriorityPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.PriorityMix();
+        //}
 
         PeerId id;
         PriorityPicker picker;
