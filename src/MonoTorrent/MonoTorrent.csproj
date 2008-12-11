@@ -126,6 +126,10 @@
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
     <Compile Include="MonoTorrent.Client\Piece.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\PiecePicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\PriorityPicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\RandomisedPicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\RarestFirstPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />

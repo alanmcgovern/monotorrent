@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.PiecePicking
         public virtual MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
             CheckOverriden();
-            return picker.PickPiece(id, id.BitField, otherPeers, startIndex, endIndex, count);
+            return picker.PickPiece(id, peerBitfield, otherPeers, startIndex, endIndex, count);
         }
         public virtual void ReceivedChokeMessage(PeerId id)
         {

@@ -50,7 +50,7 @@ namespace MonoTorrent.Client.PiecePicking
 
             public int CompareTo(Files other)
             {
-                return File.Priority.CompareTo(other.File.Priority);
+                return other.File.Priority.CompareTo(File.Priority);
             }
         }
 
@@ -70,8 +70,6 @@ namespace MonoTorrent.Client.PiecePicking
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
-            ;
-
             files.Sort();
             temp.SetAll(false);
 
@@ -109,8 +107,10 @@ namespace MonoTorrent.Client.PiecePicking
             for (int i = 0; i < files.Length; i++)
             {
                 BitField b = new BitField(bitfield.Length);
-                for (int j = files[i].StartPieceIndex; j < files[i].EndPieceIndex; j++)
+                for (int j = files[i].StartPieceIndex; j <= files[i].EndPieceIndex; j++)
                     b[j] = true;
+
+                this.files.Add(new Files(files[i], b));
             }
         }
     }

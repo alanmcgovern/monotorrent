@@ -62,8 +62,10 @@
     <Compile Include="Client\PeerTests.cs" />
     <Compile Include="Client\PiecePickerTests.cs" />
     <Compile Include="Client\PieceWriterTests.cs" />
+    <Compile Include="Client\PriorityPickerTests.cs" />
     <Compile Include="Client\SlidingWindowPickerTests.cs" />
     <Compile Include="Client\TestEncryption.cs" />
+    <Compile Include="Client\TestPicker.cs" />
     <Compile Include="Client\TestRig.cs" />
     <Compile Include="Client\TestWebSeed.cs" />
     <Compile Include="Client\TorrentManagerTest.cs" />
