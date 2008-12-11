@@ -6,39 +6,46 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PiecePickerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    PiecePickerTests t = new PiecePickerTests();
-        //    t.Setup();
-        //    t.RequestFastSeeder();
-        //    t.Setup();
-        //    t.RequestFastNotSeeder();
-        //    t.Setup();
-        //    t.RequestFastHaveEverything();
-        //    t.Setup();
-        //    t.RequestWhenSeeder();
-        //    t.Setup();
-        //    t.NoInterestingPieces();
-        //    t.Setup();
-        //    t.CancelRequests();
-        //    t.Setup();
-        //    t.RejectRequests();
-        //    t.Setup();
-        //    t.PeerChoked();
-        //    t.Setup();
-        //    t.FastPeerChoked();
-        //    t.Setup();
-        //    t.ChokeThenClose();
-        //}
+        static void Main(string[] args)
+        {
+            PiecePickerTests t = new PiecePickerTests();
+            t.Setup();
+            t.RequestBlock();
+            t.Setup();
+            t.InvalidFastPiece();
+            t.Setup();
+            t.CancelRequests();
+            t.Setup();
+            t.RequestFastSeeder();
+            t.Setup();
+            t.RequestFastNotSeeder();
+            t.Setup();
+            t.RequestFastHaveEverything();
+            t.Setup();
+            t.RequestWhenSeeder();
+            t.Setup();
+            t.NoInterestingPieces();
+            t.Setup();
+            t.CancelRequests();
+            t.Setup();
+            t.RejectRequests();
+            t.Setup();
+            t.PeerChoked();
+            t.Setup();
+            t.FastPeerChoked();
+            t.Setup();
+            t.ChokeThenClose();
+        }
         protected PeerId peer;
         protected List<PeerId> peers;
-        protected StandardPicker picker;
+        protected PiecePicker picker;
         protected TestRig rig;
 
 
@@ -48,7 +55,7 @@ namespace MonoTorrent.Client
             // Yes, this is horrible. Deal with it.
             rig = new TestRig("");
             peers = new List<PeerId>();
-            picker = new StandardPicker();
+            picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
             picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));
             peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
@@ -62,7 +69,6 @@ namespace MonoTorrent.Client
         [TearDown]
         public void GlobalTeardown()
         {
-            picker.Dispose();
             rig.Dispose();
         }
 
@@ -112,7 +118,7 @@ namespace MonoTorrent.Client
             peers[0].IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 5, 8, 13, 21 });
 
             peers[0].BitField.SetAll(true);
-            picker.MyBitField.SetAll(true);
+            rig.Manager.Bitfield.SetAll(true);
 
             Assert.IsNull(picker.PickPiece(peers[0], peers));
         }
@@ -126,7 +132,7 @@ namespace MonoTorrent.Client
         [Test]
         public void RequestWhenSeeder()
         {
-            picker.MyBitField.SetAll(true);
+            rig.Manager.Bitfield.SetAll(true);
             peers[0].BitField.SetAll(true);
             peers[0].IsChoking = false;
 
@@ -137,11 +143,11 @@ namespace MonoTorrent.Client
         public void NoInterestingPieces()
         {
             peer.IsChoking = false;
-            for (int i = 0; i < picker.MyBitField.Length; i++)
+            for (int i = 0; i < rig.Manager.Bitfield.Length; i++)
                 if (i % 2 == 0)
                 {
                     peer.BitField[i] = true;
-                    picker.MyBitField[i] = true;
+                    rig.Manager.Bitfield[i] = true;
                 }
             Assert.IsNull(picker.PickPiece(peer, peers));
         }
@@ -159,7 +165,7 @@ namespace MonoTorrent.Client
 
             picker.PickPiece(peer, peers);
             Assert.AreEqual(rig.TotalBlocks, messages.Count, "#0");
-            picker.RemoveRequests(peer);
+            picker.CancelRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -182,7 +188,7 @@ namespace MonoTorrent.Client
                 messages.Add(m);
 
             foreach (RequestMessage message in messages)
-                picker.ReceivedRejectRequest(peer, new RejectRequestMessage(message.PieceIndex, message.StartOffset, message.RequestLength));
+                picker.CancelRequest(peer, message.PieceIndex, message.StartOffset, message.RequestLength);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -204,7 +210,7 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages.Add(m);
 
-            picker.ReceivedChokeMessage(peer);
+            picker.CancelRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -216,6 +222,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        [Ignore("If a fast peer sends a choke message, CancelRequests will not be called")]
         public void FastPeerChoked()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -227,7 +234,7 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages.Add(m);
 
-            picker.ReceivedChokeMessage(peer);
+            picker.CancelRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -248,8 +255,7 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages.Add(m);
 
-            picker.ReceivedChokeMessage(peer);
-            picker.RemoveRequests(peer);
+            picker.CancelRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
@@ -269,7 +275,7 @@ namespace MonoTorrent.Client
             {
                 MessageBundle b = picker.PickPiece(peer, peers, i);
                 Assert.AreEqual(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
-                picker.RemoveRequests(peer);
+                picker.CancelRequests(peer);
             }
         }
 

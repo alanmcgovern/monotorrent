@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
 
         internal PieceManager(BitField bitfield, TorrentFile[] files)
         {
-            piecePicker = new StandardPicker();
+            piecePicker = new StandardPickerOld();
             piecePicker.Initialise(bitfield, files, new List<Piece>(), new BitField(bitfield.Length));
         }
 
@@ -234,7 +234,7 @@ namespace MonoTorrent.Client
 
         internal BitField UnhashedPieces
         {
-            get { return ((StandardPicker)this.piecePicker).UnhashedPieces; }
+            get { return ((StandardPickerOld)this.piecePicker).UnhashedPieces; }
         }
 
         #endregion

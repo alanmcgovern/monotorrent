@@ -66,20 +66,9 @@ namespace MonoTorrent.Client.PiecePicking
             // initialise the requests list from the IEnumarble request
         }
 
-        public override bool IsInteresting(PeerId id)
+        public override bool IsInteresting(BitField bitfield)
         {
-            // It'd be much faster to keep a list of pieces which are remaining and
-            // just check those individual indices.
-
-            BitField b = id.BitField.And(id.TorrentManager.Bitfield);
-            if (b.AllFalse)
-                return false;
-
-            int index = 0;
-            //while ((index = b.FirstTrue(index, b.Length)) != -1)
-            //    if (!AlreadyRequestedThreeTimes(index))
-            //        return true;
-            return false;
+            return !bitfield.AllFalse;
         }
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)

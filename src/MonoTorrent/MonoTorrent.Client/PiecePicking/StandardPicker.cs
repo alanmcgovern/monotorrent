@@ -34,13 +34,345 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// TGS CHANGE: Made private fields/methods protected for SlidingWindowPicker
-    /// </summary>
-    public class StandardPicker : PiecePickerBase
+    public class StandardPicker : PiecePicker
+    {
+        BitField bitfield;
+        protected List<Piece> requests;
+
+        public StandardPicker()
+            : base(null)
+        {
+
+        }
+
+        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        {
+            CancelWhere(delegate(Block b)
+            {
+                return b.StartOffset == startOffset &&
+                       b.RequestLength == length &&
+                       b.PieceIndex == piece &&
+                       peer.Equals(b.RequestedOff);
+            });
+        }
+
+        public override void CancelRequests(PeerId peer)
+        {
+            CancelWhere(delegate(Block b) { return peer.Equals(b.RequestedOff); });
+        }
+
+        public override void CancelTimedOutRequests()
+        {
+            CancelWhere(delegate(Block block) { return block.RequestTimedOut; });
+        }
+
+        void CancelWhere(Predicate<Block> predicate)
+        {
+            requests.ForEach(delegate(Piece p)
+            {
+                Array.ForEach<Block>(p.Blocks, delegate(Block b)
+                {
+                    if (predicate(b))
+                        b.CancelRequest();
+                });
+            });
+
+            requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
+        }
+
+        public override int CurrentRequestCount()
+        {
+            return (int)Toolbox.Accumulate<Piece>(requests, delegate(Piece p) { return p.TotalRequested - p.TotalReceived; });
+        }
+
+        public override List<Piece> ExportActiveRequests()
+        {
+            return new List<Piece>(requests);
+        }
+
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        {
+            this.bitfield = bitfield;
+            this.requests = new List<Piece>(requests);
+        }
+
+        public override bool IsInteresting(BitField bitfield)
+        {
+            return !bitfield.AllFalse;
+        }
+
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        {
+            RequestMessage message;
+            MessageBundle bundle = null;
+            try
+            {
+                // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
+                // requests that could be continued would be existing "Fast" pieces.
+                if ((message = ContinueExistingRequest(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                // Then we check if there are any allowed "Fast" pieces to download
+                if (id.IsChoking && (message = GetFastPiece(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
+                if (id.IsChoking)
+                    return null;
+
+                // If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
+                // to request the full amount first, then try to continue any existing.
+                if (count == 1 && (message = ContinueAnyExisting(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                // We see if the peer has suggested any pieces we should request
+                if ((message = GetSuggestedPiece(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                // Now we see what pieces the peer has that we don't have and try and request one
+                if ((bundle = GetStandardRequest(id, peerBitfield, otherPeers, 0, id.BitField.Length, count)) != null)
+                    return bundle;
+
+                // If all else fails, ignore how many we're requesting and try to continue any existing
+                if ((message = ContinueAnyExisting(id)) != null)
+                    return (bundle = new MessageBundle(message));
+
+                return null;
+            }
+            finally
+            {
+                if (bundle != null)
+                {
+                    foreach (RequestMessage m in bundle.Messages)
+                    {
+                        foreach (Piece p in requests)
+                        {
+                            if (p.Index != m.PieceIndex)
+                                continue;
+
+                            int index = Block.IndexOf(p.Blocks, m.StartOffset, m.RequestLength);
+                            id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+        }
+
+        public override TimeSpan Timeout
+        {
+            get
+            {
+                return base.Timeout;
+            }
+            set
+            {
+                base.Timeout = value;
+            }
+        }
+
+        public override bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
+        {
+            return base.ValidatePiece(peer, piece, startOffset, length);
+        }
+
+
+
+        protected RequestMessage ContinueExistingRequest(PeerId id)
+        {
+            foreach (Piece p in requests)
+            {
+                // For each piece that was assigned to this peer, try to request a block from it
+                // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
+                if (p.AllBlocksRequested || !id.Equals(p.Blocks[0].RequestedOff))
+                    continue;
+
+                for (int i = 0; i < p.BlockCount; i++)
+                {
+                    if (p.Blocks[i].Requested)
+                        continue;
+
+                    p.Blocks[i].Requested = true;
+                    return p.Blocks[i].CreateRequest(id);
+                }
+            }
+
+            // If we get here it means all the blocks in the pieces being downloaded by the peer are already requested
+            return null;
+        }
+
+        protected RequestMessage GetFastPiece(PeerId id)
+        {
+            int requestIndex;
+
+            // If fast peers isn't supported on both sides, then return null
+            if (!id.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
+                return null;
+
+            // Remove pieces in the list that we already have
+            RemoveOwnedPieces(id.IsAllowedFastPieces);
+
+            // For all the remaining fast pieces
+            for (int i = 0; i < id.IsAllowedFastPieces.Count; i++)
+            {
+                // The peer may not always have the piece that is marked as 'allowed fast'
+                if (!id.BitField[(int)id.IsAllowedFastPieces[i]])
+                    continue;
+
+                // We request that piece and remove it from the list
+                requestIndex = (int)id.IsAllowedFastPieces[i];
+                id.IsAllowedFastPieces.RemoveAt(i);
+
+                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                requests.Add(p);
+                p.Blocks[0].Requested = true;
+                return p.Blocks[0].CreateRequest(id);
+            }
+
+            return null;
+        }
+
+        protected RequestMessage ContinueAnyExisting(PeerId id)
+        {
+            // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
+            // piece request.
+            if (id.Peer.RepeatedHashFails != 0)
+                return null;
+
+            // Otherwise, if this peer has any of the pieces that are currently being requested, try to
+            // request a block from one of those pieces
+            foreach (Piece p in this.requests)
+            {
+                // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
+                // the peer doesn't have this piece, we don't want to help download the piece.
+                if (p.AllBlocksRequested || !id.BitField[p.Index] ||
+                    (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0))
+                    continue;
+
+                for (int i = 0; i < p.Blocks.Length; i++)
+                    if (!p.Blocks[i].Requested)
+                    {
+                        p.Blocks[i].Requested = true;
+                        return p.Blocks[i].CreateRequest(id);
+                    }
+            }
+
+            return null;
+        }
+
+        protected RequestMessage GetSuggestedPiece(PeerId id)
+        {
+            int requestIndex;
+            // Remove any pieces that we already have
+            RemoveOwnedPieces(id.SuggestedPieces);
+
+            for (int i = 0; i < id.SuggestedPieces.Count; i++)
+            {
+                // A peer should only suggest a piece he has, but just in case.
+                if (!id.BitField[id.SuggestedPieces[i]])
+                    continue;
+
+                requestIndex = id.SuggestedPieces[i];
+                id.SuggestedPieces.RemoveAt(i);
+                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                this.requests.Add(p);
+                p.Blocks[0].Requested = true;
+                return p.Blocks[0].CreateRequest(id);
+            }
+
+
+            return null;
+        }
+
+        protected virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        {
+            int piecesNeeded = 1 + (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
+            int checkIndex = CanRequest(current, startIndex, endIndex, ref piecesNeeded);
+
+            // Nothing to request.
+            if (checkIndex == -1)
+                return null;
+
+            MessageBundle bundle = new MessageBundle();
+            for (int i = 0; bundle.Messages.Count < count && i < piecesNeeded; i++)
+            {
+                // Request the piece
+                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
+                requests.Add(p);
+
+                for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
+                {
+                    p.Blocks[j].Requested = true;
+                    bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
+                }
+            }
+            return bundle;
+        }
+
+        protected bool AlreadyRequested(int index)
+        {
+            return requests.Exists(delegate(Piece p) { return p.Index == index; });
+        }
+
+        protected void RemoveOwnedPieces(MonoTorrentCollection<int> list)
+        {
+            list.RemoveAll(delegate(int i)
+            {
+                return i >= bitfield.Length || bitfield[i] || AlreadyRequested(i);
+            });
+        }
+
+        private int CanRequest(BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
+        {
+            int count = -1;
+            int start = -1;
+
+            while ((pieceStartIndex = bitfield.FirstTrue(pieceStartIndex, pieceEndIndex)) != -1)
+            {
+                if (AlreadyRequested(pieceStartIndex) || !bitfield[pieceStartIndex])
+                {
+                    pieceStartIndex++;
+                }
+                else
+                {
+                    for (int i = 1; i < pieceCount; i++)
+                    {
+                        if ((pieceStartIndex + i) != bitfield.Length && !AlreadyRequested(pieceStartIndex + i) && bitfield[pieceStartIndex + i])
+                            continue;
+
+                        // The peer does NOT have the piece or we already have it. Store the largest range
+                        // found so far.
+                        if (i > count)
+                        {
+                            count = i;
+                            start = pieceStartIndex;
+                        }
+
+                        break;
+                    }
+
+                    if (count == -1)
+                        return pieceStartIndex;
+
+                    pieceStartIndex++;
+                }
+            }
+
+            pieceCount = count;
+            return start;
+        }
+    }
+
+    public class StandardPickerOld : PiecePickerBase
     {
         #region Member Variables
 
@@ -86,7 +418,7 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        public StandardPicker()
+        public StandardPickerOld()
         {
 
         }

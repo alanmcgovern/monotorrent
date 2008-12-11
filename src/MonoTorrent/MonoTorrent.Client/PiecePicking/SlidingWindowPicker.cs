@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
     /// The high priority set represents pieces that are needed SOON. This set is updated by calling code, to adapt for events
     /// (e.g. user fast-forwards or seeks, etc.)
     /// </summary>
-    public class SlidingWindowPicker : StandardPicker
+    public class SlidingWindowPicker : StandardPickerOld
     {
         #region Member Variables
 

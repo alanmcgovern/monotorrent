@@ -9,13 +9,13 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class RandomisedPickerTests
     {
-        static void Main()
-        {
-            RandomisedPickerTests t = new RandomisedPickerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.Pick();
-        }
+        //static void Main()
+        //{
+        //    RandomisedPickerTests t = new RandomisedPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.Pick();
+        //}
 
         PeerId id;
         RandomisedPicker picker;

@@ -33,6 +33,7 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.PiecePicking
 {
@@ -95,10 +96,19 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             picker.Initialise(bitfield, files, requests, unhashedPieces);
         }
-        public virtual bool IsInteresting(PeerId id)
+        public virtual bool IsInteresting(BitField bitfield)
         {
             CheckOverriden();
-            return picker.IsInteresting(id);
+            return picker.IsInteresting(bitfield);
+        }
+        public RequestMessage PickPiece(PeerId peer, List<PeerId> otherPeers)
+        {
+            MessageBundle bundle = PickPiece(peer, otherPeers, 1);
+            return bundle == null ? null : (RequestMessage)bundle.Messages[0];
+        }
+        public MessageBundle PickPiece(PeerId peer, List<PeerId> otherPeers, int count)
+        {
+            return PickPiece(peer, peer.BitField, otherPeers, 0, peer.BitField.Length, count);
         }
         public virtual MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
