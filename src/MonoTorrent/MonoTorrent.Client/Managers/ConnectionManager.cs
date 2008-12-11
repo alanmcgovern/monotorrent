@@ -71,14 +71,11 @@ namespace MonoTorrent.Client
         private MessagingCallback bitfieldSentCallback;
         private AsyncTransfer handshakeReceievedCallback;
         private MessagingCallback handshakeSentCallback;
-        private MessagingCallback messageLengthReceivedCallback;
-        private MessagingCallback messageReceivedCallback;
         private MessagingCallback messageSentCallback;
 
         private AsyncCallback endCheckEncryptionCallback;
         private AsyncConnect endCreateConnectionCallback;
         internal AsyncTransfer incomingConnectionAcceptedCallback;
-        private AsyncTransfer endReceiveMessageCallback;
         private AsyncTransfer endSendMessageCallback;
 
         private MonoTorrentCollection<TorrentManager> torrents;
