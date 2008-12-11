@@ -287,6 +287,11 @@ namespace MonoTorrent.Client
             get { return torrent.PieceLength / (16 * 1024); }
         }
 
+        public int Pieces
+        {
+            get { return torrent.Pieces.Count; }
+        }
+
         public int TotalBlocks
         {
             get
