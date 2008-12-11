@@ -57,14 +57,6 @@ namespace MonoTorrent.Common
             get { return this.trueCount == this.length; }
         }
 
-        internal int[] Array
-        {
-            get {
-                Validate();
-                return this.array;
-            }
-        }
-
         public int Length
         {
             get { return this.length; }

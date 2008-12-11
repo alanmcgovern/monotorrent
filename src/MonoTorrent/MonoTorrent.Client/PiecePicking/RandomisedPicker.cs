@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.PiecePicking
             if ((message = base.PickPiece(id, peerBitfield, otherPeers, startIndex, midpoint, count)) != null)
                 return message;
             else
-                return base.PickPiece(id, peerBitfield, otherPeers, midpoint, endIndex, count);
+                return base.PickPiece(id, peerBitfield, otherPeers, midpoint + 1, endIndex, count);
         }
     }
 }

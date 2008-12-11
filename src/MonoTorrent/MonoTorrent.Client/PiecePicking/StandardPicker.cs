@@ -378,8 +378,8 @@ namespace MonoTorrent.Client
             try
             {
                 // Copy my bitfield into the buffer and invert it so it contains a list of pieces i want
-                Buffer.BlockCopy(myBitfield.Array, 0, current.Array, 0, current.Array.Length * 4);
-                current.Not();
+                current.SetAll(false);
+                current.Or(myBitfield).Not();
 
                 // For every file set to DoNotDownload, set it's indices to 'false'
                 foreach (TorrentFile file in torrentFiles)
@@ -494,16 +494,11 @@ namespace MonoTorrent.Client
         public override bool IsInteresting(PeerId id)
         {
             BitField bitfield = ClientEngine.BufferManager.GetBitfield(myBitfield.Length);
+            bitfield.SetAll(false);
             try
             {
-                Buffer.BlockCopy(myBitfield.Array, 0, bitfield.Array, 0, myBitfield.Array.Length * 4);
-
-                bitfield.Not();
-                bitfield.And(id.BitField);
-                if (!bitfield.AllFalse)
-                    return true;                            // He's interesting if he has a piece we want
-
-                return false;
+                bitfield.Or(myBitfield).Not().And(id.BitField);
+                return !bitfield.AllFalse;
             }
             finally
             {

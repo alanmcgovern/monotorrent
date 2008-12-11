@@ -85,11 +85,11 @@ namespace MonoTorrent.Client.PiecePicking
                 spares.Push(rarest.Pop());
 
             BitField current = DequeueSpare();
+            current.SetAll(false);
             BitField temp;
 
             // Copy my bitfield into the buffer and invert it so it contains a list of pieces i want
-            Buffer.BlockCopy(bitfield.Array, 0, current.Array, 0, current.Array.Length * 4);
-            current.Not();
+            current.Or(bitfield).Not();
 
             // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
             if (!peerBitfield.AllTrue)
@@ -105,8 +105,8 @@ namespace MonoTorrent.Client.PiecePicking
                     continue;
 
                 temp = DequeueSpare();
-                Buffer.BlockCopy(current.Array, 0, temp.Array, 0, temp.Length * 4);
-                current = temp;
+                temp.SetAll(false);
+                current = temp.Or(current);
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.

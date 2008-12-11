@@ -238,7 +238,8 @@ namespace MonoTorrent.Client
         internal BitField GetClonedBitfield(BitField bitfield)
         {
             BitField clone = GetBitfield(bitfield.Length);
-            Buffer.BlockCopy(bitfield.Array, 0, clone.Array, 0, clone.Array.Length * 4);
+            clone.SetAll(false);
+            clone.Or(bitfield);
             return clone;
         }
     }
