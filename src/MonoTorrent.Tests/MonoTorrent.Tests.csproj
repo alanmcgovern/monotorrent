@@ -63,6 +63,7 @@
     <Compile Include="Client\PiecePickerTests.cs" />
     <Compile Include="Client\PieceWriterTests.cs" />
     <Compile Include="Client\PriorityPickerTests.cs" />
+    <Compile Include="Client\RandomisedPickerTests.cs" />
     <Compile Include="Client\SlidingWindowPickerTests.cs" />
     <Compile Include="Client\TestEncryption.cs" />
     <Compile Include="Client\TestPicker.cs" />

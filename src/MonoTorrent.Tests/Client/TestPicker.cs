@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
         public List<BitField> PickPieceBitfield = new List<BitField>();
         public List<List<PeerId>> PickPiecePeers = new List<List<PeerId>>();
         public List<int> PickPieceStartIndex = new List<int>();
-        public List<int> PickPieceEndIndedx = new List<int>();
+        public List<int> PickPieceEndIndex = new List<int>();
         public List<int> PickPieceCount = new List<int>();
 
         public TestPicker()
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
             PickPieceBitfield.Add(clone);
             PickPiecePeers.Add(otherPeers);
             PickPieceStartIndex.Add(startIndex);
-            PickPieceEndIndedx.Add(endIndex);
+            PickPieceEndIndex.Add(endIndex);
             PickPieceCount.Add(count);
 
             return null;

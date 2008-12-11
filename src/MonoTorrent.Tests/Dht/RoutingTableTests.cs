@@ -10,14 +10,14 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class RoutingTableTests
     {
-        static void Main(string[] args)
-        {
-            RoutingTableTests t = new RoutingTableTests();
-            t.Setup();
-            t.AddSame();
-            t.Setup();
-            t.AddSimilar();
-        }
+        //static void Main(string[] args)
+        //{
+        //    RoutingTableTests t = new RoutingTableTests();
+        //    t.Setup();
+        //    t.AddSame();
+        //    t.Setup();
+        //    t.AddSimilar();
+        //}
         byte[] id;
         RoutingTable table;
         Node n;
