@@ -38,8 +38,7 @@ namespace MonoTorrent.Client.PiecePicking
 {
     public abstract class PiecePicker
     {
-        protected PiecePicker picker;
-        protected BitField unhashedPieces;
+        PiecePicker picker;
 
         protected PiecePicker(PiecePicker picker)
         {
