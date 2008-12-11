@@ -40,6 +40,20 @@ namespace MonoTorrent.Client.PiecePicking
     {
         PiecePicker picker;
 
+        public virtual TimeSpan Timeout
+        {
+            get
+            {
+                CheckOverriden();
+                return picker.Timeout;
+            }
+            set
+            {
+                CheckOverriden();
+                picker.Timeout = value;
+            }
+        }
+
         protected PiecePicker(PiecePicker picker)
         {
             this.picker = picker;
@@ -51,6 +65,16 @@ namespace MonoTorrent.Client.PiecePicking
                 throw new InvalidOperationException("This method must be overridden");
         }
 
+        public virtual void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        {
+            CheckOverriden();
+            picker.CancelRequest(peer, piece, startOffset, length);
+        }
+        public virtual void CancelRequests(PeerId peer)
+        {
+            CheckOverriden();
+            picker.CancelRequests(peer);
+        }
         public virtual void CancelTimedOutRequests()
         {
             CheckOverriden();
@@ -81,30 +105,15 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             return picker.PickPiece(id, peerBitfield, otherPeers, startIndex, endIndex, count);
         }
-        public virtual void ReceivedChokeMessage(PeerId id)
-        {
-            CheckOverriden();
-            picker.ReceivedChokeMessage(id);
-        }
-        public virtual PieceEvent ReceivedPieceMessage(BufferedIO data)
-        {
-            CheckOverriden();
-            return picker.ReceivedPieceMessage(data);
-        }
-        public virtual void ReceivedRejectRequest(PeerId id, RejectRequestMessage message)
-        {
-            CheckOverriden();
-            picker.ReceivedRejectRequest(id, message);
-        }
-        public virtual void RemoveRequests(PeerId id)
-        {
-            CheckOverriden();
-            picker.RemoveRequests(id);
-        }
         public virtual void Reset()
         {
             CheckOverriden();
             picker.Reset();
+        }
+        public virtual bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
+        {
+            CheckOverriden();
+            return picker.ValidatePiece(peer, piece, startOffset, length);
         }
     }
 }

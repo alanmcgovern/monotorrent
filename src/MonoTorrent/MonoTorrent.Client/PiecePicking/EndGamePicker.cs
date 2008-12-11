@@ -88,34 +88,25 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void ReceivedChokeMessage(PeerId id)
-        {
-            //requests.RemoveAll(delegate(KeyValuePair<Peer, Block> b) { return b.Key == id; });
-        }
-
-        public override PieceEvent ReceivedPieceMessage(BufferedIO data)
-        {
-            //requests.Exists(delegate(KeyValuePair<Peer, Block> b) { return b.Key == id && b.Value.Block == data.Block; });
-            // We received a piece we requested, so we can write this to disk
-
-            //base.ReceivedGoodPiece(data);
-            return base.ReceivedPieceMessage(data);
-        }
-
-        public override void ReceivedRejectRequest(PeerId id, RejectRequestMessage message)
-        {
-            //requests.RemoveAll(delegate(KeyValuePair<Peer, Block> b) { return b.Key == id && b.Value.Block == message.Block; });
-        }
-
-        public override void RemoveRequests(PeerId id)
-        {
-            //requests.RemoveAll(delegate(KeyValuePair<Peer, Block> b) { return b.Key == id; });
-        }
-
         public override void Reset()
         {
             // Though if you reset an EndGamePicker it really means that you should be using a regular picker now
             requests.Clear();
+        }
+
+        public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
+        {
+            base.CancelRequest(peer, piece, startOffset, length);
+        }
+
+        public override void CancelRequests(PeerId peer)
+        {
+            base.CancelRequests(peer);
+        }
+
+        public override bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
+        {
+            return base.ValidatePiece(peer, piece, startOffset, length);
         }
     }
 }
