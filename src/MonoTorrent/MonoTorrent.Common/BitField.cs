@@ -333,7 +333,7 @@ namespace MonoTorrent.Common
             }
         }
 
-        internal void SetAll(bool value)
+        internal BitField SetAll(bool value)
         {
             if (value)
             {
@@ -348,6 +348,8 @@ namespace MonoTorrent.Common
                     this.array[i] = 0;
                 this.trueCount = 0;
             }
+
+            return this;
         }
 
         internal byte[] ToByteArray()
