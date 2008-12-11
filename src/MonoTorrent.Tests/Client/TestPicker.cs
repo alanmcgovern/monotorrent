@@ -35,7 +35,7 @@ using MonoTorrent.Client;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Tests.Client
+namespace MonoTorrent.Client
 {
     class TestPicker : PiecePicker
     {

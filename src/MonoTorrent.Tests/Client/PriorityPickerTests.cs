@@ -35,7 +35,7 @@ using NUnit.Framework;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
 
-namespace MonoTorrent.Tests.Client
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PriorityPickerTests
