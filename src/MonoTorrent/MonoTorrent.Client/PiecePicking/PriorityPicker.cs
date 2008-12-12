@@ -113,5 +113,21 @@ namespace MonoTorrent.Client.PiecePicking
                 this.files.Add(new Files(files[i], b));
             }
         }
+
+        public override bool IsInteresting(BitField bitfield)
+        {
+            files.Sort();
+            temp.SetAll(false);
+
+            // OR all the files together which we want to download
+            for (int i = 0; i < files.Count; i++)
+                if (files[i].File.Priority != Priority.DoNotDownload)
+                    temp.Or(files[i].Selector);
+            
+            // See which pieces the peer has that we do want to download
+            temp.And(bitfield);
+
+            return base.IsInteresting(temp);
+        }
     }
 }

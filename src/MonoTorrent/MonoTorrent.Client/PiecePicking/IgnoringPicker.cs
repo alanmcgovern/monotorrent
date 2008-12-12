@@ -25,5 +25,11 @@ namespace MonoTorrent.Client.PiecePicking
             temp.SetAll(false).Or(peerBitfield).NAnd(bitfield);
             return base.PickPiece(id, temp, otherPeers, startIndex, endIndex, count);
         }
+
+        public override bool IsInteresting(BitField bitfield)
+        {
+            temp.SetAll(false).Or(bitfield).NAnd(this.bitfield);
+            return base.IsInteresting(temp);
+        }
     }
 }
