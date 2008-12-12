@@ -39,10 +39,18 @@ namespace MonoTorrent.Client.PiecePicking
     public class EndGamePicker : PiecePicker
     {
         private List<KeyValuePair<Peer, Block>> requests;
+        TimeSpan timeout;
+
+        public override TimeSpan Timeout
+        {
+            get { return timeout; }
+            set { timeout = value; }
+        }
 
         public EndGamePicker()
             : base(null)
         {
+            timeout = DefaultTimeout;
         }
 
         public override void CancelTimedOutRequests()

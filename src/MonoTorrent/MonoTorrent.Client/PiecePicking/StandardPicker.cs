@@ -42,11 +42,18 @@ namespace MonoTorrent.Client
     {
         BitField bitfield;
         protected List<Piece> requests;
+        private TimeSpan timeout;
+
+        public override TimeSpan Timeout
+        {
+            get { return timeout; }
+            set { timeout = value; }
+        }
 
         public StandardPicker()
             : base(null)
         {
-
+            timeout = DefaultTimeout;
         }
 
         public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
@@ -166,18 +173,6 @@ namespace MonoTorrent.Client
         public override void Reset()
         {
             base.Reset();
-        }
-
-        public override TimeSpan Timeout
-        {
-            get
-            {
-                return base.Timeout;
-            }
-            set
-            {
-                base.Timeout = value;
-            }
         }
 
         public override bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
