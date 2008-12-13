@@ -141,7 +141,7 @@ namespace MonoTorrent.Client
 				this.connectionRetentionFactor = value;
 			}
 		}
-		private long connectionRetentionFactor = 2000;
+		private long connectionRetentionFactor = 1024;
 
         // FIXME: This value needs to be obeyed if it's changed
         // while the torrent is running

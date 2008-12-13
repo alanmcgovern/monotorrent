@@ -9,12 +9,12 @@ namespace MonoTorrent.Client
 
 		#region Private Fields
 		private TorrentManager owningTorrent; //The torrent to which this manager belongs
-		private List<InactivePeer> inactivePeerList = new List<InactivePeer>();
+		private List<Uri> inactivePeerList = new List<Uri>();
 
 		/// <summary>
 		/// Provides access to the list of URIs we've marked as inactive
 		/// </summary>
-		internal List<InactivePeer> InactivePeerList
+		internal List<Uri> InactivePeerList
 		{
 			get { return inactivePeerList; }
 		}
@@ -84,6 +84,8 @@ namespace MonoTorrent.Client
 						// This is an eligible peer and we're not interested in it so stop looking
 						indexOfFirstUninterestingCandidate = i;
 						candidateSecondsConnected = (int)(DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+						candidateSecondsSinceLastBlock = -1;
+						candidateDataBytes = -1;
 						break;
 					}
 					// This is an eligible peer, but we're interested in it; remember it for potential disconnection if it's the first one we found
@@ -91,6 +93,8 @@ namespace MonoTorrent.Client
 					{
 						indexOfFirstInterestingCandidate = i;
 						candidateSecondsConnected = (int)(DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+						candidateSecondsSinceLastBlock = -1;
+						candidateDataBytes = -1;
 					}
 				}
 				else
@@ -137,109 +141,12 @@ namespace MonoTorrent.Client
 
 			// We've found a peer to disconnect
 			// Add it to the inactive list for this torrent and disconnect it
-			inactivePeerList.Add(new InactivePeer(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri,
-											   candidateDataBytes, candidateSecondsConnected, candidateSecondsSinceLastBlock));
+			inactivePeerList.Add(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri);
 			owningTorrent.Peers.ConnectedPeers[peerToDisconnect].ConnectionManager.CleanupSocket(owningTorrent.Peers.ConnectedPeers[peerToDisconnect], "Marked as inactive");
 
 		}
 
-		/// <summary>
-		/// Tests to see if a peer has been marked as inactive
-		/// </summary>
-		/// <param name="PeerUri">The peer's URI</param>
-		/// <returns>True if the peer is inactive, otherwise false</returns>
-		internal bool IsInactive(Uri PeerUri)
-		{
-			foreach (InactivePeer peer in inactivePeerList)
-				if (peer.PeerUri == PeerUri)
-					return true;
-			return false;
-		}
-
 		#endregion
-	}
-
-	[Obsolete("This class will be removed once the inactive peer manager is stable.")]
-	public class InactivePeer
-	{
-
-		#region Public properties
-
-		private Uri peerUri;
-		/// <summary>
-		/// The peer's URI
-		/// </summary>
-		public Uri PeerUri
-		{
-			get { return peerUri; }
-			set { value = peerUri; }
-		}
-
-		private long bytesRead = 0;
-		/// <summary>
-		/// Number of bytes read from the peer at the time it became active
-		/// </summary>
-		public long BytesRead
-		{
-			get { return bytesRead; }
-			set { value = bytesRead; }
-		}
-
-		private int secondsConnected = 0;
-		/// <summary>
-		/// Number of seconds connected at the time the peer became inactive
-		/// </summary>
-		public int SecondsConnected
-		{
-			get { return secondsConnected; }
-			set { value = secondsConnected; }
-		}
-
-		private int secondsInactive = -1;
-		/// <summary>
-		/// Number of seconds since the last message received at the time the peer became inactive
-		/// -1 if no message received
-		/// </summary>
-		public int SecondsInactive
-		{
-			get { return secondsInactive; }
-			set { value = secondsInactive; }
-		}
-
-		#endregion
-
-		#region Constructors
-
-		/// <summary>
-		/// Create an inactive peer that has not sent us data
-		/// </summary>
-		/// <param name="PeerUri">The peer's URI</param>
-		/// <param name="SecondsConnected">Number of seconds we were connected</param>
-		public InactivePeer(Uri PeerUri, int SecondsConnected)
-		{
-			peerUri = PeerUri;
-			bytesRead = 0;
-			secondsConnected = SecondsConnected;
-			secondsInactive = -1;
-		}
-
-		/// <summary>
-		/// Create an inactive peer that has sent us data
-		/// </summary>
-		/// <param name="PeerUri">The peer's URI</param>
-		/// <param name="BytesRead">Number of bytes read from the peer</param>
-		/// <param name="SecondsConnected">Number of seconds we were connected</param>
-		/// <param name="SecondsInactive">Number of seconds since the last message from the peer</param>
-		public InactivePeer(Uri PeerUri, long BytesRead, int SecondsConnected, int SecondsInactive)
-		{
-			peerUri = PeerUri;
-			bytesRead = BytesRead;
-			secondsConnected = SecondsConnected;
-			secondsInactive = SecondsInactive;
-		}
-
-		#endregion
-
 	}
 
 }

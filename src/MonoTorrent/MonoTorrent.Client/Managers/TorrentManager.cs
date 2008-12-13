@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
 		/// <summary>
 		/// List of peers we have inactivated for this torrent
 		/// </summary>
-		public List<InactivePeer> InactivePeerList
+		public List<Uri> InactivePeerList
 		{
 			get { return inactivePeerManager.InactivePeerList; }
 		}
@@ -620,7 +620,7 @@ namespace MonoTorrent.Client
                     return 0;
 
 				// Ignore peers in the inactive list
-				if (this.inactivePeerManager.IsInactive(peer.ConnectionUri))
+				if (this.inactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
 					return 0;
 
                 this.peers.AvailablePeers.Add(peer);
