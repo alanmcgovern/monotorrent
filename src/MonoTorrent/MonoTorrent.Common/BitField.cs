@@ -408,9 +408,7 @@ namespace MonoTorrent.Common
         private void Validate()
         {
             // Zero the unused bits
-            int start = this.length % 32;
-            for (int i = start; i < 32; i++)
-                array[array.Length - 1] &= ~(1 << i);
+            array[array.Length - 1] &= ~(-1 << length % 32);
 
             // Update the population count
             trueCount = 0;
