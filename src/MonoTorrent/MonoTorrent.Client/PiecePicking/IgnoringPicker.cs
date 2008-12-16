@@ -4,7 +4,7 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
     public class IgnoringPicker : PiecePicker
     {

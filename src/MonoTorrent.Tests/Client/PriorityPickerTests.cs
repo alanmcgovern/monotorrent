@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.PiecePicking;
 using NUnit.Framework;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
@@ -72,7 +71,7 @@ namespace MonoTorrent.Client
         {
             tester = new TestPicker();
             picker = new PriorityPicker(tester);
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>(), new BitField(rig.Pieces));
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             foreach (TorrentFile file in rig.Torrent.Files)
                 file.Priority = Priority.Normal;
         }

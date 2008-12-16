@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.PiecePicking;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
@@ -65,7 +64,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             
         }

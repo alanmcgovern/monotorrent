@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
     public abstract class PiecePicker
     {
@@ -93,10 +93,10 @@ namespace MonoTorrent.Client.PiecePicking
             CheckOverriden();
             return picker.ExportActiveRequests();
         }
-        public virtual void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        public virtual void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             CheckOverriden();
-            picker.Initialise(bitfield, files, requests, unhashedPieces);
+            picker.Initialise(bitfield, files, requests);
         }
         public virtual bool IsInteresting(BitField bitfield)
         {

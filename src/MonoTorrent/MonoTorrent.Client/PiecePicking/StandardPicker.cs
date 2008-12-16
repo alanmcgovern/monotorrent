@@ -34,7 +34,6 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -101,7 +100,7 @@ namespace MonoTorrent.Client
             return new List<Piece>(requests);
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
             this.requests = new List<Piece>(requests);

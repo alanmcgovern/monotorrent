@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
     public class RandomisedPicker : PiecePicker
     {

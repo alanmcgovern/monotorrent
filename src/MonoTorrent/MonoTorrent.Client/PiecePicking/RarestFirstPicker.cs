@@ -33,7 +33,7 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
     public class RarestFirstPicker : PiecePicker
     {
@@ -54,9 +54,9 @@ namespace MonoTorrent.Client.PiecePicking
             spares = new Stack<BitField>();
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            base.Initialise(bitfield, files, requests, unhashedPieces);
+            base.Initialise(bitfield, files, requests);
             this.bitfield = bitfield;
             this.files = files;
         }

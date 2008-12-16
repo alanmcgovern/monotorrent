@@ -6,7 +6,6 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.PiecePicking;
 
 namespace MonoTorrent.Client
 {
@@ -56,7 +55,7 @@ namespace MonoTorrent.Client
             rig = new TestRig("");
             peers = new List<PeerId>();
             picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
-            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));
+            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>());
             peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
             {

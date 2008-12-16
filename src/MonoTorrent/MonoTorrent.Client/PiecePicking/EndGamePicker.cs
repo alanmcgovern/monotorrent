@@ -34,7 +34,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 
-namespace MonoTorrent.Client.PiecePicking
+namespace MonoTorrent.Client
 {
     public class EndGamePicker : PiecePicker
     {
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.PiecePicking
             return null;
         }
 
-        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces)
+        public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             // initialise the requests list from the IEnumarble request
         }

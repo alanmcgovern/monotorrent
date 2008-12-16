@@ -261,6 +261,13 @@ namespace MonoTorrent.Client
 
         internal void ChangePicker(PiecePickerBase picker, TorrentFile[] files)
         {
+//          MonoTorrent.Client.PiecePicker p = new StandardPicker();
+//          p = new RandomisedPicker(p);
+//          p = new RarestFirstPicker(p);
+//          p = new PriorityPicker(p);
+//          p = new IgnoringPicker(UnhashedPieces, p);
+//          p = new IgnoringPicker(MyBitField, p);
+
             picker.Initialise(piecePicker.MyBitField, files, piecePicker.ExportActiveRequests(), piecePicker.UnhashedPieces);
             piecePicker.Dispose();
             piecePicker = picker;
