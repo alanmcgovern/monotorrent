@@ -37,14 +37,14 @@ namespace MonoTorrent.Client
 {
     public class RarestFirstPicker : PiecePicker
     {
-        BitField bitfield;
         TorrentFile[] files;
         Stack<BitField> rarest;
         Stack<BitField> spares;
+        int length;
 
         BitField DequeueSpare()
         {
-            return spares.Count > 0 ? spares.Pop() : new BitField(bitfield.Length);
+            return spares.Count > 0 ? spares.Pop() : new BitField(length);
         }
 
         public RarestFirstPicker(PiecePicker picker)
@@ -57,13 +57,13 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, files, requests);
-            this.bitfield = bitfield;
             this.files = files;
+            this.length = bitfield.Length;
         }
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
-            GenerateRarestFirst(peerBitfield, otherPeers, startIndex, endIndex);
+            GenerateRarestFirst(peerBitfield, otherPeers);
 
             while (rarest.Count > 0)
             {
@@ -78,22 +78,14 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        void GenerateRarestFirst(BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex)
+        void GenerateRarestFirst(BitField peerBitfield, List<PeerId> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)
                 spares.Push(rarest.Pop());
 
             BitField current = DequeueSpare();
-            current.SetAll(false);
-            BitField temp;
-
-            // Copy my bitfield into the buffer and invert it so it contains a list of pieces i want
-            current.Or(bitfield).Not();
-
-            // Fastpath - If he's a seeder, there's no point in AND'ing his bitfield as nothing will be set false
-            if (!peerBitfield.AllTrue)
-                current.And(peerBitfield);
+            current.SetAll(false).Or(peerBitfield);
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push(current);
@@ -101,12 +93,10 @@ namespace MonoTorrent.Client
             // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
             for (int i = 0; i < otherPeers.Count; i++)
             {
-                if (otherPeers[i].Connection == null || otherPeers[i].Peer.IsSeeder)
+                if (otherPeers[i].BitField.AllTrue)
                     continue;
 
-                temp = DequeueSpare();
-                temp.SetAll(false);
-                current = temp.Or(current);
+                current = DequeueSpare().SetAll(false).Or(current);
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.
