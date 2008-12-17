@@ -127,7 +127,7 @@ namespace MonoTorrent.Dht.Messages
                 }
             }
 
-            return error == null;
+            return error == null && message != null;
         }
     }
 }
