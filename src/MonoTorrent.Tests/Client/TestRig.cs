@@ -68,6 +68,9 @@ namespace MonoTorrent.Client
 
     public class CustomTracker : MonoTorrent.Client.Tracker.Tracker
     {
+        public List<DateTime> AnnouncedAt = new List<DateTime>();
+        public List<DateTime> ScrapedAt = new List<DateTime>();
+
         public CustomTracker(Uri uri)
             : base(uri)
         {
@@ -76,12 +79,14 @@ namespace MonoTorrent.Client
 
         public override System.Threading.WaitHandle Announce(AnnounceParameters parameters)
         {
+            AnnouncedAt.Add(DateTime.Now);
             RaiseAnnounceComplete(new AnnounceResponseEventArgs(parameters.Id));
             return parameters.Id.WaitHandle;
         }
 
         public override System.Threading.WaitHandle Scrape(ScrapeParameters parameters)
         {
+            ScrapedAt.Add(DateTime.Now);
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
             return parameters.Id.WaitHandle;
         }

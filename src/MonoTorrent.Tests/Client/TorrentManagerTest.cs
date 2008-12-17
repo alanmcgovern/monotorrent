@@ -141,5 +141,26 @@ namespace MonoTorrent.Client
 				Assert.IsTrue (t.Trackers.Count > 0, "#1");
 			}
 		}
+
+        [Test]
+        public void AnnounceWhenComplete()
+        {
+            AutoResetEvent handle = new AutoResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
+                if(e.NewState != TorrentState.Hashing)
+                    handle.Set();
+            };
+            rig.Manager.Start();
+            handle.WaitOne();
+            Assert.AreEqual(TorrentState.Downloading, rig.Manager.State, "#1");
+            Assert.AreEqual(1, rig.Tracker.AnnouncedAt.Count, "#2");
+            rig.Manager.Bitfield.SetAll(true);
+            handle.WaitOne();
+            Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
+            Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
+            rig.Manager.Stop();
+            Assert.AreEqual(TorrentState.Stopped, rig.Manager.State, "#5");
+            Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
+        }
     }
 }

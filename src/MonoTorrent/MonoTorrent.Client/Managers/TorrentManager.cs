@@ -738,8 +738,10 @@ namespace MonoTorrent.Client
         {
             //If download is complete, set state to 'Seeding'
             if (this.Progress == 100.0 && this.State != TorrentState.Seeding)
+            {
                 UpdateState(TorrentState.Seeding);
-
+                TrackerManager.Announce(TorrentEvent.Completed);
+            }
             // FIXME: Hardcoded 15kB/sec - is this ok?
             if ((DateTime.Now - startTime) > TimeSpan.FromMinutes(1) && Monitor.DownloadSpeed < 15 * 1024)
             {
