@@ -391,10 +391,10 @@ namespace MonoTorrent.Common
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder(this.array.Length * 16);
-            for (int i = 0; i < this.array.Length; i++)
+            for (int i = 0; i < Length; i++)
             {
-                sb.Append(array[i]);
-                sb.Append(',');
+                sb.Append(Get(i) ? 'T' : 'F');
+                sb.Append(' ');
             }
 
             return sb.ToString(0, sb.Length - 1);
