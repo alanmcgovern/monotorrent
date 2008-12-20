@@ -237,6 +237,39 @@ namespace MonoTorrent.Common
             return -1;              // Nothing is true
         }
 
+        public int FirstFalse()
+        {
+            return FirstFalse(0, Length);
+        }
+
+        public int FirstFalse(int startIndex, int endIndex)
+        {
+            int start;
+            int end;
+
+            // If the number of pieces is an exact multiple of 32, we need to decrement by 1 so we don't overrun the array
+            // For the case when endIndex == 0, we need to ensure we don't go negative
+            int loopEnd = Math.Min((endIndex / 32), array.Length - 1);
+            for (int i = (startIndex / 32); i <= loopEnd; i++)
+            {
+                if (this.array[i] == ~0)        // This one has no false values
+                    continue;
+
+                start = i * 32;
+                end = start + 32;
+                start = (start < startIndex) ? startIndex : start;
+                end = (end > this.length) ? this.length : end;
+                end = (end > endIndex) ? endIndex : end;
+                if (end == Length && end > 0)
+                    end--;
+
+                for (int j = start; j <= end; j++)
+                    if (!Get(j))     // This piece is true
+                        return j;
+            }
+
+            return -1;              // Nothing is true
+        }
         internal void FromArray(byte[] buffer, int offset, int length)
         {
             byte p = 128;

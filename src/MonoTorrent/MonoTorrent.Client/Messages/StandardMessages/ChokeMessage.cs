@@ -75,7 +75,8 @@ namespace MonoTorrent.Client.Messages.Standard
         internal override void Handle(PeerId id)
         {
             id.IsChoking = true;
-            id.TorrentManager.PieceManager.ReceivedChokeMessage(id);
+            if (!id.SupportsFastPeer)
+                id.TorrentManager.PieceManager.Picker.CancelRequests(id);
         }
 
 

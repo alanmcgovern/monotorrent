@@ -497,7 +497,7 @@ namespace MonoTorrent.Client
                 Logger.Log(id.Connection, "Cleanup Reason : " + message);
 
                 Logger.Log(id.Connection, "*******Cleaning up*******");
-                id.TorrentManager.PieceManager.RemoveRequests(id);
+                id.TorrentManager.PieceManager.Picker.CancelRequests(id);
                 id.Peer.CleanedUpCount++;
 
                 if (id.PeerExchangeManager != null)

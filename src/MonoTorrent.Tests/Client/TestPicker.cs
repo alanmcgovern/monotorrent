@@ -45,12 +45,15 @@ namespace MonoTorrent.Client
         public List<int> PickPieceEndIndex = new List<int>();
         public List<int> PickPieceCount = new List<int>();
 
+        public List<int> PickedPieces = new List<int>();
+
+        public bool ReturnNoPiece = true;
         public TestPicker()
             : base(null)
         {
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             PickPieceId.Add(id);
             BitField clone = new BitField(peerBitfield.Length);
@@ -61,6 +64,16 @@ namespace MonoTorrent.Client
             PickPieceEndIndex.Add(endIndex);
             PickPieceCount.Add(count);
 
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (PickedPieces.Contains(i))
+                    continue;
+                PickedPieces.Add(i);
+                if (ReturnNoPiece)
+                    return null;
+                else
+                    return new MessageBundle();
+            }
             return null;
         }
 

@@ -61,14 +61,16 @@ namespace MonoTorrent.Client
             this.length = bitfield.Length;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
+            if (count > 1)
+                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             GenerateRarestFirst(peerBitfield, otherPeers);
 
             while (rarest.Count > 0)
             {
                 BitField current = rarest.Pop();
-                MessageBundle bundle = base.PickPiece(id, current, otherPeers, startIndex, endIndex, count);
+                MessageBundle bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
                 spares.Push(current);
 
                 if (bundle != null)

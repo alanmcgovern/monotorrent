@@ -364,5 +364,70 @@ namespace MonoTorrent.Client
 
             Assert.AreEqual(rig.BlocksPerPiece * 7, messages.Count, "#2");
         }
+
+        [Test]
+        public void PickBundle4()
+        {
+            peers[0].IsChoking = false;
+            peers[0].BitField.SetAll(true);
+
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 4, 4);
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 6, 6);
+
+            MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 20 * rig.BlocksPerPiece);
+
+            foreach (RequestMessage m in b.Messages)
+                Assert.IsTrue(m.PieceIndex > 6);
+        }
+
+        [Test]
+        public void PickBundle5()
+        {
+            rig.Manager.Bitfield.SetAll(true);
+
+            for (int i = 0; i < 20; i++)
+            {
+                rig.Manager.Bitfield[i % 2] = false;
+                rig.Manager.Bitfield[10 + i] = false;
+            }
+            
+            peers[0].IsChoking = false;
+            peers[0].BitField.SetAll(true);
+
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 3, 3);
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 6, 6);
+
+            MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 20 * rig.BlocksPerPiece);
+            Assert.AreEqual(20 * rig.BlocksPerPiece, b.Messages.Count);
+            foreach (RequestMessage m in b.Messages)
+                Assert.IsTrue(m.PieceIndex >=10 && m.PieceIndex < 30);
+        }
+
+        [Test]
+        public void PickBundle6()
+        {
+            rig.Manager.Bitfield.SetAll(false);
+
+            peers[0].IsChoking = false;
+            peers[0].BitField.SetAll(true);
+
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 0, 0);
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 1, 1);
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 3, 3);
+            for (int i = 0; i < rig.BlocksPerPiece; i++)
+                picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 6, 6);
+
+            MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 2 * rig.BlocksPerPiece);
+            Assert.AreEqual(2 * rig.BlocksPerPiece, b.Messages.Count);
+            foreach (RequestMessage m in b.Messages)
+                Assert.IsTrue(m.PieceIndex >= 4 && m.PieceIndex < 6);
+        }
     }
 }

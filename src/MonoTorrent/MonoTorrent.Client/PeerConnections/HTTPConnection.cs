@@ -71,6 +71,7 @@ namespace MonoTorrent.Client.Connections
 
         private HttpRequestData currentRequest;
         private Stream dataStream;
+        private bool disposed;
         private AsyncCallback getResponseCallback;
         private AsyncCallback receivedChunkCallback;
         private TorrentManager manager;
@@ -248,9 +249,11 @@ namespace MonoTorrent.Client.Connections
 
 
 
-
         private void ReceivedChunk(IAsyncResult result)
         {
+            if (disposed)
+                return;
+
             try
             {
                 int received = dataStream.EndRead(result);
@@ -353,6 +356,10 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
+            if (disposed)
+                return;
+
+            disposed = true;
             if (dataStream != null)
                 dataStream.Dispose();
             dataStream = null;

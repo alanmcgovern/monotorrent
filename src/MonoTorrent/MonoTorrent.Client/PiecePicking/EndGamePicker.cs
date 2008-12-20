@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
             return !bitfield.AllFalse;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             // Find a block we havent already requested a bunch of times
             return null;
@@ -101,9 +101,9 @@ namespace MonoTorrent.Client
             base.CancelRequests(peer);
         }
 
-        public override bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
+        public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            return base.ValidatePiece(peer, piece, startOffset, length);
+            return base.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
         }
     }
 }

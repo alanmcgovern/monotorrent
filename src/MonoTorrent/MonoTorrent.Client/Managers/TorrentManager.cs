@@ -56,7 +56,6 @@ namespace MonoTorrent.Client
 
         public event EventHandler<PeerConnectionEventArgs> PeerConnected;
 
-
         public event EventHandler<PeerConnectionEventArgs> PeerDisconnected;
 
         internal event EventHandler<PeerConnectionFailedEventArgs> ConnectionAttemptFailed;
@@ -348,7 +347,11 @@ namespace MonoTorrent.Client
             this.settings = settings;
 			this.inactivePeerManager = new InactivePeerManager(this);
             this.peers = new PeerManager();
-            this.pieceManager = new PieceManager(bitfield, torrent.Files);
+            PiecePicker picker = new StandardPicker();
+            picker = new RandomisedPicker(picker);
+            picker = new RarestFirstPicker(picker);
+            picker = new PriorityPicker(picker);
+            this.pieceManager = new PieceManager(picker, bitfield, torrent.Files);
             this.torrent = torrent;
             this.trackerManager = new TrackerManager(this);
             this.downloadLimiter = new RateLimiter();
@@ -359,6 +362,10 @@ namespace MonoTorrent.Client
 
             if (ClientEngine.SupportsInitialSeed)
                 this.initialSeed = (settings.InitialSeedingEnabled ? (new InitialSeed(this)) : null);
+
+            PieceHashed += delegate(object o, PieceHashedEventArgs e) {
+                PieceManager.UnhashedPieces[e.PieceIndex] = false;
+            };
         }
 
 
@@ -367,17 +374,17 @@ namespace MonoTorrent.Client
 
         #region Public Methods
 
-        public void ChangePicker(PiecePickerBase picker)
+        public void ChangePicker(PiecePicker picker)
         {
             Check.Picker(picker);
 
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                this.pieceManager.ChangePicker(picker, torrent.Files);
+                this.pieceManager.ChangePicker(picker, bitfield, torrent.Files);
             });
         }
         public void Dispose()
         {
-            pieceManager.Dispose();
+            //pieceManager.Dispose();
         }
 
 
@@ -416,7 +423,7 @@ namespace MonoTorrent.Client
         public List<Piece> GetActiveRequests()
         {
             return (List<Piece>)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
-                return this.pieceManager.PiecePicker.ExportActiveRequests();
+                return PieceManager.Picker.ExportActiveRequests();
             });
         }
 
@@ -546,7 +553,7 @@ namespace MonoTorrent.Client
                 ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
                     if (State != TorrentState.Downloading && State != TorrentState.Seeding)
                         return false;
-                    pieceManager.PiecePicker.CancelTimedOutRequests();
+                    pieceManager.Picker.CancelTimedOutRequests();
                     return true;
                 });
             });

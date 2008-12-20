@@ -43,7 +43,6 @@ namespace MonoTorrent.Client
 
         private Piece piece;
         private int startOffset;
-        private int requestedAt;
         private PeerId requestedOff;
         private int requestLength;
         private bool requested;
@@ -97,7 +96,11 @@ namespace MonoTorrent.Client
 
         public bool RequestTimedOut
         {
-            get { return !Received && requestedAt != 0 && (Environment.TickCount - requestedAt) > 60000; } // 60 seconds timeout for a request to fulfill
+            get
+            { // 60 seconds timeout for a request to fulfill
+                return !Received && requestedOff != null &&
+                       (DateTime.Now - requestedOff.LastMessageReceived) > TimeSpan.FromMinutes(1);
+            }
         }
 
         internal PeerId RequestedOff
@@ -133,7 +136,6 @@ namespace MonoTorrent.Client
 
         internal Block(Piece piece, int startOffset, int requestLength)
         {
-            this.requestedAt = 0;
             this.requestedOff = null;
             this.piece = piece;
             this.received = false;
@@ -150,7 +152,6 @@ namespace MonoTorrent.Client
 
         internal RequestMessage CreateRequest(PeerId id)
         {
-            this.requestedAt = Environment.TickCount;
             this.requestedOff = id;
             return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
         }
@@ -158,7 +159,6 @@ namespace MonoTorrent.Client
         internal void CancelRequest()
         {
             Requested = false;
-            requestedAt = 0;
             RequestedOff = null;
         }
 

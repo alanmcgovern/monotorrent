@@ -37,62 +37,62 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    public abstract class PiecePickerBase : IDisposable
-    {
-        #region Private Fields
+    //public abstract class PiecePickerBase : IDisposable
+    //{
+    //    #region Private Fields
 
-        private bool disposed;
-        protected BitField myBitfield;
-        private bool linearPickingEnabled;
-        protected BitField unhashedPieces;
+    //    private bool disposed;
+    //    protected BitField myBitfield;
+    //    private bool linearPickingEnabled;
+    //    protected BitField unhashedPieces;
 
-        #endregion Private Fields
+    //    #endregion Private Fields
 
-        #region Properties
+    //    #region Properties
 
-        public bool Disposed
-        {
-            get { return disposed; }
-        }
+    //    public bool Disposed
+    //    {
+    //        get { return disposed; }
+    //    }
 
-        public BitField MyBitField
-        {
-            get { return this.myBitfield; }
-        }
+    //    public BitField MyBitField
+    //    {
+    //        get { return this.myBitfield; }
+    //    }
 
-        public bool LinearPickingEnabled
-        {
-            get { return linearPickingEnabled; }
-            set { linearPickingEnabled = value; }
-        }
+    //    public bool LinearPickingEnabled
+    //    {
+    //        get { return linearPickingEnabled; }
+    //        set { linearPickingEnabled = value; }
+    //    }
 
-        public BitField UnhashedPieces
-        {
-            get { return unhashedPieces; }
-        }
+    //    public BitField UnhashedPieces
+    //    {
+    //        get { return unhashedPieces; }
+    //    }
 
-        #endregion Properties
+    //    #endregion Properties
 
-        #region Abstract Methods
+    //    #region Abstract Methods
 
-        public abstract int CurrentRequestCount();
-        public virtual void Dispose()
-        {
-            disposed = true;
-        }
+    //    public abstract int CurrentRequestCount();
+    //    public virtual void Dispose()
+    //    {
+    //        disposed = true;
+    //    }
 
-        public abstract void CancelTimedOutRequests();
-        public abstract List<Piece> ExportActiveRequests();
-        public abstract bool IsInteresting(PeerId id);
-        public abstract void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces);
-        public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
-        public abstract MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count);
-        public abstract void ReceivedChokeMessage(PeerId id);
-        public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
-        public abstract PieceEvent ReceivedPieceMessage(BufferedIO data);
-        public abstract void RemoveRequests(PeerId id);
-        public abstract void Reset();
+    //    public abstract void CancelTimedOutRequests();
+    //    public abstract List<Piece> ExportActiveRequests();
+    //    public abstract bool IsInteresting(PeerId id);
+    //    public abstract void Initialise(BitField ownBitfield, TorrentFile[] files, IEnumerable<Piece> requests, BitField unhashedPieces);
+    //    public abstract RequestMessage PickPiece(PeerId id, List<PeerId> otherPeers);
+    //    public abstract MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count);
+    //    public abstract void ReceivedChokeMessage(PeerId id);
+    //    public abstract void ReceivedRejectRequest(PeerId id, RejectRequestMessage message);
+    //    public abstract PieceEvent ReceivedPieceMessage(BufferedIO data);
+    //    public abstract void RemoveRequests(PeerId id);
+    //    public abstract void Reset();
 
-        #endregion
-    }
+    //    #endregion
+    //}
 }

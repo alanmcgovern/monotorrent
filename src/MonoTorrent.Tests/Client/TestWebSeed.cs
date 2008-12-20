@@ -72,7 +72,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(true);
             id.MaxPendingRequests = numberOfPieces;
             
-            requests = rig.Manager.PieceManager.PickPiece(id, new List<PeerId>(), numberOfPieces);
+            requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces);
         }
 
         [TearDown]

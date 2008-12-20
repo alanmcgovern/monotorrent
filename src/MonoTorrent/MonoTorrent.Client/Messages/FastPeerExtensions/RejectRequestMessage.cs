@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!id.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
-            id.TorrentManager.PieceManager.ReceivedRejectRequest(id, this);
+            id.TorrentManager.PieceManager.Picker.CancelRequest(id, PieceIndex, StartOffset, RequestLength);
         }
 
 

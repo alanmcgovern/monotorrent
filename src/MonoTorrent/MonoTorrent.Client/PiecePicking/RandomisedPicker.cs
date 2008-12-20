@@ -45,14 +45,17 @@ namespace MonoTorrent.Client
 
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
+            if (count > 1)
+                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+
             MessageBundle message;
             int midpoint = random.Next(startIndex, endIndex);
-            if ((message = base.PickPiece(id, peerBitfield, otherPeers, startIndex, midpoint, count)) != null)
+            if ((message = base.PickPiece(id, peerBitfield, otherPeers, count, midpoint, endIndex)) != null)
                 return message;
             else
-                return base.PickPiece(id, peerBitfield, otherPeers, midpoint, endIndex, count);
+                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, midpoint);
         }
     }
 }

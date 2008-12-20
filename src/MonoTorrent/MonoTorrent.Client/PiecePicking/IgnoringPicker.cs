@@ -18,12 +18,12 @@ namespace MonoTorrent.Client
             this.temp = new BitField(bitfield.Length);
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
             temp.SetAll(false).Or(peerBitfield).NAnd(bitfield);
-            return base.PickPiece(id, temp, otherPeers, startIndex, endIndex, count);
+            return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
 
         public override bool IsInteresting(BitField bitfield)

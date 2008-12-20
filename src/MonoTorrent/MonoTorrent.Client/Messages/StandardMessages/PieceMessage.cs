@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.Messages.Standard
             string path = id.TorrentManager.FileManager.SavePath;
             BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Files, path);
             d.Id = id;
-            id.TorrentManager.PieceManager.ReceivedPieceMessage(d);
+            id.TorrentManager.PieceManager.PieceDataReceived(d);
 
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }

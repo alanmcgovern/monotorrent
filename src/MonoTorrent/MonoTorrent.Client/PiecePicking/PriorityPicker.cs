@@ -68,16 +68,19 @@ namespace MonoTorrent.Client
             return left.Priority.CompareTo(right.Priority);
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             files.Sort();
             temp.SetAll(false);
 
             if (files.Count == 1)
             {
-                temp.Or(peerBitfield);
-                temp.And(files[0].Selector);
-                return base.PickPiece(id, temp, otherPeers, startIndex, endIndex, count);
+                if (files[0].File.Priority != Priority.DoNotDownload)
+                {
+                    temp.Or(peerBitfield);
+                    temp.And(files[0].Selector);
+                }
+                return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
             }
 
             temp.Or(files[0].Selector);
@@ -86,7 +89,7 @@ namespace MonoTorrent.Client
                 if (files[i].File.Priority != files[i - 1].File.Priority)
                 {
                     temp.And(peerBitfield);
-                    MessageBundle message = base.PickPiece(id, temp, otherPeers, startIndex, endIndex, count);
+                    MessageBundle message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
                     if (message != null)
                         return message;
                     temp.SetAll(false);
@@ -96,7 +99,8 @@ namespace MonoTorrent.Client
                     temp.Or(files[i].Selector);
             }
 
-            return base.PickPiece(id, temp, otherPeers, startIndex, endIndex, count);
+            temp.And(peerBitfield);
+            return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
@@ -104,6 +108,7 @@ namespace MonoTorrent.Client
             base.Initialise(bitfield, files, requests);
             temp = new BitField(bitfield.Length);
 
+            this.files.Clear();
             for (int i = 0; i < files.Length; i++)
             {
                 BitField b = new BitField(bitfield.Length);

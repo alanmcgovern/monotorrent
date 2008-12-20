@@ -44,22 +44,17 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void Pick()
+        public void EnsureRandomlyPicked()
         {
-            picker.PickPiece(id, id.BitField, new List<PeerId>(), 10, 40, 1);
-            Assert.AreEqual(2, tester.PickPieceEndIndex.Count, "#1");
-            Assert.AreEqual(2, tester.PickPieceStartIndex.Count, "#2");
-            Assert.AreEqual(2, tester.PickPieceCount.Count, "#3");
-            if (tester.PickPieceStartIndex[0] != 10)
-            {
-                Assert.AreEqual(tester.PickPieceStartIndex[0], tester.PickPieceEndIndex[1], "#4");
-                Assert.AreEqual(10, tester.PickPieceStartIndex[1], "#5");
-            }
-            else
-            {
-                Assert.AreEqual(tester.PickPieceEndIndex[0], tester.PickPieceStartIndex[1], "#6");
-                Assert.AreEqual(40, tester.PickPieceEndIndex[1], "#7");
-            }
+            tester.ReturnNoPiece = false;
+            while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
+            Assert.AreEqual(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
+            List<int> pieces = new List<int>(tester.PickedPieces);
+            pieces.Sort();
+            for (int i = 0; i < pieces.Count; i++)
+                if (pieces[i] != tester.PickedPieces[i])
+                    return;
+            Assert.Fail("The piece were picked in order");
         }
     }
 }

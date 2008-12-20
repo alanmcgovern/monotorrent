@@ -110,22 +110,22 @@ namespace MonoTorrent.Client
         }
         public MessageBundle PickPiece(PeerId peer, List<PeerId> otherPeers, int count)
         {
-            return PickPiece(peer, peer.BitField, otherPeers, 0, peer.BitField.Length, count);
+            return PickPiece(peer, peer.BitField, otherPeers, count, 0, peer.BitField.Length);
         }
-        public virtual MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public virtual MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             CheckOverriden();
-            return picker.PickPiece(id, peerBitfield, otherPeers, startIndex, endIndex, count);
+            return picker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
         }
         public virtual void Reset()
         {
             CheckOverriden();
             picker.Reset();
         }
-        public virtual bool ValidatePiece(PeerId peer, int piece, int startOffset, int length)
+        public virtual bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
             CheckOverriden();
-            return picker.ValidatePiece(peer, piece, startOffset, length);
+            return picker.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
         }
     }
 }

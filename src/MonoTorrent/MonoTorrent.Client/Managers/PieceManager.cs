@@ -43,204 +43,17 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Contains the logic for choosing what piece to download next
     /// </summary>
-    public class PieceManager : IDisposable
+    public class PieceManager 
     {
-        #region Internal Constants
-
+        #region Old
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
         internal const int BonusRequestPerKb = 10;  
         internal const int NormalRequestAmount = 2;
         internal const int MaxEndGameRequests = 2;
 
-        #endregion
-
-
-        #region Events
-
         public event EventHandler<BlockEventArgs> BlockReceived;
         public event EventHandler<BlockEventArgs> BlockRequested;
         public event EventHandler<BlockEventArgs> BlockRequestCancelled;
-
-        #endregion
-
-
-        #region Member Variables
-
-        private PiecePickerBase piecePicker;
-
-        #endregion
-
-
-        #region Properties
-
-        /// <summary>
-        /// This option changes the picking algorithm from rarest first to linear. This should
-        /// only be enabled if the content being downloaded is streaming audio/video. It degrades
-        /// overall performance of the swarm.
-        /// </summary>
-        public bool LinearPickingEnabled
-        {
-            get { return piecePicker.LinearPickingEnabled; }
-            set { piecePicker.LinearPickingEnabled = value; }
-        }
-
-
-        /// <summary>
-        /// Get the PiecePicker instance that is currently being used by the PieceManager
-        /// </summary>
-        public PiecePickerBase PiecePicker
-        {
-            get { return this.piecePicker; }
-        }
-
-
-        #endregion Properties
-
-
-        #region Constructors
-
-        internal PieceManager(BitField bitfield, TorrentFile[] files)
-        {
-            piecePicker = new StandardPickerOld();
-            piecePicker.Initialise(bitfield, files, new List<Piece>(), new BitField(bitfield.Length));
-        }
-
-        #endregion
-
-
-        #region Methods
-
-        /// <summary>
-        /// Tries to add a piece request to the peers message queue.
-        /// </summary>
-        /// <param name="id">The peer to add the request too</param>
-        /// <returns>True if the request was added</returns>
-        internal bool AddPieceRequest(PeerId id)
-        {
-            PeerMessage msg;
-
-            // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
-			maxRequests = maxRequests > 50 ? 50 : maxRequests;
-
-            if (id.AmRequestingPiecesCount >= maxRequests)
-                return false;
-
-            if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
-                if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
-                    return false;
-
-            if (id.Connection is HttpConnection)
-            {
-                // Number of pieces which fit into 1 MB *or* 1 piece, whichever is bigger
-                int count = (1 * 1024 * 1024) / id.TorrentManager.Torrent.PieceLength;
-                count = Math.Max(count, id.TorrentManager.Torrent.PieceLength);
-
-                int blocksPerPiece = id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
-
-                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count * blocksPerPiece);
-            }
-            else
-            {
-                msg = this.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers);
-            }
-            if (msg == null)
-                return false;
-
-            id.Enqueue(msg);
-
-            if (msg is RequestMessage)
-                id.AmRequestingPiecesCount++;
-            else
-                id.AmRequestingPiecesCount += ((MessageBundle)msg).Messages.Count;
-
-            return true;
-        }
-
-
-        internal bool IsInteresting(PeerId id)
-        {
-            // If i have completed the torrent, then no-one is interesting
-            if (id.TorrentManager.Complete)
-                return false;
-
-            // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
-                return true;
-
-            // Otherwise we need to do a full check
-            return this.piecePicker.IsInteresting(id);
-        }
-
-
-        public bool InEndGameMode
-        {
-            get { return false; }
-        }
-
-
-        internal BitField MyBitField
-        {
-            get { return this.piecePicker.MyBitField; }
-        }
-
-
-        internal int CurrentRequestCount()
-        {
-            return this.piecePicker.CurrentRequestCount();
-        }
-
-
-        internal PeerMessage PickPiece(PeerId id, List<PeerId> otherPeers)
-        {
-            //if ((this.MyBitField.Length - this.MyBitField.TrueCount < 15) && this.piecePicker is StandardPicker)
-            //    this.piecePicker = new EndGamePicker(this.MyBitField, id.TorrentManager.Torrent, ((StandardPicker)this.piecePicker).Requests);
-
-            return this.piecePicker.PickPiece(id, otherPeers);
-        }
-
-        internal MessageBundle PickPiece(PeerId id, List<PeerId> otherPeers, int count)
-        {
-            return this.piecePicker.PickPiece(id, otherPeers, count);
-        }
-
-
-        internal void ReceivedChokeMessage(PeerId id)
-        {
-            this.piecePicker.ReceivedChokeMessage(id);
-        }
-
-
-        internal void ReceivedRejectRequest(PeerId id, RejectRequestMessage msg)
-        {
-            this.piecePicker.ReceivedRejectRequest(id, msg);
-        }
-
-
-        internal void RemoveRequests(PeerId id)
-        {
-            this.piecePicker.RemoveRequests(id);
-        }
-
-        internal PieceEvent ReceivedPieceMessage(BufferedIO data)
-        {
-            return this.piecePicker.ReceivedPieceMessage(data);
-        }
-
-        internal void Reset()
-        {
-            this.piecePicker.Reset();
-        }
-
-        internal BitField UnhashedPieces
-        {
-            get { return ((StandardPickerOld)this.piecePicker).UnhashedPieces; }
-        }
-
-        #endregion
-
-
-        #region Event Firing Code
 
         internal void RaiseBlockReceived(BlockEventArgs args)
         {
@@ -257,29 +70,123 @@ namespace MonoTorrent.Client
             Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequestCancelled, args.TorrentManager, args);
         }
 
-        #endregion Event Firing Code
+        #endregion Old
 
-        internal void ChangePicker(PiecePickerBase picker, TorrentFile[] files)
+        PiecePicker picker;
+        BitField unhashedPieces;
+
+        internal PiecePicker Picker
+        {
+            get { return picker; }
+        }
+
+        internal BitField UnhashedPieces
+        {
+            get { return unhashedPieces; }
+        }
+
+        internal PieceManager(PiecePicker picker, BitField bitfield, TorrentFile[] files)
+        {
+            unhashedPieces = new BitField(bitfield.Length);
+            ChangePicker(picker, bitfield, files);
+        }
+
+
+        public void PieceDataReceived(BufferedIO data)
+        {
+            Piece piece;
+            if (picker.ValidatePiece(data.Id, data.PieceIndex, data.PieceOffset, data.Count, out piece))
+            {
+                PeerId id = data.Id;
+                data.Piece = piece;
+                id.AmRequestingPiecesCount--;
+                id.LastBlockReceived = DateTime.Now;
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
+                id.TorrentManager.FileManager.QueueWrite(data);
+                
+                if (data.Piece.AllBlocksReceived)
+                    this.unhashedPieces[data.PieceIndex] = true;
+            }
+            else
+            {
+            }
+        }
+
+
+
+
+        internal bool AddPieceRequest(PeerId id)
+        {
+            PeerMessage msg;
+
+            // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
+            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
+			maxRequests = maxRequests > 50 ? 50 : maxRequests;
+
+            if (id.AmRequestingPiecesCount >= maxRequests)
+                return false;
+
+            //if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
+            //    if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
+            //        return false;
+
+            int count = 1;
+            if (id.Connection is HttpConnection)
+            {
+                // How many whole pieces fit into 2MB
+                count = (2 * 1024 * 1024) / id.TorrentManager.Torrent.PieceLength;
+
+                // Make sure we have at least one whole piece
+                count = Math.Max(count, 1);
+                
+                count *= id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
+            }
+
+            msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
+
+            if (msg == null)
+                return false;
+
+            id.Enqueue(msg);
+
+            if (msg is RequestMessage)
+                id.AmRequestingPiecesCount++;
+            else
+                id.AmRequestingPiecesCount += ((MessageBundle)msg).Messages.Count;
+
+            return true;
+        }
+
+        internal bool IsInteresting(PeerId id)
+        {
+            // If i have completed the torrent, then no-one is interesting
+            if (id.TorrentManager.Complete)
+                return false;
+
+            // If the peer is a seeder, then he is definately interesting
+            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
+                return true;
+
+            // Otherwise we need to do a full check
+            return Picker.IsInteresting(id.BitField);
+        }
+
+        internal void ChangePicker(PiecePicker picker, BitField bitfield, TorrentFile[] files)
         {
 //          MonoTorrent.Client.PiecePicker p = new StandardPicker();
 //          p = new RandomisedPicker(p);
 //          p = new RarestFirstPicker(p);
 //          p = new PriorityPicker(p);
-//          p = new IgnoringPicker(UnhashedPieces, p);
-//          p = new IgnoringPicker(MyBitField, p);
-
-            picker.Initialise(piecePicker.MyBitField, files, piecePicker.ExportActiveRequests(), piecePicker.UnhashedPieces);
-            piecePicker.Dispose();
-            piecePicker = picker;
+            picker = new IgnoringPicker(bitfield, picker);
+            picker = new IgnoringPicker(unhashedPieces, picker);
+            IEnumerable<Piece> pieces = Picker == null ? new List<Piece>() : Picker.ExportActiveRequests();
+            picker.Initialise(bitfield, files, pieces);
+            this.picker = picker;
         }
 
-        #region IDisposable Members
-
-        public void Dispose()
+        internal void Reset()
         {
-            piecePicker.Dispose();
+            this.unhashedPieces.SetAll(false);
         }
-
-        #endregion
     }
 }

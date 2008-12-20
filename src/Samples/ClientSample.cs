@@ -110,10 +110,11 @@ namespace Samples
             TorrentManager manager = new TorrentManager(torrent, "DownloadFolder", new TorrentSettings(), (FastResume) null);
             managers.Add(manager);
             engine.Register(manager);
-            SlidingWindowPicker picker = new SlidingWindowPicker();
+
+            // Disable rarest first and randomised picking - only allow priority based picking (i.e. selective downloading)
+            PiecePicker picker = new StandardPicker();
+            picker = new PriorityPicker(picker);
             manager.ChangePicker(picker);
-            picker.HighPrioritySetStart = 0;
-            picker.HighPrioritySetStart = 5;
         }
 
         void StartTorrents()
