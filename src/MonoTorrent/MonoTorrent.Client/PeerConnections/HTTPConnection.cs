@@ -374,7 +374,7 @@ namespace MonoTorrent.Client.Connections
             {
                 if (webRequests.Count == 0)
                 {
-                    sendResult.Complete();
+                    sendResult.Complete(sendResult.Count);
                 }
                 else
                 {

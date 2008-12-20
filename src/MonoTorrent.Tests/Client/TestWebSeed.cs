@@ -35,6 +35,7 @@ namespace MonoTorrent.Client
         HttpListener listener;
         //private RequestMessage m;
         private string listenerURL = "http://127.0.0.1:12{0}/announce/";
+        int amountSent;
 
         PeerId id;
         MessageBundle requests;
@@ -103,6 +104,7 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte[1024 * 1024 * 3];
             IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
             IAsyncResult sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
+            amountSent = requests.ByteLength;
 
             CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
         }
@@ -113,6 +115,7 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte[1024 * 1024 * 3];
             IAsyncResult sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
             IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+            amountSent = requests.ByteLength;
 
             CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
         }
@@ -146,7 +149,7 @@ namespace MonoTorrent.Client
                 if (requests.Messages.Count == 0)
                 {
                     receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-                    connection.EndSend(sendResult);
+                    Assert.AreEqual(connection.EndSend(sendResult), amountSent);
                     break;
                 }
                 else
