@@ -51,6 +51,7 @@ namespace MonoTorrent.Client
     {
         private bool abortHashing;
         private ManualResetEvent hashingWaitHandle;
+        int webseedCount;
 
         #region Events
 
@@ -750,12 +751,15 @@ namespace MonoTorrent.Client
                 TrackerManager.Announce(TorrentEvent.Completed);
             }
             // FIXME: Hardcoded 15kB/sec - is this ok?
-            if ((DateTime.Now - startTime) > TimeSpan.FromMinutes(1) && Monitor.DownloadSpeed < 15 * 1024)
+            if ((DateTime.Now - startTime) > TimeSpan.FromSeconds(1) && Monitor.DownloadSpeed < 15 * 1024)
             {
                 foreach (string s in this.torrent.GetRightHttpSeeds)
                 {
+                    string peerId = "-WebSeed-";
+                    peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
+
                     Uri uri = new Uri(s);
-                    Peer peer = new Peer(new string('0', 20), uri);
+                    Peer peer = new Peer(peerId, uri);
                     PeerId id = new PeerId(peer, this);
                     HttpConnection connection = new HttpConnection(new Uri(s));
                     connection.Manager = this;
