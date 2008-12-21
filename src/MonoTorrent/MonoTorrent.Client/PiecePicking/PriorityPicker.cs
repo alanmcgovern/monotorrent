@@ -80,6 +80,8 @@ namespace MonoTorrent.Client
                     temp.Or(peerBitfield);
                     temp.And(files[0].Selector);
                 }
+                if (temp.AllFalse)
+                    return null;
                 return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
             }
 
@@ -89,10 +91,13 @@ namespace MonoTorrent.Client
                 if (files[i].File.Priority != files[i - 1].File.Priority)
                 {
                     temp.And(peerBitfield);
-                    MessageBundle message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
-                    if (message != null)
-                        return message;
-                    temp.SetAll(false);
+                    if (!temp.AllFalse)
+                    {
+                        MessageBundle message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+                        if (message != null)
+                            return message;
+                        temp.SetAll(false);
+                    }
                 }
 
                 if (files[i].File.Priority != Priority.DoNotDownload)
@@ -100,6 +105,8 @@ namespace MonoTorrent.Client
             }
 
             temp.And(peerBitfield);
+            if (temp.AllFalse)
+                return null;
             return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
 

@@ -23,12 +23,16 @@ namespace MonoTorrent.Client
             // Invert 'bitfield' and AND it with the peers bitfield
             // Any pieces which are 'true' in the bitfield will not be downloaded
             temp.SetAll(false).Or(peerBitfield).NAnd(bitfield);
+            if (temp.AllFalse)
+                return null;
             return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
 
         public override bool IsInteresting(BitField bitfield)
         {
             temp.SetAll(false).Or(bitfield).NAnd(this.bitfield);
+            if (temp.AllFalse)
+                return false;
             return base.IsInteresting(temp);
         }
     }
