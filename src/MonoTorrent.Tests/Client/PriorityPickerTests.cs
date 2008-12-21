@@ -202,5 +202,26 @@ namespace MonoTorrent.Client
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
             Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
         }
+
+        [Test]
+        public void MultiFileAllNoDownload()
+        {
+            foreach (TorrentFile file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+
+            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
+            Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
+        }
+
+        [Test]
+        public void MultiFileOneAvailable()
+        {
+            foreach (TorrentFile file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            rig.Torrent.Files[0].Priority = Priority.High;
+            id.BitField.SetAll(false);   
+            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
+            Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
+        }
     }
 }

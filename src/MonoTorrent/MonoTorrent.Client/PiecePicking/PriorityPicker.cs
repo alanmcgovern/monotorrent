@@ -37,6 +37,8 @@ namespace MonoTorrent.Client
 {
     public class PriorityPicker : PiecePicker
     {
+        static Predicate<Files> IsNormal = delegate(Files f) { return f.File.Priority == Priority.Normal; };
+
         struct Files : IComparable<Files>
         {
             public TorrentFile File;
@@ -73,20 +75,28 @@ namespace MonoTorrent.Client
             files.Sort();
             temp.SetAll(false);
 
+            // Fast Path - the peer has nothing to offer
+            if (peerBitfield.AllFalse)
+                return null;
+
+            // Fast Path - all the files have been set to DoNotDownload
+            if (files[0].File.Priority == Priority.DoNotDownload)
+                return null;
+
+            // Fast Path - If all the files are normal priority, call straight into the base picker
+            if (files.TrueForAll(IsNormal))
+                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+
             if (files.Count == 1)
             {
-                if (files[0].File.Priority != Priority.DoNotDownload)
-                {
-                    temp.Or(peerBitfield);
-                    temp.And(files[0].Selector);
-                }
-                if (temp.AllFalse)
+                if (files[0].File.Priority == Priority.DoNotDownload)
                     return null;
-                return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+                else
+                    return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             }
 
             temp.Or(files[0].Selector);
-            for (int i = 1; i < files.Count; i++)
+            for (int i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
             {
                 if (files[i].File.Priority != files[i - 1].File.Priority)
                 {
@@ -100,12 +110,10 @@ namespace MonoTorrent.Client
                     }
                 }
 
-                if (files[i].File.Priority != Priority.DoNotDownload)
-                    temp.Or(files[i].Selector);
+                temp.Or(files[i].Selector);
             }
 
-            temp.And(peerBitfield);
-            if (temp.AllFalse)
+            if (temp.AllFalse || temp.And(peerBitfield).AllFalse)
                 return null;
             return base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
         }
