@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
                 {
                     if (predicate(b))
                     {
-                        Console.WriteLine("Cancelled: {0} - {1}", b.PieceIndex, b.StartOffset);
+                        //Console.WriteLine("Cancelled: {0} - {1}", b.PieceIndex, b.StartOffset);
                         b.CancelRequest();
                     }
                 });
@@ -367,7 +367,7 @@ namespace MonoTorrent.Client
             {
                 int end = bitfield.FirstFalse(pieceStartIndex, pieceEndIndex);
                 if (end == -1)
-                    end = pieceStartIndex + pieceCount;
+                    end = Math.Min(pieceStartIndex + pieceCount, bitfield.Length);
 
                 for (int i = pieceStartIndex; i < end; i++)
                     if (AlreadyRequested(i))
@@ -386,7 +386,7 @@ namespace MonoTorrent.Client
             }
 
             pieceCount = largestEnd - largestStart;
-            return pieceCount == 0 ? -1 : pieceCount; ;
+            return pieceCount == 0 ? -1 : largestStart;
         }
     }
 
