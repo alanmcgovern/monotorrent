@@ -348,25 +348,48 @@ namespace MonoTorrent.Client
             TrackerFactory.Register("custom", typeof(CustomTracker));
         }
 
+        public TestRig(bool singleFile)
+            : this("", singleFile)
+        {
+
+        }
+
         public TestRig(string savePath)
-            : this(savePath, null)
+            : this(savePath, false)
+        {
+
+        }
+
+        public TestRig(string savePath, bool singleFile)
+            : this(savePath, null, singleFile)
         {
 
         }
 
         public TestRig(string savePath, PieceWriter writer)
-            : this(savePath, 256 * 1024, writer)
+            : this(savePath, 256 * 1024, writer, false)
+        {
+
+        }
+        public TestRig(string savePath, PieceWriter writer, bool singleFile)
+            : this(savePath, 256 * 1024, writer, singleFile)
         {
 
         }
 
         public TestRig(string savePath, int piecelength, PieceWriter writer)
+            :this(savePath, piecelength, writer, false)
+        {
+
+        }
+
+        public TestRig(string savePath, int piecelength, PieceWriter writer, bool singleFile)
         {
             if (writer == null)
                 writer = new TestWriter();
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
-            torrentDict = CreateTorrent(piecelength);
+            torrentDict = CreateTorrent(piecelength, singleFile);
             torrent = Torrent.Load(torrentDict);
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
@@ -397,14 +420,20 @@ namespace MonoTorrent.Client
                 listener.Add(manager, connection);
         }
 
-        private static BEncodedDictionary CreateTorrent(int pieceLength)
+        private static BEncodedDictionary CreateTorrent(int pieceLength, bool singleFile)
         {
             BEncodedDictionary dict = new BEncodedDictionary();
             BEncodedDictionary infoDict = new BEncodedDictionary();
 
             AddAnnounces(dict);
-            AddMultiFiles(infoDict, pieceLength);
-
+            if (singleFile)
+                AddSingleFile(infoDict, pieceLength);
+            else
+                AddMultiFiles(infoDict, pieceLength);
+            if (singleFile)
+                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
+            else
+                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce";
             dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             dict["encoding"] = (BEncodedString)"UTF-8";
             dict["info"] = infoDict;
@@ -440,11 +469,49 @@ namespace MonoTorrent.Client
             dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
         }
 
+
+        private static void AddSingleFile(BEncodedDictionary dict, int pieceLength)
+        {
+            BEncodedNumber[] sizes = new BEncodedNumber[] { (int)(pieceLength * 0.44) + 
+                                                            (int)(pieceLength * 13.25)+
+                                                            (int)(pieceLength * 23.68)+
+                                                            (int)(pieceLength * 2.05) };
+
+            List<BEncodedList> paths = new List<BEncodedList>();
+            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "File1" }));
+
+            BEncodedList files = new BEncodedList();
+            for (int i = 0; i < paths.Count; i++)
+            {
+                BEncodedDictionary d = new BEncodedDictionary();
+                d["path"] = paths[i];
+                d["length"] = sizes[i];
+                files.Add(d);
+            }
+
+            dict[new BEncodedString("files")] = files;
+            dict[new BEncodedString("name")] = new BEncodedString("test.files");
+            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
+            dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
+        }
+
         #region IDisposable Members
 
         public void Dispose()
         {
             engine.Dispose();
+        }
+
+
+        public static TestRig CreateSingleFile()
+        {
+            return new TestRig(true);
+        }
+
+        public  static TestRig CreateMultiFile()
+        {
+            return new TestRig(false);
         }
 
         #endregion

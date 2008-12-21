@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
         HttpConnection connection;
         HttpListener listener;
         //private RequestMessage m;
-        private string listenerURL = "http://127.0.0.1:12{0}/announce/";
+        private string listenerURL = "http://127.0.0.1:120/announce/";
         int amountSent;
 
         PeerId id;
@@ -161,13 +161,14 @@ namespace MonoTorrent.Client
             
         }
 
+        private List<string> requestedUrl = new List<string>();
         private void GotContext(IAsyncResult result)
         {
             try
             {
                 HttpListenerContext c = listener.EndGetContext(result);
                 Console.WriteLine("Got Context");
-
+                requestedUrl.Add(c.Request.Url.OriginalString);
                 Match match = null;
                 string range = c.Request.Headers["range"];
 
@@ -193,6 +194,13 @@ namespace MonoTorrent.Client
                     break;
                 }
 
+                TorrentFile[] files = rig.Manager.Torrent.Files;
+                if (files.Length == 1 && rig.Torrent.GetRightHttpSeeds[0] == c.Request.Url.OriginalString)
+                {
+                    globalStart = 0;
+                    exists = start < files[0].Length && end < files[0].Length;
+                }
+
                 if (!exists)
                 {
                     c.Response.StatusCode = (int) HttpStatusCode.RequestedRangeNotSatisfiable;
@@ -212,6 +220,27 @@ namespace MonoTorrent.Client
             catch
             {
             }
+        }
+
+        [Test]
+        public void SingleFileTorrent()
+        {
+            rig.Dispose();
+            rig = TestRig.CreateSingleFile();
+            string url = rig.Torrent.GetRightHttpSeeds[0];
+            connection = new HttpConnection(new Uri (url));
+            connection.Manager = rig.Manager;
+
+            id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager);
+            id.Connection = connection;
+            id.IsChoking = false;
+            id.AmInterested = true;
+            id.BitField.SetAll(true);
+            id.MaxPendingRequests = numberOfPieces;
+
+            requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces);
+            RecieveFirst();
+            Assert.AreEqual(url, requestedUrl[0]);
         }
     }
 }
