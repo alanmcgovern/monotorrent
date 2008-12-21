@@ -33,22 +33,28 @@ using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
     public class EndGamePicker : PiecePicker
     {
-        static Predicate<Request> NotRequested = delegate(Request r) { return !r.Block.Requested; };
         static Predicate<Request> TimedOut = delegate(Request r) { return r.Block.RequestTimedOut; };
+        static Predicate<Request> NotRequested = delegate(Request r) { return r.Block.RequestedOff == null; };
 
         struct Request
         {
+            public Request(PeerId peer, Block block)
+            {
+                Peer = peer;
+                Block = block;
+            }
             public Block Block;
-            public Piece Piece;
             public PeerId Peer;
         }
 
-        private List<Request> requests;
+        private List<Piece> pieces;
+        List<Request> requests;
 
         public EndGamePicker()
             : base(null)
@@ -77,16 +83,18 @@ namespace MonoTorrent.Client
 
         public override List<Piece> ExportActiveRequests()
         {
-            List<Piece> list = new List<Piece>();
-            foreach (Request r in requests)
-                if (!list.Contains(r.Piece))
-                    list.Add(r.Piece);
-            return list;
+            return new List<Piece>(pieces);
         }
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            // initialise the requests list from the IEnumarble request
+            pieces = new List<Piece>(requests);
+            foreach (Piece piece in pieces)
+            {
+                for (int i = 0; i < piece.BlockCount; i++)
+                    if (piece.Blocks[i].RequestedOff != null)
+                        this.requests.Add(new Request(piece.Blocks[i].RequestedOff, piece.Blocks[i]));
+            }
         }
 
         public override bool IsInteresting(BitField bitfield)
@@ -96,7 +104,32 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            // Find a block we havent already requested a bunch of times
+            foreach (Piece p in pieces)
+            {
+                if(!peerBitfield[p.Index])
+                    continue;
+
+                for (int i = 0; i < p.BlockCount; i++)
+                {
+                    if (p.Blocks[i].Requested)
+                        continue;
+                    Request request = new Request(id, p.Blocks[i]);
+                    requests.Add(request);
+                    return new MessageBundle(request.Block.CreateRequest(id));
+                }
+            }
+
+            for (int i = 0; i < requests.Count; i++)
+            {
+                if (!peerBitfield[requests[i].Block.PieceIndex] || requests[i].Peer == id)
+                    continue;
+                Request r = new Request(id, requests[i].Block);
+                requests.Add(requests[0]);
+                requests.RemoveAt(0);
+                requests.Add(r);
+                return new MessageBundle(r.Block.CreateRequest(id));
+            }
+
             return null;
         }
 
@@ -108,17 +141,46 @@ namespace MonoTorrent.Client
 
         public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
         {
-            base.CancelRequest(peer, piece, startOffset, length);
+            CancelWhere(delegate (Request r) {
+                return r.Block.PieceIndex == piece &&
+                       r.Block.StartOffset == startOffset &&
+                       r.Block.RequestLength == length &&
+                       peer.Equals(r.Peer);
+            });
         }
 
         public override void CancelRequests(PeerId peer)
         {
-            base.CancelRequests(peer);
+            CancelWhere(delegate(Request r) { return r.Peer == peer; });
         }
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            return base.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
+            foreach (Request r in requests)
+            {
+                if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset || r.Block.RequestLength != length || r.Peer != peer)
+                    continue;
+
+                foreach (Piece p in pieces)
+                {
+                    if (p.Index != pieceIndex)
+                        continue;
+
+                    CancelWhere(delegate(Request req) {
+                        return req.Block.PieceIndex == pieceIndex &&
+                               req.Block.StartOffset == startOffset &&
+                               r.Block.RequestLength == length &&
+                               r.Peer != peer;
+                    });
+
+                    p.Blocks[startOffset / Piece.BlockSize].Received = true;
+                    piece = p;
+                    return true;
+                }
+            }
+
+            piece = null;
+            return false;
         }
     }
 }
