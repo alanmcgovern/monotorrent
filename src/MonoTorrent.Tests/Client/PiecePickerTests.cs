@@ -297,6 +297,33 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void DoesntHaveFastPiece()
+        {
+            peer.IsChoking = true;
+            peer.SupportsFastPeer = true;
+            peer.IsAllowedFastPieces.AddRange(new int[] { 1, 2, 3, 4 });
+            peer.BitField.SetAll(true);
+            picker = new StandardPicker();
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            MessageBundle bundle = picker.PickPiece(peer, new MonoTorrent.Common.BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
+            Assert.IsNull(bundle);
+        }
+
+
+        [Test]
+        public void DoesntHaveSuggestedPiece()
+        {
+            peer.IsChoking = false;
+            peer.SupportsFastPeer = true;
+            peer.SuggestedPieces.AddRange(new int[] { 1, 2, 3, 4 });
+            peer.BitField.SetAll(true);
+            picker = new StandardPicker();
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            MessageBundle bundle = picker.PickPiece(peer, new MonoTorrent.Common.BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
+            Assert.IsNull(bundle);
+        }
+
+        [Test]
         public void InvalidSuggestPiece()
         {
             peer.IsChoking = true;

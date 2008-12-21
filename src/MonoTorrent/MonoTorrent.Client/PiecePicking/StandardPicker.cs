@@ -39,7 +39,6 @@ namespace MonoTorrent.Client
 {
     public class StandardPicker : PiecePicker
     {
-        BitField bitfield;
         protected List<Piece> requests;
         private TimeSpan timeout;
 
@@ -105,7 +104,6 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            this.bitfield = bitfield;
             this.requests = new List<Piece>(requests);
         }
 
@@ -126,7 +124,7 @@ namespace MonoTorrent.Client
                     return (bundle = new MessageBundle(message));
 
                 // Then we check if there are any allowed "Fast" pieces to download
-                if (id.IsChoking && (message = GetFastPiece(id)) != null)
+                if (id.IsChoking && (message = GetFromList(id, peerBitfield, id.IsAllowedFastPieces)) != null)
                     return (bundle = new MessageBundle(message));
 
                 // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
@@ -139,7 +137,7 @@ namespace MonoTorrent.Client
                     return (bundle = new MessageBundle(message));
 
                 // We see if the peer has suggested any pieces we should request
-                if ((message = GetSuggestedPiece(id)) != null)
+                if ((message = GetFromList(id, peerBitfield, id.SuggestedPieces)) != null)
                     return (bundle = new MessageBundle(message));
 
                 // Now we see what pieces the peer has that we don't have and try and request one
@@ -174,7 +172,7 @@ namespace MonoTorrent.Client
 
         public override void Reset()
         {
-            base.Reset();
+            requests.Clear();
         }
 
         public override bool ValidatePiece(PeerId id, int pieceIndex, int startOffset, int length, out Piece piece)
@@ -236,37 +234,6 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected RequestMessage GetFastPiece(PeerId id)
-        {
-            int requestIndex;
-
-            // If fast peers isn't supported on both sides, then return null
-            if (!id.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
-                return null;
-
-            // Remove pieces in the list that we already have
-            RemoveOwnedPieces(id.IsAllowedFastPieces);
-
-            // For all the remaining fast pieces
-            for (int i = 0; i < id.IsAllowedFastPieces.Count; i++)
-            {
-                // The peer may not always have the piece that is marked as 'allowed fast'
-                if (!id.BitField[(int)id.IsAllowedFastPieces[i]])
-                    continue;
-
-                // We request that piece and remove it from the list
-                requestIndex = (int)id.IsAllowedFastPieces[i];
-                id.IsAllowedFastPieces.RemoveAt(i);
-
-                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
-                requests.Add(p);
-                p.Blocks[0].Requested = true;
-                return p.Blocks[0].CreateRequest(id);
-            }
-
-            return null;
-        }
-
         protected RequestMessage ContinueAnyExisting(PeerId id)
         {
             // If this peer is currently a 'dodgy' peer, then don't allow him to help with someone else's
@@ -295,21 +262,20 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected RequestMessage GetSuggestedPiece(PeerId id)
+        protected RequestMessage GetFromList(PeerId id, BitField bitfield, IList<int> pieces)
         {
-            int requestIndex;
-            // Remove any pieces that we already have
-            RemoveOwnedPieces(id.SuggestedPieces);
+            if (!id.SupportsFastPeer || !ClientEngine.SupportsFastPeer)
+                return null;
 
-            for (int i = 0; i < id.SuggestedPieces.Count; i++)
+            for (int i = 0; i < pieces.Count; i++)
             {
+                int index = pieces[i];
                 // A peer should only suggest a piece he has, but just in case.
-                if (!id.BitField[id.SuggestedPieces[i]])
+                if (index >= bitfield.Length || !bitfield[index])
                     continue;
 
-                requestIndex = id.SuggestedPieces[i];
-                id.SuggestedPieces.RemoveAt(i);
-                Piece p = new Piece(requestIndex, id.TorrentManager.Torrent);
+                pieces.RemoveAt(i);
+                Piece p = new Piece(index, id.TorrentManager.Torrent);
                 this.requests.Add(p);
                 p.Blocks[0].Requested = true;
                 return p.Blocks[0].CreateRequest(id);
@@ -349,14 +315,6 @@ namespace MonoTorrent.Client
         protected bool AlreadyRequested(int index)
         {
             return requests.Exists(delegate(Piece p) { return p.Index == index; });
-        }
-
-        protected void RemoveOwnedPieces(MonoTorrentCollection<int> list)
-        {
-            list.RemoveAll(delegate(int i)
-            {
-                return i >= bitfield.Length || bitfield[i] || AlreadyRequested(i);
-            });
         }
 
         private int CanRequest(BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
