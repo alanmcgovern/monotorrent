@@ -63,23 +63,20 @@ namespace MonoTorrent.Client.Encryption
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
         private static readonly AsyncTransfer HandshakeReceivedCallback = HandshakeReceived;
 
-        private static bool CheckRC4(PeerId id)
+        private static EncryptionTypes CheckRC4(PeerId id)
         {
-            // By default we assume all encryption levels are allowed. This is
-            // needed when we receive an incoming connection, because that is not
-            // associated with an engine and so we cannot check the engines settings
-            EncryptionTypes t = EncryptionTypes.All;
-
             // If the connection is *not* incoming, then it will be associated with an Engine
             // so we can check what encryption levels the engine allows.
-            if (!id.Connection.IsIncoming)
+            EncryptionTypes t;
+            if (id.Connection.IsIncoming)
+                t = EncryptionTypes.All;
+            else
                 t = id.TorrentManager.Engine.Settings.AllowedEncryption;
 
             // We're allowed use encryption if the engine settings allow it and the peer supports it
             // Binary AND both the engine encryption and peer encryption and check what levels are supported
-            t = t & id.Peer.Encryption;
-            return ClientEngine.SupportsEncryption &&
-                   (Toolbox.HasEncryption(t, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(t, EncryptionTypes.RC4Header));
+            t &= id.Peer.Encryption;
+            return t;
         }
 
         internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state)
@@ -104,14 +101,14 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    bool hasRC4 = CheckRC4(id);
-                    bool hasPlainText = Toolbox.HasEncryption(id.Engine.Settings.AllowedEncryption, EncryptionTypes.PlainText);
-
+                    EncryptionTypes usable = CheckRC4(id);
+                    bool hasPlainText = Toolbox.HasEncryption(usable, EncryptionTypes.PlainText);
+                    bool hasRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full) || Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header);
                     if (id.Engine.Settings.PreferEncryption)
                     {
                         if (hasRC4)
                         {
-                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, usable);
                             result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                         else
@@ -127,7 +124,7 @@ namespace MonoTorrent.Client.Encryption
                         }
                         else
                         {
-                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, EncryptionTypes.All);
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, usable);
                             result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                     }
@@ -181,8 +178,9 @@ namespace MonoTorrent.Client.Encryption
                 HandshakeMessage message = new HandshakeMessage();
                 message.Decode(result.Buffer, 0, result.Buffer.Length);
                 bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
-                bool canUseRC4 = CheckRC4(result.Id);
+                EncryptionTypes usable = CheckRC4(result.Id);
 
+                bool canUseRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header) || Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full);
                 // If encryption is disabled and we received an invalid handshake - abort!
                 if (valid)
                 {

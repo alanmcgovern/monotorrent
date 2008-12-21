@@ -41,6 +41,7 @@ namespace MonoTorrent.Client
             conn = new ConnectionPair(13253);
             conn.Incoming.Name = "Incoming";
             conn.Outgoing.Name = "Outgoing";
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.All;
         }
 
         [TearDown]
@@ -155,12 +156,13 @@ namespace MonoTorrent.Client
         [Test]
         public void EncrytorFactoryPeerBHeader()
         {
-            rig.Engine.Settings.PreferEncryption = true;
+            rig.Engine.Settings.PreferEncryption = false;
             PeerBTest(EncryptionTypes.RC4Header);
         }
 
         private void PeerATest(EncryptionTypes encryption, bool addInitial)
         {
+            rig.Engine.Settings.AllowedEncryption = encryption;
             rig.Engine.StartAll();
 
             HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
@@ -185,16 +187,24 @@ namespace MonoTorrent.Client
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+
+            if (encryption == EncryptionTypes.RC4Full)
+                Assert.IsTrue(a.Encryptor is RC4);
+            else if (encryption == EncryptionTypes.RC4Header)
+                Assert.IsTrue(a.Encryptor is RC4Header);
+            else if (encryption == EncryptionTypes.PlainText)
+                Assert.IsTrue(a.Encryptor is RC4Header);
         }
 
         private void PeerBTest(EncryptionTypes encryption)
         {
+            rig.Engine.Settings.AllowedEncryption = encryption;
             rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
-            PeerBEncryption a = new PeerBEncryption(new byte[][] { rig.Manager.Torrent.InfoHash }, encryption);
+            PeerBEncryption a = new PeerBEncryption(new byte[][] { rig.Manager.Torrent.InfoHash }, EncryptionTypes.All);
             IAsyncResult result = a.BeginHandshake(conn.Incoming, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(4000, true))
+            if (!result.AsyncWaitHandle.WaitOne(400000, true))
                 Assert.Fail("Handshake timed out");
             a.EndHandshake(result);
 
@@ -206,6 +216,12 @@ namespace MonoTorrent.Client
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+            if (encryption == EncryptionTypes.RC4Full)
+                Assert.IsTrue(a.Encryptor is RC4);
+            else if (encryption == EncryptionTypes.RC4Header)
+                Assert.IsTrue(a.Encryptor is RC4Header);
+            else if (encryption == EncryptionTypes.PlainText)
+                Assert.IsTrue(a.Encryptor is RC4Header);
         }
 
 
@@ -256,7 +272,23 @@ namespace MonoTorrent.Client
                 d.Decode(b.InitialData, 0, b.InitialData.Length);
             }
             Assert.AreEqual(m, d);
-            Console.WriteLine("Success");
+
+
+            if (encryptionA == EncryptionTypes.RC4Full || encryptionB == EncryptionTypes.RC4Full)
+            {
+                Assert.IsTrue(a.Encryptor is RC4);
+                Assert.IsTrue(b.Encryptor is RC4);
+            }
+            else if (encryptionA == EncryptionTypes.RC4Header || encryptionB == EncryptionTypes.RC4Header)
+            {
+                Assert.IsTrue(a.Encryptor is RC4Header);
+                Assert.IsTrue(b.Encryptor is RC4Header);
+            }
+            else if (encryptionA == EncryptionTypes.PlainText || encryptionB == EncryptionTypes.PlainText)
+            {
+                Assert.IsTrue(a.Encryptor is PlainTextEncryption);
+                Assert.IsTrue(b.Encryptor is PlainTextEncryption);
+            }
         }
     }
 }
