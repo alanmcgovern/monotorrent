@@ -39,14 +39,10 @@ namespace MonoTorrent.Client
 {
     public class StandardPicker : PiecePicker
     {
+        static Predicate<Block> TimedOut = delegate(Block b) { return b.RequestTimedOut; };
+
         protected List<Piece> requests;
         private TimeSpan timeout;
-
-        public override TimeSpan Timeout
-        {
-            get { return timeout; }
-            set { timeout = value; }
-        }
 
         public StandardPicker()
             : base(null)
@@ -72,7 +68,7 @@ namespace MonoTorrent.Client
 
         public override void CancelTimedOutRequests()
         {
-            CancelWhere(delegate(Block block) { return block.RequestTimedOut; });
+            CancelWhere(TimedOut);
         }
 
         void CancelWhere(Predicate<Block> predicate)

@@ -43,20 +43,6 @@ namespace MonoTorrent.Client
 
         PiecePicker picker;
 
-        public virtual TimeSpan Timeout
-        {
-            get
-            {
-                CheckOverriden();
-                return picker.Timeout;
-            }
-            set
-            {
-                CheckOverriden();
-                picker.Timeout = value;
-            }
-        }
-
         protected PiecePicker(PiecePicker picker)
         {
             this.picker = picker;

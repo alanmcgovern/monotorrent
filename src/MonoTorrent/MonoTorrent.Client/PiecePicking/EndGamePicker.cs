@@ -38,24 +38,36 @@ namespace MonoTorrent.Client
 {
     public class EndGamePicker : PiecePicker
     {
-        private List<KeyValuePair<Peer, Block>> requests;
-        TimeSpan timeout;
+        static Predicate<Request> NotRequested = delegate(Request r) { return !r.Block.Requested; };
+        static Predicate<Request> TimedOut = delegate(Request r) { return r.Block.RequestTimedOut; };
 
-        public override TimeSpan Timeout
+        struct Request
         {
-            get { return timeout; }
-            set { timeout = value; }
+            public Block Block;
+            public Piece Piece;
+            public PeerId Peer;
         }
+
+        private List<Request> requests;
 
         public EndGamePicker()
             : base(null)
         {
-            timeout = DefaultTimeout;
+            requests = new List<Request>();
+        }
+
+        void CancelWhere(Predicate<Request> predicate)
+        {
+            for (int i = 0; i < requests.Count; i++)
+                if (predicate(requests[i]))
+                    requests[i].Block.CancelRequest();
+
+            requests.RemoveAll(NotRequested);
         }
 
         public override void CancelTimedOutRequests()
         {
-            // no timeouts
+            CancelWhere(TimedOut);
         }
 
         public override int CurrentRequestCount()
@@ -65,8 +77,11 @@ namespace MonoTorrent.Client
 
         public override List<Piece> ExportActiveRequests()
         {
-            // Return a list generated from the requests
-            return null;
+            List<Piece> list = new List<Piece>();
+            foreach (Request r in requests)
+                if (!list.Contains(r.Piece))
+                    list.Add(r.Piece);
+            return list;
         }
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
