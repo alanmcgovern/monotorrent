@@ -73,15 +73,10 @@ namespace MonoTorrent.Client
 
         void CancelWhere(Predicate<Block> predicate)
         {
-            requests.ForEach(delegate(Piece p)
-            {
-                Array.ForEach<Block>(p.Blocks, delegate(Block b)
-                {
+            requests.ForEach(delegate(Piece p) {
+                Array.ForEach<Block>(p.Blocks, delegate(Block b) {
                     if (predicate(b))
-                    {
-                        //Console.WriteLine("Cancelled: {0} - {1}", b.PieceIndex, b.StartOffset);
                         b.CancelRequest();
-                    }
                 });
             });
 
