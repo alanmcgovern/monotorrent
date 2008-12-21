@@ -751,7 +751,7 @@ namespace MonoTorrent.Client
                 TrackerManager.Announce(TorrentEvent.Completed);
             }
             // FIXME: Hardcoded 15kB/sec - is this ok?
-            if ((DateTime.Now - startTime) > TimeSpan.FromSeconds(1) && Monitor.DownloadSpeed < 15 * 1024)
+            if ((DateTime.Now - startTime) > TimeSpan.FromMinutes(1) && Monitor.DownloadSpeed < 15 * 1024)
             {
                 foreach (string s in this.torrent.GetRightHttpSeeds)
                 {
