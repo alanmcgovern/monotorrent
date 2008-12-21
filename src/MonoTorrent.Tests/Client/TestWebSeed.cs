@@ -159,7 +159,13 @@ namespace MonoTorrent.Client
                 }
             }
 
-            
+            Uri baseUri = new Uri(this.listenerURL);
+            baseUri = new Uri(baseUri, rig.Manager.Torrent.Name + "/");
+            if (rig.Manager.Torrent.Files.Length > 1)
+            {
+                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
+                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
+            }
         }
 
         private List<string> requestedUrl = new List<string>();
