@@ -152,13 +152,15 @@ namespace MonoTorrent.Client
 
         internal RequestMessage CreateRequest(PeerId id)
         {
-            this.requestedOff = id;
+            RequestedOff = id;
+            RequestedOff.AmRequestingPiecesCount++;
             return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
         }
 
         internal void CancelRequest()
         {
             Requested = false;
+            RequestedOff.AmRequestingPiecesCount--;
             RequestedOff = null;
         }
 

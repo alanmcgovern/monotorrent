@@ -99,7 +99,6 @@ namespace MonoTorrent.Client
             {
                 PeerId id = data.Id;
                 data.Piece = piece;
-                id.AmRequestingPiecesCount--;
                 id.LastBlockReceived = DateTime.Now;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
                 id.TorrentManager.FileManager.QueueWrite(data);
@@ -148,11 +147,6 @@ namespace MonoTorrent.Client
                 return false;
 
             id.Enqueue(msg);
-
-            if (msg is RequestMessage)
-                id.AmRequestingPiecesCount++;
-            else
-                id.AmRequestingPiecesCount += ((MessageBundle)msg).Messages.Count;
 
             return true;
         }

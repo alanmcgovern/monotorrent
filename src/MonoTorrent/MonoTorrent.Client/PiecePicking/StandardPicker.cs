@@ -195,6 +195,7 @@ namespace MonoTorrent.Client
                 Console.WriteLine("not requested");
                 return false;
             }
+            id.AmRequestingPiecesCount--;
             piece.Blocks[blockIndex].Received = true;
 
             return true;
