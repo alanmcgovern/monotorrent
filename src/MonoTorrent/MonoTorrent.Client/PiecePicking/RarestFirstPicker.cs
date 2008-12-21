@@ -63,8 +63,12 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
+            if (peerBitfield.AllFalse)
+                return null;
+
             if (count > 1)
                 return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            
             GenerateRarestFirst(peerBitfield, otherPeers);
 
             while (rarest.Count > 0)
