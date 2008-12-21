@@ -325,6 +325,8 @@ namespace MonoTorrent.Client.Connections
 
             foreach (TorrentFile file in manager.Torrent.Files)
             {
+                if (manager.Torrent.Files.Length > 1)
+                    u = new Uri(u, file.Path);
                 if (endOffset == 0)
                     break;
 
@@ -337,7 +339,7 @@ namespace MonoTorrent.Client.Connections
                 // We want data from the end of the current file and from the next few files
                 else if (endOffset >= file.Length)
                 {
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(u, file.Path));
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
                     request.AddRange((int)startOffset, (int)(file.Length - 1));
                     webRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
                     startOffset = 0;
@@ -346,7 +348,7 @@ namespace MonoTorrent.Client.Connections
                 // All the data we want is from within this file
                 else
                 {
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(u, file.Path));
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
                     request.AddRange((int)startOffset, (int)(endOffset - 1));
                     webRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
                     endOffset = 0;
