@@ -313,10 +313,10 @@ namespace MonoTorrent.Client.Connections
         {
             // Properly handle the case where we have multiple files
             // This is only implemented for single file torrents
-            Uri u = uri;
+            Uri uri = Uri;
 
-            if (uri.OriginalString.EndsWith("/"))
-                u = new Uri(uri, Manager.Torrent.Name);
+            if (Uri.OriginalString.EndsWith("/"))
+                uri = new Uri(uri, Manager.Torrent.Name + "/");
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
@@ -325,6 +325,7 @@ namespace MonoTorrent.Client.Connections
 
             foreach (TorrentFile file in manager.Torrent.Files)
             {
+                Uri u = uri;
                 if (manager.Torrent.Files.Length > 1)
                     u = new Uri(u, file.Path);
                 if (endOffset == 0)

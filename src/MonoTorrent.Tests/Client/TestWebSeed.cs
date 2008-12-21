@@ -44,6 +44,7 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup()
         {
+            requestedUrl.Clear();
             partialData = false;
             int i;
             for (i = 0; i < 1000; i++)
@@ -181,7 +182,11 @@ namespace MonoTorrent.Client
 
                 long globalStart = 0;
                 bool exists = false;
-                string p = c.Request.RawUrl.Substring(10);
+                string p;
+                if(rig.Manager.Torrent.Files.Length > 1)
+                    p = c.Request.RawUrl.Substring(10 + rig.Torrent.Name.Length + 1);
+                else
+                    p = c.Request.RawUrl.Substring(10);
                 foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 {
                     if (file.Path.Replace('\\', '/') != p)
