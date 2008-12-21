@@ -117,7 +117,7 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[1].Priority = Priority.DoNotDownload;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.AreEqual(2, tester.PickPieceBitfield.Count, "#1");
+            Assert.AreEqual(1, tester.PickPieceBitfield.Count, "#1");
             for (int i = 0; i < rig.Pieces; i++)
             {
                 if (i < rig.Torrent.Files[1].EndPieceIndex)
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
 
-            Assert.AreEqual(4, tester.PickPieceBitfield.Count, "#1");
+            Assert.AreEqual(3, tester.PickPieceBitfield.Count, "#1");
 
             bf = tester.PickPieceBitfield[0];
             file = rig.Torrent.Files[0];
@@ -171,8 +171,6 @@ namespace MonoTorrent.Client
                 else
                     Assert.IsFalse(bf[i]);
             }
-
-            Assert.IsTrue(tester.PickPieceBitfield[3].AllFalse);
         }
 
         [Test]
@@ -182,8 +180,7 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[0].Priority = Priority.DoNotDownload;
             
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.AreEqual(1, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsTrue(tester.PickPieceBitfield[0].AllFalse, "#2");
+            Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
         }
 
         [Test]
@@ -193,8 +190,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(false);
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.AreEqual(1, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsTrue(tester.PickPieceBitfield[0].AllFalse, "#2");
+            Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
         }
 
         [Test]
@@ -204,8 +200,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(false);
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.AreEqual(1, tester.PickPieceBitfield.Count, "#1");
-            Assert.IsTrue(tester.PickPieceBitfield[0].AllFalse, "#2");
+            Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
         }
     }
 }
