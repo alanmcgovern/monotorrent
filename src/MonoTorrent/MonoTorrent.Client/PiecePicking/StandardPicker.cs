@@ -386,7 +386,7 @@ namespace MonoTorrent.Client
             }
 
             pieceCount = largestEnd - largestStart;
-            return largestStart;
+            return pieceCount == 0 ? -1 : pieceCount; ;
         }
     }
 
