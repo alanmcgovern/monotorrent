@@ -5,7 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Tests.Client
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class RarestFirstPickerTests
