@@ -118,13 +118,6 @@ namespace MonoTorrent
                         // Load the .torrent from the file into a Torrent instance
                         // You can use this to do preprocessing should you need to
                         torrent = Torrent.Load(file);
-                        torrent.AnnounceUrls.Clear();
-                        torrent.GetRightHttpSeeds.Add("http://download.opensuse.org/distribution/11.1/iso/openSUSE-11.1-DVD-i586.iso");
-                        //torrent.GetRightHttpSeeds.Add("http://opensuse.intergenia.de/distribution/11.1/iso/openSUSE-11.1-DVD-i586.iso");
-                        //torrent.GetRightHttpSeeds.Add("http://ftp.estpak.ee/pub/suse/opensuse/distribution/11.1/iso/openSUSE-11.1-DVD-i586.iso");
-                        //torrent.GetRightHttpSeeds.Add("http://faketracker.zam/pub/yeah/FAKESUSE");
-                        //torrent.GetRightHttpSeeds.Add("http://ftp5.gwdg.de/pub/opensuse/distribution/11.1/iso/openSUSE-11.1-DVD-i586.iso");
-                        //torrent.GetRightHttpSeeds.Add("http://suse.lagis.at/opensuse/distribution/11.1/iso/openSUSE-11.1-DVD-i586.iso");
                     }
                     catch (Exception e)
                     {
@@ -183,7 +176,6 @@ namespace MonoTorrent
                         };
                     }
                 }
-                manager.PieceHashed += new EventHandler<PieceHashedEventArgs>(manager_PieceHashed);
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 manager.Start();
             }
@@ -214,30 +206,21 @@ namespace MonoTorrent
 
                         AppendFormat(sb, "Name:            {0}", manager.Torrent.Name);
                         AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                        Console.WriteLine("Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
+                        AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
                         AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
                         AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                        AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                        
-                        foreach (PeerId p in manager.GetPeers())
-                            Console.WriteLine("\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);
+                        AppendFormat(sb, "Tracker Status:     {0}", manager.TrackerManager.CurrentTracker.State);
+                        AppendFormat(sb, "Warning Message:    {0}", manager.TrackerManager.CurrentTracker.WarningMessage);
+                        AppendFormat(sb, "Failure Message:    {0}", manager.TrackerManager.CurrentTracker.FailureMessage);
                     }
-                    //Console.Clear();
-                    //Console.WriteLine(sb.ToString());
-                    //listener.ExportTo(Console.Out);
+                    Console.Clear();
+                    Console.WriteLine(sb.ToString());
+                    listener.ExportTo(Console.Out);
                 }
 
                 System.Threading.Thread.Sleep(500);
             }
-        }
-
-        static void manager_PieceHashed(object sender, PieceHashedEventArgs e)
-        {
-            Console.WriteLine("Hashed: {0} - {1}", e.PieceIndex, e.HashPassed);
         }
 
         static void manager_PeersFound(object sender, PeersAddedEventArgs e)
