@@ -37,11 +37,15 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
+    // Keep a list of all the pieces which have not yet being fully downloaded
+    // From this list we will make requests for all the blocks until the piece is complete.
     public class EndGamePicker : PiecePicker
     {
         static Predicate<Request> TimedOut = delegate(Request r) { return r.Block.RequestTimedOut; };
         static Predicate<Request> NotRequested = delegate(Request r) { return r.Block.RequestedOff == null; };
 
+        // Struct to link a request for a block to a peer
+        // This way we can have multiple requests for the same block
         struct Request
         {
             public Request(PeerId peer, Block block)
@@ -53,7 +57,11 @@ namespace MonoTorrent.Client
             public PeerId Peer;
         }
 
-        private List<Piece> pieces;
+        // This list stores all the pieces which have not yet been completed. If a piece is *not* in this list
+        // we don't need to download it.
+        List<Piece> pieces;
+
+        // These are all the requests for the individual blocks
         List<Request> requests;
 
         public EndGamePicker()
@@ -62,6 +70,7 @@ namespace MonoTorrent.Client
             requests = new List<Request>();
         }
 
+        // Cancels a pending request when the predicate returns 'true'
         void CancelWhere(Predicate<Request> predicate)
         {
             for (int i = 0; i < requests.Count; i++)
@@ -88,6 +97,7 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
+            // 'Requests' should contain a list of all the pieces we need to complete
             pieces = new List<Piece>(requests);
             foreach (Piece piece in pieces)
             {
@@ -104,6 +114,7 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
+            // 1) See if there are any blocks which have not been requested. Request the block if the peer has it
             foreach (Piece p in pieces)
             {
                 if(!peerBitfield[p.Index])
@@ -119,6 +130,8 @@ namespace MonoTorrent.Client
                 }
             }
 
+            // 2) For each block with an existing request, add another request. We do a search from the start
+            //    of the list to the end. So when we add a duplicate request, move both requests to the end of the list
             for (int i = 0; i < requests.Count; i++)
             {
                 if (!peerBitfield[requests[i].Block.PieceIndex] || requests[i].Peer == id)
@@ -158,9 +171,12 @@ namespace MonoTorrent.Client
         {
             foreach (Request r in requests)
             {
+                // When we get past this block, it means we've found a valid request for this piece
                 if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset || r.Block.RequestLength != length || r.Peer != peer)
                     continue;
 
+                // All the other requests for this block need to be cancelled. NOTE: Currently
+                // we don't send a Cancel message. We need to.
                 foreach (Piece p in pieces)
                 {
                     if (p.Index != pieceIndex)
@@ -173,12 +189,21 @@ namespace MonoTorrent.Client
                                r.Peer != peer;
                     });
 
+                    // Mark the block as received
                     p.Blocks[startOffset / Piece.BlockSize].Received = true;
+
+                    // Once a piece is completely received, remove it from our list.
+                    // If a piece *fails* the hashcheck, we need to add it back into the list so
+                    // we download it again.
+                    if (p.AllBlocksReceived)
+                        pieces.Remove(p);
+
                     piece = p;
                     return true;
                 }
             }
 
+            // The request was not valid
             piece = null;
             return false;
         }
