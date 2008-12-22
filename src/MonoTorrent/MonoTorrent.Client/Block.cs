@@ -152,6 +152,7 @@ namespace MonoTorrent.Client
 
         internal RequestMessage CreateRequest(PeerId id)
         {
+            Requested = true;
             RequestedOff = id;
             RequestedOff.AmRequestingPiecesCount++;
             return new RequestMessage(PieceIndex, this.startOffset, this.requestLength);
