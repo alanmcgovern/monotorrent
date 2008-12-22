@@ -40,11 +40,14 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Text.RegularExpressions;
+using System.Reflection;
 
 namespace MonoTorrent.Client.Connections
 {
     public partial class HttpConnection : IConnection
     {
+        static MethodInfo method = typeof(WebHeaderCollection).GetMethod
+                                ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
         private class HttpResult : AsyncResult
         {
             public byte[] Buffer;
@@ -341,7 +344,7 @@ namespace MonoTorrent.Client.Connections
                 else if (endOffset >= file.Length)
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-                    request.AddRange((int)startOffset, (int)(file.Length - 1));
+                    AddRange(request, startOffset, file.Length - 1);
                     webRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
                     startOffset = 0;
                     endOffset -= file.Length;
@@ -350,11 +353,16 @@ namespace MonoTorrent.Client.Connections
                 else
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-                    request.AddRange((int)startOffset, (int)(endOffset - 1));
+                    AddRange(request, startOffset, endOffset - 1);
                     webRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
                     endOffset = 0;
                 }
             }
+        }
+
+        static void AddRange(HttpWebRequest request, long startOffset, long endOffset)
+        {
+            method.Invoke(request.Headers, new object[] { "Range", string.Format("bytes={0}-{1}", startOffset, endOffset) });
         }
 
         public void Dispose()
