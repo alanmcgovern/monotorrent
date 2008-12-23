@@ -54,6 +54,7 @@
     <Compile Include="Client\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Client\BanListTests.cs" />
     <Compile Include="Client\ConnectionListenerTests.cs" />
+    <Compile Include="Client\EndGamePickerTests.cs" />
     <Compile Include="Client\FileManager.cs" />
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />

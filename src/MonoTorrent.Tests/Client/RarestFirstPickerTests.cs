@@ -10,13 +10,13 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class RarestFirstPickerTests
     {
-        static void Main()
-        {
-            RarestFirstPickerTests t = new RarestFirstPickerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.RarestPieceTest();
-        }
+        //static void Main()
+        //{
+        //    RarestFirstPickerTests t = new RarestFirstPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.RarestPieceTest();
+        //}
         TestRig rig;
         List<PeerId> peers;
         RarestFirstPicker rarest;
