@@ -131,11 +131,7 @@ namespace MonoTorrent.Common
 
         public BitField And(BitField value)
         {
-            if (value == null)
-                throw new ArgumentNullException("value");
-
-            if (this.length != value.length)
-                throw new ArgumentException("BitFields are of different lengths", "value");
+            Check(value);
 
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= value.array[i];
@@ -146,11 +142,7 @@ namespace MonoTorrent.Common
 
         internal BitField NAnd(BitField value)
         {
-            if (value == null)
-                throw new ArgumentNullException("value");
-
-            if (this.length != value.length)
-                throw new ArgumentException("BitFields are of different lengths", "value");
+            Check(value);
 
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] &= ~value.array[i];
@@ -161,11 +153,7 @@ namespace MonoTorrent.Common
 
         public BitField Or(BitField value)
         {
-            if (value == null)
-                throw new ArgumentNullException("value");
-
-            if (this.length != value.length)
-                throw new ArgumentException("BitFields are of different lengths", "value");
+            Check(value);
 
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] |= value.array[i];
@@ -176,11 +164,7 @@ namespace MonoTorrent.Common
 
         public BitField Xor(BitField value)
         {
-            if (value == null)
-                throw new ArgumentNullException("value");
-
-            if (this.length != value.length)
-                throw new ArgumentException("BitFields are of different lengths", "value");
+            Check(value);
 
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] ^= value.array[i];
@@ -344,7 +328,7 @@ namespace MonoTorrent.Common
 
         public int LengthInBytes
         {
-            get { return ((int)Math.Ceiling(this.length / 8.0)); }      //8 bits in a byte.
+            get { return (this.length + 7) / 8; }      //8 bits in a byte.
         }
 
         void Set(int index, bool value)
@@ -452,6 +436,13 @@ namespace MonoTorrent.Common
                 v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
                 trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24);
             }
+        }
+
+        void Check(BitField value)
+        {
+            MonoTorrent.Check.Value(value);
+            if (length != value.length)
+                throw new ArgumentException("BitFields are of different lengths", "value");
         }
 
         #endregion

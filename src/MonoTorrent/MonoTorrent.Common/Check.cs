@@ -113,6 +113,11 @@ namespace MonoTorrent
             DoCheck(url, "url");
         }
 
+        internal static void Value(object value)
+        {
+            DoCheck(value, "value");
+        }
+
         internal static void Writer(object writer)
         {
             DoCheck(writer, "writer");

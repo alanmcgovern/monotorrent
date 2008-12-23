@@ -138,7 +138,12 @@ namespace MonoTorrent.Common
         [Test]
         public void LengthInBytes()
         {
-            Assert.AreEqual((int)Math.Ceiling(initalValues.Length / 8.0), bf.LengthInBytes);
+            Assert.AreEqual(1, new BitField(1).LengthInBytes, "#1");
+            Assert.AreEqual(1, new BitField(8).LengthInBytes, "#2");
+            Assert.AreEqual(2, new BitField(9).LengthInBytes, "#3");
+            Assert.AreEqual(2, new BitField(15).LengthInBytes, "#4");
+            Assert.AreEqual(2, new BitField(16).LengthInBytes, "#5");
+            Assert.AreEqual(3, new BitField(17).LengthInBytes, "#6");
         }
 
         [Test]
