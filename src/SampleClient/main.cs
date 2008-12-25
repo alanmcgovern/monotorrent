@@ -210,9 +210,13 @@ namespace MonoTorrent
                         AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
                         AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        AppendFormat(sb, "Tracker Status:     {0}", manager.TrackerManager.CurrentTracker.State);
-                        AppendFormat(sb, "Warning Message:    {0}", manager.TrackerManager.CurrentTracker.WarningMessage);
-                        AppendFormat(sb, "Failure Message:    {0}", manager.TrackerManager.CurrentTracker.FailureMessage);
+                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
+                        AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
+                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
+                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+                        
+                        foreach (PeerId p in manager.GetPeers())
+                            AppendFormat(sb, "\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);
                     }
                     Console.Clear();
                     Console.WriteLine(sb.ToString());
