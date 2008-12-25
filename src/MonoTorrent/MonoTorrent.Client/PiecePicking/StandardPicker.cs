@@ -39,9 +39,25 @@ namespace MonoTorrent.Client
 {
     public class StandardPicker : PiecePicker
     {
+        struct BinaryIndexComparer : IComparer<Piece>
+        {
+            int index;
+            public BinaryIndexComparer(int index)
+            {
+                this.index = index;
+            }
+
+            public int Compare(Piece x, Piece y)
+            {
+                if (x == null)
+                    return index.CompareTo(y.Index);
+                return x.Index.CompareTo(index);
+            }
+        }
+
         static Predicate<Block> TimedOut = delegate(Block b) { return b.RequestTimedOut; };
 
-        protected List<Piece> requests;
+        protected SortedPieces requests;
         private TimeSpan timeout;
 
         public StandardPicker()
@@ -73,14 +89,18 @@ namespace MonoTorrent.Client
 
         void CancelWhere(Predicate<Block> predicate)
         {
+            bool cancelled = false;
             requests.ForEach(delegate(Piece p) {
-                Array.ForEach<Block>(p.Blocks, delegate(Block b) {
-                    if (predicate(b))
-                        b.CancelRequest();
-                });
+                for (int i = 0; i < p.Blocks.Length; i++) {
+                    if (predicate(p.Blocks[i])) {
+                        cancelled = true;
+                        p.Blocks[i].CancelRequest();
+                    }
+                }
             });
 
-            requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
+            if (cancelled)
+                requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
         }
 
         public override int CurrentRequestCount()
@@ -95,7 +115,7 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            this.requests = new List<Piece>(requests);
+            this.requests = new SortedPieces(requests);
         }
 
         public override bool IsInteresting(BitField bitfield)
@@ -107,58 +127,37 @@ namespace MonoTorrent.Client
         {
             RequestMessage message;
             MessageBundle bundle = null;
-            try
-            {
-                // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
-                // requests that could be continued would be existing "Fast" pieces.
-                if ((message = ContinueExistingRequest(id)) != null)
-                    return (bundle = new MessageBundle(message));
+            // If there is already a request on this peer, try to request the next block. If the peer is choking us, then the only
+            // requests that could be continued would be existing "Fast" pieces.
+            if ((message = ContinueExistingRequest(id)) != null)
+                return (bundle = new MessageBundle(message));
 
-                // Then we check if there are any allowed "Fast" pieces to download
-                if (id.IsChoking && (message = GetFromList(id, peerBitfield, id.IsAllowedFastPieces)) != null)
-                    return (bundle = new MessageBundle(message));
+            // Then we check if there are any allowed "Fast" pieces to download
+            if (id.IsChoking && (message = GetFromList(id, peerBitfield, id.IsAllowedFastPieces)) != null)
+                return (bundle = new MessageBundle(message));
 
-                // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
-                if (id.IsChoking)
-                    return null;
-
-                // If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
-                // to request the full amount first, then try to continue any existing.
-                if (count == 1 && (message = ContinueAnyExisting(id)) != null)
-                    return (bundle = new MessageBundle(message));
-
-                // We see if the peer has suggested any pieces we should request
-                if ((message = GetFromList(id, peerBitfield, id.SuggestedPieces)) != null)
-                    return (bundle = new MessageBundle(message));
-
-                // Now we see what pieces the peer has that we don't have and try and request one
-                if ((bundle = GetStandardRequest(id, peerBitfield, otherPeers, startIndex, endIndex, count)) != null)
-                    return bundle;
-
-                // If all else fails, ignore how many we're requesting and try to continue any existing
-                if ((message = ContinueAnyExisting(id)) != null)
-                    return (bundle = new MessageBundle(message));
-
+            // If the peer is choking, then we can't download from them as they had no "fast" pieces for us to download
+            if (id.IsChoking)
                 return null;
-            }
-            finally
-            {
-                if (bundle != null)
-                {
-                    foreach (RequestMessage m in bundle.Messages)
-                    {
-                        foreach (Piece p in requests)
-                        {
-                            if (p.Index != m.PieceIndex)
-                                continue;
 
-                            int index = Block.IndexOf(p.Blocks, m.StartOffset, m.RequestLength);
-                            id.TorrentManager.PieceManager.RaiseBlockRequested(new BlockEventArgs(id.TorrentManager, p.Blocks[index], p, id));
-                            break;
-                        }
-                    }
-                }
-            }
+            // If we are only requesting 1 piece, then we can continue any existing. Otherwise we should try
+            // to request the full amount first, then try to continue any existing.
+            if (count == 1 && (message = ContinueAnyExisting(id)) != null)
+                return (bundle = new MessageBundle(message));
+
+            // We see if the peer has suggested any pieces we should request
+            if ((message = GetFromList(id, peerBitfield, id.SuggestedPieces)) != null)
+                return (bundle = new MessageBundle(message));
+
+            // Now we see what pieces the peer has that we don't have and try and request one
+            if ((bundle = GetStandardRequest(id, peerBitfield, otherPeers, startIndex, endIndex, count)) != null)
+                return bundle;
+
+            // If all else fails, ignore how many we're requesting and try to continue any existing
+            if ((message = ContinueAnyExisting(id)) != null)
+                return (bundle = new MessageBundle(message));
+
+            return null;
         }
 
         public override void Reset()
@@ -168,13 +167,16 @@ namespace MonoTorrent.Client
 
         public override bool ValidatePiece(PeerId id, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            piece = requests.Find(delegate(Piece p) { return p.Index == pieceIndex; });
-            if (piece == null)
+            //Comparer.index = pieceIndex;
+            int pIndex = requests.BinarySearch(null, new BinaryIndexComparer(pieceIndex));
+            if (pIndex < 0)
             {
+                piece = null;
                 Console.Write("Validating: {0} - {1}: ", pieceIndex, startOffset);
                 Console.WriteLine("No piece");
                 return false;
             }
+            piece = requests[pIndex];
             // Pick out the block that this piece message belongs to
             int blockIndex = Block.IndexOf(piece.Blocks, startOffset, length);
             if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
@@ -198,6 +200,8 @@ namespace MonoTorrent.Client
             id.AmRequestingPiecesCount--;
             piece.Blocks[blockIndex].Received = true;
 
+            if (piece.AllBlocksReceived)
+                requests.RemoveAt(pIndex);
             return true;
         }
 
@@ -306,7 +310,7 @@ namespace MonoTorrent.Client
 
         protected bool AlreadyRequested(int index)
         {
-            return requests.Exists(delegate(Piece p) { return p.Index == index; });
+            return requests.BinarySearch(null, new BinaryIndexComparer(index)) >= 0;
         }
 
         private int CanRequest(BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)

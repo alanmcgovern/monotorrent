@@ -142,13 +142,10 @@ namespace MonoTorrent.Client
             }
 
             msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
+            if (msg != null)
+                id.Enqueue(msg);
 
-            if (msg == null)
-                return false;
-
-            id.Enqueue(msg);
-
-            return true;
+            return msg != null;
         }
 
         internal bool IsInteresting(PeerId id)
@@ -181,6 +178,11 @@ namespace MonoTorrent.Client
         internal void Reset()
         {
             this.unhashedPieces.SetAll(false);
+        }
+
+        internal int CurrentRequestCount()
+        {
+            return (int)ClientEngine.MainLoop.QueueWait(delegate { return Picker.CurrentRequestCount(); });
         }
     }
 }

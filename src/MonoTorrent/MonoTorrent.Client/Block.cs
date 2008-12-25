@@ -181,7 +181,10 @@ namespace MonoTorrent.Client
 
         internal static int IndexOf(Block[] blocks, int startOffset, int blockLength)
         {
-            return Array.FindIndex<Block>(blocks, delegate(Block b) { return b.RequestLength == blockLength && b.StartOffset == startOffset; });
+            int index = startOffset / Piece.BlockSize;
+            if (blocks[index].startOffset != startOffset || blocks[index].RequestLength != blockLength)
+                return -1;
+            return index;
         }
 
         #endregion

@@ -32,7 +32,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class Piece
+    public class Piece : IComparable<Piece>
     {
         internal static readonly int BlockSize = (1 << 14); // 16kB
 
@@ -157,6 +157,11 @@ namespace MonoTorrent.Client
 
 
         #region Methods
+
+        public int CompareTo(Piece other)
+        {
+            return other == null ? 1 : Index.CompareTo(other.Index);
+        }
 
         public override bool Equals(object obj)
         {
