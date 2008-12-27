@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
 {
     public class PriorityPicker : PiecePicker
     {
-        static Predicate<Files> IsNormal = delegate(Files f) { return f.File.Priority == Priority.Normal; };
+        Predicate<Files> AllSamePriority;
 
         struct Files : IComparable<Files>
         {
@@ -76,14 +76,6 @@ namespace MonoTorrent.Client
             if (peerBitfield.AllFalse)
                 return null;
 
-            // Fast Path - all the files have been set to DoNotDownload
-            if (files[0].File.Priority == Priority.DoNotDownload)
-                return null;
-
-            // Fast Path - If all the files are normal priority, call straight into the base picker
-            if (files.TrueForAll(IsNormal))
-                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
-
             if (files.Count == 1)
             {
                 if (files[0].File.Priority == Priority.DoNotDownload)
@@ -93,8 +85,16 @@ namespace MonoTorrent.Client
             }
 
             files.Sort();
-            temp.SetAll(false);
-            temp.Or(files[0].Selector);
+
+            // Fast Path - all the files have been set to DoNotDownload
+            if (files[0].File.Priority == Priority.DoNotDownload)
+                return null;
+
+            // Fast Path - If all the files are the same priority, call straight into the base picker
+            if (files.TrueForAll(AllSamePriority))
+                return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+
+            temp.From(files[0].Selector);
             for (int i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
             {
                 if (files[i].File.Priority != files[i - 1].File.Priority)
@@ -120,6 +120,7 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, files, requests);
+            AllSamePriority = delegate(Files f) { return f.File.Priority == files[0].Priority; };
             temp = new BitField(bitfield.Length);
 
             this.files.Clear();
