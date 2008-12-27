@@ -56,14 +56,11 @@ namespace MonoTorrent.Client
         private Queue<ArraySegment<byte>> smallMessageBuffers;
         private Queue<ArraySegment<byte>> massiveBuffers;
 
-        private List<BitField> bitfields;
-
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
         public BufferManager()
         {
-            this.bitfields = new List<BitField>();
             this.massiveBuffers = new Queue<ArraySegment<byte>>();
             this.largeMessageBuffers = new Queue<ArraySegment<byte>>();
             this.mediumMessageBuffers = new Queue<ArraySegment<byte>>();
@@ -73,32 +70,6 @@ namespace MonoTorrent.Client
             this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
             this.AllocateBuffers(4, BufferType.MediumMessageBuffer);
             this.AllocateBuffers(4, BufferType.SmallMessageBuffer);
-        }
-
-        internal BitField GetBitfield(int length)
-        {
-            lock (this.bitfields)
-            {
-                for (int i = 0; i < bitfields.Count; i++)
-                {
-                    if (this.bitfields[i].Length == length)
-                    {
-                        BitField b = this.bitfields[i];
-                        this.bitfields.RemoveAt(i);
-                        return b;
-                    }
-                }
-
-                return new BitField(length);
-            }
-        }
-
-        internal void FreeBitfield(ref BitField b)
-        {
-            lock (this.bitfields)
-                this.bitfields.Add(b);
-
-            b = null;
         }
 
         /// <summary>
@@ -233,14 +204,6 @@ namespace MonoTorrent.Client
 
             else
                 throw new ArgumentException("Unsupported BufferType detected");
-        }
-
-        internal BitField GetClonedBitfield(BitField bitfield)
-        {
-            BitField clone = GetBitfield(bitfield.Length);
-            clone.SetAll(false);
-            clone.Or(bitfield);
-            return clone;
         }
     }
 }
