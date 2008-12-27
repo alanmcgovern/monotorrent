@@ -8,6 +8,10 @@ namespace MonoTorrent.Client
     {
         private List<Piece> list;
 
+        public SortedPieces()
+        {
+            list = new List<Piece>();
+        }
         public SortedPieces(IEnumerable<Piece> list)
         {
             this.list = new List<Piece>(list);
@@ -25,12 +29,13 @@ namespace MonoTorrent.Client
 
         public int IndexOf(Piece item)
         {
-            return list.IndexOf(item);
+            int index = list.BinarySearch(item);
+            return index < 0 ? -1 : index;
         }
 
         public void Insert(int index, Piece item)
         {
-            list.Insert(index, item);
+            Add(item);
         }
 
         public void RemoveAt(int index)
@@ -60,7 +65,7 @@ namespace MonoTorrent.Client
 
         public bool Contains(Piece item)
         {
-            return list.BinarySearch(item) != -1;
+            return list.BinarySearch(item) >= 0;
         }
 
         public void CopyTo(Piece[] array, int arrayIndex)
@@ -105,11 +110,6 @@ namespace MonoTorrent.Client
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        }
-
-        internal void BinarySearch()
-        {
-            throw new Exception("The method or operation is not implemented.");
         }
     }
 }
