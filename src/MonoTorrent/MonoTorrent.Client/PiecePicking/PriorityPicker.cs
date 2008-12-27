@@ -72,9 +72,6 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            files.Sort();
-            temp.SetAll(false);
-
             // Fast Path - the peer has nothing to offer
             if (peerBitfield.AllFalse)
                 return null;
@@ -95,6 +92,8 @@ namespace MonoTorrent.Client
                     return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             }
 
+            files.Sort();
+            temp.SetAll(false);
             temp.Or(files[0].Selector);
             for (int i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
             {
