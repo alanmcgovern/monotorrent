@@ -123,7 +123,7 @@ namespace MonoTorrent.Common
         public BitField From(BitField value)
         {
             Check(value);
-            Buffer.BlockCopy(array, 0, value.array, 0, array.Length);
+            Buffer.BlockCopy(value.array, 0, array, 0, array.Length * 4);
             trueCount = value.trueCount;
             return this;
         }
