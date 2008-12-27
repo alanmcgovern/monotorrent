@@ -120,6 +120,14 @@ namespace MonoTorrent.Common
             return b;
         }
 
+        public BitField From(BitField value)
+        {
+            Check(value);
+            Buffer.BlockCopy(array, 0, value.array, 0, array.Length);
+            trueCount = value.trueCount;
+            return this;
+        }
+
         public BitField Not()
         {
             for (int i = 0; i < this.array.Length; i++)

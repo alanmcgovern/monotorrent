@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
                 spares.Push(rarest.Pop());
 
             BitField current = DequeueSpare();
-            current.SetAll(false).Or(peerBitfield);
+            current.From(peerBitfield);
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push(current);
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
                 if (otherPeers[i].BitField.AllTrue)
                     continue;
 
-                current = DequeueSpare().SetAll(false).Or(current);
+                current = DequeueSpare().From(current);
 
                 // currentBitfield = currentBitfield & (!otherBitfield)
                 // This calculation finds the pieces this peer has that other peers *do not* have.
