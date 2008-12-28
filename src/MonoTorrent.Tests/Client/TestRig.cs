@@ -84,12 +84,14 @@ namespace MonoTorrent.Client
 
         public override void Announce(AnnounceParameters parameters, object state)
         {
+            RaiseBeforeAnnounce();
             AnnouncedAt.Add(DateTime.Now);
             RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, !FailAnnounce));
         }
 
         public override void Scrape(ScrapeParameters parameters, object state)
         {
+            RaiseBeforeScrape();
             ScrapedAt.Add(DateTime.Now);
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, !FailScrape));
         }

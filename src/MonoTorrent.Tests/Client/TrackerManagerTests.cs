@@ -94,7 +94,11 @@ namespace MonoTorrent.Client
         [Test]
         public void ScrapeTest()
         {
+            bool scrapeStarted = false;
+            trackers[0][0].BeforeScrape += delegate { scrapeStarted = true; };
+            trackers[0][0].ScrapeComplete += delegate { if (!scrapeStarted) throw new Exception("Scrape didn't start"); };
             Wait(trackerManager.Scrape());
+            Assert.IsTrue(scrapeStarted);
             Assert.AreEqual(1, trackers[0][0].ScrapedAt.Count, "#2");
             Assert.That((DateTime.Now - trackers[0][0].ScrapedAt[0]) < TimeSpan.FromSeconds(1), "#3");
             for (int i = 1; i < trackers.Count; i++)
