@@ -12,13 +12,13 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class EndGamePickerTests
     {
-        static void Main()
-        {
-            EndGamePickerTests t = new EndGamePickerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.PickRemaining();
-        }
+        //static void Main()
+        //{
+        //    EndGamePickerTests t = new EndGamePickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.PickRemaining();
+        //}
         List<Block> alreadyGot;
         BitField bitfield;
         PeerId id;

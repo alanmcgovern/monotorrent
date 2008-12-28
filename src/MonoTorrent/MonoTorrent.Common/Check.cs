@@ -108,9 +108,19 @@ namespace MonoTorrent
             DoCheck(torrentInformation, "torrentInformation");
         }
 
+        internal static void Tracker(object tracker)
+        {
+            DoCheck(tracker, "tracker");
+        }
+
         internal static void Url(object url)
         {
             DoCheck(url, "url");
+        }
+
+        internal static void Uri(Uri uri)
+        {
+            DoCheck(uri, "uri");
         }
 
         internal static void Value(object value)

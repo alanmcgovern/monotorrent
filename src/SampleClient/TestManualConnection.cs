@@ -22,22 +22,20 @@ namespace SampleClient
             this.CanScrape = false;
         }
 
-        public override System.Threading.WaitHandle Announce(AnnounceParameters parameters)
+        public override void Announce(AnnounceParameters parameters, object state)
         {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(parameters.Id));
-            return parameters.Id.WaitHandle;
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, true));
         }
 
-        public override System.Threading.WaitHandle Scrape(ScrapeParameters parameters)
+        public override void Scrape(ScrapeParameters parameters, object state)
         {
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
-            return parameters.Id.WaitHandle;
+            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, true));
         }
 
         public void AddPeer(Peer p)
         {
             TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
             e.Peers.Add(p);
             e.Successful = true;
             RaiseAnnounceComplete(e);
@@ -46,7 +44,7 @@ namespace SampleClient
         public void AddFailedPeer(Peer p)
         {
             TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
             e.Peers.Add(p);
             e.Successful = false;
             RaiseAnnounceComplete(e);

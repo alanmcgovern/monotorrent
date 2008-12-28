@@ -167,7 +167,7 @@ namespace MonoTorrent
                 };
 
                 // Every time the tracker's state changes, this is fired
-                foreach (TrackerTier tier in manager.TrackerManager.TrackerTiers)
+                foreach (TrackerTier tier in manager.TrackerManager)
                 {
                     foreach (MonoTorrent.Client.Tracker.Tracker t in tier.Trackers)
                     {
@@ -211,9 +211,10 @@ namespace MonoTorrent
                         AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
                         AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
                         MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                        AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
+                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
                         AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
                         AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+                        AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
                         
                         foreach (PeerId p in manager.GetPeers())
                             AppendFormat(sb, "\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);

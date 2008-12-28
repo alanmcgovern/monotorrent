@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -56,6 +56,7 @@
     <Compile Include="Client\ConnectionListenerTests.cs" />
     <Compile Include="Client\EndGamePickerTests.cs" />
     <Compile Include="Client\FileManager.cs" />
+    <Compile Include="Client\HttpTrackerTests.cs" />
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />
     <Compile Include="Client\PeerMessagesTest.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="Client\TestRig.cs" />
     <Compile Include="Client\TestWebSeed.cs" />
     <Compile Include="Client\TorrentManagerTest.cs" />
+    <Compile Include="Client\TrackerManagerTests.cs" />
     <Compile Include="Client\TransferTest.cs" />
     <Compile Include="Client\UdpTrackerTests.cs" />
     <Compile Include="Common\BEncodingTest.cs" />
@@ -100,7 +102,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties/" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -116,5 +118,6 @@
         <GtkDesignInfo />
       </Properties>
     </MonoDevelop>
+    <VisualStudio />
   </ProjectExtensions>
 </Project>

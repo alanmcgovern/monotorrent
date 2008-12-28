@@ -4,19 +4,27 @@ using System.Text;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Client.Tracker
 {
     public class AnnounceResponseEventArgs : TrackerResponseEventArgs
     {
-        public MonoTorrentCollection<Peer> Peers;
-        internal TrackerConnectionID TrackerId;
+        List<Peer> peers;
 
-
-        public AnnounceResponseEventArgs(TrackerConnectionID id)
-            : base(id.Tracker, true)
+        public List<Peer> Peers
         {
-            Peers = new MonoTorrentCollection<Peer>();
-            TrackerId = id;
+            get { return peers; }
+        }
+
+        public AnnounceResponseEventArgs(Tracker tracker, object state, bool successful)
+            : this(tracker, state, successful, new List<Peer>())
+        {
+
+        }
+
+        public AnnounceResponseEventArgs(Tracker tracker, object state, bool successful, List<Peer> peers)
+            : base(tracker, state, successful)
+        {
+            this.peers = peers;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace MonoTorrent.Client.Tracker
             set { this.sentStartedEvent = value; }
         }
 
-        public List<Tracker> Trackers
+        internal List<Tracker> Trackers
         {
             get { return this.trackers; }
         }
@@ -55,10 +55,9 @@ namespace MonoTorrent.Client.Tracker
                     continue;
                 }
 
-                Tracker tracker = TrackerFactory.Create(result.Scheme, result);
+                Tracker tracker = TrackerFactory.Create(result);
                 if (tracker != null)
                 {
-                    tracker.Tier = this;
                     trackerList.Add(tracker);
                 }
                 else
@@ -88,6 +87,11 @@ namespace MonoTorrent.Client.Tracker
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public List<Tracker> GetTrackers()
+        {
+            return new List<Tracker>(trackers);
         }
 
         #endregion Methods

@@ -3,7 +3,7 @@
 //
 // Authors:
 //   Eric Butler eric@extremeboredom.net
-//
+//   Alan McGovern alan.mcgovern@gmail.com
 // Copyright (C) 2007 Eric Butler
 //
 // Permission is hereby granted, free of charge, to any person obtaining
@@ -58,20 +58,16 @@ namespace MonoTorrent.Client.Tracker
                 trackerTypes.Add(protocol, trackerType);
         }
 
-        public static Tracker Create(string protocol, Uri announceUrl)
+        public static Tracker Create(Uri uri)
         {
-            if (string.IsNullOrEmpty(protocol))
-                throw new ArgumentException("cannot be null or empty", "protocol");
+            Check.Uri(uri);
 
-            if (announceUrl == null)
-                throw new ArgumentNullException("announceUrl");
-
-            if (!trackerTypes.ContainsKey(protocol))
+            if (!trackerTypes.ContainsKey(uri.Scheme))
                 return null;
 			
             try
             {
-                return (Tracker)Activator.CreateInstance(trackerTypes[protocol], announceUrl);
+                return (Tracker)Activator.CreateInstance(trackerTypes[uri.Scheme], uri);
             }
             catch
             {

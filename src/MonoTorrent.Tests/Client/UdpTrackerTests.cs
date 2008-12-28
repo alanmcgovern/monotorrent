@@ -56,7 +56,6 @@ namespace MonoTorrent.Client
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             MonoTorrent.Common.TorrentEvent.Completed,
             new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 },
-            new TrackerConnectionID(null, false, MonoTorrent.Common.TorrentEvent.Completed, null),
             false, new string('a', 20), null, 1515);
 
         [Test]

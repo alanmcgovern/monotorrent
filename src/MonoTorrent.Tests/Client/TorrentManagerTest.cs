@@ -14,6 +14,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class TorrentManagerTest
     {
+        //static void Main()
+        //{
+        //    TorrentManagerTest t = new TorrentManagerTest();
+        //    t.Setup();
+        //    t.UnregisteredAnnounce();
+        //}
         TestRig rig;
         ConnectionPair conn;
 
@@ -59,7 +65,9 @@ namespace MonoTorrent.Client
         {
             rig.Engine.Unregister(rig.Manager);
             rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+            Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
             rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+            Assert.AreEqual(0, rig.Manager.Peers.Available, "#2");
         }
 
         [Test]
@@ -136,7 +144,7 @@ namespace MonoTorrent.Client
 			tier.Add ("fake://123.123.123.2:5665");
 			rig.Torrent.AnnounceUrls.Add (tier);
 			TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
-			foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager.TrackerTiers)
+			foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
 			{
 				Assert.IsTrue (t.Trackers.Count > 0, "#1");
 			}

@@ -11,6 +11,7 @@ using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.Client.Encryption;
 using System.Threading;
+using NUnit.Framework;
 
 namespace MonoTorrent.Client
 {
@@ -71,42 +72,49 @@ namespace MonoTorrent.Client
         public List<DateTime> AnnouncedAt = new List<DateTime>();
         public List<DateTime> ScrapedAt = new List<DateTime>();
 
+        public bool FailAnnounce;
+        public bool FailScrape;
+
         public CustomTracker(Uri uri)
             : base(uri)
         {
-            this.CanScrape = false;
+            CanAnnounce = true;
+            CanScrape = true;
         }
 
-        public override System.Threading.WaitHandle Announce(AnnounceParameters parameters)
+        public override void Announce(AnnounceParameters parameters, object state)
         {
             AnnouncedAt.Add(DateTime.Now);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(parameters.Id));
-            return parameters.Id.WaitHandle;
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, !FailAnnounce));
         }
 
-        public override System.Threading.WaitHandle Scrape(ScrapeParameters parameters)
+        public override void Scrape(ScrapeParameters parameters, object state)
         {
             ScrapedAt.Add(DateTime.Now);
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
-            return parameters.Id.WaitHandle;
+            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, !FailScrape));
         }
 
         public void AddPeer(Peer p)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, new ManualResetEvent(false));
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, true);
             e.Peers.Add(p);
-            e.Successful = true;
             RaiseAnnounceComplete(e);
+            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#1 Tracker never raised the AnnounceComplete event");
         }
 
         public void AddFailedPeer(Peer p)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(id);
+            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, new ManualResetEvent(false));
+            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, false);
             e.Peers.Add(p);
-            e.Successful = false;
             RaiseAnnounceComplete(e);
+            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#2 Tracker never raised the AnnounceComplete event");
+        }
+
+        public override string ToString()
+        {
+            return Uri.ToString();
         }
     }
 
@@ -349,66 +357,98 @@ namespace MonoTorrent.Client
         }
 
         public TestRig(bool singleFile)
-            : this("", singleFile)
+            : this("", singleFile, null)
         {
 
         }
 
+        public TestRig(bool singleFile, string[][] tier)
+            : this("", singleFile, tier)
+        {
+
+        }
         public TestRig(string savePath)
-            : this(savePath, false)
+            : this(savePath, false, null)
         {
 
         }
 
-        public TestRig(string savePath, bool singleFile)
-            : this(savePath, null, singleFile)
+        public TestRig(string savePath, bool singleFile, string[][] tier)
+            : this(savePath, null, singleFile, tier)
         {
 
         }
-
         public TestRig(string savePath, PieceWriter writer)
-            : this(savePath, 256 * 1024, writer, false)
+            : this(savePath, 256 * 1024, writer, false, null)
         {
 
         }
-        public TestRig(string savePath, PieceWriter writer, bool singleFile)
-            : this(savePath, 256 * 1024, writer, singleFile)
+        public TestRig(string savePath, PieceWriter writer, string[][] tier)
+            : this(savePath, 256 * 1024, writer, false, tier)
         {
 
         }
+        public TestRig(string savePath, PieceWriter writer, bool singleFile, string[][] tier)
+            : this(savePath, 256 * 1024, writer, singleFile, tier)
+        {
 
+        }
         public TestRig(string savePath, int piecelength, PieceWriter writer)
-            :this(savePath, piecelength, writer, false)
+            : this(savePath, piecelength, writer, false, null)
+        {
+
+        }
+        public TestRig(string savePath, int piecelength, PieceWriter writer, string[][] tier)
+            :this(savePath, piecelength, writer, false, tier)
         {
 
         }
 
-        public TestRig(string savePath, int piecelength, PieceWriter writer, bool singleFile)
+
+        string savePath; int piecelength; bool singleFile; string[][] tier;
+        public TestRig(string savePath, int piecelength, PieceWriter writer, bool singleFile, string[][] tier)
         {
+            this.savePath = savePath;
+            this.piecelength = piecelength;
+            this.singleFile = singleFile;
+            this.tier = tier;
+
             if (writer == null)
                 writer = new TestWriter();
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
-            torrentDict = CreateTorrent(piecelength, singleFile);
-            torrent = Torrent.Load(torrentDict);
-            manager = new TorrentManager(torrent, savePath, new TorrentSettings());
-            engine.Register(manager);
+            RecreateManager();
         }
 
-        private static void AddAnnounces(BEncodedDictionary dict)
+        private static void AddAnnounces(BEncodedDictionary dict, string[][] tiers)
         {
             BEncodedList announces = new BEncodedList();
-            BEncodedList tier1 = new BEncodedList();
-            BEncodedList tier2 = new BEncodedList();
-            announces.Add(tier1);
-            announces.Add(tier2);
-            tier1.Add((BEncodedString)"custom://tier1/announce1");
-            tier1.Add((BEncodedString)"custom://tier1/announce2");
-            tier2.Add((BEncodedString)"custom://tier2/announce1");
-            tier2.Add((BEncodedString)"custom://tier2/announce2");
-            tier2.Add((BEncodedString)"custom://tier2/announce3");
 
-            dict["announce"] = (BEncodedString)"custom://tier1/announce1";
+            if (tiers == null)
+            {
+                BEncodedList tier1 = new BEncodedList();
+                BEncodedList tier2 = new BEncodedList();
+                announces.Add(tier1);
+                announces.Add(tier2);
+                tier1.Add((BEncodedString)"custom://tier1/announce1");
+                tier1.Add((BEncodedString)"custom://tier1/announce2");
+                tier2.Add((BEncodedString)"custom://tier2/announce1");
+                tier2.Add((BEncodedString)"custom://tier2/announce2");
+                tier2.Add((BEncodedString)"custom://tier2/announce3");
+
+                dict["announce"] = (BEncodedString)"custom://tier1/announce1";
+            }
+            else
+            {
+                foreach (string[] tier in tiers)
+                {
+                    BEncodedList bTier = new BEncodedList();
+                    announces.Add(bTier);
+                    foreach (string s in tier)
+                        bTier.Add((BEncodedString)s);
+                }
+                dict["announce"] = (BEncodedString)tiers[0][0];
+            }
             dict["announce-list"] = announces;
         }
 
@@ -420,12 +460,12 @@ namespace MonoTorrent.Client
                 listener.Add(manager, connection);
         }
 
-        private static BEncodedDictionary CreateTorrent(int pieceLength, bool singleFile)
+        private static BEncodedDictionary CreateTorrent(int pieceLength, bool singleFile, string[][] tier)
         {
             BEncodedDictionary dict = new BEncodedDictionary();
             BEncodedDictionary infoDict = new BEncodedDictionary();
 
-            AddAnnounces(dict);
+            AddAnnounces(dict, tier);
             if (singleFile)
                 AddSingleFile(infoDict, pieceLength);
             else
@@ -496,8 +536,6 @@ namespace MonoTorrent.Client
             dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
         }
 
-        #region IDisposable Members
-
         public void Dispose()
         {
             engine.Dispose();
@@ -514,6 +552,24 @@ namespace MonoTorrent.Client
             return new TestRig(false);
         }
 
-        #endregion
+        public static TestRig CreateTrackers(string[][] tier)
+        {
+            return new TestRig(true, tier);
+        }
+
+        
+        public void RecreateManager()
+        {
+            if (manager != null)
+            {
+                manager.Dispose();
+                if (engine.Contains(manager))
+                    engine.Unregister(manager);
+            }
+            torrentDict = CreateTorrent(piecelength, singleFile, tier);
+            torrent = Torrent.Load(torrentDict);
+            manager = new TorrentManager(torrent, savePath, new TorrentSettings());
+            engine.Register(manager);
+        }
     }
 }

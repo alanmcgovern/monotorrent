@@ -138,6 +138,7 @@
     <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
+    <Compile Include="MonoTorrent.Client\Tracker\ITracker.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ScrapeParameters.cs" />
     <Compile Include="MonoTorrent.Client\TransferType.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\SocketListener.cs" />

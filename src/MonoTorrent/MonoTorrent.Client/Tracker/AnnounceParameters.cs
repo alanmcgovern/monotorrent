@@ -11,7 +11,6 @@ namespace MonoTorrent.Client.Tracker
         private long bytesLeft;
         private long bytesUploaded;
         private TorrentEvent clientEvent;
-        private TrackerConnectionID id;
         private byte[] infohash;
         private string ipaddress;
         private string peerId;
@@ -41,12 +40,6 @@ namespace MonoTorrent.Client.Tracker
         {
             get { return clientEvent; }
             set { clientEvent = value; }
-        }
-
-        public TrackerConnectionID Id
-        {
-            get { return id; }
-            set { id = value; }
         }
 
         public byte[] Infohash
@@ -92,15 +85,14 @@ namespace MonoTorrent.Client.Tracker
         }
 
         public AnnounceParameters(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                    TorrentEvent clientEvent, byte[] infohash, TrackerConnectionID id,
-                                    bool requireEncryption, string peerId, string ipaddress, int port)
+                                  TorrentEvent clientEvent, byte[] infohash, bool requireEncryption,
+                                  string peerId, string ipaddress, int port)
         {
             this.bytesDownloaded = bytesDownloaded;
             this.bytesUploaded = bytesUploaded;
             this.bytesLeft = bytesLeft;
             this.clientEvent = clientEvent;
             this.infohash = infohash;
-            this.id = id;
             this.requireEncryption = requireEncryption;
             this.peerId = peerId;
             this.ipaddress = ipaddress;

@@ -5,6 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client;
 using System.Threading;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
@@ -46,10 +47,10 @@ namespace MonoTorrent.Tracker
             //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
-        int announceCount=0;
         [Test]
         public void MultipleAnnounce()
         {
+            int announceCount = 0;
             Random r = new Random();
             ManualResetEvent handle = new ManualResetEvent(false);
 
@@ -62,11 +63,11 @@ namespace MonoTorrent.Tracker
                     if (++announceCount == 20)
                         handle.Set();
                 };
-                MonoTorrent.Client.Tracker.AnnounceParameters parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0,
-                    MonoTorrent.Common.TorrentEvent.Started, infoHash,
-                    new MonoTorrent.Client.Tracker.TrackerConnectionID(tier.Trackers[0], false, MonoTorrent.Common.TorrentEvent.Started, null),
-                    false, new string('1', 20), "", 1411);
-                tier.Trackers[0].Announce(parameters);
+                TrackerConnectionID id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started, new ManualResetEvent(false));
+                MonoTorrent.Client.Tracker.AnnounceParameters parameters;
+                parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
+                                                                       infoHash, false, new string('1', 20), "", 1411);
+                tier.Trackers[0].Announce(parameters, id);
             }
 
             Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");

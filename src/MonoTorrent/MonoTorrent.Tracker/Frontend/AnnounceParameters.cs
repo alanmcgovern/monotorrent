@@ -47,6 +47,7 @@ namespace MonoTorrent.Tracker
         internal static readonly bool UseTrackerKey = false;
         private IPEndPoint clientAddress;
         private bool isValid;
+        byte[] infoHash;
 
         public IPEndPoint ClientAddress
         {
@@ -89,7 +90,7 @@ namespace MonoTorrent.Tracker
 
         public byte[] InfoHash
         {
-            get { return HttpUtility.UrlDecodeToBytes(Parameters["info_hash"]); }
+            get { return infoHash ?? (infoHash = HttpUtility.UrlDecodeToBytes(Parameters["info_hash"])); }
         }
 
         public string Key
@@ -151,14 +152,20 @@ namespace MonoTorrent.Tracker
 
         private void CheckMandatoryFields()
         {
+            isValid = false;
+
             List<string> keys = new List<string>(Parameters.AllKeys);
             foreach (string field in mandatoryFields)
             {
                 if (keys.Contains(field))
                     continue;
 
-                isValid = false;
                 Response.Add(FailureKey, (BEncodedString)("mandatory announce parameter " + field + " in query missing"));
+                return;
+            }
+            if (InfoHash.Length != 20)
+            {
+                Response.Add(FailureKey, (BEncodedString)(string.Format("infohash was {0} bytes long, it must be 20 bytes long.", infoHash.Length)));
                 return;
             }
             isValid = true;

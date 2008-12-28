@@ -723,13 +723,13 @@ namespace MonoTorrent.Client
                 // If the last connection succeeded, then update at the regular interval
                 if (this.trackerManager.UpdateSucceeded)
                 {
-                    if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(tracker.UpdateInterval)))
+                    if (DateTime.Now > (this.trackerManager.LastUpdated.Add(tracker.UpdateInterval)))
                     {
                         this.trackerManager.Announce(TorrentEvent.None);
                     }
                 }
                 // Otherwise update at the min interval
-                else if (DateTime.Now > (this.trackerManager.LastUpdated.AddSeconds(tracker.MinUpdateInterval)))
+                else if (DateTime.Now > (this.trackerManager.LastUpdated.Add(tracker.MinUpdateInterval)))
                 {
                     this.trackerManager.Announce(TorrentEvent.None);
                 }
