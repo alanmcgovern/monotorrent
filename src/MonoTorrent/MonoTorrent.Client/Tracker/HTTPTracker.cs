@@ -86,10 +86,12 @@ namespace MonoTorrent.Client.Tracker
                 string announceString = CreateAnnounceString(parameters);
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
                 request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
+                RaiseBeforeAnnounce();
                 BeginRequest(request, AnnounceReceived, new object[] { request, state });
             }
             catch (Exception ex)
             {
+                Status = TrackerState.Offline;
                 FailureMessage = ("Could not initiate announce request: " + ex.Message);
                 RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, false));
             }
@@ -118,13 +120,16 @@ namespace MonoTorrent.Client.Tracker
             {
                 BEncodedDictionary dict = DecodeResponse(request, result);
                 HandleAnnounce(dict, peers);
+                Status = TrackerState.Ok;
             }
             catch (WebException)
             {
+                Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
             }
             catch (BEncodingException)
             {
+                Status = TrackerState.InvalidResponse;
                 FailureMessage = "The tracker returned an invalid or incomplete response";
             }
             finally

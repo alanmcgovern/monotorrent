@@ -76,13 +76,9 @@ namespace MonoTorrent.Common
 
     public enum TrackerState
     {
-        Unknown,
-        Announcing,
-        AnnouncingFailed,
-        AnnounceSuccessful,
-        Scraping,
-        ScrapingFailed,
-        ScrapeSuccessful
+        Ok,
+        Offline,
+        InvalidResponse
     }
 
     public enum TorrentEvent
