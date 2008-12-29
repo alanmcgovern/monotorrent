@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
             bool cancelled = false;
             requests.ForEach(delegate(Piece p) {
                 for (int i = 0; i < p.Blocks.Length; i++) {
-                    if (predicate(p.Blocks[i])) {
+                    if (predicate(p.Blocks[i]) && !p.Blocks[i].Received) {
                         cancelled = true;
                         p.Blocks[i].CancelRequest();
                     }

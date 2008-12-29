@@ -297,6 +297,26 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void CompletePartialTest()
+        {
+            Piece piece;
+            peer.IsChoking = false;
+            peer.AmInterested = true;
+            peer.BitField.SetAll(true);
+            RequestMessage message = picker.PickPiece(peer, peers);
+            Assert.IsTrue(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece), "#1");
+            picker.CancelRequests(peer);
+            for (int i = 0; i < piece.BlockCount; i++)
+            {
+                message = picker.PickPiece(peer, peers);
+                Piece p;
+                Assert.IsTrue(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out p), "#2." + i);
+            }
+            Assert.IsTrue(piece.AllBlocksRequested, "#3");
+            Assert.IsTrue(piece.AllBlocksReceived, "#4");
+        }
+
+        [Test]
         public void DoesntHaveFastPiece()
         {
             peer.IsChoking = true;
