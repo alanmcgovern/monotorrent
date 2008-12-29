@@ -243,10 +243,10 @@ namespace MonoTorrent.Client
             IAsyncResult resultA = a.BeginHandshake(conn.Outgoing, null, null);
             IAsyncResult resultB = b.BeginHandshake(conn.Incoming, null, null);
 
-            int count = 4;
-            while (!resultA.AsyncWaitHandle.WaitOne(1000, true) || !resultB.AsyncWaitHandle.WaitOne(1000, true))
+            WaitHandle[] handles = new WaitHandle[] { resultA.AsyncWaitHandle, resultB.AsyncWaitHandle };
+            int count = 1000;
+            while (!WaitHandle.WaitAll(handles, 5, true))
             {
-                Console.WriteLine("Ticking");
                 if (!doneA && (doneA = resultA.IsCompleted))
                     a.EndHandshake(resultA);
                 if (!doneB && (doneB = resultB.IsCompleted))
