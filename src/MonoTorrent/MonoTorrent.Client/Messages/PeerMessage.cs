@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Messages
             CreateMessage creator;
 
             if (count < 4)
-                throw new ArgumentNullException("A message must contain a 4 byte length prefix");
+                throw new ArgumentException("A message must contain a 4 byte length prefix");
 
             int messageLength = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, offset));
 
