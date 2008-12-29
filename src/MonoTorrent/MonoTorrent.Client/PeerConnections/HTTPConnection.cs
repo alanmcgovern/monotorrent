@@ -41,6 +41,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Text.RegularExpressions;
 using System.Reflection;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Connections
 {
@@ -72,6 +73,8 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
+        private ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;
+        private int sendBufferCount;
         private HttpRequestData currentRequest;
         private Stream dataStream;
         private bool disposed;
@@ -210,15 +213,12 @@ namespace MonoTorrent.Client.Connections
 
             try
             {
-                List<PeerMessage> bundle = new List<PeerMessage>();
-                for (int i = offset; i < offset + count; )
+                List<PeerMessage> bundle = DecodeMessages(buffer, offset, count);
+                if (bundle == null)
                 {
-                    PeerMessage message = PeerMessage.DecodeMessage(buffer, i, count + offset - i, null);
-                    bundle.Add(message);
-                    i += message.ByteLength;
+                    sendResult.Complete(count);
                 }
-
-                if (bundle.TrueForAll(delegate(PeerMessage m) { return m is RequestMessage; }))
+                else if (bundle.TrueForAll(delegate(PeerMessage m) { return m is RequestMessage; }))
                 {
                     requestMessages.AddRange(bundle.ConvertAll<RequestMessage>(delegate(PeerMessage m) { return (RequestMessage)m; }));
                     // The RequestMessages are always sequential
@@ -241,6 +241,45 @@ namespace MonoTorrent.Client.Connections
             }
 
             return sendResult;
+        }
+
+        private List<PeerMessage> DecodeMessages(byte[] buffer, int offset, int count)
+        {
+            byte[] data = buffer;
+            int off = offset;
+            int c = count;
+
+            try
+            {
+                if (sendBuffer != BufferManager.EmptyBuffer)
+                {
+                    Buffer.BlockCopy(buffer, offset, sendBuffer.Array, sendBuffer.Offset + sendBufferCount, count);
+                    sendBufferCount += count;
+
+                    data = sendBuffer.Array;
+                    off = sendBuffer.Offset;
+                    c = sendBufferCount;
+                }
+                List<PeerMessage> messages = new List<PeerMessage>();
+                for (int i = off; i < off + c; )
+                {
+                    PeerMessage message = PeerMessage.DecodeMessage(buffer, i, c + off - i, null);
+                    messages.Add(message);
+                    i += message.ByteLength;
+                }
+                ClientEngine.BufferManager.FreeBuffer(ref sendBuffer);
+                return messages;
+            }
+            catch (Exception)
+            {
+                if (sendBuffer == BufferManager.EmptyBuffer)
+                {
+                    ClientEngine.BufferManager.GetBuffer(ref sendBuffer, 16 * 1024);
+                    Buffer.BlockCopy(buffer, offset, sendBuffer.Array, sendBuffer.Offset, count);
+                    sendBufferCount = count;
+                }
+                return null;
+            }
         }
 
         public int EndSend(IAsyncResult result)
