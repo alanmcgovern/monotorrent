@@ -73,6 +73,7 @@ namespace MonoTorrent.Client.Connections
 
         #region Member Variables
 
+        private TimeSpan connectionTimeout;
         private ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;
         private int sendBufferCount;
         private HttpRequestData currentRequest;
@@ -101,6 +102,12 @@ namespace MonoTorrent.Client.Connections
         public bool Connected
         {
             get { return true; }
+        }
+
+        internal TimeSpan ConnectionTimeout
+        {
+            get { return connectionTimeout; }
+            set { connectionTimeout = value; }
         }
 
         private HttpRequestData CurrentRequest
@@ -144,6 +151,7 @@ namespace MonoTorrent.Client.Connections
 
             this.uri = uri;
             
+            connectionTimeout = TimeSpan.FromSeconds(10);
             getResponseCallback = delegate(IAsyncResult r) {
                 ClientEngine.MainLoop.Queue(delegate { GotResponse(r); });
             };
@@ -228,7 +236,7 @@ namespace MonoTorrent.Client.Connections
 
                     KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
                     totalExpected = r.Value;
-                    r.Key.BeginGetResponse(getResponseCallback, r.Key);
+                    BeginGetResponse(r.Key, getResponseCallback, r.Key);
                 }
                 else
                 {
@@ -437,7 +445,7 @@ namespace MonoTorrent.Client.Connections
                 {
                     KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
                     totalExpected = r.Value;
-                    r.Key.BeginGetResponse(getResponseCallback, r.Key);
+                    BeginGetResponse(r.Key, getResponseCallback, r.Key);
                 }
                 return;
             }
@@ -468,6 +476,16 @@ namespace MonoTorrent.Client.Connections
             }
 
             dataStream.BeginRead(buffer, offset, count, receivedChunkCallback, null);
+        }
+
+        void BeginGetResponse(WebRequest request, AsyncCallback callback, object state)
+        {
+            IAsyncResult result = request.BeginGetResponse(callback, state);
+            ClientEngine.MainLoop.QueueTimeout(ConnectionTimeout, delegate {
+                if (!result.IsCompleted)
+                    request.Abort();
+                return false;
+            });
         }
 
         private void GotResponse(IAsyncResult result)

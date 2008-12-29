@@ -95,6 +95,7 @@ namespace MonoTorrent.Client
         [ExpectedException(typeof(WebException))]
         public void TestInactiveServer()
         {
+            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
             listener.Stop();
             RecieveFirst();
         }
