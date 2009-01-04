@@ -128,6 +128,14 @@ namespace MonoTorrent.Common
             BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
         }
 
+        [Test]
+        [ExpectedException(typeof(BEncodingException))]
+        public void corruptBenStringDecode2()
+        {
+            string s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
+            BEncodedValue.Decode(Encoding.ASCII.GetBytes(s));
+        }
+
         #endregion
 
 

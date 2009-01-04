@@ -155,7 +155,8 @@ namespace MonoTorrent.BEncoding
                 if (reader.ReadChar() != ':')                                           // remove the ':'
                     throw new BEncodingException("Invalid data found. Aborting");
 
-                letterCount = int.Parse(length);
+                if (!int.TryParse(length, out letterCount))
+                    throw new BEncodingException(string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
 
                 this.textBytes = new byte[letterCount];
                 if (reader.Read(textBytes, 0, letterCount) != letterCount)
