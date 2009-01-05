@@ -65,6 +65,11 @@ namespace MonoTorrent.Common
             get { return this.bitfield; }
         }
 
+        public long BytesDownloaded
+        {
+            get { return (long)(BitField.PercentComplete * Length / 100.0); }
+        }
+
         /// <summary>
         /// The ED2K hash of the file
         /// </summary>
