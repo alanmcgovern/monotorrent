@@ -90,6 +90,9 @@ namespace MonoTorrent.Client
 
         internal void OnTick()
         {
+            if (!id.TorrentManager.Settings.EnablePeerExchange)
+                return;
+
             int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
             byte[] added = new byte[len * 6];
             byte[] addedDotF = new byte[len];

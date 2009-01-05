@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         internal override void Handle(PeerId id)
         {
             // Ignore peer exchange messages on private torrents
-            if (id.TorrentManager.Torrent.IsPrivate)
+            if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
                 return;
 
             IList<Peer> peers = Peer.Decode((BEncodedString)peerDict[AddedKey]);

@@ -37,6 +37,13 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
+        public bool EnablePeerExchange
+        {
+            get { return enablePeerExchange; }
+            set { enablePeerExchange = value; }
+        }
+        private bool enablePeerExchange = true;
+
         public bool InitialSeedingEnabled
         {
             get { return this.initialSeedingEnabled; }
