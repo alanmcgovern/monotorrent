@@ -97,6 +97,15 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void benStringEncoding2()
+        {
+            byte[] data = System.Text.Encoding.UTF8.GetBytes("0:");
+
+            BEncodedString benString = new BEncodedString("");
+            Assert.IsTrue(Toolbox.ByteMatch(data, benString.Encode()));
+        }
+
+        [Test]
         public void benStringEncodingBuffered()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes("22:this is my test string");
@@ -159,7 +168,42 @@ namespace MonoTorrent.Common
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes("i12345e");
             BEncodedNumber number = 12345;
+            Assert.IsTrue(Toolbox.ByteMatch(data, number.Encode()));
+        }
 
+        [Test]
+        public void benNumberEncoding2()
+        {
+            byte[] data = System.Text.Encoding.UTF8.GetBytes("i0e");
+            BEncodedNumber number = 0;
+            Assert.AreEqual(3, number.LengthInBytes());
+            Assert.IsTrue(Toolbox.ByteMatch(data, number.Encode()));
+        }
+
+        [Test]
+        public void benNumberEncoding3()
+        {
+            byte[] data = System.Text.Encoding.UTF8.GetBytes("i1230e");
+            BEncodedNumber number = 1230;
+            Assert.AreEqual(6, number.LengthInBytes());
+            Assert.IsTrue(Toolbox.ByteMatch(data, number.Encode()));
+        }
+
+        [Test]
+        public void benNumberEncoding4()
+        {
+            byte[] data = System.Text.Encoding.UTF8.GetBytes("i-1230e");
+            BEncodedNumber number = -1230;
+            Assert.AreEqual(7, number.LengthInBytes());
+            Assert.IsTrue(Toolbox.ByteMatch(data, number.Encode()));
+        }
+
+        [Test]
+        public void benNumberEncoding5()
+        {
+            byte[] data = System.Text.Encoding.UTF8.GetBytes("i-123e");
+            BEncodedNumber number = -123;
+            Assert.AreEqual(6, number.LengthInBytes());
             Assert.IsTrue(Toolbox.ByteMatch(data, number.Encode()));
         }
 

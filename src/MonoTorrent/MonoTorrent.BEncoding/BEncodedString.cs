@@ -188,6 +188,9 @@ namespace MonoTorrent.BEncoding
             for (int i = textBytes.Length; i != 0; i = i/10)
                 prefix += 1;
 
+            if (textBytes.Length == 0)
+                prefix++;
+
             return prefix + textBytes.Length;
         }
 

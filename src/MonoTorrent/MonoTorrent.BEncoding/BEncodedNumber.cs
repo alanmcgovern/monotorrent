@@ -85,13 +85,36 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = 0;
-            buffer[offset + written] = (byte)'i';
-            written++;
-            written += System.Text.Encoding.UTF8.GetBytes(this.number.ToString(), 0, this.number.ToString().Length, buffer, offset + written);
-            buffer[offset + written] = (byte)'e';
-            written++;
-            return written;
+            long number = this.number;
+
+            int written = offset;
+            buffer[written++] = (byte)'i';
+            
+            if (number < 0)
+            {
+                buffer[written++] = (byte)'-';
+                number = -number;
+            }
+            // Reverse the number '12345' to get '54321'
+            long reversed = 0;
+            for (long i = number; i != 0; i /= 10)
+                reversed = reversed * 10 + i % 10;
+
+            // Write each digit of the reversed number to the array. We write '1'
+            // first, then '2', etc
+            for (long i = reversed; i != 0; i /= 10)
+                buffer[written++] = (byte)(i % 10 + '0');
+
+            if (number == 0)
+                buffer[written++] = (byte)'0';
+
+            // If the original number ends in one or more zeros, they are lost
+            // when we reverse the number. We add them back in here.
+            for (long i = number; i % 10 == 0 && number != 0; i /= 10)
+                buffer[written++] = (byte)'0';
+
+            buffer[written++] = (byte)'e';
+            return written - offset;
         }
 
 
@@ -104,20 +127,21 @@ namespace MonoTorrent.BEncoding
             if (reader == null)
                 throw new ArgumentNullException("reader");
 
-            StringBuilder sb;
             try
             {
-                sb = new StringBuilder(8);
                 if (reader.ReadByte() != 'i')              // remove the leading 'i'
                     throw new BEncodingException("Invalid data found. Aborting.");
 
-                while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
-                    sb.Append((char)reader.ReadByte());
-
+                int letter;
+                while (((letter = reader.PeekChar()) != -1) && letter != 'e')
+                {
+                    if(letter < '0' || letter > '9')
+                        throw new BEncodingException("Invalid number found.");
+                    number = number * 10 + (letter - '0');
+                    reader.ReadChar();
+                }
                 if (reader.ReadByte() != 'e')        //remove the trailing 'e'
                     throw new BEncodingException("Invalid data found. Aborting.");
-
-                this.number = long.Parse(sb.ToString());
             }
             catch (BEncodingException ex)
             {
@@ -138,7 +162,21 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes()
         {
-            return System.Text.Encoding.UTF8.GetByteCount('i' + this.number.ToString() + 'e');
+            long number = this.number;
+            int count = 2; // account for the 'i' and 'e'
+
+            if (number == 0)
+                return count + 1;
+
+            if (number < 0)
+            {
+                number = -number;
+                count++;
+            }
+            for (long i = number; i != 0; i /= 10)
+                count++;
+
+            return count;
         }
 
 
