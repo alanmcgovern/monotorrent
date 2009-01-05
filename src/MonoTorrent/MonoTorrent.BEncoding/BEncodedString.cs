@@ -162,13 +162,12 @@ namespace MonoTorrent.BEncoding
                 if (reader.Read(textBytes, 0, letterCount) != letterCount)
                     throw new BEncodingException("Couldn't decode string");
             }
-            catch (BEncodingException ex)
-            {
-                throw new BEncodingException("Couldn't decode string", ex);
-            }
             catch (Exception ex)
             {
-                throw new BEncodingException("Couldn't decode string", ex);
+                if (ex is BEncodingException)
+                    throw;
+                else
+                    throw new BEncodingException("Couldn't decode string", ex);
             }
         }
         #endregion
@@ -182,13 +181,19 @@ namespace MonoTorrent.BEncoding
 
         public override int LengthInBytes()
         {
-            string output = this.textBytes.Length.ToString() + ":";
-            return (output.Length + this.textBytes.Length);
+            // The length is equal to the length-prefix + ':' + length of data
+            int prefix = 1; // Account for ':'
+
+            // Count the number of characters needed for the length prefix
+            for (int i = textBytes.Length; i != 0; i = i/10)
+                prefix += 1;
+
+            return prefix + textBytes.Length;
         }
 
         public int CompareTo(object other)
         {
-            return CompareTo((BEncodedString)other);
+            return CompareTo(other as BEncodedString);
         }
 
 
