@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
 
         static Predicate<Block> TimedOut = delegate(Block b) { return b.RequestTimedOut; };
 
-        protected SortedPieces requests;
+        protected SortList<Piece> requests;
         private TimeSpan timeout;
 
         public StandardPicker()
@@ -115,7 +115,7 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            this.requests = new SortedPieces(requests);
+            this.requests = new SortList<Piece>(requests);
         }
 
         public override bool IsInteresting(BitField bitfield)
@@ -218,7 +218,7 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < p.BlockCount; i++)
                 {
-                    if (p.Blocks[i].Requested)
+                    if (p.Blocks[i].Requested || p.Blocks[i].Received)
                         continue;
 
                     p.Blocks[i].Requested = true;
@@ -243,12 +243,12 @@ namespace MonoTorrent.Client
             {
                 // If the peer who this piece is assigned to is dodgy or if the blocks are all request or
                 // the peer doesn't have this piece, we don't want to help download the piece.
-                if (p.AllBlocksRequested || !id.BitField[p.Index] ||
+                if (p.AllBlocksRequested || p.AllBlocksReceived || !id.BitField[p.Index] ||
                     (p.Blocks[0].RequestedOff != null && p.Blocks[0].RequestedOff.Peer.RepeatedHashFails != 0))
                     continue;
 
                 for (int i = 0; i < p.Blocks.Length; i++)
-                    if (!p.Blocks[i].Requested)
+                    if (!p.Blocks[i].Requested && !p.Blocks[i].Received)
                     {
                         p.Blocks[i].Requested = true;
                         return p.Blocks[i].CreateRequest(id);
