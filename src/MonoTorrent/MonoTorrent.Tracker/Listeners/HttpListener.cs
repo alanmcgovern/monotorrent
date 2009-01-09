@@ -111,7 +111,7 @@ namespace MonoTorrent.Tracker.Listeners
 			if (!Running)
 				return;
 			
-            listener.Stop();
+            listener.Close();
 			listener = null;
         }
 
