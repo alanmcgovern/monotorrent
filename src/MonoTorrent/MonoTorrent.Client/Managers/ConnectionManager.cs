@@ -170,8 +170,12 @@ namespace MonoTorrent.Client
         private void EndCreateConnection(bool succeeded, object state)
         {
             AsyncConnectState connect = (AsyncConnectState)state;
-            if(connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding)
+            if (connect.Manager.Engine == null || 
+                (connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding))
+            {
                 connect.Connection.Dispose();
+                return;
+            }
             
             try
             {
