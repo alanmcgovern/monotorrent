@@ -127,7 +127,7 @@ namespace MonoTorrent.Client.Tracker
                 Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
             }
-            catch (BEncodingException)
+            catch
             {
                 Status = TrackerState.InvalidResponse;
                 FailureMessage = "The tracker returned an invalid or incomplete response";
@@ -372,7 +372,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 message = "The tracker could not be contacted";
             }
-            catch (BEncodingException)
+            catch
             {
                 message = "The tracker returned an invalid or incomplete response";
             }
