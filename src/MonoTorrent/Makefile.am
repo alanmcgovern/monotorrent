@@ -82,13 +82,19 @@ FILES = \
 	MonoTorrent.Client/PeerConnections/IPV6Connection.cs \
 	MonoTorrent.Client/Piece.cs \
 	MonoTorrent.Client/PiecePicking/EndGamePicker.cs \
+	MonoTorrent.Client/PiecePicking/IgnoringPicker.cs \
+	MonoTorrent.Client/PiecePicking/LoggingPicker.cs \
 	MonoTorrent.Client/PiecePicking/PiecePickerBase.cs \
+	MonoTorrent.Client/PiecePicking/PiecePicker.cs \
+	MonoTorrent.Client/PiecePicking/PriorityPicker.cs \
+	MonoTorrent.Client/PiecePicking/RandomisedPicker.cs \
+	MonoTorrent.Client/PiecePicking/RarestFirstPicker.cs \
 	MonoTorrent.Client/PiecePicking/SlidingWindowPicker.cs \
+	MonoTorrent.Client/PiecePicking/SortedList.cs \
 	MonoTorrent.Client/PiecePicking/StandardPicker.cs \
 	MonoTorrent.Client/PieceWriter/NtfsSparseFile.cs \
 	MonoTorrent.Client/RateLimiter.cs \
 	MonoTorrent.Client/TorrentFileStream.cs \
-	MonoTorrent.Client/Tracker/ScrapeParameters.cs \
 	MonoTorrent.Client/TransferType.cs \
 	MonoTorrent.Client/ConnectionListeners/SocketListener.cs \
 	MonoTorrent.Client/Encryption/EncryptedSocket.cs \
@@ -163,7 +169,7 @@ FILES = \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ConnectMessage.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ConnectResponseMessage.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ErrorMessage.cs \
-	MonoTorrent.Client/Messages/UdpTrackerMessages/PeerDetailsMessage.cs \
+	MonoTorrent.Client/Messages/UdpTrackerMessages/MessageType.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeDetails.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeMessage.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeResponseMessage.cs \
@@ -184,8 +190,10 @@ FILES = \
 	MonoTorrent.Client/Settings/TorrentSettings.cs \
 	MonoTorrent.Client/Tracker/AnnounceParameters.cs \
 	MonoTorrent.Client/Tracker/HTTPTracker.cs \
-	MonoTorrent.Client/Tracker/Tracker.cs \
+	MonoTorrent.Client/Tracker/ITracker.cs \
+	MonoTorrent.Client/Tracker/ScrapeParameters.cs \
 	MonoTorrent.Client/Tracker/TrackerConnectionId.cs \
+	MonoTorrent.Client/Tracker/Tracker.cs \
 	MonoTorrent.Client/Tracker/TrackerFactory.cs \
 	MonoTorrent.Client/Tracker/TrackerTier.cs \
 	MonoTorrent.Client/Tracker/UdpTracker.cs \
