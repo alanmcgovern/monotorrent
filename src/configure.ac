@@ -3,6 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.54])
 AC_INIT([MonoTorrent], [0.7.0])
 AM_INIT_AUTOMAKE([foreign tar-pax])
+AM_MAINTAINER_MODE
 
 dnl pkg-config
 AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
@@ -48,14 +49,11 @@ dnl package checks, common for all configs
 
 dnl package checks, per config
 
-
 AC_CONFIG_FILES([
-Makefile
-MonoTorrent/Makefile
-MonoTorrent/monotorrent.pc
-
-])
-
-AC_OUTPUT([
+	Makefile
 	MonoTorrent/AssemblyInfo.cs
+	MonoTorrent/Makefile
+	MonoTorrent/monotorrent.pc
 ])
+
+AC_OUTPUT

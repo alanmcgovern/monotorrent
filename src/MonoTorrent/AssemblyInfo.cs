@@ -12,4 +12,3 @@ using System.IO;
 [assembly: AssemblyProduct("MonoTorrent Common Library")]
 [assembly: AssemblyTitle("MonoTorrent Common Library")]
 [assembly: AssemblyVersion("0.7.0")]
-//[assembly: CLSCompliant (true)] 
