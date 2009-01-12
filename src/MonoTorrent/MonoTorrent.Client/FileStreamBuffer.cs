@@ -37,11 +37,17 @@ namespace MonoTorrent.Client
             list.Add(stream);
         }
 
+        TorrentFileStream FindStream(string path)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (list[i].Path == path)
+                    return list[i];
+            return null;
+        }
+
         internal TorrentFileStream GetStream(TorrentFile file, string filePath, FileAccess access)
         {
-            TorrentFileStream s = list.Find(delegate(TorrentFileStream stream) {
-                return stream.Path == filePath;
-            });
+            TorrentFileStream s = FindStream(filePath);
 
             if (s != null)
             {
@@ -84,7 +90,7 @@ namespace MonoTorrent.Client
 
         internal bool CloseStream(string path)
         {
-            TorrentFileStream s = list.Find(delegate(TorrentFileStream stream) { return stream.Path == path; });
+            TorrentFileStream s = FindStream(path);
             if (s != null)
                 CloseAndRemove(s);
 
