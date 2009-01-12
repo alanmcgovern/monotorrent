@@ -85,7 +85,7 @@ namespace MonoTorrent.Client.Managers
             this.writeLimiter = new RateLimiter();
             this.writer = writer;
 
-            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
+            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
                 if (disposed)
                     return false;
 

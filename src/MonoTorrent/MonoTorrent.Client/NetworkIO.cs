@@ -99,7 +99,7 @@ namespace MonoTorrent.Client
 
         static NetworkIO()
         {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(50), delegate {
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
                 lock (sendQueue)
                 {
                     for (int i = 0; i < sendQueue.Count;)
