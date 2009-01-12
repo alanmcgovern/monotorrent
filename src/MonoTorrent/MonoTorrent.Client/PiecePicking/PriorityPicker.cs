@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
             public int CompareTo(Files other)
             {
-                return other.File.Priority.CompareTo(File.Priority);
+                return (int)other.File.Priority - (int)File.Priority;
             }
         }
 
