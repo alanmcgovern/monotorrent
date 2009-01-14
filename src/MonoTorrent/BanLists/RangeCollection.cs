@@ -2,9 +2,9 @@
 // RangeCollection.cs
 //
 // Author:
-//   Aaron Bockover <abockover@novell.com>
+//   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2007-2008 Novell, Inc.
+// Copyright (C) 2009 Alan McGovern.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -25,458 +25,200 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-#define NET_2_0
+
 
 using System;
-using System.Collections;
-
-#if NET_2_0
 using System.Collections.Generic;
-#endif
+using System.Text;
 
-#if NET_1_1
-namespace System.Collections
-#else
-namespace Hyena.Collections
-#endif
+namespace MonoTorrent.Client
 {
-    public struct Range
+    public struct RangeComparer : IComparer<AddressRange>
     {
-        public int Start;
-        public int End;
-
-        public Range(int start, int end)
+        public int Compare(AddressRange x, AddressRange y)
         {
-            Start = start;
-            End = end;
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0}-{1} ({2})", Start, End, Count);
-        }
-
-        public int Count
-        {
-            get { return End - Start + 1; }
+            return x.Start.CompareTo(y.Start);
         }
     }
 
-#if NET_1_1
-    internal
-#else
-    public
-#endif
-
-
- class RangeCollection :
-        ICloneable,
-#if NET_2_0
- ICollection<int>
-#else
-        ICollection
-#endif
+    public class RangeCollection
     {
-
-
-        private const int MIN_CAPACITY = 16;
-        private Range[] ranges;
-        private int range_count;
-        private int index_count;
-        private int generation;
-        private int[] indexes_cache;
-        private int indexes_cache_generation;
-
-        public RangeCollection()
-        {
-            Clear();
-        }
-
-        #region Private Array Logic
-
-        private void Shift(int start, int delta)
-        {
-            if (delta < 0)
-            {
-                start -= delta;
-            }
-
-            if (start < range_count)
-            {
-                Array.Copy(ranges, start, ranges, start + delta, range_count - start);
-            }
-
-            range_count += delta;
-        }
-
-        private void EnsureCapacity(int growBy)
-        {
-            int new_capacity = ranges.Length == 0 ? 1 : ranges.Length;
-            int min_capacity = ranges.Length == 0 ? MIN_CAPACITY : ranges.Length + growBy;
-
-            while (new_capacity < min_capacity)
-            {
-                new_capacity <<= 1;
-            }
-
-#if NET_2_0
-            Array.Resize(ref ranges, new_capacity);
-#else
-            Range [] new_ranges = new Range[new_capacity];
-            Array.Copy (ranges, 0, new_ranges, 0, ranges.Length);
-            ranges = new_ranges;
-#endif
-        }
-
-        private void Insert(int position, Range range)
-        {
-            if (range_count == ranges.Length)
-            {
-                EnsureCapacity(1);
-            }
-
-            Shift(position, 1);
-            ranges[position] = range;
-        }
-
-        private void RemoveAt(int position)
-        {
-            Shift(position, -1);
-            Array.Clear(ranges, range_count, 1);
-        }
-
-        #endregion
-
-        #region Private Range Logic
-
-        private bool RemoveIndexFromRange(int index)
-        {
-            int range_index = FindRangeIndexForValue(index);
-            if (range_index < 0)
-            {
-                return false;
-            }
-
-            Range range = ranges[range_index];
-            if (range.Start == index && range.End == index)
-            {
-                RemoveAt(range_index);
-            }
-            else if (range.Start == index)
-            {
-                ranges[range_index].Start++;
-            }
-            else if (range.End == index)
-            {
-                ranges[range_index].End--;
-            }
-            else
-            {
-                Range split_range = new Range(index + 1, range.End);
-                ranges[range_index].End = index - 1;
-                Insert(range_index + 1, split_range);
-            }
-
-            index_count--;
-            return true;
-        }
-
-        private void InsertRange(Range range)
-        {
-            int position = FindInsertionPosition(range);
-            bool merged_left = MergeLeft(range, position);
-            bool merged_right = MergeRight(range, position);
-
-            if (!merged_left && !merged_right)
-            {
-                Insert(position, range);
-            }
-            else if (merged_left && merged_right)
-            {
-                ranges[position - 1].End = ranges[position].End;
-                RemoveAt(position);
-            }
-        }
-
-        private bool MergeLeft(Range range, int position)
-        {
-            int left = position - 1;
-            if (left >= 0 && ranges[left].End + 1 == range.Start)
-            {
-                ranges[left].End = range.Start;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool MergeRight(Range range, int position)
-        {
-            if (position < range_count && ranges[position].Start - 1 == range.End)
-            {
-                ranges[position].Start = range.End;
-                return true;
-            }
-
-            return false;
-        }
-
-        private int CompareRanges(Range a, Range b)
-        {
-            return (a.Start + (a.End - a.Start)).CompareTo(b.Start + (b.End - b.Start));
-        }
-
-        private int FindInsertionPosition(Range range)
-        {
-            int min = 0;
-            int max = range_count - 1;
-
-            while (min <= max)
-            {
-                int mid = min + ((max - min) / 2);
-                int cmp = CompareRanges(ranges[mid], range);
-
-                if (cmp == 0)
-                {
-                    return mid;
-                }
-                else if (cmp > 0)
-                {
-                    if (mid > 0 && CompareRanges(ranges[mid - 1], range) < 0)
-                    {
-                        return mid;
-                    }
-
-                    max = mid - 1;
-                }
-                else
-                {
-                    min = mid + 1;
-                }
-            }
-
-            return min;
-        }
-
-        public int FindRangeIndexForValue(int value)
-        {
-            int min = 0;
-            int max = range_count - 1;
-
-            while (min <= max)
-            {
-                int mid = min + ((max - min) / 2);
-                Range range = ranges[mid];
-                if (value >= range.Start && value <= range.End)
-                {
-                    return mid;    // In Range
-                }
-                else if (value < range.Start)
-                {
-                    max = mid - 1; // Below Range
-                }
-                else
-                {
-                    min = mid + 1; // Above Range
-                }
-            }
-
-            return ~min;
-        }
-
-        #endregion
-
-        #region Public RangeCollection API
-
-        public Range[] Ranges
-        {
-            get
-            {
-                Range[] ranges_copy = new Range[range_count];
-                Array.Copy(ranges, ranges_copy, range_count);
-                return ranges_copy;
-            }
-        }
-
-        public int RangeCount
-        {
-            get { return range_count; }
-        }
-
-#if NET_2_0
-        [Obsolete("Do not use the Indexes property in 2.0 profiles if enumerating only; Indexes allocates an array to avoid boxing in the 1.1 profile")]
-#endif
-        public int[] Indexes
-        {
-            get
-            {
-                if (indexes_cache != null && generation == indexes_cache_generation)
-                {
-                    return indexes_cache;
-                }
-
-                indexes_cache = new int[Count];
-                indexes_cache_generation = generation;
-
-                for (int i = 0, j = 0; i < range_count; i++)
-                {
-                    for (int k = ranges[i].Start; k <= ranges[i].End; j++, k++)
-                    {
-                        indexes_cache[j] = k;
-                    }
-                }
-
-                return indexes_cache;
-            }
-        }
-
-        public int IndexOf(int value)
-        {
-            int offset = 0;
-
-            foreach (Range range in ranges)
-            {
-                if (value >= range.Start && value <= range.End)
-                {
-                    return offset + (value - range.Start);
-                }
-
-                offset += range.End - range.Start + 1;
-            }
-
-            return -1;
-        }
-
-        public int this[int index]
-        {
-            get
-            {
-                for (int i = 0, cuml_count = 0; i < range_count && index >= 0; i++)
-                {
-                    if (index < (cuml_count += ranges[i].Count))
-                    {
-                        return ranges[i].End - (cuml_count - index) + 1;
-                    }
-                }
-
-                throw new IndexOutOfRangeException(index.ToString());
-            }
-        }
-
-        #endregion
-
-        #region ICollection Implementation
-
-        public bool Add(int value)
-        {
-            if (!Contains(value))
-            {
-                generation++;
-                InsertRange(new Range(value, value));
-                index_count++;
-                return true;
-            }
-
-            return false;
-        }
-
-        void
-#if NET_2_0
- ICollection<int>.
-#else
-        ICollection.
-#endif
-Add(int value)
-        {
-            Add(value);
-        }
-
-        public bool Remove(int value)
-        {
-            generation++;
-            return RemoveIndexFromRange(value);
-        }
-
-        public void Clear()
-        {
-            range_count = 0;
-            index_count = 0;
-            generation++;
-            ranges = new Range[MIN_CAPACITY];
-        }
-
-        public bool Contains(int value)
-        {
-            return FindRangeIndexForValue(value) >= 0;
-        }
-
-        public void CopyTo(int[] array, int index)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CopyTo(Array array, int index)
-        {
-            throw new NotImplementedException();
-        }
+        List<AddressRange> ranges = new List<AddressRange>();
 
         public int Count
         {
-            get { return index_count; }
+            get { return ranges.Count; }
         }
 
-        public bool IsReadOnly
+        internal List<AddressRange> Ranges
         {
-            get { return false; }
+            get { return ranges; }
         }
 
-#if !NET_2_0        
-        public bool IsSynchronized {
-            get { return false; }
-        }
-        
-        public object SyncRoot {
-            get { return this; }
-        }
-#endif
-
-        #endregion
-
-        #region ICloneable Implementation
-
-        public object Clone()
+        public void Add(AddressRange item)
         {
-            return MemberwiseClone();
-        }
-
-        #endregion
-
-        #region IEnumerable Implementation
-
-#if NET_2_0
-        public IEnumerator<int> GetEnumerator()
-        {
-            for (int i = 0; i < range_count; i++)
+            int index;
+            if (ranges.Count == 0 || item.Start > ranges[ranges.Count - 1].Start)
             {
-                for (int j = ranges[i].Start; j <= ranges[i].End; j++)
+                index = ranges.Count;
+            }
+            else
+            {
+                index = ranges.BinarySearch(item, new RangeComparer());
+                if (index < 0)
+                    index = ~index;
+            }
+            bool mergedLeft = MergeLeft(item, index);
+            bool mergedRight = MergeRight(item, index);
+
+            if (mergedLeft || mergedRight)
+            {
+                if (index > 0)
+                    index--;
+
+                while ((index +1) < ranges.Count)
                 {
-                    yield return j;
+                    if (ranges[index].End > ranges[index + 1].Start || ranges[index].End + 1 == ranges[index + 1].Start)
+                    {
+                        ranges[index] = new AddressRange(ranges[index].Start, Math.Max(ranges[index].End, ranges[index + 1].End));
+                        ranges.RemoveAt(index + 1);
+                    }
+                    else
+                        break;
+                }
+            }
+            else
+            {
+                ranges.Insert(index, item);
+            }
+        }
+
+        public void AddRange(IEnumerable<MonoTorrent.Client.AddressRange> ranges)
+        {
+            List<AddressRange> list = new List<AddressRange>(ranges);
+            list.Sort(delegate(AddressRange x, AddressRange y) { return x.Start.CompareTo(y.Start); });
+
+            foreach (MonoTorrent.Client.AddressRange r in list)
+                Add(new AddressRange(r.Start, r.End));
+        }
+
+        bool MergeLeft(AddressRange range, int position)
+        {
+            if (position > 0)
+                position--;
+            if (ranges.Count > position && position >= 0)
+            {
+                AddressRange leftRange = ranges[position];
+                if (range.Start >= leftRange.Start && range.Start <= leftRange.End)
+                {
+                    ranges[position] = new AddressRange(leftRange.Start, Math.Max(leftRange.End, range.End));
+                    return true;
+                }
+                else if (leftRange.End + 1 == range.Start)
+                {
+                    ranges[position] = new AddressRange(leftRange.Start, range.End);
+                    return true;
+                }
+                else if (leftRange.Start - 1 == range.End)
+                {
+                    ranges[position] = new AddressRange(range.Start, leftRange.End);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool MergeRight(AddressRange range, int position)
+        {
+            if (position == ranges.Count)
+                position--;
+            if (position >= 0 && position < ranges.Count)
+            {
+                AddressRange rightRange = ranges[position];
+                if (range.End <= rightRange.End && range.End >= rightRange.Start)
+                {
+                    ranges[position] = new AddressRange(Math.Min(range.Start, rightRange.Start), rightRange.End);
+                    return true;
+                }
+                else if (range.Start <= rightRange.Start && range.End >= rightRange.Start)
+                {
+                    ranges[position] = range;
+                    return true;
+                }
+                else if (range.Start >= rightRange.Start && range.Start <= rightRange.End)
+                {
+                    ranges[position] = new AddressRange(rightRange.Start, Math.Max(range.End, rightRange.End));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal bool Contains(AddressRange range)
+        {
+            int index = ranges.BinarySearch(range);
+            if (index > 0)
+                return true;
+            index = ~index;
+            if (index >= ranges.Count)
+                return false;
+
+            AddressRange r = ranges[index];
+            return range.Start >= r.Start && range.Start <= r.End;
+        }
+
+        internal void Remove(AddressRange addressRange)
+        {
+            if (ranges.Count == 0)
+                return;
+
+            int index = ranges.BinarySearch(addressRange, new RangeComparer());
+            if (index < 0)
+            {
+                index = Math.Max((~index) - 1, 0);
+
+                AddressRange range = ranges[index];
+                if (addressRange.Start < range.Start || addressRange.Start > range.End)
+                    return;
+
+                if (addressRange.Start == range.Start)
+                {
+                    ranges[index] = new AddressRange(range.Start + 1, range.End);
+                }
+                else if (addressRange.End == range.End)
+                {
+                    ranges[index] = new AddressRange(range.Start, range.End - 1);
+                }
+                else
+                {
+                    ranges[index] = new AddressRange(range.Start, addressRange.Start - 1);
+                    ranges.Insert(index+1, new AddressRange(addressRange.Start + 1, range.End));
+                }
+            }
+            else
+            {
+                AddressRange range = ranges[index];
+                if (addressRange.Start >= range.Start && addressRange.End <= range.End)
+                {
+                    if (range.Start == range.End)
+                        ranges.RemoveAt(index);
+                    else
+                        ranges[index] = new AddressRange(range.Start + 1, range.End);
                 }
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        internal void Validate()
         {
-            return GetEnumerator();
+            for (int i = 1; i < ranges.Count; i++)
+            {
+                AddressRange left = ranges[i - 1];
+                AddressRange right = ranges[i];
+                if (left.Start > left.End)
+                    throw new Exception();
+                if (left.End >= right.Start)
+                    throw new Exception();
+            }
         }
-#else
-        public IEnumerator GetEnumerator ()
-        {
-            return Indexes.GetEnumerator ();
-        }
-#endif
-
-        #endregion
-
     }
 }

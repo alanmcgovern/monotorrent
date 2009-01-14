@@ -49,11 +49,16 @@ namespace MonoTorrent.Client
             Start = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(start.GetAddressBytes(), 0)));
             End = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(end.GetAddressBytes(), 0)));
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0},{1}", Start, End);
+        }
     }
 
     public class BanList
     {
-        Hyena.Collections.RangeCollection addresses = new Hyena.Collections.RangeCollection();
+        RangeCollection addresses = new RangeCollection();
 
         public void Add(IPAddress address)
         {
@@ -63,29 +68,24 @@ namespace MonoTorrent.Client
 
         public void Add(AddressRange addressRange)
         {
-            for (int i = addressRange.End; i > addressRange.Start; i--)
-                addresses.Add(i);
-            addresses.Add(addressRange.Start);
+            addresses.Add(addressRange);
         }
 
         public void AddRange(IEnumerable<AddressRange> addressRanges)
         {
             Check.AddressRanges(addressRanges);
-            foreach (AddressRange address in addressRanges)
-                Add(address);
+            addresses.AddRange(addressRanges);
         }
 
         public bool IsBanned(IPAddress address)
         {
             Check.Address(address);
-            AddressRange range = new AddressRange(address, address);
-            return addresses.Contains(range.Start);
+            return addresses.Contains(new AddressRange(address, address));
         }
 
-        private void Remove(AddressRange addressRange)
+        void Remove(AddressRange addressRange)
         {
-            for (int i = addressRange.Start; i <= addressRange.End; i++)
-                addresses.Remove(i);
+            addresses.Remove(addressRange);
         }
 
         public void Remove(IPAddress address)

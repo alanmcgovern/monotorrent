@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
             StreamReader reader = new StreamReader(stream);
             
             string result = null;
-            Regex r = new Regex(@"(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)");
+            Regex r = new Regex(@"([0-9]{1,3}\.){3,3}[0-9]{1,3}");
 
             while ((result = reader.ReadLine()) != null)
             {
