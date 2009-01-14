@@ -21,6 +21,7 @@ namespace MonoTorrent.Client.Managers
         private Queue<BufferedIO> bufferedWrites;
         private bool disposed;
         private ClientEngine engine;
+        private MainLoopTask LoopTask;
 
         private SpeedMonitor readMonitor;
         private SpeedMonitor writeMonitor;
@@ -85,9 +86,9 @@ namespace MonoTorrent.Client.Managers
             this.writeLimiter = new RateLimiter();
             this.writer = writer;
 
-            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
+            LoopTask = delegate {
                 if (disposed)
-                    return false;
+                    return;
 
                 while (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
                 {
@@ -106,8 +107,7 @@ namespace MonoTorrent.Client.Managers
                     Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
                     PerformRead(read);
                 }
-                return true;
-            });
+            };
 
             IOLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 if (disposed)
@@ -188,10 +188,6 @@ namespace MonoTorrent.Client.Managers
             if (data.WaitHandle != null)
                 data.WaitHandle.Set();
 
-            // Release the buffer back into the buffer manager.
-            //ClientEngine.BufferManager.FreeBuffer(ref bufferedFileIO.Buffer);
-#warning FIX THIS - don't free the buffer here anymore
-
             // If we haven't written all the pieces to disk, there's no point in hash checking
             if (!piece.AllBlocksWritten)
                 return;
@@ -252,7 +248,10 @@ namespace MonoTorrent.Client.Managers
                 PerformRead(io);
             else
                 lock (bufferLock)
+                {
                     bufferedReads.Enqueue(io);
+                    ClientEngine.MainLoop.Queue(LoopTask);
+                }
         }
 
         internal void QueueWrite(BufferedIO io)
@@ -261,7 +260,10 @@ namespace MonoTorrent.Client.Managers
                 PerformWrite(io);
             else
                 lock (bufferLock)
+                {
                     bufferedWrites.Enqueue(io);
+                    ClientEngine.MainLoop.Queue(LoopTask);
+                }
         }
 
         #endregion
