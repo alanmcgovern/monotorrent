@@ -250,7 +250,7 @@ namespace MonoTorrent.Client.Managers
                 lock (bufferLock)
                 {
                     bufferedReads.Enqueue(io);
-                    ClientEngine.MainLoop.Queue(LoopTask);
+                    DiskManager.IOLoop.Queue(LoopTask);
                 }
         }
 
@@ -262,7 +262,7 @@ namespace MonoTorrent.Client.Managers
                 lock (bufferLock)
                 {
                     bufferedWrites.Enqueue(io);
-                    ClientEngine.MainLoop.Queue(LoopTask);
+                    DiskManager.IOLoop.Queue(LoopTask);
                 }
         }
 
