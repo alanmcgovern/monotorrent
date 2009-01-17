@@ -349,8 +349,10 @@ namespace MonoTorrent.Client
             {
                 // If the connection is closed, just return
                 if (!succeeded)
+                {
+                    CleanupSocket(id, "Handshaking failed");
                     return;
-
+                }
                 // Decode the handshake and handle it
                 id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
                 msg = new HandshakeMessage();
@@ -380,7 +382,7 @@ namespace MonoTorrent.Client
                     msg = new BitfieldMessage(id.TorrentManager.Bitfield);
                 }
 
-                if (id.SupportsLTMessages)
+                if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
                 {
                     MessageBundle bundle = new MessageBundle();
                     bundle.Messages.Add(new ExtendedHandshakeMessage());
