@@ -267,7 +267,7 @@ namespace MonoTorrent.Client
             {
                 int index = pieces[i];
                 // A peer should only suggest a piece he has, but just in case.
-                if (index >= bitfield.Length || !bitfield[index])
+                if (index >= bitfield.Length || !bitfield[index] || AlreadyRequested(index))
                     continue;
 
                 pieces.RemoveAt(i);

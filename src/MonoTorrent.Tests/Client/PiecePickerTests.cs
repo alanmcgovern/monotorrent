@@ -476,5 +476,20 @@ namespace MonoTorrent.Client
             foreach (RequestMessage m in b.Messages)
                 Assert.IsTrue(m.PieceIndex >= 4 && m.PieceIndex < 6);
         }
+
+        [Test]
+        public void FastPieceTest()
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                peers[i].BitField.SetAll(true);
+                peers[i].SupportsFastPeer = true;
+                peers[i].IsAllowedFastPieces.Add(5);
+                peers[i].IsAllowedFastPieces.Add(6);
+            }
+            RequestMessage m1 = picker.PickPiece(peers[0], new List<PeerId>());
+            RequestMessage m2 = picker.PickPiece(peers[1], new List<PeerId>());
+            Assert.AreNotEqual(m1.PieceIndex, m2.PieceIndex, "#1");
+        }
     }
 }
