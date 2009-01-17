@@ -82,5 +82,60 @@ namespace MonoTorrent.Client
             Assert.AreEqual(2, ranges.Count, "#3");
             Assert.AreEqual(new AddressRange(102, 700), ranges[1], "#3b");
         }
+
+        [Test]
+        public void ContainsTest()
+        {
+            RangeCollection c = new RangeCollection();
+            c.Add(new AddressRange(1, 100));
+            c.Add(new AddressRange(-10, -1));
+            for (int i = -15; i < 120; i++)
+            {
+                bool shouldContain = (i >= -10 && i <= -1) || (i >= 1 && i <= 100);
+                Assert.AreEqual(shouldContain, c.Contains(new AddressRange(i, i)), "#1." + i);
+            }
+        }
+
+        [Test]
+        public void RemoveTest()
+        {
+            RangeCollection c = new RangeCollection();
+            c.Add(new AddressRange(0,100));
+            c.Remove(new AddressRange(50, 50));
+            Assert.AreEqual(2, c.Ranges.Count, "#1");
+            Assert.AreEqual(new AddressRange(0, 49), c.Ranges[0], "#2");
+            Assert.AreEqual(new AddressRange(51, 100), c.Ranges[1], "#3");
+
+            c.Remove(new AddressRange(50, 55));
+            Assert.AreEqual(2, c.Ranges.Count, "#4");
+            Assert.AreEqual(new AddressRange(0, 49), c.Ranges[0], "#5");
+            Assert.AreEqual(new AddressRange(56, 100), c.Ranges[1], "#6");
+
+            c.Remove(new AddressRange(45, 60));
+            Assert.AreEqual(2, c.Ranges.Count, "#7");
+            Assert.AreEqual(new AddressRange(0, 44), c.Ranges[0], "#8");
+            Assert.AreEqual(new AddressRange(61, 100), c.Ranges[1], "#9");
+
+            c.Remove(new AddressRange(45, 60));
+            Assert.AreEqual(2, c.Ranges.Count, "#10");
+            Assert.AreEqual(new AddressRange(0, 44), c.Ranges[0], "#11");
+            Assert.AreEqual(new AddressRange(61, 100), c.Ranges[1], "#12");
+
+            c.Remove(new AddressRange(-100, 5));
+            Assert.AreEqual(2, c.Ranges.Count, "#1");
+            Assert.AreEqual(new AddressRange(6, 44), c.Ranges[0], "#1");
+            Assert.AreEqual(new AddressRange(61, 100), c.Ranges[1], "#1");
+
+            c.Remove(new AddressRange(6, 15));
+            Assert.AreEqual(2, c.Ranges.Count, "#1");
+            Assert.AreEqual(new AddressRange(16, 44), c.Ranges[0], "#1");
+            Assert.AreEqual(new AddressRange(61, 100), c.Ranges[1], "#1");
+
+            c.Remove(new AddressRange(70, 80));
+            Assert.AreEqual(3, c.Ranges.Count, "#1");
+            Assert.AreEqual(new AddressRange(16, 44), c.Ranges[0], "#1");
+            Assert.AreEqual(new AddressRange(61,69), c.Ranges[1], "#1");
+            Assert.AreEqual(new AddressRange(81, 100), c.Ranges[2], "#1");
+        }
     }
 }
