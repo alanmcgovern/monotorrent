@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Constructors
         public HandshakeMessage()
-            : this(true)
+            : this(ClientEngine.SupportsFastPeer)
         {
 
         }
