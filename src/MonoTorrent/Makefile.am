@@ -205,7 +205,7 @@ FILES = \
 	MonoTorrent.Common/MonoTorrentCollectionBase.cs \
 	MonoTorrent.Common/PeerID.cs \
 	MonoTorrent.Common/SpeedMonitor.cs \
-	MonoTorrent.Common/TimerDispatcher/TimeoutDispatcher.cs \
+	MonoTorrent.Common/TimeoutDispatcher.cs \
 	MonoTorrent.Common/ToolBox.cs \
 	MonoTorrent.Common/Torrent.cs \
 	MonoTorrent.Common/TorrentCreator.cs \

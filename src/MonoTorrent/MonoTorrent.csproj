@@ -246,7 +246,7 @@
     <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs" />
     <Compile Include="MonoTorrent.Common\PeerID.cs" />
     <Compile Include="MonoTorrent.Common\SpeedMonitor.cs" />
-    <Compile Include="MonoTorrent.Common\TimerDispatcher\TimeoutDispatcher.cs" />
+    <Compile Include="MonoTorrent.Common\TimeoutDispatcher.cs" />
     <Compile Include="MonoTorrent.Common\ToolBox.cs" />
     <Compile Include="MonoTorrent.Common\Torrent.cs" />
     <Compile Include="MonoTorrent.Common\TorrentCreator.cs" />
