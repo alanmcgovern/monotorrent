@@ -182,7 +182,7 @@ namespace MonoTorrent.Client
 
         internal int CurrentRequestCount()
         {
-            return (int)ClientEngine.MainLoop.QueueWait(delegate { return Picker.CurrentRequestCount(); });
+            return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob) delegate { return Picker.CurrentRequestCount(); });
         }
     }
 }
