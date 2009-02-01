@@ -354,18 +354,12 @@ namespace MonoTorrent.Common
         /// <param name="list">The list containing the files available to download</param>
         private void LoadTorrentFiles(BEncodedList list)
         {
-            this.torrentFiles = new TorrentFile[list.Count];
-            int i = 0;
-            int j = 0;
-            int startIndex = 0;
-            int endIndex = 0;
+            List<TorrentFile> files = new List<TorrentFile>();
             long length;
             string path;
             byte[] md5sum;
             byte[] ed2k;
             byte[] sha1;
-            long totalSize = 0;
-
             StringBuilder sb = new StringBuilder(32);
 
             foreach (BEncodedDictionary dict in list)
@@ -424,14 +418,13 @@ namespace MonoTorrent.Common
                     }
                 }
 
-                startIndex = j;
-                totalSize += length;
-                endIndex = Math.Min(this.Pieces.Count - 1, (int)((totalSize + (pieceLength - 1)) / this.pieceLength));
-                j = endIndex;
-
-                this.torrentFiles[i++] = new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1);
-                this.size += length;
+                int startIndex = (int)(size / pieceLength);
+                size += length;
+                int endIndex = (int)(size / pieceLength);
+                files.Add(new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1));
             }
+
+            this.torrentFiles = files.ToArray();
         }
 
 
