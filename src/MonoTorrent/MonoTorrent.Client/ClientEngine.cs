@@ -275,8 +275,8 @@ namespace MonoTorrent.Client
 
             sb.Append(Common.VersionInfo.ClientVersion);
             lock (random)
-                for (int i = 0; i < 12; i++)
-                    sb.Append(random.Next(0, 9));
+				while (sb.Length < 20)
+					sb.Append (random.Next (0, 9));
 
             return sb.ToString();
         }
