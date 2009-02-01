@@ -178,6 +178,8 @@ namespace MonoTorrent.Client
         internal void Reset()
         {
             this.unhashedPieces.SetAll(false);
+            if (picker != null)
+                picker.Reset();
         }
 
         internal int CurrentRequestCount()
