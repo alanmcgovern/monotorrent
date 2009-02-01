@@ -14,7 +14,7 @@ namespace MonoTorrent.Tracker
     {
         public object GetKey(AnnounceParameters parameters)
         {
-            return parameters.ClientAddress.Address;
+            return parameters.ClientAddress;
         }
     }
 }
