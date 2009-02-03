@@ -164,7 +164,7 @@ namespace MonoTorrent.Client.Tracker
             sb.Append(parameters.BytesLeft);
             sb.Append("&compact=1");    // Always use compact response
             sb.Append("&numwant=");
-            sb.Append(parameters.BytesLeft == 0 ? 0 : 100);
+            sb.Append(100);
             if (!Uri.Query.Contains("key="))
             {
                 sb.Append("&key=");  // The 'key' protocol, used as a kind of 'password'. Must be the same between announces
