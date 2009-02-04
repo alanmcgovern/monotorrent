@@ -113,9 +113,7 @@ namespace MonoTorrent.Common
         public BitField Clone()
         {
             BitField b = new BitField(this.length);
-            for (int i = 0; i < this.array.Length; i++)
-                b.array[i] = this.array[i];
-
+            Buffer.BlockCopy(array, 0, b.array, 0, array.Length * 4);
             b.trueCount = trueCount;
             return b;
         }
@@ -185,7 +183,7 @@ namespace MonoTorrent.Common
         {
             BitField bf = obj as BitField;
 
-            if (bf == null || this.array.Length != bf.array.Length)
+            if (bf == null || this.array.Length != bf.array.Length || TrueCount != bf.TrueCount)
                 return false;
 
             for (int i = 0; i < this.array.Length; i++)
