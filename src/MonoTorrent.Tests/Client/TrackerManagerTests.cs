@@ -28,13 +28,13 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class TrackerManagerTests
     {
-        static void Main()
-        {
-            TrackerManagerTests t = new TrackerManagerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.ScrapeTest();
-        }
+        //static void Main()
+        //{
+        //    TrackerManagerTests t = new TrackerManagerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.ScrapeTest();
+        //}
         TestRig rig;
         List<List<CustomTracker>> trackers;
         TrackerManager trackerManager;
