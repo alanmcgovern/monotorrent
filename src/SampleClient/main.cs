@@ -77,7 +77,7 @@ namespace MonoTorrent
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
-            engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Loopback, port));
+            engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
             byte[] nodes = null;
             try
             {
@@ -218,6 +218,10 @@ namespace MonoTorrent
                         
                         foreach (PeerId p in manager.GetPeers())
                             AppendFormat(sb, "\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);
+                       
+                        AppendFormat(sb, "", null);
+                        foreach (TorrentFile file in manager.Torrent.Files)
+                            AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
                     Console.Clear();
                     Console.WriteLine(sb.ToString());
