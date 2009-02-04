@@ -433,7 +433,9 @@ namespace MonoTorrent.Common
         private void Validate()
         {
             // Zero the unused bits
-            array[array.Length - 1] &= ~(-1 << length % 32);
+            int shift = length % 32;
+            if (shift != 0)
+                array[array.Length - 1] &= ~(-1 << shift);
 
             // Update the population count
             trueCount = 0;
