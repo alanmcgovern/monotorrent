@@ -38,6 +38,12 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class BitFieldTest
     {
+        static void Main(string[] args)
+        {
+            BitFieldTest t = new BitFieldTest();
+            t.SetUp();
+            t.From();
+        }
         BitField bf;
         bool[] initalValues;
         byte[] initialByteValues;
@@ -208,6 +214,25 @@ namespace MonoTorrent.Common
                     count++;
 
             Assert.AreEqual(count, bf.TrueCount, "#3");
+        }
+
+        [Test]
+        public void From()
+        {
+            BitField b = new BitField(31);
+            b.SetAll(true);
+            Assert.AreEqual(31, b.TrueCount, "#1");
+            Assert.IsTrue(b.AllTrue, "#1b");
+
+            b = new BitField(32);
+            b.SetAll(true);
+            Assert.AreEqual(32, b.TrueCount, "#2");
+            Assert.IsTrue(b.AllTrue, "#2b");
+
+            b = new BitField(33);
+            b.SetAll(true);
+            Assert.AreEqual(33, b.TrueCount, "#3");
+            Assert.IsTrue(b.AllTrue, "#3b");
         }
     }
 }
