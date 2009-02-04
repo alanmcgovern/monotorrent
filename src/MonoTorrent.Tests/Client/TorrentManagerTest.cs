@@ -166,7 +166,7 @@ namespace MonoTorrent.Client
             handle.WaitOne();
             Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
             Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
-            Assert.IsTrue(rig.Manager.Stop().WaitOne(100), "Didn't stop");
+            Assert.IsTrue(rig.Manager.Stop().WaitOne(100, true), "Didn't stop");
             Assert.AreEqual(TorrentState.Stopped, rig.Manager.State, "#5");
             Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }
