@@ -214,8 +214,6 @@ namespace MonoTorrent.Client
             // This means we created the listener in the constructor
             if (listener.Endpoint.Port == 0)
                 listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
-
-            listener.Start();
         }
 
         #endregion
@@ -429,6 +427,8 @@ namespace MonoTorrent.Client
         {
             CheckDisposed();
             isRunning = true;
+            if (listener.Status == ListenerStatus.NotListening)
+                listener.Start();
         }
 
 
@@ -437,6 +437,8 @@ namespace MonoTorrent.Client
             CheckDisposed();
             // If all the torrents are stopped, stop ticking
             isRunning = torrents.Exists(delegate(TorrentManager m) { return m.State != TorrentState.Stopped; });
+            if (!isRunning)
+                listener.Stop();
         }
 
         #endregion
