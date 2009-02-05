@@ -159,12 +159,18 @@ namespace MonoTorrent.Client.Messages
 
         static public int Write(byte[] buffer, int offset, short value)
         {
-            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
+            offset += Write(buffer, offset, (byte)(value >> 8));
+            offset += Write(buffer, offset, (byte)value);
+            return 2;
         }
 
         static public int Write(byte[] buffer, int offset, int value)
         {
-            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
+            offset += Write(buffer, offset, (byte)(value >> 24));
+            offset += Write(buffer, offset, (byte)(value >> 16));
+            offset += Write(buffer, offset, (byte)(value >> 8));
+            offset += Write(buffer, offset, (byte)(value));
+            return 4;
         }
 
         static public int Write(byte[] buffer, int offset, uint value)
@@ -174,7 +180,9 @@ namespace MonoTorrent.Client.Messages
 
         static public int Write(byte[] buffer, int offset, long value)
         {
-            return Write(buffer, offset, BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)));
+            offset += Write(buffer, offset, (int)(value >> 32));
+            offset += Write(buffer, offset, (int)value);
+            return 8;
         }
 
         static public int Write(byte[] buffer, int offset, ulong value)
