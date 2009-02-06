@@ -63,12 +63,32 @@ namespace MonoTorrent.Client
 
     internal static class NetworkIO
     {
+        static Queue<AsyncIO> buffer = new Queue<AsyncIO>();
+
+        static AsyncIO Dequeue(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        {
+            lock (NetworkIO.buffer)
+            {
+                if (NetworkIO.buffer.Count == 0)
+                    return new AsyncIO().From(connection, buffer, offset, total, callback, state, limiter, managerMonitor, peerMonitor);
+                else
+                    return NetworkIO.buffer.Dequeue().From(connection, buffer, offset, total, callback, state, limiter, managerMonitor, peerMonitor);
+            } 
+        }
+        static void Enqueue(AsyncIO io)
+        {
+            lock (buffer)
+                buffer.Enqueue(io);
+        }
+
+
+
         private static MonoTorrentCollection<AsyncIO> receiveQueue = new MonoTorrentCollection<AsyncIO>();
         private static MonoTorrentCollection<AsyncIO> sendQueue = new MonoTorrentCollection<AsyncIO>();
 
         private class AsyncIO
         {
-            public AsyncIO(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+            public AsyncIO From(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
             {
                 Connection = connection;
                 Buffer = buffer;
@@ -80,6 +100,7 @@ namespace MonoTorrent.Client
                 RateLimiter = limiter;
                 State = state;
                 Total = total;
+                return this;
             }
 
             public byte[] Buffer;
@@ -183,6 +204,7 @@ namespace MonoTorrent.Client
                 // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
+            Enqueue(io);
             io.Callback(io.Count == io.Total, io.Count, io.State);
         }
 
@@ -210,6 +232,7 @@ namespace MonoTorrent.Client
                 // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
+            Enqueue(io);
             io.Callback(io.Count == io.Total, io.Count, io.State);
         }
 
@@ -248,7 +271,7 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
+            AsyncIO io = Dequeue(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueReceive(io);
         }
 
@@ -297,7 +320,7 @@ namespace MonoTorrent.Client
 
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
-            AsyncIO io = new AsyncIO(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
+            AsyncIO io = Dequeue(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueSend(io);
         }
 
