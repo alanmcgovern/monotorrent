@@ -125,13 +125,7 @@ namespace MonoTorrent.Client
 
             this.files.Clear();
             for (int i = 0; i < files.Length; i++)
-            {
-                BitField b = new BitField(bitfield.Length);
-                for (int j = files[i].StartPieceIndex; j <= files[i].EndPieceIndex; j++)
-                    b[j] = true;
-
-                this.files.Add(new Files(files[i], b));
-            }
+                this.files.Add(new Files(files[i], files[i].GetSelector(bitfield.Length)));
         }
 
         public override bool IsInteresting(BitField bitfield)

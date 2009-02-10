@@ -43,6 +43,7 @@ namespace MonoTorrent.Common
         #region Private Fields
 
         private BitField bitfield;
+        private BitField selector;
         private byte[] ed2k;
         private int endPiece;
         private long length;
@@ -184,6 +185,17 @@ namespace MonoTorrent.Common
         public override int GetHashCode()
         {
             return path.GetHashCode();
+        }
+
+        internal BitField GetSelector(int totalPieces)
+        {
+            if (selector != null)
+                return selector;
+
+            selector = new BitField(totalPieces);
+            for (int i = StartPieceIndex; i <= EndPieceIndex; i++)
+                selector[i] = true;
+            return selector;
         }
 
         public override string ToString()
