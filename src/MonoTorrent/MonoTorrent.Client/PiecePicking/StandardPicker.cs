@@ -271,7 +271,7 @@ namespace MonoTorrent.Client
                     continue;
 
                 pieces.RemoveAt(i);
-                Piece p = new Piece(index, id.TorrentManager.Torrent);
+                Piece p = new Piece(index, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
                 this.requests.Add(p);
                 p.Blocks[0].Requested = true;
                 return p.Blocks[0].CreateRequest(id);
@@ -296,7 +296,7 @@ namespace MonoTorrent.Client
             for (int i = 0; bundle.Messages.Count < count && i < piecesNeeded; i++)
             {
                 // Request the piece
-                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent);
+                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
                 requests.Add(p);
 
                 for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)

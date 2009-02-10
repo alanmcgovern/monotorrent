@@ -112,30 +112,31 @@ namespace MonoTorrent.Client
 
         #region Constructors
 
-        internal Piece(int pieceIndex, Torrent torrent)
+        internal Piece(int pieceIndex, int pieceLength, long torrentSize)
         {
             this.index = pieceIndex;
 
-            if (pieceIndex == torrent.Pieces.Count - 1)      // Request last piece. Special logic needed
-                LastPiece(pieceIndex, torrent);
+            // Request last piece. Special logic needed
+            if ((torrentSize - (long)pieceIndex *pieceLength) < pieceLength)      
+                LastPiece(pieceIndex, pieceLength, torrentSize);
 
             else
             {
-                int numberOfPieces = (int)Math.Ceiling(((double)torrent.PieceLength / BlockSize));
+                int numberOfPieces = (int)Math.Ceiling(((double)pieceLength / BlockSize));
 
                 blocks = new Block[numberOfPieces];
 
                 for (int i = 0; i < numberOfPieces; i++)
                     blocks[i] = new Block(this, i * BlockSize, BlockSize);
 
-                if ((torrent.PieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
-                    blocks[blocks.Length - 1] = new Block(this, blocks[blocks.Length - 1].StartOffset, (int)(torrent.PieceLength - blocks[blocks.Length - 1].StartOffset));
+                if ((pieceLength % BlockSize) != 0)     // I don't think this would ever happen. But just in case
+                    blocks[blocks.Length - 1] = new Block(this, blocks[blocks.Length - 1].StartOffset, pieceLength - blocks[blocks.Length - 1].StartOffset);
             }
         }
 
-        private void LastPiece(int pieceIndex, Torrent torrent)
+        private void LastPiece(int pieceIndex, int pieceLength, long torrentSize)
         {
-            int bytesRemaining = Convert.ToInt32(torrent.Size - ((long)torrent.Pieces.Count - 1) * torrent.PieceLength);
+            int bytesRemaining = (int)(torrentSize - ((long)pieceIndex * pieceLength));
             int numberOfBlocks = bytesRemaining / BlockSize;
             if (bytesRemaining % BlockSize != 0)
                 numberOfBlocks++;
