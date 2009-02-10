@@ -121,6 +121,9 @@ namespace MonoTorrent.Client
 
             Assert.AreEqual(1, id.AmRequestingPiecesCount, "#1");
             Assert.AreEqual(1, other.AmRequestingPiecesCount, "#1");
+            Assert.IsTrue(pieces[0][0].Received, "#5");
+            Assert.AreEqual(16, pieces[0].TotalRequested, "#6");
+            Assert.AreEqual(15, pieces[0].TotalReceived, "#7");
         }
     }
 }

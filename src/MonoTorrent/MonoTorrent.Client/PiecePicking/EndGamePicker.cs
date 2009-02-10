@@ -83,13 +83,9 @@ namespace MonoTorrent.Client
         {
             List<Request> removeList = new List<Request>();
             for (int i = 0; i < requests.Count; i++)
-                if (predicate(requests[i])) {
-                    requests[i].Block.CancelRequest();
-                    removeList.Add(requests[i]);
-                }
-
-            foreach (Request r in removeList)
-                requests.Remove(r);
+                if (predicate(requests[i]))
+                    requests[i].Peer.AmRequestingPiecesCount--;
+            requests.RemoveAll(predicate);
         }
 
         public override void CancelTimedOutRequests()
