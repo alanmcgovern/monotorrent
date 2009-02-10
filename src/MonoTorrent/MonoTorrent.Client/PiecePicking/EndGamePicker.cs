@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
 
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
-        struct Request
+        class Request
         {
             public Request(PeerId peer, Block block)
             {
@@ -81,11 +81,15 @@ namespace MonoTorrent.Client
         // Cancels a pending request when the predicate returns 'true'
         void CancelWhere(Predicate<Request> predicate)
         {
+            List<Request> removeList = new List<Request>();
             for (int i = 0; i < requests.Count; i++)
-                if (predicate(requests[i]))
+                if (predicate(requests[i])) {
                     requests[i].Block.CancelRequest();
+                    removeList.Add(requests[i]);
+                }
 
-            requests.RemoveAll(NotRequested);
+            foreach (Request r in removeList)
+                requests.Remove(r);
         }
 
         public override void CancelTimedOutRequests()
@@ -143,7 +147,7 @@ namespace MonoTorrent.Client
             //    of the list to the end. So when we add a duplicate request, move both requests to the end of the list
             for (int i = 0; i < requests.Count; i++)
             {
-                if (!peerBitfield[requests[i].Block.PieceIndex] || requests[i].Peer == id)
+                if (!peerBitfield[requests[i].Block.PieceIndex] || AlreadyRequested(requests[i], id))
                     continue;
                 Request r = new Request(id, requests[i].Block);
                 requests.Add(requests[0]);
@@ -153,6 +157,16 @@ namespace MonoTorrent.Client
             }
 
             return null;
+        }
+
+        private bool AlreadyRequested(Request request, PeerId id)
+        {
+            bool b = requests.Exists(delegate(Request r) {
+                return r.Block.PieceIndex == request.Block.PieceIndex &&
+                       r.Block.StartOffset == request.Block.StartOffset &&
+                       r.Peer == id;
+            });
+            return b;
         }
 
         public override void Reset()
@@ -194,8 +208,8 @@ namespace MonoTorrent.Client
                     CancelWhere(delegate(Request req) {
                         return req.Block.PieceIndex == pieceIndex &&
                                req.Block.StartOffset == startOffset &&
-                               r.Block.RequestLength == length &&
-                               r.Peer != peer;
+                               req.Block.RequestLength == length &&
+                               req.Peer != peer;
                     });
 
                     // Mark the block as received
@@ -208,6 +222,7 @@ namespace MonoTorrent.Client
                         pieces.Remove(p);
 
                     piece = p;
+                    peer.AmRequestingPiecesCount--;
                     return true;
                 }
             }
