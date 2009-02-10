@@ -38,12 +38,6 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class BitFieldTest
     {
-        static void Main(string[] args)
-        {
-            BitFieldTest t = new BitFieldTest();
-            t.SetUp();
-            t.From();
-        }
         BitField bf;
         bool[] initalValues;
         byte[] initialByteValues;

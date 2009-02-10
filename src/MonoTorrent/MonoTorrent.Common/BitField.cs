@@ -337,7 +337,7 @@ namespace MonoTorrent.Common
             get { return (this.length + 7) / 8; }      //8 bits in a byte.
         }
 
-        void Set(int index, bool value)
+        public BitField Set(int index, bool value)
         {
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
@@ -354,6 +354,8 @@ namespace MonoTorrent.Common
                     trueCount--;                                        // Decrease true count
                 this.array[index >> 5] &= ~(1 << (index & 31));
             }
+
+            return this;
         }
 
         internal BitField SetAll(bool value)
