@@ -348,7 +348,11 @@ namespace MonoTorrent.Client
             this.settings = settings;
 			this.inactivePeerManager = new InactivePeerManager(this);
             this.peers = new PeerManager();
-            PiecePicker picker = new StandardPicker();
+            PiecePicker picker;
+            if (ClientEngine.EnableEndgameMode)
+                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.PieceLength / Piece.BlockSize);
+            else
+                picker = new StandardPicker();
             picker = new RandomisedPicker(picker);
             picker = new RarestFirstPicker(picker);
             picker = new PriorityPicker(picker);

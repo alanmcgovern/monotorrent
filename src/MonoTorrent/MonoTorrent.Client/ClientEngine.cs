@@ -51,6 +51,8 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
+        public static bool EnableEndgameMode = false;
+
         internal static MainLoop MainLoop = new MainLoop("Client Engine Loop");
         private static Random random = new Random();
         #region Global Constants
