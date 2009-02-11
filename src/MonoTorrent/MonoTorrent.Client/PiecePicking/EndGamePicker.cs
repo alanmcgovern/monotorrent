@@ -79,18 +79,25 @@ namespace MonoTorrent.Client
         }
 
         // Cancels a pending request when the predicate returns 'true'
-        void CancelWhere(Predicate<Request> predicate)
+        void CancelWhere(Predicate<Request> predicate, bool sendCancel)
         {
             List<Request> removeList = new List<Request>();
             for (int i = 0; i < requests.Count; i++)
-                if (predicate(requests[i]))
-                    requests[i].Peer.AmRequestingPiecesCount--;
+            {
+                Request r = requests[i];
+                if (predicate(r))
+                {
+                    r.Peer.AmRequestingPiecesCount--;
+                    if (sendCancel)
+                        r.Peer.Enqueue(new CancelMessage(r.Block.PieceIndex, r.Block.StartOffset, r.Block.RequestLength));
+                }
+            }
             requests.RemoveAll(predicate);
         }
 
         public override void CancelTimedOutRequests()
         {
-            CancelWhere(TimedOut);
+            CancelWhere(TimedOut, false);
         }
 
         public override int CurrentRequestCount()
@@ -178,12 +185,12 @@ namespace MonoTorrent.Client
                        r.Block.StartOffset == startOffset &&
                        r.Block.RequestLength == length &&
                        peer.Equals(r.Peer);
-            });
+            }, false);
         }
 
         public override void CancelRequests(PeerId peer)
         {
-            CancelWhere(delegate(Request r) { return r.Peer == peer; });
+            CancelWhere(delegate(Request r) { return r.Peer == peer; }, false);
         }
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
@@ -194,8 +201,7 @@ namespace MonoTorrent.Client
                 if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset || r.Block.RequestLength != length || r.Peer != peer)
                     continue;
 
-                // All the other requests for this block need to be cancelled. NOTE: Currently
-                // we don't send a Cancel message. We need to.
+                // All the other requests for this block need to be cancelled.
                 foreach (Piece p in pieces)
                 {
                     if (p.Index != pieceIndex)
@@ -206,7 +212,7 @@ namespace MonoTorrent.Client
                                req.Block.StartOffset == startOffset &&
                                req.Block.RequestLength == length &&
                                req.Peer != peer;
-                    });
+                    }, true);
 
                     // Mark the block as received
                     p.Blocks[startOffset / Piece.BlockSize].Received = true;
