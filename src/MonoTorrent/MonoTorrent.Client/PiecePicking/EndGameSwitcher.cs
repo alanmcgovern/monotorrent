@@ -42,14 +42,14 @@ namespace MonoTorrent.Client
         BitField bitfield;
         int blocksPerPiece;
         bool inEndgame;
-        EndGamePicker endgame;
+        PiecePicker endgame;
         BitField endgameSelector;
         TorrentFile[] files;
-        StandardPicker standard;
+        PiecePicker standard;
 
         PiecePicker ActivePicker
         {
-            get { return inEndgame ? (PiecePicker)endgame : standard; }
+            get { return inEndgame ? endgame : standard; }
         }
 
         public EndGameSwitcher(StandardPicker standard, EndGamePicker endgame, int blocksPerPiece)
