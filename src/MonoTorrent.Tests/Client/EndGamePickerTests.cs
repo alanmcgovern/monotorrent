@@ -125,5 +125,24 @@ namespace MonoTorrent.Client
             Assert.AreEqual(16, pieces[0].TotalRequested, "#6");
             Assert.AreEqual(15, pieces[0].TotalReceived, "#7");
         }
+
+        [Test]
+        public void HashFail()
+        {
+            Piece piece;
+            RequestMessage m;
+            List<RequestMessage> requests = new List<RequestMessage>();
+
+            id.BitField.SetAll(false).Set(0, true);
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+
+            while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
+                requests.Add(m);
+
+            foreach (RequestMessage message in requests)
+                Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
+
+            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+        }
     }
 }

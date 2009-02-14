@@ -129,6 +129,8 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
+            LoadPieces(id, peerBitfield);
+
             // 1) See if there are any blocks which have not been requested. Request the block if the peer has it
             foreach (Piece p in pieces)
             {
@@ -160,6 +162,14 @@ namespace MonoTorrent.Client
             }
 
             return null;
+        }
+
+        void LoadPieces(PeerId id, BitField b)
+        {
+            int length = b.Length;
+            for (int i = b.FirstTrue(0, length); i != -1; i = b.FirstTrue(i + 1, length))
+                if (!pieces.Exists(delegate(Piece p) { return p.Index == i; }))
+                    pieces.Add(new Piece(i, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size));
         }
 
         private bool AlreadyRequested(Request request, PeerId id)
@@ -223,6 +233,7 @@ namespace MonoTorrent.Client
                     if (p.AllBlocksReceived)
                         pieces.Remove(p);
 
+                    requests.Remove(r);
                     piece = p;
                     peer.AmRequestingPiecesCount--;
                     return true;
