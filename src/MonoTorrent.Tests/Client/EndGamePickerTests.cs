@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         {
             RequestMessage m;
             other.IsChoking = false;
-            other.BitField.SetAll(true);
+            other.BitField.From(bitfield).Not();
 
             picker.Initialise(bitfield, rig.Torrent.Files, pieces);
 
@@ -79,10 +79,10 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(other, new List<PeerId>())) != null)
                 requests.Add(m);
 
-            Assert.AreEqual(requests.Count, rig.BlocksPerPiece * pieces.Count, "#1");
+            Assert.AreEqual(rig.BlocksPerPiece * pieces.Count, requests.Count, "#1");
 
             id.IsChoking = false;
-            id.BitField.SetAll(true);
+            id.BitField.From(bitfield).Not();
             List<RequestMessage> requests2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
                 requests2.Add(m);
@@ -96,7 +96,9 @@ namespace MonoTorrent.Client
         [Test]
         public void MultiPick2()
         {
-            pieces.RemoveRange(1, pieces.Count - 1);
+            id.BitField.SetAll(false).Set(pieces[0].Index, true);
+            other.BitField.SetAll(false).Set(pieces[0].Index, true);
+
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
                 pieces[0].Blocks[i].Requested = true;
