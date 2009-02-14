@@ -223,5 +223,15 @@ namespace MonoTorrent.Client
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
             Assert.AreEqual(0, tester.PickPieceBitfield.Count, "#1");
         }
+
+        [Test]
+        public void IsInteresting()
+        {
+            foreach (TorrentFile file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            rig.Torrent.Files[1].Priority = Priority.High;
+            id.BitField.SetAll(false).Set(0, true);
+            Assert.IsTrue(picker.IsInteresting(id.BitField));
+        }
     }
 }

@@ -131,17 +131,18 @@ namespace MonoTorrent.Client
         public override bool IsInteresting(BitField bitfield)
         {
             files.Sort();
-            temp.SetAll(true);
+            temp.SetAll(false);
 
             // OR all the files together which we want to download
             for (int i = 0; i < files.Count; i++)
-                if (files[i].File.Priority == Priority.DoNotDownload)
-                    temp.Xor(files[i].Selector);
-            
-            if (temp.AllTrue)
-                return base.IsInteresting(bitfield);
-            else
-                return base.IsInteresting(temp.And(bitfield));
+                if (files[i].File.Priority != Priority.DoNotDownload)
+                    temp.Or(files[i].Selector);
+
+            temp.And(bitfield);
+            if (temp.AllFalse)
+                return false;
+
+            return base.IsInteresting(bitfield);
         }
     }
 }
