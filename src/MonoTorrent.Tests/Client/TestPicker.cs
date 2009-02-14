@@ -38,6 +38,7 @@ namespace MonoTorrent.Client
 {
     class TestPicker : PiecePicker
     {
+        public List<BitField> IsInterestingBitfield = new List<BitField>();
         public List<PeerId> PickPieceId = new List<PeerId>();
         public List<BitField> PickPieceBitfield = new List<BitField>();
         public List<List<PeerId>> PickPiecePeers = new List<List<PeerId>>();
@@ -80,6 +81,12 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             
+        }
+
+        public override bool IsInteresting(BitField bitfield)
+        {
+            IsInterestingBitfield.Add(bitfield);
+            return !bitfield.AllFalse;
         }
     }
 }
