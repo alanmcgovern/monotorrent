@@ -63,6 +63,7 @@ namespace MonoTorrent.Client
         public StandardPicker()
             : base(null)
         {
+            requests = new SortList<Piece>();
             timeout = DefaultTimeout;
         }
 
@@ -115,7 +116,9 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            this.requests = new SortList<Piece>(requests);
+            this.requests.Clear();
+            foreach (Piece p in requests)
+                this.requests.Add(p);
         }
 
         public override bool IsInteresting(BitField bitfield)
