@@ -34,6 +34,7 @@ using System.Net;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client
 {
@@ -261,6 +262,14 @@ namespace MonoTorrent.Client
                 list.Add(new Peer("", uri, EncryptionTypes.All));
             }
 
+            return list;
+        }
+
+        internal static BEncodedList Encode(IEnumerable<Peer> peers)
+        {
+            BEncodedList list = new BEncodedList();
+            foreach (Peer p in peers)
+                list.Add((BEncodedString)p.CompactPeer());
             return list;
         }
     }
