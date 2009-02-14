@@ -125,10 +125,6 @@ namespace MonoTorrent.Client
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return false;
 
-            //if (this.InEndGameMode)// In endgame we only want to queue 2 pieces
-            //    if (id.AmRequestingPiecesCount > PieceManager.MaxEndGameRequests)
-            //        return false;
-
             int count = 1;
             if (id.Connection is HttpConnection)
             {
