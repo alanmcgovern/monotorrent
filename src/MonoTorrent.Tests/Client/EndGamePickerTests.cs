@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
             EndGamePickerTests t = new EndGamePickerTests();
             t.FixtureSetup();
             t.Setup();
-            t.MultiPick2();
+            t.CancelTest();
         }
         List<Block> alreadyGot;
         BitField bitfield;
@@ -52,11 +52,11 @@ namespace MonoTorrent.Client
 
             id = new PeerId(new Peer("peerid", new Uri("tcp://weburl.com")), rig.Manager);
             id.IsChoking = false;
-            id.BitField.SetAll(true);
+            id.BitField.SetAll(false);
 
             other = new PeerId(new Peer("other", new Uri("tcp://other.com")), rig.Manager);
             other.IsChoking = false;
-            other.BitField.SetAll(true);
+            other.BitField.SetAll(false);
         }
 
         [TestFixtureTearDown]
@@ -65,39 +65,33 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-
         [Test]
-        public void MultiPick1()
+        public void CancelTest()
         {
-            RequestMessage m;
-            other.IsChoking = false;
-            other.BitField.From(bitfield).Not();
+            foreach (Piece p in pieces)
+            {
+                for (int i = 0; i < p.BlockCount; i++)
+                {
+                    if (i % 2 == 0)
+                        p.Blocks[i].CreateRequest(id);
+                    else
+                        p.Blocks[i].CreateRequest(other);
+                }
+            }
 
-            picker.Initialise(bitfield, rig.Torrent.Files, pieces);
+            picker.Initialise(bitfield, rig.Manager.Torrent.Files, pieces);
+            picker.CancelRequests(id);
+            picker.CancelRequests(other);
 
-            List<RequestMessage> requests = new List<RequestMessage>();
-            while ((m = picker.PickPiece(other, new List<PeerId>())) != null)
-                requests.Add(m);
-
-            Assert.AreEqual(rig.BlocksPerPiece * pieces.Count, requests.Count, "#1");
-
-            id.IsChoking = false;
-            id.BitField.From(bitfield).Not();
-            List<RequestMessage> requests2 = new List<RequestMessage>();
-            while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
-                requests2.Add(m);
-
-            Assert.AreEqual(requests.Count, rig.BlocksPerPiece * pieces.Count, "#2");
-
-            Assert.AreEqual(64, id.AmRequestingPiecesCount, "#3");
-            Assert.AreEqual(64, id.AmRequestingPiecesCount, "#4");
+            id.BitField[4] = true;
+            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
         }
 
         [Test]
-        public void MultiPick2()
+        public void MultiPick()
         {
-            id.BitField.SetAll(false).Set(pieces[0].Index, true);
-            other.BitField.SetAll(false).Set(pieces[0].Index, true);
+            id.BitField.Set(pieces[0].Index, true);
+            other.BitField.Set(pieces[0].Index, true);
 
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
@@ -135,7 +129,7 @@ namespace MonoTorrent.Client
             RequestMessage m;
             List<RequestMessage> requests = new List<RequestMessage>();
 
-            id.BitField.SetAll(false).Set(0, true);
+            id.BitField[0] = true;
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
 
             while ((m = picker.PickPiece(id, new List<PeerId>())) != null)

@@ -119,16 +119,20 @@ namespace MonoTorrent.Client
             // the pieces which we still need to get and AND them together.
 
             // Create the bitfield of pieces which are downloadable
-            endgameSelector.SetAll(true);
+            endgameSelector.SetAll(false);
             for (int i = 0; i < files.Length; i++)
-                if (files[i].Priority == Priority.DoNotDownload)
-                    endgameSelector.Xor(files[i].GetSelector(bitfield.Length));
+                if (files[i].Priority != Priority.DoNotDownload)
+                    endgameSelector.Or(files[i].GetSelector(bitfield.Length));
 
             // NAND it with the pieces we already have (i.e. AND it with the pieces we still need to receive)
             endgameSelector.NAnd(bitfield);
 
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
-            inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) < Threshold;
+            int count = 0;
+            List<Piece> pieces = standard.ExportActiveRequests();
+            for (int i = 0; i < pieces.Count; i++)
+                count += pieces[i].TotalReceived;
+            inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
             if (inEndgame)
                 endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
         }
