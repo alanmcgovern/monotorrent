@@ -82,6 +82,7 @@ FILES = \
 	MonoTorrent.Client/PeerConnections/IPV6Connection.cs \
 	MonoTorrent.Client/Piece.cs \
 	MonoTorrent.Client/PiecePicking/EndGamePicker.cs \
+	MonoTorrent.Client/PiecePicking/EndGameSwitcher.cs \
 	MonoTorrent.Client/PiecePicking/IgnoringPicker.cs \
 	MonoTorrent.Client/PiecePicking/LoggingPicker.cs \
 	MonoTorrent.Client/PiecePicking/PiecePickerBase.cs \
