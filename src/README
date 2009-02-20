@@ -12,14 +12,16 @@ BUILDING MONOTORRENT:
 ------------------------------------------------------------------------------------------------------------
 
 MakeFiles:
-To build using the makefiles, just run ./configure; make; make install from the same directory as this
-README. You can alter the prefix where MonoTorrent is installed to by passing the --prefix=PATH argument to
-configure.
+To build using the makefiles, execute the following commands:
+$ ./autogen.sh
+$ make
+$ make install
 
+This will only build MonoTorrent.dll. The other sub-projects are not built via this method.
 
 Project Files:
-To build the project, go into the "BuildScripts" directory and execute the required script for the type
-build file you want to create (VisualStudio/SharpDevelop/MonoDevelop)
+You can open the MonoTorrent.sln file in MonoDevelop, SharpDevelop or Visual Studio. This is the preferred way
+to build MonoTorrent and all the sub-projects.
 
 
 
