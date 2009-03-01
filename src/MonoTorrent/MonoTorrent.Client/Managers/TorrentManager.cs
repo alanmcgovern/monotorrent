@@ -80,6 +80,7 @@ namespace MonoTorrent.Client
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
+		internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
@@ -150,6 +151,13 @@ namespace MonoTorrent.Client
             get { return this.hashFails; }
         }
 
+		/// <summary>
+		/// True if this torrent has activated special processing for the final few pieces
+		/// </summary>
+		public bool IsInEndGame
+		{
+			get { return this.state == TorrentState.Downloading && this.isInEndGame; }
+		}
 
         public ConnectionMonitor Monitor
         {
@@ -350,7 +358,7 @@ namespace MonoTorrent.Client
             this.peers = new PeerManager();
             PiecePicker picker;
             if (ClientEngine.EnableEndgameMode)
-                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.PieceLength / Piece.BlockSize);
+                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.PieceLength / Piece.BlockSize, this);
             else
                 picker = new StandardPicker();
             picker = new RandomisedPicker(picker);

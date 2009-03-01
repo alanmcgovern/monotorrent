@@ -46,18 +46,20 @@ namespace MonoTorrent.Client
         BitField endgameSelector;
         TorrentFile[] files;
         PiecePicker standard;
+		TorrentManager torrentManager;
 
         PiecePicker ActivePicker
         {
             get { return inEndgame ? endgame : standard; }
         }
 
-        public EndGameSwitcher(StandardPicker standard, EndGamePicker endgame, int blocksPerPiece)
+        public EndGameSwitcher(StandardPicker standard, EndGamePicker endgame, int blocksPerPiece, TorrentManager torrentManager)
             : base(null)
         {
             this.standard = standard;
             this.endgame = endgame;
             this.blocksPerPiece = blocksPerPiece;
+			this.torrentManager = torrentManager;
         }
 
         public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
@@ -133,8 +135,12 @@ namespace MonoTorrent.Client
             for (int i = 0; i < pieces.Count; i++)
                 count += pieces[i].TotalReceived;
             inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount * blocksPerPiece)) - count < Threshold;
-            if (inEndgame)
-                endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
+			if (inEndgame)
+			{
+				endgame.Initialise(bitfield, files, standard.ExportActiveRequests());
+				// Set torrent's IsInEndGame flag
+				torrentManager.isInEndGame = true;
+			}
         }
 
         public override void Reset()
