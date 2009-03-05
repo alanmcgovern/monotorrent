@@ -146,6 +146,7 @@ namespace MonoTorrent.Client
         public override void Reset()
         {
             inEndgame = false;
+			torrentManager.isInEndGame = false;
             standard.Reset();
             endgame.Reset();
         }
