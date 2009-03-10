@@ -37,6 +37,7 @@ using System.Net;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Common;
+using System.Diagnostics;
 
 namespace MonoTorrent.Dht
 {
@@ -79,10 +80,17 @@ namespace MonoTorrent.Dht
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
                 if (engine.Disposed)
                     return false;
-
-                SendMessage();
-                ReceiveMessage();
-                TimeoutMessage();
+                try
+                {
+                    SendMessage();
+                    ReceiveMessage();
+                    TimeoutMessage();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error in DHT main loop:");
+                    Debug.WriteLine(ex);
+                }
 
                 return !engine.Disposed;
             });
