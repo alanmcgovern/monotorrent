@@ -43,17 +43,18 @@ namespace MonoTorrent.Client.PieceWriters
 
         protected virtual string GenerateFilePath(TorrentFile file, string path)
         {
-            if (paths.ContainsKey(file))
-                return paths[file];
+            return Path.Combine(path, file.Path);
+            //if (paths.ContainsKey(file))
+            //    return paths[file];
 
-            path = Path.Combine(path, file.Path);
+            //path = Path.Combine(path, file.Path);
 
-            if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
+            //if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
+            //    Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-            paths[file] = path;
+            //paths[file] = path;
 
-            return path;
+            //return path;
         }
 
         internal TorrentFileStream GetStream(string path, TorrentFile file, FileAccess access)
