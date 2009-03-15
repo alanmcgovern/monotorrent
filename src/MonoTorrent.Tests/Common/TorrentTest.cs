@@ -35,6 +35,7 @@ using MonoTorrent.Common;
 using System.Diagnostics;
 using System.IO;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 
 namespace MonoTorrent.Common
 {
@@ -298,6 +299,43 @@ namespace MonoTorrent.Common
         public void Size()
         {
             Assert.AreEqual((50000 + 60000 + 70000 + 80000), torrent.Size);
+        }
+
+        [Test]
+        public void StartEndIndices()
+        {
+            int pieceLength = 32 * 32;
+            TorrentFile[] files = new TorrentFile[] {
+                new TorrentFile ("File0", 0),
+                new TorrentFile ("File1", pieceLength),
+                new TorrentFile ("File2", 0),
+                new TorrentFile ("File3", pieceLength - 1),
+                new TorrentFile ("File4", 1),
+                new TorrentFile ("File5", 236),
+                new TorrentFile ("File6", pieceLength * 7)
+            };
+            Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+
+            Assert.AreEqual(0, t.Files[0].StartPieceIndex, "#0a");
+            Assert.AreEqual(0, t.Files[0].EndPieceIndex, "#0b");
+
+            Assert.AreEqual(0, t.Files[1].StartPieceIndex, "#1");
+            Assert.AreEqual(0, t.Files[1].EndPieceIndex, "#2");
+
+            Assert.AreEqual(1, t.Files[2].StartPieceIndex, "#3");
+            Assert.AreEqual(1, t.Files[2].EndPieceIndex, "#4");
+
+            Assert.AreEqual(1, t.Files[3].StartPieceIndex, "#5");
+            Assert.AreEqual(1, t.Files[3].EndPieceIndex, "#6");
+
+            Assert.AreEqual(1, t.Files[4].StartPieceIndex, "#7");
+            Assert.AreEqual(1, t.Files[4].EndPieceIndex, "#8");
+
+            Assert.AreEqual(2, t.Files[5].StartPieceIndex, "#9");
+            Assert.AreEqual(2, t.Files[5].EndPieceIndex, "#10");
+
+            Assert.AreEqual(2, t.Files[6].StartPieceIndex, "#11");
+            Assert.AreEqual(9, t.Files[6].EndPieceIndex, "#12");
         }
 
         /// <summary>

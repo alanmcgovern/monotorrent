@@ -554,6 +554,28 @@ namespace MonoTorrent.Client
             return new TestRig(false);
         }
 
+        internal static TestRig CreateMultiFile(TorrentFile[] files, int pieceLength)
+        {
+            TestRig rig = new TestRig(false);
+            rig.piecelength = pieceLength;
+            BEncodedDictionary info = (BEncodedDictionary)rig.torrentDict["info"];
+            info["piece length"] = (BEncodedNumber)pieceLength;
+            int length = (int)Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
+            info["pieces"] = (BEncodedString)new byte[((length + pieceLength - 1) / pieceLength) * 20];
+            BEncodedList filesList = (BEncodedList)info["files"];
+            filesList.Clear();
+            foreach (TorrentFile file in files)
+            {
+                BEncodedDictionary d = new BEncodedDictionary();
+                d["path"] = new BEncodedList(new BEncodedString[] { file.Path });
+                d["length"] = (BEncodedNumber)file.Length;
+                filesList.Add(d);
+            }
+            rig.torrent = Torrent.Load(rig.torrentDict);
+            rig.manager = new TorrentManager(rig.torrent, rig.savePath, new TorrentSettings());
+            return rig;
+        }
+
         public static TestRig CreateTrackers(string[][] tier)
         {
             return new TestRig(true, tier);

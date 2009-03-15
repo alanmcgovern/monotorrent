@@ -421,6 +421,8 @@ namespace MonoTorrent.Common
                 int startIndex = (int)(size / pieceLength);
                 size += length;
                 int endIndex = (int)(size / pieceLength);
+                if (size % pieceLength == 0 && length != 0)
+                    endIndex--;
                 files.Add(new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1));
             }
 
