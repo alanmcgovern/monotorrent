@@ -355,11 +355,13 @@ namespace MonoTorrent.Common
         private void LoadTorrentFiles(BEncodedList list)
         {
             List<TorrentFile> files = new List<TorrentFile>();
+            int endIndex;
             long length;
             string path;
             byte[] md5sum;
             byte[] ed2k;
             byte[] sha1;
+            int startIndex;
             StringBuilder sb = new StringBuilder(32);
 
             foreach (BEncodedDictionary dict in list)
@@ -418,11 +420,28 @@ namespace MonoTorrent.Common
                     }
                 }
 
-                int startIndex = (int)(size / pieceLength);
+                // A zero length file always belongs to the same piece as the previous file
+                if (length == 0)
+                {
+                    if (files.Count > 0)
+                    {
+                        startIndex = files[files.Count - 1].EndPieceIndex;
+                        endIndex = files[files.Count - 1].EndPieceIndex;
+                    }
+                    else
+                    {
+                        startIndex = 0;
+                        endIndex = 0;
+                    }
+                }
+                else
+                {
+                    startIndex = (int)(size / pieceLength);
+                    endIndex = (int)((size  + length) / pieceLength);
+                    if ((size + length) % pieceLength == 0)
+                        endIndex--;
+                }
                 size += length;
-                int endIndex = (int)(size / pieceLength);
-                if (size % pieceLength == 0 && length != 0)
-                    endIndex--;
                 files.Add(new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1));
             }
 
