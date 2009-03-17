@@ -170,6 +170,22 @@ namespace MonoTorrent.Client.Managers
             IOLoop.QueueWait((MainLoopTask)writer.Dispose);
         }
 
+        public void Flush()
+        {
+            IOLoop.QueueWait(delegate {
+                foreach (TorrentManager manager in engine.Torrents)
+                    writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
+            });
+        }
+
+        public void Flush(TorrentManager manager)
+        {
+            Check.Manager(manager);
+            IOLoop.QueueWait(delegate {
+                writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
+            });
+        }
+
         private void PerformWrite(BufferedIO data)
         {
             PeerId id = data.Id;
