@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
         private DateTime lastMessageReceived;
         private DateTime lastMessageSent;
 		private DateTime whenConnected;
-        private MonoTorrentCollection<ExtensionSupport> extensionSupports;
+        private ExtensionSupports extensionSupports;
         private int maxPendingRequests;
         private MessagingCallback messageReceivedCallback;
         private MessagingCallback messageSentCallback;
@@ -247,7 +247,7 @@ namespace MonoTorrent.Client
             get { return this.engine; ; }
         }
 
-        internal MonoTorrentCollection<ExtensionSupport> ExtensionSupports
+        internal ExtensionSupports ExtensionSupports
         {
             get { return extensionSupports; }
             set { extensionSupports = value; }
@@ -400,7 +400,8 @@ namespace MonoTorrent.Client
                 if (value != null)
                 {
                     this.engine = value.Engine;
-                    this.BitField = new BitField(value.Torrent.Pieces.Count);
+                    if(value.HasMetadata)
+                        BitField = new BitField(value.Torrent.Pieces.Count);
                 }
             }
         }
@@ -430,6 +431,7 @@ namespace MonoTorrent.Client
             this.peer = peer;
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new MonoTorrentCollection<PeerMessage>(12);
+            ExtensionSupports = new ExtensionSupports();
             TorrentManager = manager;
             InitializeTyrant();
         }

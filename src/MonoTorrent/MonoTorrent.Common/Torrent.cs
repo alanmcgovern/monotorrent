@@ -56,23 +56,29 @@ namespace MonoTorrent.Common
         private string encoding;
         internal byte[] infoHash;
         private bool isPrivate;
-        private string name;
+        protected string name;
         private BEncodedList nodes;
-        private int pieceLength;
-        private Hashes pieces;
+        protected int pieceLength;
+        protected Hashes pieces;
         private string publisher;
         private string publisherUrl;
         private byte[] sha1;
-        private long size;
+        protected long size;
         private string source;
-        private TorrentFile[] torrentFiles;
-        private string torrentPath;
+        protected TorrentFile[] torrentFiles;
+        protected string torrentPath;
         private List<string> getRightHttpSeeds;
+        private byte[] metadata;
 
         #endregion Private Fields
 
 
         #region Properties
+
+        internal byte[] Metadata
+        {
+            get { return metadata; }
+        }
 
         /// <summary>
         /// The announce URLs contained within the .torrent file
@@ -256,6 +262,7 @@ namespace MonoTorrent.Common
         public string TorrentPath
         {
             get { return this.torrentPath; }
+            internal set { torrentPath = value; }
         }
 
         /// <summary>
@@ -456,6 +463,7 @@ namespace MonoTorrent.Common
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
+            metadata = dictionary.Encode();
             this.pieceLength = int.Parse(dictionary["piece length"].ToString());
             LoadHashPieces(((BEncodedString)dictionary["pieces"]).TextBytes);
 

@@ -1,3 +1,31 @@
+//
+// LibtorrentMessage.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2006 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -7,37 +35,39 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 {
     public abstract class ExtensionMessage : PeerMessage
     {
-        private static readonly byte HandshakeMessageId = 0;
+        internal static readonly byte MessageId = 20;
         private static Dictionary<byte, CreateMessage> messageDict;
         private static byte nextId;
 
         internal static readonly List<ExtensionSupport> SupportedMessages = new List<ExtensionSupport>();
 
-        private byte messageId;
+        private byte extensionId;
 
-        public byte MessageId
+        public byte ExtensionId
         {
-            get { return messageId; }
-            set { messageId = value; }
+            get { return extensionId; }
+            protected set { extensionId = value; }
         }
 
         static ExtensionMessage()
         {
-            HandshakeMessageId = 0;
-            nextId = 1;
-
             messageDict = new Dictionary<byte, CreateMessage>();
 
-            Register(HandshakeMessageId, delegate { return new ExtendedHandshakeMessage(); });
+            Register(nextId++, delegate { return new ExtendedHandshakeMessage(); });
 
             Register(nextId, delegate { return new LTChat(); });
             SupportedMessages.Add(new ExtensionSupport("LT_chat", nextId++));
 
             Register(nextId, delegate { return new LTMetadata(); });
-            SupportedMessages.Add(new ExtensionSupport("LT_metadata", nextId++));
+            SupportedMessages.Add(new ExtensionSupport("ut_metadata", nextId++));
 
             Register(nextId, delegate { return new PeerExchangeMessage(); });
             SupportedMessages.Add(new ExtensionSupport("ut_pex", nextId++));
+        }
+
+        public ExtensionMessage(byte messageId)
+        {
+            this.extensionId = messageId;
         }
 
         public static void Register(byte identifier, CreateMessage creator)
@@ -64,8 +94,11 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             CreateMessage creator;
             PeerMessage message;
 
+            if (!ClientEngine.SupportsExtended)
+                throw new MessageException("Extension messages are not supported");
+
             if (!messageDict.TryGetValue(buffer[offset], out creator))
-                return new UnknownMessage();
+                throw new ProtocolException("Unknown extension message received");
 
             message = creator(manager);
             message.Decode(buffer, offset + 1, count - 1);

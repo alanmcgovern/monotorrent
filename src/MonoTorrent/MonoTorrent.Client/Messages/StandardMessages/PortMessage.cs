@@ -103,11 +103,6 @@ namespace MonoTorrent.Client.Messages.Standard
             return this.port.GetHashCode();
         }
 
-        internal override void Handle(PeerId id)
-        {
-            id.Port = this.port;
-        }
-
         public override string ToString()
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();

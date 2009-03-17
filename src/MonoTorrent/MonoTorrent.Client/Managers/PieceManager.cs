@@ -85,12 +85,11 @@ namespace MonoTorrent.Client
             get { return unhashedPieces; }
         }
 
-        internal PieceManager(PiecePicker picker, BitField bitfield, TorrentFile[] files)
+        internal PieceManager()
         {
-            unhashedPieces = new BitField(bitfield.Length);
-            ChangePicker(picker, bitfield, files);
+            picker = new NullPicker();
+            unhashedPieces = new BitField(0);
         }
-
 
         public void PieceDataReceived(BufferedIO data)
         {
@@ -110,9 +109,6 @@ namespace MonoTorrent.Client
             {
             }
         }
-
-
-
 
         internal bool AddPieceRequest(PeerId id)
         {
@@ -160,10 +156,9 @@ namespace MonoTorrent.Client
 
         internal void ChangePicker(PiecePicker picker, BitField bitfield, TorrentFile[] files)
         {
-//          MonoTorrent.Client.PiecePicker p = new StandardPicker();
-//          p = new RandomisedPicker(p);
-//          p = new RarestFirstPicker(p);
-//          p = new PriorityPicker(p);
+            if (unhashedPieces.Length != bitfield.Length)
+                unhashedPieces = new BitField(bitfield.Length);
+
             picker = new IgnoringPicker(bitfield, picker);
             picker = new IgnoringPicker(unhashedPieces, picker);
             IEnumerable<Piece> pieces = Picker == null ? new List<Piece>() : Picker.ExportActiveRequests();

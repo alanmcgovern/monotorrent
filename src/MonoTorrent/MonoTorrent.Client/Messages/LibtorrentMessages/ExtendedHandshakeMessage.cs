@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private int localPort;
         private int maxRequests;
-        private MonoTorrentCollection<ExtensionSupport> supports;
+        private ExtensionSupports supports;
         private string version;
         private int metadataSize;
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get { return localPort; }
         }
 
-        public MonoTorrentCollection<ExtensionSupport> Supports
+        public ExtensionSupports Supports
         {
             get { return supports; }
         }
@@ -90,10 +90,16 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         #region Constructors
         public ExtendedHandshakeMessage()
+            : base(Support.MessageId)
         {
-            supports = new MonoTorrentCollection<ExtensionSupport>(ExtensionMessage.SupportedMessages);
+            supports = new ExtensionSupports(ExtensionMessage.SupportedMessages);
         }
 
+        public ExtendedHandshakeMessage(int metadataSize)
+            : this ()
+        {
+            this.metadataSize = metadataSize;
+        }
         #endregion
 
 
@@ -119,7 +125,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private void LoadSupports(BEncodedDictionary supports)
         {
-            MonoTorrentCollection<ExtensionSupport> list = new MonoTorrentCollection<ExtensionSupport>();
+            ExtensionSupports list = new ExtensionSupports();
             foreach (KeyValuePair<BEncodedString, BEncodedValue> k in supports)
                 list.Add(new ExtensionSupport(k.Key.Text, (byte)((BEncodedNumber)k.Value).Number));
 
@@ -132,7 +138,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             BEncodedDictionary dict = Create();
 
             written += Write(buffer, written, dict.LengthInBytes() + 1 + 1);
-            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
+            written += Write(buffer, written, ExtensionMessage.MessageId);
             written += Write(buffer, written, ExtendedHandshakeMessage.Support.MessageId);
             written += dict.Encode(buffer, written);
 
@@ -159,30 +165,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
             return mainDict;
         }
-
-
-        internal override void Handle(PeerId id)
-        {
-            if (!ClientEngine.SupportsFastPeer)
-                throw new MessageException("Libtorrent extension messages not supported");
-
-            // FIXME: Use the 'version' information
-            // FIXME: Recreate the uri? Give warning?
-            if (localPort > 0)
-                id.Peer.LocalPort = localPort;
-            id.MaxPendingRequests = maxRequests;
-            id.ExtensionSupports = supports;
-
-            // FIXME : Find a way to be more elegant!
-            foreach(ExtensionSupport support in supports) {
-                if (support.Name == "ut_pex" && id.PeerExchangeManager == null && !id.TorrentManager.Torrent.IsPrivate) {
-                    id.PeerExchangeManager = new PeerExchangeManager (id);
-                    break;
-                }
-            }
-
-        }
-
         #endregion
     }
 }

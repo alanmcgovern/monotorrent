@@ -33,6 +33,11 @@ namespace MonoTorrent
             DoCheck(addressRanges, "addressRanges");
         }
 
+        internal static void Announces(object announces)
+        {
+            DoCheck(announces, "announces");
+        }
+
         internal static void BaseDirectory(object baseDirectory)
         {
             DoCheck(baseDirectory, "baseDirectory");
@@ -48,6 +53,11 @@ namespace MonoTorrent
             DoCheck(endpoint, "endpoint");
         }
 
+        internal static void InfoHash(object infoHash)
+        {
+            DoCheck(infoHash, "infoHash");
+        }
+
         internal static void Listener(object listener)
         {
             DoCheck(listener, "listener");
@@ -61,6 +71,11 @@ namespace MonoTorrent
         internal static void Manager(object manager)
         {
             DoCheck(manager, "manager");
+        }
+
+        internal static void Metadata(object metadata)
+        {
+            DoCheck(metadata, "metadata");
         }
 
         internal static void Path(object path)
@@ -106,6 +121,11 @@ namespace MonoTorrent
         internal static void TorrentInformation(object torrentInformation)
         {
             DoCheck(torrentInformation, "torrentInformation");
+        }
+
+        internal static void TorrentSave(object torrentSave)
+        {
+            DoCheck(torrentSave, "torrentSave");
         }
 
         internal static void Tracker(object tracker)

@@ -24,11 +24,6 @@ namespace MonoTorrent.Client.Messages
             messages.Add(message);
         }
 
-        internal override void Handle(PeerId id)
-        {
-            throw new InvalidOperationException();
-        }
-
         public override int ByteLength
         {
             get

@@ -11,7 +11,6 @@ namespace MonoTorrent.Client.Messages
     public delegate PeerMessage CreateMessage(TorrentManager manager);
     public abstract class PeerMessage : Message
     {
-        internal const byte LibTorrentMessageId = 20;
         private static Dictionary<byte, CreateMessage> messageDict;
 
         static PeerMessage()
@@ -38,7 +37,7 @@ namespace MonoTorrent.Client.Messages
             
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection
-            Register(LibTorrentMessageId, delegate(TorrentManager manager) { return new UnknownMessage(); });
+            Register(ExtensionMessage.MessageId, delegate(TorrentManager manager) { throw new MessageException("Shouldn't decode extension message this way"); });
         }
 
         private static void Register(byte identifier, CreateMessage creator)
@@ -68,11 +67,11 @@ namespace MonoTorrent.Client.Messages
             if (messageLength > (count - 4))
                 throw new ArgumentException("Incomplete message detected");
 
-            if (buffer[offset + 4] == LibTorrentMessageId)
+            if (buffer[offset + 4] == ExtensionMessage.MessageId)
                 return ExtensionMessage.DecodeMessage(buffer, offset + 4 + 1, count - 4 - 1, manager);
 
             if (!messageDict.TryGetValue(buffer[offset + 4], out creator))
-                return new UnknownMessage();
+                throw new ProtocolException("Unknown message received");
 
             // The message length is given in the second byte and the message body follows directly after that
             // We decode up to the number of bytes Received. If the message isn't complete, throw an exception
@@ -81,6 +80,9 @@ namespace MonoTorrent.Client.Messages
             return message;
         }
 
-        internal abstract void Handle(PeerId id);
+        internal void Handle(PeerId id)
+        {
+            id.TorrentManager.Mode.HandleMessage(id, this);
+        }
     }
 }

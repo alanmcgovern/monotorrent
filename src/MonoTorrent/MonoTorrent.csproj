@@ -119,8 +119,14 @@
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
     <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
+    <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\IFastPeerMessage.cs" />
+    <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\ExtensionSupports.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\MessageType.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeDetails.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\DownloadMode.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\InitialSeedingMode.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\MetadataMode.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\Mode.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
@@ -129,6 +135,7 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGameSwitcher.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\IgnoringPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\LoggingPicker.cs" />
+    <Compile Include="MonoTorrent.Client\PiecePicking\NullPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\PiecePicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\PriorityPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\RandomisedPicker.cs" />
@@ -187,7 +194,6 @@
     <Compile Include="MonoTorrent.Client\Messages\Message.cs" />
     <Compile Include="MonoTorrent.Client\Messages\MessageBundle.cs" />
     <Compile Include="MonoTorrent.Client\Messages\PeerMessage.cs" />
-    <Compile Include="MonoTorrent.Client\Messages\UnknownMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\AllowedFastMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\HaveAllMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\HaveNoneMessage.cs" />

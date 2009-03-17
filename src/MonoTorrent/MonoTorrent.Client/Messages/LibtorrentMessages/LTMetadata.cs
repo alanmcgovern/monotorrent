@@ -1,106 +1,139 @@
+//
+// LTMetadata.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2009 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.BEncoding;
 using System.Security.Cryptography;
 using MonoTorrent.Common;
+using System.IO;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
-    public class LTMetadata : ExtensionMessage
+    internal class LTMetadata : ExtensionMessage
     {
-        public static readonly ExtensionSupport Support = CreateSupport("LT_metadata");
+        public static readonly ExtensionSupport Support = CreateSupport("ut_metadata");
         private static readonly BEncodedString MessageTypeKey = "msg_type";
         private static readonly BEncodedString PieceKey = "piece";
         private static readonly BEncodedString TotalSizeKey = "total_size";
-        private static readonly int BLOCK_SIZE = 16000;
+        internal static readonly int BlockSize = 16384;//16Kb
 
-        private enum eMessageType {
+        internal enum eMessageType {
             Request = 0,
             Data = 1,
             Reject = 2
         }
 
+        BEncodedDictionary dict;
         private eMessageType messageType;
         private int piece;
 
-        private int offset;
+        //this buffer contain all metadata when we send message 
+        //and only a piece of metadata we receive message
         private byte[] metadata;
 
-        private byte messageId;
-
-        public LTMetadata()
+        public int Piece
         {
-            this.piece = 0;
-            this.messageType = eMessageType.Request;
+            get { return piece; }
         }
 
-        internal override void Handle(PeerId id)
+        public byte[] MetadataPiece
         {
-            if (!ClientEngine.SupportsFastPeer)
-                throw new MessageException("Libtorrent extension messages not supported");
+            get { return metadata; }
+        }
 
-            messageId = id.ExtensionSupports.Find(delegate(ExtensionSupport l) { return l.Name == Support.Name; }).MessageId;
-            
-            switch (messageType) {
-                case eMessageType.Request :
-                     if (false )//&& id.TorrentManager.Torrent.haveAll)
-                         messageType = eMessageType.Data;
-                     else
-                         messageType = eMessageType.Reject;
-                     id.Enqueue(this);//only send the piece requested
-                     break;
-                case eMessageType.Data :
-                    if ((piece + 1) * BLOCK_SIZE < metadata.Length) // if not last piece request another
-                    {
-                        messageType = eMessageType.Request;
-                        piece++;
-                        id.Enqueue(this);
-                    }
-                    else
-                    {
-                        using (SHA1 s = SHA1.Create())
-                            if (!Toolbox.ByteMatch(id.TorrentManager.Torrent.InfoHash, s.ComputeHash(metadata)))
-                                return;//invalid metadata received from other peers
+        internal eMessageType MetadataMessageType
+        {
+            get { return messageType; }
+        }
 
-                        BEncodedDictionary d = (BEncodedDictionary)BEncodedDictionary.Decode(metadata);
-                        //id.TorrentManager.Torrent.ProcessInfo (d);
-                        //id.TorrentManager.Torrent.haveAll = true;
-                        id.TorrentManager.Start();
-                    }
-                     break;
-                case eMessageType.Reject :
-                    break;//do nothing when rejected or flood until other peer send the missing piece? 
-                default :
-                    throw new MessageException(string.Format("Invalid messagetype in LTMetadata: {0}", messageType));
+        //only for register
+        public LTMetadata()
+            : base(Support.MessageId)
+        {
+
+        }
+
+        public LTMetadata(PeerId id, eMessageType type, int piece)
+            : this (id, type, piece, null)
+        {
+
+        }
+
+        public LTMetadata(PeerId id, eMessageType type, int piece, byte[] metadata)
+            : this()
+        {
+            ExtensionId = id.ExtensionSupports.MessageId(Support);
+            this.messageType = type;
+            this.metadata = metadata;
+            this.piece = piece;
+
+            dict = new BEncodedDictionary();
+            dict.Add(MessageTypeKey, (BEncodedNumber)(int)messageType);
+            dict.Add(PieceKey, (BEncodedNumber)piece);
+
+            if (messageType == eMessageType.Data)
+            {
+                Check.Metadata(metadata);
+                dict.Add(TotalSizeKey, (BEncodedNumber)metadata.Length);
             }
-
         }
 
         public override int ByteLength
         {
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
-            get { //TODO depend of message type and of value
-                return 4 + 1 + 1 + 1;
+            get {
+                int length = 4 + 1 + 1 + dict.LengthInBytes();
+                if (messageType == eMessageType.Data)
+                    length += Math.Min(metadata.Length - piece * BlockSize, BlockSize);
+                return length;
             }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
             BEncodedValue val;
-            BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(buffer, offset, length, true);
-            int totalSize = 0;
+            using (RawReader reader = new RawReader(new MemoryStream(buffer, offset, length, false), false))
+            {
+                BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(reader);
+                int totalSize = 0;
 
-            if (d.TryGetValue(MessageTypeKey, out val))
-                messageType = (eMessageType)((BEncodedNumber)val).Number;
-            if (d.TryGetValue(PieceKey, out val))
-                piece = (int)((BEncodedNumber)val).Number;
-            if (d.TryGetValue(TotalSizeKey, out val)) {
-                totalSize = (int)((BEncodedNumber)val).Number;
-                if (metadata == null)
-                    metadata = new byte[totalSize];//create empty buffer
-                if (offset + d.LengthInBytes() < length)
-                    Buffer.BlockCopy(buffer, offset + d.LengthInBytes(), metadata, piece * BLOCK_SIZE, Math.Min(totalSize - piece * BLOCK_SIZE,BLOCK_SIZE));
+                if (d.TryGetValue(MessageTypeKey, out val))
+                    messageType = (eMessageType)((BEncodedNumber)val).Number;
+                if (d.TryGetValue(PieceKey, out val))
+                    piece = (int)((BEncodedNumber)val).Number;
+                if (d.TryGetValue(TotalSizeKey, out val))
+                {
+                    totalSize = (int)((BEncodedNumber)val).Number;
+                    metadata = new byte[Math.Min(totalSize - piece * BlockSize, BlockSize)];
+                    reader.Read(metadata, 0, metadata.Length);
+                }
             }
         }
 
@@ -110,25 +143,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 throw new MessageException("Libtorrent extension messages not supported");
 
             int written = offset;
-
-            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
-            written += Write(buffer, written, messageId);
-
-            BEncodedDictionary dict = new BEncodedDictionary();
-            dict.Add(MessageTypeKey, (BEncodedNumber)(int)messageType);
-            dict.Add(PieceKey, (BEncodedNumber)piece);
             
+            written += Write(buffer, written, ByteLength - 4);
+            written += Write(buffer, written, ExtensionMessage.MessageId);
+            written += Write(buffer, written, ExtensionId);
+            written += dict.Encode(buffer, written);
             if (messageType == eMessageType.Data)
-            {
-                dict.Add(TotalSizeKey, (BEncodedNumber)metadata.Length);
-                written += dict.Encode(buffer, written);
-                written += Write(buffer, written, metadata, piece * BLOCK_SIZE, Math.Min(metadata.Length - piece * BLOCK_SIZE,BLOCK_SIZE));
-            }
-            else
-                written += dict.Encode(buffer, written);
+                written += Write(buffer, written, metadata, piece * BlockSize, Math.Min(metadata.Length - piece * BlockSize, BlockSize));
 
-            CheckWritten(written - offset);
-            return written - offset;
+            return CheckWritten(written - offset);
         }
     }
 }

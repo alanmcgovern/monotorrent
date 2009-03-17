@@ -16,14 +16,27 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         private static readonly BEncodedString DroppedKey = "dropped";        
 
         public PeerExchangeMessage ()
+            : base(Support.MessageId)
         {
             peerDict = new BEncodedDictionary();
         }
-        //TODO done a new ctor with List<Peer> or uri
-        public PeerExchangeMessage(byte id, byte[] added, byte[] addedDotF, byte[] dropped)
+
+        internal PeerExchangeMessage(byte messageId, byte[] added, byte[] addedDotF, byte[] dropped)
             : this()
         {
-            MessageId = id;
+            ExtensionId = messageId;
+            Initialise(added, addedDotF, dropped);
+        }
+
+        public PeerExchangeMessage(PeerId id, byte[] added, byte[] addedDotF, byte[] dropped)
+            : this()
+        {
+            ExtensionId = id.ExtensionSupports.MessageId(Support);
+            Initialise(added, addedDotF, dropped);
+        }
+
+        void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
+        {
             if (added == null)
                 added = ZeroArray;
             if (addedDotF == null)
@@ -54,17 +67,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get { return ((BEncodedString)peerDict[DroppedKey]).TextBytes; }
         }
 
-        internal override void Handle(PeerId id)
-        {
-            // Ignore peer exchange messages on private torrents
-            if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
-                return;
-
-            IList<Peer> peers = Peer.Decode((BEncodedString)peerDict[AddedKey]);
-            int count = id.TorrentManager.AddPeers(peers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, peers.Count, id));
-        }
-
         public override int ByteLength
         {
             get { return 4 + 1 + 1 + peerDict.LengthInBytes(); }
@@ -80,8 +82,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             int written = offset;
 
             written += Write(buffer, offset, ByteLength - 4);
-            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
-            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, ExtensionMessage.MessageId);
+            written += Write(buffer, written, ExtensionId);
             written += peerDict.Encode(buffer, written);
 
             return CheckWritten(written - offset);

@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Messages.Standard
         private int startOffset;
         private int requestLength;
 
-        private ArraySegment<byte> data;
+        internal ArraySegment<byte> data;
 
         #endregion
 
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public int PieceLength
         {
-            get { return this.manager.FileManager.PieceLength; }
+            get { return this.manager.Torrent.PieceLength; }
         }
 
         public int StartOffset
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client.Messages.Standard
             written += Write(buffer, written, pieceIndex);
             written += Write(buffer, written, startOffset);
 
-            long pieceOffset = (long)this.PieceIndex * this.manager.FileManager.PieceLength + this.startOffset;
+            long pieceOffset = (long)this.PieceIndex * this.manager.Torrent.PieceLength + this.startOffset;
             bytesRead = this.manager.FileManager.Read(buffer, written, pieceOffset, this.RequestLength);
 
             if (bytesRead != this.RequestLength)
@@ -162,19 +162,6 @@ namespace MonoTorrent.Client.Messages.Standard
                 ^ this.pieceIndex.GetHashCode()
                 ^ this.startOffset.GetHashCode()
                 ^ this.manager.GetHashCode());
-        }
-
-        internal override void Handle(PeerId id)
-        {
-            id.PiecesReceived++;
-
-            string path = id.TorrentManager.FileManager.SavePath;
-            BufferedIO d = new BufferedIO(data, pieceIndex, BlockIndex, requestLength, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Files, path);
-            d.Id = id;
-            id.TorrentManager.PieceManager.PieceDataReceived(d);
-
-            // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-            while (id.TorrentManager.PieceManager.AddPieceRequest(id)) { }
         }
 
         public override string ToString()

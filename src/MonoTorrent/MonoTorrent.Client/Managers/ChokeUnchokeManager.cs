@@ -83,7 +83,8 @@ namespace MonoTorrent.Client
                 //If the peer is a seeder and we are not currently interested in it, put that right
                 if (connectedPeer.Peer.IsSeeder && !connectedPeer.AmInterested)
                 {
-                    owningTorrent.SetAmInterestedStatus(connectedPeer, true);
+                    // FIXME - Is this necessary anymore? I don't think so
+                    //owningTorrent.Mode.SetAmInterestedStatus(connectedPeer, true);
                     //Send2Log("Forced AmInterested: " + connectedPeer.Peer.Location);
                 }
 

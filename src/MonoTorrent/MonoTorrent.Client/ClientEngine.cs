@@ -389,21 +389,13 @@ namespace MonoTorrent.Client
 
             for (int i = 0; i < this.torrents.Count; i++)
             {
-                this.torrents[i].PreLogicTick(tickCount);
                 switch (this.torrents[i].State)
                 {
                     case (TorrentState.Downloading):
-                        this.torrents[i].DownloadLogic(tickCount);
-                        break;
-
                     case (TorrentState.Seeding):
-                        this.torrents[i].SeedingLogic(tickCount);
+                        this.torrents[i].Mode.Tick(tickCount);
                         break;
-
-                    default:
-                        break;  // Do nothing.
                 }
-                this.torrents[i].PostLogicTick(tickCount);
             }
 
             RaiseStatsUpdate(new StatsUpdateEventArgs());

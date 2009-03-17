@@ -88,7 +88,7 @@ namespace MonoTorrent
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            engine.DhtEngine.Start(nodes);
+            //engine.DhtEngine.Start(nodes);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
@@ -118,6 +118,7 @@ namespace MonoTorrent
                         // Load the .torrent from the file into a Torrent instance
                         // You can use this to do preprocessing should you need to
                         torrent = Torrent.Load(file);
+                        Console.WriteLine(BitConverter.ToString(torrent.infoHash));
                     }
                     catch (Exception e)
                     {
@@ -127,11 +128,7 @@ namespace MonoTorrent
                     }
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager;
-                    if (fastResume.ContainsKey(torrent.InfoHash))
-                        manager = new TorrentManager(torrent, downloadsPath, torrentDefaults, new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash]));
-                    else
-                        manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -204,7 +201,7 @@ namespace MonoTorrent
                     {
                         AppendSeperator(sb);
 
-                        AppendFormat(sb, "Name:            {0}", manager.Torrent.Name);
+                        AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
                         AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
                         AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
                         AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
@@ -214,14 +211,16 @@ namespace MonoTorrent
                         //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
                         AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
                         AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                        AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+                        if (manager.PieceManager != null)
+                            AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
                         
                         foreach (PeerId p in manager.GetPeers())
                             AppendFormat(sb, "\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);
                        
                         AppendFormat(sb, "", null);
-                        foreach (TorrentFile file in manager.Torrent.Files)
-                            AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+                        if (manager.Torrent != null)
+                            foreach (TorrentFile file in manager.Torrent.Files)
+                                AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
                     Console.Clear();
                     Console.WriteLine(sb.ToString());

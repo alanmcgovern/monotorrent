@@ -53,47 +53,12 @@ namespace MonoTorrent.Client
 
         #region Private Members
 
-        private long fileSize;                                  // The combined length of all the files
         private SHA1 hasher;                                    // The SHA1 hasher used to calculate the hash of a piece
         private string savePath;                                // The path where the base directory will be put
         private TorrentManager manager;
-        private TorrentFile[] files;
-        private int pieceLength;
 
         #endregion
 
-
-        #region Properties
-
-        public TorrentFile[] Files
-        {
-            get { return files; }
-        }
-
-        public long FileSize
-        {
-            get { return fileSize; }
-        }
-
-        /// <summary>
-        /// The length of a piece in bytes
-        /// </summary>
-        internal int PieceLength
-        {
-            get { return this.pieceLength; }
-        }
-
-        ///// <summary>
-        ///// Returns the number of pieces which are currently queued in the write buffer
-        ///// </summary>
-        //internal int QueuedWrites
-        //{
-        //    get { return this.bufferedWrites.Count; }
-        //}
-
-        /// <summary>
-        /// 
-        /// </summary>
         internal string SavePath
         {
             get { return this.savePath; }
@@ -107,7 +72,6 @@ namespace MonoTorrent.Client
             get { return true; }// return this.fileStreams != null; }
         }
 
-        #endregion
 
 
         #region Constructors
@@ -120,21 +84,16 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The path to the directory that contains the baseDirectory</param>
         /// <param name="pieceLength">The length of a "piece" for this file</param>
         /// <param name="fileAccess">The access level for the files</param>
-        internal FileManager(TorrentManager manager, TorrentFile[] files, int pieceLength, string savePath, string baseDirectory)
+        internal FileManager(TorrentManager manager, string savePath, string baseDirectory)
         {
             this.hasher = SHA1.Create();
             this.manager = manager;
             this.savePath = Path.Combine(savePath, baseDirectory);
-            this.files = files;
-            this.pieceLength = pieceLength;
-
-            foreach (TorrentFile file in files)
-                fileSize += file.Length;
         }
 
         internal bool CheckFilesExist()
         {
-            return Array.Exists<TorrentFile>(files, delegate(TorrentFile f) {
+            return Array.Exists<TorrentFile>(manager.Torrent.Files, delegate(TorrentFile f) {
                 return File.Exists(GenerateFilePath(f, savePath));
             });
         }
@@ -169,8 +128,10 @@ namespace MonoTorrent.Client
         /// <returns>The 20 byte SHA1 hash of the supplied piece</returns>
         internal byte[] GetHash(int pieceIndex, bool asynchronous)
         {
+            long fileSize = manager.Torrent.Size;
+            int pieceLength = manager.Torrent.PieceLength;
             int bytesToRead = 0;
-            long pieceStartIndex = (long)this.pieceLength * pieceIndex;
+            long pieceStartIndex = (long)pieceLength * pieceIndex;
             BufferedIO io = null;
             ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
             List<BufferedIO> list = new List<BufferedIO>();
@@ -252,12 +213,14 @@ namespace MonoTorrent.Client
         /// <param name="path"></param>
         public void MoveFiles(string path, bool overWriteExisting)
         {
+            TorrentFile[] files = manager.Torrent.Files;
+
             if (manager.State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move the files when the torrent is active");
 
-            manager.Engine.DiskManager.CloseFileStreams(SavePath, this.files).WaitOne();
+            manager.Engine.DiskManager.CloseFileStreams(SavePath, manager.Torrent.Files).WaitOne();
 
-            for (int i = 0; i < this.files.Length; i++)
+            for (int i = 0; i < files.Length; i++)
             {
                 string oldPath = GenerateFilePath(files[i], this.savePath);
                 string newPath = GenerateFilePath(files[i], path);

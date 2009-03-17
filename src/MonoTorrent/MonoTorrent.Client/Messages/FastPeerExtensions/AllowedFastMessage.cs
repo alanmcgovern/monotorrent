@@ -35,7 +35,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class AllowedFastMessage : PeerMessage
+    public class AllowedFastMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x11;
         private readonly int messageLength = 5;
@@ -83,15 +83,6 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
             this.pieceIndex = ReadInt(buffer, offset);
         }
-
-        internal override void Handle(PeerId id)
-        {
-            if (!id.SupportsFastPeer)
-                throw new MessageException("Peer shouldn't support fast peer messages");
-
-            id.IsAllowedFastPieces.Add(this.pieceIndex);
-        }
-
 
         public override int ByteLength
         {

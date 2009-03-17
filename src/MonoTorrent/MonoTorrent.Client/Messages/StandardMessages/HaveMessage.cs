@@ -92,38 +92,6 @@ namespace MonoTorrent.Client.Messages.Standard
         }
      
         /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerId id)
-        {
-            id.HaveMessagesReceived++;
-            
-            // First set the peers bitfield to true for that piece
-            id.BitField[this.pieceIndex] = true;
-
-            // Fastcheck to see if a peer is a seeder or not
-            id.Peer.IsSeeder = id.BitField.AllTrue;
-
-            // We can do a fast check to see if the peer is interesting or not when we receive a Have Message.
-            // If the peer just received a piece we don't have, he's interesting. Otherwise his state is unchanged
-            if (!id.TorrentManager.Bitfield[this.pieceIndex])
-                id.TorrentManager.SetAmInterestedStatus(id, true);
-
-            if (id.TorrentManager.IsInitialSeeding)
-            {
-                PeerId originPeer = id.TorrentManager.InitialSeed.GetOriginPeer (this.pieceIndex);
-                if (originPeer != null && originPeer != id) {
-                    id.TorrentManager.InitialSeed.OnNotInitialPeerHaveMessage (this.pieceIndex);
-                    int nextPiece = id.TorrentManager.InitialSeed.GetNextPieceForPeer (originPeer);
-                    if (nextPiece != -1) 
-                        originPeer.Enqueue(new HaveMessage (nextPiece));
-                }
-            }
-        }
-
-
-        /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
         public override int ByteLength

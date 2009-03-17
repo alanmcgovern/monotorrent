@@ -35,7 +35,7 @@ using System.Net;
 namespace MonoTorrent.Client.Messages.FastPeer
 {
     // FIXME: The only use for a SuggestPiece message is for when i load a piece into a Disk Cache and want to make use for it
-    public class SuggestPieceMessage : PeerMessage
+    public class SuggestPieceMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x0D;
         private readonly int messageLength = 5;
@@ -94,15 +94,6 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
             this.pieceIndex = ReadInt(buffer, ref offset);
         }
-
-        internal override void Handle(PeerId id)
-        {
-            if (!id.SupportsFastPeer)
-                throw new MessageException("Peer shouldn't support fast peer messages");
-
-            id.SuggestedPieces.Add(this.pieceIndex);
-        }
-
 
         public override int ByteLength
         {

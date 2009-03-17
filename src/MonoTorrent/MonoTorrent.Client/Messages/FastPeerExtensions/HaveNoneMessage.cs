@@ -34,7 +34,7 @@ using System.Net;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class HaveNoneMessage : PeerMessage
+    public class HaveNoneMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x0F;
         private readonly int messageLength = 1;
@@ -65,17 +65,6 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
         }
-
-        internal override void Handle(PeerId id)
-        {
-            if (!id.SupportsFastPeer)
-                throw new MessageException("Peer shouldn't support fast peer messages");
-
-            id.BitField.SetAll(false);
-            id.Peer.IsSeeder = false;
-            id.TorrentManager.SetAmInterestedStatus(id, false);
-        }
-
 
         public override int ByteLength
         {

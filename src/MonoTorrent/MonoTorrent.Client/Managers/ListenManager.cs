@@ -203,13 +203,11 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
             id.ClientApp = new Software(handshake.PeerId);
 
-            MessageBundle bundle = new MessageBundle();
-            bundle.Messages.Add(new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100));
-            bundle.Messages.Add(new BitfieldMessage(id.TorrentManager.Bitfield));
+            HandshakeMessage message = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
-            ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, bundle.ByteLength);
+            ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
             id.BytesSent = 0;
-            id.BytesToSend = bundle.Encode(id.sendBuffer, 0);
+            id.BytesToSend = message.Encode(id.sendBuffer, 0);
             id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");

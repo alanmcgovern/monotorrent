@@ -18,34 +18,23 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
         public LTChat()
+            : base(Support.MessageId)
         {
+
         }
 
-        public LTChat(byte messageId, string message)
+        internal LTChat(byte messageId, string message)
+            : this()
         {
-            MessageId = messageId;
+            ExtensionId = messageId;
             Message = message;
         }
 
         public LTChat(PeerId peer, string message)
+            : this()
         {
-            for (int i = 0; i < peer.ExtensionSupports.Count; i++)
-            {
-                if (peer.ExtensionSupports[i].Name != Support.Name)
-                    continue;
-                MessageId = peer.ExtensionSupports[i].MessageId;
-                Message = message;
-                return;
-            }
-            throw new MessageException("The peer does not support chat messages");
-        }
-
-        internal override void Handle(PeerId id)
-        {
-            if (!ClientEngine.SupportsFastPeer)
-                throw new MessageException("Libtorrent extension messages not supported");
-
-            // FIXME: Do nothing for the moment - Maybe raise an event in the future?
+            ExtensionId = peer.ExtensionSupports.MessageId(Support);
+            Message = message;
         }
 
         public override int ByteLength
@@ -66,8 +55,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             int written = offset;
 
             written += Write(buffer, offset, ByteLength - 4);
-            written += Write(buffer, written, PeerMessage.LibTorrentMessageId);
-            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, ExtensionMessage.MessageId);
+            written += Write(buffer, written, ExtensionId);
             written += messageDict.Encode(buffer, written);
             
             CheckWritten(written - offset);

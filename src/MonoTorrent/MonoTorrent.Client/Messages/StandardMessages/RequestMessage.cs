@@ -125,37 +125,6 @@ namespace MonoTorrent.Client.Messages.Standard
             return (this.pieceIndex.GetHashCode() ^ this.requestLength.GetHashCode() ^ this.startOffset.GetHashCode());
         }
 
-        internal override void Handle(PeerId id)
-        {
-            // If we are not on the last piece and the user requested a stupidly big/small amount of data
-            // we will close the connection
-            if (id.TorrentManager.Torrent.Pieces.Count != (this.pieceIndex + 1))
-                if (this.requestLength > MaxSize || this.requestLength < MinSize)
-                    throw new MessageException("Illegal piece request received. Peer requested " + requestLength.ToString() + " byte");
-
-            PieceMessage m = new PieceMessage(id.TorrentManager, this.PieceIndex, this.startOffset, this.requestLength);
-
-            // If we're not choking the peer, enqueue the message right away
-            if (!id.AmChoking)
-            {
-                id.IsRequestingPiecesCount++;
-                id.Enqueue(m);
-            }
-
-            // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
-            // otherwise send back a reject request message
-            else if (id.SupportsFastPeer && ClientEngine.SupportsFastPeer)
-            {
-                if (id.AmAllowedFastPieces.Contains(this.pieceIndex))
-                {
-                    id.IsRequestingPiecesCount++;
-                    id.Enqueue(m);
-                }
-                else
-                    id.Enqueue(new RejectRequestMessage(m));
-            }
-        }
-
         public override string ToString()
         {
 

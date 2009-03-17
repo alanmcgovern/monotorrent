@@ -1,0 +1,261 @@
+//
+// MetadataMode.cs
+//
+// Authors:
+//   Olivier Dufour olivier.duff@gmail.com
+//   Alan McGovern alan.mcgovern@gmail.com
+// Copyright (C) 2009 Olivier Dufour
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+// 
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+using System;
+using System.IO;
+using System.Threading;
+using System.Security.Cryptography;
+using System.Collections.Generic;
+
+using MonoTorrent.Common;
+using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Tracker;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Dht;
+
+
+namespace MonoTorrent.Client
+{
+    class MetadataMode : Mode
+    {
+        private MemoryStream stream;//the stream of the torrent metadata
+        private BitField bitField;
+        private DateTime lastRequest;
+        static readonly TimeSpan timeout = TimeSpan.FromSeconds(10);
+        private PeerId currentId;
+        string savePath;
+
+        internal MemoryStream Stream
+        {
+            get { return this.stream; }
+        }
+
+        public MetadataMode(TorrentManager manager, string savePath)
+            : base(manager)
+        {
+            this.savePath = savePath;
+        }
+
+        public override void Tick(int counter)
+        {
+            //if one request have been sent and we have wait more than timeout
+            // request the next peer
+            if (lastRequest.Add(timeout) < DateTime.Now)
+            {
+                SendRequestToNextPeer();
+            }
+        }
+
+        protected override void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
+        {
+            // Nothing
+        }
+        private void SendRequestToNextPeer()
+        {
+            NextPeer();
+
+            if (currentId != null)
+            {
+                LTMetadata m = new LTMetadata(currentId, LTMetadata.eMessageType.Request, (bitField != null) ? bitField.FirstTrue() : 0);
+                lastRequest = DateTime.Now;
+                currentId.Enqueue(m);
+            }
+        }
+
+        private void NextPeer()
+        {
+            bool flag = false;
+
+            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+            {
+                if (id.SupportsLTMessages && id.ExtensionSupports.Supports(LTMetadata.Support.Name))
+                {
+                    if (id == currentId)
+                        flag = true;
+                    else if (flag)
+                    {
+                        currentId = id;
+                        return;
+                    }
+                }
+            }
+            //second pass without removing the currentid and previous ones
+            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+            {
+                if (id.SupportsLTMessages && id.ExtensionSupports.Supports(LTMetadata.Support.Name))
+                {
+                    currentId = id;
+                    return;
+                }
+            }
+            currentId = null;
+            return;
+        }
+
+        protected override void HandleLtMetadataMessage(PeerId id, LTMetadata message)
+        {
+            base.HandleLtMetadataMessage(id, message);
+
+            byte messageId = id.ExtensionSupports.MessageId(LTMetadata.Support);
+            switch (message.MetadataMessageType)
+            {
+                case LTMetadata.eMessageType.Data:
+                    if (stream == null)
+                        throw new Exception("Need extention handshake before ut_metadata message.");
+
+                    stream.Seek(message.Piece * LTMetadata.BlockSize, SeekOrigin.Begin);
+                    stream.Write(message.MetadataPiece, 0, message.MetadataPiece.Length);
+                    bitField[message.Piece] = true;
+                    if (bitField.AllTrue)
+                    {
+                        byte[] hash;
+                        stream.Position = 0;
+                        using (SHA1 hasher = SHA1.Create())
+                            hash = hasher.ComputeHash(stream);
+
+                        if (!Toolbox.ByteMatch(hash, Manager.InfoHash))
+                        {
+                            bitField.SetAll(false);
+                        }
+                        else
+                        {
+                            Torrent t;
+                            stream.Position = 0;
+                            BEncodedDictionary dict = new BEncodedDictionary();
+                            dict.Add ("info", BEncodedValue.Decode(stream));
+                            // FIXME: Add the trackers too
+                            if (Torrent.TryLoad(dict.Encode (), out t))
+                            {
+                                File.WriteAllBytes(savePath, stream.GetBuffer());
+                                t.TorrentPath = savePath;
+                                Manager.Torrent = t;
+                                SwitchToRegular();
+                            }
+                            else
+                            {
+                                bitField.SetAll(false);
+                            }
+                        }
+                    }
+                    if (!bitField.AllTrue)
+                    {
+                        RequestNextNeededPiece(id);
+                    }
+                    break;
+                case LTMetadata.eMessageType.Reject:
+                    //TODO
+                    //Think to what we do in this situation
+                    //for moment nothing ;)
+                    //reject or flood?
+                    break;
+                default:
+                    throw new MessageException(string.Format("Invalid messagetype in LTMetadata: {0}", message.MetadataMessageType));
+            }
+
+        }
+
+        private void SwitchToRegular()
+        {
+            Torrent torrent = Manager.Torrent;
+            foreach (PeerId peer in Manager.Peers.ConnectedPeers)
+                peer.CloseConnection();
+            Manager.Bitfield = new BitField(torrent.Pieces.Count);
+            Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
+            Manager.Mode = new DownloadMode(Manager);
+        }
+
+        protected override void HandleHaveAllMessage(PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)
+        {
+            // Nothing
+        }
+
+        protected override void HandleHaveMessage(PeerId id, MonoTorrent.Client.Messages.Standard.HaveMessage message)
+        {
+            // Nothing
+        }
+
+        protected override void HandleHaveNoneMessage(PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveNoneMessage message)
+        {
+            // Nothing
+        }
+
+        protected override void HandleInterestedMessage(PeerId id, MonoTorrent.Client.Messages.Standard.InterestedMessage message)
+        {
+            // Nothing
+        }
+
+        private void RequestNextNeededPiece(PeerId id)
+        {
+            LTMetadata m = new LTMetadata(id, LTMetadata.eMessageType.Request, bitField.FirstFalse());
+            id.Enqueue(m);
+            lastRequest = DateTime.Now;
+        }
+
+        internal Torrent GetTorrent()
+        {
+            byte[] calculatedInfoHash = new SHA1Managed().ComputeHash(stream.ToArray());
+            if (!Toolbox.ByteMatch(Manager.Torrent.InfoHash, calculatedInfoHash))
+                throw new Exception("invalid metadata");//restart ?
+
+            BEncodedValue d = BEncodedValue.Decode(stream);
+            BEncodedDictionary dict = new BEncodedDictionary();
+            dict.Add("info", d);
+
+            return Torrent.Load(dict);
+        }
+        protected override void AppendBitfieldMessage(PeerId id, MessageBundle bundle)
+        {
+            // We can't send a bitfield message in metadata mode as
+            // we don't know what size the bitfield is
+        }
+
+        protected override void HandleExtendedHandshakeMessage(PeerId id, ExtendedHandshakeMessage message)
+        {
+            base.HandleExtendedHandshakeMessage(id, message);
+
+            if (id.ExtensionSupports.Supports(LTMetadata.Support.Name))
+            {
+                stream = new MemoryStream(new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
+                int size = message.MetadataSize % LTMetadata.BlockSize;
+                if (size > 0)
+                    size = 1;
+                size += message.MetadataSize / LTMetadata.BlockSize;
+                bitField = new BitField(size);
+                RequestNextNeededPiece(id);
+            }
+        }
+
+        protected override void SetAmInterestedStatus(PeerId id, bool interesting)
+        {
+            // Never set a peer as interesting when in metadata mode
+            // we don't want to try download any data
+        }
+    }
+}

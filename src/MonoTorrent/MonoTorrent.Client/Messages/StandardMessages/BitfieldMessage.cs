@@ -95,19 +95,6 @@ namespace MonoTorrent.Client.Messages.Standard
         }
 
         /// <summary>
-        /// Performs any necessary actions required to process the message
-        /// </summary>
-        /// <param name="id">The Peer who's message will be handled</param>
-        internal override void Handle(PeerId id)
-        {
-            id.BitField = this.bitField;
-            id.Peer.IsSeeder = (id.BitField.AllTrue);
-
-            id.TorrentManager.SetAmInterestedStatus(id, id.TorrentManager.PieceManager.IsInteresting(id));
-        }
-
-
-        /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
         public override int ByteLength

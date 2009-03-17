@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
-    public class RejectRequestMessage : PeerMessage
+    public class RejectRequestMessage : PeerMessage, IFastPeerMessage
     {
         internal static readonly byte MessageId = 0x10;
         public readonly int messageLength = 13;
@@ -118,15 +118,6 @@ namespace MonoTorrent.Client.Messages.FastPeer
             this.startOffset = ReadInt(buffer, ref offset);
             this.requestLength = ReadInt(buffer, ref offset);
         }
-
-        internal override void Handle(PeerId id)
-        {
-            if (!id.SupportsFastPeer)
-                throw new MessageException("Peer shouldn't support fast peer messages");
-
-            id.TorrentManager.PieceManager.Picker.CancelRequest(id, PieceIndex, StartOffset, RequestLength);
-        }
-
 
         public override int ByteLength
         {

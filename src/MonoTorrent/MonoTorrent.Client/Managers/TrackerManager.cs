@@ -112,16 +112,15 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager)
+        public TrackerManager(TorrentManager manager, byte[] infoHash, List<MonoTorrentCollection<string>> announces)
         {
             this.manager = manager;
-            this.infoHash = new byte[20];
-            Buffer.BlockCopy(manager.Torrent.infoHash, 0, infoHash, 0, 20);
+            this.infoHash = infoHash;
 
             // Check if this tracker supports scraping
             trackerTiers = new List<TrackerTier>();
-            for (int i = 0; i < manager.Torrent.AnnounceUrls.Count; i++)
-                trackerTiers.Add(new TrackerTier(manager.Torrent.AnnounceUrls[i]));
+            for (int i = 0; i < announces.Count; i++)
+                trackerTiers.Add(new TrackerTier(announces[i]));
 
             trackerTiers.RemoveAll(delegate(TrackerTier t) { return t.Trackers.Count == 0; });
             foreach (TrackerTier tier in trackerTiers)
@@ -197,9 +196,14 @@ namespace MonoTorrent.Client.Tracker
             string ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
             int port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
 
+            // FIXME: In metadata mode we need to pretend we need to download data otherwise
+            // tracker optimisations might result in no peers being sent back.
+            long bytesLeft = 1000;
+            if (manager.Bitfield != null && manager.Torrent != null)
+                bytesLeft = (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size);
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,
-                                                (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size),
+                                                bytesLeft,
                                                 clientEvent, this.infoHash, requireEncryption, manager.Engine.PeerId,
                                                 ip, port);
             p.SupportsEncryption = supportsEncryption;

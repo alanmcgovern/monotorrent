@@ -107,7 +107,7 @@ namespace Samples
             torrent.Files[0].Priority = Priority.Highest;
             torrent.Files[1].Priority = Priority.Normal;
 
-            TorrentManager manager = new TorrentManager(torrent, "DownloadFolder", new TorrentSettings(), (FastResume) null);
+            TorrentManager manager = new TorrentManager(torrent, "DownloadFolder", new TorrentSettings());
             managers.Add(manager);
             engine.Register(manager);
 

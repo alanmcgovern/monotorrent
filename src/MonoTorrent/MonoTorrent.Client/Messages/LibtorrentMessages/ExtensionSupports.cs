@@ -1,10 +1,10 @@
 //
-// UnchokeMessage.sc
+// ExtensionSupports.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2006 Alan McGovern
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,69 +26,40 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
 using System;
-using System.Net;
+using System.Collections.Generic;
+using System.Text;
+using MonoTorrent.Client.Messages.Libtorrent;
 
-namespace MonoTorrent.Client.Messages.Standard
+namespace MonoTorrent.Client
 {
-    public class UnchokeMessage : PeerMessage
+    public class ExtensionSupports : List<ExtensionSupport>
     {
-        internal static readonly byte MessageId = 1;
-        private const int messageLength = 1;
-
-
-        #region Constructors
-        
-        public UnchokeMessage()
+        public ExtensionSupports()
         {
         }
 
-        #endregion
-
-
-        #region Methods
-
-        public override int Encode(byte[] buffer, int offset)
+        public ExtensionSupports(IEnumerable<ExtensionSupport> collection)
+            : base(collection)
         {
-			int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-
-            return CheckWritten(written - offset);
         }
 
-        public override void Decode(byte[] buffer, int offset, int length)
+        public bool Supports(string name)
         {
-            // No decoding needed
+            for (int i = 0; i < Count; i++)
+                if (this[i].Name == name)
+                    return true;
+            return false;
         }
 
-        public override int ByteLength
+        internal byte MessageId(ExtensionSupport support)
         {
-            get { return (messageLength + 4); }
+            for (int i = 0; i < Count; i++)
+                if (this[i].Name == support.Name)
+                    return this[i].MessageId;
+
+            throw new MessageException(string.Format("{0} is not supported by this peer", support.Name));
         }
-        #endregion
-
-
-        #region Overridden Methods
-        
-        public override string ToString()
-        {
-            return "UnChokeMessage";
-        }
-
-        public override bool Equals(object obj)
-        {
-            return (obj is UnchokeMessage);
-        }
-
-        public override int GetHashCode()
-        {
-            return this.ToString().GetHashCode();
-        }
-
-        #endregion
     }
 }
