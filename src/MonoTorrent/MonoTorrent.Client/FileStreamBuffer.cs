@@ -18,6 +18,11 @@ namespace MonoTorrent.Client
 			get { return list.Count; }
 		}
 		
+		public List<TorrentFileStream> Streams
+		{
+			get { return list; }
+		}
+
         public FileStreamBuffer(int maxStreams)
         {
             this.maxStreams = maxStreams;
@@ -71,7 +76,7 @@ namespace MonoTorrent.Client
                 if (!File.Exists(filePath))
                     SparseFile.CreateSparse(filePath, file.Length);
 
-                s = new TorrentFileStream(filePath, FileMode.OpenOrCreate, access, FileShare.Read);
+                s = new TorrentFileStream(filePath, file, FileMode.OpenOrCreate, access, FileShare.Read);
                 Add(s);
             }
 

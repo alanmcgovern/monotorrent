@@ -161,11 +161,17 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override void Flush(string path, TorrentFile[] files)
         {
-            // No buffering done here
+            for (int i = 0; i < streamsBuffer.Count; i++)
+                streamsBuffer.Streams[i].Flush();
         }
         public override void Flush(string path, TorrentFile[] files, int pieceIndex)
         {
-            // No buffering done here
+            for (int i = 0; i < streamsBuffer.Count; i++)
+            {
+                TorrentFile file = streamsBuffer.Streams[i].File;
+                if (pieceIndex >= file.StartPieceIndex && pieceIndex <= file.EndPieceIndex)
+                    streamsBuffer.Streams[i].Flush();
+            }
         }
     }
 }
