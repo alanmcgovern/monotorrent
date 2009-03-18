@@ -46,10 +46,10 @@ namespace MonoTorrent.Client
     {
         private MemoryStream stream;//the stream of the torrent metadata
         private BitField bitField;
-        private DateTime lastRequest;
         static readonly TimeSpan timeout = TimeSpan.FromSeconds(10);
         private PeerId currentId;
         string savePath;
+        private DateTime requestTimeout;
 
         internal MemoryStream Stream
         {
@@ -66,25 +66,25 @@ namespace MonoTorrent.Client
         {
             //if one request have been sent and we have wait more than timeout
             // request the next peer
-            if (lastRequest.Add(timeout) < DateTime.Now)
+            if (requestTimeout < DateTime.Now)
             {
                 SendRequestToNextPeer();
             }
+            
         }
 
         protected override void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
             // Nothing
         }
+
         private void SendRequestToNextPeer()
         {
             NextPeer();
 
             if (currentId != null)
             {
-                LTMetadata m = new LTMetadata(currentId, LTMetadata.eMessageType.Request, (bitField != null) ? bitField.FirstTrue() : 0);
-                lastRequest = DateTime.Now;
-                currentId.Enqueue(m);
+                RequestNextNeededPiece (currentId);
             }
         }
 
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client
                             }
                         }
                     }
-                    if (!bitField.AllTrue)
+                    else
                     {
                         RequestNextNeededPiece(id);
                     }
@@ -212,9 +212,13 @@ namespace MonoTorrent.Client
 
         private void RequestNextNeededPiece(PeerId id)
         {
-            LTMetadata m = new LTMetadata(id, LTMetadata.eMessageType.Request, bitField.FirstFalse());
+            int index = bitField.FirstFalse();
+            if (index == -1)
+                return;//throw exception or switch to regular?
+
+            LTMetadata m = new LTMetadata(id, LTMetadata.eMessageType.Request, index);
             id.Enqueue(m);
-            lastRequest = DateTime.Now;
+            requestTimeout = DateTime.Now.Add(timeout);
         }
 
         internal Torrent GetTorrent()
@@ -229,6 +233,7 @@ namespace MonoTorrent.Client
 
             return Torrent.Load(dict);
         }
+
         protected override void AppendBitfieldMessage(PeerId id, MessageBundle bundle)
         {
             // We can't send a bitfield message in metadata mode as
