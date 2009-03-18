@@ -44,6 +44,7 @@ namespace MonoTorrent.Client
         public string Path
         {
             get { return path; }
+            set { path = value; }
         }
         public int PieceIndex
         {

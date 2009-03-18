@@ -32,7 +32,7 @@ namespace MonoTorrent.Client.PieceWriters
         public override void Close(string path, TorrentFile[] files)
         {
             for (int i = 0; i < files.Length; i++)
-                streamsBuffer.CloseStream(GenerateFilePath(files[i], path));
+                streamsBuffer.CloseStream(GenerateFilePath(path, files[i]));
         }
 
         public override void Dispose()
@@ -41,26 +41,31 @@ namespace MonoTorrent.Client.PieceWriters
             base.Dispose();
         }
 
-        protected virtual string GenerateFilePath(TorrentFile file, string path)
+        protected virtual string GenerateFilePath(string path, TorrentFile file)
         {
-            return Path.Combine(path, file.Path);
-            //if (paths.ContainsKey(file))
-            //    return paths[file];
+            path = Path.Combine(path, file.Path);
+            string directory = Path.GetDirectoryName(path);
 
-            //path = Path.Combine(path, file.Path);
-
-            //if (!Directory.Exists(Path.GetDirectoryName(path)) && !string.IsNullOrEmpty(Path.GetDirectoryName(path)))
-            //    Directory.CreateDirectory(Path.GetDirectoryName(path));
-
-            //paths[file] = path;
-
-            //return path;
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            
+            return path;
         }
 
         internal TorrentFileStream GetStream(string path, TorrentFile file, FileAccess access)
         {
-            path = GenerateFilePath(file, path);
+            path = GenerateFilePath(path, file);
             return streamsBuffer.GetStream(file, path, access);
+        }
+
+        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        {
+            string oldFile = GenerateFilePath(oldPath, file);
+            string newFile = GenerateFilePath (newPath, file);
+            streamsBuffer.CloseStream(oldFile);
+            if (ignoreExisting)
+                File.Delete(newFile);
+            File.Move(oldFile, newFile);
         }
 
         public override int Read(BufferedIO data)
@@ -157,6 +162,11 @@ namespace MonoTorrent.Client.PieceWriters
             }
             ClientEngine.BufferManager.FreeBuffer(ref data.buffer);
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
+        }
+
+        public override bool Exists(string path, TorrentFile file)
+        {
+            return File.Exists(GenerateFilePath(path, file));
         }
 
         public override void Flush(string path, TorrentFile[] files)

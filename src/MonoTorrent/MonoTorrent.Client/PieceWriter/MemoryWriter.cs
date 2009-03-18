@@ -87,6 +87,11 @@ namespace MonoTorrent.Client.PieceWriters
             writer.Close(path, files);
         }
 
+        public override bool Exists(string path, TorrentFile file)
+        {
+            return this.writer.Exists(path, file);
+        }
+
         public override void Flush(string path, TorrentFile[] files)
         {
             Flush(delegate(BufferedIO io) { return io.Files == files; });
@@ -108,6 +113,14 @@ namespace MonoTorrent.Client.PieceWriters
             });
 
             memoryBuffer.RemoveAll(flush);
+        }
+
+        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        {
+            foreach (BufferedIO io in memoryBuffer)
+                io.Path = newPath;
+
+            writer.Move(oldPath, newPath, file, ignoreExisting);
         }
 
         public override void Dispose()

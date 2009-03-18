@@ -75,7 +75,6 @@ namespace MonoTorrent.Client
 
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
         private ClientEngine engine;            // The engine that this torrent is registered with
-        private FileManager fileManager;        // Controls all reading/writing to/from the disk
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
@@ -85,6 +84,7 @@ namespace MonoTorrent.Client
         private ConnectionMonitor monitor;      // Calculates download/upload speed
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
+        private string savePath;
         internal RateLimiter uploadLimiter;        // Contains the logic to decide how many chunks we can download
         internal RateLimiter downloadLimiter;        // Contains the logic to decide how many chunks we can download
         private TorrentSettings settings;       // The settings for this torrent
@@ -122,12 +122,6 @@ namespace MonoTorrent.Client
         {
             get { return this.engine; }
             internal set { this.engine = value; }
-        }
-
-        public FileManager FileManager
-        {
-            get { return this.fileManager; }
-            internal set { fileManager = value; }
         }
 
         internal Mode Mode
@@ -229,7 +223,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public string SavePath
         {
-            get { return this.fileManager.SavePath; }
+            get { return this.savePath; }
         }
 
 
@@ -372,7 +366,7 @@ namespace MonoTorrent.Client
         void Initialise(string savePath, string baseDirectory, List<MonoTorrentCollection<string>> announces)
         {
             this.bitfield = new BitField(HasMetadata ? torrent.Pieces.Count : 1);
-            this.fileManager = new FileManager(this, savePath, baseDirectory);
+            this.savePath = Path.Combine(savePath, baseDirectory);
             this.finishedPieces = new Queue<int>();
             this.hashingWaitHandle = new ManualResetEvent(false);
             this.monitor = new ConnectionMonitor();
@@ -479,6 +473,18 @@ namespace MonoTorrent.Client
                 UpdateState(TorrentState.Hashing);
                 ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); }); 
             });
+        }
+
+        public void MoveFiles(string newPath, bool overWriteExisting)
+        {
+            CheckRegisteredAndDisposed();
+            CheckMetadata();
+
+            if (State != TorrentState.Stopped)
+                throw new TorrentException("Cannot move the files when the torrent is active");
+
+            Engine.DiskManager.MoveFiles(this, savePath, newPath, overWriteExisting);
+            savePath = newPath;
         }
 
         /// <summary>
@@ -614,7 +620,7 @@ namespace MonoTorrent.Client
 
                     this.peers.ClearAll();
 
-                    handle.AddHandle(engine.DiskManager.CloseFileStreams(FileManager.SavePath, Torrent.Files), "DiskManager");
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(SavePath, Torrent.Files), "DiskManager");
 
                     if (this.hashChecked)
                         this.SaveFastResume();
@@ -773,14 +779,14 @@ namespace MonoTorrent.Client
                 // If they are initially closed, we need to close them again after we hashcheck
 
                 // We only need to hashcheck if at least one file already exists on the disk
-                filesExist = HasMetadata && fileManager.CheckFilesExist();
+                filesExist = HasMetadata && Engine.DiskManager.CheckFilesExist(this);
 
                 // A hashcheck should only be performed if some/all of the files exist on disk
                 if (filesExist)
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
-                        bitfield[i] = this.torrent.Pieces.IsValid(this.fileManager.GetHash(i, true), i);
+                        bitfield[i] = this.torrent.Pieces.IsValid(engine.DiskManager.GetHash(this, i), i);
                         RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
 
                         // This happens if the user cancels the hash by stopping the torrent.

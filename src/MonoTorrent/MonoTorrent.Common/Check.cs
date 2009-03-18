@@ -53,6 +53,11 @@ namespace MonoTorrent
             DoCheck(endpoint, "endpoint");
         }
 
+        internal static void Files(object files)
+        {
+            DoCheck(files, "files");
+        }
+
         internal static void InfoHash(object infoHash)
         {
             DoCheck(infoHash, "infoHash");

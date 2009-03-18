@@ -75,6 +75,16 @@ namespace SampleClient
         {
             
         }
+
+        public override bool Exists(string path, TorrentFile file)
+        {
+            return false;
+        }
+
+        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        {
+            
+        }
     }
 
     public class CustomConnection : IConnection

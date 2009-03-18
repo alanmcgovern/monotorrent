@@ -290,7 +290,7 @@ namespace MonoTorrent.Client
         protected virtual void HandlePieceMessage(PeerId id, PieceMessage message)
         {
             id.PiecesReceived++;
-            string path = manager.FileManager.SavePath;
+            string path = manager.SavePath;
             BufferedIO d = new BufferedIO(message.data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files, path);
             d.Id = id;
             manager.PieceManager.PieceDataReceived(d);

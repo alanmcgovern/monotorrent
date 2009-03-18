@@ -13,6 +13,18 @@ namespace MonoTorrent.Client.PieceWriters
             //pressures = new List<Pressure>();
         }
 
+        public abstract bool Exists(string path, TorrentFile file);
+
+        public bool Exists(string path, TorrentFile[] files)
+        {
+            Check.Path(path);
+            Check.Files(files);
+            for (int i = 0; i < files.Length; i++)
+                if (Exists(path, files[i]))
+                    return true;
+            return false;
+        }
+
         public abstract void Close(string path, TorrentFile[] files);
 
         public virtual void Dispose()
@@ -23,6 +35,8 @@ namespace MonoTorrent.Client.PieceWriters
         public abstract void Flush(string path, TorrentFile[] files);
 
         public abstract void Flush(string path, TorrentFile[] files, int pieceIndex);
+
+        public abstract void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting);
 
         public abstract int Read(BufferedIO data);
 

@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
     {
         public string CreateFilePath(TorrentFile file, string path)
         {
-            return base.GenerateFilePath(file, path);
+            return base.GenerateFilePath(path, file);
         }
     }
     

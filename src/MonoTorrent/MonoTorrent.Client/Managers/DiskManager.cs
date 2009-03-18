@@ -174,7 +174,7 @@ namespace MonoTorrent.Client.Managers
         {
             IOLoop.QueueWait(delegate {
                 foreach (TorrentManager manager in engine.Torrents)
-                    writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
+                    writer.Flush(manager.SavePath, manager.Torrent.Files);
             });
         }
 
@@ -182,7 +182,7 @@ namespace MonoTorrent.Client.Managers
         {
             Check.Manager(manager);
             IOLoop.QueueWait(delegate {
-                writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
+                writer.Flush(manager.SavePath, manager.Torrent.Files);
             });
         }
 
@@ -199,7 +199,6 @@ namespace MonoTorrent.Client.Managers
             writeMonitor.AddDelta(data.Count);
 
             piece.Blocks[index].Written = true;
-            id.TorrentManager.FileManager.RaiseBlockWritten(new BlockEventArgs(data));
 
             if (data.WaitHandle != null)
                 data.WaitHandle.Set();
@@ -209,7 +208,8 @@ namespace MonoTorrent.Client.Managers
                 return;
 
             // Hashcheck the piece as we now have all the blocks.
-            bool result = id.TorrentManager.Torrent.Pieces.IsValid(id.TorrentManager.FileManager.GetHash(piece.Index, false), piece.Index);
+            byte[] hash = id.Engine.DiskManager.GetHash(id.TorrentManager, piece.Index);
+            bool result = id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
             id.TorrentManager.Bitfield[data.PieceIndex] = result;
 
             ClientEngine.MainLoop.Queue(delegate {
@@ -242,7 +242,7 @@ namespace MonoTorrent.Client.Managers
 
         internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
         {
-            string path = manager.FileManager.SavePath;
+            string path = manager.SavePath;
             ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
             BufferedIO io = new BufferedIO(b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
             IOLoop.QueueWait((MainLoopTask)delegate {
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client.Managers
         internal void QueueFlush(TorrentManager manager, int index)
         {
             IOLoop.Queue(delegate {
-                writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files, index);
+                writer.Flush(manager.SavePath, manager.Torrent.Files, index);
             });
         }
 
@@ -282,6 +282,62 @@ namespace MonoTorrent.Client.Managers
                 }
         }
 
+        internal bool CheckFilesExist(TorrentManager manager)
+        {
+            return writer.Exists(manager.SavePath, manager.Torrent.Files);
+        }
+
+        internal byte[] GetHash(TorrentManager manager, int pieceIndex)
+        {
+            long fileSize = manager.Torrent.Size;
+            int pieceLength = manager.Torrent.PieceLength;
+            int bytesToRead = 0;
+            long pieceStartIndex = (long)pieceLength * pieceIndex;
+            BufferedIO io = null;
+            ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
+            List<BufferedIO> list = new List<BufferedIO>();
+
+            for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += Piece.BlockSize)
+            {
+                hashBuffer = BufferManager.EmptyBuffer;
+                ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
+                bytesToRead = Piece.BlockSize;
+                if ((i + bytesToRead) > fileSize)
+                    bytesToRead = (int)(fileSize - i);
+
+                io = new BufferedIO(hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
+                io.WaitHandle = new ManualResetEvent(false);
+                list.Add(io);
+                manager.Engine.DiskManager.QueueRead(io);
+
+                if (bytesToRead != Piece.BlockSize)
+                    break;
+            }
+
+            using (SHA1 hasher = SHA1.Create())
+            {
+                hasher.Initialize();
+                for (int i = 0; i < list.Count; i++)
+                {
+                    list[i].WaitHandle.WaitOne();
+                    list[i].WaitHandle.Close();
+                    hashBuffer = list[i].buffer;
+                    hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
+                    ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
+                }
+                hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
+                return hasher.Hash;
+            }
+        }
+
         #endregion
+
+        internal void MoveFiles(TorrentManager torrentManager, string oldPath, string newPath, bool overWriteExisting)
+        {
+            IOLoop.QueueWait(delegate {
+                foreach (TorrentFile file in torrentManager.Torrent.Files)
+                    writer.Move(oldPath, newPath, file, overWriteExisting);
+            });
+        }
     }
 }

@@ -100,7 +100,7 @@ namespace MonoTorrent.Client
                 data.Piece = piece;
                 id.LastBlockReceived = DateTime.Now;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
-                id.TorrentManager.FileManager.QueueWrite(data);
+                id.TorrentManager.Engine.DiskManager.QueueWrite(data);
                 
                 if (data.Piece.AllBlocksReceived)
                     this.unhashedPieces[data.PieceIndex] = true;

@@ -138,7 +138,7 @@ namespace MonoTorrent.Client.Messages.Standard
             written += Write(buffer, written, startOffset);
 
             long pieceOffset = (long)this.PieceIndex * this.manager.Torrent.PieceLength + this.startOffset;
-            bytesRead = this.manager.FileManager.Read(buffer, written, pieceOffset, this.RequestLength);
+            bytesRead = manager.Engine.DiskManager.Read(manager, buffer, written, pieceOffset, RequestLength);
 
             if (bytesRead != this.RequestLength)
                 throw new MessageException("Could not read required data");
