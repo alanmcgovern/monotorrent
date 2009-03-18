@@ -88,7 +88,7 @@ namespace MonoTorrent
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            //engine.DhtEngine.Start(nodes);
+            engine.DhtEngine.Start(nodes);
 
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
