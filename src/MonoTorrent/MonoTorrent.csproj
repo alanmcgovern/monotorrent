@@ -304,7 +304,6 @@
     <Compile Include="MonoTorrent.Dht\Tasks\Task.cs" />
     <Compile Include="MonoTorrent.Dht\TransactionId.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />
-    <Compile Include="MonoTorrent.Tracker\ByteComparer.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\PeerEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\InfoHashTrackable.cs" />
     <Compile Include="MonoTorrent.Tracker\IPAddressComparer.cs" />
