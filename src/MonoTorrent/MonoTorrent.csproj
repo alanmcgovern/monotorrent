@@ -130,6 +130,7 @@
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
+    <Compile Include="MonoTorrent.Client\PeerConnections\PeerId.cs" />
     <Compile Include="MonoTorrent.Client\Piece.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGamePicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\EndGameSwitcher.cs" />
@@ -140,11 +141,11 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\PriorityPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\RandomisedPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\RarestFirstPicker.cs" />
-    <Compile Include="MonoTorrent.Client\PiecePicking\PiecePickerBase.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\SortedList.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
+    <Compile Include="MonoTorrent.Client\PieceWriter\PieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\TorrentFileStream.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\ITracker.cs" />
@@ -227,12 +228,10 @@
     <Compile Include="MonoTorrent.Client\PeerConnections\ConnectionFactory.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HTTPConnection.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IConnection.cs" />
-    <Compile Include="MonoTorrent.Client\PeerConnections\PeerIdInternal.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\TCPConnection.cs" />
     <Compile Include="MonoTorrent.Client\Peers\Peer.cs" />
     <Compile Include="MonoTorrent.Client\Peers\PeerList.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\DiskWriter.cs" />
-    <Compile Include="MonoTorrent.Client\PieceWriter\IPieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\MemoryWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\PieceData.cs" />
     <Compile Include="MonoTorrent.Client\Settings\EngineSettings.cs" />
