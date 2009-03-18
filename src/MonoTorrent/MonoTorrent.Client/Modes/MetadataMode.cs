@@ -163,7 +163,8 @@ namespace MonoTorrent.Client
                             }
                         }
                     }
-                    else
+					//Double test because we can change the bitfield in the other block
+                    if (!bitField.AllTrue)
                     {
                         RequestNextNeededPiece(id);
                     }
