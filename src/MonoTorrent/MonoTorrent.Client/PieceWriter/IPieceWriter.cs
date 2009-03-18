@@ -19,20 +19,36 @@ namespace MonoTorrent.Client.PieceWriters
         {
             Check.Path(path);
             Check.Files(files);
-            for (int i = 0; i < files.Length; i++)
-                if (Exists(path, files[i]))
+            foreach (TorrentFile file in files)
+                if (Exists(path, file))
                     return true;
             return false;
         }
 
-        public abstract void Close(string path, TorrentFile[] files);
+        public abstract void Close(string path, TorrentFile file);
+
+        public void Close(string path, TorrentFile[] files)
+        {
+            Check.Path(path);
+            Check.Files (files);
+            foreach (TorrentFile file in files)
+                Close(path, file);
+        }
 
         public virtual void Dispose()
         {
 
         }
 
-        public abstract void Flush(string path, TorrentFile[] files);
+        public abstract void Flush(string path, TorrentFile file);
+
+        public void Flush(string path, TorrentFile[] files)
+        {
+            Check.Path(path);
+            Check.Files(files);
+            foreach (TorrentFile file in files)
+                Flush(path, file);
+        }
 
         public abstract void Flush(string path, TorrentFile[] files, int pieceIndex);
 

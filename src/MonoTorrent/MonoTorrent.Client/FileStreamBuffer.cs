@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
             list.Add(stream);
         }
 
-        TorrentFileStream FindStream(string path)
+        public TorrentFileStream FindStream(string path)
         {
             for (int i = 0; i < list.Count; i++)
                 if (list[i].Path == path)

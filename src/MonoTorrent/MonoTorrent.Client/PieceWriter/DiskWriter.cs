@@ -29,10 +29,9 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-        public override void Close(string path, TorrentFile[] files)
+        public override void Close(string path, TorrentFile file)
         {
-            for (int i = 0; i < files.Length; i++)
-                streamsBuffer.CloseStream(GenerateFilePath(path, files[i]));
+            streamsBuffer.CloseStream(GenerateFilePath(path, file));
         }
 
         public override void Dispose()
@@ -169,10 +168,11 @@ namespace MonoTorrent.Client.PieceWriters
             return File.Exists(GenerateFilePath(path, file));
         }
 
-        public override void Flush(string path, TorrentFile[] files)
+        public override void Flush(string path, TorrentFile file)
         {
-            for (int i = 0; i < streamsBuffer.Count; i++)
-                streamsBuffer.Streams[i].Flush();
+            Stream s = streamsBuffer.FindStream(GenerateFilePath(path, file));
+            if (s != null)
+                s.Flush();
         }
         public override void Flush(string path, TorrentFile[] files, int pieceIndex)
         {

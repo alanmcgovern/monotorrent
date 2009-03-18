@@ -31,12 +31,12 @@ namespace MonoTorrent.Client
 			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
 		}
 
-		public override void Close(string path, TorrentFile[] files)
+		public override void Close(string path, TorrentFile file)
 		{
             
 		}
 
-        public override void Flush(string path, TorrentFile[] files)
+        public override void Flush(string path, TorrentFile file)
 		{
 
 		}

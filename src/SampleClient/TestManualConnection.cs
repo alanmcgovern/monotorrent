@@ -63,12 +63,12 @@ namespace SampleClient
         {
         }
 
-        public override void Close(string path, TorrentFile[] files)
+        public override void Close(string path, TorrentFile file)
         {
 
         }
 
-        public override void Flush(string path, TorrentFile[] files)
+        public override void Flush(string path, TorrentFile file)
         {
         }
         public override void Flush(string path, TorrentFile[] files, int pieceIndex)
