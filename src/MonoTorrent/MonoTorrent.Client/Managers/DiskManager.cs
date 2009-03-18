@@ -254,7 +254,9 @@ namespace MonoTorrent.Client.Managers
         internal void QueueFlush(TorrentManager manager, int index)
         {
             IOLoop.Queue(delegate {
-                writer.Flush(manager.SavePath, manager.Torrent.Files, index);
+                foreach (TorrentFile file in manager.Torrent.Files)
+                    if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
+                        writer.Flush(manager.SavePath, file);
             });
         }
 

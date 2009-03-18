@@ -15,7 +15,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract bool Exists(string path, TorrentFile file);
 
-        public bool Exists(string path, TorrentFile[] files)
+        internal bool Exists(string path, TorrentFile[] files)
         {
             Check.Path(path);
             Check.Files(files);
@@ -27,7 +27,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Close(string path, TorrentFile file);
 
-        public void Close(string path, TorrentFile[] files)
+        internal void Close(string path, TorrentFile[] files)
         {
             Check.Path(path);
             Check.Files (files);
@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Flush(string path, TorrentFile file);
 
-        public void Flush(string path, TorrentFile[] files)
+        internal void Flush(string path, TorrentFile[] files)
         {
             Check.Path(path);
             Check.Files(files);
@@ -50,11 +50,9 @@ namespace MonoTorrent.Client.PieceWriters
                 Flush(path, file);
         }
 
-        public abstract void Flush(string path, TorrentFile[] files, int pieceIndex);
-
         public abstract void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting);
 
-        public void Move(string oldPath, string newPath, TorrentFile[] files, bool ignoreExisting)
+        internal void Move(string oldPath, string newPath, TorrentFile[] files, bool ignoreExisting)
         {
             foreach (TorrentFile file in files)
                 Move(oldPath, newPath, file, ignoreExisting);
@@ -62,7 +60,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract int Read(BufferedIO data);
 
-        public int ReadChunk(BufferedIO data)
+        internal int ReadChunk(BufferedIO data)
         {
             // Copy the inital buffer, offset and count so the values won't
             // be lost when doing the reading.

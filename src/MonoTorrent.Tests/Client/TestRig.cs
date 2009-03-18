@@ -61,11 +61,6 @@ namespace MonoTorrent.Client
 
         }
 
-        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
-        {
-
-        }
-
         public override bool Exists(string path, TorrentFile file)
         {
             return false;

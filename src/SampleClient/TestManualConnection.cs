@@ -71,10 +71,6 @@ namespace SampleClient
         public override void Flush(string path, TorrentFile file)
         {
         }
-        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
-        {
-            
-        }
 
         public override bool Exists(string path, TorrentFile file)
         {

@@ -101,11 +101,6 @@ namespace MonoTorrent.Client.PieceWriters
             });
         }
 
-        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
-        {
-            Flush(delegate(BufferedIO io) { return io.Files == files && io.PieceIndex == pieceIndex; });
-        }
-
         public void Flush(Predicate<BufferedIO> flush)
         {
             memoryBuffer.ForEach(delegate(BufferedIO io)

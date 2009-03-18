@@ -40,9 +40,6 @@ namespace MonoTorrent.Client
 		{
 
 		}
-        public override void Flush(string path, TorrentFile[] files, int pieceIndex)
-        {
-        }
 		public override void Dispose()
 		{
 
