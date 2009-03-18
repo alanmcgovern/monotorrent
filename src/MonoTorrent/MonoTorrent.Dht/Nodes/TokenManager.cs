@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // TokenManager.cs
 //
@@ -89,3 +90,4 @@ namespace MonoTorrent.Dht
         }
     }
 }
+#endif

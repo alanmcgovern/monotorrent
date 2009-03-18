@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // UdpListener.cs
 //
@@ -136,3 +137,4 @@ namespace MonoTorrent.Dht.Listeners
         }
     }
 }
+#endif

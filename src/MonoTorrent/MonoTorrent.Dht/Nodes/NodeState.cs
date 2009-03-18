@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // NodeState.cs
 //
@@ -39,3 +40,4 @@ namespace MonoTorrent.Dht
 		Bad
 	}
 }
+#endif

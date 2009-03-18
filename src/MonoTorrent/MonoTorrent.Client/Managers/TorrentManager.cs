@@ -43,7 +43,10 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+
+#if !DISABLE_DHT
 using MonoTorrent.Dht;
+#endif
 
 namespace MonoTorrent.Client
 {
@@ -546,6 +549,7 @@ namespace MonoTorrent.Client
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
 
+#if !DISABLE_DHT
                 if (HasMetadata && !torrent.IsPrivate)
                 {
                     engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
@@ -568,6 +572,7 @@ namespace MonoTorrent.Client
                         return true;
                     });
                 }
+#endif
                 this.startTime = DateTime.Now;
                 if (engine.ConnectionManager.IsRegistered(this))
                     Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
@@ -592,8 +597,9 @@ namespace MonoTorrent.Client
         {
             return (WaitHandle)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
                 CheckRegisteredAndDisposed();
-
+#if !DISABLE_DHT
                 engine.DhtEngine.PeersFound -= DhtPeersFound;
+#endif
                 ManagerWaitHandle handle = new ManagerWaitHandle("Global");
                 try
                 {
@@ -761,6 +767,7 @@ namespace MonoTorrent.Client
             return picker;
         }
 
+#if !DISABLE_DHT
         private void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
             if (torrent.InfoHash != e.InfoHash)
@@ -769,6 +776,7 @@ namespace MonoTorrent.Client
             int count = AddPeers(e.Peers);
             RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
         }
+#endif
 
         private void PerformHashCheck(bool autoStart)
         {

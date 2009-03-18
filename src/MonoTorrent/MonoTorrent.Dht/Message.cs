@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // Message.cs
 //
@@ -111,3 +112,4 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+#endif

@@ -38,7 +38,6 @@ using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Dht;
 
 
 namespace MonoTorrent.Client

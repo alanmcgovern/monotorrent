@@ -124,9 +124,16 @@ namespace MonoTorrent.Client
         public void ScrapeTest()
         {
             List<byte[]> hashes = new List<byte[]>();
-            hashes.Add(MonoTorrent.Dht.NodeId.Create().Bytes);
-            hashes.Add(MonoTorrent.Dht.NodeId.Create().Bytes);
-            hashes.Add(MonoTorrent.Dht.NodeId.Create().Bytes);
+            Random r = new Random();
+            byte[] hash1 = new byte[20];
+            byte[] hash2 = new byte[20];
+            byte[] hash3 = new byte[20];
+            r.NextBytes(hash1);
+            r.NextBytes(hash2);
+            r.NextBytes(hash3);
+            hashes.Add(hash1);
+            hashes.Add(hash2);
+            hashes.Add(hash3);
 
             ScrapeMessage m = new ScrapeMessage(12345, 123, hashes);
             ScrapeMessage d = (ScrapeMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);

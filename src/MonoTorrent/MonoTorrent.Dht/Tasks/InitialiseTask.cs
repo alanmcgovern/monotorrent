@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 using MonoTorrent.Dht.Messages;
 using System;
 using System.Net;
@@ -95,3 +96,4 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+#endif

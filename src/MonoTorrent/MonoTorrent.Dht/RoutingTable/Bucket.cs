@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // Bucket.cs
 //
@@ -163,3 +164,4 @@ namespace MonoTorrent.Dht
         }
     }
 }
+#endif
