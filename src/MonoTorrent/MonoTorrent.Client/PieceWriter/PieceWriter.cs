@@ -54,6 +54,12 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting);
 
+        public void Move(string oldPath, string newPath, TorrentFile[] files, bool ignoreExisting)
+        {
+            foreach (TorrentFile file in files)
+                Move(oldPath, newPath, file, ignoreExisting);
+        }
+
         public abstract int Read(BufferedIO data);
 
         public int ReadChunk(BufferedIO data)

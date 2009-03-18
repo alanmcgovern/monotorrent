@@ -335,8 +335,7 @@ namespace MonoTorrent.Client.Managers
         internal void MoveFiles(TorrentManager torrentManager, string oldPath, string newPath, bool overWriteExisting)
         {
             IOLoop.QueueWait(delegate {
-                foreach (TorrentFile file in torrentManager.Torrent.Files)
-                    writer.Move(oldPath, newPath, file, overWriteExisting);
+                    writer.Move(oldPath, newPath, torrentManager.Torrent.Files, overWriteExisting);
             });
         }
     }
