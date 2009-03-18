@@ -12,7 +12,7 @@ namespace MonoTorrent.Tracker
         /// <summary>
         /// The infohash of the torrent being tracked
         /// </summary>
-        byte[] InfoHash { get; }
+        InfoHash InfoHash { get; }
 
         /// <summary>
         /// The name of the torrent being tracked

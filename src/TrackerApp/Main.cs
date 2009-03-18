@@ -39,6 +39,7 @@ using MonoTorrent.Common;
 using TrackerApp;
 using MonoTorrent.TorrentWatcher;
 using MonoTorrent.Tracker.Listeners;
+using MonoTorrent;
 
 namespace SampleTracker
 {
@@ -53,7 +54,7 @@ namespace SampleTracker
         private TorrentFile[] files;
 
         // We require the infohash and the name of the torrent so the tracker can work correctly
-        private byte[] infoHash;
+        private InfoHash infoHash;
         private string name;
 
         public CustomITrackable(Torrent t)
@@ -76,7 +77,7 @@ namespace SampleTracker
         /// <summary>
         /// The infohash of the torrent
         /// </summary>
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infoHash; }
         }

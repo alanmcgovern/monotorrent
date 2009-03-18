@@ -41,12 +41,12 @@ namespace MonoTorrent.Client
         internal static readonly int AllowedFastPieceCount = 10;
         private static SHA1 hasher = SHA1.Create();
 
-        internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, byte[] infohash, UInt32 numberOfPieces)
+        internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, InfoHash infohash, UInt32 numberOfPieces)
         {
             return Calculate(addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
         }
 
-        internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, byte[] infohash, int count, UInt32 numberOfPieces)
+        internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, InfoHash infohash, int count, UInt32 numberOfPieces)
         {
             byte[] hashBuffer = new byte[24];                // The hash buffer to be used in hashing
             MonoTorrentCollection<int> results = new MonoTorrentCollection<int>(count);  // The results array which will be returned
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy(BitConverter.GetBytes(ip2), 0, hashBuffer, 0, 4);
 
             // 5) Copy the infohash into the hashbuffer
-            Buffer.BlockCopy(infohash, 0, hashBuffer, 4, 20);
+            Buffer.BlockCopy(infohash.Hash, 0, hashBuffer, 4, 20);
 
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result

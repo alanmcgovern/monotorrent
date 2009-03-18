@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Encryption
         private AsyncCallback gotVerificationCallback;
         private AsyncCallback gotPadDCallback;
 
-        public PeerAEncryption(byte[] InfoHash, EncryptionTypes allowedEncryption)
+        public PeerAEncryption(InfoHash InfoHash, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
         {
             gotVerificationCallback = new AsyncCallback(gotVerification);
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client.Encryption
                 byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
 
                 // ... HASH('req2', SKEY)
-                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY);
+                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY.Hash);
 
                 // ... HASH('req3', S)
                 byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);

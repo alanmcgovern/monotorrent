@@ -6,15 +6,15 @@ namespace MonoTorrent.Client.Tracker
 {
     public class ScrapeParameters
     {
-        private byte[] infoHash;
+        private InfoHash infoHash;
 
 
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infoHash; }
         }
 
-        public ScrapeParameters(byte[] infoHash)
+        public ScrapeParameters(InfoHash infoHash)
         {
             this.infoHash = infoHash;
         }

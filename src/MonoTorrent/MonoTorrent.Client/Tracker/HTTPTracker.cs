@@ -147,7 +147,7 @@ namespace MonoTorrent.Client.Tracker
             sb.Append(Uri);
             sb.Append(Uri.OriginalString.Contains("?") ? '&' : '?');
             sb.Append("info_hash=");
-            sb.Append(HttpUtility.UrlEncode(parameters.Infohash));
+            sb.Append(parameters.InfoHash.UrlEncode ());
             sb.Append("&peer_id=");
             sb.Append(parameters.PeerId);
             sb.Append("&port=");
@@ -310,9 +310,9 @@ namespace MonoTorrent.Client.Tracker
 
                 // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
                 if (url.IndexOf('?') == -1)
-                    url += "?info_hash=" + HttpUtility.UrlEncode(parameters.InfoHash);
+                    url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
                 else
-                    url += "&info_hash=" + HttpUtility.UrlEncode(parameters.InfoHash);
+                    url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
 
                 WebRequest request = WebRequest.Create(url);
                 BeginRequest(request, ScrapeReceived, new object[] { request, state });

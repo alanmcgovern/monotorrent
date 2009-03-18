@@ -118,7 +118,7 @@ namespace MonoTorrent
                         // Load the .torrent from the file into a Torrent instance
                         // You can use this to do preprocessing should you need to
                         torrent = Torrent.Load(file);
-                        Console.WriteLine(BitConverter.ToString(torrent.infoHash));
+                        Console.WriteLine(torrent.InfoHash.ToString());
                     }
                     catch (Exception e)
                     {
@@ -262,7 +262,7 @@ namespace MonoTorrent
                     Console.WriteLine(handle.ToString());
 
                 Console.WriteLine(handle.ToString());
-                fastResume.Add(torrents[i].Torrent.InfoHash, torrents[i].SaveFastResume().Encode());
+                fastResume.Add(torrents[i].Torrent.InfoHash.Hash, torrents[i].SaveFastResume().Encode());
             }
 
             File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());

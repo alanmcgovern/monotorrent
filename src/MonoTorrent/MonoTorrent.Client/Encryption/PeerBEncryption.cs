@@ -41,13 +41,13 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     public class PeerBEncryption : EncryptedSocket
     {
-        private byte[][] possibleSKEYs = null;
+        private InfoHash[] possibleSKEYs = null;
         private byte[] VerifyBytes;
 
         private AsyncCallback gotVerificationCallback;
         private AsyncCallback gotPadCCallback;
 
-        public PeerBEncryption(byte[][] possibleSKEYs, EncryptionTypes allowedEncryption)
+        public PeerBEncryption(InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
         {
             this.possibleSKEYs = possibleSKEYs;
@@ -205,7 +205,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 for (int i = 0; i < possibleSKEYs.Length; i++)
                 {
-                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i]);
+                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
                     byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
                     
                     bool match = true;

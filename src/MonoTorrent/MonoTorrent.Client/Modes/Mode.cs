@@ -130,7 +130,7 @@ namespace MonoTorrent.Client
                 id.Peer.PeerId = message.PeerId;
 
             // If the infohash doesn't match, dump the connection
-            if (!Toolbox.ByteMatch(message.InfoHash, id.TorrentManager.InfoHash))
+            if (message.InfoHash != id.TorrentManager.InfoHash)
             {
                 Logger.Log(id.Connection, "HandShake.Handle - Invalid infohash");
                 throw new TorrentException("Invalid infohash. Not tracking this torrent");

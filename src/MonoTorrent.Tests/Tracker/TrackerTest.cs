@@ -168,12 +168,9 @@ namespace MonoTorrent.Tracker
             rig.Trackables.ForEach(delegate(Trackable t) { Assert.IsTrue(rig.Tracker.Add(t), "#1"); });
         }
 
-        private byte[] Clone(byte[] p)
+        private InfoHash Clone(InfoHash p)
         {
-            byte[] clone = new byte[p.Length];
-            for (int i = 0; i < p.Length; i++)
-                clone[i] = p[i];
-            return clone;
+            return new InfoHash((byte[])p.Hash.Clone());
         }
     }
 }

@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
                 id.WaitHandle.Set();
             };
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
-            pars.Infohash = new byte[20];
+            pars.InfoHash = new InfoHash (new byte[20]);
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
         public void KeyTest()
         {
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
-            pars.Infohash = new byte[20];
+            pars.InfoHash = new InfoHash (new byte[20]);
 
             Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix + "?key=value"));
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
                 id.WaitHandle.Set();
             };
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
-            pars.Infohash = new byte[20];
+            pars.InfoHash = new InfoHash(new byte[20]);
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);

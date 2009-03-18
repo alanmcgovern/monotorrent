@@ -41,7 +41,7 @@ namespace MonoTorrent.Client.Encryption
     {
         private class EncryptorAsyncResult : AsyncResult
         {
-            public byte[][] SKeys;
+            public InfoHash[] SKeys;
             public int Available;
             public byte[] Buffer;
             public byte[] InitialData;
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client.Encryption
             return BeginCheckEncryption(id, callback, state, null);
         }
 
-        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state, byte[][] sKeys)
+        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state, InfoHash[] sKeys)
         {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
             result.SKeys = sKeys;

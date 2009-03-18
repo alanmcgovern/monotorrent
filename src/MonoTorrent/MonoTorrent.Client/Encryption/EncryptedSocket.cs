@@ -126,7 +126,7 @@ namespace MonoTorrent.Client.Encryption
 
         #region Protected members
         protected byte[] S = null;
-        protected byte[] SKEY = null;
+        protected InfoHash SKEY = null;
 
         protected byte[] PadC = null;
         protected byte[] PadD = null;
@@ -517,8 +517,8 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
         protected void CreateCryptors(string encryptionSalt, string decryptionSalt)
         {
-            encryptor = new RC4(Hash(Encoding.ASCII.GetBytes(encryptionSalt), S, SKEY));
-            decryptor = new RC4(Hash(Encoding.ASCII.GetBytes(decryptionSalt), S, SKEY));
+            encryptor = new RC4(Hash(Encoding.ASCII.GetBytes(encryptionSalt), S, SKEY.Hash));
+            decryptor = new RC4(Hash(Encoding.ASCII.GetBytes(decryptionSalt), S, SKEY.Hash));
         }
 
         /// <summary>

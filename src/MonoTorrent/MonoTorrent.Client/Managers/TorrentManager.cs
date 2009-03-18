@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
-        private byte[] infohash;
+        private InfoHash infohash;
 		internal bool isInEndGame = false;       // Set true when the torrent enters end game processing
         private Mode mode;
         private ConnectionMonitor monitor;      // Calculates download/upload speed
@@ -301,7 +301,7 @@ namespace MonoTorrent.Client
 			get { return inactivePeerManager.InactivePeers; }
 		}
 
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infohash; }
         }
@@ -354,7 +354,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public TorrentManager(byte[] infoHash, string savePath, TorrentSettings settings, string torrentSave, List<MonoTorrentCollection<string>> announces)
+        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, List<MonoTorrentCollection<string>> announces)
         {
             Check.InfoHash(infoHash);
             Check.SavePath(savePath);
@@ -437,7 +437,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public bool Equals(TorrentManager other)
         {
-            return (other == null) ? false : Toolbox.ByteMatch(this.infohash, other.infohash);
+            return (other == null) ? false : infohash == other.infohash;
         }
 
         public List<Piece> GetActiveRequests()
@@ -453,7 +453,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return Toolbox.HashCode(infohash);
+            return infohash.GetHashCode();
         }
 
         public List<PeerId> GetPeers()
@@ -757,7 +757,7 @@ namespace MonoTorrent.Client
 
         private void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
-            if (!Toolbox.ByteMatch(torrent.InfoHash, e.InfoHash))
+            if (torrent.InfoHash != e.InfoHash)
                 return;
 
             int count = AddPeers(e.Peers);
@@ -822,7 +822,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException("Can only load FastResume when the torrent is stopped");
-            if (!Toolbox.ByteMatch(torrent.infoHash, data.InfoHash) || torrent.Pieces.Count != data.Bitfield.Length)
+            if (torrent.InfoHash != data.Infohash || torrent.Pieces.Count != data.Bitfield.Length)
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
             bitfield.From(data.Bitfield);

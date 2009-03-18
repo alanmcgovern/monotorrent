@@ -202,7 +202,7 @@ namespace MonoTorrent.Client
             rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
-            PeerBEncryption a = new PeerBEncryption(new byte[][] { rig.Manager.Torrent.InfoHash }, EncryptionTypes.All);
+            PeerBEncryption a = new PeerBEncryption(new InfoHash[] { rig.Manager.Torrent.InfoHash }, EncryptionTypes.All);
             IAsyncResult result = a.BeginHandshake(conn.Incoming, null, null);
             if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.Fail("Handshake timed out");
@@ -238,7 +238,7 @@ namespace MonoTorrent.Client
             if (addInitial)
                 a.AddPayload(handshake);
 
-            PeerBEncryption b = new PeerBEncryption(new byte[][] { rig.Torrent.InfoHash }, encryptionB);
+            PeerBEncryption b = new PeerBEncryption(new InfoHash[] { rig.Torrent.InfoHash }, encryptionB);
 
             IAsyncResult resultA = a.BeginHandshake(conn.Outgoing, null, null);
             IAsyncResult resultB = b.BeginHandshake(conn.Incoming, null, null);

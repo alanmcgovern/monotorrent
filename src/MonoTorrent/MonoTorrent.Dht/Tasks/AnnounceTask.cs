@@ -12,7 +12,7 @@ namespace MonoTorrent.Dht.Tasks
         private DhtEngine engine;
         private int port;
 
-        public AnnounceTask(DhtEngine engine, byte[] infoHash, int port)
+        public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
             : this(engine, new NodeId(infoHash), port)
         {
 

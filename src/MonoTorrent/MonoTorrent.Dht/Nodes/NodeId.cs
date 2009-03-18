@@ -53,6 +53,12 @@ namespace MonoTorrent.Dht
             this.bytes = value;
         }
 
+        internal NodeId(InfoHash infoHash)
+            : this(infoHash.Hash)
+        {
+
+        }
+
         private NodeId(BigInteger value)
         {
             this.value = value;

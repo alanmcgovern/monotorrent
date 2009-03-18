@@ -113,12 +113,13 @@ namespace MonoTorrent.Common
         /// <returns></returns>
         public static string ToHex(byte[] array)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(40);
 
-            foreach (byte b in array)
+            for (int i=0; i < array.Length; i++)
             {
-                string hex = b.ToString("X");
-                hex = hex.Length < 2 ? "0" + hex : hex;
+                string hex = array[i].ToString("X");
+                if (hex.Length != 2)
+                    sb.Append("0");
                 sb.Append(hex);
             }
             return sb.ToString();

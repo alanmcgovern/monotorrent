@@ -168,13 +168,10 @@ namespace MonoTorrent.Dht
             task.Execute();
         }
 
-        internal void Announce(byte[] infoHash, int port)
+        internal void Announce(InfoHash infoHash, int port)
         {
             CheckDisposed();
-            if (infoHash == null)
-                throw new ArgumentNullException("infoHash");
-            if (infoHash.Length != 20)
-                throw new ArgumentException("infoHash must be 20 bytes");
+            Check.InfoHash(infoHash);
             new AnnounceTask(this, infoHash, port).Execute();
         }
 
@@ -195,13 +192,10 @@ namespace MonoTorrent.Dht
             });
         }
 
-        internal void GetPeers(byte[] infoHash)
+        internal void GetPeers(InfoHash infoHash)
         {
             CheckDisposed();
-            if (infoHash == null)
-                throw new ArgumentNullException("infoHash");
-            if (infoHash.Length != 20)
-                throw new ArgumentException("infoHash must be 20 bytes");
+            Check.InfoHash(infoHash);
             new GetPeersTask(this, infoHash).Execute();
         }
 
@@ -216,7 +210,7 @@ namespace MonoTorrent.Dht
         internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
         {
             if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(infoHash.Bytes, peers));
+                PeersFound(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
         }
 
         public byte[] SaveNodes()

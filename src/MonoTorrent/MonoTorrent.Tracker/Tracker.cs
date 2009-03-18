@@ -78,7 +78,7 @@ namespace MonoTorrent.Tracker
         private TimeSpan minAnnounceInterval;
         private RequestMonitor monitor;
         private TimeSpan timeoutInterval;
-        private Dictionary<byte[], SimpleTorrentManager> torrents;
+        private Dictionary<InfoHash, SimpleTorrentManager> torrents;
         private BEncodedString trackerId;
 
 
@@ -162,7 +162,7 @@ namespace MonoTorrent.Tracker
             allowNonCompact = true;
             allowScrape = true;
             monitor = new RequestMonitor();
-            torrents = new Dictionary<byte[], SimpleTorrentManager>(new ByteComparer());
+            torrents = new Dictionary<InfoHash, SimpleTorrentManager>();
             this.trackerId = trackerId;
 
             announceInterval = TimeSpan.FromMinutes(45);
@@ -267,7 +267,7 @@ namespace MonoTorrent.Tracker
                 {
                     if (AllowUnregisteredTorrents)
                     {
-                        Add(new InfoHashTrackable(BitConverter.ToString(e.InfoHash), e.InfoHash));
+                        Add(new InfoHashTrackable(BitConverter.ToString(e.InfoHash.Hash), e.InfoHash));
                         manager = torrents[e.InfoHash];
                     }
                     else
@@ -336,7 +336,7 @@ namespace MonoTorrent.Tracker
             {
                 // FIXME: Converting infohash
                 SimpleTorrentManager manager;
-                string key = Toolbox.ToHex(e.InfoHashes[i]);
+                string key = Toolbox.ToHex(e.InfoHashes[i].Hash);
                 if (!torrents.TryGetValue(e.InfoHashes[i], out manager))
                     continue;
 

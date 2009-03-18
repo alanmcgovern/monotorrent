@@ -10,7 +10,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
     class AnnounceMessage : UdpTrackerMessage
     {
         private long connectionId;
-        private byte[] infoHash;  // 20
+        private InfoHash infoHash;  // 20
         private string peerId; //20
         private long downloaded;
         private long left;
@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             set { downloaded = value; }
         }
 
-        public byte[] InfoHash
+        public InfoHash Infohash
         {
             get { return infoHash; }
             set { infoHash = value; }
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
                 return;
 
             this.downloaded = parameters.BytesDownloaded;
-            this.infoHash = parameters.Infohash;
+            this.infoHash = parameters.InfoHash;
             this.ip = 0;
             this.key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
             this.left = parameters.BytesLeft;
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             if (Action != ReadInt(buffer, ref offset))
                 ThrowInvalidActionException();
             TransactionId = ReadInt(buffer, ref offset);
-            infoHash = ReadBytes(buffer, ref offset, 20);
+            infoHash = new InfoHash(ReadBytes(buffer, ref offset, 20));
             peerId = ReadString(buffer, ref offset, 20);
             downloaded = ReadLong(buffer, ref offset);
             left = ReadLong(buffer, ref offset);
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write(buffer, written, connectionId);
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, infoHash, 0, infoHash.Length);
+            written += Write(buffer, written, infoHash.Hash, 0, infoHash.Hash.Length);
             written += WriteAscii(buffer, written, peerId);
             written += Write(buffer, written, downloaded);
             written += Write(buffer, written, left);

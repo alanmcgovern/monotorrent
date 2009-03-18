@@ -32,7 +32,7 @@ namespace MonoTorrent.Tracker
         public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)
         {
             NameValueCollection c = new NameValueCollection();
-            c.Add("info_hash", HttpUtility.UrlEncode(trackable.InfoHash));
+            c.Add("info_hash", trackable.InfoHash.UrlEncode());
             c.Add("peer_id", d.peerId);
             c.Add("port", d.Port.ToString());
             c.Add("uploaded", d.Uploaded.ToString());
@@ -60,17 +60,17 @@ namespace MonoTorrent.Tracker
     }
     public class Trackable : ITrackable
     {
-        private byte[] infoHash;
+        private InfoHash infoHash;
         private string name;
 
 
-        public Trackable(byte[] infoHash, string name)
+        public Trackable(InfoHash infoHash, string name)
         {
             this.infoHash = infoHash;
             this.name = name;
         }
 
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infoHash; }
         }
@@ -119,7 +119,7 @@ namespace MonoTorrent.Tracker
             {
                 byte[] infoHash = new byte[20];
                 r.NextBytes(infoHash);
-                Trackables.Add(new Trackable(infoHash, i.ToString()));
+                Trackables.Add(new Trackable(new InfoHash (infoHash), i.ToString()));
             }
         }
 

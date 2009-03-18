@@ -76,28 +76,5 @@ namespace MonoTorrent.Client.Encryption
 
             return bytes;
         }
-
-        public static string GetString(byte[] a)
-        {
-            string result = "";
-            foreach (byte integer in a)
-            {
-                result += integer.ToString("X2");
-            }
-            return result;
-        }
-
-        public static byte[] GetByte(string hex)
-        {
-            char[] hexArr = hex.ToCharArray();
-            byte[] bytes = new byte[hex.Length / 2];
-
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = byte.Parse(hexArr[i * 2].ToString() + hexArr[i * 2 + 1].ToString(), System.Globalization.NumberStyles.HexNumber);
-            }
-
-            return bytes;
-        }
     }
 }

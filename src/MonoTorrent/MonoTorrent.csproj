@@ -250,6 +250,7 @@
     <Compile Include="MonoTorrent.Common\Check.cs" />
     <Compile Include="MonoTorrent.Common\Enums.cs" />
     <Compile Include="MonoTorrent.Common\Hashes.cs" />
+    <Compile Include="MonoTorrent.Common\InfoHash.cs" />
     <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs" />
     <Compile Include="MonoTorrent.Common\PeerID.cs" />
     <Compile Include="MonoTorrent.Common\SpeedMonitor.cs" />

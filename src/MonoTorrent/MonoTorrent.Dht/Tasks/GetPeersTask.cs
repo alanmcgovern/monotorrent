@@ -18,7 +18,7 @@ namespace MonoTorrent.Dht.Tasks
             get { return queriedNodes; }
         }
 
-    	public GetPeersTask(DhtEngine engine, byte[] infohash)
+        public GetPeersTask(DhtEngine engine, InfoHash infohash)
             : this(engine, new NodeId(infohash))
     	{
     		

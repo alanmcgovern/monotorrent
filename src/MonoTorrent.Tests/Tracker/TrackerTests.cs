@@ -56,8 +56,8 @@ namespace MonoTorrent.Tracker
 
             for (int i=0; i < 20; i++)
             {
-                byte[] infoHash = new byte[20];
-                r.NextBytes(infoHash);
+                InfoHash infoHash = new InfoHash(new byte[20]);
+                r.NextBytes(infoHash.Hash);
                 TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
                 tier.Trackers[0].AnnounceComplete += delegate {
                     if (++announceCount == 20)

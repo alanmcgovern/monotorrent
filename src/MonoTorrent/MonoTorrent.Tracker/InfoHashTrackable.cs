@@ -6,25 +6,20 @@ namespace MonoTorrent.Tracker
 {
     public class InfoHashTrackable : ITrackable
     {
-        private byte[] infoHash;
+        private InfoHash infoHash;
         private string name;
 
         public InfoHashTrackable(Torrent torrent)
         {
-            if (torrent == null)
-                throw new ArgumentNullException("torrent");
+            Check.Torrent(torrent);
 
             name = torrent.Name;
             infoHash = torrent.InfoHash;
         }
 
-        public InfoHashTrackable(string name, byte[] infoHash)
+        public InfoHashTrackable(string name, InfoHash infoHash)
         {
-            if(infoHash == null)
-                throw new ArgumentNullException("infoHash");
-
-            if (infoHash.Length != 20)
-                throw new ArgumentException("An infohash is 20 bytes long", "infoHash");
+            Check.InfoHash(infoHash);
 
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException("name cannot be null or empty", "name");
@@ -33,7 +28,7 @@ namespace MonoTorrent.Tracker
             this.name = name;
         }
 
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infoHash; }
         }

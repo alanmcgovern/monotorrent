@@ -38,14 +38,14 @@ namespace MonoTorrent.Tracker
 {
     public class ScrapeParameters : RequestParameters
     {
-        private List<byte[]> hashs;
+        private List<InfoHash> hashs;
         
         public int Count
         {
             get { return hashs.Count; }
         }
         
-        public List<byte[]> InfoHashes
+        public List<InfoHash> InfoHashes
         {
             get { return hashs; }
         }
@@ -58,7 +58,7 @@ namespace MonoTorrent.Tracker
         public ScrapeParameters(NameValueCollection collection, IPAddress address)
             : base(collection, address)
         {
-            hashs = new List<byte[]>();
+            hashs = new List<InfoHash>();
             ParseHashes(Parameters["info_hash"]);
         }
         
@@ -71,11 +71,11 @@ namespace MonoTorrent.Tracker
             {
                 string[] stringHashs = infoHash.Split(',');
                 for (int i = 0; i < stringHashs.Length; i++)
-                    hashs.Add(HttpUtility.UrlDecodeToBytes(stringHashs[i]));
+                    hashs.Add(InfoHash.UrlDecode(stringHashs[i]));
             }
             else
             {
-                hashs.Add(HttpUtility.UrlDecodeToBytes(infoHash));
+                hashs.Add(InfoHash.UrlDecode(infoHash));
             }
         }
 

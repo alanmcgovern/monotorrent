@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
                 id.BytesReceived = 0;
                 id.BytesToRecieve = 68;
-                List<byte[]> skeys = new List<byte[]>();
+                List<InfoHash> skeys = new List<InfoHash>();
 
                 ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                     for (int i = 0; i < engine.Torrents.Count; i++)
@@ -168,7 +168,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < engine.Torrents.Count; i++)
-                    if (Toolbox.ByteMatch(handshake.infoHash, engine.Torrents[i].Torrent.InfoHash))
+                    if (handshake.infoHash == engine.Torrents[i].Torrent.InfoHash)
                         man = engine.Torrents[i];
             });
 

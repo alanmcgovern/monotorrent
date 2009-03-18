@@ -40,9 +40,9 @@ namespace MonoTorrent.Dht
     public class PeersFoundEventArgs : EventArgs
     {
         private List<Peer> peers;
-        private byte[] infoHash;
+        private InfoHash infoHash;
         
-        public PeersFoundEventArgs(byte[] infoHash, List<Peer> peers)
+        public PeersFoundEventArgs(InfoHash infoHash, List<Peer> peers)
         {
             this.peers = peers;
             this.infoHash = infoHash;
@@ -51,7 +51,7 @@ namespace MonoTorrent.Dht
         {
             get { return peers; }
         }
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return infoHash; }
         }

@@ -9,6 +9,7 @@ using MonoTorrent.BEncoding;
 using System.Threading;
 using MonoTorrent.Tracker.Listeners;
 using MonoTorrent.Common;
+using MonoTorrent;
 
 namespace TrackerApp
 {
@@ -36,7 +37,7 @@ namespace TrackerApp
             {
                 byte[] infoHash = new byte[20];
                 random.NextBytes(infoHash);
-                hashes.Add(HttpUtility.UrlEncode(infoHash));
+                hashes.Add(new InfoHash(infoHash).UrlEncode());
             }
 
             threadSleepTime = Math.Max ((int)(20000.0 / requests + 0.5), 1);

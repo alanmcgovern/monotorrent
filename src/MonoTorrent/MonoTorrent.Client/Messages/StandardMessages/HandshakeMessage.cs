@@ -68,11 +68,11 @@ namespace MonoTorrent.Client.Messages.Standard
         /// <summary>
         /// The infohash of the torrent
         /// </summary>
-        public byte[] InfoHash
+        public InfoHash InfoHash
         {
             get { return this.infoHash; }
         }
-        internal byte[] infoHash;
+        internal InfoHash infoHash;
 
 
         /// <summary>
@@ -111,24 +111,24 @@ namespace MonoTorrent.Client.Messages.Standard
         /// Creates a new HandshakeMessage
         /// </summary>
         public HandshakeMessage(bool enableFastPeer)
-            : this(new byte[20], "", VersionInfo.ProtocolStringV100, enableFastPeer)
+            : this(new InfoHash (new byte[20]), "", VersionInfo.ProtocolStringV100, enableFastPeer)
         {
             
         }
 
-        public HandshakeMessage(byte[] infoHash, string peerId, string protocolString)
+        public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString)
             : this(infoHash, peerId, protocolString, ClientEngine.SupportsFastPeer, ClientEngine.SupportsExtended)
         {
 
         }
 
-        public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer)
+        public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString, bool enableFastPeer)
             : this(infoHash, peerId, protocolString, enableFastPeer, ClientEngine.SupportsExtended)
         {
 
         }
 
-        public HandshakeMessage(byte[] infoHash, string peerId, string protocolString, bool enableFastPeer, bool enableExtended)
+        public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString, bool enableFastPeer, bool enableExtended)
         {
             if (!ClientEngine.SupportsFastPeer && enableFastPeer)
                 throw new ProtocolException("The engine does not support fast peer, but fast peer was requested");
@@ -160,7 +160,7 @@ namespace MonoTorrent.Client.Messages.Standard
             if (SupportsFastPeer)
                 buffer[written - 1] |= FastPeersFlag;
 
-            written += Write(buffer, written, infoHash); 
+            written += Write(buffer, written, infoHash.Hash); 
             written += WriteAscii(buffer, written, peerId);
 
             return CheckWritten(written - offset);
@@ -176,7 +176,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
             protocolString = ReadString(buffer, ref offset, protocolStringLength);
             CheckForSupports(buffer, ref offset);
-            infoHash = ReadBytes(buffer, ref offset, 20);
+            infoHash = new InfoHash(ReadBytes(buffer, ref offset, 20));
             peerId = ReadString(buffer, ref offset, 20);
         }
 
@@ -219,7 +219,7 @@ namespace MonoTorrent.Client.Messages.Standard
             if (msg == null)
                 return false;
 
-            if (!Toolbox.ByteMatch(this.infoHash, msg.infoHash))
+            if (this.infoHash != msg.infoHash)
                 return false;
 
             return (this.peerId == msg.peerId
