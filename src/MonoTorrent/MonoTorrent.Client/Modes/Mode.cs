@@ -111,6 +111,11 @@ namespace MonoTorrent.Client
                 throw new MessageException(string.Format("Unsupported message found: {0}", message.GetType().Name));
         }
 
+        public virtual bool CanAcceptConnections
+        {
+            get { return true; }
+        }
+
         protected virtual void HandleGenericExtensionMessage(PeerId id, ExtensionMessage extensionMessage)
         {
             // Do nothing

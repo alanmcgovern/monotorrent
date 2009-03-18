@@ -60,7 +60,8 @@ namespace MonoTorrent.Common
         Downloading,
         Seeding,
         Hashing,
-        Stopping
+        Stopping,
+        Error
     }
 
     public enum Priority

@@ -35,6 +35,7 @@ using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Common;
 using NUnit.Framework;
 using System.IO;
+using System.Threading;
 
 namespace MonoTorrent.Client
 {
@@ -45,10 +46,139 @@ namespace MonoTorrent.Client
             return base.GenerateFilePath(path, file);
         }
     }
+
+    public class ExceptionWriter : PieceWriter
+    {
+        public bool exist, close, flush, move, read, write;
+
+        public override bool Exists(string path, TorrentFile file)
+        {
+            if (exist)
+                throw new Exception("exists");
+            return true;
+        }
+
+        public override void Close(string path, TorrentFile file)
+        {
+            if (close)
+                throw new Exception("close");
+        }
+
+        public override void Flush(string path, TorrentFile file)
+        {
+            if (flush)
+                throw new Exception("flush");
+        }
+
+        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        {
+            if (move)
+                throw new Exception("move");
+        }
+
+        public override int Read(BufferedIO data)
+        {
+            if (read)
+                throw new Exception("read");
+            return data.Count;
+        }
+
+        public override void Write(BufferedIO data)
+        {
+            if (write)
+                throw new Exception("write");
+        }
+    }
     
     [TestFixture]
     public class DiskWriterTests
     {
+        TestRig rig;
+        ExceptionWriter writer;
+
+        [TestFixtureSetUp]
+        public void FixtureSetup()
+        {
+            writer = new ExceptionWriter();
+            rig = TestRig.CreateMultiFile();
+            rig.Engine.DiskManager.Writer = writer;
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            rig.Manager.Stop();
+        }
+
+        [TestFixtureTearDown]
+        public void Teardown()
+        {
+            rig.Dispose();
+        }
+
+        [Test]
+        public void CloseFail()
+        {
+            ManualResetEvent handle = new ManualResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate
+            {
+                if (rig.Manager.State == TorrentState.Error)
+                    handle.Set();
+            };
+            writer.close = true;
+
+            rig.Manager.HashCheck (true);
+            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+        }
+
+        [Test]
+        public void ExistFail()
+        {
+            ManualResetEvent handle = new ManualResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate {
+                if (rig.Manager.State == TorrentState.Error)
+                    handle.Set();
+            };
+            writer.exist = true;
+            
+            rig.Manager.HashCheck(false);
+            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+        }
+
+        [Test]
+        public void ReadFail()
+        {
+            ManualResetEvent handle = new ManualResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate {
+                if (rig.Manager.State == TorrentState.Error)
+                    handle.Set();
+            };
+            writer.read = true;
+            
+            rig.Manager.HashCheck(false);
+            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+        }
+
+        [Test]
+        public void WriteFail()
+        {
+            ManualResetEvent handle = new ManualResetEvent(false);
+            rig.Manager.TorrentStateChanged += delegate {
+                if (rig.Manager.State == TorrentState.Error)
+                    handle.Set();
+            };
+            writer.write = true;
+
+            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+            BufferedIO io = new BufferedIO(buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files, "Path");
+            io.Id = new PeerId(new Peer("", new Uri("tcp://123.123.123")), rig.Manager);
+            rig.Engine.DiskManager.QueueWrite(io);
+
+            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+        }
+            
+            
+
         [Test]
         public void SameFilePath()
         {

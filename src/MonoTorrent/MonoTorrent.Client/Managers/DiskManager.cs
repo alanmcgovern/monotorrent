@@ -68,6 +68,7 @@ namespace MonoTorrent.Client.Managers
         internal PieceWriter Writer
         {
             get { return writer; }
+            set { writer = value; }
         }
 
         #endregion Properties
@@ -96,7 +97,15 @@ namespace MonoTorrent.Client.Managers
                     lock (bufferLock)
                         write = this.bufferedWrites.Dequeue();
                     Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
-                    PerformWrite(write);
+                    try
+                    {
+                        PerformWrite(write);
+                    }
+                    catch (Exception ex)
+                    {
+                        TorrentManager manager = write.Id.TorrentManager;
+                        SetError(manager, Reason.WriteFailure, ex);
+                    }
                 }
 
                 while (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
@@ -105,7 +114,15 @@ namespace MonoTorrent.Client.Managers
                     lock(bufferLock)
                         read = this.bufferedReads.Dequeue();
                     Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
-                    PerformRead(read);
+                    try
+                    {
+                        PerformRead(read);
+                    }
+                    catch (Exception ex)
+                    {
+                        TorrentManager manager = read.Id.TorrentManager;
+                        SetError(manager, Reason.ReadFailure, ex);
+                    }
                 }
             };
 
@@ -124,37 +141,47 @@ namespace MonoTorrent.Client.Managers
 
         #region Methods
 
-        internal WaitHandle CloseFileStreams(string path, TorrentFile[] files)
+        internal WaitHandle CloseFileStreams(TorrentManager manager, string path, TorrentFile[] files)
         {
             ManualResetEvent handle = new ManualResetEvent(false);
 
-            IOLoop.Queue(delegate {
-                // Dump all buffered reads for the manager we're closing the streams for
-                List<BufferedIO> writes = new List<BufferedIO>();
-                lock (bufferLock)
+            IOLoop.Queue(delegate
+            {
+                try
                 {
-                    List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
-                    list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                    bufferedReads = new Queue<BufferedIO>(list);
+                    // Dump all buffered reads for the manager we're closing the streams for
+                    List<BufferedIO> writes = new List<BufferedIO>();
+                    lock (bufferLock)
+                    {
+                        List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
+                        list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                        bufferedReads = new Queue<BufferedIO>(list);
 
-                    list.Clear();
-                    list.AddRange(bufferedWrites);
+                        list.Clear();
+                        list.AddRange(bufferedWrites);
 
-                    for (int i = 0; i < list.Count; i++)
-                        if (list[i].Files == files)
-                            writes.Add(list[i]);
+                        for (int i = 0; i < list.Count; i++)
+                            if (list[i].Files == files)
+                                writes.Add(list[i]);
 
-                    list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                    bufferedWrites = new Queue<BufferedIO>(list);
+                        list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
+                        bufferedWrites = new Queue<BufferedIO>(list);
+                    }
+
+                    // Process all remaining writes
+                    foreach (BufferedIO io in writes)
+                        if (io.Files == files)
+                            PerformWrite(io);
+                    writer.Close(path, files);
                 }
-
-                // Process all remaining writes
-                foreach (BufferedIO io in writes)
-                    if (io.Files == files)
-                        PerformWrite(io);
-                writer.Close(path, files);
-
-                handle.Set();
+                catch (Exception ex)
+                {
+                    SetError(manager, Reason.WriteFailure, ex);
+                }
+                finally
+                {
+                    handle.Set();
+                }
             });
 
             return handle;
@@ -286,7 +313,28 @@ namespace MonoTorrent.Client.Managers
 
         internal bool CheckFilesExist(TorrentManager manager)
         {
-            return writer.Exists(manager.SavePath, manager.Torrent.Files);
+            bool result = false;
+            IOLoop.QueueWait(delegate {
+                try
+                {
+                    result = writer.Exists(manager.SavePath, manager.Torrent.Files);
+                }
+                catch (Exception ex)
+                {
+                    SetError(manager, Reason.ReadFailure, ex);
+                }
+            });
+            return result;
+        }
+
+        void SetError (TorrentManager manager, Reason reason, Exception ex)
+        {
+            if (manager.Mode is ErrorMode)
+                return;
+
+            manager.Error = new Error(Reason.ReadFailure, ex);
+            manager.Mode = new ErrorMode(manager);
+            manager.UpdateState(TorrentState.Error);
         }
 
         internal byte[] GetHash(TorrentManager manager, int pieceIndex)

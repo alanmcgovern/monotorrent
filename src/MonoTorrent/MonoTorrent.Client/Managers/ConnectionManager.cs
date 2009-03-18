@@ -666,6 +666,9 @@ namespace MonoTorrent.Client
                 // Check each torrent manager in turn to see if they have any peers we want to connect to
                 foreach (TorrentManager manager in this.torrents)
                 {
+                    if (!manager.Mode.CanAcceptConnections)
+                        continue;
+
                     // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
                     if (manager.Peers.ConnectedPeers.Count >= manager.Settings.MaxConnections)
                         continue;

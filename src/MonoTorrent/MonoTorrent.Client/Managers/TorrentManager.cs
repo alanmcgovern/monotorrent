@@ -78,6 +78,7 @@ namespace MonoTorrent.Client
 
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
         private ClientEngine engine;            // The engine that this torrent is registered with
+        private Error error;
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
         private bool hashChecked;               // True if the manager has been hash checked
         private int hashFails;                  // The total number of pieces receieved which failed the hashcheck
@@ -125,6 +126,12 @@ namespace MonoTorrent.Client
         {
             get { return this.engine; }
             internal set { this.engine = value; }
+        }
+
+        public Error Error
+        {
+            get { return error; }
+            internal set { error = value; }
         }
 
         internal Mode Mode
@@ -606,6 +613,13 @@ namespace MonoTorrent.Client
                     if (this.state == TorrentState.Stopped)
                         return handle;
 
+                    if (this.state == TorrentState.Error)
+                    {
+                        UpdateState(TorrentState.Stopped);
+                        error = null;
+                        mode = new DownloadMode(this);
+                        return handle;
+                    }
                     if (this.state == TorrentState.Hashing)
                     {
                         hashingWaitHandle = new ManualResetEvent(false);
@@ -626,7 +640,7 @@ namespace MonoTorrent.Client
 
                     this.peers.ClearAll();
 
-                    handle.AddHandle(engine.DiskManager.CloseFileStreams(SavePath, Torrent.Files), "DiskManager");
+                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this, SavePath, Torrent.Files), "DiskManager");
 
                     if (this.hashChecked)
                         this.SaveFastResume();
@@ -789,6 +803,8 @@ namespace MonoTorrent.Client
                 // We only need to hashcheck if at least one file already exists on the disk
                 filesExist = HasMetadata && Engine.DiskManager.CheckFilesExist(this);
 
+                if (abortHashing || mode is ErrorMode)
+                    return;
                 // A hashcheck should only be performed if some/all of the files exist on disk
                 if (filesExist)
                 {
@@ -798,7 +814,7 @@ namespace MonoTorrent.Client
                         RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
 
                         // This happens if the user cancels the hash by stopping the torrent.
-                        if (abortHashing)
+                        if (abortHashing || mode is ErrorMode)
                             return;
                     }
                 }
@@ -820,7 +836,7 @@ namespace MonoTorrent.Client
             {
                 // Ensure file streams are all closed after hashing
                 if (filesExist)
-                    engine.DiskManager.Writer.Close(SavePath, this.torrent.Files);
+                    engine.DiskManager.CloseFileStreams (this, SavePath, Torrent.Files);
 
                 if (abortHashing)
                 {

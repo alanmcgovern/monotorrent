@@ -185,6 +185,12 @@ namespace MonoTorrent.Client
 				CleanupSocket(id);
 				return;
 			}
+            if (!man.Mode.CanAcceptConnections)
+            {
+                Logger.Log(id.Connection, "ListenManager - Current mode does not support connections");
+                CleanupSocket(id);
+                return;
+            }
 
             id.Peer.PeerId = handshake.PeerId;
             id.TorrentManager = man;
