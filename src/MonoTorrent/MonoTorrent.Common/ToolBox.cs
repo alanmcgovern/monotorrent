@@ -172,15 +172,6 @@ namespace MonoTorrent.Common
             return true;
         }
 
-        internal static int HashCode(byte[] array)
-        {
-            int result = 0;
-            for (int i = 0; i < array.Length; i++)
-                result ^= array[i];
-
-            return result;
-        }
-
         internal static bool HasEncryption(EncryptionTypes available, EncryptionTypes check)
         {
             return (available & check) == check;

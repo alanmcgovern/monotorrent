@@ -40,7 +40,9 @@ namespace MonoTorrent
 
         public override int GetHashCode()
         {
-            return Toolbox.HashCode(hash);
+            // Equality is based generally on checking 20 positions, checking 4 should be enough
+            // for the hashcode as infohashes are randomly distributed.
+            return Hash[0] | (Hash[1] << 8) | (Hash[2] << 16) | (Hash[3] << 24);
         }
 
         public string ToHex()
