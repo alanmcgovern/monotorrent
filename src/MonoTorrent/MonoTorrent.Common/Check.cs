@@ -73,6 +73,11 @@ namespace MonoTorrent
             DoCheck(location, "location");
         }
 
+        internal static void MagnetLink(string magnetLink)
+        {
+            DoCheck(magnetLink, "magnetLink");
+        }
+
         internal static void Manager(object manager)
         {
             DoCheck(manager, "manager");
