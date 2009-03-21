@@ -358,6 +358,18 @@ namespace MonoTorrent.Common
             return this;
         }
 
+        internal BitField SetTrue(int index)
+        {
+            Set(index, true);
+            return this;
+        }
+
+        internal BitField SetFalse(int index)
+        {
+            Set(index, false);
+            return this;
+        }
+
         internal BitField SetAll(bool value)
         {
             if (value)
