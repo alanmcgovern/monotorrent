@@ -129,6 +129,8 @@ namespace MonoTorrent
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
                     TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    if (fastResume.ContainsKey(torrent.InfoHash.Hash))
+                        manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.Hash]));
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -215,7 +217,10 @@ namespace MonoTorrent
                             AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
                         
                         foreach (PeerId p in manager.GetPeers())
-                            AppendFormat(sb, "\t{2} - {1:0.00}kB/sec - {0}", p.Peer.ConnectionUri, p.Monitor.DownloadSpeed / 1024.0, p.AmRequestingPiecesCount);
+                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+                                                                                      p.Monitor.DownloadSpeed / 1024.0,
+                                                                                      p.AmRequestingPiecesCount,
+                                                                                      p.Monitor.UploadSpeed/ 1024.0);
                        
                         AppendFormat(sb, "", null);
                         if (manager.Torrent != null)
