@@ -53,6 +53,7 @@ namespace MonoTorrent.Client
         protected Mode(TorrentManager manager)
         {
             this.manager = manager;
+            manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
         }
 
         public void HandleMessage(PeerId id, PeerMessage message)
@@ -367,6 +368,11 @@ namespace MonoTorrent.Client
             id.Enqueue(bundle);
         }
 
+        public virtual void HandlePeerDisconnected(PeerId id)
+        {
+
+        }
+
         protected virtual void AppendExtendedHandshake(PeerId id, MessageBundle bundle)
         {
             if (id.SupportsLTMessages && ClientEngine.SupportsExtended)
@@ -548,7 +554,7 @@ namespace MonoTorrent.Client
             // Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
             if (manager.chokeUnchoker == null)
                 manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
-            manager.chokeUnchoker.TimePassed();
+            manager.chokeUnchoker.UnchokeReview();
         }
 
         void SeedingLogic(int counter)
@@ -557,7 +563,7 @@ namespace MonoTorrent.Client
             if (manager.chokeUnchoker == null)
                 manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
 
-            manager.chokeUnchoker.TimePassed();
+            manager.chokeUnchoker.UnchokeReview();
         }
 
         protected virtual void SetAmInterestedStatus(PeerId id, bool interesting)

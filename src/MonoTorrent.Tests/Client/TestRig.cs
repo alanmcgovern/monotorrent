@@ -296,6 +296,8 @@ namespace MonoTorrent.Client
 
     public class TestRig : IDisposable
     {
+        static Random Random = new Random(1000);
+        static int port = 10000;
         private BEncodedDictionary torrentDict;
         private ClientEngine engine;
         private CustomListener listener;
@@ -541,6 +543,15 @@ namespace MonoTorrent.Client
             dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
             dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
             dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
+        }
+
+        public PeerId CreatePeer()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i=0; i < 20; i++)
+                sb.Append ((char)Random.Next((int)'a', (int)'z'));
+            Peer peer = new Peer(sb.ToString(), new Uri("tcp://127.0.0.1:" + (port++)));
+            return new PeerId(peer, Manager);
         }
 
         public void Dispose()

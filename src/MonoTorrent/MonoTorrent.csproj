@@ -99,6 +99,7 @@
     <Compile Include="MonoTorrent.Client\EventArgs\DhtPeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerAddedEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerConnectionFailedEventArgs.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\PeerEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerExchangePeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\TrackerPeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\InitialSeed\InitialSeed.cs" />
@@ -244,6 +245,9 @@
     <Compile Include="MonoTorrent.Client\Tracker\TrackerFactory.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\TrackerTier.cs" />
     <Compile Include="MonoTorrent.Client\Tracker\UdpTracker.cs" />
+    <Compile Include="MonoTorrent.Client\Unchokers\InitialSeedUnchoker.cs" />
+    <Compile Include="MonoTorrent.Client\Unchokers\IUnchoker.cs" />
+    <Compile Include="MonoTorrent.Client\Unchokers\Unchoker.cs" />
     <Compile Include="MonoTorrent.Common\AsyncResult.cs" />
     <Compile Include="MonoTorrent.Common\BitField.cs" />
     <Compile Include="MonoTorrent.Common\Check.cs" />

@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         private Torrent torrent;                // All the information from the physical torrent that was loaded
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
-        internal ChokeUnchokeManager chokeUnchoker; // Used to choke and unchoke peers
+        internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
 		private InactivePeerManager inactivePeerManager; // Used to identify inactive peers we don't want to connect to
 		internal DateTime lastCalledInactivePeerManager = DateTime.Now;
 
@@ -144,8 +144,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                if (this.chokeUnchoker != null)
-                    return this.chokeUnchoker.ReviewsExecuted;
+                if (this.chokeUnchoker is ChokeUnchokeManager)
+                    return ((ChokeUnchokeManager)this.chokeUnchoker).ReviewsExecuted;
                 else
                     return 0;
             }
@@ -544,8 +544,10 @@ namespace MonoTorrent.Client
                 if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
                     return;
 
-                if (this.Complete)
+                if (this.Complete) {
+                    mode = new InitialSeedingMode(this);
                     UpdateState(TorrentState.Seeding);
+                }
                 else
                     UpdateState(TorrentState.Downloading);
 
@@ -712,6 +714,7 @@ namespace MonoTorrent.Client
         
         internal void RaisePeerDisconnected(PeerConnectionEventArgs args)
         {
+            mode.HandlePeerDisconnected(args.PeerID);
             Toolbox.RaiseAsyncEvent<PeerConnectionEventArgs>(PeerDisconnected, this, args);
         }
 

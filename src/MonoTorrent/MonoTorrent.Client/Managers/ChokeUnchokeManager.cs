@@ -9,7 +9,7 @@ using MonoTorrent.Client.Messages.FastPeer;
 
 namespace MonoTorrent.Client
 {
-    internal class ChokeUnchokeManager
+    internal class ChokeUnchokeManager : IUnchoker
     {
         #region Private Fields
 
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
 
 
 
-        private void Choke(PeerId peer)
+        public void Choke(PeerId peer)
         {
             //Choke the supplied peer
 
@@ -556,7 +556,7 @@ namespace MonoTorrent.Client
             return difference.TotalMilliseconds / 1000;
         }
 
-        private void Unchoke(PeerId PeerToUnchoke)
+        public void Unchoke(PeerId PeerToUnchoke)
         {
             //Unchoke the supplied peer
 
@@ -609,6 +609,15 @@ namespace MonoTorrent.Client
         //    else
         //        return "N,";
         //}
+
+        #endregion
+
+        #region IUnchoker Members
+
+        public void UnchokeReview()
+        {
+            this.TimePassed();
+        }
 
         #endregion
     }

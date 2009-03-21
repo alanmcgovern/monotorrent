@@ -58,6 +58,7 @@
     <Compile Include="Client\EndGamePickerTests.cs" />
     <Compile Include="Client\FileManager.cs" />
     <Compile Include="Client\HttpTrackerTests.cs" />
+    <Compile Include="Client\InitialSeedUnchokerTests.cs" />
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />
     <Compile Include="Client\PeerMessagesTest.cs" />
