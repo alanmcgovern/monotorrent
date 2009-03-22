@@ -41,12 +41,21 @@ namespace MonoTorrent.Client
         public int BlocksSent;
         public DateTime LastChoked;
         public PeerId Peer;
+        public BitField CurrentPieces;
+        public int SharedPieces;
         public DateTime LastUnchoked;
+        public int TotalPieces;
+
+        public double ShareRatio
+        {
+            get { return (SharedPieces + 1.0) / (TotalPieces + 1.0); }
+        }
 
         public ChokeData(PeerId peer)
         {
             LastChoked = DateTime.Now;
             Peer = peer;
+            CurrentPieces = new BitField(peer.BitField.Length);
         }
     }
 
@@ -126,9 +135,22 @@ namespace MonoTorrent.Client
         public void ReceivedHave(PeerId peer, int pieceIndex)
         {
             bitfield[pieceIndex] = true;
+
+            // If a peer reports they have a piece that *isn't* the peer
+            // we uploaded it to, then the peer we uploaded to has shared it
+            foreach (ChokeData data in peers)
+            {
+                if (data.CurrentPieces[pieceIndex] && data.Peer != peer)
+                {
+                    data.CurrentPieces[pieceIndex] = false;
+                    data.SharedPieces++;
+                    break;
+                }
+            }
+
             foreach (SeededPiece piece in advertisedPieces)
             {
-                if (piece.Peer == peer && piece.Index == pieceIndex)
+                if (piece.Index == pieceIndex)
                 {
                     advertisedPieces.Remove(piece);
                     return;
@@ -161,7 +183,19 @@ namespace MonoTorrent.Client
                 return;
 
             int advertised = advertisedPieces.FindAll(delegate(SeededPiece p) { return p.Peer == data.Peer; }).Count;
-            if (advertised >= MaxAdvertised)
+            int max = MaxAdvertised;
+            if (manager.UploadingTo < manager.Settings.UploadSlots)
+                max = MaxAdvertised;
+            else if (data.ShareRatio < 0.25)
+                max = 1;
+            else if (data.ShareRatio < 0.35)
+                max = 2;
+            else if (data.ShareRatio < 0.50)
+                max = 3;
+            else
+                max = MaxAdvertised;
+
+            if (advertised >= max)
                 return;
 
             // List of pieces *not* in the swarm
@@ -175,7 +209,7 @@ namespace MonoTorrent.Client
                 temp[p.Index] = false;
 
             int index = 0;
-            while (advertised < MaxAdvertised)
+            while (advertised < max)
             {
                 // Get the index of the first piece we can send him
                 index = temp.FirstTrue(index, temp.Length);
@@ -184,6 +218,8 @@ namespace MonoTorrent.Client
                     return;
 
                 advertised++;
+                data.TotalPieces++;
+                data.CurrentPieces[index] = true;
                 advertisedPieces.Add(new SeededPiece(data.Peer, index, data.Peer.TorrentManager.Torrent.PieceLength / Piece.BlockSize));
                 data.Peer.Enqueue(new HaveMessage(index));
                 index++;
@@ -239,6 +275,13 @@ namespace MonoTorrent.Client
             foreach (ChokeData data in dupePieces)
                 TryChoke(data);
 
+            // FIXME: Remove the need to dupe the list
+            List<ChokeData> dupe = new List<ChokeData>(peers);
+
+            // See if there's anyone interesting to unchoke
+            foreach (ChokeData data in dupe)
+                TryUnchoke(data);
+
             // Make sure our list of pieces available in the swarm is up to date
             foreach (ChokeData data in peers)
                 bitfield.Or(data.Peer.BitField);
@@ -249,12 +292,6 @@ namespace MonoTorrent.Client
             foreach (ChokeData data in peers)
                 TryAdvertisePiece(data);
 
-            // FIXME: Remove the need to dupe the list
-            List<ChokeData> dupe = new List<ChokeData>(peers);
-
-            // See if there's anyone interesting to unchoke
-            foreach (ChokeData data in dupe)
-                TryUnchoke(data);
         }
     }
 }

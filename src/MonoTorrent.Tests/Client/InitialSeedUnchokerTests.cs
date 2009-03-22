@@ -66,9 +66,9 @@ namespace MonoTorrent.Tests.Client
         [SetUp]
         public void Setup()
         {
+            rig.Manager.UploadingTo = 0;
             rig.Manager.Settings.UploadSlots = 4;
-            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://127.0.0.5:5353")), rig.Manager);
-            peer.ProcessingQueue = true;
+            peer = rig.CreatePeer(true);
             unchoker = new InitialSeedUnchoker(rig.Manager);
             unchoker.PeerConnected(peer);
         }
@@ -151,8 +151,54 @@ namespace MonoTorrent.Tests.Client
         }
 
         [Test]
+        public void Advertise7()
+        {
+            PeerId other = rig.CreatePeer(true);
+            // Check that peers which don't share only get a small number of pieces to share
+            rig.Manager.Settings.UploadSlots = 1;
+            unchoker.PeerDisconnected(peer);
+            List<PeerId> peers = new List<PeerId>(new PeerId[] { peer, rig.CreatePeer(true) });
+            peers.ForEach(unchoker.PeerConnected);
+            unchoker.UnchokeReview();
+
+            peers.ForEach(delegate(PeerId id) { id.IsInterested = true; });
+            unchoker.UnchokeReview();
+
+            Assert.AreEqual(unchoker.MaxAdvertised + 1, peers[0].QueueLength);
+            while (peers[0].QueueLength > 1)
+                unchoker.ReceivedHave(peers[0], ((HaveMessage)peers[0].Dequeue()).PieceIndex);
+            unchoker.UnchokeReview();
+            Assert.IsInstanceOf<UnchokeMessage>(peers[0].Dequeue());
+            Assert.IsInstanceOf<ChokeMessage>(peers[0].Dequeue());
+
+            Assert.AreEqual(unchoker.MaxAdvertised + 1, peers[1].QueueLength);
+            while (peers[1].QueueLength > 1)
+                unchoker.ReceivedHave(other, ((HaveMessage)peers[1].Dequeue()).PieceIndex);
+            unchoker.UnchokeReview();
+            Assert.IsInstanceOf<UnchokeMessage>(peers[1].Dequeue());
+            Assert.IsInstanceOf<ChokeMessage>(peers[1].Dequeue());
+
+            // He didn't share any, he should get 1 piece.
+            Assert.AreEqual(1 + 1, peers[0].QueueLength);
+            while (peers[0].QueueLength > 1)
+                unchoker.ReceivedHave(peers[0], ((HaveMessage)peers[0].Dequeue()).PieceIndex);
+            unchoker.UnchokeReview();
+            Assert.IsInstanceOf<UnchokeMessage>(peers[0].Dequeue());
+            Assert.IsInstanceOf<ChokeMessage>(peers[0].Dequeue());
+
+            // He shared them all, he should get max allowance
+            Assert.AreEqual(unchoker.MaxAdvertised + 1, peers[1].QueueLength);
+            while (peers[1].QueueLength > 1)
+                unchoker.ReceivedHave(other, ((HaveMessage)peers[1].Dequeue()).PieceIndex);
+            unchoker.UnchokeReview();
+            Assert.IsInstanceOf<UnchokeMessage>(peers[1].Dequeue());
+            Assert.IsInstanceOf<ChokeMessage>(peers[1].Dequeue());
+        }
+
+        [Test]
         public void Choke()
         {
+            PeerId other = rig.CreatePeer(true);
             // More slots than peers
             for (int i = 0; i < 25; i++)
             {
@@ -161,12 +207,15 @@ namespace MonoTorrent.Tests.Client
                 HaveMessage h = (HaveMessage)peer.Dequeue();
                 Assert.AreEqual(i, h.PieceIndex, "#2." + i);
                 unchoker.ReceivedHave(peer, h.PieceIndex);
+                unchoker.ReceivedHave(other, h.PieceIndex);
             }
         }
 
         [Test]
         public void Choke2()
         {
+            PeerId other = rig.CreatePeer(true);
+
             // More peers than slots
             unchoker.PeerDisconnected(this.peer);
             rig.Manager.Settings.UploadSlots = 1;
@@ -197,7 +246,7 @@ namespace MonoTorrent.Tests.Client
                     Assert.IsFalse(peer.AmChoking);
                     peers.ForEach(delegate(PeerId p) { if (p != peer) Assert.IsTrue(p.AmChoking); });
                     Assert.AreEqual(0, peer.QueueLength);
-                    unchoker.ReceivedHave(peer, haves.Dequeue());
+                    unchoker.ReceivedHave(other, haves.Dequeue());
                 }
 
                 unchoker.UnchokeReview();
