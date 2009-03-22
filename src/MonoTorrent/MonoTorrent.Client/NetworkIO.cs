@@ -361,7 +361,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 4);
             RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
-            limiter = limiter == null && id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null;
+            limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
             EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
         }
 
@@ -413,7 +413,7 @@ namespace MonoTorrent.Client
                     ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                     id.recieveBuffer = buffer;
                     RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
-                    limiter = limiter == null && id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null;
+                    limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
                     EnqueueReceive(connection, id.recieveBuffer, 4, messageBodyLength, MessageBodyReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
                 }
             }
