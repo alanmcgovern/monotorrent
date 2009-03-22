@@ -77,8 +77,8 @@ namespace MonoTorrent.Client
             get { return this.uploadSlots; }
             set
             {
-                if (value < 2)
-                    throw new ArgumentOutOfRangeException("You must use at least 2 upload slots");
+                if (value < 1)
+                    throw new ArgumentOutOfRangeException("You must use at least 1 upload slot");
                 this.uploadSlots = value;
             }
         }
