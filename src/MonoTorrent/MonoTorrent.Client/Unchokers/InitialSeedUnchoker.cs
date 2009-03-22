@@ -75,6 +75,11 @@ namespace MonoTorrent.Client
         List<ChokeData> peers;
         BitField temp;
 
+        bool PendingUnchoke
+        {
+            get { return peers.Exists(delegate(ChokeData d) { return d.Peer.AmChoking && d.Peer.IsInterested; }); }
+        }
+
         public int MaxAdvertised
         {
             get { return 4; }
@@ -115,6 +120,7 @@ namespace MonoTorrent.Client
         public void PeerDisconnected(PeerId id)
         {
             peers.RemoveAll(delegate(ChokeData d) { return d.Peer == id; });
+            advertisedPieces.RemoveAll(delegate(SeededPiece piece) { return piece.Peer == id; });
         }
 
         public void ReceivedHave(PeerId peer, int pieceIndex)
@@ -130,6 +136,11 @@ namespace MonoTorrent.Client
             }
         }
 
+        public void ReceivedNotInterested(PeerId id)
+        {
+            advertisedPieces.RemoveAll(delegate(SeededPiece piece) { return piece.Peer == id; });
+        }
+
         public void SentBlock(PeerId peer, int pieceIndex)
         {
             SeededPiece piece = advertisedPieces.Find(delegate(SeededPiece p) { return p.Peer == peer && p.Index == pieceIndex; });
@@ -138,10 +149,17 @@ namespace MonoTorrent.Client
 
             piece.SeededAt = DateTime.Now;
             piece.BlocksSent++;
+            if (piece.TotalBlocks == piece.BlocksSent)
+                advertisedPieces.Remove(piece);
         }
 
         void TryAdvertisePiece(ChokeData data)
         {
+            // If we are seeding to this peer and we have a peer waiting to unchoke
+            // don't advertise more data
+            if (!data.Peer.AmChoking && PendingUnchoke)
+                return;
+
             int advertised = advertisedPieces.FindAll(delegate(SeededPiece p) { return p.Peer == data.Peer; }).Count;
             if (advertised >= MaxAdvertised)
                 return;
@@ -186,12 +204,7 @@ namespace MonoTorrent.Client
                 // Choke him if he's not interested
                 Choke(data.Peer);
             }
-            else if (uploadingTo < maxUploads)
-            {
-                // If we still have free upload slots, don't choke anyone
-                return;
-            }
-            else if (peers.Count > maxUploads && (DateTime.Now - data.LastUnchoked) > TimeSpan.FromSeconds(30))
+            else if (!advertisedPieces.Exists(delegate(SeededPiece p) { return p.Peer == data.Peer; }))
             {
                 // If we have no free slots and peers are waiting, choke after 30 seconds.
                 // FIXME: Choke as soon as the next piece completes *or* a larger time limit *and*
@@ -226,19 +239,22 @@ namespace MonoTorrent.Client
             foreach (ChokeData data in dupePieces)
                 TryChoke(data);
 
+            // Make sure our list of pieces available in the swarm is up to date
+            foreach (ChokeData data in peers)
+                bitfield.Or(data.Peer.BitField);
+
+            advertisedPieces.RemoveAll(delegate(SeededPiece p) { return bitfield[p.Index]; });
+
+            // Send have messages to anyone that needs them
+            foreach (ChokeData data in peers)
+                TryAdvertisePiece(data);
+
             // FIXME: Remove the need to dupe the list
             List<ChokeData> dupe = new List<ChokeData>(peers);
-            
-            // Make sure our list of pieces available in the swarm is up to date
-            foreach (ChokeData data in dupe)
-                bitfield.Or(data.Peer.BitField);
 
             // See if there's anyone interesting to unchoke
             foreach (ChokeData data in dupe)
                 TryUnchoke(data);
-
-            foreach (ChokeData data in dupe)
-                TryAdvertisePiece(data);
         }
     }
 }

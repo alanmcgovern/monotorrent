@@ -84,6 +84,12 @@ namespace MonoTorrent.Client
             unchoker.SentBlock(id, message.PieceIndex);
         }
 
+        protected override void HandleNotInterested(PeerId id, NotInterestedMessage message)
+        {
+            base.HandleNotInterested(id, message);
+            unchoker.ReceivedNotInterested(id);
+        }
+
         public override void HandlePeerConnected(PeerId id, Direction direction)
         {
             base.HandlePeerConnected(id, direction);

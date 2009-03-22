@@ -45,7 +45,7 @@ namespace MonoTorrent.Tests.Client
             InitialSeedUnchokerTests t = new InitialSeedUnchokerTests();
             t.FixtureSetup();
             t.Setup();
-            t.Unchoke();
+            t.Choke();
         }
         PeerId peer;
         TestRig rig;
@@ -66,6 +66,7 @@ namespace MonoTorrent.Tests.Client
         [SetUp]
         public void Setup()
         {
+            rig.Manager.Settings.UploadSlots = 4;
             peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://127.0.0.5:5353")), rig.Manager);
             peer.ProcessingQueue = true;
             unchoker = new InitialSeedUnchoker(rig.Manager);
@@ -115,7 +116,7 @@ namespace MonoTorrent.Tests.Client
         [Test]
         public void Advertise5()
         {
-            List<PeerId> peers = new List<PeerId>(new PeerId[] { rig.CreatePeer(), rig.CreatePeer(), rig.CreatePeer()});
+            List<PeerId> peers = new List<PeerId>(new PeerId[] { rig.CreatePeer(true), rig.CreatePeer(true), rig.CreatePeer(true) });
             peers.ForEach(unchoker.PeerConnected);
             peers.Add(this.peer);
 
@@ -133,6 +134,82 @@ namespace MonoTorrent.Tests.Client
                     Assert.IsFalse(peers.Exists(delegate(PeerId p) { return p.BitField[index]; }));
                 }
             }
+        }
+
+        [Test]
+        public void Advertise6()
+        {
+            unchoker.UnchokeReview();
+            Assert.AreEqual(unchoker.MaxAdvertised, peer.QueueLength, "#2");
+            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+                Assert.AreEqual(i, ((HaveMessage)peer.Dequeue()).PieceIndex, "#3." + i);
+            peer.BitField.SetTrue(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+            unchoker.UnchokeReview();
+            Assert.AreEqual(unchoker.MaxAdvertised, peer.QueueLength, "#4");
+            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+                Assert.AreEqual(i + 11, ((HaveMessage)peer.Dequeue()).PieceIndex, "#5." + i);
+        }
+
+        [Test]
+        public void Choke()
+        {
+            // More slots than peers
+            for (int i = 0; i < 25; i++)
+            {
+                unchoker.UnchokeReview();
+                Assert.AreEqual(unchoker.MaxAdvertised, peer.QueueLength, "#1." + i);
+                HaveMessage h = (HaveMessage)peer.Dequeue();
+                Assert.AreEqual(i, h.PieceIndex, "#2." + i);
+                unchoker.ReceivedHave(peer, h.PieceIndex);
+            }
+        }
+
+        [Test]
+        public void Choke2()
+        {
+            // More peers than slots
+            unchoker.PeerDisconnected(this.peer);
+            rig.Manager.Settings.UploadSlots = 1;
+
+            List<PeerId> peers = new List<PeerId>(new PeerId[] { this.peer, rig.CreatePeer(true), rig.CreatePeer(true) });
+            peers.ForEach(unchoker.PeerConnected);
+
+            unchoker.UnchokeReview();
+            peers.ForEach(delegate(PeerId p) { p.IsInterested = true; });
+            unchoker.UnchokeReview();
+            Assert.IsFalse(peers[0].AmChoking);
+            Assert.IsTrue(peers[1].AmChoking);
+            Assert.IsTrue(peers[2].AmChoking);
+
+            for (int current = 0; current < peers.Count; current++)
+            {
+                PeerId peer = peers[current];
+                Assert.IsFalse(peer.AmChoking);
+                Queue<int> haves = new Queue<int>();
+
+                for (int i = 0; i < unchoker.MaxAdvertised; i++)
+                    haves.Enqueue(((HaveMessage)peer.Dequeue()).PieceIndex);
+                Assert.IsInstanceOf<UnchokeMessage>(peer.Dequeue());
+
+                while(haves.Count > 0)
+                {
+                    unchoker.UnchokeReview();
+                    Assert.IsFalse(peer.AmChoking);
+                    peers.ForEach(delegate(PeerId p) { if (p != peer) Assert.IsTrue(p.AmChoking); });
+                    Assert.AreEqual(0, peer.QueueLength);
+                    unchoker.ReceivedHave(peer, haves.Dequeue());
+                }
+
+                unchoker.UnchokeReview();
+                Assert.IsTrue(peer.AmChoking);
+                Assert.IsInstanceOf<ChokeMessage>(peer.Dequeue());
+            }
+
+            Assert.IsFalse(peers[0].AmChoking);
+            Assert.IsTrue(peers[1].AmChoking);
+            Assert.IsTrue(peers[2].AmChoking);
+
+            peers.ForEach(delegate(PeerId p) { Assert.Less(0, p.QueueLength); });
         }
 
         [Test]

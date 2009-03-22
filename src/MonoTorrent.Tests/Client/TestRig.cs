@@ -545,13 +545,15 @@ namespace MonoTorrent.Client
             dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
         }
 
-        public PeerId CreatePeer()
+        public PeerId CreatePeer(bool processingQueue)
         {
             StringBuilder sb = new StringBuilder();
             for (int i=0; i < 20; i++)
                 sb.Append ((char)Random.Next((int)'a', (int)'z'));
             Peer peer = new Peer(sb.ToString(), new Uri("tcp://127.0.0.1:" + (port++)));
-            return new PeerId(peer, Manager);
+            PeerId id = new PeerId(peer, Manager);
+            id.ProcessingQueue = processingQueue;
+            return id;
         }
 
         public void Dispose()
