@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
         [TestFixtureSetUp]
         public void GlobalSetup()
         {
-            rig = new TestRig("");
+            rig = TestRig.CreateMultiFile();
         }
 
         [TestFixtureTearDown]

@@ -40,13 +40,13 @@ namespace MonoTorrent.Tests.Client
     [TestFixture]
     public class InitialSeedUnchokerTests
     {
-        static void Main()
-        {
-            InitialSeedUnchokerTests t = new InitialSeedUnchokerTests();
-            t.FixtureSetup();
-            t.Setup();
-            t.Choke();
-        }
+        //static void Main()
+        //{
+        //    InitialSeedUnchokerTests t = new InitialSeedUnchokerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.Choke();
+        //}
         PeerId peer;
         TestRig rig;
         InitialSeedUnchoker unchoker;
@@ -54,7 +54,7 @@ namespace MonoTorrent.Tests.Client
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            rig = TestRig.CreateSingleFile();
+            rig = TestRig.CreateMultiFile();
         }
 
         [TestFixtureTearDown]

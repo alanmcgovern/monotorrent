@@ -17,16 +17,16 @@ namespace MonoTorrent.Client
     public class TestWebSeed
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
-        //static void Main(string[] args)
-        //{
-        //    TestWebSeed s = new TestWebSeed();
-        //    for (int i = 0; i < 50; i++)
-        //    {
-        //        s.Setup();
-        //        s.TestPartialData();
-        //        s.TearDown();
-        //    }
-        //}
+        static void Main(string[] args)
+        {
+            TestWebSeed s = new TestWebSeed();
+            for (int i = 0; i < 50; i++)
+            {
+                s.Setup();
+                s.SingleFileTorrent();
+                s.TearDown();
+            }
+        }
 
         bool partialData;
         public readonly int Count = 5;
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
                 }
             }
             listener.BeginGetContext(GotContext, null);
-            rig = new TestRig("");
+            rig = TestRig.CreateMultiFile();
             connection = new HttpConnection(new Uri(string.Format(listenerURL, i)));
             connection.Manager = rig.Manager;
 

@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         public void FixtureSetup()
         {
             buffer = new byte[100000];
-            testRig = new TestRig("Downloads");
+            testRig = TestRig.CreateMultiFile();
         }
 
         [TestFixtureTearDown]

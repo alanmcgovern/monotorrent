@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup()
         {
-            rig = new TestRig("", new TestWriter());
+            rig = TestRig.CreateMultiFile (new TestWriter());
             conn = new ConnectionPair(51515);
         }
         [TearDown]
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
             handle.Reset();
 
             rig.Engine.Unregister(rig.Manager);
-            TestRig rig2 = new TestRig("", new TestWriter());
+            TestRig rig2 = TestRig.CreateMultiFile (new TestWriter());
             rig2.Engine.Unregister(rig2.Manager);
             rig.Engine.Register(rig2.Manager);
             rig2.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)

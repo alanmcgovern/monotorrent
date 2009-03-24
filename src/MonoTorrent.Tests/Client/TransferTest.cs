@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
         public void Setup()
         {
             pair = new ConnectionPair(55432);
-            rig = new TestRig("");
+            rig = TestRig.CreateMultiFile();
             rig.Manager.Start();
         }
 

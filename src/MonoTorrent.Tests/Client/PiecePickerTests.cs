@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         public virtual void Setup()
         {
             // Yes, this is horrible. Deal with it.
-            rig = new TestRig("");
+            rig = TestRig.CreateMultiFile();
             peers = new List<PeerId>();
             picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
             picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>());

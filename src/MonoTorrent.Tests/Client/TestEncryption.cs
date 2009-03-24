@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            rig = new TestRig("");
+            rig = TestRig.CreateMultiFile();
         }
         [SetUp]
         public void Setup()

@@ -360,106 +360,7 @@ namespace MonoTorrent.Client
         }
 
 
-        static TestRig()
-        {
-            TrackerFactory.Register("custom", typeof(CustomTracker));
-        }
-
-        public TestRig(bool singleFile)
-            : this("", singleFile, null)
-        {
-
-        }
-
-        public TestRig(bool singleFile, string[][] tier)
-            : this("", singleFile, tier)
-        {
-
-        }
-        public TestRig(string savePath)
-            : this(savePath, false, null)
-        {
-
-        }
-
-        public TestRig(string savePath, bool singleFile, string[][] tier)
-            : this(savePath, null, singleFile, tier)
-        {
-
-        }
-        public TestRig(string savePath, PieceWriter writer)
-            : this(savePath, 256 * 1024, writer, false, null)
-        {
-
-        }
-        public TestRig(string savePath, PieceWriter writer, string[][] tier)
-            : this(savePath, 256 * 1024, writer, false, tier)
-        {
-
-        }
-        public TestRig(string savePath, PieceWriter writer, bool singleFile, string[][] tier)
-            : this(savePath, 256 * 1024, writer, singleFile, tier)
-        {
-
-        }
-        public TestRig(string savePath, int piecelength, PieceWriter writer)
-            : this(savePath, piecelength, writer, false, null)
-        {
-
-        }
-        public TestRig(string savePath, int piecelength, PieceWriter writer, string[][] tier)
-            :this(savePath, piecelength, writer, false, tier)
-        {
-
-        }
-
-
-        string savePath; int piecelength; bool singleFile; string[][] tier;
-        public TestRig(string savePath, int piecelength, PieceWriter writer, bool singleFile, string[][] tier)
-        {
-            this.savePath = savePath;
-            this.piecelength = piecelength;
-            this.singleFile = singleFile;
-            this.tier = tier;
-
-            if (writer == null)
-                writer = new TestWriter();
-            listener = new CustomListener();
-            engine = new ClientEngine(new EngineSettings(), listener, writer);
-            RecreateManager();
-        }
-
-        private static void AddAnnounces(BEncodedDictionary dict, string[][] tiers)
-        {
-            BEncodedList announces = new BEncodedList();
-
-            if (tiers == null)
-            {
-                BEncodedList tier1 = new BEncodedList();
-                BEncodedList tier2 = new BEncodedList();
-                announces.Add(tier1);
-                announces.Add(tier2);
-                tier1.Add((BEncodedString)"custom://tier1/announce1");
-                tier1.Add((BEncodedString)"custom://tier1/announce2");
-                tier2.Add((BEncodedString)"custom://tier2/announce1");
-                tier2.Add((BEncodedString)"custom://tier2/announce2");
-                tier2.Add((BEncodedString)"custom://tier2/announce3");
-
-                dict["announce"] = (BEncodedString)"custom://tier1/announce1";
-            }
-            else
-            {
-                foreach (string[] tier in tiers)
-                {
-                    BEncodedList bTier = new BEncodedList();
-                    announces.Add(bTier);
-                    foreach (string s in tier)
-                        bTier.Add((BEncodedString)s);
-                }
-                dict["announce"] = (BEncodedString)tiers[0][0];
-            }
-            dict["announce-list"] = announces;
-        }
+        string savePath; int piecelength; string[][] tier;
 
         public void AddConnection(IConnection connection)
         {
@@ -469,87 +370,11 @@ namespace MonoTorrent.Client
                 listener.Add(manager, connection);
         }
 
-        private static BEncodedDictionary CreateTorrent(int pieceLength, bool singleFile, string[][] tier)
-        {
-            BEncodedDictionary dict = new BEncodedDictionary();
-            BEncodedDictionary infoDict = new BEncodedDictionary();
-
-            AddAnnounces(dict, tier);
-            if (singleFile)
-                AddSingleFile(infoDict, pieceLength);
-            else
-                AddMultiFiles(infoDict, pieceLength);
-            if (singleFile)
-                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
-            else
-                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce";
-            dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
-            dict["encoding"] = (BEncodedString)"UTF-8";
-            dict["info"] = infoDict;
-
-            return dict;
-        }
-
-        private static void AddMultiFiles(BEncodedDictionary dict, int pieceLength)
-        {
-            BEncodedNumber[] sizes = new BEncodedNumber[] { (int)(pieceLength * 0.44), 
-                                                            (int)(pieceLength * 13.25),
-                                                            (int)(pieceLength * 23.68),
-                                                            (int)(pieceLength * 2.05) };
-
-            List<BEncodedList> paths = new List<BEncodedList>();
-            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "File1" }));
-            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "Dir2", "File2" }));
-            paths.Add(new BEncodedList(new BEncodedString[] { "File3" }));
-            paths.Add(new BEncodedList(new BEncodedString[] { "File4" }));
-
-            BEncodedList files = new BEncodedList();
-            for (int i = 0; i < paths.Count; i++)
-            {
-                BEncodedDictionary d = new BEncodedDictionary();
-                d["path"] = paths[i];
-                d["length"] = sizes[i];
-                files.Add(d);
-            }
-
-            dict[new BEncodedString("files")] = files;
-            dict[new BEncodedString("name")] = new BEncodedString("test.files");
-            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
-        }
-
-
-        private static void AddSingleFile(BEncodedDictionary dict, int pieceLength)
-        {
-            BEncodedNumber[] sizes = new BEncodedNumber[] { (int)(pieceLength * 0.44) + 
-                                                            (int)(pieceLength * 13.25)+
-                                                            (int)(pieceLength * 23.68)+
-                                                            (int)(pieceLength * 2.05) };
-
-            List<BEncodedList> paths = new List<BEncodedList>();
-            paths.Add(new BEncodedList(new BEncodedString[] { "Dir1", "File1" }));
-
-            BEncodedList files = new BEncodedList();
-            for (int i = 0; i < paths.Count; i++)
-            {
-                BEncodedDictionary d = new BEncodedDictionary();
-                d["path"] = paths[i];
-                d["length"] = sizes[i];
-                files.Add(d);
-            }
-
-            dict[new BEncodedString("files")] = files;
-            dict[new BEncodedString("name")] = new BEncodedString("test.files");
-            dict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 40]);
-            dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
-        }
-
         public PeerId CreatePeer(bool processingQueue)
         {
             StringBuilder sb = new StringBuilder();
-            for (int i=0; i < 20; i++)
-                sb.Append ((char)Random.Next((int)'a', (int)'z'));
+            for (int i = 0; i < 20; i++)
+                sb.Append((char)Random.Next((int)'a', (int)'z'));
             Peer peer = new Peer(sb.ToString(), new Uri("tcp://127.0.0.1:" + (port++)));
             PeerId id = new PeerId(peer, Manager);
             id.ProcessingQueue = processingQueue;
@@ -561,45 +386,6 @@ namespace MonoTorrent.Client
             engine.Dispose();
         }
 
-
-        public static TestRig CreateSingleFile()
-        {
-            return new TestRig(true);
-        }
-
-        public  static TestRig CreateMultiFile()
-        {
-            return new TestRig(false);
-        }
-
-        internal static TestRig CreateMultiFile(TorrentFile[] files, int pieceLength)
-        {
-            TestRig rig = new TestRig(false);
-            rig.piecelength = pieceLength;
-            BEncodedDictionary info = (BEncodedDictionary)rig.torrentDict["info"];
-            info["piece length"] = (BEncodedNumber)pieceLength;
-            int length = (int)Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
-            info["pieces"] = (BEncodedString)new byte[((length + pieceLength - 1) / pieceLength) * 20];
-            BEncodedList filesList = (BEncodedList)info["files"];
-            filesList.Clear();
-            foreach (TorrentFile file in files)
-            {
-                BEncodedDictionary d = new BEncodedDictionary();
-                d["path"] = new BEncodedList(new BEncodedString[] { file.Path });
-                d["length"] = (BEncodedNumber)file.Length;
-                filesList.Add(d);
-            }
-            rig.torrent = Torrent.Load(rig.torrentDict);
-            rig.manager = new TorrentManager(rig.torrent, rig.savePath, new TorrentSettings());
-            return rig;
-        }
-
-        public static TestRig CreateTrackers(string[][] tier)
-        {
-            return new TestRig(true, tier);
-        }
-
-        
         public void RecreateManager()
         {
             if (manager != null)
@@ -608,10 +394,158 @@ namespace MonoTorrent.Client
                 if (engine.Contains(manager))
                     engine.Unregister(manager);
             }
-            torrentDict = CreateTorrent(piecelength, singleFile, tier);
+            torrentDict = CreateTorrent(piecelength, files, tier);
             torrent = Torrent.Load(torrentDict);
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
         }
+
+        #region Rig Creation
+
+        TorrentFile[] files;
+        PieceWriter writer;
+        TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files)
+        {
+            this.files = files;
+            this.savePath = savePath;
+            this.piecelength = piecelength;
+            this.writer = writer;
+            this.tier = trackers;
+
+            listener = new CustomListener();
+            engine = new ClientEngine(new EngineSettings(), listener, writer);
+
+            RecreateManager();
+        }
+
+        static TestRig()
+        {
+            TrackerFactory.Register("custom", typeof(CustomTracker));
+        }
+
+        private static void AddAnnounces(BEncodedDictionary dict, string[][] tiers)
+        {
+            BEncodedList announces = new BEncodedList();
+            foreach (string[] tier in tiers)
+            {
+                BEncodedList bTier = new BEncodedList();
+                announces.Add(bTier);
+                foreach (string s in tier)
+                    bTier.Add((BEncodedString)s);
+            }
+            dict["announce"] = (BEncodedString)tiers[0][0];
+            dict["announce-list"] = announces;
+        }
+
+        BEncodedDictionary CreateTorrent(int pieceLength, TorrentFile[] files, string[][] tier)
+        {
+            BEncodedDictionary dict = new BEncodedDictionary();
+            BEncodedDictionary infoDict = new BEncodedDictionary();
+
+            AddAnnounces(dict, tier);
+            AddFiles(infoDict, files);
+            if (files.Length == 1)
+                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
+            else
+                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce";
+            dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
+            dict["encoding"] = (BEncodedString)"UTF-8";
+            dict["info"] = infoDict;
+
+            return dict;
+        }
+
+        void AddFiles(BEncodedDictionary dict, TorrentFile[] files)
+        {
+            long totalSize = piecelength - 1;
+            BEncodedList bFiles = new BEncodedList();
+            for (int i = 0; i < files.Length; i++)
+            {
+                BEncodedList path = new BEncodedList();
+                foreach (string s in files[i].Path.Split('/'))
+                    path.Add((BEncodedString)s);
+                BEncodedDictionary d = new BEncodedDictionary();
+                d["path"] = path;
+                d["length"] = (BEncodedNumber)files[i].Length;
+                bFiles.Add(d);
+                totalSize += files[i].Length;
+            }
+
+            dict[new BEncodedString("files")] = bFiles;
+            dict[new BEncodedString("name")] = new BEncodedString("test.files");
+            dict[new BEncodedString("piece length")] = new BEncodedNumber(piecelength);
+            dict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * (totalSize / piecelength)]);
+        }
+
+        public static TestRig CreateSingleFile()
+        {
+            return new TestRig("", StandardPieceSize(), StandardWriter(), StandardTrackers(), StandardSingleFile());
+        }
+
+        public static TestRig CreateMultiFile()
+        {
+            return new TestRig("", StandardPieceSize(), StandardWriter(), StandardTrackers(), StandardMultiFile());
+        }
+
+        internal static TestRig CreateMultiFile(TorrentFile[] files, int pieceLength)
+        {
+            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files);
+        }
+
+        public static TestRig CreateTrackers(string[][] tier)
+        {
+            return new TestRig("", StandardPieceSize(), StandardWriter(), tier, StandardMultiFile());
+        }
+
+        internal static TestRig CreateMultiFile(PieceWriter writer)
+        {
+            return new TestRig ("", StandardPieceSize (), writer, StandardTrackers (), StandardMultiFile());
+        }
+
+        internal static TestRig CreateMultiFile(int pieceSize)
+        {
+            return new TestRig("", pieceSize, StandardWriter(), StandardTrackers(), StandardMultiFile());
+        }
+
+        #region Create standard fake data
+
+        static int StandardPieceSize()
+        {
+            return 256 * 1024;
+        }
+
+        static TorrentFile[] StandardMultiFile()
+        {
+            return new TorrentFile[] {
+                new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44)),
+                new TorrentFile ("Dir1/Dir2/File2", (int)(StandardPieceSize () * 13.25)),
+                new TorrentFile ("File3", (int)(StandardPieceSize () * 23.68)),
+                new TorrentFile ("File4", (int)(StandardPieceSize () * 2.05)),
+            };
+        }
+
+        static TorrentFile[] StandardSingleFile()
+        {
+            return new TorrentFile[] {
+                 new TorrentFile ("Dir1/File1", (int)(StandardPieceSize () * 0.44))
+            };
+        }
+
+        static string[][] StandardTrackers()
+        {
+            return new string[][] {
+                new string[] { "custom://tier1/announce1", "custom://tier1/announce2" },
+                new string[] { "custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3" },
+            };
+        }
+
+        static PieceWriter StandardWriter()
+        {
+            return new TestWriter();
+        }
+
+        #endregion Create standard fake data
+
+        #endregion Rig Creation
     }
 }
