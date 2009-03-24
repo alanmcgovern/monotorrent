@@ -409,6 +409,7 @@ namespace MonoTorrent.Client
             {
                 switch (this.torrents[i].State)
                 {
+                    case (TorrentState.Paused):
                     case (TorrentState.Downloading):
                     case (TorrentState.Seeding):
                         this.torrents[i].Mode.Tick(tickCount);
