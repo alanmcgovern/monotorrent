@@ -129,8 +129,8 @@ namespace MonoTorrent
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
                     TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    if (fastResume.ContainsKey(torrent.InfoHash.Hash))
-                        manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.Hash]));
+                    if (fastResume.ContainsKey(torrent.InfoHash.ToHex ()))
+                        manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -267,7 +267,7 @@ namespace MonoTorrent
                     Console.WriteLine(handle.ToString());
 
                 Console.WriteLine(handle.ToString());
-                fastResume.Add(torrents[i].Torrent.InfoHash.Hash, torrents[i].SaveFastResume().Encode());
+                fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
 #if !DISABLE_DHT
