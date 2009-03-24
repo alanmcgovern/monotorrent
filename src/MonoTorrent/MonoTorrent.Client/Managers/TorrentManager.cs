@@ -878,6 +878,8 @@ namespace MonoTorrent.Client
 
             TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this, this.state, newState);
             this.state = newState;
+            this.downloadLimiter.Paused = state == TorrentState.Paused;
+            this.uploadLimiter.Paused = state == TorrentState.Paused;
 
             RaiseTorrentStateChanged(e);
 

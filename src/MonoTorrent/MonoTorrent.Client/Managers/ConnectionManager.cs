@@ -419,6 +419,8 @@ namespace MonoTorrent.Client
 
                 RateLimiter limiter = engine.Settings.GlobalMaxUploadSpeed > 0 ? engine.uploadLimiter : null;
                 limiter = limiter ?? (id.TorrentManager.Settings.MaxUploadSpeed > 0 ? id.TorrentManager.uploadLimiter : null);
+                if (id.TorrentManager.State == TorrentState.Paused)
+                    limiter = id.TorrentManager.uploadLimiter;
                 NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)

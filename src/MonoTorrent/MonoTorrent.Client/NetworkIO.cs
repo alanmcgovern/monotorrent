@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
                 {
                     for (int i = 0; i < sendQueue.Count;)
                     {
-                        if (sendQueue[i].RateLimiter.Chunks > 0)
+                        if (sendQueue[i].RateLimiter.Chunks > 0 && !receiveQueue[i].RateLimiter.Paused)
                         {
                             EnqueueSend(sendQueue[i]);
                             sendQueue.RemoveAt(i);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                 {
                     for (int i = 0; i < receiveQueue.Count;)
                     {
-                        if (receiveQueue[i].RateLimiter.Chunks > 0)
+                        if (receiveQueue[i].RateLimiter.Chunks > 0 && !receiveQueue[i].RateLimiter.Paused)
                         {
                             EnqueueReceive(receiveQueue[i]);
                             receiveQueue.RemoveAt(i);
@@ -283,7 +283,7 @@ namespace MonoTorrent.Client
                 {
                     io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndReceiveCallback, io);
                 }
-                else if (io.RateLimiter.Chunks > 0)
+                else if (io.RateLimiter.Chunks > 0 && !io.RateLimiter.Paused)
                 {
                     if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
                         Interlocked.Decrement(ref io.RateLimiter.Chunks);
@@ -332,7 +332,7 @@ namespace MonoTorrent.Client
                 {
                     io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndSendCallback, io);
                 }
-                else if (io.RateLimiter.Chunks > 0)
+                else if (io.RateLimiter.Chunks > 0 && !io.RateLimiter.Paused)
                 {
                     if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
                         Interlocked.Decrement(ref io.RateLimiter.Chunks);
@@ -362,6 +362,8 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 4);
             RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
             limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
+            if (id.TorrentManager.State == TorrentState.Paused)
+                limiter = id.TorrentManager.downloadLimiter;
             EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
         }
 

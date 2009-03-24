@@ -38,8 +38,15 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
+        private bool paused;
         private int savedError;
         public int Chunks;
+
+        public bool Paused
+        {
+            get { return paused; }
+            set { paused = value; }
+        }
 
         #endregion
 
@@ -48,6 +55,12 @@ namespace MonoTorrent.Client
 
         public void UpdateChunks(int maxRate, int actualRate)
         {
+            if (maxRate == 0)
+            {
+                Chunks = 10000;
+                savedError = 0;
+                return;
+            }
             // From experimentation, i found that increasing by 5% gives more accuate rate limiting
             // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
             maxRate = (int)(maxRate * 1.05);
