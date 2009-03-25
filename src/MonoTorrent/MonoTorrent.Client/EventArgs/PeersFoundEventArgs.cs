@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent
 {
     public class PeersFoundEventArgs : EventArgs
     {
