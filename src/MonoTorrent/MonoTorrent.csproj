@@ -90,6 +90,8 @@
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
     <Compile Include="BanLists\RangeCollection.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\PeersFoundEventArgs.cs" />
+    <Compile Include="MonoTorrent.Client\IDhtEngine.cs" />
     <Compile Include="MonoTorrent.BEncoding\RawReader.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\IListener.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\Listener.cs" />
@@ -130,6 +132,7 @@
     <Compile Include="MonoTorrent.Client\Modes\MetadataMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\Mode.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />
+    <Compile Include="MonoTorrent.Client\NullDhtEngine.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\HttpRequestData.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\IPV6Connection.cs" />
     <Compile Include="MonoTorrent.Client\PeerConnections\PeerId.cs" />

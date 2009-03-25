@@ -30,6 +30,16 @@
 
 using System;
 
+namespace MonoTorrent
+{
+    public enum DhtState
+    {
+        NotReady,
+        Initialising,
+        Ready
+    }
+}
+
 namespace MonoTorrent.Common
 {
     public enum ListenerStatus

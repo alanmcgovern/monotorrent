@@ -44,10 +44,6 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 
-#if !DISABLE_DHT
-using MonoTorrent.Dht;
-#endif
-
 namespace MonoTorrent.Client
 {
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>

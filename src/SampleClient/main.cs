@@ -11,6 +11,8 @@ using System.Threading;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Dht;
+using MonoTorrent.Dht.Listeners;
 
 namespace MonoTorrent
 {
@@ -87,9 +89,13 @@ namespace MonoTorrent
             {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
-#if !DISABLE_DHT
+
+            DhtListener dhtListner = new UdpListener (new IPEndPoint (IPAddress.Any, port));
+            DhtEngine dht = new DhtEngine (dhtListner);
+            engine.RegisterDht(dht);
+            dhtListner.Start();
             engine.DhtEngine.Start(nodes);
-#endif
+            
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);

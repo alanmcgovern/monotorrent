@@ -1,11 +1,10 @@
-#if !DISABLE_DHT
 //
-// NodeState.cs
+// NullDhtEngine.cs
 //
 // Authors:
-//   Jérémie Laval <jeremie.laval@gmail.com>
+//   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2008 Jérémie Laval
+// Copyright (C) 2009 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -32,13 +31,56 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Client
 {
-    public enum State
+    class NullDhtEngine : IDhtEngine
     {
-        NotReady,
-        Initialising,
-        Ready
+        public event EventHandler<PeersFoundEventArgs> PeersFound;
+        public event EventHandler StateChanged;
+
+        public bool Disposed
+        {
+            get { return false; }
+        }
+
+        public DhtState State
+        {
+            get { return DhtState.NotReady; }
+        }
+
+        public void Announce(InfoHash infohash, int port)
+        {
+
+        }
+
+        public void Dispose()
+        {
+
+        }
+
+        public void GetPeers(InfoHash infohash)
+        {
+
+        }
+
+        public byte[] SaveNodes()
+        {
+            return new byte[0];
+        }
+
+        public void Start()
+        {
+            
+        }
+
+        public void Start(byte[] initialNodes)
+        {
+            
+        }
+
+        public void Stop()
+        {
+            
+        }
     }
 }
-#endif
