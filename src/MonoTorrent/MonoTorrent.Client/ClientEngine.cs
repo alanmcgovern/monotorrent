@@ -186,6 +186,7 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
+            this.dhtEngine = new NullDhtEngine();
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
