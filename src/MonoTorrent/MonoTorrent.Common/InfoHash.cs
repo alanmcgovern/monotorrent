@@ -45,6 +45,11 @@ namespace MonoTorrent
             return Hash[0] | (Hash[1] << 8) | (Hash[2] << 16) | (Hash[3] << 24);
         }
 
+        public byte[] ToArray()
+        {
+            return (byte[])hash.Clone();
+        }
+
         public string ToHex()
         {
             return Toolbox.ToHex(Hash);
