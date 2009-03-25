@@ -3,7 +3,7 @@ using MonoTorrent.Client.PieceWriters;
 
 namespace MonoTorrent
 {
-    internal static class Check
+    public static class Check
     {
         static void DoCheck(object toCheck, string name)
         {
@@ -18,147 +18,147 @@ namespace MonoTorrent
                 throw new ArgumentException("Cannot be empty", name);
         }
 
-        internal static void Address(object address)
+        public static void Address(object address)
         {
             DoCheck(address, "address");
         }
 
-        internal static void AddressRange(object addressRange)
+        public static void AddressRange(object addressRange)
         {
             DoCheck(addressRange, "addressRange");
         }
 
-        internal static void AddressRanges(object addressRanges)
+        public static void AddressRanges(object addressRanges)
         {
             DoCheck(addressRanges, "addressRanges");
         }
 
-        internal static void Announces(object announces)
+        public static void Announces(object announces)
         {
             DoCheck(announces, "announces");
         }
 
-        internal static void BaseDirectory(object baseDirectory)
+        public static void BaseDirectory(object baseDirectory)
         {
             DoCheck(baseDirectory, "baseDirectory");
         }
 
-        internal static void Data(object data)
+        public static void Data(object data)
         {
             DoCheck(data, "data");
         }
 
-        internal static void Endpoint(object endpoint)
+        public static void Endpoint(object endpoint)
         {
             DoCheck(endpoint, "endpoint");
         }
 
-        internal static void Files(object files)
+        public static void Files(object files)
         {
             DoCheck(files, "files");
         }
 
-        internal static void InfoHash(object infoHash)
+        public static void InfoHash(object infoHash)
         {
             DoCheck(infoHash, "infoHash");
         }
 
-        internal static void Listener(object listener)
+        public static void Listener(object listener)
         {
             DoCheck(listener, "listener");
         }
 
-        internal static void Location(object location)
+        public static void Location(object location)
         {
             DoCheck(location, "location");
         }
 
-        internal static void MagnetLink(string magnetLink)
+        public static void MagnetLink(string magnetLink)
         {
             DoCheck(magnetLink, "magnetLink");
         }
 
-        internal static void Manager(object manager)
+        public static void Manager(object manager)
         {
             DoCheck(manager, "manager");
         }
 
-        internal static void Metadata(object metadata)
+        public static void Metadata(object metadata)
         {
             DoCheck(metadata, "metadata");
         }
 
-        internal static void Path(object path)
+        public static void Path(object path)
         {
             DoCheck(path, "path");
         }
 
-        internal static void PathNotEmpty(string path)
+        public static void PathNotEmpty(string path)
         {
             IsNullOrEmpty(path, "path");
         }
 
-        internal static void Picker(object picker)
+        public static void Picker(object picker)
         {
             DoCheck(picker, "picker");
         }
 
-        internal static void Result(object result)
+        public static void Result(object result)
         {
             DoCheck(result, "result");
         }
 
-        internal static void SavePath(object savePath)
+        public static void SavePath(object savePath)
         {
             DoCheck(savePath, "savePath");
         }
 
-        internal static void Settings(object settings)
+        public static void Settings(object settings)
         {
             DoCheck(settings, "settings");
         }
 
-        internal static void Stream(object stream)
+        public static void Stream(object stream)
         {
             DoCheck(stream, "stream");
         }
 
-        internal static void Torrent(object torrent)
+        public static void Torrent(object torrent)
         {
             DoCheck(torrent, "torrent");
         }
 
-        internal static void TorrentInformation(object torrentInformation)
+        public static void TorrentInformation(object torrentInformation)
         {
             DoCheck(torrentInformation, "torrentInformation");
         }
 
-        internal static void TorrentSave(object torrentSave)
+        public static void TorrentSave(object torrentSave)
         {
             DoCheck(torrentSave, "torrentSave");
         }
 
-        internal static void Tracker(object tracker)
+        public static void Tracker(object tracker)
         {
             DoCheck(tracker, "tracker");
         }
 
-        internal static void Url(object url)
+        public static void Url(object url)
         {
             DoCheck(url, "url");
         }
 
-        internal static void Uri(Uri uri)
+        public static void Uri(Uri uri)
         {
             DoCheck(uri, "uri");
         }
 
-        internal static void Value(object value)
+        public static void Value(object value)
         {
             DoCheck(value, "value");
         }
 
-        internal static void Writer(object writer)
+        public static void Writer(object writer)
         {
             DoCheck(writer, "writer");
         }

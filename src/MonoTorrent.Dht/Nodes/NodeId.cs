@@ -55,7 +55,7 @@ namespace MonoTorrent.Dht
         }
 
         internal NodeId(InfoHash infoHash)
-            : this(infoHash.Hash)
+            : this(infoHash.ToArray ())
         {
 
         }

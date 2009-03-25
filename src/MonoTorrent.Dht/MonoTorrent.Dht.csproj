@@ -41,25 +41,27 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MonoTorrent, Version=0.70.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\bin\Debug\MonoTorrent.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BigInteger.cs" />
     <Compile Include="DhtEngine.cs" />
-    <Compile Include="DhtTracker.cs" />
     <Compile Include="EventArgs\NodeAddedEventArgs.cs" />
     <Compile Include="EventArgs\SendMessageEventArgs.cs" />
     <Compile Include="EventArgs\TaskCompleteEventArgs.cs" />
     <Compile Include="Listeners\DhtListener.cs" />
     <Compile Include="Listeners\UdpListener.cs" />
+    <Compile Include="Message.cs" />
     <Compile Include="MessageException.cs" />
+    <Compile Include="MessageFactory.cs" />
     <Compile Include="MessageLoop.cs" />
     <Compile Include="Messages\Errors\ErrorMessage.cs" />
-    <Compile Include="Messages\Message.cs" />
-    <Compile Include="Messages\MessageFactory.cs" />
     <Compile Include="Messages\Queries\AnnouncePeer.cs" />
     <Compile Include="Messages\Queries\FindNode.cs" />
     <Compile Include="Messages\Queries\GetPeers.cs" />

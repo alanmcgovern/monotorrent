@@ -201,8 +201,14 @@ namespace MonoTorrent
                     
                     foreach (TorrentManager manager in torrents)
                     {
-                        AppendSeperator(sb);
+                        if (i == 31)
+                            manager.Pause();
 
+                        if (i == 41)
+                            manager.Start();
+
+                        AppendSeperator(sb);
+                        AppendFormat(sb, "State:           {0}", manager.State);
                         AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
                         AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
                         AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
