@@ -238,19 +238,29 @@ namespace MonoTorrent.Client
                 throw new ObjectDisposedException(GetType().Name);
         }
 
+        public bool Contains(InfoHash infoHash)
+        {
+            CheckDisposed();
+            if (infoHash == null)
+                return false;
+
+            return torrents.Exists(delegate(TorrentManager m) { return m.InfoHash.Equals(infoHash); });
+        }
+
         public bool Contains(Torrent torrent)
         {
             CheckDisposed();
             if (torrent == null)
                 return false;
 
-            return torrents.Exists(delegate(TorrentManager m) { return m.Torrent.Equals(torrent); });
+            return Contains (torrent.InfoHash);
         }
 
         public bool Contains(TorrentManager manager)
         {
             CheckDisposed();
-            Check.Manager(manager);
+            if (manager == null)
+                return false;
             
             return Contains(manager.Torrent);
         }
@@ -274,8 +284,8 @@ namespace MonoTorrent.Client
 
             sb.Append(Common.VersionInfo.ClientVersion);
             lock (random)
-				while (sb.Length < 20)
-					sb.Append (random.Next (0, 9));
+                while (sb.Length < 20)
+                    sb.Append (random.Next (0, 9));
 
             return sb.ToString();
         }
