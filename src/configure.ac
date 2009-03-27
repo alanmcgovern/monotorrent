@@ -49,11 +49,14 @@ dnl package checks, common for all configs
 
 dnl package checks, per config
 
+
 AC_CONFIG_FILES([
-	Makefile
-	MonoTorrent/AssemblyInfo.cs
-	MonoTorrent/Makefile
-	MonoTorrent/monotorrent.pc
+MonoTorrent/monotorrent.pc
+MonoTorrent/Makefile
+MonoTorrent.Dht/monotorrent.dht.pc
+MonoTorrent.Dht/Makefile
+Makefile
+
 ])
 
 AC_OUTPUT

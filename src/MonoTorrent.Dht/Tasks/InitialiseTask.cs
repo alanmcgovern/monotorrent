@@ -76,7 +76,7 @@ namespace MonoTorrent.Dht.Tasks
             }
             else
             {
-                engine.RaiseStateChanged(State.Ready);
+                engine.RaiseStateChanged(DhtState.Ready);
             }
 
             Active = false;

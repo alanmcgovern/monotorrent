@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -10,8 +10,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MonoTorrent.Dht</RootNamespace>
     <AssemblyName>MonoTorrent.Dht</AssemblyName>
-    <StartupObject>
-    </StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -24,8 +22,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Library</OutputType>
     <RootNamespace>MonoTorrent.Dht</RootNamespace>
-    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -41,10 +37,6 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MonoTorrent, Version=0.70.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\Debug\MonoTorrent.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -77,7 +69,6 @@
     <Compile Include="Nodes\NodeState.cs" />
     <Compile Include="Nodes\Node.cs" />
     <Compile Include="RoutingTable\RoutingTable.cs" />
-    <Compile Include="State.cs" />
     <Compile Include="Tasks\AnnounceTask.cs" />
     <Compile Include="Tasks\GetPeersTask.cs" />
     <Compile Include="Tasks\InitialiseTask.cs" />
@@ -88,11 +79,7 @@
     <Compile Include="Tasks\Task.cs" />
     <Compile Include="TransactionId.cs" />
     <Compile Include="Nodes\TokenManager.cs" />
-    <Compile Include="EventArgs\PeersFoundEventArgs.cs" />
     <Compile Include="EventArgs\NodeFoundEventArgs.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -103,11 +90,12 @@
   </Target>
   -->
   <ProjectExtensions>
-    <MonoDevelop>
-      <Properties>
-        <GtkDesignInfo gtkVersion="2.12.2" />
-      </Properties>
-    </MonoDevelop>
     <VisualStudio />
   </ProjectExtensions>
+  <ItemGroup>
+    <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
+      <Name>MonoTorrent</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

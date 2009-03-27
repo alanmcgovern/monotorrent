@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht
         TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
         bool disposed;
         MessageLoop messageLoop;
-        State state = State.NotReady;
+        DhtState state = DhtState.NotReady;
         RoutingTable table = new RoutingTable();
         TimeSpan timeout;
         Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
@@ -112,7 +112,7 @@ namespace MonoTorrent.Dht
             get { return table; }
         }
 
-        public State State
+        public DhtState State
         {
             get { return state; }
         }
@@ -200,7 +200,7 @@ namespace MonoTorrent.Dht
             new GetPeersTask(this, infoHash).Execute();
         }
 
-        internal void RaiseStateChanged(State newState)
+        internal void RaiseStateChanged(DhtState newState)
         {
             state = newState;
 
@@ -247,12 +247,12 @@ namespace MonoTorrent.Dht
             if (Bootstrap)
             {
                 new InitialiseTask(this, initialNodes).Execute();
-                RaiseStateChanged(State.Initialising);
+                RaiseStateChanged(DhtState.Initialising);
                 bootStrap = false;
             }
             else
             {
-                RaiseStateChanged(State.Ready);
+                RaiseStateChanged(DhtState.Ready);
             }
 
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
