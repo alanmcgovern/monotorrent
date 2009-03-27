@@ -3,4 +3,5 @@ Description: MonoTorrent.Dht
 Version: @VERSION@
 
 Requires: 
-Libs: -r:@expanded_libdir@/@PACKAGE@/MonoTorrent.Dht.dll
+Libraries=@expanded_libdir@/@PACKAGE@/MonoTorrent.dll
+Libs: -r:MonoTorrent.Dht.dll
