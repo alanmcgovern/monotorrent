@@ -1,6 +1,6 @@
 Name: MonoTorrent.Dht
 Description: MonoTorrent.Dht
-Version: 0.1
+Version: @VERSION@
 
 Requires: 
 Libs: -r:@expanded_libdir@/@PACKAGE@/MonoTorrent.Dht.dll
