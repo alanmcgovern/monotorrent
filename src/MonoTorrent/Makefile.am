@@ -110,7 +110,11 @@ FILES = \
 	MonoTorrent.Client/PiecePicking/StandardPicker.cs \
 	MonoTorrent.Client/PieceWriter/NtfsSparseFile.cs \
 	MonoTorrent.Client/PieceWriter/PieceWriter.cs \
-	MonoTorrent.Client/RateLimiter.cs \
+	MonoTorrent.Client/RateLimiters/DiskWriterLimiter.cs \
+	MonoTorrent.Client/RateLimiters/IRateLimiter.cs \
+	MonoTorrent.Client/RateLimiters/PauseLimiter.cs \
+	MonoTorrent.Client/RateLimiters/RateLimiter.cs \
+	MonoTorrent.Client/RateLimiters/RateLimiterGroup.cs \
 	MonoTorrent.Client/TorrentFileStream.cs \
 	MonoTorrent.Client/Tracker/ITracker.cs \
 	MonoTorrent.Client/Tracker/ScrapeParameters.cs \
