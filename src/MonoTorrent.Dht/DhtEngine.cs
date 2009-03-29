@@ -53,7 +53,7 @@ namespace MonoTorrent.Dht
         MethodUnknown = 204//Method Unknown
     }
 
-    public class DhtEngine : IDisposable
+    public class DhtEngine : IDisposable, IDhtEngine
     {
         #region Events
 
@@ -169,7 +169,7 @@ namespace MonoTorrent.Dht
             task.Execute();
         }
 
-        internal void Announce(InfoHash infoHash, int port)
+        public void Announce(InfoHash infoHash, int port)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
@@ -193,7 +193,7 @@ namespace MonoTorrent.Dht
             });
         }
 
-        internal void GetPeers(InfoHash infoHash)
+        public void GetPeers(InfoHash infoHash)
         {
             CheckDisposed();
             Check.InfoHash(infoHash);
