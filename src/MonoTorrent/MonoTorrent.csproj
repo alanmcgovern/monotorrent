@@ -151,7 +151,7 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\PieceWriter.cs" />
-    <Compile Include="MonoTorrent.Client\RateLimiter.cs" />
+    <Compile Include="MonoTorrent.Client\RateLimiters\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\DiskWriterLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\IRateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\PauseLimiter.cs" />
