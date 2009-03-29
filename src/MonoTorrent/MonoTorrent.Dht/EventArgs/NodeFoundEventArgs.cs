@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 // NodeFound.cs.cs
 //
 // Authors:
@@ -50,3 +51,4 @@ namespace MonoTorrent.Dht
         }
     }
 }
+#endif

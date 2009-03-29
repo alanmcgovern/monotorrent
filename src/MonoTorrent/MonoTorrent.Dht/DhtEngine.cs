@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // DhtEngine.cs
 //
@@ -286,3 +287,4 @@ namespace MonoTorrent.Dht
         #endregion Methods
     }
 }
+#endif

@@ -87,9 +87,9 @@ namespace MonoTorrent
             {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
-
+#if !DISABLE_DHT
             engine.DhtEngine.Start(nodes);
-
+#endif
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
@@ -262,7 +262,9 @@ namespace MonoTorrent
                 fastResume.Add(torrents[i].Torrent.InfoHash, torrents[i].SaveFastResume().Encode());
             }
 
+#if !DISABLE_DHT
             File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
+#endif
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 

@@ -1,3 +1,4 @@
+#if !DISABLE_DHT
 //
 // NodeId.cs
 //
@@ -223,3 +224,4 @@ namespace MonoTorrent.Dht
         }
     }
 }
+#endif
