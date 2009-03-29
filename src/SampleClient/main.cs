@@ -207,12 +207,6 @@ namespace MonoTorrent
                     
                     foreach (TorrentManager manager in torrents)
                     {
-                        if (i == 31)
-                            manager.Pause();
-
-                        if (i == 41)
-                            manager.Start();
-
                         AppendSeperator(sb);
                         AppendFormat(sb, "State:           {0}", manager.State);
                         AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);

@@ -417,10 +417,7 @@ namespace MonoTorrent.Client
                 id.BytesToSend = message.Encode(id.sendBuffer, 0);
                 id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
-                RateLimiter limiter = engine.Settings.GlobalMaxUploadSpeed > 0 ? engine.uploadLimiter : null;
-                limiter = limiter ?? (id.TorrentManager.Settings.MaxUploadSpeed > 0 ? id.TorrentManager.uploadLimiter : null);
-                if (id.TorrentManager.State == TorrentState.Paused)
-                    limiter = id.TorrentManager.uploadLimiter;
+                RateLimiterGroup limiter = id.TorrentManager.DownloadLimiter;
                 NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)

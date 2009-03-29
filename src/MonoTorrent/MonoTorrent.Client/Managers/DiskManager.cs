@@ -91,12 +91,11 @@ namespace MonoTorrent.Client.Managers
                 if (disposed)
                     return;
 
-                while (this.bufferedWrites.Count > 0 && (engine.Settings.MaxWriteRate == 0 || writeLimiter.Chunks > 0))
+                while (this.bufferedWrites.Count > 0 && writeLimiter.TryProcess(bufferedWrites.Peek ().buffer.Count / 2048))
                 {
                     BufferedIO write;
                     lock (bufferLock)
                         write = this.bufferedWrites.Dequeue();
-                    Interlocked.Add(ref writeLimiter.Chunks, -write.buffer.Count / ConnectionManager.ChunkLength);
                     try
                     {
                         PerformWrite(write);
@@ -108,12 +107,12 @@ namespace MonoTorrent.Client.Managers
                     }
                 }
 
-                while (this.bufferedReads.Count > 0 && (engine.Settings.MaxReadRate == 0 || readLimiter.Chunks > 0))
+                while (this.bufferedReads.Count > 0 && readLimiter.TryProcess(bufferedReads.Peek().Count / 2048))
                 {
                     BufferedIO read;
                     lock(bufferLock)
                         read = this.bufferedReads.Dequeue();
-                    Interlocked.Add(ref readLimiter.Chunks, -read.Count / ConnectionManager.ChunkLength);
+
                     try
                     {
                         PerformRead(read);
@@ -132,6 +131,7 @@ namespace MonoTorrent.Client.Managers
 
                 readMonitor.Tick();
                 writeMonitor.Tick();
+                LoopTask();
                 return true;
             });
         }

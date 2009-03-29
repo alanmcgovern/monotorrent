@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
     {
         static Queue<AsyncIO> buffer = new Queue<AsyncIO>();
 
-        static AsyncIO Dequeue(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        static AsyncIO Dequeue(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
             lock (NetworkIO.buffer)
             {
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
 
         private class AsyncIO
         {
-            public AsyncIO From(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+            public AsyncIO From(IConnection connection, byte[] buffer, int offset, int total, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
             {
                 Connection = connection;
                 Buffer = buffer;
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
             public int Count;
             public int Offset;
             public ConnectionMonitor PeerMonitor;
-            public RateLimiter RateLimiter;
+            public IRateLimiter RateLimiter;
             public object State;
             public int Total;
         }
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
                 {
                     for (int i = 0; i < sendQueue.Count;)
                     {
-                        if (sendQueue[i].RateLimiter.Chunks > 0 && !receiveQueue[i].RateLimiter.Paused)
+                        if (sendQueue[i].RateLimiter.TryProcess(1))
                         {
                             EnqueueSend(sendQueue[i]);
                             sendQueue.RemoveAt(i);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                 {
                     for (int i = 0; i < receiveQueue.Count;)
                     {
-                        if (receiveQueue[i].RateLimiter.Chunks > 0 && !receiveQueue[i].RateLimiter.Paused)
+                        if (receiveQueue[i].RateLimiter.TryProcess (1))
                         {
                             EnqueueReceive(receiveQueue[i]);
                             receiveQueue.RemoveAt(i);
@@ -259,7 +259,7 @@ namespace MonoTorrent.Client
             EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
             EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
         }
@@ -269,7 +269,7 @@ namespace MonoTorrent.Client
             EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
             AsyncIO io = Dequeue(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueReceive(io);
@@ -279,15 +279,12 @@ namespace MonoTorrent.Client
         {
             try
             {
-                if (io.RateLimiter == null)
+                if (io.RateLimiter == null || io.RateLimiter.Unlimited)
                 {
                     io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndReceiveCallback, io);
                 }
-                else if (io.RateLimiter.Chunks > 0 && !io.RateLimiter.Paused)
+                else if (io.RateLimiter.TryProcess(1))
                 {
-                    if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
-                        Interlocked.Decrement(ref io.RateLimiter.Chunks);
-
                     // Receive in 2kB (or less) chunks to allow rate limiting to work
                     io.Connection.BeginReceive(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndReceiveCallback, io);
                 }
@@ -308,7 +305,7 @@ namespace MonoTorrent.Client
             EnqueueSend(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
             EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
         }
@@ -318,7 +315,7 @@ namespace MonoTorrent.Client
             EnqueueSend(connection, buffer, offset, count, callback, state, null, null, null);
         }
 
-        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, RateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
+        internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
         {
             AsyncIO io = Dequeue(connection, buffer, offset, count, callback, state, limiter, managerMonitor, peerMonitor);
             EnqueueSend(io);
@@ -328,15 +325,12 @@ namespace MonoTorrent.Client
         {
             try
             {
-                if (io.RateLimiter == null)
+                if (io.RateLimiter == null || io.RateLimiter .Unlimited)
                 {
                     io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, io.Total - io.Count, EndSendCallback, io);
                 }
-                else if (io.RateLimiter.Chunks > 0 && !io.RateLimiter.Paused)
+                else if ((io.Total - io.Count) < ConnectionManager.ChunkLength / 2 || io.RateLimiter.TryProcess (1))
                 {
-                    if ((io.Total - io.Count) > ConnectionManager.ChunkLength / 2)
-                        Interlocked.Decrement(ref io.RateLimiter.Chunks);
-
                     // Receive in 2kB (or less) chunks to allow rate limiting to work
                     io.Connection.BeginSend(io.Buffer, io.Offset + io.Count, Math.Min(ConnectionManager.ChunkLength, io.Total - io.Count), EndSendCallback, io);
                 }
@@ -360,10 +354,7 @@ namespace MonoTorrent.Client
                 return;
 
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 4);
-            RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
-            limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
-            if (id.TorrentManager.State == TorrentState.Paused)
-                limiter = id.TorrentManager.downloadLimiter;
+            IRateLimiter limiter = id.TorrentManager.DownloadLimiter;
             EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
         }
 
@@ -414,8 +405,7 @@ namespace MonoTorrent.Client
                     
                     ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                     id.recieveBuffer = buffer;
-                    RateLimiter limiter = id.Engine.Settings.GlobalMaxDownloadSpeed > 0 ? id.Engine.downloadLimiter : null;
-                    limiter = limiter ?? (id.TorrentManager.Settings.MaxDownloadSpeed > 0 ? id.TorrentManager.downloadLimiter : null);
+                    IRateLimiter limiter = id.TorrentManager.DownloadLimiter;
                     EnqueueReceive(connection, id.recieveBuffer, 4, messageBodyLength, MessageBodyReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
                 }
             }

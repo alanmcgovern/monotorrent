@@ -500,12 +500,6 @@ namespace MonoTorrent.Client
                     manager.TrackerManager.Announce(TorrentEvent.None);
                 }
             }
-
-            if (counter % (1000 / ClientEngine.TickLength) == 0)
-            {
-                manager.downloadLimiter.UpdateChunks(manager.Settings.MaxDownloadSpeed, manager.Monitor.DownloadSpeed);
-                manager.uploadLimiter.UpdateChunks(manager.Settings.MaxUploadSpeed, manager.Monitor.UploadSpeed);
-            }
         }
 
         void DownloadLogic(int counter)

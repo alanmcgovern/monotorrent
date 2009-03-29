@@ -97,8 +97,8 @@ namespace MonoTorrent.Client
         private EngineSettings settings;
         private int tickCount;
         private MonoTorrentCollection<TorrentManager> torrents;
-        internal RateLimiter uploadLimiter;
-        internal RateLimiter downloadLimiter;
+        private RateLimiterGroup uploadLimiter;
+        private RateLimiterGroup downloadLimiter;
 
         #endregion
 
@@ -195,8 +195,7 @@ namespace MonoTorrent.Client
                 return !disposed;
             });
             this.torrents = new MonoTorrentCollection<TorrentManager>();
-            this.downloadLimiter = new RateLimiter();
-            this.uploadLimiter = new RateLimiter();
+            CreateRateLimiters();
             this.peerId = GeneratePeerId();
 
             listenManager.Register(listener);
@@ -217,6 +216,25 @@ namespace MonoTorrent.Client
             // This means we created the listener in the constructor
             if (listener.Endpoint.Port == 0)
                 listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
+        }
+
+        void CreateRateLimiters()
+        {
+            RateLimiter downloader = new RateLimiter();
+            downloadLimiter = new RateLimiterGroup();
+            downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
+            downloadLimiter.Add(downloader);
+
+            RateLimiter uploader = new RateLimiter();
+            uploadLimiter = new RateLimiterGroup();
+            downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
+            uploadLimiter.Add(uploader);
+
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                downloader.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
+                uploader.UpdateChunks(Settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
+                return !disposed;
+            });
         }
 
         #endregion
@@ -313,6 +331,8 @@ namespace MonoTorrent.Client
                 this.torrents.Add(manager);
                 manager.PieceHashed += PieceHashed;
                 manager.Engine = this;
+                manager.DownloadLimiter.Add(downloadLimiter);
+                manager.UploadLimiter.Add(uploadLimiter);
             });
 
             if (TorrentRegistered != null)
@@ -386,6 +406,8 @@ namespace MonoTorrent.Client
 
                 manager.PieceHashed -= PieceHashed;
                 manager.Engine = null;
+                manager.DownloadLimiter.Remove(downloadLimiter);
+                manager.UploadLimiter.Remove(uploadLimiter);
             });
 
             if (TorrentUnregistered != null)
@@ -405,8 +427,6 @@ namespace MonoTorrent.Client
             {
                 diskManager.writeLimiter.UpdateChunks(settings.MaxWriteRate, diskManager.WriteRate);
                 diskManager.readLimiter.UpdateChunks(settings.MaxReadRate, diskManager.ReadRate);
-                downloadLimiter.UpdateChunks(settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
-                uploadLimiter.UpdateChunks(settings.GlobalMaxUploadSpeed, TotalUploadSpeed);
             }
 
             for (int i = 0; i < this.torrents.Count; i++)

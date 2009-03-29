@@ -73,6 +73,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private BitField bitfield;              // The bitfield representing the pieces we've downloaded and have to download
+        private bool disposed;
         private ClientEngine engine;            // The engine that this torrent is registered with
         private Error error;
         internal Queue<int> finishedPieces;     // The list of pieces which we should send "have" messages for
@@ -85,8 +86,8 @@ namespace MonoTorrent.Client
         private PeerManager peers;              // Stores all the peers we know of in a list
         private PieceManager pieceManager;      // Tracks all the piece requests we've made and decides what pieces we can request off each peer
         private string savePath;
-        internal RateLimiter uploadLimiter;        // Contains the logic to decide how many chunks we can download
-        internal RateLimiter downloadLimiter;        // Contains the logic to decide how many chunks we can download
+        private RateLimiterGroup uploadLimiter;     // Contains the logic to decide how many chunks we can download
+        private RateLimiterGroup downloadLimiter;   // Contains the logic to decide how many chunks we can download
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
         private TorrentState state;             // The current state (seeding, downloading etc)
@@ -116,6 +117,11 @@ namespace MonoTorrent.Client
         public bool Complete
         {
             get { return this.bitfield.AllTrue; }
+        }
+
+        internal RateLimiterGroup DownloadLimiter
+        {
+            get { return downloadLimiter; }
         }
 
         public ClientEngine Engine
@@ -288,6 +294,11 @@ namespace MonoTorrent.Client
             internal set { this.uploadingTo = value; }
         }
 
+        internal RateLimiterGroup UploadLimiter
+        {
+            get { return uploadLimiter; }
+        }
+
         public bool IsInitialSeeding
         {
             get { return mode is InitialSeedingMode; }
@@ -380,12 +391,30 @@ namespace MonoTorrent.Client
             this.peers = new PeerManager();
             this.pieceManager = new PieceManager();
             this.trackerManager = new TrackerManager(this, InfoHash, announces);
-            this.downloadLimiter = new RateLimiter();
-            this.uploadLimiter = new RateLimiter();
+            CreateRateLimiters();
 
             PieceHashed += delegate(object o, PieceHashedEventArgs e) {
                 PieceManager.UnhashedPieces[e.PieceIndex] = false;
             };
+        }
+
+        void CreateRateLimiters()
+        {
+            RateLimiter downloader = new RateLimiter();
+            downloadLimiter = new RateLimiterGroup();
+            downloadLimiter.Add(new PauseLimiter(this));
+            downloadLimiter.Add(downloader);
+
+            RateLimiter uploader = new RateLimiter();
+            uploadLimiter = new RateLimiterGroup();
+            uploadLimiter.Add(new PauseLimiter(this));
+            uploadLimiter.Add(uploader);
+
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                downloader.UpdateChunks(Settings.MaxDownloadSpeed, Monitor.DownloadSpeed);
+                uploader.UpdateChunks(Settings.MaxUploadSpeed, Monitor.UploadSpeed);
+                return !disposed;
+            });
         }
 
         #endregion
@@ -404,7 +433,7 @@ namespace MonoTorrent.Client
 
         public void Dispose()
         {
-            //pieceManager.Dispose();
+            disposed = true;
         }
 
 
@@ -874,11 +903,8 @@ namespace MonoTorrent.Client
 
             TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this, this.state, newState);
             this.state = newState;
-            this.downloadLimiter.Paused = state == TorrentState.Paused;
-            this.uploadLimiter.Paused = state == TorrentState.Paused;
 
             RaiseTorrentStateChanged(e);
-
         }
 
         #endregion Private Methods
