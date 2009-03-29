@@ -1,7 +1,7 @@
 dnl Warning: This is an automatically generated file, do not edit!
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.54])
-AC_INIT([MonoTorrent], [0.70])
+AC_INIT([MonoTorrent], [0.71])
 AM_INIT_AUTOMAKE([foreign tar-pax])
 AM_MAINTAINER_MODE
 
@@ -21,7 +21,6 @@ AC_PATH_PROG(GMCS, gmcs, no)
 if test "x$GMCS" = "xno"; then
         AC_MSG_ERROR([gmcs Not found])
 fi
-
 
 AC_ARG_ENABLE(debug,
 	AC_HELP_STRING([--enable-debug],
@@ -44,6 +43,11 @@ if test -z "$CONFIG_REQUESTED" ; then
 	enable_release=yes
 fi
 
+AC_ARG_ENABLE(dht,
+	AC_HELP_STRING([--disable-dht],
+		[Disable DHT [default=NO]]),
+		disable_dht=yes, disable_dht=no)
+AM_CONDITIONAL(DISABLE_DHT, test x$disable_dht = xyes)
 
 dnl package checks, common for all configs
 
