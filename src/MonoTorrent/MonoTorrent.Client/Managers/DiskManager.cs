@@ -172,7 +172,7 @@ namespace MonoTorrent.Client.Managers
 
         public void Flush()
         {
-            IOLoop.QueueWait(delegate {
+            IOLoop.QueueWait((MainLoopTask) delegate {
                 foreach (TorrentManager manager in engine.Torrents)
                     writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
             });
@@ -181,7 +181,7 @@ namespace MonoTorrent.Client.Managers
         public void Flush(TorrentManager manager)
         {
             Check.Manager(manager);
-            IOLoop.QueueWait(delegate {
+            IOLoop.QueueWait((MainLoopTask) delegate {
                 writer.Flush(manager.FileManager.SavePath, manager.Torrent.Files);
             });
         }
