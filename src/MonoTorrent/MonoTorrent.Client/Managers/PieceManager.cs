@@ -112,11 +112,11 @@ namespace MonoTorrent.Client
 
         internal bool AddPieceRequest(PeerId id)
         {
-            PeerMessage msg;
+            PeerMessage msg = null;
 
             // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
             int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
-			maxRequests = maxRequests > 50 ? 50 : maxRequests;
+            maxRequests = maxRequests > 50 ? 50 : maxRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return false;
@@ -133,7 +133,11 @@ namespace MonoTorrent.Client
                 count *= id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
             }
 
-            msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
+            if (!id.IsChoking || id.SupportsFastPeer)
+                msg = Picker.ContinueExistingRequest(id);
+
+            if (msg == null && (!id.IsChoking || (id.SupportsFastPeer && id.AmAllowedFastPieces.Count > 0)))
+                msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
             if (msg != null)
                 id.Enqueue(msg);
 
