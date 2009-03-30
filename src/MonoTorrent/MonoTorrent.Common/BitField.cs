@@ -262,46 +262,20 @@ namespace MonoTorrent.Common
         }
         internal void FromArray(byte[] buffer, int offset, int length)
         {
-            byte p = 128;
-            bool temp = false;
-            this.trueCount = 0;
+            int end = Length / 32;
+            for (int i = 0; i < end; i++)
+                array[i] = (buffer[offset++] << 24) |
+                           (buffer[offset++] << 16) |
+                           (buffer[offset++] << 8) |
+                           (buffer[offset++] << 0);
 
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            // Decode the bitfield from the buffer
-            for (int i = 0; i < this.length; i++)
+            int shift = 24;
+            for (int i = end * 32; i < Length; i += 8)
             {
-                temp = ((buffer[offset] & p) != 0);
-                this.Set(i, temp);
-                p >>= 1;
-
-                if (p != 0)
-                    continue;
-
-                p = 128;
-                offset++;
+                array[array.Length - 1] |= buffer[offset++] << shift;
+                shift -= 8;
             }
-
-            // If true, there are no extra bits
-            if (this.length % 8 == 0)
-                return;
-
-            // Make sure all extra bits are set to zero
-            for (int i = this.length; i < this.length + (8 - this.length % 8); i++)
-            {
-                temp = ((buffer[offset] & p) != 0);
-                if (temp)
-                    Logger.Log(null, "BitField - Invalid bitfield received, high bits not set to zero. Attempting to continue...");
-
-                p >>= 1;
-
-                if (p != 0)
-                    continue;
-
-                p = 128;
-                offset++;
-            }
+            Validate();
         }
 
         bool Get(int index)
@@ -309,7 +283,7 @@ namespace MonoTorrent.Common
             if (index < 0 || index >= length)
                 throw new ArgumentOutOfRangeException("index");
 
-            return (this.array[index >> 5] & (1 << (index & 31))) != 0;
+            return (this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
         }
 
         public IEnumerator<bool> GetEnumerator()
@@ -344,15 +318,15 @@ namespace MonoTorrent.Common
 
             if (value)
             {
-                if ((this.array[index >> 5] & (1 << (index & 31))) == 0)// If it's not already true
+                if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
                     trueCount++;                                        // Increase true count
-                this.array[index >> 5] |= (1 << (index & 31));
+                this.array[index >> 5] |= (1 << (31 - index & 31));
             }
             else
             {
-                if ((this.array[index >> 5] & (1 << (index & 31))) != 0)// If it's not already false
+                if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0)// If it's not already false
                     trueCount--;                                        // Decrease true count
-                this.array[index >> 5] &= ~(1 << (index & 31));
+                this.array[index >> 5] &= ~(1 << (31 - (index & 31)));
             }
 
             return this;
@@ -403,28 +377,22 @@ namespace MonoTorrent.Common
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
 
-            Validate();
-
-            int byteindex = offset;
-            byte temp = 0;
-            byte position = 128;
-            for (int i = 0; i < this.length; i++)
+            ZeroUnusedBits();
+            int end = Length / 32;
+            for (int i = 0; i < end; i++)
             {
-                if (this[i])
-                    temp |= position;
-
-                position >>= 1;
-
-                if (position == 0)              // Current byte is full.
-                {
-                    buffer[byteindex] = temp;     // Add byte into the array
-                    position = 128;             // Reset position to the high bit
-                    temp = 0;                   // reset temp = 0
-                    byteindex++;                // advance position in the array by 1
-                }
+                buffer[offset++] = (byte)(array[i] >> 24);
+                buffer[offset++] = (byte)(array[i] >> 16);
+                buffer[offset++] = (byte)(array[i] >> 8);
+                buffer[offset++] = (byte)(array[i] >> 0);
             }
-            if (position != 128)                // We need to add in the last byte
-                buffer[byteindex] = temp;
+
+            int shift = 24;
+            for (int i = end * 32; i < Length; i += 8)
+            {
+                buffer[offset++] = (byte)(array[array.Length - 1] >> shift);
+                shift -= 8;
+            }
         }
 
         public override string ToString()
@@ -444,22 +412,28 @@ namespace MonoTorrent.Common
             get { return this.trueCount; }
         }
 
-        private void Validate()
+        void Validate()
         {
-            // Zero the unused bits
-            int shift = length % 32;
-            if (shift != 0)
-                array[array.Length - 1] &= ~(-1 << shift);
+            ZeroUnusedBits();
 
             // Update the population count
-            trueCount = 0;
+            uint count = 0;
             for (int i = 0; i < array.Length; i++)
             {
                 uint v = (uint)array[i];
                 v = v - ((v >> 1) & 0x55555555);
                 v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-                trueCount += (int)(((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24);
+                count += (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101));
             }
+            trueCount = (int)(count >> 24);
+        }
+
+        void ZeroUnusedBits()
+        {
+            // Zero the unused bits
+            int shift = 32 - length % 32;
+            if (shift != 0)
+                array[array.Length - 1] &= (-1 << shift);
         }
 
         void Check(BitField value)

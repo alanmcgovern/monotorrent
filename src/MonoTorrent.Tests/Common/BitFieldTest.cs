@@ -123,6 +123,82 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void ToByteArray()
+        {
+            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false });
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
+        public void ToByteArray2()
+        {
+            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false, true });
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
+        public void ToByteArray3()
+        {
+            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
+        public void ToByteArray4()
+        {
+            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false,
+                                                        false, false, true, false, true, false, false, false,
+                                                        true, false, false, false, true, true, true, false,
+                                                        true, false, false, true, false, false, true, false});
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
+        public void ToByteArray5()
+        {
+            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false,
+                                                        false, false, true, false, true, false, false, false,
+                                                        true, false, false, false, true, true, true, false,
+                                                        true, false, false, true, false, false, true});
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+        [Test]
+        public void ToByteArray6()
+        {
+            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false, true,
+                                                        false, false, true, false, true, false, true, false,
+                                                        true, false, false, false, true, true, true, false, true,
+                                                        true, false, false, true, false, false, true});
+            BitField second = new BitField(first.ToByteArray(), first.Length);
+            for (int i = 0; i < first.Length; i++)
+            {
+                Assert.AreEqual(first[i], second[i], "#" + i);
+            }
+        }
+
+
+        [Test]
         public void Clone()
         {
             BitField clone = bf.Clone();
