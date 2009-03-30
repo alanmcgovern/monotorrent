@@ -284,6 +284,7 @@ namespace MonoTorrent.Client
 
             Incoming = new CustomConnection(s1a, true);
             Outgoing = new CustomConnection(s1b, false);
+            socketListener.Stop();
         }
 
         public void Dispose()
@@ -547,5 +548,12 @@ namespace MonoTorrent.Client
         #endregion Create standard fake data
 
         #endregion Rig Creation
+
+        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
+        {
+            TorrentFile[] files = StandardSingleFile();
+            files[0] = new TorrentFile (files[0].Path, torrentSize);
+            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files);
+        }
     }
 }
