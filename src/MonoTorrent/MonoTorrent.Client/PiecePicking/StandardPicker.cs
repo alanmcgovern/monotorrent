@@ -207,7 +207,7 @@ namespace MonoTorrent.Client
 
 
 
-        protected RequestMessage ContinueExistingRequest(PeerId id)
+        public override RequestMessage ContinueExistingRequest(PeerId id)
         {
             foreach (Piece p in requests)
             {

@@ -69,6 +69,11 @@ namespace MonoTorrent.Client
             CheckOverriden();
             picker.CancelTimedOutRequests();
         }
+        public virtual RequestMessage ContinueExistingRequest(PeerId peer)
+        {
+            CheckOverriden();
+            return picker.ContinueExistingRequest(peer);
+        }
         public virtual int CurrentRequestCount()
         {
             CheckOverriden();

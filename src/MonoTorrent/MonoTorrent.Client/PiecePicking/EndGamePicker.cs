@@ -93,6 +93,11 @@ namespace MonoTorrent.Client
             CancelWhere(TimedOut);
         }
 
+        public override RequestMessage ContinueExistingRequest(PeerId peer)
+        {
+            return null;
+        }
+
         public override int CurrentRequestCount()
         {
             return requests.Count;
