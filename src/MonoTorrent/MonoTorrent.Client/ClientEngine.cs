@@ -54,6 +54,7 @@ namespace MonoTorrent.Client
         #region Global Constants
 
         public static readonly bool SupportsInitialSeed = false;
+        public static readonly bool SupportsLocalPeerDiscovery = true;
         public static readonly bool SupportsWebSeed = true;
         public static readonly bool SupportsExtended = true;
         public static readonly bool SupportsFastPeer = true;
@@ -91,7 +92,7 @@ namespace MonoTorrent.Client
         private bool isRunning;
         private PeerListener listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
-        internal LocalPeerManager localPeerManager;
+        private LocalPeerManager localPeerManager;
         private LocalPeerListener localPeerListener;
         private readonly string peerId;
         private EngineSettings settings;
@@ -129,6 +130,18 @@ namespace MonoTorrent.Client
         public PeerListener Listener
         {
             get { return this.listener; }
+        }
+
+        public bool LocalPeerSearchEnabled
+        {
+            get { return localPeerListener.Status != ListenerStatus.NotListening; }
+            set
+            {
+                if (value && !LocalPeerSearchEnabled)
+                    localPeerListener.Start();
+                else if (!value && LocalPeerSearchEnabled)
+                    localPeerListener.Stop();
+            }
         }
 
         public bool IsRunning
@@ -200,7 +213,7 @@ namespace MonoTorrent.Client
 
             localPeerListener = new LocalPeerListener(this);
             localPeerManager = new LocalPeerManager();
-            localPeerListener.Start();
+            LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
             dhtEngine.StateChanged += delegate {
                 if (dhtEngine.State != DhtState.Ready)
@@ -296,6 +309,8 @@ namespace MonoTorrent.Client
                 this.dhtEngine.Dispose();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
+                this.localPeerListener.Stop();
+                this.localPeerManager.Dispose();
             });
         }
 
@@ -421,6 +436,11 @@ namespace MonoTorrent.Client
 
 
         #region Private/Internal methods
+
+        internal void Broadcast(TorrentManager manager)
+        {
+            localPeerManager.Broadcast(manager);
+        }
 
         private void LogicTick()
         {

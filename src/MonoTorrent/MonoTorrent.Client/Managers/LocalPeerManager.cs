@@ -38,7 +38,7 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent.Client
 {
-    public class LocalPeerManager : IDisposable
+    class LocalPeerManager : IDisposable
     {
         private const int port = 6771;
         
@@ -51,12 +51,7 @@ namespace MonoTorrent.Client
             ep = new IPEndPoint(IPAddress.Broadcast, port);
         }
 
-        public void Stop()
-        {
-            socket.Close();
-        }
-
-        private void BroadcastHash(TorrentManager manager)
+        public void Broadcast(TorrentManager manager)
         {
             if (manager.HasMetadata && manager.Torrent.IsPrivate)
                 return;
@@ -66,14 +61,9 @@ namespace MonoTorrent.Client
             socket.Send(data, data.Length, ep);
         }
 
-        public void ForceBroadcast(TorrentManager manager)
-        {
-            BroadcastHash(manager);
-        }
-
         public void Dispose()
         {
-            Stop();
+            socket.Close();
         }
     }
 }
