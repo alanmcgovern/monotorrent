@@ -439,7 +439,8 @@ namespace MonoTorrent.Client
 
         internal void Broadcast(TorrentManager manager)
         {
-            localPeerManager.Broadcast(manager);
+            if (LocalPeerSearchEnabled)
+                localPeerManager.Broadcast(manager);
         }
 
         private void LogicTick()
