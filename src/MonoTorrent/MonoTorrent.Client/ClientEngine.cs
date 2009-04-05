@@ -49,8 +49,6 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ClientEngine : IDisposable
     {
-        public static bool EnableEndgameMode = false;
-
         internal static MainLoop MainLoop = new MainLoop("Client Engine Loop");
         private static Random random = new Random();
         #region Global Constants
@@ -60,7 +58,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsExtended = true;
         public static readonly bool SupportsFastPeer = true;
         public static readonly bool SupportsEncryption = true;
-        public static readonly bool SupportsEndgameMode = false;
+        public static readonly bool SupportsEndgameMode = true;
 #if !DISABLE_DHT
         public static readonly bool SupportsDht = true;
 #else

@@ -800,7 +800,7 @@ namespace MonoTorrent.Client
         internal PiecePicker CreateStandardPicker()
         {
             PiecePicker picker;
-            if (ClientEngine.EnableEndgameMode)
+            if (ClientEngine.SupportsEndgameMode)
                 picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.PieceLength / Piece.BlockSize, this);
             else
                 picker = new StandardPicker();
