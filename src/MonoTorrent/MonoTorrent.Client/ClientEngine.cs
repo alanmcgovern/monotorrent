@@ -93,6 +93,8 @@ namespace MonoTorrent.Client
         private bool isRunning;
         private PeerListener listener;
         private ListenManager listenManager;         // Listens for incoming connections and passes them off to the correct TorrentManager
+        internal LocalPeerManager localPeerManager;
+        private LocalPeerListener localPeerListener;
         private readonly string peerId;
         private EngineSettings settings;
         private int tickCount;
@@ -198,6 +200,9 @@ namespace MonoTorrent.Client
             CreateRateLimiters();
             this.peerId = GeneratePeerId();
 
+            localPeerListener = new LocalPeerListener(this);
+            localPeerManager = new LocalPeerManager();
+            localPeerListener.Start();
             listenManager.Register(listener);
             dhtEngine.StateChanged += delegate {
                 if (dhtEngine.State != DhtState.Ready)

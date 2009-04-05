@@ -582,6 +582,7 @@ namespace MonoTorrent.Client
                         this.TrackerManager.Scrape();
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
+                engine.localPeerManager.ForceBroadcast(this);
 
 #if !DISABLE_DHT
                 if (HasMetadata && !torrent.IsPrivate)
