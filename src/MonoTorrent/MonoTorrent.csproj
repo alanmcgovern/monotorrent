@@ -91,6 +91,7 @@
     <Compile Include="BanLists\ListParser.cs" />
     <Compile Include="BanLists\RangeCollection.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\LocalPeerListener.cs" />
+    <Compile Include="MonoTorrent.Client\EventArgs\LocalPeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeersFoundEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\IDhtEngine.cs" />
     <Compile Include="MonoTorrent.BEncoding\RawReader.cs" />
