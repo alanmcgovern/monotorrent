@@ -674,6 +674,7 @@ namespace MonoTorrent.Client
                         this.SaveFastResume();
                     this.monitor.Reset();
                     this.pieceManager.Reset();
+                    engine.ConnectionManager.CancelPendingConnects(this);
                     if (this.engine.ConnectionManager.IsRegistered(this))
                         this.engine.ConnectionManager.UnregisterManager(this);
                     this.engine.Stop();

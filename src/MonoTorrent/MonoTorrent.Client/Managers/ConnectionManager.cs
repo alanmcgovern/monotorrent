@@ -78,6 +78,7 @@ namespace MonoTorrent.Client
         internal AsyncTransfer incomingConnectionAcceptedCallback;
         private AsyncTransfer endSendMessageCallback;
 
+        private List<AsyncConnectState> pendingConnects;
         private MonoTorrentCollection<TorrentManager> torrents;
 
         /// <summary>
@@ -141,6 +142,7 @@ namespace MonoTorrent.Client
             this.handshakeReceievedCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { PeerHandshakeReceived(s, c, o); }); };
             this.messageSentCallback = new MessagingCallback(this.PeerMessageSent);
 
+            this.pendingConnects = new List<AsyncConnectState>();
             this.torrents = new MonoTorrentCollection<TorrentManager>();
         }
 
@@ -158,6 +160,7 @@ namespace MonoTorrent.Client
 
             peer.LastConnectionAttempt = DateTime.Now;
             AsyncConnectState c = new AsyncConnectState(manager, peer, connection, endCreateConnectionCallback);
+            pendingConnects.Add(c);
 
             manager.Peers.ConnectingToPeers.Add(peer);
             NetworkIO.EnqueueConnect(c);
@@ -169,6 +172,7 @@ namespace MonoTorrent.Client
         private void EndCreateConnection(bool succeeded, object state)
         {
             AsyncConnectState connect = (AsyncConnectState)state;
+            pendingConnects.Remove(connect);
             if (connect.Manager.Engine == null || 
                 (connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding))
             {
@@ -490,7 +494,12 @@ namespace MonoTorrent.Client
             }
         }
 
-
+        internal void CancelPendingConnects(TorrentManager manager)
+        {
+            foreach (AsyncConnectState c in pendingConnects)
+                if (c.Manager == manager)
+                    c.Connection.Dispose();
+        }
 
         /// <summary>
         /// This method is called when a connection needs to be closed and the resources for it released.
