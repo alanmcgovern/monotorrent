@@ -1,7 +1,7 @@
 dnl Warning: This is an automatically generated file, do not edit!
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.54])
-AC_INIT([MonoTorrent], [0.70])
+AC_INIT([MonoTorrent], [0.80])
 AM_INIT_AUTOMAKE([foreign tar-pax])
 AM_MAINTAINER_MODE
 

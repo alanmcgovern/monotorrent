@@ -54,10 +54,12 @@ FILES = \
 	MonoTorrent.BEncoding/RawReader.cs \
 	MonoTorrent.Client/ConnectionListeners/IListener.cs \
 	MonoTorrent.Client/ConnectionListeners/Listener.cs \
+	MonoTorrent.Client/ConnectionListeners/LocalPeerListener.cs \
 	MonoTorrent.Client/ConnectionListeners/PeerListener.cs \
 	MonoTorrent.Client/Encryption/EncryptionTypes.cs \
 	MonoTorrent.Client/EventArgs/AttemptConnectionEventArgs.cs \
 	MonoTorrent.Client/EventArgs/DhtPeersAdded.cs \
+	MonoTorrent.Client/EventArgs/LocalPeersAdded.cs \
 	MonoTorrent.Client/EventArgs/PeerAddedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeerConnectionFailedEventArgs.cs \
 	MonoTorrent.Client/EventArgs/PeerEventArgs.cs \
@@ -154,6 +156,7 @@ FILES = \
 	MonoTorrent.Client/Managers/ConnectionMonitor.cs \
 	MonoTorrent.Client/Managers/DiskManager.cs \
 	MonoTorrent.Client/Managers/ListenManager.cs \
+	MonoTorrent.Client/Managers/LocalPeerManager.cs \
 	MonoTorrent.Client/Managers/PeerManager.cs \
 	MonoTorrent.Client/Managers/PieceManager.cs \
 	MonoTorrent.Client/Managers/TorrentManager.cs \
