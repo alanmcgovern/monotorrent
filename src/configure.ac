@@ -51,6 +51,7 @@ dnl package checks, per config
 
 
 AC_CONFIG_FILES([
+MonoTorrent/AssemblyInfo.cs
 MonoTorrent/monotorrent.pc
 MonoTorrent/Makefile
 MonoTorrent.Dht/monotorrent.dht.pc
