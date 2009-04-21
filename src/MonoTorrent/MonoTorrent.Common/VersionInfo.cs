@@ -52,17 +52,21 @@ namespace MonoTorrent.Common
 
 		static string CreateClientVersion ()
 		{
-			AssemblyInformationalVersionAttribute version;
+			AssemblyInformationalVersionAttribute versionAttr;
 			Assembly assembly = Assembly.GetExecutingAssembly ();
-			version = (AssemblyInformationalVersionAttribute) assembly.GetCustomAttributes (typeof (AssemblyInformationalVersionAttribute), false)[0];
-			Version v = new Version(version.InformationalVersion);
+			versionAttr = (AssemblyInformationalVersionAttribute) assembly.GetCustomAttributes (typeof (AssemblyInformationalVersionAttribute), false)[0];
+			Version v = new Version(versionAttr.InformationalVersion);
 
 			    // 'MO' for MonoTorrent then four digit version number
-			return string.Format ("-MO{0}{1}{2}{3}-",
-			                      Math.Max (v.Major, 0),
-			                      Math.Max (v.Minor, 0), 
-			                      Math.Max (v.Build, 0),
-			                      Math.Max (v.Revision, 0));
+            string version = string.Format ("{0}{1}{2}{3}", Math.Max (v.Major, 0),
+			                                                Math.Max (v.Minor, 0), 
+			                                                Math.Max (v.Build, 0),
+			                                                Math.Max (v.Revision, 0));
+            if (version.Length > 4)
+                version = version.Substring (0, 4);
+            else
+                version = version.PadRight (4, '0');
+			return string.Format ("-MO{0}-", version);
 		}
     }
 }
