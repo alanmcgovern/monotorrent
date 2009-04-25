@@ -40,15 +40,6 @@ namespace MonoTorrent.Client
     public delegate void MainLoopTask();
     public delegate bool TimeoutTask();
 
-    internal class ReverseComparer : IComparer<Priority>
-    {
-        public int Compare(Priority x, Priority y)
-        {
-            // High priority will sort to the top of the list
-            return ((int)y).CompareTo((int)x);
-        }
-    }
-
     public class MainLoop
     {
         private class DelegateTask
