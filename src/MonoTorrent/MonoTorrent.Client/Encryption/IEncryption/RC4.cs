@@ -40,7 +40,7 @@ namespace MonoTorrent.Client.Encryption
     /// </summary>
     public class RC4 : IEncryption
     {
-        static RandomNumberGenerator random = RandomNumberGenerator.Create();
+        static RandomNumberGenerator random = new RNGCryptoServiceProvider();
 
         byte[] S;
         int x;

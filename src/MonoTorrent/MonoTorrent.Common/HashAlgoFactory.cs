@@ -41,8 +41,7 @@ namespace MonoTorrent.Common
 
         static HashAlgoFactory()
         {
-            using (SHA1 sha = SHA1.Create())
-                Register(typeof(SHA1), sha.GetType());
+            Register<SHA1, SHA1CryptoServiceProvider>();
         }
 
         public static void Register<T, U>()

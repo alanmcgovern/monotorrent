@@ -55,7 +55,7 @@ namespace MonoTorrent.Dht
         public TokenManager()
         {
             sha1 = HashAlgoFactory.Create<SHA1>();
-            random = RandomNumberGenerator.Create();
+            random = new RNGCryptoServiceProvider ();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];
             previousSecret = new byte[10];
