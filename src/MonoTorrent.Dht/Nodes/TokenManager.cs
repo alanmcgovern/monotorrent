@@ -33,6 +33,7 @@ using System.IO;
 using System.Security.Cryptography;
 
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
@@ -53,7 +54,7 @@ namespace MonoTorrent.Dht
 
         public TokenManager()
         {
-            sha1 = SHA1.Create();
+            sha1 = HashAlgoFactory.Create<SHA1>();
             random = RandomNumberGenerator.Create();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];

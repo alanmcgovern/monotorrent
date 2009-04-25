@@ -364,7 +364,7 @@ namespace MonoTorrent.Client.Managers
                     break;
             }
 
-            using (SHA1 hasher = SHA1.Create())
+            using (SHA1 hasher = HashAlgoFactory.Create<SHA1>())
             {
                 hasher.Initialize();
                 for (int i = 0; i < list.Count; i++)

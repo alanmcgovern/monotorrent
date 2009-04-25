@@ -136,7 +136,7 @@ namespace MonoTorrent.Client
                     {
                         byte[] hash;
                         stream.Position = 0;
-                        using (SHA1 hasher = SHA1.Create())
+                        using (SHA1 hasher = HashAlgoFactory.Create<SHA1>())
                             hash = hasher.ComputeHash(stream);
 
                         if (!Manager.InfoHash.Equals (hash))
@@ -224,7 +224,9 @@ namespace MonoTorrent.Client
 
         internal Torrent GetTorrent()
         {
-            byte[] calculatedInfoHash = new SHA1Managed().ComputeHash(stream.ToArray());
+            byte[] calculatedInfoHash;
+            using (SHA1 sha = HashAlgoFactory.Create<SHA1>())
+                calculatedInfoHash = sha.ComputeHash(stream.ToArray());
             if (!Manager.Torrent.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception("invalid metadata");//restart ?
 

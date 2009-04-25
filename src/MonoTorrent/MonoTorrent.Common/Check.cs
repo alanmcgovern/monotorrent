@@ -43,6 +43,11 @@ namespace MonoTorrent
             DoCheck(baseDirectory, "baseDirectory");
         }
 
+        internal static void BaseType(Type baseType)
+        {
+            DoCheck(baseType, "baseType");
+        }
+
         public static void Data(object data)
         {
             DoCheck(data, "data");
@@ -121,6 +126,11 @@ namespace MonoTorrent
         public static void Settings(object settings)
         {
             DoCheck(settings, "settings");
+        }
+
+        internal static void SpecificType(Type specificType)
+        {
+            DoCheck(specificType, "specificType");
         }
 
         public static void Stream(object stream)
