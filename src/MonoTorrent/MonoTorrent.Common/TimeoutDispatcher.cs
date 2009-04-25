@@ -77,11 +77,6 @@ namespace Mono.Ssdp.Internal
             return Add (TimeSpan.FromMilliseconds (timeoutMs), handler, state);
         }
 
-        public uint Add (DateTime timeout, TimeoutHandler handler, object state)
-        {
-            return Add (timeout - DateTime.Now, handler, state);
-        }
-
         public uint Add (TimeSpan timeout, TimeoutHandler handler, object state)
         {
             lock (this) {
@@ -89,7 +84,7 @@ namespace Mono.Ssdp.Internal
                 TimeoutItem item = new TimeoutItem ();
                 item.Id = timeout_ids++;
                 item.Timeout = timeout;
-                item.Trigger = DateTime.Now + timeout;
+                item.Trigger = DateTime.UtcNow + timeout;
                 item.Handler = handler;
                 item.State = state;
 
@@ -150,7 +145,7 @@ namespace Mono.Ssdp.Internal
                     item = timeouts[0];
                 }
 
-                TimeSpan interval = item.Trigger - DateTime.Now;
+                TimeSpan interval = item.Trigger - DateTime.UtcNow;
                 if (interval < TimeSpan.Zero) {
                     interval = TimeSpan.Zero;
                 }
