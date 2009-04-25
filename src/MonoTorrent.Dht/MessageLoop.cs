@@ -180,10 +180,9 @@ namespace MonoTorrent.Dht
             KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
             Message m = receive.Value;
             IPEndPoint source = receive.Key;
-			waitingResponse.RemoveAll(delegate(SendDetails msg)
-			{
-                return msg.Message.TransactionId.Equals(m.TransactionId);
-            });
+            for (int i = 0; i < waitingResponse.Count; i++)
+                if (waitingResponse[i].Message.TransactionId.Equals(m.TransactionId))
+                    waitingResponse.RemoveAt(i--);
 
             try
             {
