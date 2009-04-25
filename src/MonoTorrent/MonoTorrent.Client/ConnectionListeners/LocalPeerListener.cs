@@ -81,7 +81,8 @@ namespace MonoTorrent.Client
             RaiseStatusChanged(ListenerStatus.NotListening);
             UdpClient c = udpClient;
             udpClient = null;
-            c.Close();
+            if (c != null)
+                c.Close();
         }
 
         private void OnReceiveCallBack(IAsyncResult ar)
