@@ -255,7 +255,7 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(DhtState.Ready);
             }
 
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(200), delegate
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
             {
                 if (Disposed)
                     return false;
