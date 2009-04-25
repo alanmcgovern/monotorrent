@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
@@ -75,6 +76,11 @@ namespace MonoTorrent.Client
         public override void CancelTimedOutRequests()
         {
             ActivePicker.CancelTimedOutRequests();
+        }
+
+        public override RequestMessage ContinueExistingRequest(PeerId peer)
+        {
+            return ActivePicker.ContinueExistingRequest(peer);
         }
 
         public override int CurrentRequestCount()
