@@ -197,7 +197,9 @@ namespace MonoTorrent.Client.Messages
 
         static public int WriteAscii(byte[] buffer, int offset, string text)
         {
-            return Encoding.ASCII.GetBytes(text, 0, text.Length, buffer, offset);
+            for (int i = 0; i < text.Length; i++)
+                Write(buffer, offset + i, (byte)text[i]);
+            return text.Length;
         }
     }
 }
