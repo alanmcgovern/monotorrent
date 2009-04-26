@@ -135,6 +135,9 @@ namespace MonoTorrent.Client
             // NAND it with the pieces we already have (i.e. AND it with the pieces we still need to receive)
             endgameSelector.NAnd(bitfield);
 
+            if (endgameSelector.TrueCount * blocksPerPiece > (Threshold * 4))
+                return;
+
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
             int count = 0;
             List<Piece> pieces = standard.ExportActiveRequests();
