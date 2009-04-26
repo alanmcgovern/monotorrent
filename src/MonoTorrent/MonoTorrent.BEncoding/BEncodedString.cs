@@ -33,6 +33,7 @@ using System.IO;
 using System.Collections;
 using System.Text;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.BEncoding
 {
@@ -128,10 +129,11 @@ namespace MonoTorrent.BEncoding
         /// <returns>The number of bytes encoded</returns>
         public override int Encode(byte[] buffer, int offset)
         {
-            string output = this.textBytes.Length + ":";
-            int written = System.Text.Encoding.UTF8.GetBytes(output, 0, output.Length, buffer, offset);
-            Buffer.BlockCopy(this.textBytes, 0, buffer, offset + written, this.textBytes.Length);
-            return written + this.textBytes.Length;
+            int written = offset;
+            written += Message.WriteAscii(buffer, written, textBytes.Length.ToString ());
+            written += Message.WriteAscii(buffer, written, ":");
+            written += Message.Write(buffer, written, textBytes);
+            return written - offset;
         }
 
 
