@@ -110,14 +110,16 @@ namespace MonoTorrent.Client
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
-            TryEnableEndgame();
-            return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            MessageBundle bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            if (bundle == null && TryEnableEndgame())
+                return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            return bundle;
         }
 
-        private void TryEnableEndgame()
+        private bool TryEnableEndgame()
         {
             if (inEndgame)
-                return;
+                return false;
 
             // We need to activate endgame mode when there are less than 20 requestable blocks
             // available. We OR the bitfields of all the files which are downloadable and then
@@ -135,9 +137,6 @@ namespace MonoTorrent.Client
             // NAND it with the pieces we already have (i.e. AND it with the pieces we still need to receive)
             endgameSelector.NAnd(bitfield);
 
-            if (endgameSelector.TrueCount * blocksPerPiece > (Threshold * 4))
-                return;
-
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
             int count = 0;
             List<Piece> pieces = standard.ExportActiveRequests();
@@ -150,6 +149,7 @@ namespace MonoTorrent.Client
 				// Set torrent's IsInEndGame flag
 				torrentManager.isInEndGame = true;
 			}
+            return inEndgame;
         }
 
         public override void Reset()
