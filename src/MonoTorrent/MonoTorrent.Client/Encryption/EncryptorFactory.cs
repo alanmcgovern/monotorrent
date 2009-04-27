@@ -90,6 +90,12 @@ namespace MonoTorrent.Client.Encryption
             result.SKeys = sKeys;
 
             IConnection c = id.Connection;
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate {
+                if (id.Encryptor == null || id.Decryptor == null)
+                    id.CloseConnection();
+                return false;
+            });
+            
             try
             {
                 // If the connection is incoming, receive the handshake before
