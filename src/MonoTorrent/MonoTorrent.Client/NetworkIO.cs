@@ -41,8 +41,8 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    internal delegate void AsyncConnect(bool succeeded, object state);
-    internal delegate void AsyncTransfer(bool succeeded, int count, object state);
+    public delegate void AsyncConnect(bool succeeded, object state);
+    public delegate void AsyncTransfer(bool succeeded, int count, object state);
 
     internal class AsyncConnectState
     {

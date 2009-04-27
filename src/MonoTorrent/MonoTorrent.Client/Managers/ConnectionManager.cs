@@ -68,7 +68,6 @@ namespace MonoTorrent.Client
         internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
         // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
-        private MessagingCallback bitfieldSentCallback;
         private AsyncTransfer handshakeReceievedCallback;
         private MessagingCallback handshakeSentCallback;
         private MessagingCallback messageSentCallback;

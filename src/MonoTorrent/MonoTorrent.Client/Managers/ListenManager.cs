@@ -16,10 +16,10 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private object locker;
         private ClientEngine engine;
         private MonoTorrentCollection<PeerListener> listeners;
         private AsyncCallback endCheckEncryptionCallback;
+        private AsyncTransfer handshakeReceivedCallback;
 
         #endregion Member Variables
 
@@ -29,12 +29,6 @@ namespace MonoTorrent.Client
         public MonoTorrentCollection<PeerListener> Listeners
         {
             get { return listeners; }
-        }
-
-        internal object Locker
-        {
-            get { return locker; }
-            private set { locker = value; }
         }
 
         internal ClientEngine Engine
@@ -51,9 +45,9 @@ namespace MonoTorrent.Client
         internal ListenManager(ClientEngine engine)
         {
             Engine = engine;
-            Locker = new object();
             listeners = new MonoTorrentCollection<PeerListener>();
-            endCheckEncryptionCallback = EndCheckEncryption;
+            endCheckEncryptionCallback = ClientEngine.MainLoop.Wrap(EndCheckEncryption);
+            handshakeReceivedCallback = ClientEngine.MainLoop.Wrap(onPeerHandshakeReceived);
         }
 
         #endregion Constructors
@@ -108,11 +102,7 @@ namespace MonoTorrent.Client
             }
             else
             {
-                // FIXME I saw this once - how did it happen?
-                // Probably the connection was cleaned up before
-                // the delegate was invoked on the main thread.
-                //if (id.Engine == null)
-                ClientEngine.MainLoop.Queue(delegate { id.ConnectionManager.ProcessFreshConnection(id); });
+                ClientEngine.MainLoop.Queue(delegate { engine.ConnectionManager.ProcessFreshConnection(id); });
             }
         }
 
@@ -132,7 +122,7 @@ namespace MonoTorrent.Client
                 if (id.BytesToRecieve == id.BytesReceived)
                     handleHandshake(id);
                 else
-                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, id.BytesToRecieve - id.BytesReceived, onPeerHandshakeReceived, id);
+                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, id.BytesToRecieve - id.BytesReceived, handshakeReceivedCallback, id);
             }
             catch
             {
