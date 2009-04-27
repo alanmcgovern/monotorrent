@@ -132,14 +132,14 @@ namespace MonoTorrent.Client
         {
             this.engine = engine;
 
-            this.endCheckEncryptionCallback = delegate(IAsyncResult result) { ClientEngine.MainLoop.Queue(delegate { EndCheckEncryption(result); }); };
-            this.endSendMessageCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { EndSendMessage(s, c, o); }); };
-            this.endCreateConnectionCallback = delegate(bool succeeded, object state) { ClientEngine.MainLoop.Queue(delegate { EndCreateConnection(succeeded, state); }); };
-            this.incomingConnectionAcceptedCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { IncomingConnectionAccepted(s, c, o); }); };
+            this.endCheckEncryptionCallback = ClientEngine.MainLoop.Wrap(EndCheckEncryption);
+            this.endSendMessageCallback = ClientEngine.MainLoop.Wrap(EndSendMessage);
+            this.endCreateConnectionCallback = ClientEngine.MainLoop.Wrap(EndCreateConnection);
+            this.incomingConnectionAcceptedCallback = ClientEngine.MainLoop.Wrap(IncomingConnectionAccepted);
 
-            this.handshakeSentCallback = new MessagingCallback(this.PeerHandshakeSent);
-            this.handshakeReceievedCallback = delegate(bool s, int c, object o) { ClientEngine.MainLoop.Queue(delegate { PeerHandshakeReceived(s, c, o); }); };
-            this.messageSentCallback = new MessagingCallback(this.PeerMessageSent);
+            this.handshakeSentCallback = PeerHandshakeSent;
+            this.handshakeReceievedCallback = ClientEngine.MainLoop.Wrap(PeerHandshakeReceived);
+            this.messageSentCallback = PeerMessageSent;
 
             this.pendingConnects = new List<AsyncConnectState>();
             this.torrents = new MonoTorrentCollection<TorrentManager>();

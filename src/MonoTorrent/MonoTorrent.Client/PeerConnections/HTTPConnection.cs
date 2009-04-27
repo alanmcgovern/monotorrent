@@ -152,14 +152,8 @@ namespace MonoTorrent.Client.Connections
             this.uri = uri;
             
             connectionTimeout = TimeSpan.FromSeconds(10);
-            getResponseCallback = delegate(IAsyncResult r) {
-                ClientEngine.MainLoop.Queue(delegate { GotResponse(r); });
-            };
-
-            receivedChunkCallback = delegate(IAsyncResult r) {
-                ClientEngine.MainLoop.Queue(delegate { ReceivedChunk(r); });
-            };
-
+            getResponseCallback = ClientEngine.MainLoop.Wrap(GotResponse);
+            receivedChunkCallback = ClientEngine.MainLoop.Wrap(ReceivedChunk);
             requestMessages = new List<RequestMessage>();
             webRequests = new Queue<KeyValuePair<WebRequest, int>>();
         }
