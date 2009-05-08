@@ -34,7 +34,6 @@
     <DebugSymbols>true</DebugSymbols>
     <RootNamespace>MonoTorrent.Dht</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
