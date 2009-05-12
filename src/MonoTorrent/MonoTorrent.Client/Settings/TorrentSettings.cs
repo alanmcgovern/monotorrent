@@ -155,6 +155,7 @@ namespace MonoTorrent.Client
         public bool UseDht
         {
             get { return useDht; }
+			set { useDht = value; }
         }
         private bool useDht = true;
 
