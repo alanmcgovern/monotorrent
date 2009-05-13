@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Tracker
            ConnectAnnounceState state = (ConnectAnnounceState)((UDPTrackerState)ar.AsyncState).state;
            if (ar is FakeAsyncResult)
            {
-               FailureMessage = "Send 8 times connect for announce to tracker but timeout!";
+               FailureMessage = "Send 4 times connect for announce to tracker but timeout!";
                amConnecting = false;
                DoAnnounceComplete(false, state, null);
                return;
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client.Tracker
            object state = ((UDPTrackerState)ar.AsyncState).state;
            if (ar is FakeAsyncResult)
            {
-               FailureMessage = "Send 8 times announce to tracker but timeout!";
+               FailureMessage = "Send 4 times announce to tracker but timeout!";
                DoAnnounceComplete(false, state, null);
                return;
            }
@@ -188,7 +188,7 @@ namespace MonoTorrent.Client.Tracker
            ConnectScrapeState state = (ConnectScrapeState)((UDPTrackerState)ar.AsyncState).state;
            if (ar is FakeAsyncResult)
            {
-               FailureMessage = "Send 8 times connect for scrape to tracker but timeout!";
+               FailureMessage = "Send 4 times connect for scrape to tracker but timeout!";
                amConnecting = false;
                DoScrapeComplete(false, state);
                return;
@@ -219,7 +219,7 @@ namespace MonoTorrent.Client.Tracker
            object state = ((UDPTrackerState)ar.AsyncState).state;
            if (ar is FakeAsyncResult)
            {
-               FailureMessage = "Send 8 times scrape to tracker but timeout!";
+               FailureMessage = "Send 4 times scrape to tracker but timeout!";
                DoScrapeComplete(false, state);
                return;
            }
@@ -260,7 +260,7 @@ namespace MonoTorrent.Client.Tracker
 
        private void SendAndReceive(UdpTrackerMessage m, AsyncCallback callback, object state)
        {
-           timeout = 15;
+           timeout = 1;
            SendRequest(m, callback, state);
            tracker.BeginReceive(ClientEngine.MainLoop.Wrap(callback), new UDPTrackerState(m, state));
        }
@@ -269,15 +269,15 @@ namespace MonoTorrent.Client.Tracker
            //TODO BeginSend
            tracker.Send(message.Encode(), message.ByteLength);
 
-           //response timeout
-           ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(timeout), delegate
+           //response timeout: we try 4 times every 15 sec
+           ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(15), delegate
            {
                if (timeout == 0)//we receive data
                    return true;
 
-               if (timeout < 3840)
+               if (timeout <= 4)
                {
-                   timeout *= 2;
+                   timeout++;
                    SendRequest(message, callback, state);
                }
                else
