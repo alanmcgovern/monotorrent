@@ -38,7 +38,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         #region Methods
 
-        public virtual BEncodedValue Handle(string queryString, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedDictionary Handle(string queryString, IPAddress remoteAddress, bool isScrape)
         {
             if (queryString == null)
                 throw new ArgumentNullException("queryString");
@@ -46,7 +46,7 @@ namespace MonoTorrent.Tracker.Listeners
             return Handle(ParseQuery(queryString), remoteAddress, isScrape);
         }
 
-        public virtual BEncodedValue Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
+        public virtual BEncodedDictionary Handle(NameValueCollection collection, IPAddress remoteAddress, bool isScrape)
         {
             if (collection == null)
                 throw new ArgumentNullException("collection");

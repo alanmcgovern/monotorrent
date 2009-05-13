@@ -36,30 +36,71 @@ using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
+using System.Threading;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class UdpTrackerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    UdpTrackerTests t = new UdpTrackerTests();
-        //    t.ConnectTest();
-        //    t.ConnectResponseTest();
-        //    t.AnnounceTest();
-        //    t.AnnounceResponseTest();
-        //    t.ScrapeTest();
-        //    t.ScrapeResponseTest();
-        //}
+        static void Main(string[] args)
+        {
+            UdpTrackerTests t = new UdpTrackerTests();
+            t.ConnectMessageTest();
+            t.ConnectResponseTest();
+            t.AnnounceMessageTest();
+            t.AnnounceResponseTest();
+            t.ScrapeMessageTest();
+            t.ScrapeResponseTest();
+            t.FixtureSetup();
+
+            t.AnnounceTest();
+            t.Setup();
+            t.ScrapeTest();
+
+            t.FixtureTeardown();
+        }
 
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             MonoTorrent.Common.TorrentEvent.Completed,
             new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
             false, new string('a', 20), null, 1515);
+        MonoTorrent.Tracker.Tracker server;
+        MonoTorrent.Tracker.Listeners.UdpListener listener;
+        List<string> keys;
+        string prefix = "udp://localhost:6767/announce/";
+
+        [TestFixtureSetUp]
+        public void FixtureSetup()
+        {
+            keys = new List<string>();
+            server = new MonoTorrent.Tracker.Tracker();
+            server.AllowUnregisteredTorrents = true;
+            listener = new MonoTorrent.Tracker.Listeners.UdpListener(6767);
+            listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
+            {
+                keys.Add(e.Key);
+            };
+            server.RegisterListener(listener);
+
+            listener.Start();
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            keys.Clear();
+        }
+
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
+        {
+            listener.Stop();
+            server.Dispose();
+        }
 
         [Test]
-        public void AnnounceTest()
+        public void AnnounceMessageTest()
         {
             AnnounceMessage m = new AnnounceMessage(0, 12345, announceparams);
             AnnounceMessage d = (AnnounceMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
@@ -90,7 +131,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void ConnectTest()
+        public void ConnectMessageTest()
         {
             ConnectMessage m = new ConnectMessage();
             ConnectMessage d = (ConnectMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
@@ -121,7 +162,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void ScrapeTest()
+        public void ScrapeMessageTest()
         {
             List<byte[]> hashes = new List<byte[]>();
             Random r = new Random();
@@ -167,6 +208,58 @@ namespace MonoTorrent.Client
             byte[] e = message.Encode();
             Assert.AreEqual(e.Length, message.ByteLength, "#1");
             Assert.IsTrue(Toolbox.ByteMatch(e, UdpTrackerMessage.DecodeMessage(e, 0, e.Length, type).Encode()), "#2");
+        }
+
+        [Test]
+        public void AnnounceTest()
+        {
+            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
+            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+
+            AnnounceResponseEventArgs p = null;
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
+            {
+                p = e;
+                id.WaitHandle.Set();
+            };
+            MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
+            pars.InfoHash = new InfoHash(new byte[20]);
+            pars.PeerId = "";
+
+            t.Announce(pars, id);
+            Wait(id.WaitHandle);
+            Assert.IsNotNull(p, "#1");
+            Assert.IsTrue(p.Successful);
+            //Assert.AreEqual(keys[0], t.Key, "#2");
+        }
+
+        [Test]
+        public void ScrapeTest()
+        {
+            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
+            Assert.IsTrue(t.CanScrape, "#1");
+            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+
+            ScrapeResponseEventArgs p = null;
+            t.ScrapeComplete += delegate(object o, ScrapeResponseEventArgs e)
+            {
+                p = e;
+                id.WaitHandle.Set();
+            };
+            MonoTorrent.Client.Tracker.ScrapeParameters pars = new ScrapeParameters(new InfoHash(new byte[20]));
+
+            t.Scrape(pars, id);
+            Wait(id.WaitHandle);
+            Assert.IsNotNull(p, "#2");
+            Assert.IsTrue(p.Successful, "#3");
+            Assert.AreEqual(0, t.Complete, "#1");
+            Assert.AreEqual(0, t.Incomplete, "#2");
+            Assert.AreEqual(0, t.Downloaded, "#3");
+        }
+
+        void Wait(WaitHandle handle)
+        {
+            Assert.IsTrue(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }
     }
 }
