@@ -92,7 +92,7 @@ namespace MonoTorrent.Tracker.Listeners
             listener = null;
         }
 
-        public void ReceiveData(IAsyncResult ar)
+        private void ReceiveData(IAsyncResult ar)
         {
             try
             {
