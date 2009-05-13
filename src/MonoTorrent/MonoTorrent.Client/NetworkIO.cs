@@ -204,8 +204,8 @@ namespace MonoTorrent.Client
                 // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
-            Enqueue(io);
             io.Callback(io.Count == io.Total, io.Count, io.State);
+            Enqueue(io);
         }
 
         internal static void EndSend(IAsyncResult result)
@@ -232,8 +232,8 @@ namespace MonoTorrent.Client
                 // No need to do anything, io.Count != io.Total, so it'll fail
             }
 
-            Enqueue(io);
             io.Callback(io.Count == io.Total, io.Count, io.State);
+			Enqueue(io);
         }
 
         internal static void EnqueueConnect(AsyncConnectState c)
