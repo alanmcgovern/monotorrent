@@ -204,7 +204,9 @@ namespace MonoTorrent.Client.Tracker
        {
            //strange because here only one infohash???
            //or get all torrent infohash so loop on torrents of client engine
-           ScrapeMessage m = new ScrapeMessage(DateTime.Now.GetHashCode(), connectionId, new List<byte[]>() { parameters.InfoHash.Hash });
+           List<byte[]> infohashs= new List<byte[]>(1);
+           infohashs.Add(parameters.InfoHash.Hash);
+           ScrapeMessage m = new ScrapeMessage(DateTime.Now.GetHashCode(), connectionId, infohashs);
            try
            {
                SendAndReceive(m, new AsyncCallback(ScrapeCallback), state);
