@@ -314,7 +314,7 @@ namespace MonoTorrent.Client.Tracker
 
        #region async state
 
-       internal class UDPTrackerState
+       class UDPTrackerState
        {
            public object state;
            public UdpTrackerMessage m;
@@ -325,7 +325,7 @@ namespace MonoTorrent.Client.Tracker
            }
        }
 
-       internal class ConnectAnnounceState
+       class ConnectAnnounceState
        {
            public object state;
            public AnnounceParameters parameters;
@@ -335,7 +335,7 @@ namespace MonoTorrent.Client.Tracker
                this.state = state;
            }
        }
-       internal class ConnectScrapeState
+       class ConnectScrapeState
        {
            public object state;
            public ScrapeParameters parameters;
@@ -347,7 +347,7 @@ namespace MonoTorrent.Client.Tracker
        }
 
        //if use it outside of timeout, we have to store a string error and return it in FailureMessage
-       internal class FakeAsyncResult : IAsyncResult
+       class FakeAsyncResult : IAsyncResult
        {
            private object state;
            public FakeAsyncResult(object state)
