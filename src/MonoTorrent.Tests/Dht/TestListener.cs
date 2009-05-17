@@ -33,7 +33,7 @@ namespace MonoTorrent.Dht
         {
             DhtEngine.MainLoop.Queue(delegate
             {
-                RaiseMessageReceived(message.Encode(), endpoint);
+                OnMessageReceived(message.Encode(), endpoint);
             });
         }
 

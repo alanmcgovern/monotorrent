@@ -90,7 +90,7 @@ namespace MonoTorrent
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            DhtListener dhtListner = new UdpListener (new IPEndPoint (IPAddress.Any, port));
+            DhtListener dhtListner = new DhtListener (new IPEndPoint (IPAddress.Any, port));
             DhtEngine dht = new DhtEngine (dhtListner);
             engine.RegisterDht(dht);
             dhtListner.Start();

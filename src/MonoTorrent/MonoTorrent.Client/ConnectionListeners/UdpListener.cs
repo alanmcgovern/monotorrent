@@ -33,19 +33,18 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
-using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Dht.Listeners
+namespace MonoTorrent
 {
-    public class UdpListener : DhtListener
+    public abstract class UdpListener : Listener
     {
 
         private UdpClient client;
 
-        public UdpListener(IPEndPoint endpoint)
+        protected UdpListener(IPEndPoint endpoint)
             :base(endpoint)
         {
             
@@ -58,7 +57,7 @@ namespace MonoTorrent.Dht.Listeners
                 IPEndPoint e = new IPEndPoint(IPAddress.Any, Endpoint.Port);
                 byte[] buffer = client.EndReceive(result, ref e);
 
-                RaiseMessageReceived(buffer, e);
+                OnMessageReceived(buffer, e);
                 client.BeginReceive(EndReceive, null);
             }
             catch (ObjectDisposedException)
@@ -93,7 +92,9 @@ namespace MonoTorrent.Dht.Listeners
             }
         }
 
-        public override void Send(byte[] buffer, IPEndPoint endpoint)
+		protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
+
+        public virtual void Send(byte[] buffer, IPEndPoint endpoint)
         {
             try
             {
