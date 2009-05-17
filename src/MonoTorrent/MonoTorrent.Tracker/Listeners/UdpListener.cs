@@ -88,8 +88,9 @@ namespace MonoTorrent.Tracker.Listeners
         {
             if (!Running)
                 return;
+			System.Net.Sockets.UdpClient listener = this.listener;
+			this.listener = null;
             listener.Close();
-            listener = null;
         }
 
         private void ReceiveData(IAsyncResult ar)
@@ -120,7 +121,7 @@ namespace MonoTorrent.Tracker.Listeners
                         throw new ProtocolException(string.Format("Invalid udp message received: {0}", request.Action));
                 }
             }
-            catch (ProtocolException e)//other exception not catch
+            catch (Exception e)
             {
                 Logger.Log(null, e.ToString());
             }
