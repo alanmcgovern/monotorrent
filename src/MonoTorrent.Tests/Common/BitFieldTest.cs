@@ -206,6 +206,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void LargeBitfield()
+        {
+            BitField bf = new BitField(1000);
+            bf.SetAll(true);
+            Assert.AreEqual(1000, bf.TrueCount);
+        }
+
+        [Test]
         public void Length()
         {
             Assert.AreEqual(initalValues.Length, bf.Length);

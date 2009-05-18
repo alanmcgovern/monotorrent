@@ -423,9 +423,9 @@ namespace MonoTorrent.Common
                 uint v = (uint)array[i];
                 v = v - ((v >> 1) & 0x55555555);
                 v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-                count += (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101));
+                count += (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
             }
-            trueCount = (int)(count >> 24);
+            trueCount = (int)count ;
         }
 
         void ZeroUnusedBits()
