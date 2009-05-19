@@ -68,39 +68,53 @@ namespace MonoTorrent.Client.Tracker
        private void ConnectAnnounceCallback(IAsyncResult ar)
        {
            ConnectAnnounceState state = (ConnectAnnounceState)((UDPTrackerState)ar.AsyncState).state;
-           if (ar is FakeAsyncResult)
-           {
-               FailureMessage = "Send 4 times connect for announce to tracker but timeout!";
-               amConnecting = false;
-               DoAnnounceComplete(false, state, null);
-               return;
-           }
-           if (!ConnectCallback(ar))//bad transaction id
-           {
-               DoAnnounceComplete(false, state, null);
-               return;
-           }
-           DoAnnounce(state.parameters, state.state);
+            try
+            {
+                if (ar is FakeAsyncResult)
+                {
+                    FailureMessage = "Send 4 times connect for announce to tracker but timeout!";
+                    amConnecting = false;
+                    DoAnnounceComplete(false, state, null);
+                    return;
+                }
+                if (!ConnectCallback(ar))//bad transaction id
+                {
+                    DoAnnounceComplete(false, state, null);
+                    return;
+                }
+                DoAnnounce(state.parameters, state.state);
+            }
+            catch
+            {
+                DoAnnounceComplete(false, state, null);
+            }
        }
 
        private void AnnounceCallback(IAsyncResult ar)
        {
            object state = ((UDPTrackerState)ar.AsyncState).state;
-           if (ar is FakeAsyncResult)
-           {
-               FailureMessage = "Send 4 times announce to tracker but timeout!";
-               DoAnnounceComplete(false, state, null);
-               return;
-           }
-           UdpTrackerMessage rsp = Receive(ar);
-           if (rsp == null)
-           {
-               DoScrapeComplete(false, state);
-               return;
-           }
+            try
+            {
+                if (ar is FakeAsyncResult)
+                {
+                    FailureMessage = "Send 4 times announce to tracker but timeout!";
+                    DoAnnounceComplete(false, state, null);
+                    return;
+                }
+                UdpTrackerMessage rsp = Receive(ar);
+                if (rsp == null)
+                {
+                    DoAnnounceComplete(false, state, null);
+                    return;
+                }
 
-           MinUpdateInterval = ((AnnounceResponseMessage)rsp).Interval;
-           CompleteAnnounce(rsp, state);
+                MinUpdateInterval = ((AnnounceResponseMessage)rsp).Interval;
+                CompleteAnnounce(rsp, state);
+            }
+            catch
+            {
+                DoAnnounceComplete(false, state, null);
+            }
        }
 
        private void CompleteAnnounce(UdpTrackerMessage message, object state)
@@ -121,19 +135,26 @@ namespace MonoTorrent.Client.Tracker
        }
 
        private void DoAnnounceComplete(bool successful, object state, List<Peer> peers)
-       {
-           AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, state, false);
-           e.Successful = successful;
-           if (successful)
-                e.Peers.AddRange(peers);
-           RaiseAnnounceComplete(e);
+        {
+            try
+            {
+                AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, state, false);
+                e.Successful = successful;
+                if (successful)
+                    e.Peers.AddRange(peers);
+                RaiseAnnounceComplete(e);
+            }
+            catch
+            {
+                //FIXME: Is there anything we should do here
+            }
        }
 
        #endregion
 
        #region connect
 
-       private void Connect(object state, AsyncCallback callback )
+       private void Connect(object state, AsyncCallback callback)
        {
            ConnectMessage message = new ConnectMessage();
            tracker.Connect(Uri.Host, Uri.Port);
@@ -141,21 +162,28 @@ namespace MonoTorrent.Client.Tracker
        }
 
        private bool ConnectCallback(IAsyncResult ar)
-       {
-           UdpTrackerMessage msg = Receive(ar);
-           if (msg == null)
-               return false;//bad transaction id
-           ConnectResponseMessage rsp = msg as ConnectResponseMessage;
-           if (rsp == null)
-           {
-               //is there a possibility to have a message which is not error message or connect rsp but udp msg
-               FailureMessage = ((ErrorMessage)msg).Error;
-               return false;//error message
-           }   
-           connectionId = rsp.ConnectionId;
-           hasConnected = true;
-           amConnecting = false;
-           return true;
+        {
+            try
+            {
+                UdpTrackerMessage msg = Receive(ar);
+                if (msg == null)
+                    return false;//bad transaction id
+                ConnectResponseMessage rsp = msg as ConnectResponseMessage;
+                if (rsp == null)
+                {
+                    //is there a possibility to have a message which is not error message or connect rsp but udp msg
+                    FailureMessage = ((ErrorMessage)msg).Error;
+                    return false;//error message
+                }
+                connectionId = rsp.ConnectionId;
+                hasConnected = true;
+                amConnecting = false;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
        }
        #endregion
 
@@ -186,19 +214,26 @@ namespace MonoTorrent.Client.Tracker
        private void ConnectScrapeCallback(IAsyncResult ar)
        {
            ConnectScrapeState state = (ConnectScrapeState)((UDPTrackerState)ar.AsyncState).state;
-           if (ar is FakeAsyncResult)
-           {
-               FailureMessage = "Send 4 times connect for scrape to tracker but timeout!";
-               amConnecting = false;
-               DoScrapeComplete(false, state);
-               return;
-           }
-           if (!ConnectCallback(ar))//bad transaction id
-           {
-               DoScrapeComplete(false, state);
-               return;
-           }
-           DoScrape(state.parameters, state.state);
+            try
+            {
+                if (ar is FakeAsyncResult)
+                {
+                    FailureMessage = "Send 4 times connect for scrape to tracker but timeout!";
+                    amConnecting = false;
+                    DoScrapeComplete(false, state);
+                    return;
+                }
+                if (!ConnectCallback(ar))//bad transaction id
+                {
+                    DoScrapeComplete(false, state);
+                    return;
+                }
+                DoScrape(state.parameters, state.state);
+            }
+            catch
+            {
+                DoScrapeComplete(false, state);
+            }
        }
        private void DoScrape(ScrapeParameters parameters, object state)
        {
@@ -217,21 +252,28 @@ namespace MonoTorrent.Client.Tracker
            }
        }
        private void ScrapeCallback(IAsyncResult ar)
-       {
-           object state = ((UDPTrackerState)ar.AsyncState).state;
-           if (ar is FakeAsyncResult)
-           {
-               FailureMessage = "Send 4 times scrape to tracker but timeout!";
-               DoScrapeComplete(false, state);
-               return;
-           }
-           UdpTrackerMessage rsp = Receive(ar);
-           if (rsp == null)
-           {
-               DoScrapeComplete(false, state);
-               return;
-           }
-           CompleteScrape(rsp, state);
+        {
+            try
+            {
+                object state = ((UDPTrackerState)ar.AsyncState).state;
+                if (ar is FakeAsyncResult)
+                {
+                    FailureMessage = "Send 4 times scrape to tracker but timeout!";
+                    DoScrapeComplete(false, state);
+                    return;
+                }
+                UdpTrackerMessage rsp = Receive(ar);
+                if (rsp == null)
+                {
+                    DoScrapeComplete(false, state);
+                    return;
+                }
+                CompleteScrape(rsp, state);
+            }
+            catch
+            {
+                // Nothing to do i think
+            }
        }
               
        private void CompleteScrape(UdpTrackerMessage message, object state)
@@ -275,19 +317,19 @@ namespace MonoTorrent.Client.Tracker
            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(15), delegate
            {
                if (timeout == 0)//we receive data
-                   return true;
+                   return false;
 
                if (timeout <= 4)
                {
                    timeout++;
-                   SendRequest(message, callback, state);
+                    tracker.Send(message.Encode(), message.ByteLength);
                }
                else
                {
                    timeout = 0;
                    callback(new FakeAsyncResult(state));
                }
-               return false;
+               return true;
            });
        }
 
