@@ -322,7 +322,16 @@ namespace MonoTorrent.Client.Tracker
                if (timeout <= 4)
                {
                    timeout++;
-                    tracker.Send(message.Encode(), message.ByteLength);
+				   try
+				   {
+					   tracker.Send(message.Encode(), message.ByteLength);
+				   }
+				   catch
+				   {
+					   timeout = 0;
+					   callback(new FakeAsyncResult(state));
+					   return false;
+				   }
                }
                else
                {
