@@ -49,7 +49,7 @@
     <DocumentationFile>
     </DocumentationFile>
     <FileAlignment>4096</FileAlignment>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <RegisterForComInterop>False</RegisterForComInterop>
     <RemoveIntegerChecks>False</RemoveIntegerChecks>

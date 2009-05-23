@@ -222,6 +222,7 @@ FILES = \
 	MonoTorrent.Common/Check.cs \
 	MonoTorrent.Common/Enums.cs \
 	MonoTorrent.Common/Hashes.cs \
+	MonoTorrent.Common/HashAlgoFactory.cs \
 	MonoTorrent.Common/InfoHash.cs \
 	MonoTorrent.Common/MonoTorrentCollectionBase.cs \
 	MonoTorrent.Common/PeerID.cs \
