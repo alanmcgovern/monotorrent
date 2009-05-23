@@ -59,7 +59,6 @@ FILES = \
 	EventArgs/SendMessageEventArgs.cs \
 	EventArgs/TaskCompleteEventArgs.cs \
 	Listeners/DhtListener.cs \
-	Listeners/UdpListener.cs \
 	Message.cs \
 	MessageException.cs \
 	MessageFactory.cs \

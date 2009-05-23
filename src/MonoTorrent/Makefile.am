@@ -56,6 +56,7 @@ FILES = \
 	MonoTorrent.Client/ConnectionListeners/Listener.cs \
 	MonoTorrent.Client/ConnectionListeners/LocalPeerListener.cs \
 	MonoTorrent.Client/ConnectionListeners/PeerListener.cs \
+	MonoTorrent.Client/ConnectionListeners/UdpListener.cs \
 	MonoTorrent.Client/Encryption/EncryptionTypes.cs \
 	MonoTorrent.Client/EventArgs/AttemptConnectionEventArgs.cs \
 	MonoTorrent.Client/EventArgs/DhtPeersAdded.cs \
