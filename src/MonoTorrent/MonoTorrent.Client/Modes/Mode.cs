@@ -528,6 +528,7 @@ namespace MonoTorrent.Client
                     id.Encryptor = new PlainTextEncryption();
                     id.Decryptor = new PlainTextEncryption();
                     id.IsChoking = false;
+					id.AmInterested = !manager.Complete;
                     id.Connection = connection;
                     manager.Peers.ConnectedPeers.Add(id);
                     NetworkIO.ReceiveMessage(id);
