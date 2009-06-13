@@ -98,6 +98,7 @@ namespace MonoTorrent.Common
         uTorrent,
         UPnPNatBitTorrent,
         Vuze,
+		WebSeed,
         XanTorrent,
         XBTClient,
         ZipTorrent
@@ -160,6 +161,12 @@ namespace MonoTorrent.Common
             Match m;
 
             this.peerId = peerId;
+			if (peerId.StartsWith("-WebSeed-"))
+			{
+				this.shortId = "WebSeed";
+				this.client = Client.WebSeed;
+				return;
+			}
 
             #region Standard style peers
             if ((m = standard.Match(peerId)) !=null)
