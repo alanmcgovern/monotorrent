@@ -530,7 +530,9 @@ namespace MonoTorrent.Client
                     id.IsChoking = false;
 					id.AmInterested = !manager.Complete;
                     id.Connection = connection;
+					id.ClientApp = new Software(id.PeerID);
                     manager.Peers.ConnectedPeers.Add(id);
+					manager.RaisePeerConnected(new PeerConnectionEventArgs(manager, id, Direction.Outgoing));
                     NetworkIO.ReceiveMessage(id);
                 }
 
