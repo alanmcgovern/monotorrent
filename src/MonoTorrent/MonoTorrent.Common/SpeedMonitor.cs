@@ -13,7 +13,7 @@ namespace MonoTorrent.Common
         private int speedIndex;
         private int[] speeds;
         private int lastUpdated;
-        private int tempRecvCount;
+        private long tempRecvCount;
 
 
         public int Rate
@@ -46,6 +46,12 @@ namespace MonoTorrent.Common
             this.tempRecvCount += speed;
         }
 
+		public void AddDelta(long speed)
+		{
+			this.total += speed;
+			this.tempRecvCount += speed;
+		}
+
 
         public void Reset()
         {
@@ -62,7 +68,7 @@ namespace MonoTorrent.Common
         private void TimePeriodPassed()
         {
             int count = 0;
-            int total = 0;
+            long total = 0;
 
             // Find how many milliseconds have passed since the last update and the current tick count
             int difference = Environment.TickCount - this.lastUpdated;
@@ -93,7 +99,7 @@ namespace MonoTorrent.Common
             if (count == speeds.Length)
                 count--;
 
-            this.speed = (total / (speeds.Length - count));
+            this.speed = (int)(total / (speeds.Length - count));
             this.tempRecvCount = 0;
             this.lastUpdated = Environment.TickCount;
         }
