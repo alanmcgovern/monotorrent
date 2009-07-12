@@ -513,7 +513,7 @@ namespace MonoTorrent.Common
             while (totalLength > 0)
             {
                 int bytesToRead = (int)Math.Min(totalLength, PieceLength);
-                BufferedIO io = new BufferedIO(buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, bytesToRead, files, path);
+                BufferedIO io = new BufferedIO(null, buffer, (piecesBufferOffset / 20) * PieceLength, bytesToRead, bytesToRead, files, path);
                 totalLength -= writer.ReadChunk(io);
 
                 // If we are using the synchronous version, result is null

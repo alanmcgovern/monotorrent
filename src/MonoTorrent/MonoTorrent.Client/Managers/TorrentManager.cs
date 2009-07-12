@@ -48,7 +48,6 @@ namespace MonoTorrent.Client
 {
     public class TorrentManager : IDisposable, IEquatable<TorrentManager>
     {
-        private bool abortHashing;
         private ManualResetEvent hashingWaitHandle;
 
         #region Events
@@ -158,6 +157,11 @@ namespace MonoTorrent.Client
         {
             get { return this.hashChecked; }
             internal set { this.hashChecked = value; }
+        }
+
+        internal WaitHandle HashingHandle
+        {
+            get { return hashingWaitHandle; }
         }
 
         public int HashFails
@@ -504,8 +508,10 @@ namespace MonoTorrent.Client
                     throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", state));
 
                 CheckRegisteredAndDisposed();
+                hashingWaitHandle.Reset();
                 this.startTime = DateTime.Now;
                 UpdateState(TorrentState.Hashing);
+                Engine.Start();
                 ThreadPool.QueueUserWorkItem(delegate { PerformHashCheck(autoStart); }); 
             });
         }
@@ -628,63 +634,28 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops the TorrentManager
         /// </summary>
-        public WaitHandle Stop()
+        public void Stop()
         {
-            return (WaitHandle)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
-                CheckRegisteredAndDisposed();
+            if (this.state == TorrentState.Error)
+            {
+                UpdateState(TorrentState.Stopped);
+                error = null;
+                mode = new DownloadMode(this);
+                return;
+            }
+
+            if (mode is StoppingMode)
+                return;
+
+            ClientEngine.MainLoop.QueueWait(delegate {
+                if (state != TorrentState.Stopped) {
 #if !DISABLE_DHT
-                engine.DhtEngine.PeersFound -= DhtPeersFound;
+                    engine.DhtEngine.PeersFound -= DhtPeersFound;
 #endif
-                ManagerWaitHandle handle = new ManagerWaitHandle("Global");
-                try
-                {
-                    if (this.state == TorrentState.Stopped)
-                        return handle;
-
-                    if (this.state == TorrentState.Error)
-                    {
-                        UpdateState(TorrentState.Stopped);
-                        error = null;
-                        mode = new DownloadMode(this);
-                        return handle;
-                    }
-                    if (this.state == TorrentState.Hashing)
-                    {
-                        hashingWaitHandle = new ManualResetEvent(false);
-                        handle.AddHandle(hashingWaitHandle, "Hashing");
-                        abortHashing = true;
-                        UpdateState(TorrentState.Stopped);
-                        return handle;
-                    }
-
-                    UpdateState(TorrentState.Stopped);
-
-                    if (trackerManager.CurrentTracker != null)
-                        handle.AddHandle(this.trackerManager.Announce(TorrentEvent.Stopped), "Announcing");
-
-                    foreach (PeerId id in Peers.ConnectedPeers)
-                        if (id.Connection != null)
-                            id.Connection.Dispose();
-
-                    this.peers.ClearAll();
-
-                    handle.AddHandle(engine.DiskManager.CloseFileStreams(this, SavePath, Torrent.Files), "DiskManager");
-
-                    if (this.hashChecked)
-                        this.SaveFastResume();
-                    this.monitor.Reset();
-                    this.pieceManager.Reset();
-                    engine.ConnectionManager.CancelPendingConnects(this);
-                    if (this.engine.ConnectionManager.IsRegistered(this))
-                        this.engine.ConnectionManager.UnregisterManager(this);
-                    this.engine.Stop();
+                    mode = new StoppingMode(this);
+                    UpdateState(TorrentState.Stopping);
+                    mode.Tick(0);
                 }
-                finally
-                {
-
-                }
-
-                return handle; ;
             });
         }
 
@@ -831,21 +802,29 @@ namespace MonoTorrent.Client
                 // If they are initially closed, we need to close them again after we hashcheck
 
                 // We only need to hashcheck if at least one file already exists on the disk
-                filesExist = HasMetadata && Engine.DiskManager.CheckFilesExist(this);
+                ClientEngine.MainLoop.QueueWait(() => {
+                    if (state != TorrentState.Hashing || mode is ErrorMode)
+                        return;
+                    filesExist = HasMetadata && Engine.DiskManager.CheckFilesExist(this);
+                });
 
-                if (abortHashing || mode is ErrorMode)
+                if (state != TorrentState.Hashing || mode is ErrorMode)
                     return;
                 // A hashcheck should only be performed if some/all of the files exist on disk
                 if (filesExist)
                 {
                     for (int i = 0; i < this.torrent.Pieces.Count; i++)
                     {
-                        bitfield[i] = this.torrent.Pieces.IsValid(engine.DiskManager.GetHash(this, i), i);
-                        RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
+                        ClientEngine.MainLoop.QueueWait(() => {
+                            if (state != TorrentState.Hashing || mode is ErrorMode)
+                                return;
+                            bitfield[i] = this.torrent.Pieces.IsValid(engine.DiskManager.GetHash(this, i), i);
+                        });
 
-                        // This happens if the user cancels the hash by stopping the torrent.
-                        if (abortHashing || mode is ErrorMode)
+                        if (state != TorrentState.Hashing || mode is ErrorMode)
                             return;
+
+                        RaisePieceHashed(new PieceHashedEventArgs(this, i, bitfield[i]));
                     }
                 }
                 else if (HasMetadata)
@@ -864,15 +843,12 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                // Ensure file streams are all closed after hashing
-                if (filesExist)
-                    engine.DiskManager.CloseFileStreams (this, SavePath, Torrent.Files);
-
-                if (abortHashing)
-                {
-                    abortHashing = false;
+                ClientEngine.MainLoop.QueueWait (() => {
+                    // Ensure file streams are all closed after hashing
+                    if (engine != null && filesExist)
+                        engine.DiskManager.CloseFileStreams (this, SavePath, Torrent.Files);
                     this.hashingWaitHandle.Set();
-                }
+                });
             }
         }
 

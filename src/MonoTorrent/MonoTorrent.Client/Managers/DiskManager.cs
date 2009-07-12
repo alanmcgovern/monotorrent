@@ -102,8 +102,8 @@ namespace MonoTorrent.Client.Managers
                     }
                     catch (Exception ex)
                     {
-                        TorrentManager manager = write.Id.TorrentManager;
-                        SetError(manager, Reason.WriteFailure, ex);
+                        if (write.Manager != null)
+                            SetError(write.Manager, Reason.WriteFailure, ex);
                     }
                 }
 
@@ -119,8 +119,8 @@ namespace MonoTorrent.Client.Managers
                     }
                     catch (Exception ex)
                     {
-                        TorrentManager manager = read.Id.TorrentManager;
-                        SetError(manager, Reason.ReadFailure, ex);
+                        if(read.Manager != null)
+                            SetError(read.Manager, Reason.ReadFailure, ex);
                     }
                 }
             };
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client.Managers
         {
             string path = manager.SavePath;
             ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
-            BufferedIO io = new BufferedIO(b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
+            BufferedIO io = new BufferedIO(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
             IOLoop.QueueWait((MainLoopTask)delegate {
                 PerformRead(io);
             });
@@ -355,7 +355,7 @@ namespace MonoTorrent.Client.Managers
                 if ((i + bytesToRead) > fileSize)
                     bytesToRead = (int)(fileSize - i);
 
-                io = new BufferedIO(hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
+                io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
                 io.WaitHandle = new ManualResetEvent(false);
                 list.Add(io);
                 manager.Engine.DiskManager.QueueRead(io);

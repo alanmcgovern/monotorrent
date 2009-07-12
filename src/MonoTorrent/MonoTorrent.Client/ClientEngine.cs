@@ -379,17 +379,14 @@ namespace MonoTorrent.Client
             });
         }
 
-        public WaitHandle[] StopAll()
+        public void StopAll()
         {
             CheckDisposed();
-            List<WaitHandle> handles = new List<WaitHandle>();
 
             MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    handles.Add(torrents[i].Stop());
+                    torrents[i].Stop();
             });
-
-            return handles.ToArray();
         }
 
         public int TotalDownloadSpeed
@@ -454,16 +451,7 @@ namespace MonoTorrent.Client
             }
 
             for (int i = 0; i < this.torrents.Count; i++)
-            {
-                switch (this.torrents[i].State)
-                {
-                    case (TorrentState.Paused):
-                    case (TorrentState.Downloading):
-                    case (TorrentState.Seeding):
-                        this.torrents[i].Mode.Tick(tickCount);
-                        break;
-                }
-            }
+                this.torrents[i].Mode.Tick(tickCount);
 
             RaiseStatsUpdate(new StatsUpdateEventArgs());
         }

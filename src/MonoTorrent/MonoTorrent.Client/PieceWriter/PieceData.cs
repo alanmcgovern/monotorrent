@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class BufferedIO : ICloneable
+    public class BufferedIO
     {
         internal ArraySegment<byte> buffer;
         private int actualCount;
@@ -16,6 +16,7 @@ namespace MonoTorrent.Client
         private int pieceLength;
         private PeerId peerId;
         private TorrentFile[] files;
+        private TorrentManager manager;
         private ManualResetEvent waitHandle;
 
         public int ActualCount
@@ -65,21 +66,27 @@ namespace MonoTorrent.Client
             get { return files; }
         }
 
+        internal TorrentManager Manager
+        {
+            get { return this.manager; }
+        }
+
         public ManualResetEvent WaitHandle
         {
             get { return waitHandle; }
             set { waitHandle = value; }
         }
 
-        internal BufferedIO(ArraySegment<byte> buffer, long offset, int count, int pieceLength, TorrentFile[] files, string path)
+        internal BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, TorrentFile[] files, string path)
         {
+            this.manager = manager;
             this.path = path;
             this.files = files;
             this.pieceLength = pieceLength;
             Initialise(buffer, offset, count);
         }
 
-        public BufferedIO(ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files, string path)
+        public BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files, string path)
         {
             this.path = path;
             this.files = files;
@@ -97,11 +104,6 @@ namespace MonoTorrent.Client
         public override string ToString()
         {
             return string.Format("Piece: {0} Block: {1} Count: {2}", PieceIndex, BlockIndex, count);
-        }
-
-        object ICloneable.Clone()
-        {
-            return MemberwiseClone();
         }
     }
 }

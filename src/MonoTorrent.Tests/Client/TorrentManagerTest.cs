@@ -101,17 +101,19 @@ namespace MonoTorrent.Client
         [Test]
         public void StopTest()
         {
-            ManualResetEvent h = new ManualResetEvent(false);
+			AutoResetEvent h = new AutoResetEvent(false);
 
             rig.Manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
             {
-                if (e.OldState == TorrentState.Hashing)
+                if (e.OldState == TorrentState.Hashing || e.OldState == TorrentState.Stopped)
                     h.Set();
             };
 
             rig.Manager.Start();
             h.WaitOne();
-            Assert.IsTrue(rig.Manager.Stop().WaitOne(15000, false));
+			rig.Manager.Stop();
+			h.WaitOne();
+            Assert.IsTrue(h.WaitOne(15000, false));
         }
 
         [Test]
@@ -124,16 +126,17 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager(t, "", new TorrentSettings());
             rig.Engine.Register(manager);
 
-            ManualResetEvent handle = new ManualResetEvent(false);
+			AutoResetEvent handle = new AutoResetEvent(false);
             manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {
-                if (e.NewState == TorrentState.Downloading)
+                if (e.NewState == TorrentState.Downloading || e.NewState == TorrentState.Stopped)
                     handle.Set();
             };
             manager.Start();
             handle.WaitOne();
             System.Threading.Thread.Sleep(1000);
+			manager.Stop();
 
-            Assert.IsTrue(manager.Stop().WaitOne(10000, true), "#1");
+            Assert.IsTrue(handle.WaitOne(10000, true), "#1");
             Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
         }
 
@@ -166,7 +169,8 @@ namespace MonoTorrent.Client
             handle.WaitOne();
             Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
             Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
-            Assert.IsTrue(rig.Manager.Stop().WaitOne(100, true), "Didn't stop");
+			rig.Manager.Stop();
+            Assert.IsTrue(handle.WaitOne(100, true), "Didn't stop");
             Assert.AreEqual(TorrentState.Stopped, rig.Manager.State, "#5");
             Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }
