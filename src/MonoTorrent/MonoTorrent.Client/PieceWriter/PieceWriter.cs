@@ -10,7 +10,7 @@ namespace MonoTorrent.Client.PieceWriters
     {
         protected PieceWriter()
         {
-            //pressures = new List<Pressure>();
+            
         }
 
         public abstract bool Exists(string path, TorrentFile file);
