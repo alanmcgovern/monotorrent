@@ -345,11 +345,13 @@ namespace MonoTorrent.Client.Managers
 				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
 				io.WaitHandle = new ManualResetEvent(false);
 				list.Add(io);
-				manager.Engine.DiskManager.QueueRead(io, readCallback);
 
 				if (bytesToRead != Piece.BlockSize)
 					break;
 			}
+
+			for (int i=0; i < list.Count; i++)
+				manager.Engine.DiskManager.QueueRead(list[i], readCallback);
 		}
 
         internal byte[] GetHash(TorrentManager manager, int pieceIndex)
