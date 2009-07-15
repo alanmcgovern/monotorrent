@@ -136,7 +136,11 @@ namespace MonoTorrent.Client
         internal Mode Mode
         {
             get { return mode; }
-            set { mode = value; }
+            set {
+                mode = value;
+                if (value != null)
+                    mode.Tick(0);
+			}
         }
 
         public int PeerReviewRoundsComplete
