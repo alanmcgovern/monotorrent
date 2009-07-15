@@ -145,43 +145,17 @@ namespace MonoTorrent.Client.Managers
         {
             ManualResetEvent handle = new ManualResetEvent(false);
 
-            IOLoop.Queue(delegate
-            {
-                try
-                {
-                    // Dump all buffered reads for the manager we're closing the streams for
-                    List<BufferedIO> writes = new List<BufferedIO>();
-                    lock (bufferLock)
-                    {
-                        List<BufferedIO> list = new List<BufferedIO>(bufferedReads);
-                        list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                        bufferedReads = new Queue<BufferedIO>(list);
-
-                        list.Clear();
-                        list.AddRange(bufferedWrites);
-
-                        for (int i = 0; i < list.Count; i++)
-                            if (list[i].Files == files)
-                                writes.Add(list[i]);
-
-                        list.RemoveAll(delegate(BufferedIO io) { return io.Files == files; });
-                        bufferedWrites = new Queue<BufferedIO>(list);
-                    }
-
-                    // Process all remaining writes
-                    foreach (BufferedIO io in writes)
-                        if (io.Files == files)
-                            PerformWrite(io);
-                    writer.Close(path, files);
-                }
-                catch (Exception ex)
-                {
-                    SetError(manager, Reason.WriteFailure, ex);
-                }
-                finally
-                {
-                    handle.Set();
-                }
+            IOLoop.Queue(delegate {
+				// Process all pending reads/writes then close any open streams
+				try
+				{
+					LoopTask();
+					writer.Close(path, files);
+				}
+				finally
+				{
+					handle.Set();
+				}
             });
 
             return handle;
@@ -230,32 +204,8 @@ namespace MonoTorrent.Client.Managers
             if (data.WaitHandle != null)
                 data.WaitHandle.Set();
 
-            // If we haven't written all the pieces to disk, there's no point in hash checking
-            if (!piece.AllBlocksWritten)
-                return;
-
-            // Hashcheck the piece as we now have all the blocks.
-            byte[] hash = id.Engine.DiskManager.GetHash(id.TorrentManager, piece.Index);
-            bool result = id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
-            id.TorrentManager.Bitfield[data.PieceIndex] = result;
-
-            ClientEngine.MainLoop.Queue(delegate {
-                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
-
-                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-                List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
-                for (int i = 0; i < piece.Blocks.Length; i++)
-                    if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
-                        peers.Add(piece.Blocks[i].RequestedOff);
-
-                for (int i = 0; i < peers.Count; i++)
-                    if (peers[i].Connection != null)
-                        id.Peer.HashedPiece(result);
-
-                // If the piece was successfully hashed, enqueue a new "have" message to be sent out
-                if (result)
-                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
-            });
+            if (data.Callback != null)
+                data.Callback();
         }
 
         private void PerformRead(BufferedIO io)
@@ -265,6 +215,8 @@ namespace MonoTorrent.Client.Managers
 
             if (io.WaitHandle != null)
                 io.WaitHandle.Set();
+			if (io.Callback != null)
+				io.Callback();
         }
 
         internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
@@ -287,29 +239,41 @@ namespace MonoTorrent.Client.Managers
             });
         }
 
-        internal void QueueRead(BufferedIO io)
-        {
-            if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
-                PerformRead(io);
-            else
-                lock (bufferLock)
-                {
-                    bufferedReads.Enqueue(io);
-                    DiskManager.IOLoop.Queue(LoopTask);
-                }
-        }
+		//internal void QueueRead(BufferedIO io)
+		//{
+		//    QueueRead(io, null);
+		//}
 
-        internal void QueueWrite(BufferedIO io)
-        {
-            if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
-                PerformWrite(io);
-            else
-                lock (bufferLock)
-                {
-                    bufferedWrites.Enqueue(io);
-                    DiskManager.IOLoop.Queue(LoopTask);
-                }
-        }
+		internal void QueueRead(BufferedIO io, MainLoopTask callback)
+		{
+			io.Callback = callback;
+			if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+				PerformRead(io);
+			else
+				lock (bufferLock)
+				{
+					bufferedReads.Enqueue(io);
+					DiskManager.IOLoop.Queue(LoopTask);
+				}
+		}
+
+		//internal void QueueWrite(BufferedIO io)
+		//{
+		//    QueueWrite(io, null);
+		//}
+
+		internal void QueueWrite(BufferedIO io, MainLoopTask callback)
+		{
+			io.Callback = callback;
+			if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+				PerformWrite(io);
+			else
+				lock (bufferLock)
+				{
+					bufferedWrites.Enqueue(io);
+					DiskManager.IOLoop.Queue(LoopTask);
+				}
+		}
 
         internal bool CheckFilesExist(TorrentManager manager)
         {
@@ -336,48 +300,69 @@ namespace MonoTorrent.Client.Managers
             manager.Mode = new ErrorMode(manager);
             manager.UpdateState(TorrentState.Error);
         }
+		
+		internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
+		{
+			long fileSize = manager.Torrent.Size;
+			int pieceLength = manager.Torrent.PieceLength;
+			int bytesToRead = 0;
+			long pieceStartIndex = (long)pieceLength * pieceIndex;
+			BufferedIO io = null;
+			ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
+			List<BufferedIO> list = new List<BufferedIO>();
+
+			MainLoopTask readCallback = delegate {
+				for (int i = 0; i < list.Count; i++)
+				{
+					if (!list[i].WaitHandle.WaitOne(0, false))
+						return;
+				}
+				ClientEngine.MainLoop.Queue(delegate
+				{
+					using (SHA1 hasher = HashAlgoFactory.Create<SHA1>()) {
+						hasher.Initialize();
+						for (int i = 0; i < list.Count; i++)
+						{
+							list[i].WaitHandle.Close();
+							hashBuffer = list[i].buffer;
+							hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
+							ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
+						}
+						hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
+						callback(hasher.Hash);
+					}
+				});
+			};
+
+			for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += Piece.BlockSize)
+			{
+				hashBuffer = BufferManager.EmptyBuffer;
+				ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
+				bytesToRead = Piece.BlockSize;
+				if ((i + bytesToRead) > fileSize)
+					bytesToRead = (int)(fileSize - i);
+
+				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
+				io.WaitHandle = new ManualResetEvent(false);
+				list.Add(io);
+				manager.Engine.DiskManager.QueueRead(io, readCallback);
+
+				if (bytesToRead != Piece.BlockSize)
+					break;
+			}
+		}
 
         internal byte[] GetHash(TorrentManager manager, int pieceIndex)
         {
-            long fileSize = manager.Torrent.Size;
-            int pieceLength = manager.Torrent.PieceLength;
-            int bytesToRead = 0;
-            long pieceStartIndex = (long)pieceLength * pieceIndex;
-            BufferedIO io = null;
-            ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
-            List<BufferedIO> list = new List<BufferedIO>();
-
-            for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += Piece.BlockSize)
-            {
-                hashBuffer = BufferManager.EmptyBuffer;
-                ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
-                bytesToRead = Piece.BlockSize;
-                if ((i + bytesToRead) > fileSize)
-                    bytesToRead = (int)(fileSize - i);
-
-                io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
-                io.WaitHandle = new ManualResetEvent(false);
-                list.Add(io);
-                manager.Engine.DiskManager.QueueRead(io);
-
-                if (bytesToRead != Piece.BlockSize)
-                    break;
-            }
-
-            using (SHA1 hasher = HashAlgoFactory.Create<SHA1>())
-            {
-                hasher.Initialize();
-                for (int i = 0; i < list.Count; i++)
-                {
-                    list[i].WaitHandle.WaitOne();
-                    list[i].WaitHandle.Close();
-                    hashBuffer = list[i].buffer;
-                    hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
-                    ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
-                }
-                hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
-                return hasher.Hash;
-            }
+			byte[] hash = null;
+			using (ManualResetEvent handle = new ManualResetEvent(false)) {
+				BeginGetHash(manager, pieceIndex, delegate(object result) {
+					hash = (byte[])result;
+					handle.Set();
+				});
+				handle.WaitOne();
+			}
+			return hash;
         }
 
         #endregion

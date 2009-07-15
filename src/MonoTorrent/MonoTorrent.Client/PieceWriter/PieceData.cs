@@ -10,6 +10,7 @@ namespace MonoTorrent.Client
     {
         internal ArraySegment<byte> buffer;
         private int actualCount;
+		private MainLoopTask callback;
         private int count;
         private string path;
         private long offset;
@@ -32,6 +33,13 @@ namespace MonoTorrent.Client
         {
             get { return buffer; }
         }
+
+		internal MainLoopTask Callback
+		{
+			get { return callback; }
+			set { callback = value; }
+		}
+
         public int Count
         {
             get { return count; }

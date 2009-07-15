@@ -18,13 +18,8 @@ namespace MonoTorrent.Client
 			: base(manager)
 		{
 			ClientEngine engine = manager.Engine;
-
-			// If we're in the hashing state, it means the torrent manager has not contacted the server.
-			if (manager.State == TorrentState.Hashing)
-			{
-				handle.AddHandle(manager.HashingHandle, "Hashing");
-				return;
-			}
+			if (manager.Mode is HashingMode)
+				handle.AddHandle(((HashingMode)manager.Mode).hashingWaitHandle, "Hashing");
 
 			if (manager.TrackerManager.CurrentTracker != null)
 				handle.AddHandle(manager.TrackerManager.Announce(TorrentEvent.Stopped), "Announcing");
