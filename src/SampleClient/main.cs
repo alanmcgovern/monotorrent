@@ -268,11 +268,13 @@ namespace MonoTorrent
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
-                WaitHandle handle = torrents[i].Stop(); ;
-                while (!handle.WaitOne(10, true))
-                    Console.WriteLine(handle.ToString());
+                torrents[i].Stop(); ;
+                while (torrents[i].State != TorrentState.Stopped)
+                {
+                    Console.WriteLine("{0} is {1}", torrents[i].Torrent.Name, torrents[i].State);
+                    Thread.Sleep(250);
+                }
 
-                Console.WriteLine(handle.ToString());
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex (), torrents[i].SaveFastResume().Encode());
             }
 
