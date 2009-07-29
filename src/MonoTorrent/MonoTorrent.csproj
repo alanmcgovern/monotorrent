@@ -122,6 +122,7 @@
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\ScrapeDetails.cs" />
     <Compile Include="MonoTorrent.Client\Modes\DownloadMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\ErrorMode.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\HashingMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\InitialSeedingMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\MetadataMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\Mode.cs" />
