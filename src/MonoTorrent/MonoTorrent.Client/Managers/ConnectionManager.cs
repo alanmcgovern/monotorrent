@@ -687,9 +687,7 @@ namespace MonoTorrent.Client
                     // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer
                     // if they are not a seeder.
                     for (i = 0; i < manager.Peers.AvailablePeers.Count; i++)
-                        if (manager.State == TorrentState.Seeding && manager.Peers.AvailablePeers[i].IsSeeder)
-                            continue;
-                        else
+                        if (manager.Mode.ShouldConnect (manager.Peers.AvailablePeers[i]))
                             break;
 
                     // If this is true, there were no peers in the available list to connect to.

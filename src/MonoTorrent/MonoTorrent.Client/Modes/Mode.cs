@@ -117,6 +117,16 @@ namespace MonoTorrent.Client
             get { return true; }
         }
 
+        public bool ShouldConnect(PeerId peer)
+        {
+            return ShouldConnect(peer.Peer);
+        }
+
+		public virtual bool ShouldConnect(Peer peer)
+        {
+            return true;
+        }
+
         protected virtual void HandleGenericExtensionMessage(PeerId id, ExtensionMessage extensionMessage)
         {
             // Do nothing
