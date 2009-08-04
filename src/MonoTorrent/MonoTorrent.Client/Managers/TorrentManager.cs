@@ -574,8 +574,10 @@ namespace MonoTorrent.Client
 					Mode = new InitialSeedingMode(this);
                     UpdateState(TorrentState.Seeding);
                 }
-                else
+                else {
+                    Mode = new DownloadMode(this);
                     UpdateState(TorrentState.Downloading);
+                }
 
                 if (TrackerManager.CurrentTracker != null)
                 {
