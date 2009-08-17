@@ -201,9 +201,7 @@ namespace MonoTorrent.Client.Managers
 
             piece.Blocks[index].Written = true;
 
-            if (data.WaitHandle != null)
-                data.WaitHandle.Set();
-
+            data.Complete = true;
             if (data.Callback != null)
                 data.Callback();
         }
@@ -213,8 +211,7 @@ namespace MonoTorrent.Client.Managers
             io.ActualCount = writer.ReadChunk(io);
             readMonitor.AddDelta(io.ActualCount);
 
-            if (io.WaitHandle != null)
-                io.WaitHandle.Set();
+            io.Complete = true;
 			if (io.Callback != null)
 				io.Callback();
         }
@@ -247,7 +244,7 @@ namespace MonoTorrent.Client.Managers
 		internal void QueueRead(BufferedIO io, MainLoopTask callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+			if (Thread.CurrentThread == IOLoop.thread)
 				PerformRead(io);
 			else
 				lock (bufferLock)
@@ -265,7 +262,7 @@ namespace MonoTorrent.Client.Managers
 		internal void QueueWrite(BufferedIO io, MainLoopTask callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread && io.WaitHandle != null)
+			if (Thread.CurrentThread == IOLoop.thread)
 				PerformWrite(io);
 			else
 				lock (bufferLock)
@@ -314,7 +311,7 @@ namespace MonoTorrent.Client.Managers
 			MainLoopTask readCallback = delegate {
 				for (int i = 0; i < list.Count; i++)
 				{
-					if (!list[i].WaitHandle.WaitOne(0, false))
+					if (!list[i].Complete)
 						return;
 				}
 				ClientEngine.MainLoop.Queue(delegate
@@ -323,7 +320,6 @@ namespace MonoTorrent.Client.Managers
 						hasher.Initialize();
 						for (int i = 0; i < list.Count; i++)
 						{
-							list[i].WaitHandle.Close();
 							hashBuffer = list[i].buffer;
 							hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
 							ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
@@ -343,7 +339,6 @@ namespace MonoTorrent.Client.Managers
 					bytesToRead = (int)(fileSize - i);
 
 				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
-				io.WaitHandle = new ManualResetEvent(false);
 				list.Add(io);
 
 				if (bytesToRead != Piece.BlockSize)
@@ -353,19 +348,6 @@ namespace MonoTorrent.Client.Managers
 			for (int i=0; i < list.Count; i++)
 				manager.Engine.DiskManager.QueueRead(list[i], readCallback);
 		}
-
-        internal byte[] GetHash(TorrentManager manager, int pieceIndex)
-        {
-			byte[] hash = null;
-			using (ManualResetEvent handle = new ManualResetEvent(false)) {
-				BeginGetHash(manager, pieceIndex, delegate(object result) {
-					hash = (byte[])result;
-					handle.Set();
-				});
-				handle.WaitOne();
-			}
-			return hash;
-        }
 
         #endregion
 

@@ -18,7 +18,7 @@ namespace MonoTorrent.Client
         private PeerId peerId;
         private TorrentFile[] files;
         private TorrentManager manager;
-        private ManualResetEvent waitHandle;
+        private bool complete;
 
         public int ActualCount
         {
@@ -79,10 +79,10 @@ namespace MonoTorrent.Client
             get { return this.manager; }
         }
 
-        public ManualResetEvent WaitHandle
+        public bool Complete
         {
-            get { return waitHandle; }
-            set { waitHandle = value; }
+            get { return complete; }
+            set { complete = value; }
         }
 
         internal BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, TorrentFile[] files, string path)
