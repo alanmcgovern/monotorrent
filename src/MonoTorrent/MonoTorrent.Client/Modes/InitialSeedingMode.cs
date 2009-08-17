@@ -54,6 +54,10 @@ namespace MonoTorrent.Client
         //    if (ClientEngine.SupportsInitialSeed)
         //this.initialSeed = (settings.InitialSeedingEnabled ? (new InitialSeed(this)) : null);
 
+		public override TorrentState State
+		{
+			get { return TorrentState.Seeding; }
+		}
             
         public InitialSeedingMode(TorrentManager manager)
             : base(manager)

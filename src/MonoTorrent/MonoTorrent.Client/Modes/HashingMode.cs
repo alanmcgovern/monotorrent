@@ -19,6 +19,11 @@ namespace MonoTorrent.Client
 			get { return false; }
 		}
 
+		public override TorrentState State
+		{
+			get { return TorrentState.Hashing; }
+		}
+
 		public HashingMode(TorrentManager manager, bool autostart)
 			: base(manager)
 		{
@@ -78,7 +83,6 @@ namespace MonoTorrent.Client
 			}
 			else
 			{
-				Manager.UpdateState(TorrentState.Stopped);
 				Manager.Mode = new StoppedMode(Manager);
 			}
 		}

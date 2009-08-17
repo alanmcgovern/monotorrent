@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -36,6 +37,11 @@ namespace MonoTorrent.Client
         {
             get { return false; }
         }
+
+		public override TorrentState State
+		{
+			get { return TorrentState.Error; }
+		}
 
         public ErrorMode(TorrentManager manager)
             : base(manager)

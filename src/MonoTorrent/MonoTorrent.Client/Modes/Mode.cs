@@ -45,6 +45,11 @@ namespace MonoTorrent.Client
         int webseedCount;
         private TorrentManager manager;
 
+		public abstract TorrentState State
+		{
+			get;
+		}
+
         protected TorrentManager Manager
         {
             get { return manager; }
@@ -514,12 +519,6 @@ namespace MonoTorrent.Client
 
         void DownloadLogic(int counter)
         {
-            //If download is complete, set state to 'Seeding'
-            if (manager.Complete && manager.State != TorrentState.Seeding)
-            {
-                manager.UpdateState(TorrentState.Seeding);
-                manager.TrackerManager.Announce(TorrentEvent.Completed);
-            }
             // FIXME: Hardcoded 15kB/sec - is this ok?
             if ((DateTime.Now - manager.StartTime) > TimeSpan.FromMinutes(1) && manager.Monitor.DownloadSpeed < 15 * 1024)
             {
