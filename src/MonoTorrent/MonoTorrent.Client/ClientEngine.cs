@@ -53,6 +53,9 @@ namespace MonoTorrent.Client
         private static Random random = new Random();
         #region Global Constants
 
+        // To support this I need to ensure that the transition from
+        // InitialSeeding -> Regular seeding either closes all existing
+        // connections or sends HaveAll messages, or sends HaveMessages.
         public static readonly bool SupportsInitialSeed = false;
         public static readonly bool SupportsLocalPeerDiscovery = true;
         public static readonly bool SupportsWebSeed = true;
