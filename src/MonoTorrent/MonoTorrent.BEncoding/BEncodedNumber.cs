@@ -124,6 +124,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader">RawReader containing a BEncoded Number</param>
         internal override void DecodeInternal(RawReader reader)
         {
+            int sign = 1;
             if (reader == null)
                 throw new ArgumentNullException("reader");
 
@@ -131,6 +132,12 @@ namespace MonoTorrent.BEncoding
             {
                 if (reader.ReadByte() != 'i')              // remove the leading 'i'
                     throw new BEncodingException("Invalid data found. Aborting.");
+
+                if (reader.PeekChar() == '-')
+                {
+                    sign = -1;
+                    reader.ReadChar();
+                }
 
                 int letter;
                 while (((letter = reader.PeekChar()) != -1) && letter != 'e')
@@ -142,6 +149,8 @@ namespace MonoTorrent.BEncoding
                 }
                 if (reader.ReadByte() != 'e')        //remove the trailing 'e'
                     throw new BEncodingException("Invalid data found. Aborting.");
+
+                number *= sign;
             }
             catch (BEncodingException ex)
             {

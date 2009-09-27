@@ -208,6 +208,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void benNumberEncoding6 ()
+        {
+            BEncodedNumber a = -123;
+            BEncodedNumber b = BEncodedNumber.Decode<BEncodedNumber>(a.Encode());
+            Assert.AreEqual(a.Number, b.Number, "#1");
+        }
+
+        [Test]
         public void benNumberEncodingBuffered()
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes("i12345e");
