@@ -109,25 +109,14 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader"></param>
         internal override void DecodeInternal(RawReader reader)
         {
-            try
-            {
-                if (reader.ReadByte() != 'l')                            // Remove the leading 'l'
-                    throw new BEncodingException("Invalid data found. Aborting");
+            if (reader.ReadByte() != 'l')                            // Remove the leading 'l'
+                throw new BEncodingException("Invalid data found. Aborting");
 
-                while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
-                    list.Add(BEncodedValue.Decode(reader));
+            while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
+                list.Add(BEncodedValue.Decode(reader));
 
-                if (reader.ReadByte() != 'e')                            // Remove the trailing 'e'
-                    throw new BEncodingException("Invalid data found. Aborting");
-            }
-            catch (BEncodingException ex)
-            {
-                throw new BEncodingException("Couldn't decode list", ex);
-            }
-            catch
-            {
-                throw new BEncodingException("Couldn't decode list");
-            }
+            if (reader.ReadByte() != 'e')                            // Remove the trailing 'e'
+                throw new BEncodingException("Invalid data found. Aborting");
         }
         #endregion
 

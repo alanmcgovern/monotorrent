@@ -149,28 +149,18 @@ namespace MonoTorrent.BEncoding
             int letterCount;
             string length = string.Empty;
 
-            try
-            {
-                while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))         // read in how many characters
-                    length += (char)reader.ReadChar();                                 // the string is
+            while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))         // read in how many characters
+                length += (char)reader.ReadChar();                                 // the string is
 
-                if (reader.ReadChar() != ':')                                           // remove the ':'
-                    throw new BEncodingException("Invalid data found. Aborting");
+            if (reader.ReadChar() != ':')                                           // remove the ':'
+                throw new BEncodingException("Invalid data found. Aborting");
 
-                if (!int.TryParse(length, out letterCount))
-                    throw new BEncodingException(string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
+            if (!int.TryParse(length, out letterCount))
+                throw new BEncodingException(string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
 
-                this.textBytes = new byte[letterCount];
-                if (reader.Read(textBytes, 0, letterCount) != letterCount)
-                    throw new BEncodingException("Couldn't decode string");
-            }
-            catch (Exception ex)
-            {
-                if (ex is BEncodingException)
-                    throw;
-                else
-                    throw new BEncodingException("Couldn't decode string", ex);
-            }
+            this.textBytes = new byte[letterCount];
+            if (reader.Read(textBytes, 0, letterCount) != letterCount)
+                throw new BEncodingException("Couldn't decode string");
         }
         #endregion
 

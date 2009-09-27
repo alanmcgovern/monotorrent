@@ -128,38 +128,27 @@ namespace MonoTorrent.BEncoding
             if (reader == null)
                 throw new ArgumentNullException("reader");
 
-            try
-            {
-                if (reader.ReadByte() != 'i')              // remove the leading 'i'
-                    throw new BEncodingException("Invalid data found. Aborting.");
+            if (reader.ReadByte() != 'i')              // remove the leading 'i'
+                throw new BEncodingException("Invalid data found. Aborting.");
 
-                if (reader.PeekChar() == '-')
-                {
-                    sign = -1;
-                    reader.ReadChar();
-                }
-
-                int letter;
-                while (((letter = reader.PeekChar()) != -1) && letter != 'e')
-                {
-                    if(letter < '0' || letter > '9')
-                        throw new BEncodingException("Invalid number found.");
-                    number = number * 10 + (letter - '0');
-                    reader.ReadChar();
-                }
-                if (reader.ReadByte() != 'e')        //remove the trailing 'e'
-                    throw new BEncodingException("Invalid data found. Aborting.");
-
-                number *= sign;
-            }
-            catch (BEncodingException ex)
+            if (reader.PeekChar() == '-')
             {
-                throw new BEncodingException("Couldn't decode number", ex);
+                sign = -1;
+                reader.ReadChar();
             }
-            catch
+
+            int letter;
+            while (((letter = reader.PeekChar()) != -1) && letter != 'e')
             {
-                throw new BEncodingException("Couldn't decode number");
+                if(letter < '0' || letter > '9')
+                    throw new BEncodingException("Invalid number found.");
+                number = number * 10 + (letter - '0');
+                reader.ReadChar();
             }
+            if (reader.ReadByte() != 'e')        //remove the trailing 'e'
+                throw new BEncodingException("Invalid data found. Aborting.");
+
+            number *= sign;
         }
         #endregion
 
