@@ -65,6 +65,14 @@ namespace MonoTorrent.Client
 
         }
 
+        public override RequestMessage ContinueExistingRequest(PeerId peer)
+        {
+            RequestMessage m = base.ContinueExistingRequest(peer);
+            if (m != null)
+                HandleRequest(peer, m);
+            return m;
+        }
+
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             MessageBundle bundle = base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
@@ -72,36 +80,41 @@ namespace MonoTorrent.Client
             {
                 foreach (RequestMessage m in bundle.Messages)
                 {
-                    Request r = new Request();
-                    r.PieceIndex = m.PieceIndex;
-                    r.RequestedOff = id;
-                    r.RequestLength = m.RequestLength;
-                    r.StartOffset = m.StartOffset;
-                    List<Request> current = requests.FindAll(delegate(Request req) { return req.CompareTo(r) == 0; });
-                    if (current.Count > 0)
-                    {
-                        foreach (Request request in current)
-                        {
-                            if (request.Verified)
-                            {
-                                if (id.TorrentManager.Bitfield[request.PieceIndex])
-                                {
-                                    Console.WriteLine("Double request: {0}", m);
-                                    Console.WriteLine("From: {0} and {1}", id.PeerID, r.RequestedOff.PeerID);
-                                }
-                                else
-                                {
-                                    // The piece failed a hashcheck, so ignore it this time
-                                    requests.Remove(request);
-                                }
-                            }
-                        }
-                    }
-                    requests.Add(r);
+                    HandleRequest(id, m);
                 }
             }
 
             return bundle;
+        }
+
+        private void HandleRequest(PeerId id, RequestMessage m)
+        {
+            Request r = new Request();
+            r.PieceIndex = m.PieceIndex;
+            r.RequestedOff = id;
+            r.RequestLength = m.RequestLength;
+            r.StartOffset = m.StartOffset;
+            List<Request> current = requests.FindAll(delegate(Request req) { return req.CompareTo(r) == 0; });
+            if (current.Count > 0)
+            {
+                foreach (Request request in current)
+                {
+                    if (request.Verified)
+                    {
+                        if (id.TorrentManager.Bitfield[request.PieceIndex])
+                        {
+                            Console.WriteLine("Double request: {0}", m);
+                            Console.WriteLine("From: {0} and {1}", id.PeerID, r.RequestedOff.PeerID);
+                        }
+                        else
+                        {
+                            // The piece failed a hashcheck, so ignore it this time
+                            requests.Remove(request);
+                        }
+                    }
+                }
+            }
+            requests.Add(r);
         }
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
