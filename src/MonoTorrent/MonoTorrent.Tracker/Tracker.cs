@@ -334,9 +334,7 @@ namespace MonoTorrent.Tracker
             BEncodedDictionary files = new BEncodedDictionary();
             for (int i = 0; i < e.InfoHashes.Count; i++)
             {
-                // FIXME: Converting infohash
                 SimpleTorrentManager manager;
-                string key = Toolbox.ToHex(e.InfoHashes[i].Hash);
                 if (!torrents.TryGetValue(e.InfoHashes[i], out manager))
                     continue;
 
@@ -347,7 +345,7 @@ namespace MonoTorrent.Tracker
                 dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
                 dict.Add("incomplete", new BEncodedNumber(manager.Incomplete));
                 dict.Add("name", new BEncodedString(manager.Trackable.Name));
-                files.Add(key, dict);
+                files.Add(e.InfoHashes[i].ToHex (), dict);
             }
             RaisePeerScraped(new ScrapeEventArgs(managers));
             e.Response.Add("files", files);

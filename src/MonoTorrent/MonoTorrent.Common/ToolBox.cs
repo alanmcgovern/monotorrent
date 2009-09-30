@@ -107,25 +107,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Creates a hex string from the given byte[]
-        /// </summary>
-        /// <param name="infoHash">The byte[] to create the hex string from</param>
-        /// <returns></returns>
-        public static string ToHex(byte[] array)
-        {
-            StringBuilder sb = new StringBuilder(40);
-
-            for (int i=0; i < array.Length; i++)
-            {
-                string hex = array[i].ToString("X");
-                if (hex.Length != 2)
-                    sb.Append("0");
-                sb.Append(hex);
-            }
-            return sb.ToString();
-        }
-
-        /// <summary>
         /// Checks to see if the contents of two byte arrays are equal
         /// </summary>
         /// <param name="array1">The first array</param>

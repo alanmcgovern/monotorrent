@@ -52,7 +52,15 @@ namespace MonoTorrent
 
         public string ToHex()
         {
-            return Toolbox.ToHex(Hash);
+            StringBuilder sb = new StringBuilder(40);
+            for (int i = 0; i < hash.Length; i++)
+            {
+                string hex = hash[i].ToString("X");
+                if (hex.Length != 2)
+                    sb.Append("0");
+                sb.Append(hex);
+            }
+            return sb.ToString();
         }
 
         public override string ToString()
