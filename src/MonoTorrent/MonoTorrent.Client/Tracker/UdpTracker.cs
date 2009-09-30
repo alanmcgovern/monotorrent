@@ -42,7 +42,7 @@ namespace MonoTorrent.Client.Tracker
                {
                    Connect(new ConnectAnnounceState(parameters, state), new AsyncCallback(ConnectAnnounceCallback));
                }
-               catch (SocketException e)
+               catch (SocketException)
                {
                    DoAnnounceComplete(false, state, null);
                    return;
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client.Tracker
            {
                SendAndReceive(m, new AsyncCallback(AnnounceCallback), state);
            }
-           catch (SocketException e)
+           catch (SocketException)
            {
                DoAnnounceComplete(false, state, null);
            }
@@ -202,7 +202,7 @@ namespace MonoTorrent.Client.Tracker
                {
                     Connect(new ConnectScrapeState(parameters, state), new AsyncCallback(ConnectScrapeCallback));
                }
-               catch (SocketException e)
+               catch (SocketException)
                {
                    DoScrapeComplete(false, state);
                    return;
@@ -246,7 +246,7 @@ namespace MonoTorrent.Client.Tracker
            {
                SendAndReceive(m, new AsyncCallback(ScrapeCallback), state);
            }
-           catch (SocketException e)
+           catch (SocketException)
            {
                DoScrapeComplete(false, state);
            }
@@ -278,7 +278,6 @@ namespace MonoTorrent.Client.Tracker
               
        private void CompleteScrape(UdpTrackerMessage message, object state)
        {
-           ScrapeResponseEventArgs e = new ScrapeResponseEventArgs(this, state, false);
            ErrorMessage error = message as ErrorMessage;
            if (error != null)
            {

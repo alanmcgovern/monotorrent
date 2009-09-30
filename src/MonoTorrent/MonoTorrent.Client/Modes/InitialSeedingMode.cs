@@ -41,19 +41,8 @@ namespace MonoTorrent.Client
     class InitialSeedingMode : Mode
     {
         BitField zero;
-        InitialSeed initialSeed;	//superseed class manager
         InitialSeedUnchoker unchoker;
         
-        //return settings.InitialSeedingEnabled
-        //    && state == TorrentState.Seeding
-        //    && ClientEngine.SupportsInitialSeed;
-
-        //
-        //
-
-        //    if (ClientEngine.SupportsInitialSeed)
-        //this.initialSeed = (settings.InitialSeedingEnabled ? (new InitialSeed(this)) : null);
-
 		public override TorrentState State
 		{
 			get { return TorrentState.Seeding; }
@@ -62,7 +51,6 @@ namespace MonoTorrent.Client
         public InitialSeedingMode(TorrentManager manager)
             : base(manager)
         {
-            initialSeed = new InitialSeed(manager);
             unchoker = new InitialSeedUnchoker(manager);
             manager.chokeUnchoker = unchoker;
             zero = new BitField(manager.Bitfield.Length);

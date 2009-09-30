@@ -70,6 +70,8 @@ namespace MonoTorrent.Client
 			int indexOfFirstInterestingCandidate = -1;
 			int leastAttractiveCandidate = -1; // The least attractive peer that has sent us data
 			int longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
+			
+            // FIXME These three variables aren't used in the calculation - need to fix this.
 			int candidateSecondsConnected = 0;
 			int candidateSecondsSinceLastBlock = -1;
 			int candidateDataBytes = -1;

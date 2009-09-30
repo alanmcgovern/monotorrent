@@ -9,7 +9,6 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : PieceWriter
     {
-        private Dictionary<TorrentFile, string> paths;
         private FileStreamBuffer streamsBuffer;
 
         public int OpenFiles
@@ -25,7 +24,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         public DiskWriter(int maxOpenFiles)
         {
-            paths = new Dictionary<TorrentFile, string>();
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 

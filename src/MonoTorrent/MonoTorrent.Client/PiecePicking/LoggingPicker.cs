@@ -103,8 +103,8 @@ namespace MonoTorrent.Client
                     {
                         if (id.TorrentManager.Bitfield[request.PieceIndex])
                         {
-                            Console.WriteLine("Double request: {0}", m);
-                            Console.WriteLine("From: {0} and {1}", id.PeerID, r.RequestedOff.PeerID);
+                            Logger.Log (null, "Double request: {0}", m);
+                            Logger.Log (null, "From: {0} and {1}", id.PeerID, r.RequestedOff.PeerID);
                         }
                         else
                         {
@@ -130,15 +130,15 @@ namespace MonoTorrent.Client
 
             if (list.Count == 0)
             {
-                Console.WriteLine("Piece was not requested from anyone: {1}-{2}", peer.PeerID, pieceIndex, startOffset);
+                Logger.Log (null, "Piece was not requested from anyone: {1}-{2}", peer.PeerID, pieceIndex, startOffset);
             }
             else if (list.Count == 1)
             {
                 if (list[0].Verified)
                 {
                     if (validatedOk)
-                        Console.WriteLine("The piece should not have validated");
-                    Console.WriteLine("Piece already verified: Orig: {0} Current: {3} <> {1}-{2}",
+                        Logger.Log (null, "The piece should not have validated");
+                    Logger.Log (null, "Piece already verified: Orig: {0} Current: {3} <> {1}-{2}",
                                        list[0].RequestedOff.PeerID, pieceIndex, startOffset, peer.PeerID);
                 }
             }
@@ -148,8 +148,8 @@ namespace MonoTorrent.Client
                 if (alreadyVerified.Count > 0)
                 {
                     if (validatedOk)
-                        Console.WriteLine("The piece should not have validated 2");
-                    Console.WriteLine("Piece has already been verified {0} times", alreadyVerified.Count);
+                        Logger.Log (null, "The piece should not have validated 2");
+                    Logger.Log (null, "Piece has already been verified {0} times", alreadyVerified.Count);
                 }
             }
 
@@ -159,14 +159,14 @@ namespace MonoTorrent.Client
                     if (!request.Verified)
                     {
                         if (!validatedOk)
-                            Console.WriteLine("The piece should have validated");
+                            Logger.Log (null, "The piece should have validated");
                         request.Verified = true;
                     }
                     else
                     {
                         if (validatedOk)
-                            Console.WriteLine("The piece should not have validated 3");
-                        Console.WriteLine("This peer has already sent and verified this piece. {0} <> {1}-{2}", peer.PeerID, pieceIndex, startOffset);
+                            Logger.Log (null, "The piece should not have validated 3");
+                        Logger.Log (null, "This peer has already sent and verified this piece. {0} <> {1}-{2}", peer.PeerID, pieceIndex, startOffset);
                     }
             }
 

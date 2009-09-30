@@ -189,7 +189,6 @@ namespace MonoTorrent.Client.Managers
 
         private void PerformWrite(BufferedIO data)
         {
-            PeerId id = data.Id;
             Piece piece = data.Piece;
 
             // Find the block that this data belongs to and set it's state to "Written"

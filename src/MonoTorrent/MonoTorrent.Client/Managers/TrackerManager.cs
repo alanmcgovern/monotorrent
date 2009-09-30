@@ -199,7 +199,7 @@ namespace MonoTorrent.Client.Tracker
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
-            if (manager.Bitfield != null && manager.Torrent != null)
+            if (manager.HasMetadata)
                 bytesLeft = (long)((1 - this.manager.Bitfield.PercentComplete / 100.0) * this.manager.Torrent.Size);
             AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
                                                 this.manager.Monitor.DataBytesUploaded,

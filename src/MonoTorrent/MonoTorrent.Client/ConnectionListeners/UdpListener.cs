@@ -103,7 +103,7 @@ namespace MonoTorrent
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex);// FIXME: Shoulnd't need a try/catch
+                Logger.Log (null, "UdpListener could not send message: {0}", ex);
             }
         }
 

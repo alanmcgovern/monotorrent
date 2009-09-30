@@ -127,7 +127,6 @@ namespace MonoTorrent.Client
         {
             base.HandleLtMetadataMessage(id, message);
 
-            byte messageId = id.ExtensionSupports.MessageId(LTMetadata.Support);
             switch (message.MetadataMessageType)
             {
                 case LTMetadata.eMessageType.Data:

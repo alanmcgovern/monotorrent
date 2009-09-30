@@ -38,7 +38,6 @@ namespace MonoTorrent.Client
 {
     class ChokeData
     {
-        public int BlocksSent;
         public DateTime LastChoked;
         public PeerId Peer;
         public BitField CurrentPieces;
@@ -231,9 +230,6 @@ namespace MonoTorrent.Client
             // Already choked
             if (data.Peer.AmChoking)
                 return;
-
-            int uploadingTo = data.Peer.TorrentManager.UploadingTo;
-            int maxUploads = data.Peer.TorrentManager.Settings.UploadSlots;
 
             if (!data.Peer.IsInterested)
             {

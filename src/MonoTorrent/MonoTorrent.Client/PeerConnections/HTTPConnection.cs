@@ -247,7 +247,6 @@ namespace MonoTorrent.Client.Connections
 
         private List<PeerMessage> DecodeMessages(byte[] buffer, int offset, int count)
         {
-            byte[] data = buffer;
             int off = offset;
             int c = count;
 
@@ -258,7 +257,6 @@ namespace MonoTorrent.Client.Connections
                     Buffer.BlockCopy(buffer, offset, sendBuffer.Array, sendBuffer.Offset + sendBufferCount, count);
                     sendBufferCount += count;
 
-                    data = sendBuffer.Array;
                     off = sendBuffer.Offset;
                     c = sendBufferCount;
                 }

@@ -267,10 +267,7 @@ namespace MonoTorrent.Client
             {
                 EncryptorFactory.EndCheckEncryption(result, out initialData);
                 if (initialData != null && initialData.Length > 0)
-                {
-                    Console.WriteLine("What is this initial data?!");
                     throw new EncryptionException("unhandled initial data");
-                }
 
                 EncryptionTypes e = engine.Settings.AllowedEncryption;
                 if (id.Encryptor is RC4 && !Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||

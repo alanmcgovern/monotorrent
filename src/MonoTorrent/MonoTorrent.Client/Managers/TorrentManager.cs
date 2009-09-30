@@ -812,7 +812,7 @@ namespace MonoTorrent.Client
         public FastResume SaveFastResume()
         {
             CheckMetadata();
-            return new FastResume(this.torrent.infoHash, this.bitfield, new List<Peer>());
+            return new FastResume(this.torrent.infoHash, this.bitfield);
         }
 
         #endregion Private Methods

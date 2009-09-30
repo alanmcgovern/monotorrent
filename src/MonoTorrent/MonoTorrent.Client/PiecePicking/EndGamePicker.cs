@@ -41,16 +41,8 @@ namespace MonoTorrent.Client
     // From this list we will make requests for all the blocks until the piece is complete.
     public class EndGamePicker : PiecePicker
     {
-        static Predicate<Request> TimedOut = PTimedOut;
-        static Predicate<Request> NotRequested = PNotRequested;
-		static bool PTimedOut (Request r)
-		{
-			return r.Block.RequestTimedOut;
-		}
-		static bool PNotRequested (Request r)
-		{
-			return r.Block.RequestedOff == null;
-		}
+        static Predicate<Request> TimedOut = delegate (Request r) { return r.Block.RequestTimedOut; };
+        static Predicate<Request> NotRequested = delegate (Request r) { return r.Block.RequestedOff == null; };
 
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
@@ -81,7 +73,6 @@ namespace MonoTorrent.Client
         // Cancels a pending request when the predicate returns 'true'
         void CancelWhere(Predicate<Request> predicate, bool sendCancel)
         {
-            List<Request> removeList = new List<Request>();
             for (int i = 0; i < requests.Count; i++)
             {
                 Request r = requests[i];

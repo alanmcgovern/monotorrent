@@ -17,7 +17,6 @@ namespace MonoTorrent.Client
 
         private BitField bitfield;
         private InfoHash infoHash;
-        private List<Peer> peers;
 
         public BitField Bitfield
         {
@@ -33,18 +32,15 @@ namespace MonoTorrent.Client
         {
         }
 
-        public FastResume(InfoHash infoHash, BitField bitfield, List<Peer> peers)
+        public FastResume(InfoHash infoHash, BitField bitfield)
         {
             if (infoHash==null)
                 throw new ArgumentNullException("infoHash");
             if(bitfield == null)
                 throw new ArgumentNullException("bitfield");
-            if(peers == null)
-                throw new ArgumentNullException("peers");
 
             this.infoHash = infoHash;
             this.bitfield = bitfield;
-            this.peers = peers;
         }
 
         public FastResume(BEncodedDictionary dict)
