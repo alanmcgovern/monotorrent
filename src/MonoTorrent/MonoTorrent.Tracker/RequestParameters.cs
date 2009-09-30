@@ -10,7 +10,7 @@ namespace MonoTorrent.Tracker
     public abstract class RequestParameters : EventArgs
     {
         protected internal static readonly string FailureKey = "failure reason";
-        protected internal static readonly string WarningKey = "warning"; //FIXME: Check this, i know it's wrong!
+        protected internal static readonly string WarningKey = "warning message";
 
         private IPAddress remoteAddress;
         private NameValueCollection parameters;
