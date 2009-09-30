@@ -149,10 +149,6 @@ namespace MonoTorrent.Tracker.Listeners
             return curConnectionID;
         }
 
-        private long GetConnectionID()
-        {
-            return connectionIDs[endpoint.Address];
-        }
         //QUICKHACK: format bencoded val and get it back wereas must refactor tracker system to have more generic object...
         private void ReceiveAnnounce(AnnounceMessage announceMessage)
         {
@@ -231,7 +227,6 @@ namespace MonoTorrent.Tracker.Listeners
             else
             {
                 List<ScrapeDetails> scrapes = new List<ScrapeDetails>();
-                BEncodedDictionary files = (BEncodedDictionary)val["files"];
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val)
                 {
