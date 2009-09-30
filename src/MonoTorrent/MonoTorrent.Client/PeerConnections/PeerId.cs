@@ -527,6 +527,7 @@ namespace MonoTorrent.Client
 
             this.rateLimiter = new RateLimiter();
             this.uploadRateForRecip = MARKET_RATE;
+            this.lastRateReductionTime = DateTime.Now;
             this.lastMeasuredDownloadRate = 0;
 
             this.maxObservedDownloadSpeed = 0;
@@ -682,6 +683,7 @@ namespace MonoTorrent.Client
                     && (DateTime.Now - lastRateReductionTime).TotalSeconds > 30)           // only do rate reduction every 30s
             {
                 this.uploadRateForRecip = (this.uploadRateForRecip * 9) / 10;
+                lastRateReductionTime = DateTime.Now;
             }
         }
 
