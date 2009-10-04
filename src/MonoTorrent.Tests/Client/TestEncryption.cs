@@ -42,6 +42,7 @@ namespace MonoTorrent.Client
             conn.Incoming.Name = "Incoming";
             conn.Outgoing.Name = "Outgoing";
             rig.Engine.Settings.AllowedEncryption = EncryptionTypes.All;
+            rig.Manager.HashChecked = true;
         }
 
         [TearDown]
@@ -194,7 +195,9 @@ namespace MonoTorrent.Client
                 conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
             }
          
-            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+            int received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+            Assert.AreEqual (68, received, "Recived handshake");
+
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
             Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
