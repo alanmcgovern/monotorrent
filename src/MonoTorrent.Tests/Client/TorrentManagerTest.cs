@@ -162,21 +162,19 @@ namespace MonoTorrent.Client
         public void AnnounceWhenComplete()
         {
             AutoResetEvent handle = new AutoResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
-                if(e.NewState != TorrentState.Hashing)
-                    handle.Set();
+            rig.Manager.TrackerManager.CurrentTracker.AnnounceComplete += delegate {
+                handle.Set ();
             };
             rig.Manager.Start();
-            handle.WaitOne();
+            Assert.IsTrue (handle.WaitOne(5000, false), "Announce on startup");
             Assert.AreEqual(TorrentState.Downloading, rig.Manager.State, "#1");
             Assert.AreEqual(1, rig.Tracker.AnnouncedAt.Count, "#2");
             rig.Manager.Bitfield.SetAll(true);
-            handle.WaitOne();
+            Assert.IsTrue (handle.WaitOne (5000, false), "Announce when download completes");
             Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
             Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
 			rig.Manager.Stop();
-            Assert.IsTrue(handle.WaitOne(100, true), "Didn't stop");
-            Assert.AreEqual(TorrentState.Stopped, rig.Manager.State, "#5");
+            Assert.IsTrue (handle.WaitOne (5000, false), "Announce when torrent stops");
             Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }
     }

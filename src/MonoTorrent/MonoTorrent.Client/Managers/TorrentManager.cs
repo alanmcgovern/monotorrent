@@ -578,18 +578,18 @@ namespace MonoTorrent.Client
                 if (State == TorrentState.Seeding || State == TorrentState.Downloading)
                     return;
 
-                if (this.Complete && ClientEngine.SupportsInitialSeed) {
-					Mode = new InitialSeedingMode(this);
-                }
-                else {
-                    Mode = new DownloadMode(this);
-                }
-
                 if (TrackerManager.CurrentTracker != null)
                 {
                     if (this.trackerManager.CurrentTracker.CanScrape)
                         this.TrackerManager.Scrape();
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+                }
+
+                if (this.Complete && ClientEngine.SupportsInitialSeed) {
+					Mode = new InitialSeedingMode(this);
+                }
+                else {
+                    Mode = new DownloadMode(this);
                 }
                 engine.Broadcast(this);
 
