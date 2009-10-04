@@ -101,19 +101,24 @@ namespace MonoTorrent.Client
         [Test]
         public void StopTest()
         {
+            bool started = false;
 			AutoResetEvent h = new AutoResetEvent(false);
 
             rig.Manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
             {
-                if (e.OldState == TorrentState.Hashing || e.OldState == TorrentState.Stopped)
-                    h.Set();
+                if (!started) {
+                    if ((started = e.NewState == TorrentState.Hashing))
+                        h.Set();
+                } else {
+                    if (e.NewState == TorrentState.Stopped)
+                        h.Set();
+                }
             };
 
             rig.Manager.Start();
-            h.WaitOne();
+            Assert.IsTrue (h.WaitOne(5000, true), "Started");
 			rig.Manager.Stop();
-			h.WaitOne();
-            Assert.IsTrue(h.WaitOne(15000, false));
+			Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
         }
 
         [Test]
