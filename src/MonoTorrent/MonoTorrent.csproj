@@ -97,7 +97,6 @@
     <Compile Include="MonoTorrent.Client\EventArgs\PeerEventArgs.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\PeerExchangePeersAdded.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\TrackerPeersAdded.cs" />
-    <Compile Include="MonoTorrent.Client\InitialSeed\InitialSeed.cs" />
     <Compile Include="MonoTorrent.BEncoding\BEncodedDictionary.cs" />
     <Compile Include="MonoTorrent.BEncoding\BEncodedList.cs" />
     <Compile Include="MonoTorrent.BEncoding\BEncodedNumber.cs" />
@@ -270,6 +269,7 @@
     <Compile Include="MonoTorrent.Common\TorrentCreatorAsyncResult.cs" />
     <Compile Include="MonoTorrent.Common\TorrentException.cs" />
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
+    <Compile Include="MonoTorrent.Common\UriQueryBuilder.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />
     <Compile Include="MonoTorrent.Tracker\EventArgs\AnnounceEventArgs.cs" />

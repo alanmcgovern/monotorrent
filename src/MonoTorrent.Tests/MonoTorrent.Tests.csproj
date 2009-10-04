@@ -86,6 +86,7 @@
     <Compile Include="Common\SHA1Fake.cs" />
     <Compile Include="Common\TorrentCreatorTests.cs" />
     <Compile Include="Common\TorrentTest.cs" />
+    <Compile Include="Common\UriQueryBuilderTests.cs" />
     <Compile Include="Dht\AssemblyInfo.cs" />
     <Compile Include="Dht\MessageHandlingTests.cs" />
     <Compile Include="Dht\MessageTests.cs" />
