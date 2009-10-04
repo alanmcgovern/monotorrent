@@ -68,6 +68,11 @@ namespace MonoTorrent
             DoCheck(infoHash, "infoHash");
         }
 
+        public static void Key (string key)
+        {
+            DoCheck (key, "key");
+        }
+
         public static void Limiter(object limiter)
         {
             DoCheck(limiter, "limiter");

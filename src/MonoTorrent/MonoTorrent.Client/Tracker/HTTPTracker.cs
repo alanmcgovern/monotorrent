@@ -83,7 +83,7 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                string announceString = CreateAnnounceString(parameters);
+                Uri announceString = CreateAnnounceString(parameters);
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
                 request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
                 RaiseBeforeAnnounce();
@@ -138,43 +138,26 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        string CreateAnnounceString(AnnounceParameters parameters)
+        Uri CreateAnnounceString (AnnounceParameters parameters)
         {
-            StringBuilder sb = new StringBuilder(256);
+            UriQueryBuilder b = new UriQueryBuilder (Uri);
+            b.Add ("info_hash", parameters.InfoHash.UrlEncode ())
+             .Add ("peer_id", parameters.PeerId)
+             .Add ("port", parameters.Port)
+             .Add ("uploaded", parameters.BytesUploaded)
+             .Add ("downloaded", parameters.BytesDownloaded)
+             .Add ("left", parameters.BytesLeft)
+             .Add ("compact", 1)
+             .Add ("numwant", 100);
 
-            //base.LastUpdated = DateTime.Now;
-            // FIXME: This method should be tidied up. I don't like the way it current works
-            sb.Append(Uri);
-            sb.Append(Uri.OriginalString.Contains("?") ? '&' : '?');
-            sb.Append("info_hash=");
-            sb.Append(parameters.InfoHash.UrlEncode ());
-            sb.Append("&peer_id=");
-            sb.Append(parameters.PeerId);
-            sb.Append("&port=");
-            sb.Append(parameters.Port);
             if (parameters.SupportsEncryption)
-                sb.Append("&supportcrypto=1");
+                b.Add ("supportcrypto", 1);
             if (parameters.RequireEncryption)
-                sb.Append("&requirecrypto=1");
-            sb.Append("&uploaded=");
-            sb.Append(parameters.BytesUploaded);
-            sb.Append("&downloaded=");
-            sb.Append(parameters.BytesDownloaded);
-            sb.Append("&left=");
-            sb.Append(parameters.BytesLeft);
-            sb.Append("&compact=1");    // Always use compact response
-            sb.Append("&numwant=");
-            sb.Append(100);
-            if (!Uri.Query.Contains("&key=") && !Uri.Query.Contains("?key="))
-            {
-                sb.Append("&key=");  // The 'key' protocol, used as a kind of 'password'. Must be the same between announces
-                sb.Append(Key);
-            }
-            if (parameters.Ipaddress != null)
-            {
-                sb.Append("&ip=");
-                sb.Append(parameters.Ipaddress);
-            }
+                b.Add ("requirecrypto", 1);
+            if (!b.Contains ("key"))
+                b.Add ("key", Key);
+            if (!string.IsNullOrEmpty (parameters.Ipaddress))
+                b.Add ("ip", parameters.Ipaddress);
 
             // If we have not successfully sent the started event to this tier, override the passed in started event
             // Otherwise append the event if it is not "none"
@@ -184,18 +167,12 @@ namespace MonoTorrent.Client.Tracker
             //    parameters.Id.Tracker.Tier.SendingStartedEvent = true;
             //}
             if (parameters.ClientEvent != TorrentEvent.None)
-            {
-                sb.Append("&event=");
-                sb.Append(parameters.ClientEvent.ToString().ToLower());
-            }
+                b.Add ("event", parameters.ClientEvent.ToString ().ToLower ());
 
-            if (!string.IsNullOrEmpty(TrackerId))
-            {
-                sb.Append("&trackerid=");
-                sb.Append(TrackerId);
-            }
+            if (!string.IsNullOrEmpty (TrackerId))
+                b.Add ("trackerid", TrackerId);
 
-            return sb.ToString();
+            return b.ToUri ();
         }
 
         BEncodedDictionary DecodeResponse(WebRequest request, IAsyncResult result)
