@@ -179,6 +179,11 @@ namespace MonoTorrent.BEncoding
             this.list.Add(item);
         }
 
+        public void AddRange (IEnumerable<BEncodedValue> collection)
+        {
+            list.AddRange (collection);
+        }
+
         public void Clear()
         {
             this.list.Clear();
