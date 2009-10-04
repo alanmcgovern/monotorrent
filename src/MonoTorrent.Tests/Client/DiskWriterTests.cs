@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
             writer.write = true;
 
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[Piece.BlockSize]);
-			BufferedIO io = new BufferedIO(null, buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files, "Path");
+			BufferedIO io = new BufferedIO(rig.Manager, buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files, "Path");
             io.Id = new PeerId(new Peer("", new Uri("tcp://123.123.123")), rig.Manager);
             rig.Engine.DiskManager.QueueWrite(io, null);
 
