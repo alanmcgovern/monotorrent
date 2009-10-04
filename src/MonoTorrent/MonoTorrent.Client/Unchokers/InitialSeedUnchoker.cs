@@ -266,12 +266,10 @@ namespace MonoTorrent.Client
 
         public override void UnchokeReview()
         {
-            // FIXME: Remove the need to dupe the list
             List<ChokeData> dupePieces = new List<ChokeData>(peers);
             foreach (ChokeData data in dupePieces)
                 TryChoke(data);
 
-            // FIXME: Remove the need to dupe the list
             List<ChokeData> dupe = new List<ChokeData>(peers);
 
             // See if there's anyone interesting to unchoke
