@@ -65,11 +65,6 @@ namespace MonoTorrent.Client
 
         }
 
-        int FileComparer(TorrentFile left, TorrentFile right)
-        {
-            return left.Priority.CompareTo(right.Priority);
-        }
-
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer

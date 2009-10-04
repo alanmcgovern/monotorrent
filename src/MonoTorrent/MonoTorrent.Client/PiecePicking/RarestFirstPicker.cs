@@ -37,7 +37,6 @@ namespace MonoTorrent.Client
 {
     public class RarestFirstPicker : PiecePicker
     {
-        TorrentFile[] files;
         Stack<BitField> rarest;
         Stack<BitField> spares;
         int length;
@@ -57,7 +56,6 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, files, requests);
-            this.files = files;
             this.length = bitfield.Length;
         }
 
