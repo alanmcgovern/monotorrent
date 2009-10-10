@@ -50,6 +50,15 @@ namespace MonoTorrent.Common {
             return dictionary.ContainsKey (key) ? dictionary [key] : null;
         }
 
+        public static IEnumerable<FileMapping> GetFileMappings (string path)
+        {
+            return GetAllMappings (path, true);
+        }
+        public static IEnumerable<FileMapping> GetFileMappings (string path, bool ignoreHiddenFiles)
+        {
+            return GetAllMappings (path, ignoreHiddenFiles);
+        }
+
         public static int RecommendedPieceSize (long totalSize)
         {
             // Check all piece sizes that are multiples of 32kB and
@@ -356,7 +365,7 @@ namespace MonoTorrent.Common {
             Check.Path (path);
             path = Path.GetFullPath (path);
 
-            List<FileMapping> mappings = GetAllMappings (path);
+            List<FileMapping> mappings = GetAllMappings (path, IgnoreHiddenFiles);
             string name = mappings.Count == 1 ? Path.GetFileName (mappings [0].Destination) : new DirectoryInfo (path).Name;
             return Create (name, mappings);
         }
@@ -464,7 +473,7 @@ namespace MonoTorrent.Common {
             return data != null;
         }
 
-        List<FileMapping> GetAllMappings (string path)
+        static List<FileMapping> GetAllMappings (string path, bool ignoreHiddenFiles)
         {
             if (File.Exists (path)) {
                 List<FileMapping> mappings = new List<FileMapping> ();
