@@ -141,7 +141,7 @@ namespace MonoTorrent.Client.Managers
 
         #region Methods
 
-        internal WaitHandle CloseFileStreams(TorrentManager manager, string path, TorrentFile[] files)
+        internal WaitHandle CloseFileStreams(TorrentManager manager, TorrentFile[] files)
         {
             ManualResetEvent handle = new ManualResetEvent(false);
 
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client.Managers
 				try
 				{
 					LoopTask();
-					writer.Close(path, files);
+					writer.Close(files);
 				}
                 catch (Exception ex)
                 {
@@ -179,7 +179,7 @@ namespace MonoTorrent.Client.Managers
         {
             IOLoop.QueueWait(delegate {
                 foreach (TorrentManager manager in engine.Torrents)
-                    writer.Flush(manager.SavePath, manager.Torrent.Files);
+                    writer.Flush(manager.Torrent.Files);
             });
         }
 
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client.Managers
         {
             Check.Manager(manager);
             IOLoop.QueueWait(delegate {
-                writer.Flush(manager.SavePath, manager.Torrent.Files);
+                writer.Flush(manager.Torrent.Files);
             });
         }
 
@@ -223,7 +223,7 @@ namespace MonoTorrent.Client.Managers
         {
             string path = manager.SavePath;
             ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
-            BufferedIO io = new BufferedIO(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, path);
+            BufferedIO io = new BufferedIO(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
             IOLoop.QueueWait((MainLoopTask)delegate {
                 PerformRead(io);
             });
@@ -235,7 +235,7 @@ namespace MonoTorrent.Client.Managers
             IOLoop.Queue(delegate {
                 foreach (TorrentFile file in manager.Torrent.Files)
                     if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
-                        writer.Flush(manager.SavePath, file);
+                        writer.Flush(file);
             });
         }
 
@@ -281,7 +281,7 @@ namespace MonoTorrent.Client.Managers
             IOLoop.QueueWait(delegate {
                 try
                 {
-                    result = writer.Exists(manager.SavePath, manager.Torrent.Files);
+                    result = writer.Exists(manager.Torrent.Files);
                 }
                 catch (Exception ex)
                 {
@@ -342,7 +342,7 @@ namespace MonoTorrent.Client.Managers
 				if ((i + bytesToRead) > fileSize)
 					bytesToRead = (int)(fileSize - i);
 
-				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files, manager.SavePath);
+				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
 				list.Add(io);
 
 				if (bytesToRead != Piece.BlockSize)
@@ -355,10 +355,10 @@ namespace MonoTorrent.Client.Managers
 
         #endregion
 
-        internal void MoveFiles(TorrentManager torrentManager, string oldPath, string newPath, bool overWriteExisting)
+        internal void MoveFiles(TorrentManager torrentManager, string newRoot, bool overWriteExisting)
         {
             IOLoop.QueueWait(delegate {
-                    writer.Move(oldPath, newPath, torrentManager.Torrent.Files, overWriteExisting);
+                writer.Move (newRoot, torrentManager.Torrent.Files, overWriteExisting);
             });
         }
     }

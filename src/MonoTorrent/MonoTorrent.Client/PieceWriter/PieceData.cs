@@ -12,11 +12,10 @@ namespace MonoTorrent.Client
         private int actualCount;
 		private MainLoopTask callback;
         private int count;
-        private string path;
         private long offset;
         private int pieceLength;
         private PeerId peerId;
-        private TorrentFile[] files;
+        private IList<TorrentFile> files;
         private TorrentManager manager;
         private bool complete;
 
@@ -50,11 +49,6 @@ namespace MonoTorrent.Client
             get { return peerId; }
             set { peerId = value; }
         }
-        public string Path
-        {
-            get { return path; }
-            set { path = value; }
-        }
         public int PieceIndex
         {
             get { return (int)(offset / pieceLength); }
@@ -69,7 +63,7 @@ namespace MonoTorrent.Client
             get { return offset; }
             set { offset = value; }
         }
-        public TorrentFile[] Files
+        public IList<TorrentFile> Files
         {
             get { return files; }
         }
@@ -85,18 +79,16 @@ namespace MonoTorrent.Client
             set { complete = value; }
         }
 
-        internal BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, TorrentFile[] files, string path)
+        internal BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, IList<TorrentFile> files)
         {
             this.manager = manager;
-            this.path = path;
             this.files = files;
             this.pieceLength = pieceLength;
             Initialise(buffer, offset, count);
         }
 
-        public BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files, string path)
+        public BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files)
         {
-            this.path = path;
             this.files = files;
             this.pieceLength = pieceLength;
             Initialise(buffer, (long)pieceIndex * pieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count);

@@ -41,6 +41,7 @@ namespace MonoTorrent.Common
 
         static HashAlgoFactory()
         {
+            Register<MD5, MD5CryptoServiceProvider>();
             Register<SHA1, SHA1CryptoServiceProvider>();
         }
 

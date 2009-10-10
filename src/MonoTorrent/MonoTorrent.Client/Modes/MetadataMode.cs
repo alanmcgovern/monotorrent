@@ -192,6 +192,8 @@ namespace MonoTorrent.Client
                 peer.CloseConnection();
             Manager.Bitfield = new BitField(torrent.Pieces.Count);
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
+            foreach (TorrentFile file in torrent.Files)
+                file.FullPath = Path.Combine (Manager.SavePath, file.Path);
             Manager.Mode = new DownloadMode(Manager);
         }
 

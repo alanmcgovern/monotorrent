@@ -53,6 +53,11 @@ namespace MonoTorrent
             DoCheck(data, "data");
         }
 
+        public static void Destination (object destination)
+        {
+            DoCheck (destination, "destination");
+        }
+
         public static void Endpoint(object endpoint)
         {
             DoCheck(endpoint, "endpoint");
@@ -68,7 +73,7 @@ namespace MonoTorrent
             DoCheck(infoHash, "infoHash");
         }
 
-        public static void Key (string key)
+        public static void Key (object key)
         {
             DoCheck (key, "key");
         }
@@ -88,7 +93,7 @@ namespace MonoTorrent
             DoCheck(location, "location");
         }
 
-        public static void MagnetLink(string magnetLink)
+        public static void MagnetLink(object magnetLink)
         {
             DoCheck(magnetLink, "magnetLink");
         }
@@ -98,14 +103,29 @@ namespace MonoTorrent
             DoCheck(manager, "manager");
         }
 
+        public static void Mappings (object mappings)
+        {
+            DoCheck (mappings, "mappings");
+        }
+
         public static void Metadata(object metadata)
         {
             DoCheck(metadata, "metadata");
         }
 
+        public static void Name (object name)
+        {
+            DoCheck (name, "name");
+        }
+
         public static void Path(object path)
         {
             DoCheck(path, "path");
+        }
+
+        public static void Paths (object paths)
+        {
+            DoCheck (paths, "paths");
         }
 
         public static void PathNotEmpty(string path)

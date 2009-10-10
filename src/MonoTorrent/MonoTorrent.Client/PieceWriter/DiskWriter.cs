@@ -27,9 +27,9 @@ namespace MonoTorrent.Client.PieceWriters
             this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
-        public override void Close(string path, TorrentFile file)
+        public override void Close(TorrentFile file)
         {
-            streamsBuffer.CloseStream(GenerateFilePath(path, file));
+            streamsBuffer.CloseStream(file.FullPath);
         }
 
         public override void Dispose()
@@ -38,31 +38,17 @@ namespace MonoTorrent.Client.PieceWriters
             base.Dispose();
         }
 
-        protected virtual string GenerateFilePath(string path, TorrentFile file)
+        internal TorrentFileStream GetStream(TorrentFile file, FileAccess access)
         {
-            path = Path.Combine(path, file.Path);
-            string directory = Path.GetDirectoryName(path);
-
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-            
-            return path;
+            return streamsBuffer.GetStream(file, access);
         }
 
-        internal TorrentFileStream GetStream(string path, TorrentFile file, FileAccess access)
+        public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
-            path = GenerateFilePath(path, file);
-            return streamsBuffer.GetStream(file, path, access);
-        }
-
-        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
-        {
-            string oldFile = GenerateFilePath(oldPath, file);
-            string newFile = GenerateFilePath (newPath, file);
-            streamsBuffer.CloseStream(oldFile);
+            streamsBuffer.CloseStream(oldPath);
             if (ignoreExisting)
-                File.Delete(newFile);
-            File.Move(oldFile, newFile);
+                File.Delete(newPath);
+            File.Move(oldPath, newPath);
         }
 
         public override int Read(BufferedIO data)
@@ -72,7 +58,7 @@ namespace MonoTorrent.Client.PieceWriters
             
             long offset = data.Offset;
             int count = data.Count;
-            TorrentFile[] files = data.Files;
+            IList<TorrentFile> files = data.Files;
             long fileSize = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
             if (offset < 0 || offset + count > fileSize)
                 throw new ArgumentOutOfRangeException("offset");
@@ -81,7 +67,7 @@ namespace MonoTorrent.Client.PieceWriters
             int bytesRead = 0;
             int totalRead = 0;
 
-            for (i = 0; i < files.Length; i++)          // This section loops through all the available
+            for (i = 0; i < files.Count; i++)          // This section loops through all the available
             {                                                   // files until we find the file which contains
                 if (offset < files[i].Length)           // the start of the data we want to read
                     break;
@@ -91,10 +77,10 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
             {
-                if (i == files.Length)
+                if (i == files.Count)
                     break;
 
-                TorrentFileStream s = GetStream(data.Path, files[i], FileAccess.Read);
+                TorrentFileStream s = GetStream(files[i], FileAccess.Read);
                 s.Seek(offset, SeekOrigin.Begin);
                 offset = 0; // Any further files need to be read from the beginning
                 bytesRead = s.Read(data.buffer.Array, data.buffer.Offset + totalRead, count - totalRead);
@@ -116,7 +102,7 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentNullException("buffer");
 
             long fileSize = 0;
-            for (int j = 0; j < data.Files.Length; j++)
+            for (int j = 0; j < data.Files.Count; j++)
                 fileSize += data.Files[j].Length;
 
             if (offset < 0 || offset + count > fileSize)
@@ -127,7 +113,7 @@ namespace MonoTorrent.Client.PieceWriters
             long totalWritten = 0;
             long bytesWeCanWrite = 0;
 
-            for (i = 0; i < data.Files.Length; i++)          // This section loops through all the available
+            for (i = 0; i < data.Files.Count; i++)          // This section loops through all the available
             {                                                   // files until we find the file which contains
                 if (offset < data.Files[i].Length)           // the start of the data we want to write
                     break;
@@ -137,7 +123,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
             {
-                TorrentFileStream stream = GetStream(data.Path, data.Files[i], FileAccess.ReadWrite);
+                TorrentFileStream stream = GetStream(data.Files[i], FileAccess.ReadWrite);
                 stream.Seek(offset, SeekOrigin.Begin);
 
                 // Find the maximum number of bytes we can write before we reach the end of the file
@@ -161,14 +147,14 @@ namespace MonoTorrent.Client.PieceWriters
             //monitor.BytesReceived((int)totalWritten, TransferType.Data);
         }
 
-        public override bool Exists(string path, TorrentFile file)
+        public override bool Exists(TorrentFile file)
         {
-            return File.Exists(GenerateFilePath(path, file));
+            return File.Exists(file.FullPath);
         }
 
-        public override void Flush(string path, TorrentFile file)
+        public override void Flush(TorrentFile file)
         {
-            Stream s = streamsBuffer.FindStream(GenerateFilePath(path, file));
+            Stream s = streamsBuffer.FindStream(file.FullPath);
             if (s != null)
                 s.Flush();
         }

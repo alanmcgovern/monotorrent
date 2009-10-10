@@ -63,21 +63,21 @@ namespace SampleClient
         {
         }
 
-        public override void Close(string path, TorrentFile file)
+        public override void Close(TorrentFile file)
         {
 
         }
 
-        public override void Flush(string path, TorrentFile file)
+        public override void Flush (TorrentFile file)
         {
         }
 
-        public override bool Exists(string path, TorrentFile file)
+        public override bool Exists(TorrentFile file)
         {
             return false;
         }
 
-        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
             
         }

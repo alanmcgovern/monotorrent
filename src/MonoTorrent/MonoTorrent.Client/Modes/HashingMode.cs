@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
 			}
 
 			if (Manager.Engine != null && filesExist)
-				Manager.Engine.DiskManager.CloseFileStreams(Manager, Manager.SavePath, Manager.Torrent.Files);
+				Manager.Engine.DiskManager.CloseFileStreams(Manager, Manager.Torrent.Files);
 
 			hashingWaitHandle.Set();
 

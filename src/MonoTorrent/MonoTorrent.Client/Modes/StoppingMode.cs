@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
 
 			manager.Peers.ClearAll();
 
-			handle.AddHandle(engine.DiskManager.CloseFileStreams(manager, manager.SavePath, manager.Torrent.Files), "DiskManager");
+			handle.AddHandle(engine.DiskManager.CloseFileStreams(manager, manager.Torrent.Files), "DiskManager");
 
 			manager.Monitor.Reset();
 			manager.PieceManager.Reset();

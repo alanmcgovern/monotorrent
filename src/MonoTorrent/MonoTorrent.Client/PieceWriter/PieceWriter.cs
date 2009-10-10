@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using System.Threading;
+using System.IO;
 
 namespace MonoTorrent.Client.PieceWriters
 {
@@ -13,26 +14,24 @@ namespace MonoTorrent.Client.PieceWriters
             
         }
 
-        public abstract bool Exists(string path, TorrentFile file);
+        public abstract bool Exists(TorrentFile file);
 
-        internal bool Exists(string path, TorrentFile[] files)
+        internal bool Exists(TorrentFile[] files)
         {
-            Check.Path(path);
             Check.Files(files);
             foreach (TorrentFile file in files)
-                if (Exists(path, file))
+                if (Exists(file))
                     return true;
             return false;
         }
 
-        public abstract void Close(string path, TorrentFile file);
+        public abstract void Close(TorrentFile file);
 
-        internal void Close(string path, TorrentFile[] files)
+        internal void Close(TorrentFile[] files)
         {
-            Check.Path(path);
             Check.Files (files);
             foreach (TorrentFile file in files)
-                Close(path, file);
+                Close(file);
         }
 
         public virtual void Dispose()
@@ -40,22 +39,24 @@ namespace MonoTorrent.Client.PieceWriters
 
         }
 
-        public abstract void Flush(string path, TorrentFile file);
+        public abstract void Flush(TorrentFile file);
 
-        internal void Flush(string path, TorrentFile[] files)
+        internal void Flush(TorrentFile[] files)
         {
-            Check.Path(path);
             Check.Files(files);
             foreach (TorrentFile file in files)
-                Flush(path, file);
+                Flush(file);
         }
 
-        public abstract void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting);
+        public abstract void Move(string oldPath, string newPath, bool ignoreExisting);
 
-        internal void Move(string oldPath, string newPath, TorrentFile[] files, bool ignoreExisting)
+        internal void Move(string newRoot, TorrentFile[] files, bool ignoreExisting)
         {
-            foreach (TorrentFile file in files)
-                Move(oldPath, newPath, file, ignoreExisting);
+            foreach (TorrentFile file in files) {
+                string newPath = Path.Combine (newRoot, file.Path);
+                Move(file.FullPath, newPath, ignoreExisting);
+                file.FullPath = newPath;
+            }
         }
 
         public abstract int Read(BufferedIO data);

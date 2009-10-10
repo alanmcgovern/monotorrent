@@ -399,6 +399,11 @@ namespace MonoTorrent.Client
             PieceHashed += delegate(object o, PieceHashedEventArgs e) {
                 PieceManager.UnhashedPieces[e.PieceIndex] = false;
             };
+
+            if (HasMetadata) {
+                foreach (TorrentFile file in torrent.Files)
+                    file.FullPath = Path.Combine (SavePath, file.Path);
+            }
         }
 
         void CreateRateLimiters()
@@ -513,7 +518,7 @@ namespace MonoTorrent.Client
             });
         }
 
-        public void MoveFiles(string newPath, bool overWriteExisting)
+        public void MoveFiles(string newRoot, bool overWriteExisting)
         {
             CheckRegisteredAndDisposed();
             CheckMetadata();
@@ -521,8 +526,8 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new TorrentException("Cannot move the files when the torrent is active");
 
-            Engine.DiskManager.MoveFiles(this, savePath, newPath, overWriteExisting);
-            savePath = newPath;
+            Engine.DiskManager.MoveFiles(this, newRoot, overWriteExisting);
+            savePath = newRoot;
         }
 
         /// <summary>

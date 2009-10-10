@@ -9,7 +9,6 @@ namespace MonoTorrent.Client
     internal class TorrentFileStream : FileStream
     {
         TorrentFile file;
-        private string path;
 
         public TorrentFile File
         {
@@ -18,15 +17,14 @@ namespace MonoTorrent.Client
 
         public string Path
         {
-            get { return path; }
+            get { return file.FullPath; }
         }
 
 
-        public TorrentFileStream(string filePath, TorrentFile file, FileMode mode, FileAccess access, FileShare share)
-            : base(filePath, mode, access, share)
+        public TorrentFileStream(TorrentFile file, FileMode mode, FileAccess access, FileShare share)
+            : base(file.FullPath, mode, access, share)
         {
             this.file = file;
-            this.path = filePath;
         }
     }
 }

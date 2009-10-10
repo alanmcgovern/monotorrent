@@ -41,36 +41,33 @@ namespace MonoTorrent.Client
 {
     public class FakeDiskWriter : DiskWriter
     {
-        public string CreateFilePath(TorrentFile file, string path)
-        {
-            return base.GenerateFilePath(path, file);
-        }
+
     }
 
     public class ExceptionWriter : PieceWriter
     {
         public bool exist, close, flush, move, read, write;
 
-        public override bool Exists(string path, TorrentFile file)
+        public override bool Exists(TorrentFile file)
         {
             if (exist)
                 throw new Exception("exists");
             return true;
         }
 
-        public override void Close(string path, TorrentFile file)
+        public override void Close(TorrentFile file)
         {
             if (close)
                 throw new Exception("close");
         }
 
-        public override void Flush(string path, TorrentFile file)
+        public override void Flush(TorrentFile file)
         {
             if (flush)
                 throw new Exception("flush");
         }
 
-        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
             if (move)
                 throw new Exception("move");
@@ -170,29 +167,11 @@ namespace MonoTorrent.Client
             writer.write = true;
 
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[Piece.BlockSize]);
-			BufferedIO io = new BufferedIO(rig.Manager, buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files, "Path");
+			BufferedIO io = new BufferedIO(rig.Manager, buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files);
             io.Id = new PeerId(new Peer("", new Uri("tcp://123.123.123")), rig.Manager);
             rig.Engine.DiskManager.QueueWrite(io, null);
 
             Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
-        }
-            
-            
-
-        [Test]
-        public void SameFilePath()
-        {
-            // Simulate two torrents each containing a file at "Folder/File"
-            TorrentFile f1 = new TorrentFile("Folder/File", 12345);
-            TorrentFile f2 = new TorrentFile("Folder/File", 54321);
-
-            FakeDiskWriter writer = new FakeDiskWriter();
-            string s1 = writer.CreateFilePath(f1, "Root1");
-            string s2 = writer.CreateFilePath(f1, "Root2");
-
-            Assert.AreNotEqual(s1, s2, "#1");
-            Assert.AreEqual(Path.Combine("Root1", f1.Path), s1, "#2");
-            Assert.AreEqual(Path.Combine("Root2", f2.Path), s2, "#3");
         }
     }
 }

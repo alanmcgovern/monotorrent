@@ -46,6 +46,7 @@ namespace MonoTorrent.Common
         private BitField selector;
         private byte[] ed2k;
         private int endPiece;
+        private string fullPath;
         private long length;
         private byte[] md5;
         private string path;
@@ -87,6 +88,12 @@ namespace MonoTorrent.Common
             get { return this.endPiece; }
         }
 
+        public string FullPath
+        {
+            get { return fullPath; }
+            internal set { fullPath = value; }
+        }
+
         /// <summary>
         /// The length of the file in bytes
         /// </summary>
@@ -101,6 +108,7 @@ namespace MonoTorrent.Common
         public byte[] MD5
         {
             get { return this.md5; }
+            internal set { md5 = value; }
         }
 
         /// <summary>
@@ -143,22 +151,35 @@ namespace MonoTorrent.Common
 
         #region Constructors
         public TorrentFile(string path, long length)
-            : this(path, length, 0, 0, null, null, null)
+            : this(path, length, path)
         {
 
         }
 
-        public TorrentFile(string path, long length, int startIndex, int endIndex)
-            : this(path, length, startIndex, endIndex, null, null, null)
+        public TorrentFile (string path, long length, string fullPath)
+            : this (path, length, fullPath, 0, 0)
         {
 
         }
 
-        public TorrentFile(string path, long length, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
+        public TorrentFile (string path, long length, int startIndex, int endIndex)
+            : this (path, length, path, startIndex, endIndex)
+        {
+
+        }
+
+        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex)
+            : this(path, length, fullPath, startIndex, endIndex, null, null, null)
+        {
+
+        }
+
+        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
         {
             this.bitfield = new BitField(endIndex - startIndex + 1);
             this.ed2k = ed2k;
             this.endPiece = endIndex;
+            this.fullPath = fullPath;
             this.length = length;
             this.md5 = md5;
             this.path = path;

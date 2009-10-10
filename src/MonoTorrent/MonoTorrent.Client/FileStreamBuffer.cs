@@ -50,9 +50,9 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        internal TorrentFileStream GetStream(TorrentFile file, string filePath, FileAccess access)
+        internal TorrentFileStream GetStream(TorrentFile file, FileAccess access)
         {
-            TorrentFileStream s = FindStream(filePath);
+            TorrentFileStream s = FindStream(file.FullPath);
 
             if (s != null)
             {
@@ -73,10 +73,14 @@ namespace MonoTorrent.Client
 
             if (s == null)
             {
-                if (!File.Exists(filePath))
-                    SparseFile.CreateSparse(filePath, file.Length);
+                string directory = Path.GetDirectoryName (file.FullPath);
+                if (!Directory.Exists (directory))
+                    Directory.CreateDirectory (directory);
 
-                s = new TorrentFileStream(filePath, file, FileMode.OpenOrCreate, access, FileShare.Read);
+                if (!File.Exists(file.FullPath))
+                    SparseFile.CreateSparse (file.FullPath, file.Length);
+
+                s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.Read);
                 Add(s);
             }
 

@@ -31,12 +31,12 @@ namespace MonoTorrent.Client
 			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
 		}
 
-		public override void Close(string path, TorrentFile file)
+		public override void Close(TorrentFile file)
 		{
             
 		}
 
-        public override void Flush(string path, TorrentFile file)
+        public override void Flush(TorrentFile file)
 		{
 
 		}
@@ -45,12 +45,12 @@ namespace MonoTorrent.Client
 
 		}
 
-        public override bool Exists(string path, TorrentFile file)
+        public override bool Exists(TorrentFile file)
         {
             return false;
         }
 
-        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
             
         }
@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
 			Buffer.GetBuffer(ref b, BlockSize);
 			for (int i = 0; i < b.Count; i++)
 				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
-			return new BufferedIO(null, b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.SavePath);
+			return new BufferedIO(null, b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
 		}
 
 		[Test]
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
 			{
 				for(int block = 0; block < BlockCount; block++)
 				{
-					BufferedIO io = new BufferedIO(null, buffer, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.SavePath);
+					BufferedIO io = new BufferedIO(null, buffer, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
 					level1.ReadChunk(io);
 
 					for (int i = 0; i < BlockSize; i++)
@@ -168,7 +168,7 @@ namespace MonoTorrent.Client
 			int piece = 0;
             int block = 0;
 
-			BufferedIO io = new BufferedIO(null, buffer, piece, block, PieceSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files, rig.Manager.SavePath);
+			BufferedIO io = new BufferedIO(null, buffer, piece, block, PieceSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
 			level1.ReadChunk(io);
 			for (block = 0; block < 5; block++)
 			{

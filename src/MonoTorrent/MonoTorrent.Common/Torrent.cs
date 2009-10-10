@@ -445,7 +445,7 @@ namespace MonoTorrent.Common
                         endIndex--;
                 }
                 size += length;
-                files.Add(new TorrentFile(path, length, startIndex, endIndex, md5sum, ed2k, sha1));
+                files.Add(new TorrentFile(path, length, path, startIndex, endIndex, md5sum, ed2k, sha1));
             }
 
             this.torrentFiles = files.ToArray();
@@ -539,7 +539,7 @@ namespace MonoTorrent.Common
 
                 this.torrentFiles = new TorrentFile[1];
                 int endPiece = Math.Min(Pieces.Count - 1, (int)((size + (pieceLength - 1)) / pieceLength));
-                this.torrentFiles[0] = new TorrentFile(path, length, 0, endPiece, md5, ed2k, sha1);
+                this.torrentFiles[0] = new TorrentFile(path, length, path, 0, endPiece, md5, ed2k, sha1);
             }
         }
 
@@ -720,7 +720,7 @@ namespace MonoTorrent.Common
             try
             {
                 //Torrent t = Torrent.Load(BEncodedValue.Decode<BEncodedDictionary>(stream));
-                Torrent t = Torrent.Load(BEncodedDictionary.DecodeTorrent(stream));
+                Torrent t = Torrent.Load((BEncodedDictionary)BEncodedDictionary.Decode(stream));
                 t.torrentPath = path;
                 return t;
             }

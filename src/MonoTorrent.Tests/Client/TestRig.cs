@@ -22,13 +22,12 @@ namespace MonoTorrent.Client
         public override int Read(BufferedIO data)
         {
             long idx = data.Offset;
-            for (int i = 0; i < data.Files.Length; i++)
+            for (int i = 0; i < data.Files.Count; i++)
             {
                 if (idx < data.Files[i].Length)
                 {
-                    string path = System.IO.Path.Combine(data.Path, data.Files[i].Path);
-                    if (!Paths.Contains(path))
-                        Paths.Add(path);
+                    if (!Paths.Contains(data.Files[i].FullPath))
+                        Paths.Add(data.Files[i].FullPath);
                     break;
                 }
                 else
@@ -51,22 +50,22 @@ namespace MonoTorrent.Client
 
         }
 
-        public override void Close(string path, TorrentFile file)
+        public override void Close(TorrentFile file)
         {
 
         }
 
-        public override void Flush(string path, TorrentFile file)
+        public override void Flush(TorrentFile file)
         {
 
         }
 
-        public override bool Exists(string path, TorrentFile file)
+        public override bool Exists(TorrentFile file)
         {
             return false;
         }
 
-        public override void Move(string oldPath, string newPath, TorrentFile file, bool ignoreExisting)
+        public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
             
         }
