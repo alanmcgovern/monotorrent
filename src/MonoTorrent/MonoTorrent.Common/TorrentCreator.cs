@@ -81,6 +81,13 @@ namespace MonoTorrent.Common {
                 total += new FileInfo (file).Length;
             return RecommendedPieceSize (total);
         }
+        public static int RecommendedPieceSize (IEnumerable<TorrentFile> files)
+        {
+            long total = 0;
+            foreach (TorrentFile file in files)
+                total += file.Length;
+            return RecommendedPieceSize (total);
+        }
         public static int RecommendedPieceSize (IEnumerable<FileMapping> files)
         {
             long total = 0;
@@ -306,7 +313,7 @@ namespace MonoTorrent.Common {
             torrentHashes = new List<byte> ();
             overallTotal = Toolbox.Accumulate<TorrentFile> (files, delegate (TorrentFile m) { return m.Length; });
 
-            long pieceLength = PieceLength.HasValue ? PieceLength.Value : RecommendedPieceSize (overallTotal);
+            long pieceLength = PieceLength.Value;
             buffer = new byte [pieceLength];
 
             if (StoreMD5)
@@ -391,6 +398,9 @@ namespace MonoTorrent.Common {
 
             if (maps.Count == 0)
                 throw new ArgumentException ("Path must refer to a file or a directory containing one or more files", "path");
+
+            if (!PieceLength.HasValue)
+                PieceLength = RecommendedPieceSize (maps);
 
             BEncodedDictionary torrent = BEncodedDictionary.Decode<BEncodedDictionary> (dict.Encode ());
             BEncodedDictionary info = BEncodedDictionary.Decode<BEncodedDictionary> (this.info.Encode ());
