@@ -578,7 +578,7 @@ namespace MonoTorrent.Client
                 if (State == TorrentState.Seeding || State == TorrentState.Downloading)
                     return;
 
-                if (this.Complete) {
+                if (this.Complete && ClientEngine.SupportsInitialSeed) {
 					Mode = new InitialSeedingMode(this);
                 }
                 else {
