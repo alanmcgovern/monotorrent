@@ -420,7 +420,7 @@ namespace MonoTorrent.Client
                 id.BytesToSend = message.Encode(id.sendBuffer, 0);
                 id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
 
-                RateLimiterGroup limiter = id.TorrentManager.DownloadLimiter;
+                RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
                 NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)
