@@ -249,6 +249,24 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void And2 ()
+        {
+            Random r = new Random ();
+            byte [] a = new byte [100];
+            byte [] b = new byte [100];
+
+            r.NextBytes (a);
+            r.NextBytes (b);
+
+            for (int i = 0; i < a.Length * 8; i++) {
+                BitField first = new BitField (a, i);
+                BitField second = new BitField (b, i);
+
+                first.And (second);
+            }
+        }
+
+        [Test]
         public void Or()
         {
             BitField bf2 = new BitField(secondValues);

@@ -430,6 +430,9 @@ namespace MonoTorrent.Common
 
         void ZeroUnusedBits()
         {
+            if (array.Length == 0)
+                return;
+
             // Zero the unused bits
             int shift = 32 - length % 32;
             if (shift != 0)
