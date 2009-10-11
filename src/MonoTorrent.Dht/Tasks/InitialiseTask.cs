@@ -72,7 +72,7 @@ namespace MonoTorrent.Dht.Tasks
             // initialise again except use the utorrent router.
             if (nodes != null && engine.RoutingTable.CountNodes() < 10)
             {
-                new InitialiseTask(engine, null);
+                new InitialiseTask(engine, null).Execute ();
             }
             else
             {
