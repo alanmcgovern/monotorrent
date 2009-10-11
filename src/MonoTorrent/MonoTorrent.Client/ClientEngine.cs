@@ -38,7 +38,6 @@ using System.Threading;
 using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
-using MonoTorrent.Client.Managers;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.PieceWriters;
 

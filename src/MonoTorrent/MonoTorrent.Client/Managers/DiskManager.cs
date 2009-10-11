@@ -8,7 +8,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.PieceWriters;
 
-namespace MonoTorrent.Client.Managers
+namespace MonoTorrent.Client
 {
     public class DiskManager : IDisposable
     {
