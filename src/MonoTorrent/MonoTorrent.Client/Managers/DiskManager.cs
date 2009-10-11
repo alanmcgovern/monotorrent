@@ -152,6 +152,10 @@ namespace MonoTorrent.Client.Managers
 					LoopTask();
 					writer.Close(path, files);
 				}
+                catch (Exception ex)
+                {
+                    SetError (manager, Reason.WriteFailure, ex);
+                }
 				finally
 				{
 					handle.Set();
@@ -293,11 +297,13 @@ namespace MonoTorrent.Client.Managers
 
         void SetError (TorrentManager manager, Reason reason, Exception ex)
         {
-            if (manager.Mode is ErrorMode)
-                return;
+            ClientEngine.MainLoop.Queue (() => {
+                if (manager.Mode is ErrorMode)
+                    return;
 
-            manager.Error = new Error(Reason.ReadFailure, ex);
-            manager.Mode = new ErrorMode(manager);
+                manager.Error = new Error (reason, ex);
+                manager.Mode = new ErrorMode (manager);
+            });
         }
 		
 		internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
