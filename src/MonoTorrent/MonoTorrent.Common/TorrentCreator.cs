@@ -43,7 +43,7 @@ using MonoTorrent.Client.PieceWriters;
 
 namespace MonoTorrent.Common {
 
-    public class TorrentCreatorV2 {
+    public class TorrentCreator {
 
         static BEncodedValue Get (BEncodedDictionary dictionary, BEncodedString key)
         {
@@ -196,7 +196,7 @@ namespace MonoTorrent.Common {
         }
 
 
-        public TorrentCreatorV2 ()
+        public TorrentCreator ()
         {
             announces = new List<List<string>> ();
             dict = new BEncodedDictionary ();
