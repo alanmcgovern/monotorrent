@@ -66,7 +66,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    public class EncryptedSocket : IEncryptor
+    class EncryptedSocket : IEncryptor
     {
         protected AsyncResult asyncResult;
         public IEncryption Encryptor
