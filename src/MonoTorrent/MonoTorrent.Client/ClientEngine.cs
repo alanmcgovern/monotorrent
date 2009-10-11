@@ -199,7 +199,7 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
-            this.dhtEngine = new NullDhtEngine();
+            RegisterDht (new NullDhtEngine());
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
@@ -215,20 +215,6 @@ namespace MonoTorrent.Client
             localPeerManager = new LocalPeerManager();
             LocalPeerSearchEnabled = SupportsLocalPeerDiscovery;
             listenManager.Register(listener);
-            dhtEngine.StateChanged += delegate {
-                if (dhtEngine.State != DhtState.Ready)
-                    return;
-                MainLoop.Queue(delegate {
-                    foreach (TorrentManager manager in torrents)
-                    {
-                        if (!manager.CanUseDht)
-                            continue;
-
-                        dhtEngine.Announce(manager.Torrent.infoHash, Listener.Endpoint.Port);
-                        dhtEngine.GetPeers(manager.Torrent.infoHash);
-                    }
-                });
-            };
             // This means we created the listener in the constructor
             if (listener.Endpoint.Port == 0)
                 listener.ChangeEndpoint(new IPEndPoint(IPAddress.Any, settings.ListenPort));
@@ -363,10 +349,29 @@ namespace MonoTorrent.Client
             {
                 if (dhtEngine != null)
                 {
+                    dhtEngine.StateChanged -= DhtEngineStateChanged;
                     dhtEngine.Stop();
                     dhtEngine.Dispose();
                 }
                 dhtEngine = engine ?? new NullDhtEngine ();
+            });
+
+            dhtEngine.StateChanged += DhtEngineStateChanged;
+        }
+
+        void DhtEngineStateChanged (object o, EventArgs e)
+        {
+            if (dhtEngine.State != DhtState.Ready)
+                return;
+
+            MainLoop.Queue (delegate {
+                foreach (TorrentManager manager in torrents) {
+                    if (!manager.CanUseDht)
+                        continue;
+
+                    dhtEngine.Announce (manager.Torrent.infoHash, Listener.Endpoint.Port);
+                    dhtEngine.GetPeers (manager.Torrent.infoHash);
+                }
             });
         }
 
