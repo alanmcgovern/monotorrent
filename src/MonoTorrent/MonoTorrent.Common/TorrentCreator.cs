@@ -267,7 +267,7 @@ namespace MonoTorrent.Common
                 throw new TorrentException ("There were no files in the specified directory");
 
             string[] parts = path.Split(new char[] { System.IO.Path.DirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-            string name = files.Count == 1 ? System.IO.Path.GetFileName(path) : parts[parts.Length - 1];
+            string name = File.Exists (Path) ? System.IO.Path.GetFileName(path) : parts[parts.Length - 1];
             return Create(files.ToArray(), writer, name);
         }
 
@@ -305,7 +305,7 @@ namespace MonoTorrent.Common
                 return String.CompareOrdinal(a.Path, b.Path);
             });
 
-            if (files.Length > 1)
+            if (Directory.Exists (Path))
             {
                 Logger.Log(null, "Creating multifile torrent from: {0}", Path);
                 CreateMultiFileTorrent(torrentDict, files, writer, name);
