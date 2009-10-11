@@ -126,6 +126,7 @@
     <Compile Include="MonoTorrent.Client\Modes\InitialSeedingMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\MetadataMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\Mode.cs" />
+    <Compile Include="MonoTorrent.Client\Modes\PausedMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\StoppedMode.cs" />
     <Compile Include="MonoTorrent.Client\Modes\StoppingMode.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO.cs" />

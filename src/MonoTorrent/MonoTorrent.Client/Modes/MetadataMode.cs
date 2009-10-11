@@ -51,6 +51,11 @@ namespace MonoTorrent.Client
         string savePath;
         private DateTime requestTimeout;
 
+		public override TorrentState State
+		{
+			get { return TorrentState.Metadata; }
+		}
+
         internal MemoryStream Stream
         {
             get { return this.stream; }

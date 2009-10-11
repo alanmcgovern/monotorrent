@@ -87,8 +87,8 @@ namespace MonoTorrent.Client
         private RateLimiterGroup downloadLimiter;   // Contains the logic to decide how many chunks we can download
         private TorrentSettings settings;       // The settings for this torrent
         private DateTime startTime;             // The time at which the torrent was started at.
-        private TorrentState state;             // The current state (seeding, downloading etc)
         private Torrent torrent;                // All the information from the physical torrent that was loaded
+        private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
         private int uploadingTo;                // The number of peers which we're currently uploading to
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
@@ -137,9 +137,11 @@ namespace MonoTorrent.Client
         {
             get { return mode; }
             set {
+                Mode oldMode = mode;
                 mode = value;
-                if (value != null)
-                    mode.Tick(0);
+                if (oldMode != null)
+                    RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(this, oldMode.State, mode.State));
+                mode.Tick(0);
 			}
         }
 
@@ -176,7 +178,7 @@ namespace MonoTorrent.Client
 		/// </summary>
 		public bool IsInEndGame
 		{
-			get { return this.state == TorrentState.Downloading && this.isInEndGame; }
+			get { return State == TorrentState.Downloading && this.isInEndGame; }
 		}
 
         public ConnectionMonitor Monitor
@@ -254,7 +256,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public TorrentState State
         {
-            get { return this.state; }
+            get { return mode.State; }
         }
 
 
@@ -360,7 +362,6 @@ namespace MonoTorrent.Client
             this.infohash = torrent.infoHash;
             this.settings = settings;
 
-            Mode = new StoppedMode(this);
             Initialise(savePath, baseDirectory, torrent.AnnounceUrls);
             ChangePicker(CreateStandardPicker());
         }
@@ -376,8 +377,8 @@ namespace MonoTorrent.Client
 
             this.infohash = infoHash;
             this.settings = settings;
+            this.torrentSave = torrentSave;
 
-			Mode = new MetadataMode(this, torrentSave);
             Initialise(savePath, "", announces);
         }
 
@@ -391,6 +392,8 @@ namespace MonoTorrent.Client
             this.peers = new PeerManager();
             this.pieceManager = new PieceManager();
             this.trackerManager = new TrackerManager(this, InfoHash, announces);
+
+            Mode = new StoppedMode(this);            
             CreateRateLimiters();
 
             PieceHashed += delegate(object o, PieceHashedEventArgs e) {
@@ -500,13 +503,12 @@ namespace MonoTorrent.Client
         public void HashCheck(bool autoStart)
         {
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                if (this.state != TorrentState.Stopped)
-                    throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", state));
+                if (State != TorrentState.Stopped)
+                    throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
 
                 CheckRegisteredAndDisposed();
                 this.startTime = DateTime.Now;
 				Mode = new HashingMode(this, autoStart);
-                UpdateState(TorrentState.Hashing);
                 Engine.Start();
             });
         }
@@ -530,12 +532,12 @@ namespace MonoTorrent.Client
         {
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 CheckRegisteredAndDisposed();
-                if (state != TorrentState.Downloading && state != TorrentState.Seeding)
+                if (State != TorrentState.Downloading && State != TorrentState.Seeding)
                     return;
 
                 // By setting the state to "paused", peers will not be dequeued from the either the
                 // sending or receiving queues, so no traffic will be allowed.
-                UpdateState(TorrentState.Paused);
+                Mode = new PausedMode(this);
                 this.SaveFastResume();
             });
         }
@@ -552,9 +554,15 @@ namespace MonoTorrent.Client
                 this.engine.Start();
                 // If the torrent was "paused", then just update the state to Downloading and forcefully
                 // make sure the peers begin sending/receiving again
-                if (this.state == TorrentState.Paused)
+                if (this.State == TorrentState.Paused)
                 {
-                    UpdateState(TorrentState.Downloading);
+                    Mode = new DownloadMode(this);
+                    return;
+                }
+
+                if (!HasMetadata)
+                {
+                    Mode = new MetadataMode(this, torrentSave);
                     return;
                 }
 
@@ -562,21 +570,19 @@ namespace MonoTorrent.Client
                 // before attempting to start again
                 if (!hashChecked)
                 {
-                    if (state != TorrentState.Hashing)
+                    if (State != TorrentState.Hashing)
                         HashCheck(true);
                     return;
                 }
 
-                if (this.state == TorrentState.Seeding || this.state == TorrentState.Downloading)
+                if (State == TorrentState.Seeding || State == TorrentState.Downloading)
                     return;
 
                 if (this.Complete) {
 					Mode = new InitialSeedingMode(this);
-                    UpdateState(TorrentState.Seeding);
                 }
                 else {
                     Mode = new DownloadMode(this);
-                    UpdateState(TorrentState.Downloading);
                 }
 
                 if (TrackerManager.CurrentTracker != null)
@@ -633,11 +639,10 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Stop()
         {
-            if (this.state == TorrentState.Error)
+            if (State == TorrentState.Error)
             {
-                UpdateState(TorrentState.Stopped);
                 error = null;
-				Mode = new DownloadMode(this);
+				Mode = new StoppedMode(this);
                 return;
             }
 
@@ -645,13 +650,11 @@ namespace MonoTorrent.Client
                 return;
 
             ClientEngine.MainLoop.QueueWait(delegate {
-                if (state != TorrentState.Stopped) {
+                if (State != TorrentState.Stopped) {
 #if !DISABLE_DHT
                     engine.DhtEngine.PeersFound -= DhtPeersFound;
 #endif
 					Mode = new StoppingMode(this);
-                    UpdateState(TorrentState.Stopping);
-					Mode.Tick(0);
                 }
             });
         }
@@ -810,17 +813,6 @@ namespace MonoTorrent.Client
         {
             CheckMetadata();
             return new FastResume(this.torrent.infoHash, this.bitfield, new List<Peer>());
-        }
-
-        internal void UpdateState(TorrentState newState)
-        {
-            if (this.state == newState)
-                return;
-
-            TorrentStateChangedEventArgs e = new TorrentStateChangedEventArgs(this, this.state, newState);
-            this.state = newState;
-
-            RaiseTorrentStateChanged(e);
         }
 
         #endregion Private Methods

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -9,6 +10,11 @@ namespace MonoTorrent.Client
 		public override bool CanAcceptConnections
 		{
 			get { return false; }
+		}
+
+		public override TorrentState State
+		{
+			get { return TorrentState.Stopped; }
 		}
 
 		public StoppedMode(TorrentManager manager)

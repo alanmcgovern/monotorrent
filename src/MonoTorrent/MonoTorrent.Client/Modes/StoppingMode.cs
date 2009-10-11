@@ -14,6 +14,11 @@ namespace MonoTorrent.Client
 			get { return false; }
 		}
 
+		public override TorrentState State
+		{
+			get { return TorrentState.Stopping; }
+		}
+
 		public StoppingMode(TorrentManager manager)
 			: base(manager)
 		{
@@ -51,7 +56,6 @@ namespace MonoTorrent.Client
 			{
 				handle.Close();
 				Manager.Mode = new StoppedMode(Manager);
-				Manager.UpdateState(MonoTorrent.Common.TorrentState.Stopped);
 			}
 		}
 	}

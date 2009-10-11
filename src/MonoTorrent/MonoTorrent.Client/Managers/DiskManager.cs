@@ -298,7 +298,6 @@ namespace MonoTorrent.Client.Managers
 
             manager.Error = new Error(Reason.ReadFailure, ex);
             manager.Mode = new ErrorMode(manager);
-            manager.UpdateState(TorrentState.Error);
         }
 		
 		internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
