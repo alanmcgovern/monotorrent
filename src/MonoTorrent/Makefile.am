@@ -90,9 +90,13 @@ FILES = \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/ScrapeDetails.cs \
 	MonoTorrent.Client/Modes/DownloadMode.cs \
 	MonoTorrent.Client/Modes/ErrorMode.cs \
+	MonoTorrent.Client/Modes/HashingMode.cs \
 	MonoTorrent.Client/Modes/InitialSeedingMode.cs \
 	MonoTorrent.Client/Modes/MetadataMode.cs \
 	MonoTorrent.Client/Modes/Mode.cs \
+	MonoTorrent.Client/Modes/PausedMode.cs \
+	MonoTorrent.Client/Modes/StoppedMode.cs \
+	MonoTorrent.Client/Modes/StoppingMode.cs \
 	MonoTorrent.Client/NetworkIO.cs \
 	MonoTorrent.Client/NullDhtEngine.cs \
 	MonoTorrent.Client/PeerConnections/HttpRequestData.cs \
