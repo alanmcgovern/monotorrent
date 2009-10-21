@@ -293,7 +293,7 @@ namespace MonoTorrent.Client
 
         void SetError (TorrentManager manager, Reason reason, Exception ex)
         {
-            ClientEngine.MainLoop.Queue (() => {
+            ClientEngine.MainLoop.Queue (delegate {
                 if (manager.Mode is ErrorMode)
                     return;
 
