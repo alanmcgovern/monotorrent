@@ -171,7 +171,7 @@ namespace MonoTorrent.Client
             io.Id = new PeerId(new Peer("", new Uri("tcp://123.123.123")), rig.Manager);
             rig.Engine.DiskManager.QueueWrite(io, null);
 
-            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+            Assert.IsTrue(handle.WaitOne(5000, true), "Failure was not handled");
         }
     }
 }

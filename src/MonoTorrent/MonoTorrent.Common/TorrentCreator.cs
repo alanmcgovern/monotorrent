@@ -398,9 +398,14 @@ namespace MonoTorrent.Common {
 
             if (maps.Count == 0)
                 throw new ArgumentException ("Path must refer to a file or a directory containing one or more files", "path");
+           
+            return Create(name, maps);
+        }
 
+        internal BEncodedDictionary Create(string name, List<TorrentFile> files)
+        {
             if (!PieceLength.HasValue)
-                PieceLength = RecommendedPieceSize (maps);
+                PieceLength = RecommendedPieceSize(files);
 
             BEncodedDictionary torrent = BEncodedDictionary.Decode<BEncodedDictionary> (dict.Encode ());
             BEncodedDictionary info = BEncodedDictionary.Decode<BEncodedDictionary> (this.info.Encode ());
@@ -410,12 +415,12 @@ namespace MonoTorrent.Common {
             AddCommonStuff (torrent);
 
             using (PieceWriter reader = CreateReader ()) {
-                info ["pieces"] = (BEncodedString) CalcPiecesHash (maps, reader);
+                info ["pieces"] = (BEncodedString) CalcPiecesHash (files, reader);
 
-                if (maps.Count == 1 && maps [0].Path == name)
-                    CreateSingleFileTorrent (torrent, maps, reader, name);
+                if (files.Count == 1 && files [0].Path == name)
+                    CreateSingleFileTorrent (torrent, files, reader, name);
                 else
-                    CreateMultiFileTorrent (torrent, maps, reader, name);
+                    CreateMultiFileTorrent (torrent, files, reader, name);
             }
 
             return torrent;
