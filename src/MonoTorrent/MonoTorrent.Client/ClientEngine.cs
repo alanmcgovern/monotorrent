@@ -470,7 +470,8 @@ namespace MonoTorrent.Client
 
         private void PieceHashed(object sender, PieceHashedEventArgs e)
         {
-            diskManager.QueueFlush(e.TorrentManager, e.PieceIndex);
+            if (e.TorrentManager.State != TorrentState.Hashing)
+                diskManager.QueueFlush(e.TorrentManager, e.PieceIndex);
         }
 
         internal void RaiseStatsUpdate(StatsUpdateEventArgs args)
