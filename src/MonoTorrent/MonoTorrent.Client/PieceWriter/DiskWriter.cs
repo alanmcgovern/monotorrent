@@ -86,6 +86,8 @@ namespace MonoTorrent.Client.PieceWriters
                     break;
 
                 TorrentFileStream s = GetStream(files[i], FileAccess.Read);
+                if (s.Length < Math.Min(offset + count, files[i].Length))
+                    break;
                 s.Seek(offset, SeekOrigin.Begin);
                 offset = 0; // Any further files need to be read from the beginning
                 bytesRead = s.Read(data.buffer.Array, data.buffer.Offset + totalRead, count - totalRead);
