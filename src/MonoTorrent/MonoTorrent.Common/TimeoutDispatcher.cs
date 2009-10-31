@@ -62,6 +62,11 @@ namespace Mono.Ssdp.Internal
 
         private List<TimeoutItem> timeouts = new List<TimeoutItem> ();
 
+        public TimeoutDispatcher()
+        {
+            ThreadPool.QueueUserWorkItem(TimerThread);
+        }
+
         public uint Add (uint timeoutMs, TimeoutHandler handler)
         {
             return Add (timeoutMs, handler, null);
@@ -79,23 +84,17 @@ namespace Mono.Ssdp.Internal
 
         public uint Add (TimeSpan timeout, TimeoutHandler handler, object state)
         {
-            lock (this) {
-                CheckDisposed ();
-                TimeoutItem item = new TimeoutItem ();
-                item.Id = timeout_ids++;
-                item.Timeout = timeout;
-                item.Trigger = DateTime.UtcNow + timeout;
-                item.Handler = handler;
-                item.State = state;
+            CheckDisposed ();
+            TimeoutItem item = new TimeoutItem ();
+            item.Id = timeout_ids++;
+            item.Timeout = timeout;
+            item.Trigger = DateTime.UtcNow + timeout;
+            item.Handler = handler;
+            item.State = state;
 
-                Add (ref item);
+            Add (ref item);
 
-                if (timeouts.Count == 1) {
-                    Start ();
-                }
-
-                return item.Id;
-            }
+            return item.Id;
         }
 
         private void Add (ref TimeoutItem item)
@@ -105,7 +104,7 @@ namespace Mono.Ssdp.Internal
                 index = index >= 0 ? index : ~index;
                 timeouts.Insert (index, item);
 
-                if (index == 0 && timeouts.Count > 1) {
+                if (index == 0) {
                     wait.Set ();
                 }
             }
@@ -131,26 +130,31 @@ namespace Mono.Ssdp.Internal
         private void Start ()
         {
             wait.Reset ();
-            ThreadPool.QueueUserWorkItem (TimerThread);
         }
 
         private void TimerThread (object state)
         {
+            bool hasItem;
+            TimeoutItem item = default (TimeoutItem);
+            
             while (true) {
-                TimeoutItem item;
-                lock (timeouts) {
-                    if (timeouts.Count == 0) {
-                        break;
-                    }
-                    item = timeouts[0];
+                if (disposed) {
+                    wait.Close();
+                    return;
                 }
 
-                TimeSpan interval = item.Trigger - DateTime.UtcNow;
+                lock (timeouts) {
+                    hasItem = timeouts.Count > 0;
+                    if (hasItem)
+                        item = timeouts[0];
+                }
+
+                TimeSpan interval = hasItem ? item.Trigger - DateTime.UtcNow : TimeSpan.FromMilliseconds (-1);
                 if (interval < TimeSpan.Zero) {
                     interval = TimeSpan.Zero;
                 }
 
-                if (!wait.WaitOne (interval, false)) {
+                if (!wait.WaitOne (interval, false) && hasItem) {
                     bool requeue = item.Handler (item.State, ref item.Timeout);
                     lock (timeouts) {
                         Remove(item.Id);
