@@ -59,7 +59,12 @@ namespace MonoTorrent.Client.PieceWriters
             long offset = data.Offset;
             int count = data.Count;
             IList<TorrentFile> files = data.Files;
-            long fileSize = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
+            long fileSize;
+            //if (data.Manager != null)
+            //    fileSize = data.Manager.Torrent.Size;
+            //else
+                fileSize = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
+
             if (offset < 0 || offset + count > fileSize)
                 throw new ArgumentOutOfRangeException("offset");
 
