@@ -73,12 +73,14 @@ namespace MonoTorrent.Client
 
             if (s == null)
             {
-                string directory = Path.GetDirectoryName (file.FullPath);
-                if (!Directory.Exists (directory))
-                    Directory.CreateDirectory (directory);
-
                 if (!File.Exists(file.FullPath))
+                {
+                    string directory = Path.GetDirectoryName(file.FullPath);
+                    if (!Directory.Exists(directory))
+                        Directory.CreateDirectory(directory);
+
                     SparseFile.CreateSparse (file.FullPath, file.Length);
+                }
 
                 s = new TorrentFileStream (file, FileMode.OpenOrCreate, access, FileShare.Read);
                 Add(s);
