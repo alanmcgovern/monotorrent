@@ -254,11 +254,13 @@
     <Compile Include="MonoTorrent.Client\Unchokers\Unchoker.cs" />
     <Compile Include="MonoTorrent.Common\AsyncResult.cs" />
     <Compile Include="MonoTorrent.Common\BitField.cs" />
+    <Compile Include="MonoTorrent.Common\Cache.cs" />
     <Compile Include="MonoTorrent.Common\Check.cs" />
     <Compile Include="MonoTorrent.Common\Enums.cs" />
     <Compile Include="MonoTorrent.Common\FileMapping.cs" />
     <Compile Include="MonoTorrent.Common\HashAlgoFactory.cs" />
     <Compile Include="MonoTorrent.Common\Hashes.cs" />
+    <Compile Include="MonoTorrent.Common\ICacheable.cs" />
     <Compile Include="MonoTorrent.Common\InfoHash.cs" />
     <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs" />
     <Compile Include="MonoTorrent.Common\PeerID.cs" />
