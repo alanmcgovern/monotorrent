@@ -64,7 +64,9 @@ namespace Mono.Ssdp.Internal
 
         public TimeoutDispatcher()
         {
-            ThreadPool.QueueUserWorkItem(TimerThread);
+            Thread t = new Thread(TimerThread);
+            t.IsBackground = true;
+            t.Start();
         }
 
         public uint Add (uint timeoutMs, TimeoutHandler handler)
