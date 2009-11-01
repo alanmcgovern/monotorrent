@@ -329,7 +329,8 @@ namespace MonoTorrent.Common {
 
 
                         int toRead = (int) Math.Min (buffer.Length - bufferRead, file.Length - fileRead);
-                        BufferedIO io = new BufferedIO (null, new ArraySegment<byte> (buffer, bufferRead, toRead), overallRead, toRead, buffer.Length, files);
+                        BufferedIO io = new BufferedIO ();
+                        io.Initialise (null, new ArraySegment<byte> (buffer, bufferRead, toRead), overallRead, toRead, buffer.Length, files);
                         writer.ReadChunk (io);
 
                         if (md5Hasher != null)

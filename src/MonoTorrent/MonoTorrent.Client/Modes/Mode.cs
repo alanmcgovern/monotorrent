@@ -312,7 +312,8 @@ namespace MonoTorrent.Client
         {
             id.PiecesReceived++;
             string path = manager.SavePath;
-            BufferedIO d = new BufferedIO(id.TorrentManager, message.data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files);
+            BufferedIO d = new BufferedIO();
+            d.Initialise (id.TorrentManager, message.data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files);
             d.Id = id;
             manager.PieceManager.PieceDataReceived(d);
 

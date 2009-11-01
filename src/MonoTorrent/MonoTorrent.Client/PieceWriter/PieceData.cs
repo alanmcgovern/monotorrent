@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public class BufferedIO
+    public class BufferedIO : ICacheable
     {
         internal ArraySegment<byte> buffer;
         private int actualCount;
@@ -79,26 +79,34 @@ namespace MonoTorrent.Client
             set { complete = value; }
         }
 
-        internal BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, IList<TorrentFile> files)
+        public BufferedIO()
         {
-            this.manager = manager;
-            this.files = files;
-            this.pieceLength = pieceLength;
-            Initialise(buffer, offset, count);
+
         }
 
-        public BufferedIO(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, TorrentFile[] files)
+        public void Initialise()
         {
-            this.files = files;
-            this.pieceLength = pieceLength;
-            Initialise(buffer, (long)pieceIndex * pieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count);
+            Initialise(null, new ArraySegment<byte>(), 0, 0, 0, null);
         }
 
-        private void Initialise(ArraySegment<byte> buffer, long offset, int count)
+        public void Initialise(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, IList<TorrentFile> files)
         {
+            this.actualCount = 0;
             this.buffer = buffer;
+            this.callback = null;
+            this.complete = false;
             this.count = count;
+            this.files = files;
+            this.manager = manager;
             this.offset = offset;
+            this.peerId = null;
+            this.Piece = null;
+            this.pieceLength = pieceLength;
+        }
+
+        public void Initialise(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, IList<TorrentFile> files)
+        {
+            Initialise(manager, buffer, pieceIndex * pieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count, pieceLength, files);
         }
 
         public override string ToString()
