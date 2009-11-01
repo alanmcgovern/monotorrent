@@ -1,5 +1,4 @@
 using System;
-using MonoTorrent.Client.PieceWriters;
 
 namespace MonoTorrent
 {
@@ -46,6 +45,11 @@ namespace MonoTorrent
         internal static void BaseType(Type baseType)
         {
             DoCheck(baseType, "baseType");
+        }
+
+        internal static void Cache(object cache)
+        {
+            DoCheck(cache, "cache");
         }
 
         public static void Data(object data)
