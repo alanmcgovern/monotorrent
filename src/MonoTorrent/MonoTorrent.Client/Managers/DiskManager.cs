@@ -19,6 +19,7 @@ namespace MonoTorrent.Client
         private object bufferLock = new object();
         private Queue<BufferedIO> bufferedReads;
         private Queue<BufferedIO> bufferedWrites;
+        private ICache<BufferedIO> cache;
         private bool disposed;
         private ClientEngine engine;
         private MainLoopTask LoopTask;
@@ -80,6 +81,7 @@ namespace MonoTorrent.Client
         {
             this.bufferedReads = new Queue<BufferedIO>();
             this.bufferedWrites = new Queue<BufferedIO>();
+            this.cache = new Cache<BufferedIO>(true).Synchronize ();
             this.engine = engine;
             this.readLimiter = new RateLimiter();
             this.readMonitor = new SpeedMonitor();
@@ -223,7 +225,8 @@ namespace MonoTorrent.Client
         {
             string path = manager.SavePath;
             ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
-            BufferedIO io = new BufferedIO(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
+            BufferedIO io = new BufferedIO();
+            io.Initialise(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
             IOLoop.QueueWait((MainLoopTask)delegate {
                 PerformRead(io);
             });
@@ -329,6 +332,8 @@ namespace MonoTorrent.Client
 							ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
 						}
 						hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
+                        for (int i = 0; i < list.Count; i++)
+                            cache.Enqueue(list[i]);
 						callback(hasher.Hash);
 					}
 				});
@@ -342,7 +347,8 @@ namespace MonoTorrent.Client
 				if ((i + bytesToRead) > fileSize)
 					bytesToRead = (int)(fileSize - i);
 
-				io = new BufferedIO(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
+				io = cache.Dequeue();
+				io.Initialise(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
 				list.Add(io);
 
 				if (bytesToRead != Piece.BlockSize)
