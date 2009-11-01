@@ -151,10 +151,9 @@ namespace MonoTorrent.Client
 
         public MainLoop(string name)
         {
-            ThreadPool.QueueUserWorkItem(delegate {
-                thread = Thread.CurrentThread;
-                Loop();
-            });
+            thread = new Thread(Loop);
+            thread.IsBackground = true;
+            thread.Start();
         }
 
         void Loop()
