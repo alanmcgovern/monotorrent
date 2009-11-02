@@ -70,12 +70,12 @@ namespace MonoTorrent.BEncoding
 
         public override bool CanWrite
         {
-            get { return input.CanWrite; }
+            get { return false; }
         }
 
         public override void Flush()
         {
-            input.Flush();
+            throw new NotSupportedException();
         }
 
         public override long Length
@@ -90,7 +90,7 @@ namespace MonoTorrent.BEncoding
             return hasPeek ? peeked[0] : -1;
         }
 
-        public int ReadByte()
+        public override int ReadByte()
         {
             if (hasPeek)
             {
@@ -102,8 +102,20 @@ namespace MonoTorrent.BEncoding
 
         public override long Position
         {
-            get { return input.Position; }
-            set { input.Position = value; }
+            get
+            {
+                if (hasPeek)
+                    return input.Position - 1;
+                return input.Position;
+            }
+            set
+            {
+                if (value != Position)
+                {
+                    hasPeek = false;
+                    input.Position = value;
+                }
+            }
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -123,17 +135,23 @@ namespace MonoTorrent.BEncoding
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return input.Seek(offset, origin);
+            long val;
+            if (hasPeek && origin == SeekOrigin.Current)
+                val = input.Seek(offset - 1, origin);
+            else
+                val = input.Seek(offset, origin);
+            hasPeek = false;
+            return val;
         }
 
         public override void SetLength(long value)
         {
-            input.SetLength(value);
+            throw new NotSupportedException();
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            input.Write(buffer, offset, count);
+            throw new NotSupportedException();
         }
     }
 }
