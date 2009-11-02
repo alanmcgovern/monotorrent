@@ -149,10 +149,10 @@ namespace MonoTorrent.BEncoding
             int letterCount;
             string length = string.Empty;
 
-            while ((reader.PeekChar() != -1) && (reader.PeekChar() != ':'))         // read in how many characters
-                length += (char)reader.ReadChar();                                 // the string is
+            while ((reader.PeekByte() != -1) && (reader.PeekByte() != ':'))         // read in how many characters
+                length += (char)reader.ReadByte();                                 // the string is
 
-            if (reader.ReadChar() != ':')                                           // remove the ':'
+            if (reader.ReadByte() != ':')                                           // remove the ':'
                 throw new BEncodingException("Invalid data found. Aborting");
 
             if (!int.TryParse(length, out letterCount))

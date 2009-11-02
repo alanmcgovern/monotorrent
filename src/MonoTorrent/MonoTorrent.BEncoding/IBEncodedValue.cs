@@ -136,7 +136,7 @@ namespace MonoTorrent.BEncoding
                 throw new ArgumentNullException("reader");
 
             BEncodedValue data;
-            switch ((char)reader.PeekChar())
+            switch (reader.PeekByte())
             {
                 case ('i'):                         // Integer
                     data = new BEncodedNumber();

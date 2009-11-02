@@ -107,7 +107,7 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte() != 'd')
                 throw new BEncodingException("Invalid data found. Aborting"); // Remove the leading 'd'
 
-            while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
+            while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
             {
                 key = (BEncodedString)BEncodedValue.Decode(reader);         // keys have to be BEncoded strings
 
@@ -150,11 +150,11 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte() != 'd')
                 throw new BEncodingException("Invalid data found. Aborting"); // Remove the leading 'd'
 
-            while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
+            while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
             {
                 key = (BEncodedString)BEncodedValue.Decode(reader);         // keys have to be BEncoded strings
 
-                if (reader.PeekChar() == 'd')
+                if (reader.PeekByte() == 'd')
                 {
                     value = new BEncodedDictionary();
                     if (key.Text.ToLower().Equals("info"))

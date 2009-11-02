@@ -33,9 +33,12 @@ using System.IO;
 
 namespace MonoTorrent.BEncoding
 {
-    public class RawReader : BinaryReader
+    public class RawReader : Stream
     {
-        private bool strictDecoding;
+        bool hasPeek;
+        Stream input;
+        byte[] peeked;
+        bool strictDecoding;
 
         public bool StrictDecoding
         {
@@ -49,9 +52,88 @@ namespace MonoTorrent.BEncoding
         }
 
         public RawReader(Stream input, bool strictDecoding)
-            : base(input)
         {
+            this.input = input;
+            this.peeked = new byte[1];
             this.strictDecoding = strictDecoding;
+        }
+
+        public override bool CanRead
+        {
+            get { return input.CanRead; }
+        }
+
+        public override bool CanSeek
+        {
+            get { return input.CanSeek; }
+        }
+
+        public override bool CanWrite
+        {
+            get { return input.CanWrite; }
+        }
+
+        public override void Flush()
+        {
+            input.Flush();
+        }
+
+        public override long Length
+        {
+            get { return input.Length; }
+        }
+
+        public int PeekByte()
+        {
+            if (!hasPeek)
+                hasPeek = Read(peeked, 0, 1) == 1;
+            return hasPeek ? peeked[0] : -1;
+        }
+
+        public int ReadByte()
+        {
+            if (hasPeek)
+            {
+                hasPeek = false;
+                return peeked[0];
+            }
+            return base.ReadByte();
+        }
+
+        public override long Position
+        {
+            get { return input.Position; }
+            set { input.Position = value; }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int read = 0;
+            if (hasPeek && count > 0)
+            {
+                hasPeek = false;
+                buffer[offset] = peeked[0];
+                offset++;
+                count--;
+                read++;
+            }
+            read += input.Read(buffer, offset, count);
+            return read;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            return input.Seek(offset, origin);
+        }
+
+        public override void SetLength(long value)
+        {
+            input.SetLength(value);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            input.Write(buffer, offset, count);
         }
     }
 }

@@ -131,19 +131,19 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte() != 'i')              // remove the leading 'i'
                 throw new BEncodingException("Invalid data found. Aborting.");
 
-            if (reader.PeekChar() == '-')
+            if (reader.PeekByte() == '-')
             {
                 sign = -1;
-                reader.ReadChar();
+                reader.ReadByte ();
             }
 
             int letter;
-            while (((letter = reader.PeekChar()) != -1) && letter != 'e')
+            while (((letter = reader.PeekByte()) != -1) && letter != 'e')
             {
                 if(letter < '0' || letter > '9')
                     throw new BEncodingException("Invalid number found.");
                 number = number * 10 + (letter - '0');
-                reader.ReadChar();
+                reader.ReadByte ();
             }
             if (reader.ReadByte() != 'e')        //remove the trailing 'e'
                 throw new BEncodingException("Invalid data found. Aborting.");

@@ -112,7 +112,7 @@ namespace MonoTorrent.BEncoding
             if (reader.ReadByte() != 'l')                            // Remove the leading 'l'
                 throw new BEncodingException("Invalid data found. Aborting");
 
-            while ((reader.PeekChar() != -1) && ((char)reader.PeekChar() != 'e'))
+            while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
                 list.Add(BEncodedValue.Decode(reader));
 
             if (reader.ReadByte() != 'e')                            // Remove the trailing 'e'
