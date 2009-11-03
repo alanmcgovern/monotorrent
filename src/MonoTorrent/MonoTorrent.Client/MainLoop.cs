@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
 
     public class MainLoop
     {
-        private class DelegateTask
+        private class DelegateTask : ICacheable
         {
             private ManualResetEvent handle;
             private bool isBlocking;
@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
 
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         AutoResetEvent handle = new AutoResetEvent(false);
-        Queue<DelegateTask> spares = new Queue<DelegateTask>();
+        Cache<DelegateTask> cache = new Cache<DelegateTask>();
         Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
@@ -177,7 +177,7 @@ namespace MonoTorrent.Client
                     bool reuse = !task.IsBlocking;
                     task.Execute();
                     if (reuse)
-                        AddSpare(task);
+                        cache.Enqueue(task);
                 }
             }
         }
@@ -198,14 +198,14 @@ namespace MonoTorrent.Client
 
         public void Queue(MainLoopTask task)
         {
-            DelegateTask dTask = GetSpare();
+            DelegateTask dTask = cache.Dequeue();
             dTask.Task = task;
             Queue(dTask);
         }
 
         public void QueueWait(MainLoopTask task)
         {
-            DelegateTask dTask = GetSpare();
+            DelegateTask dTask = cache.Dequeue();
             dTask.Task = task;
             try
             {
@@ -213,13 +213,13 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                AddSpare(dTask);
+                cache.Enqueue(dTask);
             }
         }
 
         public object QueueWait(MainLoopJob task)
         {
-            DelegateTask dTask = GetSpare();
+            DelegateTask dTask = cache.Dequeue();
             dTask.Job = task;
 
             try
@@ -229,7 +229,7 @@ namespace MonoTorrent.Client
             }
             finally
             {
-                AddSpare(dTask);
+                cache.Enqueue(dTask);
             }
         }
 
@@ -250,7 +250,7 @@ namespace MonoTorrent.Client
 
         public uint QueueTimeout(TimeSpan span, TimeoutTask task)
         {
-            DelegateTask dTask = GetSpare();
+            DelegateTask dTask = cache.Dequeue();
             dTask.Timeout = task;
 
             return dispatcher.Add(span, delegate {
@@ -284,22 +284,6 @@ namespace MonoTorrent.Client
                     transfer(s, c, o);
                 });
             };
-        }
-
-        private void AddSpare(DelegateTask task)
-        {
-            task.Initialise();
-            lock (spares)
-                spares.Enqueue(task);
-        }
-
-        private DelegateTask GetSpare()
-        {
-            lock (spares)
-                if (spares.Count > 0)
-                    return spares.Dequeue();
-
-            return new DelegateTask();
         }
     }
 }
