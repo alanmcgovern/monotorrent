@@ -234,7 +234,7 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException(typeof(EndOfStreamException))]
+        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenNumberDecode()
         {
             string testString = "i35212";
@@ -387,7 +387,7 @@ namespace MonoTorrent.Common
 
 
         [Test]
-        [ExpectedException(typeof(EndOfStreamException))]
+        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenDictionaryDecode()
         {
             string testString = "d3:3521:a3:aedddd";
