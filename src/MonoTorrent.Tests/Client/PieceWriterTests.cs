@@ -17,19 +17,17 @@ namespace MonoTorrent.Client
 		{
 			tester = tests;
 		}
-        public override int Read(BufferedIO data)
-		{
-			Console.WriteLine("Attempting to read - returning zero");
-			return 0;
-		}
+        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        {
+            return 0;
+        }
 
-		public override void Write(BufferedIO data)
-		{
-			Console.WriteLine("Flushed {0}:{1} to disk", data.PieceIndex, data.PieceOffset / 1000);
-			tester.blocks.Remove(data);
-            ArraySegment<byte> buffer = data.Buffer;
-			PieceWriterTests.Buffer.FreeBuffer(ref buffer);
-		}
+        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        {
+            tester.blocks.RemoveAll(delegate (BufferedIO io) {
+                return io.Offset == offset && io.Count == count;
+            });
+        }
 
 		public override void Close(TorrentFile file)
 		{
@@ -59,13 +57,13 @@ namespace MonoTorrent.Client
 	[TestFixture]
 	public class PieceWriterTests
 	{
-        //static void Main(string[] args)
-        //{
-        //    PieceWriterTests t = new PieceWriterTests();
-        //    t.GlobalSetup();
-        //    t.Setup();
-        //    t.TestMemoryStandardReads();
-        //}
+        static void Main(string[] args)
+        {
+            PieceWriterTests t = new PieceWriterTests();
+            t.GlobalSetup();
+            t.Setup();
+            t.TestMemoryStandardReads();
+        }
         public static readonly int PieceCount = 2;
         public static readonly int BlockCount = 10;
 		public static readonly int BlockSize = Piece.BlockSize;
@@ -109,7 +107,7 @@ namespace MonoTorrent.Client
 			for (int i = 0; i < b.Count; i++)
 				b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
 			BufferedIO io = new BufferedIO();
-            io.Initialise(null, b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
+            io.Initialise(rig.Manager, b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
             return io;
         }
 
@@ -120,7 +118,7 @@ namespace MonoTorrent.Client
 				for (int j = 0; j < BlockCount; j++)
 					blocks.Add(CreateBlock(i, j));
 
-			blocks.ForEach(delegate(BufferedIO d) { level1.Write(d); });
+			blocks.ForEach(delegate(BufferedIO d) { level1.Write(d.Files, d.Offset, d.buffer.Array, d.buffer.Offset, d.Count, d.PieceLength, d.Manager.Torrent.Size); });
 
 			// For the pieces which weren't flushed to the null buffer, make sure they are still accessible
 			for (int i = 0; i < blocks.Count; i++)
@@ -136,18 +134,17 @@ namespace MonoTorrent.Client
 		public void TestMemoryStandardReads()
 		{
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
+            level2.Capacity = PieceSize * 20;
 			Buffer.GetBuffer(ref buffer, BlockSize);
 			Initialise(buffer);
 			foreach (BufferedIO data in this.blocks.ToArray())
-				level1.Write(data);
+				level1.WriteBlock(data);
 
 			for (int piece=0; piece < PieceCount; piece++)
 			{
 				for(int block = 0; block < BlockCount; block++)
 				{
-					BufferedIO io = new BufferedIO();
-                    io.Initialise (null, buffer, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
-					level1.ReadChunk(io);
+                    level1.ReadBlock(rig.Manager.Torrent.Files, piece, block, buffer.Array, buffer.Offset, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Size);
 
 					for (int i = 0; i < BlockSize; i++)
 						Assert.AreEqual(buffer.Array[buffer.Offset + i], piece * BlockCount + block, "#1");
@@ -158,11 +155,11 @@ namespace MonoTorrent.Client
 		[Test]
 		public void TestMemoryOffsetReads()
 		{
-			level1.Write(blocks[0]);
-			level2.Write(blocks[1]);
-			level1.Write(blocks[2]);
-			level2.Write(blocks[3]);
-			level2.Write(blocks[4]);
+            level1.WriteBlock(blocks[0]);
+            level2.WriteBlock(blocks[1]);
+            level1.WriteBlock(blocks[2]);
+            level2.WriteBlock(blocks[3]);
+            level2.WriteBlock(blocks[4]);
 
 			ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
 			Buffer.GetBuffer(ref buffer, PieceSize);
@@ -171,9 +168,7 @@ namespace MonoTorrent.Client
 			int piece = 0;
             int block = 0;
 
-			BufferedIO io = new BufferedIO();
-            io.Initialise (null, buffer, piece, block, PieceSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
-			level1.ReadChunk(io);
+			level1.ReadPiece(rig.Manager.Torrent.Files, piece, buffer.Array, buffer.Offset, PieceSize, rig.Manager.Torrent.Size);
 			for (block = 0; block < 5; block++)
 			{
 				for (int i = 0; i < BlockSize; i++)

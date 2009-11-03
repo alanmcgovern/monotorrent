@@ -193,32 +193,34 @@ namespace MonoTorrent.Client
             });
         }
 
-        private void PerformWrite(BufferedIO data)
+        private void PerformWrite(BufferedIO io)
         {
-            Piece piece = data.Piece;
+            Piece piece = io.Piece;
 
             // Find the block that this data belongs to and set it's state to "Written"
-            int index = data.PieceOffset / Piece.BlockSize;
+            int index = io.PieceOffset / Piece.BlockSize;
 
             // Perform the actual write
-            writer.Write(data);
-            writeMonitor.AddDelta(data.Count);
+            writer.Write(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size);
+            writeMonitor.AddDelta(io.Count);
 
             piece.Blocks[index].Written = true;
 
-            data.Complete = true;
-            if (data.Callback != null)
-                data.Callback();
+            io.Complete = true;
+            if (io.Callback != null)
+                io.Callback();
         }
 
         private void PerformRead(BufferedIO io)
         {
-            io.ActualCount = writer.ReadChunk(io);
-            readMonitor.AddDelta(io.ActualCount);
+            if (writer.Read(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size))
+                io.ActualCount = io.Count;
+            else
+                io.ActualCount = 0;
 
             io.Complete = true;
-			if (io.Callback != null)
-				io.Callback();
+            if (io.Callback != null)
+                io.Callback();
         }
 
         internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
@@ -313,50 +315,38 @@ namespace MonoTorrent.Client
 			long pieceStartIndex = (long)pieceLength * pieceIndex;
 			BufferedIO io = null;
 			ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
-			List<BufferedIO> list = new List<BufferedIO>();
 
 			MainLoopTask readCallback = delegate {
-				for (int i = 0; i < list.Count; i++)
-				{
-					if (!list[i].Complete)
-						return;
-				}
 				ClientEngine.MainLoop.Queue(delegate
 				{
 					using (SHA1 hasher = HashAlgoFactory.Create<SHA1>()) {
 						hasher.Initialize();
-						for (int i = 0; i < list.Count; i++)
-						{
-							hashBuffer = list[i].buffer;
-							hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, list[i].ActualCount, hashBuffer.Array, hashBuffer.Offset);
-							ClientEngine.BufferManager.FreeBuffer(ref list[i].buffer);
-						}
+					    hashBuffer = io.buffer;
+						hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, io.ActualCount, hashBuffer.Array, hashBuffer.Offset);
+						ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
 						hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
-                        for (int i = 0; i < list.Count; i++)
-                            cache.Enqueue(list[i]);
+                        cache.Enqueue(io);
 						callback(hasher.Hash);
 					}
 				});
 			};
 
-			for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += Piece.BlockSize)
+			for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += pieceLength)
 			{
 				hashBuffer = BufferManager.EmptyBuffer;
-				ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
-				bytesToRead = Piece.BlockSize;
+				ClientEngine.BufferManager.GetBuffer(ref hashBuffer, pieceLength);
+				bytesToRead = pieceLength;
 				if ((i + bytesToRead) > fileSize)
 					bytesToRead = (int)(fileSize - i);
 
 				io = cache.Dequeue();
 				io.Initialise(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
-				list.Add(io);
 
-				if (bytesToRead != Piece.BlockSize)
+                if (bytesToRead != pieceLength)
 					break;
 			}
 
-			for (int i=0; i < list.Count; i++)
-				manager.Engine.DiskManager.QueueRead(list[i], readCallback);
+				manager.Engine.DiskManager.QueueRead(io, readCallback);
 		}
 
         #endregion

@@ -53,6 +53,10 @@ namespace MonoTorrent.Client
         {
             get { return (int)(offset / pieceLength); }
         }
+        public int PieceLength
+        {
+            get { return pieceLength; }
+        }
         public int PieceOffset
         {
             get { return (int)(offset % pieceLength); ; }

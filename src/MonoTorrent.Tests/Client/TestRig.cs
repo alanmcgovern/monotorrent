@@ -19,33 +19,18 @@ namespace MonoTorrent.Client
     {
         public bool DontWrite;
         public List<String> Paths = new List<string>();
-        public override int Read(BufferedIO data)
+        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            long idx = data.Offset;
-            for (int i = 0; i < data.Files.Count; i++)
-            {
-                if (idx < data.Files[i].Length)
-                {
-                    if (!Paths.Contains(data.Files[i].FullPath))
-                        Paths.Add(data.Files[i].FullPath);
-                    break;
-                }
-                else
-                {
-                    idx -= data.Files[i].Length;
-                }
-            }
-             
-            data.ActualCount = data.Count;
-            if (DontWrite)
-                return data.Count;
+            if (!Paths.Contains(file.FullPath))
+                Paths.Add(file.FullPath);
 
-            for (int i = 0; i < data.Count; i++)
-                data.Buffer.Array[data.Buffer.Offset + i] = (byte)(data.Buffer.Offset + i);
-            return data.Count;
+            if (!DontWrite)
+                for (int i = 0; i < count; i++)
+                    buffer[bufferOffset + i] = (byte)(bufferOffset + i);
+            return count;
         }
 
-        public override void Write(BufferedIO data)
+        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
 
         }

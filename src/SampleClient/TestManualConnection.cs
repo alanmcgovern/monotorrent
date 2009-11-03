@@ -53,13 +53,11 @@ namespace SampleClient
 
     public class NullWriter : PieceWriter
     {
-        public override int Read(BufferedIO data)
+        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            data.ActualCount = data.Count;
-            return data.Count;
+            return count;
         }
-
-        public override void Write(BufferedIO data)
+        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
         }
 

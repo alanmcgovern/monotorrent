@@ -47,6 +47,11 @@ namespace MonoTorrent
             DoCheck(baseType, "baseType");
         }
 
+        internal static void Buffer(object buffer)
+        {
+            DoCheck(buffer, "buffer");
+        }
+
         internal static void Cache(object cache)
         {
             DoCheck(cache, "cache");
@@ -65,6 +70,11 @@ namespace MonoTorrent
         public static void Endpoint(object endpoint)
         {
             DoCheck(endpoint, "endpoint");
+        }
+
+        public static void File(object file)
+        {
+            DoCheck(file, "file");
         }
 
         public static void Files(object files)

@@ -246,7 +246,7 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceDecoding()
         {
-            EncodeDecode(new PieceMessage(testRig.Manager, 123, 456, 789));
+            EncodeDecode(new PieceMessage(testRig.Manager, 10, 0, Piece.BlockSize));
         }
 
 

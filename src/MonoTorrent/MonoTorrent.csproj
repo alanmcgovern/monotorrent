@@ -146,6 +146,7 @@
     <Compile Include="MonoTorrent.Client\PiecePicking\SlidingWindowPicker.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\SortedList.cs" />
     <Compile Include="MonoTorrent.Client\PiecePicking\StandardPicker.cs" />
+    <Compile Include="MonoTorrent.Client\PieceWriter\IPieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\PieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\RateLimiter.cs" />

@@ -39,11 +39,6 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    public class FakeDiskWriter : DiskWriter
-    {
-
-    }
-
     public class ExceptionWriter : PieceWriter
     {
         public bool exist, close, flush, move, read, write;
@@ -73,14 +68,14 @@ namespace MonoTorrent.Client
                 throw new Exception("move");
         }
 
-        public override int Read(BufferedIO data)
+        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (read)
                 throw new Exception("read");
-            return data.Count;
+            return count;
         }
 
-        public override void Write(BufferedIO data)
+        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             if (write)
                 throw new Exception("write");

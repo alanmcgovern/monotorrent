@@ -51,107 +51,32 @@ namespace MonoTorrent.Client.PieceWriters
             File.Move(oldPath, newPath);
         }
 
-        public override int Read(BufferedIO data)
+        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            if (data == null)
-                throw new ArgumentNullException("buffer");
-            
-            long offset = data.Offset;
-            int count = data.Count;
-            IList<TorrentFile> files = data.Files;
-            long fileSize;
-            if (data.Manager != null)
-                fileSize = data.Manager.Torrent.Size;
-            else
-                fileSize = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile f) { return f.Length; });
+            Check.File(file);
+            Check.Buffer(buffer);
 
-            if (offset < 0 || offset + count > fileSize)
+            if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException("offset");
 
-            int i = 0;
-            int bytesRead = 0;
-            int totalRead = 0;
-
-            for (i = 0; i < files.Count; i++)          // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < files[i].Length)           // the start of the data we want to read
-                    break;
-
-                offset -= files[i].Length;              // Offset now contains the index of the data we want
-            }                                                   // to read from fileStream[i].
-
-            while (totalRead < count)                           // We keep reading until we have read 'count' bytes.
-            {
-                if (i == files.Count)
-                    break;
-
-                TorrentFileStream s = GetStream(files[i], FileAccess.Read);
-                if (s.Length < Math.Min(offset + count, files[i].Length))
-                    break;
-                s.Seek(offset, SeekOrigin.Begin);
-                offset = 0; // Any further files need to be read from the beginning
-                bytesRead = s.Read(data.buffer.Array, data.buffer.Offset + totalRead, count - totalRead);
-                totalRead += bytesRead;
-                i++;
-            }
-            //monitor.BytesSent(totalRead, TransferType.Data);
-            data.ActualCount += totalRead;
-            return totalRead;
+            Stream s = GetStream(file, FileAccess.Read);
+            if (s.Length < offset + count)
+                return 0;
+            s.Seek(offset, SeekOrigin.Begin);
+            return s.Read(buffer, bufferOffset, count);
         }
 
-        public override void Write(BufferedIO data)
+        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-            byte[] buffer = data.buffer.Array;
-            long offset = data.Offset;
-            int count = data.Count;
+            Check.File(file);
+            Check.Buffer(buffer);
 
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            long fileSize = 0;
-            for (int j = 0; j < data.Files.Count; j++)
-                fileSize += data.Files[j].Length;
-
-            if (offset < 0 || offset + count > fileSize)
+            if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException("offset");
 
-            int i = 0;
-            long bytesWritten = 0;
-            long totalWritten = 0;
-            long bytesWeCanWrite = 0;
-
-            for (i = 0; i < data.Files.Count; i++)          // This section loops through all the available
-            {                                                   // files until we find the file which contains
-                if (offset < data.Files[i].Length)           // the start of the data we want to write
-                    break;
-
-                offset -= data.Files[i].Length;              // Offset now contains the index of the data we want
-            }                                                   // to write to fileStream[i].
-
-            while (totalWritten < count)                        // We keep writing  until we have written 'count' bytes.
-            {
-                TorrentFileStream stream = GetStream(data.Files[i], FileAccess.ReadWrite);
-                stream.Seek(offset, SeekOrigin.Begin);
-
-                // Find the maximum number of bytes we can write before we reach the end of the file
-                bytesWeCanWrite = data.Files[i].Length - offset;
-
-                // Any further files need to be written from the beginning of the file
-                offset = 0;
-
-                // If the amount of data we are going to write is larger than the amount we can write, just write the allowed
-                // amount and let the rest of the data be written with the next filestream
-                bytesWritten = ((count - totalWritten) > bytesWeCanWrite) ? bytesWeCanWrite : (count - totalWritten);
-
-                // Write the data
-                stream.Write(buffer, data.buffer.Offset + (int)totalWritten, (int)bytesWritten);
-
-                // Any further data should be written to the next available file
-                totalWritten += bytesWritten;
-                i++;
-            }
-            ClientEngine.BufferManager.FreeBuffer(ref data.buffer);
-            //monitor.BytesReceived((int)totalWritten, TransferType.Data);
+            TorrentFileStream stream = GetStream(file, FileAccess.ReadWrite);
+            stream.Seek(offset, SeekOrigin.Begin);
+            stream.Write(buffer, bufferOffset, count);
         }
 
         public override bool Exists(TorrentFile file)

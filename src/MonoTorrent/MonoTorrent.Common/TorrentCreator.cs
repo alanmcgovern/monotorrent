@@ -329,23 +329,21 @@ namespace MonoTorrent.Common {
 
 
                         int toRead = (int) Math.Min (buffer.Length - bufferRead, file.Length - fileRead);
-                        BufferedIO io = new BufferedIO ();
-                        io.Initialise (null, new ArraySegment<byte> (buffer, bufferRead, toRead), overallRead, toRead, buffer.Length, files);
-                        writer.ReadChunk (io);
+                        int read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
 
                         if (md5Hasher != null)
-                            md5Hasher.TransformBlock (buffer, bufferRead, io.ActualCount, buffer, bufferRead);
-                        shaHasher.TransformBlock (buffer, bufferRead, io.ActualCount, buffer, bufferRead);
+                            md5Hasher.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
+                        shaHasher.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
 
-                        bufferRead += io.ActualCount;
-                        fileRead += io.ActualCount;
-                        overallRead += io.ActualCount;
+                        bufferRead += read;
+                        fileRead += read;
+                        overallRead += read;
 
                         if (bufferRead == buffer.Length) {
                             bufferRead = 0;
                             shaHasher.TransformFinalBlock (buffer, 0, 0);
-                            shaHasher.Initialize ();
                             torrentHashes.AddRange (shaHasher.Hash);
+                            shaHasher.Initialize();
                         }
                         RaiseHashed (new TorrentCreatorEventArgs (fileRead, file.Length, overallRead, overallTotal));
                     }
