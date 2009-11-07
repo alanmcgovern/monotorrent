@@ -145,7 +145,7 @@ namespace MonoTorrent.Client
 
         TimeoutDispatcher dispatcher = new TimeoutDispatcher();
         AutoResetEvent handle = new AutoResetEvent(false);
-        Cache<DelegateTask> cache = new Cache<DelegateTask>();
+        ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
         Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
