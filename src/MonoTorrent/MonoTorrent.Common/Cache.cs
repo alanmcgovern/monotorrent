@@ -40,7 +40,7 @@ namespace MonoTorrent.Common
     }
 
     class Cache<T> : ICache<T>
-        where T : ICacheable, new()
+        where T : class, ICacheable, new()
     {
         bool autoCreate;
         Queue<T> cache;
@@ -61,7 +61,7 @@ namespace MonoTorrent.Common
         {
             if (cache.Count > 0)
                 return cache.Dequeue();
-            return autoCreate ? new T() : default(T);
+            return autoCreate ? new T() : null;
         }
 
         public void Enqueue(T instance)
@@ -78,24 +78,22 @@ namespace MonoTorrent.Common
     class SynchronizedCache<T> : ICache<T>
     {
         ICache<T> cache;
-        object locker;
 
         public SynchronizedCache(ICache<T> cache)
         {
             Check.Cache(cache);
             this.cache = cache;
-            this.locker = new object();
         }
 
         public T Dequeue()
         {
-            lock (locker)
+            lock (cache)
                 return cache.Dequeue();
         }
 
         public void Enqueue(T instance)
         {
-            lock (locker)
+            lock (cache)
                 cache.Enqueue(instance);
         }
     }
