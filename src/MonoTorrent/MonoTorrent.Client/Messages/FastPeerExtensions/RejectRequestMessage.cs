@@ -81,6 +81,10 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
         }
 
+        public RejectRequestMessage(RequestMessage message)
+            : this(message.PieceIndex, message.StartOffset, message.RequestLength)
+        {
+        }
 
         public RejectRequestMessage(int pieceIndex, int startOffset, int requestLength)
         {
