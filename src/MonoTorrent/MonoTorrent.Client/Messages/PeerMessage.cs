@@ -28,7 +28,7 @@ namespace MonoTorrent.Client.Messages
             Register(HaveNoneMessage.MessageId,      delegate (TorrentManager manager) { return new HaveNoneMessage(); });
             Register(InterestedMessage.MessageId,    delegate (TorrentManager manager) { return new InterestedMessage(); });
             Register(NotInterestedMessage.MessageId, delegate (TorrentManager manager) { return new NotInterestedMessage(); });
-            Register(PieceMessage.MessageId,         delegate (TorrentManager manager) { return new PieceMessage(manager); });
+            Register(PieceMessage.MessageId,         delegate (TorrentManager manager) { return new PieceMessage(); });
             Register(PortMessage.MessageId,          delegate (TorrentManager manager) { return new PortMessage(); });
             Register(RejectRequestMessage.MessageId, delegate (TorrentManager manager) { return new RejectRequestMessage(); });
             Register(RequestMessage.MessageId,       delegate (TorrentManager manager) { return new RequestMessage(); });

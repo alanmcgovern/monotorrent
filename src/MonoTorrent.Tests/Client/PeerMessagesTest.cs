@@ -241,12 +241,16 @@ namespace MonoTorrent.Client
         [Test]
         public void PieceEncoding()
         {
-            new PieceMessage(testRig.Manager, 15, 1024, 16384).Encode(buffer, offset);
+            PieceMessage message = new PieceMessage(15, 10, Piece.BlockSize);
+            message.Data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+            message.Encode(buffer, offset);
         }
         [Test]
         public void PieceDecoding()
         {
-            EncodeDecode(new PieceMessage(testRig.Manager, 10, 0, Piece.BlockSize));
+            PieceMessage message = new PieceMessage(15, 10, Piece.BlockSize);
+            message.Data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+            EncodeDecode(message);
         }
 
 

@@ -223,18 +223,6 @@ namespace MonoTorrent.Client
                 io.Callback();
         }
 
-        internal int Read(TorrentManager manager, byte[] buffer, int bufferOffset, long pieceStartIndex, int bytesToRead)
-        {
-            string path = manager.SavePath;
-            ArraySegment<byte> b = new ArraySegment<byte>(buffer, bufferOffset, bytesToRead);
-            BufferedIO io = new BufferedIO();
-            io.Initialise(manager, b, pieceStartIndex, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
-            IOLoop.QueueWait((MainLoopTask)delegate {
-                PerformRead(io);
-            });
-            return io.ActualCount;
-        }
-
         internal void QueueFlush(TorrentManager manager, int index)
         {
             IOLoop.Queue(delegate {
@@ -243,11 +231,6 @@ namespace MonoTorrent.Client
                         writer.Flush(file);
             });
         }
-
-		//internal void QueueRead(BufferedIO io)
-		//{
-		//    QueueRead(io, null);
-		//}
 
 		internal void QueueRead(BufferedIO io, MainLoopTask callback)
 		{
@@ -261,11 +244,6 @@ namespace MonoTorrent.Client
 					DiskManager.IOLoop.Queue(LoopTask);
 				}
 		}
-
-		//internal void QueueWrite(BufferedIO io)
-		//{
-		//    QueueWrite(io, null);
-		//}
 
 		internal void QueueWrite(BufferedIO io, MainLoopTask callback)
 		{
@@ -356,6 +334,14 @@ namespace MonoTorrent.Client
             IOLoop.QueueWait(delegate {
                 writer.Move (newRoot, torrentManager.Torrent.Files, overWriteExisting);
             });
+        }
+
+
+        internal void QueueRead(TorrentManager manager, long offset, ArraySegment<byte> buffer, int count, MainLoopTask callback)
+        {
+            BufferedIO io = cache.Dequeue();
+            io.Initialise(manager, buffer, offset, count, manager.Torrent.PieceLength, manager.Torrent.Files);
+            QueueRead(io, callback);
         }
     }
 }

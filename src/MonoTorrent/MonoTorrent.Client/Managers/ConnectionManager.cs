@@ -410,12 +410,16 @@ namespace MonoTorrent.Client
                 ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
                 id.MessageSentCallback = callback;
                 id.CurrentlySendingMessage = message;
-                if (message is PieceMessage)
-                    id.IsRequestingPiecesCount--;
 
                 id.BytesSent = 0;
                 id.BytesToSend = message.Encode(id.sendBuffer, 0);
                 id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
+
+                if (message is PieceMessage)
+                {
+                    ClientEngine.BufferManager.FreeBuffer(ref ((PieceMessage)message).Data);
+                    id.IsRequestingPiecesCount--;
+                }
 
                 RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
                 NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);

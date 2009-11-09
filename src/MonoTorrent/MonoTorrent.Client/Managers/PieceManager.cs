@@ -101,6 +101,7 @@ namespace MonoTorrent.Client
                 id.LastBlockReceived = DateTime.Now;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
 				id.TorrentManager.Engine.DiskManager.QueueWrite(data, delegate {
+                    ClientEngine.BufferManager.FreeBuffer(ref data.buffer);
 					// If we haven't written all the pieces to disk, there's no point in hash checking
 					if (!piece.AllBlocksWritten)
 						return;

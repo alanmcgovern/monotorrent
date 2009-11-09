@@ -38,11 +38,9 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Libtorrent;
 using System.Collections.Generic;
+using MonoTorrent.Client.Messages.Standard;
 namespace MonoTorrent.Client
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public class PeerId //: IComparable<PeerIdInternal>
     {
         #region Choke/Unchoke
@@ -101,6 +99,8 @@ namespace MonoTorrent.Client
         #endregion
 
         #region Member Variables
+
+        public List<PieceMessage> PieceReads = new List<PieceMessage>();
 
         private MonoTorrentCollection<int> amAllowedFastPieces;
         private bool amChoking;
@@ -724,5 +724,48 @@ namespace MonoTorrent.Client
         }
 
         #endregion BitTyrant
+
+        internal void TryProcessAsyncReads()
+        {
+            // We only allow 2 simultaenous PieceMessages in a peers send queue.
+            // This way if the peer requests 100 pieces, we don't bloat our memory
+            // usage unnecessarily. Once the first message is sent, we read data
+            // for the *next* message asynchronously and then add it to the queue.
+            // While this is happening, we send data from the second PieceMessage in
+            // the queue, thus the queue should rarely be empty.
+            int existingReads = 0;
+            if (currentlySendingMessage is PieceMessage)
+                existingReads++;
+
+            for (int i = 0; existingReads < 2 && i < sendQueue.Count; i++)
+                if (sendQueue[i] is PieceMessage)
+                    existingReads++;
+
+            if (existingReads >= 2)
+                return;
+
+            PieceMessage m = null;
+            for (int i = 0; m == null && i < PieceReads.Count; i++)
+                if (PieceReads [i].Data == BufferManager.EmptyBuffer)
+                    m = PieceReads[i];
+
+            if (m == null)
+                return;
+
+            long offset = (long)m.PieceIndex * torrentManager.Torrent.PieceLength + m.StartOffset;
+            ClientEngine.BufferManager.GetBuffer(ref m.Data, m.RequestLength);
+            engine.DiskManager.QueueRead(torrentManager, offset, m.Data, m.RequestLength, delegate {
+                ClientEngine.MainLoop.Queue(delegate {
+                    if (!PieceReads.Contains(m))
+                        ClientEngine.BufferManager.FreeBuffer(ref m.Data);
+                    else
+                    {
+                        PieceReads.Remove(m);
+                        Enqueue(m);
+                    }
+                    TryProcessAsyncReads();
+                });
+            });
+        }
     }
 }

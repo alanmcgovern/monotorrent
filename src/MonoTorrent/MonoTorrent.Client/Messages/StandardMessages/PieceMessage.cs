@@ -43,12 +43,11 @@ namespace MonoTorrent.Client.Messages.Standard
         #region Private Fields
 
         private int dataOffset;
-        private TorrentManager manager;
         private int pieceIndex;
         private int startOffset;
         private int requestLength;
 
-        internal ArraySegment<byte> data;
+        internal ArraySegment<byte> Data;
 
         #endregion
 
@@ -75,11 +74,6 @@ namespace MonoTorrent.Client.Messages.Standard
             get { return this.pieceIndex; }
         }
 
-        public int PieceLength
-        {
-            get { return this.manager.Torrent.PieceLength; }
-        }
-
         public int StartOffset
         {
             get { return this.startOffset; }
@@ -95,17 +89,17 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #region Constructors
 
-        public PieceMessage(TorrentManager manager)
+        public PieceMessage()
         {
-            this.manager = manager;
+            Data = BufferManager.EmptyBuffer;
         }
 
-        public PieceMessage(TorrentManager manager, int pieceIndex, int startOffset, int blockLength)
+        public PieceMessage(int pieceIndex, int startOffset, int blockLength)
         {
-            this.manager = manager;
             this.pieceIndex = pieceIndex;
             this.startOffset = startOffset;
             this.requestLength = blockLength;
+            Data = BufferManager.EmptyBuffer;
         }
 
         #endregion
@@ -122,27 +116,20 @@ namespace MonoTorrent.Client.Messages.Standard
             this.dataOffset = offset;
 
             // This buffer will be freed after the PieceWriter has finished with it
-            this.data = BufferManager.EmptyBuffer;
-            ClientEngine.BufferManager.GetBuffer(ref this.data, requestLength);
-            Buffer.BlockCopy(buffer, offset, this.data.Array, this.data.Offset, requestLength);
+            this.Data = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref this.Data, requestLength);
+            Buffer.BlockCopy(buffer, offset, this.Data.Array, this.Data.Offset, requestLength);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int bytesRead = 0;
             int written = offset;
 
             written += Write(buffer, written, messageLength + requestLength);
             written += Write(buffer, written, MessageId);
             written += Write(buffer, written, pieceIndex);
             written += Write(buffer, written, startOffset);
-
-            long pieceOffset = (long)this.PieceIndex * this.manager.Torrent.PieceLength + this.startOffset;
-            bytesRead = manager.Engine.DiskManager.Read(manager, buffer, written, pieceOffset, RequestLength);
-
-            if (bytesRead != this.RequestLength)
-                throw new MessageException("Could not read required data");
-            written += bytesRead;
+            written += Write(buffer, written, Data.Array, Data.Offset, requestLength);
 
             return CheckWritten(written - offset);
         }
@@ -160,8 +147,7 @@ namespace MonoTorrent.Client.Messages.Standard
             return (this.requestLength.GetHashCode()
                 ^ this.dataOffset.GetHashCode()
                 ^ this.pieceIndex.GetHashCode()
-                ^ this.startOffset.GetHashCode()
-                ^ this.manager.GetHashCode());
+                ^ this.startOffset.GetHashCode());
         }
 
         public override string ToString()

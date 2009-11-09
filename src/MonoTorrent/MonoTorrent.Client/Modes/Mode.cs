@@ -268,6 +268,16 @@ namespace MonoTorrent.Client
                     id.IsRequestingPiecesCount--;
                 }
             }
+
+            for (int i = 0; i < id.PieceReads.Count; i++)
+            {
+                if (id.PieceReads[i].PieceIndex == message.PieceIndex && id.PieceReads[i].StartOffset == message.StartOffset && id.PieceReads[i].RequestLength == message.RequestLength)
+                {
+                    id.IsRequestingPiecesCount--;
+                    id.PieceReads.RemoveAt(i);
+                    break;
+                }
+            }
         }
 
         protected virtual void HandleChokeMessage(PeerId id, ChokeMessage message)
@@ -313,7 +323,7 @@ namespace MonoTorrent.Client
             id.PiecesReceived++;
             string path = manager.SavePath;
             BufferedIO d = new BufferedIO();
-            d.Initialise (id.TorrentManager, message.data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files);
+            d.Initialise (id.TorrentManager, message.Data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files);
             d.Id = id;
             manager.PieceManager.PieceDataReceived(d);
 
@@ -334,13 +344,14 @@ namespace MonoTorrent.Client
                 if (message.RequestLength > RequestMessage.MaxSize || message.RequestLength < RequestMessage.MinSize)
                     throw new MessageException("Illegal piece request received. Peer requested " + message.RequestLength.ToString() + " byte");
 
-            PieceMessage m = new PieceMessage(id.TorrentManager, message.PieceIndex, message.StartOffset, message.RequestLength);
+            PieceMessage m = new PieceMessage(message.PieceIndex, message.StartOffset, message.RequestLength);
 
             // If we're not choking the peer, enqueue the message right away
             if (!id.AmChoking)
             {
                 id.IsRequestingPiecesCount++;
-                id.Enqueue(m);
+                id.PieceReads.Add(m);
+                id.TryProcessAsyncReads();
             }
 
             // If the peer supports fast peer and the requested piece is one of the allowed pieces, enqueue it
@@ -350,7 +361,8 @@ namespace MonoTorrent.Client
                 if (id.AmAllowedFastPieces.Contains(message.PieceIndex))
                 {
                     id.IsRequestingPiecesCount++;
-                    id.Enqueue(m);
+                    id.PieceReads.Add(m);
+                    id.TryProcessAsyncReads();
                 }
                 else
                     id.Enqueue(new RejectRequestMessage(m));
