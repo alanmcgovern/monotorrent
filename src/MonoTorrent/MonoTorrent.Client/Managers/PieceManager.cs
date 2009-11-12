@@ -91,17 +91,21 @@ namespace MonoTorrent.Client
             unhashedPieces = new BitField(0);
         }
 
-        public void PieceDataReceived(BufferedIO data)
+        public void PieceDataReceived(PeerId peer, PieceMessage message)
         {
             Piece piece;
-            if (picker.ValidatePiece(data.Id, data.PieceIndex, data.PieceOffset, data.Count, out piece))
+            if (picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece))
             {
-                PeerId id = data.Id;
-                data.Piece = piece;
+                PeerId id = peer;
+                TorrentManager manager = id.TorrentManager;
+                Block block = piece.Blocks [message.StartOffset / Piece.BlockSize];
+                long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
+
                 id.LastBlockReceived = DateTime.Now;
-                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(data));
-				id.TorrentManager.Engine.DiskManager.QueueWrite(data, delegate {
-                    ClientEngine.BufferManager.FreeBuffer(ref data.buffer);
+                id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(manager, block, piece, id));
+				id.TorrentManager.Engine.DiskManager.QueueWrite (manager, offset, message.Data, message.RequestLength , delegate {
+                    piece.Blocks[message.StartOffset/ Piece.BlockSize].Written = true;
+                    ClientEngine.BufferManager.FreeBuffer(ref message.Data);
 					// If we haven't written all the pieces to disk, there's no point in hash checking
 					if (!piece.AllBlocksWritten)
 						return;
@@ -110,7 +114,7 @@ namespace MonoTorrent.Client
                     id.Engine.DiskManager.BeginGetHash (id.TorrentManager, piece.Index, delegate (object o) {
 					    byte[] hash = (byte[]) o;
 					    bool result = id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
-					    id.TorrentManager.Bitfield[data.PieceIndex] = result;
+					    id.TorrentManager.Bitfield[message.PieceIndex] = result;
 
 					    ClientEngine.MainLoop.Queue(delegate
 					    {
@@ -133,8 +137,8 @@ namespace MonoTorrent.Client
 					});
 				});
                 
-                if (data.Piece.AllBlocksReceived)
-                    this.unhashedPieces[data.PieceIndex] = true;
+                if (piece.AllBlocksReceived)
+                    this.unhashedPieces[message.PieceIndex] = true;
             }
             else
             {

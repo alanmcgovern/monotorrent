@@ -322,10 +322,7 @@ namespace MonoTorrent.Client
         {
             id.PiecesReceived++;
             string path = manager.SavePath;
-            BufferedIO d = new BufferedIO();
-            d.Initialise (id.TorrentManager, message.Data, message.PieceIndex, message.BlockIndex, message.RequestLength, manager.Torrent.PieceLength, manager.Torrent.Files);
-            d.Id = id;
-            manager.PieceManager.PieceDataReceived(d);
+            manager.PieceManager.PieceDataReceived(id, message);
 
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
             while (manager.PieceManager.AddPieceRequest(id)) { }

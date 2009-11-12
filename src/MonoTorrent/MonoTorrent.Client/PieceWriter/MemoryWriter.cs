@@ -70,11 +70,6 @@ namespace MonoTorrent.Client.PieceWriters
             return writer.Read(file, offset, buffer, bufferOffset, count);
         }
 
-        public void WriteBlock(BufferedIO io)
-        {
-            Write(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceIndex, io.Manager.Torrent.Size);
-        }
-
         public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             Write(file, offset, buffer, bufferOffset, count, false);

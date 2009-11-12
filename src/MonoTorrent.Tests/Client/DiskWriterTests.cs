@@ -81,7 +81,7 @@ namespace MonoTorrent.Client
                 throw new Exception("write");
         }
     }
-    
+
     [TestFixture]
     public class DiskWriterTests
     {
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
             };
             writer.close = true;
 
-            rig.Manager.HashCheck (true);
+            rig.Manager.HashCheck(true);
             Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
         }
 
@@ -127,12 +127,13 @@ namespace MonoTorrent.Client
         public void ExistFail()
         {
             ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate {
+            rig.Manager.TorrentStateChanged += delegate
+            {
                 if (rig.Manager.State == TorrentState.Error)
                     handle.Set();
             };
             writer.exist = true;
-            
+
             rig.Manager.HashCheck(false);
             Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
         }
@@ -141,12 +142,13 @@ namespace MonoTorrent.Client
         public void ReadFail()
         {
             ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate {
+            rig.Manager.TorrentStateChanged += delegate
+            {
                 if (rig.Manager.State == TorrentState.Error)
                     handle.Set();
             };
             writer.read = true;
-            
+
             rig.Manager.HashCheck(false);
             Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
         }
@@ -162,10 +164,7 @@ namespace MonoTorrent.Client
             writer.write = true;
 
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[Piece.BlockSize]);
-			BufferedIO io = new BufferedIO();
-            io.Initialise (rig.Manager, buffer, 0, Piece.BlockSize, Piece.BlockSize * 4, rig.Torrent.Files);
-            io.Id = new PeerId(new Peer("", new Uri("tcp://123.123.123")), rig.Manager);
-            rig.Engine.DiskManager.QueueWrite(io, null);
+            rig.Engine.DiskManager.QueueWrite(rig.Manager, 0, buffer, Piece.BlockSize, null);
 
             Assert.IsTrue(handle.WaitOne(5000, true), "Failure was not handled");
         }

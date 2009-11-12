@@ -6,6 +6,8 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
+    public partial class DiskManager
+    {
     public class BufferedIO : ICacheable
     {
         internal ArraySegment<byte> buffer;
@@ -61,7 +63,6 @@ namespace MonoTorrent.Client
         {
             get { return (int)(offset % pieceLength); ; }
         }
-        internal Piece Piece;
         public long Offset
         {
             get { return offset; }
@@ -104,7 +105,6 @@ namespace MonoTorrent.Client
             this.manager = manager;
             this.offset = offset;
             this.peerId = null;
-            this.Piece = null;
             this.pieceLength = pieceLength;
         }
 
@@ -116,6 +116,7 @@ namespace MonoTorrent.Client
         public override string ToString()
         {
             return string.Format("Piece: {0} Block: {1} Count: {2}", PieceIndex, BlockIndex, count);
+        }
         }
     }
 }
