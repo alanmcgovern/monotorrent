@@ -463,9 +463,7 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
-                if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
-                    id.Monitor.Tick();
-
+                id.Monitor.Tick();
             }
         }
 
