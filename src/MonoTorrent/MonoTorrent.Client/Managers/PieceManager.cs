@@ -171,7 +171,7 @@ namespace MonoTorrent.Client
             if (!id.IsChoking || id.SupportsFastPeer)
                 msg = Picker.ContinueExistingRequest(id);
 
-            if (msg == null && (!id.IsChoking || (id.SupportsFastPeer && id.AmAllowedFastPieces.Count > 0)))
+            if (msg == null && (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0)))
                 msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
             if (msg != null)
                 id.Enqueue(msg);
