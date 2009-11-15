@@ -236,7 +236,7 @@ namespace MonoTorrent.Client
             id.IsChoking = false;
 
             // Add requests to the peers message queue
-            while (manager.PieceManager.AddPieceRequest(id)) { }
+            manager.PieceManager.AddPieceRequests(id);
         }
 
         protected virtual void HandleBitfieldMessage(PeerId id, BitfieldMessage message)
@@ -299,7 +299,7 @@ namespace MonoTorrent.Client
             // FIXME: Recreate the uri? Give warning?
             if (message.LocalPort > 0)
                 id.Peer.LocalPort = message.LocalPort;
-            id.MaxPendingRequests = message.MaxRequests;
+            id.MaxSupportedPendingRequests = Math.Max(1, message.MaxRequests);
             id.ExtensionSupports = message.Supports;
 
             if (id.ExtensionSupports.Supports(PeerExchangeMessage.Support.Name))
@@ -326,7 +326,7 @@ namespace MonoTorrent.Client
             manager.PieceManager.PieceDataReceived(id, message);
 
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue
-            while (manager.PieceManager.AddPieceRequest(id)) { }
+            manager.PieceManager.AddPieceRequests(id);
         }
 
         protected virtual void HandlePortMessage(PeerId id, PortMessage message)
@@ -464,6 +464,12 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     continue;
 
+                int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / PieceManager.BonusRequestPerKb);
+                maxRequests = Math.Min(id.AmRequestingPiecesCount + 2, maxRequests);
+                maxRequests = Math.Min(id.MaxSupportedPendingRequests, maxRequests);
+                maxRequests = Math.Max(2, maxRequests);
+                id.MaxPendingRequests = maxRequests;
+
                 id.Monitor.Tick();
             }
         }
@@ -589,7 +595,7 @@ namespace MonoTorrent.Client
                 id.Enqueue(new InterestedMessage());
 
                 // He's interesting, so attempt to queue up any FastPieces (if that's possible)
-                while (manager.PieceManager.AddPieceRequest(id)) { }
+                manager.PieceManager.AddPieceRequests(id);
             }
             else if (!interesting && id.AmInterested)
             {

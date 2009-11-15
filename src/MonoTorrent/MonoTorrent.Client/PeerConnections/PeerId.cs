@@ -127,6 +127,7 @@ namespace MonoTorrent.Client
 		private DateTime whenConnected;
         private ExtensionSupports extensionSupports;
         private int maxPendingRequests;
+        private int maxSupportedPendingRequests;
         private MessagingCallback messageReceivedCallback;
         private MessagingCallback messageSentCallback;
         private ConnectionMonitor monitor;
@@ -153,6 +154,9 @@ namespace MonoTorrent.Client
             get { return Connection.AddressBytes; }
         }
 
+        /// <summary>
+        /// The remote peer can request these and we'll fulfill the request if we're choking them
+        /// </summary>
         internal MonoTorrentCollection<int> AmAllowedFastPieces
         {
             get { return this.amAllowedFastPieces; }
@@ -316,6 +320,12 @@ namespace MonoTorrent.Client
             set { maxPendingRequests = value; }
         }
 
+        internal int MaxSupportedPendingRequests
+        {
+            get { return maxSupportedPendingRequests; }
+            set { maxSupportedPendingRequests = value; }
+        }
+
         internal MessagingCallback MessageSentCallback
         {
             get { return this.messageSentCallback; }
@@ -429,6 +439,8 @@ namespace MonoTorrent.Client
             this.lastMessageReceived = DateTime.Now;
             this.lastMessageSent = DateTime.Now;
             this.peer = peer;
+            this.maxPendingRequests = 2;
+            this.maxSupportedPendingRequests = 50;
             this.monitor = new ConnectionMonitor();
             this.sendQueue = new MonoTorrentCollection<PeerMessage>(12);
             ExtensionSupports = new ExtensionSupports();

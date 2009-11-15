@@ -145,16 +145,13 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal bool AddPieceRequest(PeerId id)
+        internal void AddPieceRequests(PeerId id)
         {
             PeerMessage msg = null;
-
-            // If someone can upload to us fast, queue more pieces off them. But no more than 100 blocks.
-            int maxRequests = PieceManager.NormalRequestAmount + (int)(id.Monitor.DownloadSpeed / 1024.0 / BonusRequestPerKb);
-            maxRequests = maxRequests > 50 ? 50 : maxRequests;
+            int maxRequests = id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
-                return false;
+                return;
 
             int count = 1;
             if (id.Connection is HttpConnection)
@@ -169,14 +166,28 @@ namespace MonoTorrent.Client
             }
 
             if (!id.IsChoking || id.SupportsFastPeer)
-                msg = Picker.ContinueExistingRequest(id);
+            {
+                while (id.AmRequestingPiecesCount < maxRequests)
+                {
+                    msg = Picker.ContinueExistingRequest(id);
+                    if (msg != null)
+                        id.Enqueue(msg);
+                    else
+                        break;
+                } 
+            }
 
-            if (msg == null && (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0)))
-                msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
-            if (msg != null)
-                id.Enqueue(msg);
-
-            return msg != null;
+            if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0))
+            {
+                while (id.AmRequestingPiecesCount < maxRequests)
+                {
+                    msg = Picker.PickPiece(id, id.TorrentManager.Peers.ConnectedPeers, count);
+                    if (msg != null)
+                        id.Enqueue(msg);
+                    else
+                        break;
+                }
+            }
         }
 
         internal bool IsInteresting(PeerId id)

@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
                 // If the peer is interesting try to queue up some piece requests off him
                 // If he is choking, we will only queue a piece if there is a FastPiece we can choose
                 if (connectedPeer.AmInterested)
-                    while (owningTorrent.PieceManager.AddPieceRequest(connectedPeer)) { }
+                    owningTorrent.PieceManager.AddPieceRequests(connectedPeer);
 
                 if (!connectedPeer.Peer.IsSeeder)
                 {
