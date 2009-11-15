@@ -103,6 +103,8 @@ namespace MonoTorrent.Client
 
         static readonly AsyncCallback EndReceiveCallback = EndReceive;
         static readonly AsyncCallback EndSendCallback = EndSend;
+        static readonly AsyncTransfer MessageBodyReceivedCallback = MessageBodyReceived;
+        static readonly AsyncTransfer MessageLengthReceivedCallback = MessageLengthReceived;
 
         static NetworkIO()
         {
@@ -343,7 +345,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 4);
             IRateLimiter limiter = id.TorrentManager.DownloadLimiter;
-            EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
+            EnqueueReceive(connection, id.recieveBuffer, 0, 4, MessageLengthReceivedCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
         }
 
         static void MessageLengthReceived(bool succeeded, int count, object state)
@@ -394,7 +396,7 @@ namespace MonoTorrent.Client
                     ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                     id.recieveBuffer = buffer;
                     IRateLimiter limiter = id.TorrentManager.DownloadLimiter;
-                    EnqueueReceive(connection, id.recieveBuffer, 4, messageBodyLength, MessageBodyReceived, id, limiter, id.TorrentManager.Monitor, id.Monitor);
+                    EnqueueReceive(connection, id.recieveBuffer, 4, messageBodyLength, MessageBodyReceivedCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
                 }
             }
         }
