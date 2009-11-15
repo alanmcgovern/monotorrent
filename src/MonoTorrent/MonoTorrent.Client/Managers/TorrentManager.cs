@@ -735,6 +735,13 @@ namespace MonoTorrent.Client
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
                     files[i].BitField[index - files[i].StartPieceIndex] = args.HashPassed;
 
+            if (args.HashPassed)
+            {
+                List<PeerId> connected = Peers.ConnectedPeers;
+                for (int i = 0; i < connected.Count; i++)
+                    connected[i].IsAllowedFastPieces.Remove(index);
+            }
+
             Toolbox.RaiseAsyncEvent<PieceHashedEventArgs>(PieceHashed, this, args);
         }
 

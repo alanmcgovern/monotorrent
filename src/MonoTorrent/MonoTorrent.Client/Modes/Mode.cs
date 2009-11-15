@@ -203,7 +203,8 @@ namespace MonoTorrent.Client
 
         protected virtual void HandleAllowedFastMessage(PeerId id, AllowedFastMessage message)
         {
-            id.IsAllowedFastPieces.Add(message.PieceIndex);
+            if (!Manager.Bitfield[message.PieceIndex])
+                id.IsAllowedFastPieces.Add(message.PieceIndex);
         }
 
         protected virtual void HandleSuggestedPieceMessage(PeerId id, SuggestPieceMessage message)
