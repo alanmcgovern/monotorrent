@@ -584,7 +584,7 @@ namespace MonoTorrent.Client
             get
             {
                 int timeElapsed = (int)new TimeSpan(Stopwatch.GetTimestamp() - this.startTime).TotalSeconds;
-                return timeElapsed == 0 ? 0 : (this.haveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed;
+                return (int) (timeElapsed == 0 ? 0 : ((long) this.haveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
             }
         }
 
