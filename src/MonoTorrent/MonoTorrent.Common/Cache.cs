@@ -35,6 +35,7 @@ namespace MonoTorrent.Common
 {
     interface ICache<T>
     {
+        int Count { get; }
         T Dequeue();
         void Enqueue (T instance);
     }
@@ -44,6 +45,11 @@ namespace MonoTorrent.Common
     {
         bool autoCreate;
         Queue<T> cache;
+
+        public int Count
+        {
+            get { return cache.Count; }
+        }
 
         public Cache()
             : this (false)
@@ -78,6 +84,11 @@ namespace MonoTorrent.Common
     class SynchronizedCache<T> : ICache<T>
     {
         ICache<T> cache;
+
+        public int Count
+        {
+            get { return cache.Count; }
+        }
 
         public SynchronizedCache(ICache<T> cache)
         {
