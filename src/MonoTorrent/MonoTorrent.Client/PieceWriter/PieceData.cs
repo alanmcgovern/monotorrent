@@ -12,7 +12,7 @@ namespace MonoTorrent.Client
     {
         internal ArraySegment<byte> buffer;
         private int actualCount;
-		private MainLoopTask callback;
+		private DiskIOCallback callback;
         private int count;
         private long offset;
         private int pieceLength;
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
             get { return buffer; }
         }
 
-		internal MainLoopTask Callback
+		internal DiskIOCallback Callback
 		{
 			get { return callback; }
 			set { callback = value; }

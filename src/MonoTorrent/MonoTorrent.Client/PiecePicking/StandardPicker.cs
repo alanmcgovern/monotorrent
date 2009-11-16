@@ -210,8 +210,9 @@ namespace MonoTorrent.Client
 
         public override RequestMessage ContinueExistingRequest(PeerId id)
         {
-            foreach (Piece p in requests)
+            for (int req = 0; req < requests.Count; req++)
             {
+                Piece p = requests[req];
                 // For each piece that was assigned to this peer, try to request a block from it
                 // A piece is 'assigned' to a peer if he is the first person to request a block from that piece
                 if (p.AllBlocksRequested || !id.Equals(p.Blocks[0].RequestedOff))

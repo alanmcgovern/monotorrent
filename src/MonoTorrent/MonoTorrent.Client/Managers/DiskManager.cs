@@ -10,10 +10,11 @@ using MonoTorrent.Client.PieceWriters;
 
 namespace MonoTorrent.Client
 {
+    public delegate void DiskIOCallback (bool successful);
+
     public partial class DiskManager : IDisposable
     {
         private static MainLoop IOLoop = new MainLoop("Disk IO");
-
         #region Member Variables
 
         private object bufferLock = new object();
@@ -204,7 +205,8 @@ namespace MonoTorrent.Client
 
             io.Complete = true;
             if (io.Callback != null)
-                io.Callback();
+                io.Callback(true);
+            cache.Enqueue(io);
         }
 
         private void PerformRead(BufferedIO io)
@@ -216,7 +218,8 @@ namespace MonoTorrent.Client
 
             io.Complete = true;
             if (io.Callback != null)
-                io.Callback();
+                io.Callback(io.ActualCount == io.Count);
+            cache.Enqueue(io);
         }
 
         internal void QueueFlush(TorrentManager manager, int index)
@@ -228,14 +231,14 @@ namespace MonoTorrent.Client
             });
         }
 
-        internal void QueueRead(TorrentManager manager, long offset, ArraySegment<byte> buffer, int count, MainLoopTask callback)
+        internal void QueueRead(TorrentManager manager, long offset, ArraySegment<byte> buffer, int count, DiskIOCallback callback)
         {
             BufferedIO io = cache.Dequeue();
             io.Initialise(manager, buffer, offset, count, manager.Torrent.PieceLength, manager.Torrent.Files);
             QueueRead(io, callback);
         }
 
-		void QueueRead(BufferedIO io, MainLoopTask callback)
+		void QueueRead(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
 			if (Thread.CurrentThread == IOLoop.thread)
@@ -244,18 +247,19 @@ namespace MonoTorrent.Client
 				lock (bufferLock)
 				{
 					bufferedReads.Enqueue(io);
-					DiskManager.IOLoop.Queue(LoopTask);
+                    if (bufferedReads.Count == 1)
+                        DiskManager.IOLoop.Queue(LoopTask);
 				}
 		}
 
-        internal void QueueWrite(TorrentManager manager, long offset, ArraySegment<byte> buffer, int count, MainLoopTask callback)
+        internal void QueueWrite(TorrentManager manager, long offset, ArraySegment<byte> buffer, int count, DiskIOCallback callback)
         {
             BufferedIO io = cache.Dequeue();
             io.Initialise(manager, buffer, offset, count, manager.Torrent.PieceLength, manager.Torrent.Files);
             QueueWrite(io, callback);
         }
 
-		void QueueWrite(BufferedIO io, MainLoopTask callback)
+		void QueueWrite(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
 			if (Thread.CurrentThread == IOLoop.thread)
@@ -264,7 +268,8 @@ namespace MonoTorrent.Client
 				lock (bufferLock)
 				{
 					bufferedWrites.Enqueue(io);
-					DiskManager.IOLoop.Queue(LoopTask);
+                    if (bufferedWrites.Count == 1)
+                        DiskManager.IOLoop.Queue(LoopTask);
 				}
 		}
 
@@ -294,48 +299,45 @@ namespace MonoTorrent.Client
                 manager.Mode = new ErrorMode (manager);
             });
         }
-		
-		internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
-		{
-			long fileSize = manager.Torrent.Size;
-			int pieceLength = manager.Torrent.PieceLength;
-			int bytesToRead = 0;
-			long pieceStartIndex = (long)pieceLength * pieceIndex;
-			BufferedIO io = null;
-			ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
 
-			MainLoopTask readCallback = delegate {
-				ClientEngine.MainLoop.Queue(delegate
-				{
-					using (SHA1 hasher = HashAlgoFactory.Create<SHA1>()) {
-						hasher.Initialize();
-					    hashBuffer = io.buffer;
-						hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, io.ActualCount, hashBuffer.Array, hashBuffer.Offset);
-						ClientEngine.BufferManager.FreeBuffer(ref io.buffer);
-						hasher.TransformFinalBlock(hashBuffer.Array, hashBuffer.Offset, 0);
-                        cache.Enqueue(io);
-						callback(hasher.Hash);
-					}
-				});
-			};
+        internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
+        {
+            int count = 0;
+            long offset = (long) manager.Torrent.PieceLength * pieceIndex;
+            long endOffset = Math.Min(offset + manager.Torrent.PieceLength, manager.Torrent.Size);
 
-			for (long i = pieceStartIndex; i < (pieceStartIndex + pieceLength); i += pieceLength)
-			{
-				hashBuffer = BufferManager.EmptyBuffer;
-				ClientEngine.BufferManager.GetBuffer(ref hashBuffer, pieceLength);
-				bytesToRead = pieceLength;
-				if ((i + bytesToRead) > fileSize)
-					bytesToRead = (int)(fileSize - i);
+            ArraySegment<byte> hashBuffer = BufferManager.EmptyBuffer;
+            ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
 
-				io = cache.Dequeue();
-				io.Initialise(manager, hashBuffer, i, bytesToRead, manager.Torrent.PieceLength, manager.Torrent.Files);
+            SHA1 hasher = HashAlgoFactory.Create<SHA1>();
+            hasher.Initialize();
 
-                if (bytesToRead != pieceLength)
-					break;
-			}
+            DiskIOCallback readCallback = null;
+            readCallback = delegate(bool successful) {
+                
+                hasher.TransformBlock(hashBuffer.Array, hashBuffer.Offset, count, hashBuffer.Array, hashBuffer.Offset);
+                offset += count;
 
-				manager.Engine.DiskManager.QueueRead(io, readCallback);
-		}
+                if (!successful || offset == endOffset)
+                {
+                    hasher.TransformFinalBlock(hashBuffer.Array, 0, 0);
+                    object hash = successful ? hasher.Hash : null;
+                    ((IDisposable)hasher).Dispose();
+                    ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
+                    ClientEngine.MainLoop.Queue(delegate {
+                        callback(hash);
+                    });
+                }
+                else
+                {
+                    count = (int)Math.Min(Piece.BlockSize, endOffset - offset);
+                    QueueRead(manager, offset, hashBuffer, count, readCallback);
+                }
+            };
+
+            count = (int)Math.Min(Piece.BlockSize, endOffset - offset);
+            QueueRead(manager, offset, hashBuffer, count, readCallback);
+        }
 
         #endregion
 

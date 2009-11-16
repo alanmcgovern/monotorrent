@@ -13,6 +13,7 @@ namespace MonoTorrent.Client
 		bool autostart;
 		bool filesExist;
 		int index = -1;
+        MainLoopResult pieceCompleteCallback;
 
 		public override bool CanAcceptConnections
 		{
@@ -30,6 +31,7 @@ namespace MonoTorrent.Client
 			this.hashingWaitHandle = new ManualResetEvent(false);
 			this.autostart = autostart;
 			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckFilesExist(Manager);
+            this.pieceCompleteCallback = PieceComplete;
 			if (!filesExist)
 				HashingComplete();
 		}
@@ -39,7 +41,7 @@ namespace MonoTorrent.Client
 			if (Manager.Mode != this || index == Manager.Torrent.Pieces.Count)
 				HashingComplete();
 			else
-				Manager.Engine.DiskManager.BeginGetHash(Manager, index, PieceComplete);
+				Manager.Engine.DiskManager.BeginGetHash(Manager, index, pieceCompleteCallback);
 		}
 
 		private void PieceComplete(object hash)
@@ -51,7 +53,7 @@ namespace MonoTorrent.Client
 			else
 			{
 
-				Manager.Bitfield[index] = Manager.Torrent.Pieces.IsValid((byte[])hash, index);
+				Manager.Bitfield[index] = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
 				Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, index, Manager.Bitfield[index]));
 				index++;
 				QueueNextHash();
