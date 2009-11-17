@@ -13,8 +13,7 @@ namespace MonoTorrent.Client.PieceWriters
         {
             public TorrentFile File;
             public long Offset;
-            public byte[] Buffer;
-            public int BufferOffset;
+            public ArraySegment<byte> Buffer;
             public int Count;
         }
 
@@ -63,7 +62,7 @@ namespace MonoTorrent.Client.PieceWriters
                     continue;
                 if (cachedBlocks[i].Offset != offset || cachedBlocks[i].File != file || cachedBlocks[i].Count != count)
                     continue;
-                Buffer.BlockCopy(cachedBlocks[i].Buffer, cachedBlocks[i].BufferOffset, buffer, bufferOffset, count);
+                Buffer.BlockCopy(cachedBlocks[i].Buffer.Array, cachedBlocks[i].Buffer.Offset, buffer, bufferOffset, count);
                 return count;
             }
 
@@ -86,9 +85,12 @@ namespace MonoTorrent.Client.PieceWriters
                 if (Used > (Capacity - count))
                     Flush(0);
 
+                ArraySegment<byte> cacheBuffer = BufferManager.EmptyBuffer;
+                ClientEngine.BufferManager.GetBuffer(ref cacheBuffer, count);
+                Buffer.BlockCopy(buffer, bufferOffset, cacheBuffer.Array, cacheBuffer.Offset, count);
+
                 CachedBlock block = new CachedBlock();
-                block.Buffer = buffer;
-                block.BufferOffset = bufferOffset;
+                block.Buffer = cacheBuffer;
                 block.Count = count;
                 block.Offset = offset;
                 block.File = file;
@@ -114,7 +116,8 @@ namespace MonoTorrent.Client.PieceWriters
                 if (cachedBlocks[i].File == file)
                 {
                     CachedBlock b = cachedBlocks[i];
-                    writer.Write(b.File, b.Offset, b.Buffer, b.BufferOffset, b.Count);
+                    writer.Write(b.File, b.Offset, b.Buffer.Array, b.Buffer.Offset, b.Count);
+                    ClientEngine.BufferManager.FreeBuffer(ref b.Buffer);
                 }
             }
             cachedBlocks.RemoveAll(delegate(CachedBlock b) { return b.File == file; });
@@ -124,7 +127,8 @@ namespace MonoTorrent.Client.PieceWriters
         {
             CachedBlock b = cachedBlocks[index];
             cachedBlocks.RemoveAt (index);
-            Write (b.File, b.Offset, b.Buffer, b.BufferOffset, b.Count, true);
+            Write (b.File, b.Offset, b.Buffer.Array, b.Buffer.Offset, b.Count, true);
+            ClientEngine.BufferManager.FreeBuffer(ref b.Buffer);
         }
 
         public override void Move(string oldPath, string newPath, bool ignoreExisting)

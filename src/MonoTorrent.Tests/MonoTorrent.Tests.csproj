@@ -61,12 +61,13 @@
     <Compile Include="Client\InitialSeedUnchokerTests.cs" />
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />
+    <Compile Include="Client\MemoryWriterTests.cs" />
+    <Compile Include="Client\NullWriter.cs" />
     <Compile Include="Client\PeerMessagesTest.cs" />
     <Compile Include="Client\PeerTest.cs" />
     <Compile Include="Client\PeerTests.cs" />
     <Compile Include="Client\PerformanceTests.cs" />
     <Compile Include="Client\PiecePickerTests.cs" />
-    <Compile Include="Client\PieceWriterTests.cs" />
     <Compile Include="Client\PriorityPickerTests.cs" />
     <Compile Include="Client\RandomisedPickerTests.cs" />
     <Compile Include="Client\RangeCollectionTests.cs" />

@@ -10,179 +10,116 @@ using System.IO;
 
 namespace MonoTorrent.Client
 {
-	public class NullWriter : PieceWriter
+	public class MemoryWriterTests
 	{
-		PieceWriterTests tester;
-		public NullWriter(PieceWriterTests tests)
-		{
-			tester = tests;
-		}
-        public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
+        byte[] buffer;
+        MemoryWriter level1;
+        MemoryWriter level2;
+
+        TorrentFile singleFile;
+        TorrentFile[] multiFile;
+
+        int pieceLength;
+        long torrentSize;
+
+        [TestFixtureSetUp]
+        public void FixtureSetup()
         {
-            return 0;
+            pieceLength = Piece.BlockSize * 2;
+            singleFile = new TorrentFile("path", Piece.BlockSize * 5);
+            multiFile = new TorrentFile[] {
+                new TorrentFile ("first", Piece.BlockSize - 550),
+                new TorrentFile ("second", 100),
+                new TorrentFile ("third", Piece.BlockSize)
+            };
+            buffer = new byte[Piece.BlockSize];
+            torrentSize = Toolbox.Accumulate<TorrentFile>(multiFile, delegate(TorrentFile f) { return f.Length; });
         }
-
-        public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
-        {
-            //tester.blocks.RemoveAll(delegate (BufferedIO io) {
-            //    return io.Offset == offset && io.Count == count;
-            //});
-        }
-
-		public override void Close(TorrentFile file)
-		{
-            
-		}
-
-        public override void Flush(TorrentFile file)
-		{
-
-		}
-		public override void Dispose()
-		{
-
-		}
-
-        public override bool Exists(TorrentFile file)
-        {
-            return false;
-        }
-
-        public override void Move(string oldPath, string newPath, bool ignoreExisting)
-        {
-            
-        }
-    }
-
-	[TestFixture(Ignore=true)]
-	public class PieceWriterTests
-	{
-        //static void Main(string[] args)
-        //{
-        //    PieceWriterTests t = new PieceWriterTests();
-        //    t.GlobalSetup();
-        //    t.Setup();
-        //    t.TestMemoryStandardReads();
-        //}
-        public static readonly int PieceCount = 2;
-        public static readonly int BlockCount = 10;
-		public static readonly int BlockSize = Piece.BlockSize;
-        public static readonly int PieceSize = BlockCount * BlockSize;
-
-		public static BufferManager Buffer = new BufferManager();
-		TestRig rig;
-
-		MemoryWriter level1;
-		MemoryWriter level2;
-        //public List<BufferedIO> blocks;
-
-		[TestFixtureSetUp]
-		public void GlobalSetup()
-		{
-			rig = TestRig.CreateMultiFile (PieceSize);
-		}
-
-		[TestFixtureTearDown]
-		public void GlobalTearDown()
-		{
-			rig.Dispose();
-		}
 
 		[SetUp]
 		public void Setup()
 		{
-			//blocks = new List<BufferedIO>();
-			level2 = new MemoryWriter(new NullWriter(this), (int)(PieceSize * 1.7));
-			level1 = new MemoryWriter(level2, (int)(PieceSize * 0.7));
-
-			//for (int piece = 0; piece < PieceCount; piece++)
-			//	for (int block = 0; block < BlockCount; block++)
-			//		blocks.Add(CreateBlock(piece, block));
+            Initialise(buffer, 1);
+			level2 = new MemoryWriter(new NullWriter(), Piece.BlockSize * 3);
+            level1 = new MemoryWriter(level2, Piece.BlockSize * 3);
 		}
 
-		//private BufferedIO CreateBlock(int piece, int block)
-		//{
-			//ArraySegment<byte> b = BufferManager.EmptyBuffer;
-			//Buffer.GetBuffer(ref b, BlockSize);
-			//for (int i = 0; i < b.Count; i++)
-			//	b.Array[b.Offset + i] = (byte)(piece * BlockCount + block);
-			//BufferedIO io = new BufferedIO();
-            //io.Initialise(rig.Manager, b, piece, block, BlockSize, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Files);
-            //return io;
-        //}
+        [Test]
+        public void FillFirstBuffer()
+        {
+            // Write 4 blocks to the stream and then verify they can all be read
+            for (int i = 0; i < 4; i++)
+            {
+                Initialise(buffer, (byte)(i + 1));
+                level1.Write(singleFile, Piece.BlockSize * i, buffer, 0, buffer.Length);
+            }
 
-		[Test]
-        [Ignore]
-		public void TestMemoryWrites()
+            // Read them all back out and verify them
+            for (int i = 0; i < 4; i++)
+            {
+                level1.Read(singleFile, Piece.BlockSize * i, buffer, 0, Piece.BlockSize);
+                Verify(buffer, (byte)(i + 1));
+            }
+        }
+
+        [Test]
+        public void ReadWriteBlock()
+        {
+            level1.Write(singleFile, 0, buffer, 0, buffer.Length);
+            level1.Read(singleFile, 0, buffer, 0, buffer.Length);
+            Verify(buffer, 1);
+        }
+
+        [Test]
+        public void ReadWriteBlockChangeOriginal()
+        {
+            level1.Write(singleFile, 0, buffer, 0, buffer.Length);
+            Initialise(buffer, 5);
+            level1.Read(singleFile, 0, buffer, 0, buffer.Length);
+            Verify(buffer, 1);
+        }
+
+        [Test]
+        public void ReadWriteSpanningBlock()
+        {
+            // Write one block of data to the memory stream. 
+            int file1 = (int)multiFile[0].Length;
+            int file2 = (int)multiFile[1].Length;
+            int file3 = Piece.BlockSize - file1 - file2;
+
+            Initialise(buffer, 1);
+            level1.Write(multiFile[0], 0, buffer, 0, file1);
+
+            Initialise(buffer, 2);
+            level1.Write(multiFile[1], 0, buffer, 0, file2);
+
+            Initialise(buffer, 3);
+            level1.Write(multiFile[2], 0, buffer, 0, file3);
+
+            // Read the block from the memory stream
+            level1.Read(multiFile, 0, buffer, 0, Piece.BlockSize, pieceLength, torrentSize);
+
+            // Ensure that the data is in the buffer exactly as expected.
+            Verify(buffer, 0, file1, 1);
+            Verify(buffer, file1, file2, 2);
+            Verify(buffer, file1 + file2, file3, 3);
+        }
+        
+        void Initialise(byte[] buffer, byte value)
 		{
-			//for (int i = 2; i < 5; i++)
-			//	for (int j = 0; j < BlockCount; j++)
-			//		blocks.Add(CreateBlock(i, j));
-
-			//blocks.ForEach(delegate(BufferedIO d) { level1.Write(d.Files, d.Offset, d.buffer.Array, d.buffer.Offset, d.Count, d.PieceLength, d.Manager.Torrent.Size); });
-
-			// For the pieces which weren't flushed to the null buffer, make sure they are still accessible
-			//for (int i = 0; i < blocks.Count; i++)
-			//{
-			//	ArraySegment<byte> b = blocks[i].Buffer;
-			//	BufferedIO data = blocks[i];
-			//	for (int j = 0; j < b.Count; j++)
-			//		Assert.AreEqual(b.Array[b.Offset + j], data.PieceIndex * BlockCount + data.PieceOffset / data.Count, "#1");
-			//}
+			for (int i = 0; i < buffer.Length; i++)
+				buffer[i] = value;
 		}
 
-		[Test]
-        [Ignore]
-		public void TestMemoryStandardReads()
-		{
-			//ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-            //level2.Capacity = PieceSize * 20;
-			//Buffer.GetBuffer(ref buffer, BlockSize);
-			//Initialise(buffer);
-			//foreach (BufferedIO data in this.blocks.ToArray())
-			//	level1.WriteBlock(data);
+        void Verify(byte[] buffer, byte expected)
+        {
+            Verify(buffer, 0, buffer.Length, expected);
+        }
 
-			//for (int piece=0; piece < PieceCount; piece++)
-			//{
-			//	for(int block = 0; block < BlockCount; block++)
-			//	{
-            //       level1.ReadBlock(rig.Manager.Torrent.Files, piece, block, buffer.Array, buffer.Offset, rig.Manager.Torrent.PieceLength, rig.Manager.Torrent.Size);
-            //
-			//		for (int i = 0; i < BlockSize; i++)
-			//			Assert.AreEqual(buffer.Array[buffer.Offset + i], piece * BlockCount + block, "#1");
-			//	}
-			//}
-		}
-
-		[Test]
-        [Ignore]
-		public void TestMemoryOffsetReads()
-		{
-            //level1.WriteBlock(blocks[0]);
-            //level2.WriteBlock(blocks[1]);
-            //level1.WriteBlock(blocks[2]);
-            //level2.WriteBlock(blocks[3]);
-            //level2.WriteBlock(blocks[4]);
-
-			//ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
-			//Buffer.GetBuffer(ref buffer, PieceSize);
-			//Initialise(buffer);
-
-			//int piece = 0;
-            //int block = 0;
-
-			//level1.ReadPiece(rig.Manager.Torrent.Files, piece, buffer.Array, buffer.Offset, PieceSize, rig.Manager.Torrent.Size);
-			//for (block = 0; block < 5; block++)
-			//{
-			//	for (int i = 0; i < BlockSize; i++)
-			//		Assert.AreEqual(block, buffer.Array[buffer.Offset + i + block * BlockSize], "Piece 0. Block " + i);
-			//}
-		}
-
-		private void Initialise(ArraySegment<byte> buffer)
-		{
-			for (int i = 0; i < buffer.Count; i++)
-				buffer.Array[buffer.Offset + i] = 0;
-		}
+        void Verify(byte[] buffer, int startOffset, int count, byte expected)
+        {
+            for (int i = startOffset; i < startOffset + count; i++)
+                Assert.AreEqual(buffer[i], expected, "#" + i);
+        }
 	}
 }
