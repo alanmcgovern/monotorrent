@@ -131,11 +131,18 @@ namespace MonoTorrent.Tracker.Listeners
             }
             finally
             {
-                if (context != null)
-                    context.Response.Close();
+                try
+                {
+                    if (context != null)
+                        context.Response.Close();
 
-                if (listener.IsListening)
-                    listener.BeginGetContext(EndGetRequest, listener);
+                    if (listener.IsListening)
+                        listener.BeginGetContext(EndGetRequest, listener);
+                }
+                catch
+                {
+                    // If we hit an exception here it's because the user disposed the listener.
+                }
             }
         }
 
