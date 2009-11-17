@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal WaitHandle CloseFileStreams(TorrentManager manager, TorrentFile[] files)
+        internal WaitHandle CloseFileStreams(TorrentManager manager)
         {
             ManualResetEvent handle = new ManualResetEvent(false);
 
@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
 				try
 				{
 					LoopTask();
-					writer.Close(files);
+					writer.Close(manager.Torrent.Files);
 				}
                 catch (Exception ex)
                 {
@@ -225,9 +225,16 @@ namespace MonoTorrent.Client
         internal void QueueFlush(TorrentManager manager, int index)
         {
             IOLoop.Queue(delegate {
-                foreach (TorrentFile file in manager.Torrent.Files)
-                    if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
-                        writer.Flush(file);
+                try
+                {
+                    foreach (TorrentFile file in manager.Torrent.Files)
+                        if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
+                            writer.Flush(file);
+                }
+                catch (Exception ex)
+                {
+                    SetError(manager, Reason.WriteFailure, ex);
+                }
             });
         }
 
@@ -341,10 +348,17 @@ namespace MonoTorrent.Client
 
         #endregion
 
-        internal void MoveFiles(TorrentManager torrentManager, string newRoot, bool overWriteExisting)
+        internal void MoveFiles(TorrentManager manager, string newRoot, bool overWriteExisting)
         {
             IOLoop.QueueWait(delegate {
-                writer.Move (newRoot, torrentManager.Torrent.Files, overWriteExisting);
+                try
+                {
+                    writer.Move(newRoot, manager.Torrent.Files, overWriteExisting);
+                }
+                catch (Exception ex)
+                {
+                    SetError(manager, Reason.WriteFailure, ex);
+                }
             });
         }
     }

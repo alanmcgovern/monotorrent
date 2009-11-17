@@ -85,25 +85,36 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class DiskWriterTests
     {
+        ArraySegment<byte> data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+        DiskManager diskManager;
+        ManualResetEvent handle;
         TestRig rig;
         ExceptionWriter writer;
 
         [TestFixtureSetUp]
         public void FixtureSetup()
         {
-            writer = new ExceptionWriter();
             rig = TestRig.CreateMultiFile();
-            rig.Engine.DiskManager.Writer = writer;
+            diskManager = rig.Engine.DiskManager;
         }
 
         [SetUp]
         public void Setup()
         {
+            writer = new ExceptionWriter();
+            diskManager.Writer = writer;
+            handle = new ManualResetEvent(false);
             rig.Manager.Stop();
         }
 
-        [TestFixtureTearDown]
+        [TearDown]
         public void Teardown()
+        {
+            handle.Close();
+        }
+
+        [TestFixtureTearDown]
+        public void FixtureTeardown()
         {
             rig.Dispose();
         }
@@ -111,61 +122,58 @@ namespace MonoTorrent.Client
         [Test]
         public void CloseFail()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate
-            {
-                if (rig.Manager.State == TorrentState.Error)
-                    handle.Set();
-            };
             writer.close = true;
-
-            rig.Manager.HashCheck(true);
-            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+            Hookup();
+            diskManager.CloseFileStreams(rig.Manager);
+            CheckFail();
         }
 
         [Test]
-        public void ExistFail()
+        public void FlushFail()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate
-            {
-                if (rig.Manager.State == TorrentState.Error)
-                    handle.Set();
-            };
-            writer.exist = true;
+            writer.flush = true;
+            Hookup();
+            diskManager.QueueFlush(rig.Manager, 0);
+            CheckFail();
+        }
 
-            rig.Manager.HashCheck(false);
-            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+        [Test]
+        public void MoveFail()
+        {
+            writer.move = true;
+            Hookup();
+            diskManager.MoveFiles(rig.Manager, "root", true);
+            CheckFail();
         }
 
         [Test]
         public void ReadFail()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate
-            {
-                if (rig.Manager.State == TorrentState.Error)
-                    handle.Set();
-            };
             writer.read = true;
-
-            rig.Manager.HashCheck(false);
-            Assert.IsTrue(handle.WaitOne(50000, true), "Failure was not handled");
+            Hookup();
+            diskManager.QueueRead(rig.Manager, 0, data, data.Count, delegate { });
+            CheckFail();
         }
 
         [Test]
         public void WriteFail()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
+            writer.write = true;
+            Hookup();
+            diskManager.QueueWrite(rig.Manager, 0, data, data.Count, delegate { });
+            CheckFail();
+        }
+
+        void Hookup()
+        {
             rig.Manager.TorrentStateChanged += delegate {
                 if (rig.Manager.State == TorrentState.Error)
                     handle.Set();
             };
-            writer.write = true;
+        }
 
-            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[Piece.BlockSize]);
-            rig.Engine.DiskManager.QueueWrite(rig.Manager, 0, buffer, Piece.BlockSize, null);
-
+        void CheckFail()
+        {
             Assert.IsTrue(handle.WaitOne(5000, true), "Failure was not handled");
         }
     }
