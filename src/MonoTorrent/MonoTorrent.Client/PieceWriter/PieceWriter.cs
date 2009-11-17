@@ -59,14 +59,6 @@ namespace MonoTorrent.Client.PieceWriters
             }
         }
 
-        internal bool ReadPiece(IList<TorrentFile> files, int piece, byte[] buffer, int bufferOffset, int pieceLength, long torrentSize)
-        {
-            long offset = (long)piece * pieceLength;
-            int count = (int)Math.Min(pieceLength, torrentSize - offset);
-
-            return Read(files, offset, buffer, bufferOffset, count, pieceLength, torrentSize);
-        }
-
         internal bool ReadBlock(IList<TorrentFile> files, int piece, int blockIndex, byte[] buffer, int bufferOffset, int pieceLength, long torrentSize)
         {
             long offset = (long) piece * pieceLength + blockIndex * Piece.BlockSize;
