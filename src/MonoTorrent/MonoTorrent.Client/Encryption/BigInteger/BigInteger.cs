@@ -121,6 +121,8 @@ namespace Mono.Math
 
         public BigInteger(byte[] inData)
         {
+            if (inData.Length == 0)
+                inData = new byte[1];
             length = (uint)inData.Length >> 2;
             int leftOver = inData.Length & 0x3;
 
