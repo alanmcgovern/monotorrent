@@ -111,8 +111,9 @@ namespace MonoTorrent.Tracker.Listeners
 			if (!Running)
 				return;
 			
-            listener.Close();
+            IDisposable d = (IDisposable)listener;
 			listener = null;
+            d.Dispose();
         }
 
         private void EndGetRequest(IAsyncResult result)
@@ -123,7 +124,8 @@ namespace MonoTorrent.Tracker.Listeners
             try
             {
                 context = listener.EndGetContext(result);
-                HandleRequest(context);
+                using (context.Response)
+                    HandleRequest(context);
             }
             catch(Exception ex)
             {
@@ -133,15 +135,12 @@ namespace MonoTorrent.Tracker.Listeners
             {
                 try
                 {
-                    if (context != null)
-                        context.Response.Close();
-
                     if (listener.IsListening)
                         listener.BeginGetContext(EndGetRequest, listener);
                 }
                 catch
                 {
-                    // If we hit an exception here it's because the user disposed the listener.
+                    Stop();
                 }
             }
         }
