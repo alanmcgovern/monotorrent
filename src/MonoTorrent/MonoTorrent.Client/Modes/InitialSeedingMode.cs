@@ -93,5 +93,12 @@ namespace MonoTorrent.Client
             unchoker.PeerDisconnected(id);
             base.HandlePeerDisconnected(id);
         }
+
+        public override void Tick(int counter)
+        {
+            base.Tick(counter);
+            if (unchoker.Complete)
+                Manager.Mode = new DownloadMode(Manager);
+        }
     }
 }
