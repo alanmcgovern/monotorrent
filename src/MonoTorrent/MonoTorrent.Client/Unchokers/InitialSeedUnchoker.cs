@@ -88,6 +88,11 @@ namespace MonoTorrent.Client
             get { return peers.Exists(delegate(ChokeData d) { return d.Peer.AmChoking && d.Peer.IsInterested; }); }
         }
 
+        public bool Complete
+        {
+            get { return bitfield.AllTrue; }
+        }
+
         public int MaxAdvertised
         {
             get { return 4; }
