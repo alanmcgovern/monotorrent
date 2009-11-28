@@ -117,8 +117,10 @@ namespace MonoTorrent.Client
                 // Add new peer to matched Torrent
                 if (!manager.HasMetadata || !manager.Torrent.IsPrivate)
                 {
-                    int count = manager.AddPeers(peer);
-                    manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
+                    ClientEngine.MainLoop.Queue(delegate {
+                        int count = manager.AddPeers(peer);
+                        manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
+                    });
                 }
             }
             catch

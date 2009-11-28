@@ -799,9 +799,11 @@ namespace MonoTorrent.Client
         {
             if (torrent.InfoHash != e.InfoHash)
                 return;
-
-            int count = AddPeers(e.Peers);
-            RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
+            
+            ClientEngine.MainLoop.Queue (delegate {
+                int count = AddPeers(e.Peers);
+                RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
+            });
         }
 #endif
 
