@@ -63,6 +63,11 @@ namespace MonoTorrent.Client
             set { this.bytesUploadedAtLastReview = value; }
         }
 
+        public IConnection Connection {
+            get { return connection; }
+            internal set { connection = value; }
+        }
+
         internal double LastReviewDownloadRate
         {
             get { return this.lastReviewDownloadRate; }
@@ -112,7 +117,7 @@ namespace MonoTorrent.Client
         private int bytesToRecieve;
         private int bytesToSend;
         private Software clientApp;
-        internal IConnection Connection;
+        private IConnection connection;
         private PeerMessage currentlySendingMessage;
         private IEncryption decryptor;
         private string disconnectReason;
