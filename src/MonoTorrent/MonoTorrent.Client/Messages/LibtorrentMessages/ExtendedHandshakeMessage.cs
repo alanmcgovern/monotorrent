@@ -148,7 +148,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private BEncodedDictionary Create()
         {
-            if (!ClientEngine.SupportsFastPeer)
+            if (!ClientEngine.SupportsExtended)
                 throw new MessageException("Libtorrent extension messages not supported");
 
             BEncodedDictionary mainDict = new BEncodedDictionary();
