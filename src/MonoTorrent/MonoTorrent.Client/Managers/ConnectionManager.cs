@@ -600,8 +600,19 @@ namespace MonoTorrent.Client
 
             PeerMessage msg = id.Dequeue();
             if (msg is PieceMessage)
-                id.PiecesSent++;
-
+            {
+                using (ManualResetEvent handle = new ManualResetEvent(false)) {
+                    PieceMessage pm = (PieceMessage)msg;
+                    pm.Data = BufferManager.EmptyBuffer;
+                    ClientEngine.BufferManager.GetBuffer(ref pm.Data, pm.ByteLength);
+                    engine.DiskManager.QueueRead(id.TorrentManager, pm.StartOffset + (pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength, delegate
+                    {
+                        handle.Set();
+                    });
+                    handle.WaitOne();
+                    id.PiecesSent++;
+                }
+            }
             try
             {
                 SendMessage(id, msg, this.messageSentCallback);
