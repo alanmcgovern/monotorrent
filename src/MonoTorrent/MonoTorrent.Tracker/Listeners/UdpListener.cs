@@ -78,7 +78,7 @@ namespace MonoTorrent.Tracker.Listeners
             //Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             
             listener = new System.Net.Sockets.UdpClient(endpoint.Port);
-            listener.BeginReceive(new AsyncCallback(ReceiveData), null);
+            listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
         }
 
         /// <summary>
@@ -97,6 +97,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             try
             {
+                System.Net.Sockets.UdpClient listener = (System.Net.Sockets.UdpClient)ar.AsyncState;
                 byte[] data = listener.EndReceive(ar, ref endpoint);
                 if (data.Length <16)
                     return;//bad request
@@ -128,11 +129,11 @@ namespace MonoTorrent.Tracker.Listeners
             finally
             {
                 if (Running)
-                    listener.BeginReceive(new AsyncCallback(ReceiveData), null);
+                    listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
             }
         }
         
-        private void ReceiveConnect(ConnectMessage connectMessage)
+        protected virtual void ReceiveConnect(ConnectMessage connectMessage)
         {
             UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID());
             byte[] data = m.Encode();
@@ -150,7 +151,7 @@ namespace MonoTorrent.Tracker.Listeners
         }
 
         //QUICKHACK: format bencoded val and get it back wereas must refactor tracker system to have more generic object...
-        private void ReceiveAnnounce(AnnounceMessage announceMessage)
+        protected virtual void ReceiveAnnounce(AnnounceMessage announceMessage)
         {
             UdpTrackerMessage m;
             BEncodedDictionary dict = Handle(getCollection(announceMessage), endpoint.Address, false);
@@ -214,7 +215,7 @@ namespace MonoTorrent.Tracker.Listeners
             return res;
         }
 
-        private void ReceiveScrape(ScrapeMessage scrapeMessage)
+        protected virtual void ReceiveScrape(ScrapeMessage scrapeMessage)
         {
             BEncodedDictionary val = Handle(getCollection(scrapeMessage), endpoint.Address, true);
 
@@ -276,7 +277,7 @@ namespace MonoTorrent.Tracker.Listeners
             return res;
         }
 
-        private void ReceiveError(ErrorMessage errorMessage)
+        protected virtual void ReceiveError(ErrorMessage errorMessage)
         {
             throw new ProtocolException(String.Format("ErrorMessage from :{0}",endpoint.Address));
         }

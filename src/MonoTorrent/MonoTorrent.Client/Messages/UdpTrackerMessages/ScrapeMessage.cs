@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    class ScrapeMessage : UdpTrackerMessage
+    public class ScrapeMessage : UdpTrackerMessage
     {
         long connectionId;
         List<byte[]> infohashes;

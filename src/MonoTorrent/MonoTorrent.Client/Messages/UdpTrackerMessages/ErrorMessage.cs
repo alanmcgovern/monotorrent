@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    class ErrorMessage : UdpTrackerMessage
+    public class ErrorMessage : UdpTrackerMessage
     {
         string errorMessage;
 

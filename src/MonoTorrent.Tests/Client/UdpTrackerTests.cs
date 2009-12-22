@@ -37,6 +37,7 @@ using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
 using System.Threading;
+using System.Net;
 
 namespace MonoTorrent.Client
 {
@@ -234,6 +235,113 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void AnnounceTest_NoConnect()
+        {
+            IgnoringListener listener = new IgnoringListener(57532);
+            try
+            {
+                listener.IgnoreConnects = true;
+                listener.Start();
+                OfflineAnnounceTest();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void AnnounceTest_NoAnnounce()
+        {
+            IgnoringListener listener = new IgnoringListener(57532);
+            try
+            {
+                listener.IgnoreAnnounces = true;
+                listener.Start();
+                OfflineAnnounceTest();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void ScrapeTest_NoConnect()
+        {
+            IgnoringListener listener = new IgnoringListener(57532);
+            try
+            {
+                listener.IgnoreConnects = true;
+                listener.Start();
+                OfflineScrapeTest();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void ScrapeTest_NoScrapes()
+        {
+            IgnoringListener listener = new IgnoringListener(57532);
+            try
+            {
+                listener.IgnoreScrapes = true;
+                listener.Start();
+                OfflineScrapeTest();
+            }
+            finally
+            {
+                listener.Stop();
+            }
+        }
+
+        void OfflineAnnounceTest()
+        {
+            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
+            t.RetryDelay = TimeSpan.FromMilliseconds(500);
+            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+
+            AnnounceResponseEventArgs p = null;
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e) {
+                p = e;
+                id.WaitHandle.Set();
+            };
+            MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
+            pars.InfoHash = new InfoHash(new byte[20]);
+            pars.PeerId = "";
+
+            t.Announce(pars, id);
+            Wait(id.WaitHandle);
+            Assert.IsNotNull(p, "#1");
+            Assert.IsFalse(p.Successful);
+        }
+
+        void OfflineScrapeTest()
+        {
+            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
+            t.RetryDelay = TimeSpan.FromMilliseconds(500);
+            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+
+            ScrapeResponseEventArgs p = null;
+            t.ScrapeComplete += delegate(object o, ScrapeResponseEventArgs e)
+            {
+                if (e.Successful)
+                    Console.ReadLine();
+                p = e;
+                id.WaitHandle.Set();
+            };
+            MonoTorrent.Client.Tracker.ScrapeParameters pars = new ScrapeParameters(new InfoHash(new byte[20]));
+
+            t.Scrape(pars, id);
+            Wait(id.WaitHandle);
+            Assert.IsNotNull(p, "#1");
+            Assert.IsFalse(p.Successful);
+        }
+
+        [Test]
         public void ScrapeTest()
         {
             UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
@@ -260,6 +368,44 @@ namespace MonoTorrent.Client
         void Wait(WaitHandle handle)
         {
             Assert.IsTrue(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
+        }
+    }
+
+    class IgnoringListener : MonoTorrent.Tracker.Listeners.UdpListener
+    {
+        public bool IgnoreConnects;
+        public bool IgnoreAnnounces;
+        public bool IgnoreErrors;
+        public bool IgnoreScrapes;
+
+        public IgnoringListener(int port)
+            : base(port)
+        {
+
+        }
+
+        protected override void ReceiveConnect(ConnectMessage connectMessage)
+        {
+            if (!IgnoreConnects)
+                base.ReceiveConnect(connectMessage);
+        }
+
+        protected override void ReceiveAnnounce(AnnounceMessage announceMessage)
+        {
+            if (!IgnoreAnnounces)
+                base.ReceiveAnnounce(announceMessage);
+        }
+
+        protected override void ReceiveError(ErrorMessage errorMessage)
+        {
+            if (!IgnoreErrors)
+                base.ReceiveError(errorMessage);
+        }
+
+        protected override void ReceiveScrape(ScrapeMessage scrapeMessage)
+        {
+            if (!IgnoreScrapes)
+                base.ReceiveScrape(scrapeMessage);
         }
     }
 }
