@@ -199,7 +199,7 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
             id.ClientApp = new Software(handshake.PeerId);
 
-            HandshakeMessage message = new HandshakeMessage(id.TorrentManager.Torrent.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
+            HandshakeMessage message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
             ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
             id.BytesSent = 0;

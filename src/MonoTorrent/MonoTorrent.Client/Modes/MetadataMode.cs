@@ -194,7 +194,8 @@ namespace MonoTorrent.Client
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
             foreach (TorrentFile file in torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
-            Manager.Mode = new DownloadMode(Manager);
+            //Manager.Mode = new DownloadMode(Manager);
+            Manager.Start();
         }
 
         protected override void HandleHaveAllMessage(PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)

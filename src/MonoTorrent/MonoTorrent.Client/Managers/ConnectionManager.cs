@@ -173,7 +173,7 @@ namespace MonoTorrent.Client
             AsyncConnectState connect = (AsyncConnectState)state;
             pendingConnects.Remove(connect);
             if (connect.Manager.Engine == null || 
-                (connect.Manager.State != TorrentState.Downloading && connect.Manager.State != TorrentState.Seeding))
+                !connect.Manager.Mode.CanAcceptConnections)
             {
                 connect.Connection.Dispose();
                 return;
@@ -693,7 +693,7 @@ namespace MonoTorrent.Client
                         continue;
 
                     // If the torrent isn't active, don't connect to a peer for it
-                    if (manager.State != TorrentState.Downloading && manager.State != TorrentState.Seeding)
+                    if (!manager.Mode.CanAcceptConnections)
                         continue;
 
                     // If we are not seeding, we can connect to anyone. If we are seeding, we should only connect to a peer

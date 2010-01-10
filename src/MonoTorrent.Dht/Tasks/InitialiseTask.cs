@@ -70,7 +70,7 @@ namespace MonoTorrent.Dht.Tasks
 
             // If we were given a list of initial nodes and they were all dead,
             // initialise again except use the utorrent router.
-            if (nodes != null && engine.RoutingTable.CountNodes() < 10)
+            if (initialNodes != null && engine.RoutingTable.CountNodes() < 10)
             {
                 new InitialiseTask(engine, null).Execute ();
             }

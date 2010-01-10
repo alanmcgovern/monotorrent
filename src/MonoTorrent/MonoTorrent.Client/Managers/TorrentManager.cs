@@ -604,7 +604,7 @@ namespace MonoTorrent.Client
                     engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
 
                     // First get some peers
-                    engine.DhtEngine.GetPeers(torrent.infoHash);
+                    engine.DhtEngine.GetPeers(InfoHash);
 
                     // Second, get peers every 10 minutes (if we need them)
                     ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
@@ -615,8 +615,8 @@ namespace MonoTorrent.Client
                         // Only use DHT if it hasn't been (temporarily?) disabled in settings
                         if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
                         {
-                            engine.DhtEngine.Announce(torrent.infoHash, engine.Settings.ListenPort);
-                            engine.DhtEngine.GetPeers(torrent.infoHash);
+                            engine.DhtEngine.Announce(InfoHash, engine.Settings.ListenPort);
+                            engine.DhtEngine.GetPeers(InfoHash);
                         }
                         return true;
                     });
