@@ -613,7 +613,7 @@ namespace MonoTorrent.Client
                             return false;
 
                         // Only use DHT if it hasn't been (temporarily?) disabled in settings
-                        if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
+                        if (CanUseDht)// && Peers.AvailablePeers.Count < Settings.MaxConnections)
                         {
                             engine.DhtEngine.Announce(InfoHash, engine.Settings.ListenPort);
                             engine.DhtEngine.GetPeers(InfoHash);
