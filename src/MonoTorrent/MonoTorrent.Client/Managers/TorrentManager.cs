@@ -608,8 +608,7 @@ namespace MonoTorrent.Client
 
                     // Second, get peers every 10 minutes (if we need them)
                     ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
-                        // Torrent is no longer active
-                        if (State != TorrentState.Seeding && State != TorrentState.Downloading)
+                        if (!Mode.CanAcceptConnections)
                             return false;
 
                         // Only use DHT if it hasn't been (temporarily?) disabled in settings
