@@ -51,6 +51,7 @@ namespace MonoTorrent.Client
 
         public override void Tick(int counter)
         {
+            Manager.Monitor.Reset();
             CloseConnections();
         }
 
