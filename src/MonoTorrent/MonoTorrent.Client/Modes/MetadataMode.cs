@@ -234,7 +234,7 @@ namespace MonoTorrent.Client
             byte[] calculatedInfoHash;
             using (SHA1 sha = HashAlgoFactory.Create<SHA1>())
                 calculatedInfoHash = sha.ComputeHash(stream.ToArray());
-            if (Manager.InfoHash != calculatedInfoHash)
+            if (!Manager.InfoHash.Equals (calculatedInfoHash))
                 throw new Exception("invalid metadata");//restart ?
 
             BEncodedValue d = BEncodedValue.Decode(stream);
