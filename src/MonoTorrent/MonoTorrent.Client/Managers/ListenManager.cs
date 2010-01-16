@@ -95,7 +95,7 @@ namespace MonoTorrent.Client
 
                 ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                     for (int i = 0; i < engine.Torrents.Count; i++)
-                        skeys.Add(engine.Torrents[i].Torrent.InfoHash);
+                        skeys.Add(engine.Torrents[i].InfoHash);
                 });
 
                 EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < engine.Torrents.Count; i++)
-                    if (handshake.infoHash == engine.Torrents[i].Torrent.InfoHash)
+                    if (handshake.infoHash == engine.Torrents[i].InfoHash)
                         man = engine.Torrents[i];
             });
 

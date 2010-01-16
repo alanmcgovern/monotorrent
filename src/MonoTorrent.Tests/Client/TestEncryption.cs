@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
 
             rig.AddConnection(conn.Incoming);
 
-            HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
 
             conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
@@ -177,9 +177,9 @@ namespace MonoTorrent.Client
             rig.Engine.Settings.AllowedEncryption = encryption;
             rig.Engine.StartAll();
 
-            HandshakeMessage message = new HandshakeMessage(rig.Manager.Torrent.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
-            PeerAEncryption a = new PeerAEncryption(rig.Manager.Torrent.InfoHash, encryption);
+            PeerAEncryption a = new PeerAEncryption(rig.Manager.InfoHash, encryption);
             if (addInitial)
                 a.AddPayload(buffer);
 
@@ -216,7 +216,7 @@ namespace MonoTorrent.Client
             rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
-            PeerBEncryption a = new PeerBEncryption(new InfoHash[] { rig.Manager.Torrent.InfoHash }, EncryptionTypes.All);
+            PeerBEncryption a = new PeerBEncryption(new InfoHash[] { rig.Manager.InfoHash }, EncryptionTypes.All);
             IAsyncResult result = a.BeginHandshake(conn.Incoming, null, null);
             if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.Fail("Handshake timed out");

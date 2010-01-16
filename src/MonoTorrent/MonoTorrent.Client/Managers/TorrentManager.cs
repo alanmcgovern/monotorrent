@@ -796,7 +796,7 @@ namespace MonoTorrent.Client
 #if !DISABLE_DHT
         private void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
-            if (torrent.InfoHash != e.InfoHash)
+            if (InfoHash != e.InfoHash)
                 return;
             
             ClientEngine.MainLoop.Queue (delegate {
@@ -812,7 +812,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException("Can only load FastResume when the torrent is stopped");
-            if (torrent.InfoHash != data.Infohash || torrent.Pieces.Count != data.Bitfield.Length)
+            if (InfoHash != data.Infohash || torrent.Pieces.Count != data.Bitfield.Length)
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
             bitfield.From(data.Bitfield);
