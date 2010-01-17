@@ -69,6 +69,7 @@ namespace MonoTorrent.Client
 
         public override void Tick(int counter)
         {
+            Manager.Engine.ConnectionManager.TryConnect();
             //if one request have been sent and we have wait more than timeout
             // request the next peer
             if (requestTimeout < DateTime.Now)
@@ -178,6 +179,8 @@ namespace MonoTorrent.Client
                     //Think to what we do in this situation
                     //for moment nothing ;)
                     //reject or flood?
+                    break;
+                case LTMetadata.eMessageType.Request://ever done in base class but needed to avoid default
                     break;
                 default:
                     throw new MessageException(string.Format("Invalid messagetype in LTMetadata: {0}", message.MetadataMessageType));
