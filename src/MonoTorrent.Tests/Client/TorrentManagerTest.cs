@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
             MessageBundle bundle = new MessageBundle();
 
             // Create the handshake and bitfield message
-            bundle.Messages.Add(new HandshakeMessage(rig.Manager.Torrent.InfoHash, "11112222333344445555", VersionInfo.ProtocolStringV100));
+            bundle.Messages.Add(new HandshakeMessage(rig.Manager.InfoHash, "11112222333344445555", VersionInfo.ProtocolStringV100));
             bundle.Messages.Add(new BitfieldMessage(rig.Torrent.Pieces.Count));
             byte[] data = bundle.Encode();
 

@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.Encryption
                     {
                         if (hasRC4)
                         {
-                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, usable);
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.InfoHash, usable);
                             result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                         else
@@ -130,7 +130,7 @@ namespace MonoTorrent.Client.Encryption
                         }
                         else
                         {
-                            result.EncSocket = new PeerAEncryption(id.TorrentManager.Torrent.infoHash, usable);
+                            result.EncSocket = new PeerAEncryption(id.TorrentManager.InfoHash, usable);
                             result.EncSocket.BeginHandshake(id.Connection, CompletedEncryptedHandshakeCallback, result);
                         }
                     }
