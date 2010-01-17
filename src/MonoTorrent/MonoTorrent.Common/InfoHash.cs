@@ -8,6 +8,16 @@ namespace MonoTorrent
 {
     public class InfoHash : IEquatable <InfoHash>
     {
+        static Dictionary<int, byte> base32DecodeTable;
+
+        static InfoHash()
+        {
+            base32DecodeTable = new Dictionary<int, byte>();
+            string table = "abcdefghijklmnopqrstuvwxyz234567";
+            for (int i = 0; i < table.Length; i++)
+                base32DecodeTable[(int)table[i]] = (byte)i;
+        }
+
         byte[] hash;
 
         internal byte[] Hash
@@ -87,6 +97,32 @@ namespace MonoTorrent
             return !(left == right);
         }
 
+        public static InfoHash FromBase32(string infoHash)
+        {
+            Check.InfoHash (infoHash);
+            if (infoHash.Length != 32)
+                throw new ArgumentException("Infohash must be a base32 encoded 32 character string");
+            
+            infoHash = infoHash.ToLower();
+            int infohashOffset =0 ;
+            byte[] hash = new byte[20];
+            var temp = new byte[8];
+            for (int i = 0; i < hash.Length; ) {
+                for (int j=0; j < 8; j++)
+                    if (!base32DecodeTable.TryGetValue((int)infoHash[infohashOffset++], out temp[j]))
+                        throw new ArgumentException ("infoHash", "Value is not a valid base32 encoded string");
+
+                //8 * 5bits = 40 bits = 5 bytes
+                hash[i++] = (byte)((temp[0] << 3) | (temp [1]>> 2));
+                hash[i++] = (byte)((temp[1] << 6) | (temp[2] << 1) | (temp[3] >> 4));
+                hash[i++] = (byte)((temp[3] << 4) | (temp [4]>> 1));
+                hash[i++] = (byte)((temp[4] << 7) | (temp[5] << 2) | (temp [6]>> 3));
+                hash[i++] = (byte)((temp[6] << 5) | temp[7]);
+            }
+
+            return new InfoHash(hash);
+        }
+
         public static InfoHash FromHex(string infoHash)
         {
             Check.InfoHash (infoHash);
@@ -114,10 +150,16 @@ namespace MonoTorrent
             int hashEnd = magnetLink.IndexOf('&', hashStart);
             if (hashEnd == -1)
                 hashEnd = magnetLink.Length;
-            if (hashEnd - hashStart != 40)
-                throw new ArgumentException("Infohash is not 40 characters long");
-            
-            return FromHex(magnetLink.Substring(hashStart, 40));
+
+            switch (hashEnd - hashStart)
+            {
+                case 32:
+                    return FromBase32(magnetLink.Substring(hashStart, 32));
+                case 40:
+                    return FromHex(magnetLink.Substring(hashStart, 40));
+                default:
+                    throw new ArgumentException("Infohash must be base32 or hex encoded.");
+            }
         }
 
         public static InfoHash UrlDecode(string infoHash)

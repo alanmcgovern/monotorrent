@@ -49,6 +49,14 @@ namespace MonoTorrent.Common
         }
 
         [Test]
+        public void MagnetLink_Base32()
+        {
+            InfoHash initial = new InfoHash (System.Text.Encoding.ASCII.GetBytes("foobafoobafoobafooba"));
+            InfoHash decoded = InfoHash.FromMagnetLink("magnet:?xt=urn:btih:MZXW6YTBMZXW6YTBMZXW6YTBMZXW6YTB");
+            Assert.AreEqual(initial, decoded, "#1");
+        }
+
+        [Test]
         [ExpectedException(typeof(ArgumentException))]
         public void InvalidMagnetLink()
         {
