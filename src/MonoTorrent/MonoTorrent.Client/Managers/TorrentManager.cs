@@ -108,7 +108,7 @@ namespace MonoTorrent.Client
 
         public bool CanUseDht
         {
-            get { return !torrent.IsPrivate && settings.UseDht; }
+            get { return settings.UseDht && (torrent == null || !torrent.IsPrivate); }
         }
 
         public bool Complete
@@ -825,7 +825,7 @@ namespace MonoTorrent.Client
         public FastResume SaveFastResume()
         {
             CheckMetadata();
-            return new FastResume(this.torrent.infoHash, this.bitfield);
+            return new FastResume(InfoHash, this.bitfield);
         }
 
         #endregion Private Methods
