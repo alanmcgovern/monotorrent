@@ -8,14 +8,14 @@ namespace MonoTorrent
 {
     public class InfoHash : IEquatable <InfoHash>
     {
-        static Dictionary<int, byte> base32DecodeTable;
+        static Dictionary<char, byte> base32DecodeTable;
 
         static InfoHash()
         {
-            base32DecodeTable = new Dictionary<int, byte>();
+            base32DecodeTable = new Dictionary<char, byte>();
             string table = "abcdefghijklmnopqrstuvwxyz234567";
             for (int i = 0; i < table.Length; i++)
-                base32DecodeTable[(int)table[i]] = (byte)i;
+                base32DecodeTable[table[i]] = (byte)i;
         }
 
         byte[] hash;
@@ -109,7 +109,7 @@ namespace MonoTorrent
             var temp = new byte[8];
             for (int i = 0; i < hash.Length; ) {
                 for (int j=0; j < 8; j++)
-                    if (!base32DecodeTable.TryGetValue((int)infoHash[infohashOffset++], out temp[j]))
+                    if (!base32DecodeTable.TryGetValue(infoHash[infohashOffset++], out temp[j]))
                         throw new ArgumentException ("infoHash", "Value is not a valid base32 encoded string");
 
                 //8 * 5bits = 40 bits = 5 bytes
