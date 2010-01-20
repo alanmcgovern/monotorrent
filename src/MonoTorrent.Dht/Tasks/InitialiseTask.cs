@@ -10,16 +10,33 @@ namespace MonoTorrent.Dht.Tasks
     class InitialiseTask : Task
     {
         int activeRequests = 0;
-        byte[] initialNodes;
+        List<Node> initialNodes;
         SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
         DhtEngine engine;
             
+        public InitialiseTask(DhtEngine engine)
+        {
+            Initialise(engine, null);
+        }
+
         public InitialiseTask(DhtEngine engine, byte[] initialNodes)
         {
-            this.engine = engine;
-            this.initialNodes = initialNodes;
+            Initialise(engine, initialNodes == null ? null :  Node.FromCompactNode(initialNodes));
         }
-        
+
+        public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
+        {
+            Initialise(engine, nodes);
+        }
+
+        void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
+        {
+            this.engine = engine;
+            this.initialNodes = new List<Node>();
+            if (nodes != null)
+                initialNodes.AddRange(nodes);
+        }
+
         public override void Execute()
         {
             if (Active)
@@ -28,17 +45,11 @@ namespace MonoTorrent.Dht.Tasks
             Active = true;
 
             // If we were given a list of nodes to load at the start, use them
-            BEncodedList list = new BEncodedList();
-            if (initialNodes != null)
+            if (initialNodes.Count > 0)
             {
-                foreach (BEncodedString s in (BEncodedList)BEncodedValue.Decode(initialNodes))
-                    list.Add(s);
-            }
-
-            if (list.Count > 0)
-            {
-                foreach (BEncodedString s in list)
-                    engine.Add(Node.FromCompactNode(s.TextBytes, 0));
+                foreach (Node node in initialNodes)
+                    engine.Add(node);
+                SendFindNode(initialNodes);
             }
             else
             {
@@ -70,9 +81,9 @@ namespace MonoTorrent.Dht.Tasks
 
             // If we were given a list of initial nodes and they were all dead,
             // initialise again except use the utorrent router.
-            if (initialNodes != null && engine.RoutingTable.CountNodes() < 10)
+            if (initialNodes.Count > 0 && engine.RoutingTable.CountNodes() < 10)
             {
-                new InitialiseTask(engine, null).Execute ();
+                new InitialiseTask(engine).Execute ();
             }
             else
             {

@@ -568,6 +568,9 @@ namespace MonoTorrent.Client
                 if (!HasMetadata)
                 {
                     Mode = new MetadataMode(this, torrentSave);
+#if !DISABLE_DHT
+                    StartDHT();
+#endif                    
                     return;
                 }
 
@@ -599,27 +602,7 @@ namespace MonoTorrent.Client
                 engine.Broadcast(this);
 
 #if !DISABLE_DHT
-                if (HasMetadata && !torrent.IsPrivate)
-                {
-                    engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
-
-                    // First get some peers
-                    engine.DhtEngine.GetPeers(InfoHash);
-
-                    // Second, get peers every 10 minutes (if we need them)
-                    ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
-                        if (!Mode.CanAcceptConnections)
-                            return false;
-
-                        // Only use DHT if it hasn't been (temporarily?) disabled in settings
-                        if (CanUseDht)// && Peers.AvailablePeers.Count < Settings.MaxConnections)
-                        {
-                            engine.DhtEngine.Announce(InfoHash, engine.Settings.ListenPort);
-                            engine.DhtEngine.GetPeers(InfoHash);
-                        }
-                        return true;
-                    });
-                }
+                StartDHT();
 #endif
                 this.startTime = DateTime.Now;
                 if (engine.ConnectionManager.IsRegistered(this))
@@ -637,6 +620,31 @@ namespace MonoTorrent.Client
             });
         }
 
+#if !DISABLE_DHT
+        private void StartDHT()
+        {
+            engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
+ 
+            // First get some peers
+            engine.DhtEngine.GetPeers(InfoHash);
+
+            // Second, get peers every 10 minutes (if we need them)
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMinutes(10), delegate {
+                // Torrent is no longer active
+                if (!Mode.CanAcceptConnections)
+                    return false;
+
+                // Only use DHT if it hasn't been (temporarily?) disabled in settings
+                if (CanUseDht && Peers.AvailablePeers.Count < Settings.MaxConnections)
+                {
+                    engine.DhtEngine.Announce(InfoHash, engine.Settings.ListenPort);
+                    //announce ever done a get peers task
+                    //engine.DhtEngine.GetPeers(InfoHash);
+                }
+                return true;
+            });
+        }
+#endif
 
         /// <summary>
         /// Stops the TorrentManager

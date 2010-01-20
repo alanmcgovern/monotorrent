@@ -172,6 +172,34 @@ namespace MonoTorrent.Dht
             return FromCompactNode(nodes.TextBytes);
         }
 
+        internal static IEnumerable<Node> FromCompactNode(BEncodedList nodes)
+        {
+			foreach(BEncodedValue node in nodes)
+	        {
+                //bad format!
+                if (!(node is BEncodedList))
+                    continue;
+                
+	            string host = string.Empty;
+	            long port = 0;
+	            foreach (BEncodedValue val in (BEncodedList)node)
+	            {
+	                if(val is BEncodedString)
+	                	host = ((BEncodedString)val).Text;
+	                else if (val is BEncodedNumber)
+	                    port = ((BEncodedNumber)val).Number;
+	            }
+	            IPAddress address;
+	            IPAddress.TryParse(host, out address);
+                
+                //REM: bad design from bitcomet we do not have node id so create it...
+                //or use torrent infohash?
+                // Will messages from this node be discarded later on if the NodeId doesn't match?
+                if (address != null)
+	            	yield return new Node(NodeId.Create(), new IPEndPoint(address, (int)port));
+	        }
+        }
+
         //To order by last seen in bucket
         public int CompareTo(Node other)
         {

@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
@@ -46,6 +47,11 @@ namespace MonoTorrent.Client
         public DhtState State
         {
             get { return DhtState.NotReady; }
+        }
+
+        public void Add(BEncodedList nodes)
+        {
+            
         }
 
         public void Announce(InfoHash infohash, int port)
