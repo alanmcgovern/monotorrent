@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
@@ -11,7 +11,12 @@ namespace MonoTorrent.Client
 		{
 			get { return false; }
 		}
-
+		
+		public override bool CanHashCheck
+		{
+			get { return true; }
+		}
+		
 		public override TorrentState State
 		{
 			get { return TorrentState.Stopped; }

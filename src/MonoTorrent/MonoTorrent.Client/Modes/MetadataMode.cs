@@ -51,6 +51,11 @@ namespace MonoTorrent.Client
         string savePath;
         private DateTime requestTimeout;
 
+		public override bool CanHashCheck
+		{
+			get { return true; }
+		}
+		
 		public override TorrentState State
 		{
 			get { return TorrentState.Metadata; }
@@ -157,7 +162,17 @@ namespace MonoTorrent.Client
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad(dict.Encode (), out t))
                             {
-                                File.WriteAllBytes(savePath, stream.GetBuffer());
+                                try
+                                {
+                                    File.WriteAllBytes(savePath, stream.GetBuffer());
+                                }
+                                catch (Exception ex)
+                                {
+									Logger.Log(null, "*METADATA EXCEPTION* - Can not write in {0} : {1}", savePath, ex);
+									Manager.Error = new Error (Reason.WriteFailure, ex);
+									Manager.Mode = new ErrorMode(Manager);
+                                    return;
+                                }
                                 t.TorrentPath = savePath;
                                 Manager.Torrent = t;
                                 SwitchToRegular();
@@ -197,7 +212,6 @@ namespace MonoTorrent.Client
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
             foreach (TorrentFile file in torrent.Files)
                 file.FullPath = Path.Combine (Manager.SavePath, file.Path);
-            //Manager.Mode = new DownloadMode(Manager);
             Manager.Start();
         }
 

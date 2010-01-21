@@ -132,6 +132,11 @@ namespace MonoTorrent.Client
             return true;
         }
 
+		public virtual bool CanHashCheck
+		{
+			get { return false; }
+		}
+		
         protected virtual void HandleGenericExtensionMessage(PeerId id, ExtensionMessage extensionMessage)
         {
             // Do nothing

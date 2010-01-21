@@ -508,7 +508,7 @@ namespace MonoTorrent.Client
         public void HashCheck(bool autoStart)
         {
             ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                if (State != TorrentState.Stopped)
+                if (!Mode.CanHashCheck)
                     throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
 
                 CheckRegisteredAndDisposed();
