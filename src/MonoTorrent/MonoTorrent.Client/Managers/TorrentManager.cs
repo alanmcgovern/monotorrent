@@ -94,7 +94,9 @@ namespace MonoTorrent.Client
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
 		private InactivePeerManager inactivePeerManager; // Used to identify inactive peers we don't want to connect to
 		internal DateTime lastCalledInactivePeerManager = DateTime.Now;
-
+#if !DISABLE_DHT	
+		private bool dhtInitialised;
+#endif		
         #endregion Member Variables
 
 
@@ -623,6 +625,9 @@ namespace MonoTorrent.Client
 #if !DISABLE_DHT
         private void StartDHT()
         {
+			if (dhtInitialised)
+				return;
+			dhtInitialised = true;
             engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
  
             // First get some peers
