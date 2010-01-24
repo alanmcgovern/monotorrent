@@ -12,6 +12,7 @@ namespace MonoTorrent.Common
         private long fileTotal;
         private long overallHashed;
         private long overallTotal;
+        private string file;
 
         #endregion Member Variables
 
@@ -66,13 +67,22 @@ namespace MonoTorrent.Common
             get { return overallHashed / (double)overallTotal * 100.0; }
         }
 
+        /// <summary>
+        /// The path of the current file
+        /// </summary>
+        public string CurrentFile 
+        { 
+            get { return file; }
+        }
+		
         #endregion Properties
 
 
         #region Constructors
 
-        internal TorrentCreatorEventArgs(long fileHashed, long fileTotal, long overallHashed, long overallTotal)
+        internal TorrentCreatorEventArgs(string file, long fileHashed, long fileTotal, long overallHashed, long overallTotal)
         {
+            this.file = file;
             this.fileHashed = fileHashed;
             this.fileTotal = fileTotal;
             this.overallHashed = overallHashed;

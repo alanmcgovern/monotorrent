@@ -317,7 +317,7 @@ namespace MonoTorrent.Common {
                             torrentHashes.AddRange (shaHasher.Hash);
                             shaHasher.Initialize();
                         }
-                        RaiseHashed (new TorrentCreatorEventArgs (fileRead, file.Length, overallRead, overallTotal));
+                        RaiseHashed (new TorrentCreatorEventArgs (file.Path, fileRead, file.Length, overallRead, overallTotal));
                     }
                     if (md5Hasher != null) {
                         md5Hasher.TransformFinalBlock (buffer, 0, 0);
