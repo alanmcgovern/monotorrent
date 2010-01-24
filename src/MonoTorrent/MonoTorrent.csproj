@@ -284,6 +284,7 @@
     <Compile Include="MonoTorrent.Common\HashAlgoFactory.cs" />
     <Compile Include="MonoTorrent.Common\Hashes.cs" />
     <Compile Include="MonoTorrent.Common\ICacheable.cs" />
+    <Compile Include="MonoTorrent.Common\IFileSource.cs" />
     <Compile Include="MonoTorrent.Common\InfoHash.cs" />
     <Compile Include="MonoTorrent.Common\MonoTorrentCollectionBase.cs" />
     <Compile Include="MonoTorrent.Common\PeerID.cs" />
@@ -295,6 +296,7 @@
     <Compile Include="MonoTorrent.Common\TorrentCreatorAsyncResult.cs" />
     <Compile Include="MonoTorrent.Common\TorrentException.cs" />
     <Compile Include="MonoTorrent.Common\TorrentFile.cs" />
+    <Compile Include="MonoTorrent.Common\TorrentFileSource.cs" />
     <Compile Include="MonoTorrent.Common\UriQueryBuilder.cs" />
     <Compile Include="MonoTorrent.Common\VersionInfo.cs" />
     <Compile Include="MonoTorrent.Common\EventArgs\TorrentCreatorEventArgs.cs" />

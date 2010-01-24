@@ -30,16 +30,15 @@
 
 
 using System;
-using System.IO;
-using System.Text;
-using System.Diagnostics;
-using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using MonoTorrent.BEncoding;
+using System.IO;
+using System.Linq;
 using System.Threading;
+
+using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
+using System.Security.Cryptography;
 
 namespace MonoTorrent.Common {
 
@@ -48,15 +47,6 @@ namespace MonoTorrent.Common {
         static BEncodedValue Get (BEncodedDictionary dictionary, BEncodedString key)
         {
             return dictionary.ContainsKey (key) ? dictionary [key] : null;
-        }
-
-        public static IEnumerable<FileMapping> GetFileMappings (string path)
-        {
-            return GetAllMappings (path, true);
-        }
-        public static IEnumerable<FileMapping> GetFileMappings (string path, bool ignoreHiddenFiles)
-        {
-            return GetAllMappings (path, ignoreHiddenFiles);
         }
 
         public static int RecommendedPieceSize (long totalSize)
@@ -104,7 +94,6 @@ namespace MonoTorrent.Common {
         TorrentCreatorAsyncResult asyncResult;
         BEncodedDictionary dict;
         List<string> getrightHttpSeeds;
-        bool ignoreHiddenFiles;
         BEncodedDictionary info;
         bool storeMD5;
 
@@ -143,12 +132,6 @@ namespace MonoTorrent.Common {
         public List<string> GetrightHttpSeeds
         {
             get { return getrightHttpSeeds; }
-        }
-
-        public bool IgnoreHiddenFiles
-        {
-            get { return ignoreHiddenFiles; }
-            set { ignoreHiddenFiles = value; }
         }
 
         public bool StoreMD5
@@ -208,7 +191,6 @@ namespace MonoTorrent.Common {
             announces = new List<List<string>> ();
             dict = new BEncodedDictionary ();
             getrightHttpSeeds = new List<string> ();
-            ignoreHiddenFiles = true;
             info = new BEncodedDictionary ();
 
             CreatedBy = string.Format ("MonoTorrent {0}", VersionInfo.Version);
@@ -266,19 +248,9 @@ namespace MonoTorrent.Common {
             info [key] = value;
         }
 
-        public IAsyncResult BeginCreate (string path, AsyncCallback callback, object asyncState)
+        public IAsyncResult BeginCreate (ITorrentFileSource fileSource, AsyncCallback callback, object asyncState)
         {
-            return BeginCreate (delegate { return Create (path); }, callback, asyncState);
-        }
-
-        public IAsyncResult BeginCreate (string directory, IEnumerable<string> fullPaths, AsyncCallback callback, object asyncState)
-        {
-            return BeginCreate (delegate { return Create (directory, fullPaths); }, callback, asyncState);
-        }
-
-        public IAsyncResult BeginCreate (string name, IEnumerable<FileMapping> files, AsyncCallback callback, object asyncState)
-        {
-            return BeginCreate (delegate { return Create (name, files); }, callback, asyncState);
+            return BeginCreate(delegate { return Create(fileSource); }, callback, asyncState);
         }
 
         IAsyncResult BeginCreate (MainLoopJob task, AsyncCallback callback, object asyncState)
@@ -366,39 +338,17 @@ namespace MonoTorrent.Common {
             return torrentHashes.ToArray ();
         }
 
-        public BEncodedDictionary Create (string path)
+        public BEncodedDictionary Create (ITorrentFileSource fileSource)
         {
-            Check.Path (path);
-            path = Path.GetFullPath (path);
-
-            List<FileMapping> mappings = GetAllMappings (path, IgnoreHiddenFiles);
-            string name = mappings.Count == 1 ? Path.GetFileName (mappings [0].Destination) : new DirectoryInfo (path).Name;
-            return Create (name, mappings);
-        }
-
-        public BEncodedDictionary Create (string directory, IEnumerable<string> fullPaths)
-        {
-            List<FileMapping> mappings = new List<FileMapping> ();
-            foreach (string s in fullPaths)
-                mappings.Add (new FileMapping (s, s.Substring (directory.Length + 1)));
-
-            string name = mappings.Count == 1 ? Path.GetFileName (mappings [0].Destination) : new DirectoryInfo (directory).Name;
-            return Create (name, mappings);
-        }
-
-        public BEncodedDictionary Create (string name, IEnumerable<FileMapping> mappings)
-        {
-            Check.Name (name);
-            Check.Mappings (mappings);
-
             List<TorrentFile> maps = new List<TorrentFile> ();
-            foreach (FileMapping m in mappings)
+            foreach (FileMapping m in fileSource.Files)
                 maps.Add (ToTorrentFile (m));
 
             if (maps.Count == 0)
                 throw new ArgumentException ("Path must refer to a file or a directory containing one or more files", "path");
-           
-            return Create(name, maps);
+
+            maps.Sort((left, right) => left.Path.CompareTo(right.Path));
+            return Create(fileSource.TorrentName, maps);
         }
 
         internal BEncodedDictionary Create(string name, List<TorrentFile> files)
@@ -485,44 +435,6 @@ namespace MonoTorrent.Common {
                 stream.Write (buffer, 0, buffer.Length);
 
             return data != null;
-        }
-
-        static List<FileMapping> GetAllMappings (string path, bool ignoreHiddenFiles)
-        {
-            if (File.Exists (path)) {
-                List<FileMapping> mappings = new List<FileMapping> ();
-                mappings.Add (new FileMapping (path, Path.GetFileName (path)));
-                return mappings;
-            }
-
-            List<string> files = new List<string> ();
-            Queue<string> directories = new Queue<string> ();
-            directories.Enqueue (path);
-
-            while (directories.Count > 0) {
-                string current = directories.Dequeue ();
-                if (ignoreHiddenFiles) {
-                    DirectoryInfo info = new DirectoryInfo (current);
-                    if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-                        continue;
-                }
-
-                foreach (string s in Directory.GetDirectories (current))
-                    directories.Enqueue (s);
-
-                files.AddRange (Directory.GetFiles (current));
-            }
-
-            if (ignoreHiddenFiles) {
-                files.RemoveAll (delegate (string file) {
-                    return (new FileInfo (file).Attributes & FileAttributes.Hidden) == FileAttributes.Hidden;
-                });
-            }
-
-            files.Sort (StringComparer.Ordinal);
-            return files.ConvertAll<FileMapping> (delegate (string file) {
-                return new FileMapping (file, file.Substring (path.Length + 1));
-            });
         }
 
         public void RemoveCustom (BEncodedString key)

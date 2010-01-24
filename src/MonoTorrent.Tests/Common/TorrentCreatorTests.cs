@@ -117,7 +117,7 @@ namespace MonoTorrent.Common
         public void CreateSingleFromFolder()
         {
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            BEncodedDictionary dict = creator.Create(Path.GetFullPath(assembly.Location));
+            BEncodedDictionary dict = creator.Create(new TorrentFileSource(assembly.Location));
 
             Torrent t = Torrent.Load(dict);
 
@@ -126,7 +126,7 @@ namespace MonoTorrent.Common
             Assert.AreEqual(Path.GetFileName(assembly.Location), t.Files[0].Path, "#3");
 
             // Create it again
-            creator.Create(Path.GetFullPath(assembly.Location));
+            creator.Create(new TorrentFileSource(assembly.Location));
         }
 
         [Test]
