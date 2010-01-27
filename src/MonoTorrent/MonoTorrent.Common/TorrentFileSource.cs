@@ -12,7 +12,7 @@ namespace MonoTorrent.Common
         }
 
         public bool IgnoreHidden {
-            get; set;
+            get; private set;
         }
 
         public string Path {

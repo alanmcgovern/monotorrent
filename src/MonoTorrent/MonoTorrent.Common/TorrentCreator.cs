@@ -340,6 +340,8 @@ namespace MonoTorrent.Common {
 
         public BEncodedDictionary Create (ITorrentFileSource fileSource)
         {
+            Check.FileSource(fileSource);
+
             List<TorrentFile> maps = new List<TorrentFile> ();
             foreach (FileMapping m in fileSource.Files)
                 maps.Add (ToTorrentFile (m));
@@ -349,6 +351,21 @@ namespace MonoTorrent.Common {
 
             maps.Sort((left, right) => left.Path.CompareTo(right.Path));
             return Create(fileSource.TorrentName, maps);
+        }
+
+        public void Create(ITorrentFileSource fileSource, Stream stream)
+        {
+            Check.Stream(stream);
+
+            var data = Create(fileSource).Encode();
+            stream.Write(data, 0, data.Length);
+        }
+
+        public void Create(ITorrentFileSource fileSource, string savePath)
+        {
+            Check.SavePath(savePath);
+
+            File.WriteAllBytes(savePath, Create(fileSource).Encode());
         }
 
         internal BEncodedDictionary Create(string name, List<TorrentFile> files)
@@ -415,26 +432,20 @@ namespace MonoTorrent.Common {
             }
         }
 
-        public bool EndCreate (IAsyncResult result, string path)
+        public void EndCreate (IAsyncResult result, string path)
         {
-            if (string.IsNullOrEmpty (path))
-                throw new ArgumentNullException ("path");
+            Check.PathNotEmpty(path);
 
-            using (FileStream s = File.OpenWrite (path))
-                return EndCreate (result, s);
+            var dict = EndCreate(result);
+            File.WriteAllBytes(path, dict.Encode());
         }
 
-        public bool EndCreate (IAsyncResult result, Stream stream)
+        public void EndCreate(IAsyncResult result, Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException ("stream");
+            Check.Stream(stream);
 
-            BEncodedDictionary data = EndCreate (result);
-            byte [] buffer = data.Encode ();
-            if (data != null)
-                stream.Write (buffer, 0, buffer.Length);
-
-            return data != null;
+            var buffer = EndCreate (result).Encode ();
+            stream.Write (buffer, 0, buffer.Length);
         }
 
         public void RemoveCustom (BEncodedString key)

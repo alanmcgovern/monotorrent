@@ -82,6 +82,11 @@ namespace MonoTorrent
             DoCheck(files, "files");
         }
 
+        public static void FileSource(object fileSource)
+        {
+            DoCheck(fileSource, "fileSource");
+        }
+
         public static void InfoHash(object infoHash)
         {
             DoCheck(infoHash, "infoHash");
