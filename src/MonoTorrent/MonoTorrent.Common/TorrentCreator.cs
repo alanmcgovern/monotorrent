@@ -342,14 +342,16 @@ namespace MonoTorrent.Common {
         {
             Check.FileSource(fileSource);
 
-            List<TorrentFile> maps = new List<TorrentFile> ();
+            List <FileMapping> mappings = new List <FileMapping> (fileSource.Files);
+            if (mappings.Count == 0)
+                throw new ArgumentException ("The file source must contain one or more files", "fileSource");
+
+            mappings.Sort((left, right) => left.Destination.CompareTo(right.Destination));
+            Validate (mappings);
+
+            List<TorrentFile> maps = new List <TorrentFile> ();
             foreach (FileMapping m in fileSource.Files)
                 maps.Add (ToTorrentFile (m));
-
-            if (maps.Count == 0)
-                throw new ArgumentException ("Path must refer to a file or a directory containing one or more files", "path");
-
-            maps.Sort((left, right) => left.Path.CompareTo(right.Path));
             return Create(fileSource.TorrentName, maps);
         }
 
@@ -486,6 +488,35 @@ namespace MonoTorrent.Common {
                 fileDict ["md5sum"] = (BEncodedString) file.MD5;
 
             return fileDict;
+        }
+
+        void Validate (List <FileMapping> maps)
+        {
+            // Make sure the user doesn't try to overwrite system files. Ensure
+            // that the path is relative and doesn't try to access its parent folder
+            var sepLinux = "/";
+            var sepWindows = "\\";
+            var dropLinux = "../";
+            var dropWindows = "..\\";
+            foreach (var map in maps) {
+                if (map.Destination.StartsWith (sepLinux))
+                    throw new ArgumentException ("The destination path cannot start with the '{0}' character", sepLinux);
+                if (map.Destination.StartsWith (sepWindows))
+                    throw new ArgumentException ("The destination path cannot start with the '{0}' character", sepWindows);
+
+                if (map.Destination.Contains (dropLinux))
+                    throw new ArgumentException ("The destination path cannot contain '{0}'", dropLinux);
+                if (map.Destination.Contains (dropWindows))
+                    throw new ArgumentException ("The destination path cannot contain '{0}'", dropWindows);
+            }
+
+            // Ensure all the destination files are unique too. The files should already be sorted.
+            for (int i = 1; i < maps.Count; i++)
+                if (maps[i - 1].Destination == maps [i].Destination)
+                    throw new ArgumentException (string.Format ("Files '{0}' and '{1}' both map to the same destination '{2}'",
+                                                 maps [i - 1].Source,
+                                                 maps [i].Source,
+                                                 maps [i].Destination));
         }
     }
 }

@@ -154,6 +154,28 @@ namespace MonoTorrent.Common
             Assert.AreEqual(name5, torrent.Files[4].Path, "#6");
         }
 
+        [Test]
+        [ExpectedException (typeof (ArgumentException))]
+        public void IllegalDestinationPath ()
+        {
+            var source = new CustomFileSource (new List <FileMapping> {
+                new FileMapping("a", "../../dest1"),
+            });
+            new TorrentCreator ().Create (source);
+        }
+
+        [Test]
+        [ExpectedException (typeof (ArgumentException))]
+        public void TwoFilesSameDestionation ()
+        {
+            var source = new CustomFileSource (new List <FileMapping> {
+                new FileMapping("a", "dest1"),
+                new FileMapping ("b", "dest2"),
+                new FileMapping ("c", "dest1"),
+            });
+            new TorrentCreator ().Create (source);
+        }
+
         void VerifyCommonParts(Torrent torrent)
         {
             Assert.AreEqual(Comment, torrent.Comment, "#1");
