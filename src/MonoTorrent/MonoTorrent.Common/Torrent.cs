@@ -243,7 +243,7 @@ namespace MonoTorrent.Common
         public long Size
         {
             get { return this.size; }
-            set { this.size = value; }
+            private set { this.size = value; }
         }
 
 
