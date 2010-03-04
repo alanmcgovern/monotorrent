@@ -607,10 +607,6 @@ namespace MonoTorrent.Client
                 StartDHT();
 #endif
                 this.startTime = DateTime.Now;
-                if (engine.ConnectionManager.IsRegistered(this))
-                    Logger.Log(null, "TorrentManager - Error, this manager is already in the connectionmanager!");
-                else
-                    engine.ConnectionManager.RegisterManager(this);
                 this.pieceManager.Reset();
 
                 ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {

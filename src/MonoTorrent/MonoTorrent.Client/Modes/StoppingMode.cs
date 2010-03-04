@@ -40,8 +40,6 @@ namespace MonoTorrent.Client
 			manager.Monitor.Reset();
 			manager.PieceManager.Reset();
 			engine.ConnectionManager.CancelPendingConnects(manager);
-			if (engine.ConnectionManager.IsRegistered(manager))
-				engine.ConnectionManager.UnregisterManager(manager);
 			engine.Stop();
 		}
 
