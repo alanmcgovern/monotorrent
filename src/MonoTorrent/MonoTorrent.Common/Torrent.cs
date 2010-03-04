@@ -461,7 +461,6 @@ namespace MonoTorrent.Common
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
             metadata = dictionary.Encode();
-            originalDictionary = dictionary;
             this.pieceLength = int.Parse(dictionary["piece length"].ToString());
             LoadHashPieces(((BEncodedString)dictionary["pieces"]).TextBytes);
 
