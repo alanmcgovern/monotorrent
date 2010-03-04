@@ -258,7 +258,7 @@ namespace MonoTorrent.Client
             BEncodedDictionary dict = new BEncodedDictionary();
             dict.Add("info", d);
 
-            return Torrent.Load(dict);
+            return Torrent.LoadCore(dict);
         }
 
         protected override void AppendBitfieldMessage(PeerId id, MessageBundle bundle)

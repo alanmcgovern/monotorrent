@@ -47,6 +47,7 @@ namespace MonoTorrent.Common
     {
         #region Private Fields
 
+        private BEncodedDictionary originalDictionary;
         private BEncodedValue azureusProperties;
         private List<MonoTorrentCollection<string>> announceUrls;
         private string comment;
@@ -297,11 +298,6 @@ namespace MonoTorrent.Common
 
         #region Public Methods
 
-        /// <summary>
-        /// Two Torrent instances are considered equal if they have the same infohash
-        /// </summary>
-        /// <param name="obj">The object to compare</param>
-        /// <returns>True if they are equal</returns>
         public override bool Equals(object obj)
         {
             return Equals(obj as Torrent);
@@ -315,16 +311,21 @@ namespace MonoTorrent.Common
             return infoHash == other.infoHash;
         }
 
-
-        /// <summary>
-        /// Returns the hashcode of the infohash byte[]
-        /// </summary>
-        /// <returns>int</returns>
         public override int GetHashCode()
         {
             return infoHash.GetHashCode();
         }
 
+        internal byte [] ToBytes ()
+        {
+            return originalDictionary.Encode ();
+        }
+
+        internal BEncodedDictionary ToDictionary ()
+        {
+            // Give the user a copy of the original dictionary.
+            return (BEncodedDictionary) BEncodedValue.Decode (ToBytes ());
+        }
 
         public override string ToString()
         {
@@ -460,6 +461,7 @@ namespace MonoTorrent.Common
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
             metadata = dictionary.Encode();
+            originalDictionary = dictionary;
             this.pieceLength = int.Parse(dictionary["piece length"].ToString());
             LoadHashPieces(((BEncodedString)dictionary["pieces"]).TextBytes);
 
@@ -719,8 +721,7 @@ namespace MonoTorrent.Common
 
             try
             {
-                //Torrent t = Torrent.Load(BEncodedValue.Decode<BEncodedDictionary>(stream));
-                Torrent t = Torrent.Load((BEncodedDictionary)BEncodedDictionary.Decode(stream));
+                Torrent t = Torrent.LoadCore ((BEncodedDictionary) BEncodedDictionary.Decode(stream));
                 t.torrentPath = path;
                 return t;
             }
@@ -731,6 +732,11 @@ namespace MonoTorrent.Common
         }
 
         public static Torrent Load(BEncodedDictionary torrentInformation)
+        {
+            return LoadCore ((BEncodedDictionary)BEncodedValue.Decode (torrentInformation.Encode ()));
+        }
+
+        internal static Torrent LoadCore(BEncodedDictionary torrentInformation)
         {
             Check.TorrentInformation(torrentInformation);
 
@@ -743,6 +749,7 @@ namespace MonoTorrent.Common
         protected void LoadInternal(BEncodedDictionary torrentInformation)
         {
             Check.TorrentInformation(torrentInformation);
+            originalDictionary = torrentInformation;
             torrentPath = "";
 
             try
