@@ -457,8 +457,10 @@ namespace MonoTorrent.Client
             manager.Engine.ConnectionManager.TryConnect();
 
             //Execute iniitial logic for individual peers
-            if (counter % (1000 / ClientEngine.TickLength) == 0)     // Call it every second... ish
+            if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
                 manager.Monitor.Tick();
+                manager.UpdateLimiters ();
+            }
 
             if (manager.finishedPieces.Count > 0)
                 SendHaveMessagesToAll();

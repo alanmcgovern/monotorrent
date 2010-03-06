@@ -35,5 +35,6 @@ namespace MonoTorrent.Client
     {
         bool TryProcess(int amount);
         bool Unlimited { get; }
+        void UpdateChunks (int maxRate, int actualRate);
     }
 }

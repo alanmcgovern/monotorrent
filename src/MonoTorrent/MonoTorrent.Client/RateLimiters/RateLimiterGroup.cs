@@ -40,7 +40,12 @@ namespace MonoTorrent.Client
 
         public bool Unlimited
         {
-            get { return limiters.TrueForAll(delegate(IRateLimiter l) { return l.Unlimited; }); }
+            get {
+                for (int i = 0; i < limiters.Count; i++)
+                    if (!limiters [i].Unlimited)
+                        return false;
+                return true;
+            }
         }
 
         public RateLimiterGroup()
@@ -70,6 +75,12 @@ namespace MonoTorrent.Client
                     return false;
             }
             return true;
+        }
+
+        public void UpdateChunks (int maxRate, int actualRate)
+        {
+            for (int i = 0; i < limiters.Count; i++)
+                limiters [i].UpdateChunks (maxRate, actualRate);
         }
     }
 }

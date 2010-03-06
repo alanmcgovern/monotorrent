@@ -419,12 +419,6 @@ namespace MonoTorrent.Client
             uploadLimiter = new RateLimiterGroup();
             uploadLimiter.Add(new PauseLimiter(this));
             uploadLimiter.Add(uploader);
-
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
-                downloader.UpdateChunks(Settings.MaxDownloadSpeed, Monitor.DownloadSpeed);
-                uploader.UpdateChunks(Settings.MaxUploadSpeed, Monitor.UploadSpeed);
-                return !disposed;
-            });
         }
 
         #endregion
@@ -770,6 +764,11 @@ namespace MonoTorrent.Client
             Toolbox.RaiseAsyncEvent<PeerConnectionFailedEventArgs>(this.ConnectionAttemptFailed, this, args);
         }
 
+        internal void UpdateLimiters ()
+        {
+            DownloadLimiter.UpdateChunks (Settings.MaxDownloadSpeed, Monitor.DownloadSpeed);
+            UploadLimiter.UpdateChunks (Settings.MaxUploadSpeed, Monitor.UploadSpeed);
+        }
         #endregion Internal Methods
 
 
