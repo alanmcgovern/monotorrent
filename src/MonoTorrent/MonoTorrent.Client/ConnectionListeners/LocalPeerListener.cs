@@ -118,7 +118,7 @@ namespace MonoTorrent.Client
                 if (!manager.HasMetadata || !manager.Torrent.IsPrivate)
                 {
                     ClientEngine.MainLoop.Queue(delegate {
-                        int count = manager.AddPeers(peer);
+                        int count = manager.AddPeersCore (peer);
                         manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
                     });
                 }

@@ -671,7 +671,29 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        internal int AddPeers(Peer peer)
+        public void AddPeers (Peer peer)
+        {
+            Check.Peer (peer);
+            if (HasMetadata && Torrent.IsPrivate)
+                throw new InvalidOperationException ("You cannot add external peers to a private torrent");
+
+            ClientEngine.MainLoop.QueueWait (() => {
+                AddPeersCore (peer);
+            });
+        }
+
+        public void AddPeers (IEnumerable <Peer> peers)
+        {
+            Check.Peers (peers);
+            if (HasMetadata && Torrent.IsPrivate)
+                throw new InvalidOperationException ("You cannot add external peers to a private torrent");
+
+            ClientEngine.MainLoop.QueueWait (() => {
+                AddPeersCore (peers);
+            });
+        }
+
+        internal int AddPeersCore(Peer peer)
         {
             try
             {
@@ -696,11 +718,11 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal int AddPeers(IEnumerable<Peer> peers)
+        internal int AddPeersCore(IEnumerable<Peer> peers)
         {
             int count = 0;
             foreach (Peer p in peers)
-                count += AddPeers(p);
+                count += AddPeersCore(p);
             return count;
         }
 
@@ -808,7 +830,7 @@ namespace MonoTorrent.Client
                 return;
             
             ClientEngine.MainLoop.Queue (delegate {
-                int count = AddPeers(e.Peers);
+                int count = AddPeersCore(e.Peers);
                 RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
             });
         }

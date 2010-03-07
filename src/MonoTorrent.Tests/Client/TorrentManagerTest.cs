@@ -7,6 +7,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
@@ -58,6 +59,18 @@ namespace MonoTorrent.Client
             }
 
             Assert.Fail ("The outgoing connection should've thrown an exception");
+        }
+
+        [Test]
+        [ExpectedException (typeof (InvalidOperationException))]
+        public void AddPeers_PrivateTorrent ()
+        {
+            // You can't manually add peers to private torrents
+            var dict = (BEncodedDictionary) rig.TorrentDict["info"];
+            dict ["private"] = (BEncodedString) "1";
+            Torrent t = Torrent.Load (rig.TorrentDict);
+            TorrentManager manager = new TorrentManager (t, "path", new TorrentSettings ());
+            manager.AddPeers (new Peer ("id", new Uri ("tcp:://whatever.com")));
         }
 
         [Test]

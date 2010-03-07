@@ -152,6 +152,16 @@ namespace MonoTorrent
             IsNullOrEmpty(path, "path");
         }
 
+        public static void Peer (object peer)
+        {
+            DoCheck (peer, "peer");
+        }
+
+        public static void Peers (object peers)
+        {
+            DoCheck (peers, "peers");
+        }
+
         public static void Picker(object picker)
         {
             DoCheck(picker, "picker");

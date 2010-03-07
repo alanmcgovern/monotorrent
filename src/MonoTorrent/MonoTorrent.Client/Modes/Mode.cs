@@ -186,7 +186,7 @@ namespace MonoTorrent.Client
                 return;
 
             IList<Peer> peers = Peer.Decode((BEncodedString)message.Added);
-            int count = id.TorrentManager.AddPeers(peers);
+            int count = id.TorrentManager.AddPeersCore(peers);
             id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, peers.Count, id));
         }
 
