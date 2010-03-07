@@ -74,7 +74,7 @@ namespace MonoTorrent.Common
         { 
             get { return file; }
         }
-		
+
         #endregion Properties
 
 
