@@ -81,6 +81,7 @@
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />
     <Compile Include="Client\MemoryWriterTests.cs" />
+    <Compile Include="Client\MetadataModeTest.cs" />
     <Compile Include="Client\NullWriter.cs" />
     <Compile Include="Client\PeerMessagesTest.cs" />
     <Compile Include="Client\PeerTest.cs" />

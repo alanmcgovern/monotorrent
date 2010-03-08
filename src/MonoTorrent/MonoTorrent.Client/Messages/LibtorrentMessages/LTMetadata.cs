@@ -87,9 +87,15 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         }
 
         public LTMetadata(PeerId id, eMessageType type, int piece, byte[] metadata)
+            : this(id.ExtensionSupports.MessageId(Support), type, piece, metadata)
+        {
+
+        }
+
+        public LTMetadata(byte extensionId, eMessageType type, int piece, byte[] metadata)
             : this()
         {
-            ExtensionId = id.ExtensionSupports.MessageId(Support);
+            ExtensionId = extensionId;
             this.messageType = type;
             this.metadata = metadata;
             this.piece = piece;
