@@ -57,6 +57,7 @@ namespace MonoTorrent.Client
 
         protected Mode(TorrentManager manager)
         {
+            CanAcceptConnections = true;
             this.manager = manager;
             manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
         }
@@ -119,7 +120,7 @@ namespace MonoTorrent.Client
 
         public virtual bool CanAcceptConnections
         {
-            get { return true; }
+            get; protected set;
         }
 
         public bool ShouldConnect(PeerId peer)
@@ -453,8 +454,6 @@ namespace MonoTorrent.Client
         void PreLogicTick(int counter)
         {
             PeerId id;
-
-            manager.Engine.ConnectionManager.TryConnect();
 
             //Execute iniitial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish

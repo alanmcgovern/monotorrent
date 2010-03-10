@@ -468,6 +468,7 @@ namespace MonoTorrent.Client
                 diskManager.readLimiter.UpdateChunks(settings.MaxReadRate, diskManager.ReadRate);
             }
 
+            ConnectionManager.TryConnect ();
             for (int i = 0; i < this.torrents.Count; i++)
                 this.torrents[i].Mode.Tick(tickCount);
 

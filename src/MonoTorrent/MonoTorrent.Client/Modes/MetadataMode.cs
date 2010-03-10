@@ -74,7 +74,6 @@ namespace MonoTorrent.Client
 
         public override void Tick(int counter)
         {
-            Manager.Engine.ConnectionManager.TryConnect();
             //if one request have been sent and we have wait more than timeout
             // request the next peer
             if (requestTimeout < DateTime.Now)
