@@ -15,11 +15,6 @@ namespace MonoTorrent.Client
 		int index = -1;
         MainLoopResult pieceCompleteCallback;
 
-		public override bool CanAcceptConnections
-		{
-			get { return false; }
-		}
-
 		public override TorrentState State
 		{
 			get { return TorrentState.Hashing; }
@@ -28,6 +23,7 @@ namespace MonoTorrent.Client
 		public HashingMode(TorrentManager manager, bool autostart)
 			: base(manager)
 		{
+			CanAcceptConnections = false;
 			this.hashingWaitHandle = new ManualResetEvent(false);
 			this.autostart = autostart;
 			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckFilesExist(Manager);

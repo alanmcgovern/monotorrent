@@ -7,11 +7,6 @@ namespace MonoTorrent.Client
 {
 	class StoppedMode : Mode
 	{
-		public override bool CanAcceptConnections
-		{
-			get { return false; }
-		}
-		
 		public override bool CanHashCheck
 		{
 			get { return true; }
@@ -25,7 +20,7 @@ namespace MonoTorrent.Client
 		public StoppedMode(TorrentManager manager)
 			: base(manager)
 		{
-			
+			CanAcceptConnections = false;
 		}
 
 		public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)

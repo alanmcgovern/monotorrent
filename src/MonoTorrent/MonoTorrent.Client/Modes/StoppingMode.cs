@@ -9,11 +9,6 @@ namespace MonoTorrent.Client
 	{
 		ManagerWaitHandle handle = new ManagerWaitHandle("Global");
 
-		public override bool CanAcceptConnections
-		{
-			get { return false; }
-		}
-
 		public override TorrentState State
 		{
 			get { return TorrentState.Stopping; }
@@ -22,6 +17,7 @@ namespace MonoTorrent.Client
 		public StoppingMode(TorrentManager manager)
 			: base(manager)
 		{
+			CanAcceptConnections = false;
 			ClientEngine engine = manager.Engine;
 			if (manager.Mode is HashingMode)
 				handle.AddHandle(((HashingMode)manager.Mode).hashingWaitHandle, "Hashing");

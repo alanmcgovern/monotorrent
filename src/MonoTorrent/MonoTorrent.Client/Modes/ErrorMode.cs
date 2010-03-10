@@ -33,19 +33,15 @@ namespace MonoTorrent.Client
 
     class ErrorMode : Mode
     {
-        public override bool CanAcceptConnections
+        public override TorrentState State
         {
-            get { return false; }
+            get { return TorrentState.Error; }
         }
-
-		public override TorrentState State
-		{
-			get { return TorrentState.Error; }
-		}
 
         public ErrorMode(TorrentManager manager)
             : base(manager)
         {
+            CanAcceptConnections = false;
             CloseConnections();
         }
 
