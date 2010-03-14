@@ -329,6 +329,14 @@ namespace MonoTorrent.Client
             get { return manager; }
         }
 
+        public bool MetadataMode {
+            get; private set;
+        }
+
+        public string MetadataPath {
+            get; set;
+        }
+
         public Torrent Torrent
         {
             get { return torrent; }
@@ -381,7 +389,10 @@ namespace MonoTorrent.Client
             }
             torrentDict = CreateTorrent(piecelength, files, tier);
             torrent = Torrent.Load(torrentDict);
-            manager = new TorrentManager(torrent, savePath, new TorrentSettings());
+            if (MetadataMode)
+                manager = new TorrentManager(torrent.infoHash, savePath, new TorrentSettings(), MetadataPath, new List<MonoTorrentCollection<string>>());
+            else
+                manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);
         }
 
@@ -390,13 +401,20 @@ namespace MonoTorrent.Client
         TorrentFile[] files;
         PieceWriter writer;
         TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files)
+            : this (savePath, piecelength, writer, trackers, files, false)
+        {
+            
+        }
+
+        TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
         {
             this.files = files;
             this.savePath = savePath;
             this.piecelength = piecelength;
             this.writer = writer;
             this.tier = trackers;
-
+            MetadataMode = metadataMode;
+            MetadataPath = "metadataSave.torrent";
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
 
@@ -535,9 +553,14 @@ namespace MonoTorrent.Client
 
         internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
         {
+            return CreateSingleFile(torrentSize, pieceLength, false);
+        }
+
+        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength, bool metadataMode)
+        {
             TorrentFile[] files = StandardSingleFile();
             files[0] = new TorrentFile (files[0].Path, torrentSize);
-            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files);
+            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
         }
     }
 }
