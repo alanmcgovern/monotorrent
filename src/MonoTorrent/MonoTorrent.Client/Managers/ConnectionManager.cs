@@ -676,13 +676,13 @@ namespace MonoTorrent.Client
             // Check each torrent manager in turn to see if they have any peers we want to connect to
             for (int i = TryConnectIndex; i <  engine.Torrents.Count; i ++) {
                 if (TryConnect (engine.Torrents [i])) {
-                    TryConnectIndex = i + 1;
+                    TryConnectIndex = i + 1 % engine.Torrents.Count;
                     return;
                 }
             }
-            for (int i = 0; i < TryConnectIndex; i ++) {
+            for (int i = 0; i < TryConnectIndex && i < engine.Torrents.Count; i ++) {
                 if (TryConnect (engine.Torrents [i])) {
-                    TryConnectIndex = i + 1;
+                    TryConnectIndex = (i + 1) % engine.Torrents.Count;
                     return;
                 }
             }
