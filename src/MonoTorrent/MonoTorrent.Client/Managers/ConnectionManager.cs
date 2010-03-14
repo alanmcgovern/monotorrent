@@ -167,9 +167,6 @@ namespace MonoTorrent.Client
 
             manager.Peers.ConnectingToPeers.Add(peer);
             NetworkIO.EnqueueConnect(c);
-
-            // Try to connect to another peer
-            TryConnect();
         }
 
         private void EndCreateConnection(bool succeeded, object state)
@@ -494,7 +491,6 @@ namespace MonoTorrent.Client
             {
                 id.TorrentManager.RaisePeerDisconnected(
                     new PeerConnectionEventArgs( id.TorrentManager, id, Direction.None, message ) );
-                TryConnect();
             }
         }
 
@@ -670,21 +666,17 @@ namespace MonoTorrent.Client
             TorrentManager m = null;
             
             // If we have already reached our max connections globally, don't try to connect to a new peer
-            if ((OpenConnections >= this.MaxOpenConnections) || this.HalfOpenConnections >= this.MaxHalfOpenConnections)
-                return;
-            
-            // Check each torrent manager in turn to see if they have any peers we want to connect to
-            for (int i = TryConnectIndex; i <  engine.Torrents.Count; i ++) {
-                if (TryConnect (engine.Torrents [i])) {
-                    TryConnectIndex = i + 1 % engine.Torrents.Count;
-                    return;
+            while (OpenConnections < this.MaxOpenConnections && this.HalfOpenConnections < this.MaxHalfOpenConnections) {
+                // Check each torrent manager in turn to see if they have any peers we want to connect to
+                for (int i = TryConnectIndex; i <  engine.Torrents.Count; i ++) {
+                    if (TryConnect (engine.Torrents [i])) {
+                        TryConnectIndex = (i + 1) % engine.Torrents.Count;
+                        continue;
+                    }
                 }
-            }
-            for (int i = 0; i < TryConnectIndex && i < engine.Torrents.Count; i ++) {
-                if (TryConnect (engine.Torrents [i])) {
-                    TryConnectIndex = (i + 1) % engine.Torrents.Count;
-                    return;
-                }
+
+                TryConnectIndex = 0;
+                break;
             }
         }
         

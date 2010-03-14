@@ -695,27 +695,18 @@ namespace MonoTorrent.Client
 
         internal int AddPeersCore(Peer peer)
         {
-            try
-            {
-                if (this.peers.Contains(peer))
-                    return 0;
+            if (this.peers.Contains(peer))
+                return 0;
 
-				// Ignore peers in the inactive list
-				if (this.inactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
-					return 0;
+            // Ignore peers in the inactive list
+            if (this.inactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
+                return 0;
 
-                this.peers.AvailablePeers.Add(peer);
-                if (OnPeerFound != null)
-                    OnPeerFound(this, new PeerAddedEventArgs(this, peer));
-                // When we successfully add a peer we try to connect to the next available peer
-                return 1;
-            }
-            finally
-            {
-                ClientEngine e = this.engine;
-                if (e != null)
-                    e.ConnectionManager.TryConnect();
-            }
+            this.peers.AvailablePeers.Add(peer);
+            if (OnPeerFound != null)
+                OnPeerFound(this, new PeerAddedEventArgs(this, peer));
+            // When we successfully add a peer we try to connect to the next available peer
+            return 1;
         }
 
         internal int AddPeersCore(IEnumerable<Peer> peers)
