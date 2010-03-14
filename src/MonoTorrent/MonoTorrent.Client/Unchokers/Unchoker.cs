@@ -51,6 +51,7 @@ namespace MonoTorrent.Client
             id.AmChoking = false;
             id.TorrentManager.UploadingTo++;
             id.Enqueue(new UnchokeMessage());
+            id.LastUnchoked = DateTime.Now;
         }
     }
 }
