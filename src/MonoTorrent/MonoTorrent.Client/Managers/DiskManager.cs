@@ -348,6 +348,13 @@ namespace MonoTorrent.Client
 
         #endregion
 
+        internal void MoveFile (TorrentManager manager, TorrentFile file, string path)
+        {
+            path = Path.GetFullPath (path);
+            writer.Move (file.FullPath, path, false);
+            file.FullPath = path;
+        }
+
         internal void MoveFiles(TorrentManager manager, string newRoot, bool overWriteExisting)
         {
             IOLoop.QueueWait(delegate {

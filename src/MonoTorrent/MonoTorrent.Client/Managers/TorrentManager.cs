@@ -509,9 +509,17 @@ namespace MonoTorrent.Client
 
                 CheckRegisteredAndDisposed();
                 this.startTime = DateTime.Now;
-				Mode = new HashingMode(this, autoStart);
+                Mode = new HashingMode(this, autoStart);
                 Engine.Start();
             });
+        }
+
+        public void MoveFile (TorrentFile file, string path)
+        {
+            Check.File (file);
+            Check.PathNotEmpty (path);
+
+            Engine.DiskManager.MoveFile (this, file, path);
         }
 
         public void MoveFiles(string newRoot, bool overWriteExisting)
