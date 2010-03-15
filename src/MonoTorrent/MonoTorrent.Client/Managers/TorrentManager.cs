@@ -518,6 +518,11 @@ namespace MonoTorrent.Client
         {
             Check.File (file);
             Check.PathNotEmpty (path);
+            CheckRegisteredAndDisposed();
+            CheckMetadata();
+
+            if (State != TorrentState.Stopped)
+                throw new TorrentException("Cannot move files when the torrent is active");
 
             Engine.DiskManager.MoveFile (this, file, path);
         }
@@ -528,7 +533,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
 
             if (State != TorrentState.Stopped)
-                throw new TorrentException("Cannot move the files when the torrent is active");
+                throw new TorrentException("Cannot move files when the torrent is active");
 
             Engine.DiskManager.MoveFiles(this, newRoot, overWriteExisting);
             savePath = newRoot;

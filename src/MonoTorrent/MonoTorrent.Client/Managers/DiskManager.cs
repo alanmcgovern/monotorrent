@@ -350,9 +350,18 @@ namespace MonoTorrent.Client
 
         internal void MoveFile (TorrentManager manager, TorrentFile file, string path)
         {
-            path = Path.GetFullPath (path);
-            writer.Move (file.FullPath, path, false);
-            file.FullPath = path;
+            IOLoop.QueueWait (delegate {
+                try
+                {
+                    path = Path.GetFullPath (path);
+                    writer.Move (file.FullPath, path, false);
+                    file.FullPath = path;
+                }
+                catch (Exception ex)
+                {
+                    SetError (manager, Reason.WriteFailure, ex);
+                }
+            });
         }
 
         internal void MoveFiles(TorrentManager manager, string newRoot, bool overWriteExisting)
