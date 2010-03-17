@@ -605,7 +605,7 @@ namespace MonoTorrent.Client
                     PieceMessage pm = (PieceMessage)msg;
                     pm.Data = BufferManager.EmptyBuffer;
                     ClientEngine.BufferManager.GetBuffer(ref pm.Data, pm.ByteLength);
-                    engine.DiskManager.QueueRead(id.TorrentManager, pm.StartOffset + (pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength, delegate
+                    engine.DiskManager.QueueRead(id.TorrentManager, pm.StartOffset + ((long) pm.PieceIndex * id.TorrentManager.Torrent.PieceLength), pm.Data, pm.RequestLength, delegate
                     {
                         handle.Set();
                     });
