@@ -198,28 +198,31 @@ namespace MonoTorrent.Client
         {
             // Find the block that this data belongs to and set it's state to "Written"
             int index = io.PieceOffset / Piece.BlockSize;
-
-            // Perform the actual write
-            writer.Write(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size);
-            writeMonitor.AddDelta(io.Count);
-
-            io.Complete = true;
-            if (io.Callback != null)
-                io.Callback(true);
-            cache.Enqueue(io);
+            try {
+                // Perform the actual write
+                writer.Write(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size);
+                writeMonitor.AddDelta(io.Count);
+            } finally {
+                io.Complete = true;
+                if (io.Callback != null)
+                    io.Callback(true);
+                cache.Enqueue(io);
+            }
         }
 
         private void PerformRead(BufferedIO io)
         {
-            if (writer.Read(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size))
-                io.ActualCount = io.Count;
-            else
-                io.ActualCount = 0;
-
-            io.Complete = true;
-            if (io.Callback != null)
-                io.Callback(io.ActualCount == io.Count);
-            cache.Enqueue(io);
+            try {
+                if (writer.Read(io.Files, io.Offset, io.buffer.Array, io.buffer.Offset, io.Count, io.PieceLength, io.Manager.Torrent.Size))
+                    io.ActualCount = io.Count;
+                else
+                    io.ActualCount = 0;
+            } finally {
+                io.Complete = true;
+                if (io.Callback != null)
+                    io.Callback(io.ActualCount == io.Count);
+                cache.Enqueue(io);
+            }
         }
 
         internal void QueueFlush(TorrentManager manager, int index)
