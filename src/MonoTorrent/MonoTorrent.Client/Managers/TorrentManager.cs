@@ -859,6 +859,8 @@ namespace MonoTorrent.Client
         public FastResume SaveFastResume()
         {
             CheckMetadata();
+            if (!HashChecked)
+                throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
             return new FastResume(InfoHash, this.bitfield);
         }
 
