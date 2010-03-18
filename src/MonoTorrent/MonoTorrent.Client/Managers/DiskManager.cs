@@ -102,6 +102,7 @@ namespace MonoTorrent.Client
                     try
                     {
                         PerformWrite(write);
+                        cache.Enqueue (write);
                     }
                     catch (Exception ex)
                     {
@@ -119,6 +120,7 @@ namespace MonoTorrent.Client
                     try
                     {
                         PerformRead(read);
+                        cache.Enqueue (read);
                     }
                     catch (Exception ex)
                     {
@@ -206,7 +208,6 @@ namespace MonoTorrent.Client
                 io.Complete = true;
                 if (io.Callback != null)
                     io.Callback(true);
-                cache.Enqueue(io);
             }
         }
 
@@ -221,7 +222,6 @@ namespace MonoTorrent.Client
                 io.Complete = true;
                 if (io.Callback != null)
                     io.Callback(io.ActualCount == io.Count);
-                cache.Enqueue(io);
             }
         }
 
@@ -251,8 +251,10 @@ namespace MonoTorrent.Client
 		void QueueRead(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread)
+			if (Thread.CurrentThread == IOLoop.thread) {
 				PerformRead(io);
+				cache.Enqueue (io);
+			}
 			else
 				lock (bufferLock)
 				{
@@ -272,8 +274,10 @@ namespace MonoTorrent.Client
 		void QueueWrite(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread)
+			if (Thread.CurrentThread == IOLoop.thread) {
 				PerformWrite(io);
+				cache.Enqueue (io);
+			}
 			else
 				lock (bufferLock)
 				{
@@ -283,13 +287,30 @@ namespace MonoTorrent.Client
 				}
 		}
 
-        internal bool CheckFilesExist(TorrentManager manager)
+        internal bool CheckAnyFilesExist(TorrentManager manager)
         {
             bool result = false;
             IOLoop.QueueWait(delegate {
                 try
                 {
-                    result = writer.Exists(manager.Torrent.Files);
+                    for (int i = 0; i < manager.Torrent.Files.Length && !result; i++)
+                        result = writer.Exists (manager.Torrent.Files [i]);
+                }
+                catch (Exception ex)
+                {
+                    SetError(manager, Reason.ReadFailure, ex);
+                }
+            });
+            return result;
+        }
+
+        internal bool CheckFileExists (TorrentManager manager, TorrentFile file)
+        {
+            bool result = false;
+            IOLoop.QueueWait(delegate {
+                try
+                {
+                    result = writer.Exists (file);
                 }
                 catch (Exception ex)
                 {

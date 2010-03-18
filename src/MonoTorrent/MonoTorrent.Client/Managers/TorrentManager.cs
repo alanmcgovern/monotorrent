@@ -583,6 +583,7 @@ namespace MonoTorrent.Client
                     return;
                 }
 
+                VerifyHashState ();
                 // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
                 // before attempting to start again
                 if (!hashChecked)
@@ -862,6 +863,15 @@ namespace MonoTorrent.Client
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
             return new FastResume(InfoHash, this.bitfield);
+        }
+
+        void VerifyHashState ()
+        {
+            if (HasMetadata) {
+                foreach (var file in Torrent.Files)
+                    if (!file.BitField.AllFalse)
+                        hashChecked &= Engine.DiskManager.CheckFileExists (this, file);
+            }
         }
 
         #endregion Private Methods

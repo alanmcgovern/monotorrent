@@ -16,15 +16,6 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract bool Exists(TorrentFile file);
 
-        internal bool Exists(IList<TorrentFile> files)
-        {
-            Check.Files(files);
-            foreach (TorrentFile file in files)
-                if (Exists(file))
-                    return true;
-            return false;
-        }
-
         public abstract void Close(TorrentFile file);
 
         internal void Close(IList<TorrentFile> files)

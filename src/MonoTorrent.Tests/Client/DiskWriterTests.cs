@@ -149,19 +149,23 @@ namespace MonoTorrent.Client
         [Test]
         public void ReadFail()
         {
+            bool called = false;
             writer.read = true;
             Hookup();
-            diskManager.QueueRead(rig.Manager, 0, data, data.Count, delegate { });
+            diskManager.QueueRead(rig.Manager, 0, data, data.Count, delegate { called = true; });
             CheckFail();
+            Assert.IsTrue (called, "#delegate called");
         }
 
         [Test]
         public void WriteFail()
         {
+            bool called = false;
             writer.write = true;
             Hookup();
-            diskManager.QueueWrite(rig.Manager, 0, data, data.Count, delegate { });
+            diskManager.QueueWrite(rig.Manager, 0, data, data.Count, delegate { called = true; });
             CheckFail();
+            Assert.IsTrue (called, "#delegate called");
         }
 
         void Hookup()

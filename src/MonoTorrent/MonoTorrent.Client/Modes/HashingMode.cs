@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
 			CanAcceptConnections = false;
 			this.hashingWaitHandle = new ManualResetEvent(false);
 			this.autostart = autostart;
-			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckFilesExist(Manager);
+			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
             this.pieceCompleteCallback = PieceComplete;
 			if (!filesExist)
 				HashingComplete();
