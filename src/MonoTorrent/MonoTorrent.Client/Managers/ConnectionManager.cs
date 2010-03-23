@@ -350,7 +350,7 @@ namespace MonoTorrent.Client
                     return;
                 }
                 // Decode the handshake and handle it
-                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
+                id.Decryptor.Decrypt(id.recieveBuffer, 0, count);
                 msg = new HandshakeMessage();
                 msg.Decode(id.recieveBuffer, 0, count);
                 msg.Handle(id);
@@ -411,7 +411,7 @@ namespace MonoTorrent.Client
                 id.CurrentlySendingMessage = message;
 
                 int bytesToSend = message.Encode(id.sendBuffer, 0);
-                id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, bytesToSend);
+                id.Encryptor.Encrypt(id.sendBuffer, 0, bytesToSend);
 
                 if (message is PieceMessage)
                 {

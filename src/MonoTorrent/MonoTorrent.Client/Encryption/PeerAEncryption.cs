@@ -108,7 +108,7 @@ namespace MonoTorrent.Client.Encryption
                 
                 // Send the entire message in one go
                 SendMessage(buffer);
-                InitialPayload = new byte[0];
+                InitialPayload = BufferManager.EmptyBuffer;
 
                 Synchronize(DoDecrypt(VerificationConstant), 616); // 4 B->A: ENCRYPT(VC)
             }

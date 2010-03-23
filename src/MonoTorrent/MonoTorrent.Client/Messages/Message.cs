@@ -48,11 +48,6 @@ namespace MonoTorrent.Client.Messages
 
         public abstract void Decode(byte[] buffer, int offset, int length);
 
-        public void Decode(ArraySegment<byte> buffer, int offset, int length)
-        {
-            Decode(buffer.Array, buffer.Offset + offset, length);
-        }
-
         public byte[] Encode()
         {
             byte[] buffer = new byte[ByteLength];
@@ -61,11 +56,6 @@ namespace MonoTorrent.Client.Messages
         }
 
         public abstract int Encode(byte[] buffer, int offset);
-
-        public int Encode(ArraySegment<byte> buffer, int offset)
-        {
-            return Encode(buffer.Array, buffer.Offset + offset);
-        }
 
         static public byte ReadByte(byte[] buffer, int offset)
         {

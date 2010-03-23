@@ -49,22 +49,22 @@ namespace MonoTorrent.Client
         internal static readonly int MediumMessageBufferSize = 1 << 11;             // 2048 bytes
         internal static readonly int LargeMessageBufferSize = Piece.BlockSize + 32; // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
         
-        public static readonly ArraySegment<byte> EmptyBuffer = new System.ArraySegment<byte>(new byte[0]);
+        public static readonly byte [] EmptyBuffer = new byte[0];
 
-        private Queue<ArraySegment<byte>> largeMessageBuffers;
-        private Queue<ArraySegment<byte>> mediumMessageBuffers;
-        private Queue<ArraySegment<byte>> smallMessageBuffers;
-        private Queue<ArraySegment<byte>> massiveBuffers;
+        private Queue<byte []> largeMessageBuffers;
+        private Queue<byte []> mediumMessageBuffers;
+        private Queue<byte []> smallMessageBuffers;
+        private Queue<byte []> massiveBuffers;
 
         /// <summary>
         /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
         public BufferManager()
         {
-            this.massiveBuffers = new Queue<ArraySegment<byte>>();
-            this.largeMessageBuffers = new Queue<ArraySegment<byte>>();
-            this.mediumMessageBuffers = new Queue<ArraySegment<byte>>();
-            this.smallMessageBuffers = new Queue<ArraySegment<byte>>();
+            this.massiveBuffers = new Queue<byte []>();
+            this.largeMessageBuffers = new Queue<byte []>();
+            this.mediumMessageBuffers = new Queue<byte []>();
+            this.smallMessageBuffers = new Queue<byte []>();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
             this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
@@ -77,7 +77,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
-        private void GetBuffer(ref ArraySegment<byte> buffer, BufferType type)
+        private void GetBuffer(ref byte[] buffer, BufferType type)
         {
             // We check to see if the buffer already there is the empty buffer. If it isn't, then we have
             // a buffer leak somewhere and the buffers aren't being freed properly.
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
-        public void GetBuffer(ref ArraySegment<byte> buffer, int minCapacity)
+        public void GetBuffer(ref byte[] buffer, int minCapacity)
         {
             if (buffer != EmptyBuffer)
                 throw new TorrentException("The old Buffer should have been recovered before getting a new buffer");
@@ -141,12 +141,12 @@ namespace MonoTorrent.Client
                 lock (this.massiveBuffers)
                 {
                     for (int i = 0; i < massiveBuffers.Count; i++)
-                        if ((buffer = massiveBuffers.Dequeue()).Count >= minCapacity)
+                        if ((buffer = massiveBuffers.Dequeue()).Length >= minCapacity)
                             return;
                         else
                             massiveBuffers.Enqueue(buffer);
 
-                    buffer = new ArraySegment<byte>(new byte[minCapacity], 0, minCapacity);
+                    buffer = new byte[minCapacity];
                 }
             }
         }
@@ -157,24 +157,24 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="buffer">The buffer to add back into the pool</param>
         /// <returns></returns>
-        public void FreeBuffer(ref ArraySegment<byte> buffer)
+        public void FreeBuffer(ref byte[] buffer)
         {
             if (buffer == EmptyBuffer)
                 return;
 
-            if (buffer.Count == SmallMessageBufferSize)
+            if (buffer.Length == SmallMessageBufferSize)
                 lock (this.smallMessageBuffers)
                     this.smallMessageBuffers.Enqueue(buffer);
 
-            else if (buffer.Count == MediumMessageBufferSize)
+            else if (buffer.Length == MediumMessageBufferSize)
                 lock (this.mediumMessageBuffers)
                     this.mediumMessageBuffers.Enqueue(buffer);
 
-            else if (buffer.Count == LargeMessageBufferSize)
+            else if (buffer.Length == LargeMessageBufferSize)
                 lock (this.largeMessageBuffers)
                     this.largeMessageBuffers.Enqueue(buffer);
 
-            else if (buffer.Count > LargeMessageBufferSize)
+            else if (buffer.Length > LargeMessageBufferSize)
                 lock (this.massiveBuffers)
                     this.massiveBuffers.Enqueue(buffer);
 
@@ -192,15 +192,15 @@ namespace MonoTorrent.Client
             Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
             if (type == BufferType.LargeMessageBuffer)
                 while (number-- > 0)
-                    this.largeMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[LargeMessageBufferSize], 0, LargeMessageBufferSize));
+                    this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
 
             else if (type == BufferType.MediumMessageBuffer)
                 while (number-- > 0)
-                    this.mediumMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[MediumMessageBufferSize], 0, MediumMessageBufferSize));
+                    this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
 
             else if (type == BufferType.SmallMessageBuffer)
                 while (number-- > 0)
-                        this.smallMessageBuffers.Enqueue(new ArraySegment<byte>(new byte[SmallMessageBufferSize], 0, SmallMessageBufferSize));
+                        this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
 
             else
                 throw new ArgumentException("Unsupported BufferType detected");

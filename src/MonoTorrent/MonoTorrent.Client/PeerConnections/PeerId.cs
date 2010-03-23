@@ -138,8 +138,8 @@ namespace MonoTorrent.Client
         private int piecesReceived;
         private ushort port;
         private bool processingQueue;
-        internal ArraySegment<byte> recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
-        internal ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
+        internal byte[] recieveBuffer = BufferManager.EmptyBuffer;      // The byte array used to buffer data while it's being received
+        internal byte[] sendBuffer = BufferManager.EmptyBuffer;         // The byte array used to buffer data before it's sent
         private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;

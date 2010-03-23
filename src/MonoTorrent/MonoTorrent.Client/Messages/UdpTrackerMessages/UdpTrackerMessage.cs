@@ -57,11 +57,6 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             this.transactionId = transactionId;
         }
 
-        public static UdpTrackerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, MessageType type)
-        {
-            return DecodeMessage(buffer.Array, buffer.Offset + offset, count, type);
-        }
-
         public static UdpTrackerMessage DecodeMessage(byte[] buffer, int offset, int count, MessageType type)
         {
             UdpTrackerMessage m = null;

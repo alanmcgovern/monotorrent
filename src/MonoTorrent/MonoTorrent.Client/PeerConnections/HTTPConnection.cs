@@ -74,7 +74,7 @@ namespace MonoTorrent.Client.Connections
         #region Member Variables
 
         private TimeSpan connectionTimeout;
-        private ArraySegment<byte> sendBuffer = BufferManager.EmptyBuffer;
+        private byte[] sendBuffer = BufferManager.EmptyBuffer;
         private int sendBufferCount;
         private HttpRequestData currentRequest;
         private Stream dataStream;
@@ -254,10 +254,10 @@ namespace MonoTorrent.Client.Connections
             {
                 if (sendBuffer != BufferManager.EmptyBuffer)
                 {
-                    Buffer.BlockCopy(buffer, offset, sendBuffer.Array, sendBuffer.Offset + sendBufferCount, count);
+                    Buffer.BlockCopy(buffer, offset, sendBuffer, sendBufferCount, count);
                     sendBufferCount += count;
 
-                    off = sendBuffer.Offset;
+                    off = 0;
                     c = sendBufferCount;
                 }
                 List<PeerMessage> messages = new List<PeerMessage>();
@@ -275,7 +275,7 @@ namespace MonoTorrent.Client.Connections
                 if (sendBuffer == BufferManager.EmptyBuffer)
                 {
                     ClientEngine.BufferManager.GetBuffer(ref sendBuffer, 16 * 1024);
-                    Buffer.BlockCopy(buffer, offset, sendBuffer.Array, sendBuffer.Offset, count);
+                    Buffer.BlockCopy(buffer, offset, sendBuffer, 0, count);
                     sendBufferCount = count;
                 }
                 return null;

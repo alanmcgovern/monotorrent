@@ -242,16 +242,6 @@ namespace MonoTorrent.Client
             }
         }
 
-        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
-        {
-            EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
-        }
-
-        internal static void EnqueueReceive(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
-        {
-            EnqueueReceive(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
-        }
-
         internal static void EnqueueReceive(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
         {
             EnqueueReceive(connection, buffer, offset, count, callback, state, null, null, null);
@@ -287,16 +277,6 @@ namespace MonoTorrent.Client
             {
                 io.Callback(false, 0, io.State);
             }
-        }
-
-        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state)
-        {
-            EnqueueSend(connection, buffer, offset, count, callback, state, null, null, null);
-        }
-
-        internal static void EnqueueSend(IConnection connection, ArraySegment<byte> buffer, int offset, int count, AsyncTransfer callback, object state, IRateLimiter limiter, ConnectionMonitor managerMonitor, ConnectionMonitor peerMonitor)
-        {
-            EnqueueSend(connection, buffer.Array, buffer.Offset + offset, count, callback, state, limiter, managerMonitor, peerMonitor);
         }
 
         internal static void EnqueueSend(IConnection connection, byte[] buffer, int offset, int count, AsyncTransfer callback, object state)
@@ -363,8 +343,8 @@ namespace MonoTorrent.Client
 
                 // Decode the message length from the buffer. It is a big endian integer, so make sure
                 // it is converted to host endianness.
-                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, count);
-                int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.recieveBuffer.Array, id.recieveBuffer.Offset));
+                id.Decryptor.Decrypt(id.recieveBuffer, 0, count);
+                int messageBodyLength = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(id.recieveBuffer, 0));
 
                 if (messageBodyLength > RequestMessage.MaxSize)
                 {
@@ -389,9 +369,9 @@ namespace MonoTorrent.Client
                 // Otherwise queue the peer in the Receive buffer and try to resume downloading off him
                 else
                 {
-                    ArraySegment<byte> buffer = BufferManager.EmptyBuffer;
+                    byte[] buffer = BufferManager.EmptyBuffer;
                     ClientEngine.BufferManager.GetBuffer(ref buffer, messageBodyLength + 4);
-                    Buffer.BlockCopy(id.recieveBuffer.Array, id.recieveBuffer.Offset, buffer.Array, buffer.Offset, 4);
+                    Buffer.BlockCopy(id.recieveBuffer, 0, buffer, 0, 4);
                     
                     ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
                     id.recieveBuffer = buffer;
@@ -412,9 +392,9 @@ namespace MonoTorrent.Client
             else
             {
                 // The first 4 bytes are the already decrypted message length
-                id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset + 4, count);
+                id.Decryptor.Decrypt(id.recieveBuffer, 4, count);
 
-                ArraySegment<byte> buffer = id.recieveBuffer;
+                byte[] buffer = id.recieveBuffer;
                 id.recieveBuffer = BufferManager.EmptyBuffer;
                 ClientEngine.MainLoop.Queue(delegate {
                     ProcessMessage(id, buffer, count);
@@ -425,7 +405,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private static void ProcessMessage(PeerId id, ArraySegment<byte> buffer, int count)
+        private static void ProcessMessage(PeerId id, byte[] buffer, int count)
         {
             string reason = "";
             bool cleanUp = false;

@@ -49,11 +49,6 @@ namespace MonoTorrent.Client.Messages
                 messageDict.Add(identifier, creator);
         }
 
-        public static PeerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
-        {
-            return DecodeMessage(buffer.Array, buffer.Offset + offset, count, manager);
-        }
-
         public static PeerMessage DecodeMessage(byte[] buffer, int offset, int count, TorrentManager manager)
         {
             PeerMessage message;

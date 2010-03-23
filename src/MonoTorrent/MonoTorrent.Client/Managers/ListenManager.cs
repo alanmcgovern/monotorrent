@@ -113,9 +113,9 @@ namespace MonoTorrent.Client
                 EncryptorFactory.EndCheckEncryption(result, out initialData);
 
                 if(initialData == null)
-                    initialData = new byte[0];
+                    initialData = BufferManager.EmptyBuffer;
                     
-                Message.Write(id.recieveBuffer.Array, id.recieveBuffer.Offset, initialData);
+                Message.Write(id.recieveBuffer, 0, initialData);
 
                 if (initialData.Length == HandshakeMessage.HandshakeLength)
                     handleHandshake(id);
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
                 handshake.Decode(id.recieveBuffer, 0, HandshakeMessage.HandshakeLength);
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                 {
-                    id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, HandshakeMessage.HandshakeLength);
+                    id.Decryptor.Decrypt(id.recieveBuffer, 0, HandshakeMessage.HandshakeLength);
                     handshake.Decode(id.recieveBuffer, 0, HandshakeMessage.HandshakeLength);
                 }
 
@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
             int bytesToSend = message.Encode(id.sendBuffer, 0);
-            id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, bytesToSend);
+            id.Encryptor.Encrypt(id.sendBuffer, 0, bytesToSend);
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
             AsyncTransfer callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;

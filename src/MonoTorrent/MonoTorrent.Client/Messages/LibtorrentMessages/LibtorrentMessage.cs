@@ -84,11 +84,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             return SupportedMessages.Find(delegate(ExtensionSupport s) { return s.Name == name; });
         }
 
-        public new static PeerMessage DecodeMessage(ArraySegment<byte> buffer, int offset, int count, TorrentManager manager)
-        {
-            return DecodeMessage(buffer.Array, buffer.Offset + offset, count, manager);
-        }
-
         public new static PeerMessage DecodeMessage(byte[] buffer, int offset, int count, TorrentManager manager)
         {
             CreateMessage creator;

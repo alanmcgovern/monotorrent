@@ -90,7 +90,7 @@ namespace MonoTorrent.Common
         [ExpectedException(typeof(ArgumentNullException))]
         public void NullMagnetLink3()
         {
-            InfoHash other = InfoHash.FromMagnetLink(null);
+            InfoHash.FromMagnetLink(null);
         }
     }
 }

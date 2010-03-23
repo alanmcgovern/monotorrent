@@ -144,8 +144,8 @@ namespace MonoTorrent.Client
         {
             PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
             id.Connection = connection;
-            id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
-            byte[] data = id.recieveBuffer.Array;
+            id.recieveBuffer = new byte[68];
+            byte[] data = id.recieveBuffer;
 
             EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
             decryptor = id.Decryptor;

@@ -19,7 +19,6 @@ namespace MonoTorrent.Client
         //    t.Setup();
         //    t.CancelTest();
         //}
-        List<Block> alreadyGot;
         BitField bitfield;
         PeerId id;
         PeerId other;
@@ -36,7 +35,6 @@ namespace MonoTorrent.Client
         [SetUp]
         public void Setup()
         {
-            alreadyGot = new List<Block>();
             bitfield = new BitField(40).SetAll(true)
                                        .Set(4, false)
                                        .Set(6, false)

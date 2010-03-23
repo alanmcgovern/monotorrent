@@ -10,7 +10,7 @@ namespace MonoTorrent.Client
     {
     public class BufferedIO : ICacheable
     {
-        internal ArraySegment<byte> buffer;
+        internal byte[] buffer;
         private int actualCount;
 		private DiskIOCallback callback;
         private int count;
@@ -30,7 +30,7 @@ namespace MonoTorrent.Client
         {
             get { return PieceOffset / MonoTorrent.Client.Piece.BlockSize; }
         }
-        public ArraySegment<byte> Buffer
+        public byte[] Buffer
         {
             get { return buffer; }
         }
@@ -91,10 +91,10 @@ namespace MonoTorrent.Client
 
         public void Initialise()
         {
-            Initialise(null, new ArraySegment<byte>(), 0, 0, 0, null);
+            Initialise(null, BufferManager.EmptyBuffer, 0, 0, 0, null);
         }
 
-        public void Initialise(TorrentManager manager, ArraySegment<byte> buffer, long offset, int count, int pieceLength, IList<TorrentFile> files)
+        public void Initialise(TorrentManager manager, byte[] buffer, long offset, int count, int pieceLength, IList<TorrentFile> files)
         {
             this.actualCount = 0;
             this.buffer = buffer;
@@ -106,11 +106,6 @@ namespace MonoTorrent.Client
             this.offset = offset;
             this.peerId = null;
             this.pieceLength = pieceLength;
-        }
-
-        public void Initialise(TorrentManager manager, ArraySegment<byte> buffer, int pieceIndex, int blockIndex, int count, int pieceLength, IList<TorrentFile> files)
-        {
-            Initialise(manager, buffer, pieceIndex * pieceLength + blockIndex * MonoTorrent.Client.Piece.BlockSize, count, pieceLength, files);
         }
 
         public override string ToString()

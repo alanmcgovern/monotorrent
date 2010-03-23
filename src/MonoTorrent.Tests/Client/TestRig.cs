@@ -399,7 +399,6 @@ namespace MonoTorrent.Client
         #region Rig Creation
 
         TorrentFile[] files;
-        PieceWriter writer;
         TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
@@ -411,7 +410,6 @@ namespace MonoTorrent.Client
             this.files = files;
             this.savePath = savePath;
             this.piecelength = piecelength;
-            this.writer = writer;
             this.tier = trackers;
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";

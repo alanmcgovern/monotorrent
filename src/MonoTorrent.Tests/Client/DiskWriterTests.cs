@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class DiskWriterTests
     {
-        ArraySegment<byte> data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+        byte [] data = new byte [Piece.BlockSize];
         DiskManager diskManager;
         ManualResetEvent handle;
         TestRig rig;
@@ -152,7 +152,7 @@ namespace MonoTorrent.Client
             bool called = false;
             writer.read = true;
             Hookup();
-            diskManager.QueueRead(rig.Manager, 0, data, data.Count, delegate { called = true; });
+            diskManager.QueueRead(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
             Assert.IsTrue (called, "#delegate called");
         }
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client
             bool called = false;
             writer.write = true;
             Hookup();
-            diskManager.QueueWrite(rig.Manager, 0, data, data.Count, delegate { called = true; });
+            diskManager.QueueWrite(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
             Assert.IsTrue (called, "#delegate called");
         }

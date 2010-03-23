@@ -242,14 +242,14 @@ namespace MonoTorrent.Client
         public void PieceEncoding()
         {
             PieceMessage message = new PieceMessage(15, 10, Piece.BlockSize);
-            message.Data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+            message.Data = new byte[Piece.BlockSize];
             message.Encode(buffer, offset);
         }
         [Test]
         public void PieceDecoding()
         {
             PieceMessage message = new PieceMessage(15, 10, Piece.BlockSize);
-            message.Data = new ArraySegment<byte>(new byte[Piece.BlockSize]);
+            message.Data = new byte[Piece.BlockSize];
             EncodeDecode(message);
         }
 

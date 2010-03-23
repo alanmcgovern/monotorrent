@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.Messages.Standard
         private int startOffset;
         private int requestLength;
 
-        internal ArraySegment<byte> Data;
+        internal byte[] Data;
 
         #endregion
 
@@ -118,7 +118,7 @@ namespace MonoTorrent.Client.Messages.Standard
             // This buffer will be freed after the PieceWriter has finished with it
             this.Data = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref this.Data, requestLength);
-            Buffer.BlockCopy(buffer, offset, this.Data.Array, this.Data.Offset, requestLength);
+            Buffer.BlockCopy(buffer, offset, this.Data, 0, requestLength);
         }
 
         public override int Encode(byte[] buffer, int offset)
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client.Messages.Standard
             written += Write(buffer, written, MessageId);
             written += Write(buffer, written, pieceIndex);
             written += Write(buffer, written, startOffset);
-            written += Write(buffer, written, Data.Array, Data.Offset, requestLength);
+            written += Write(buffer, written, Data, 0, requestLength);
 
             return CheckWritten(written - offset);
         }
