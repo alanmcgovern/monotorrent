@@ -39,6 +39,7 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     public class HandshakeMessage : PeerMessage
     {
+        internal const int HandshakeLength = 68;
         private readonly static byte[] ZeroedBits = new byte[8];
         private const byte ExtendedMessagingFlag = 0x10;
         private const byte FastPeersFlag = 0x04;

@@ -53,8 +53,15 @@ namespace MonoTorrent.Dht.Tasks
             }
             else
             {
-                Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                SendFindNode(new Node[] { utorrent });
+                try
+                {
+                    Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                    SendFindNode(new Node[] { utorrent });
+                }
+                catch
+                {
+                    RaiseComplete(new TaskCompleteEventArgs(this));
+                }
             }
         }
 

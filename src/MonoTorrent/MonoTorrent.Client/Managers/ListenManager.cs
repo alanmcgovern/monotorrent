@@ -89,8 +89,6 @@ namespace MonoTorrent.Client
             if (id.Connection.IsIncoming)
             {
                 ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
-                id.BytesReceived = 0;
-                id.BytesToRecieve = 68;
                 List<InfoHash> skeys = new List<InfoHash>();
 
                 ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
@@ -98,7 +96,7 @@ namespace MonoTorrent.Client
                         skeys.Add(engine.Torrents[i].InfoHash);
                 });
 
-                EncryptorFactory.BeginCheckEncryption(id, endCheckEncryptionCallback, id, skeys.ToArray());
+                EncryptorFactory.BeginCheckEncryption(id, HandshakeMessage.HandshakeLength, endCheckEncryptionCallback, id, skeys.ToArray());
             }
             else
             {
@@ -117,12 +115,12 @@ namespace MonoTorrent.Client
                 if(initialData == null)
                     initialData = new byte[0];
                     
-                id.BytesReceived += Message.Write(id.recieveBuffer.Array, id.recieveBuffer.Offset, initialData);
+                Message.Write(id.recieveBuffer.Array, id.recieveBuffer.Offset, initialData);
 
-                if (id.BytesToRecieve == id.BytesReceived)
+                if (initialData.Length == HandshakeMessage.HandshakeLength)
                     handleHandshake(id);
                 else
-                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, id.BytesToRecieve - id.BytesReceived, handshakeReceivedCallback, id);
+                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, HandshakeMessage.HandshakeLength - initialData.Length, handshakeReceivedCallback, id);
             }
             catch
             {
@@ -139,11 +137,11 @@ namespace MonoTorrent.Client
             {
                 // Nasty hack - If there is initial data on the connection, it's already decrypted
                 // If there was no initial data, we need to decrypt it here
-                handshake.Decode(id.recieveBuffer, 0, id.BytesToRecieve);
+                handshake.Decode(id.recieveBuffer, 0, HandshakeMessage.HandshakeLength);
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
                 {
-                    id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, id.BytesToRecieve);
-                    handshake.Decode(id.recieveBuffer, 0, id.BytesToRecieve);
+                    id.Decryptor.Decrypt(id.recieveBuffer.Array, id.recieveBuffer.Offset, HandshakeMessage.HandshakeLength);
+                    handshake.Decode(id.recieveBuffer, 0, HandshakeMessage.HandshakeLength);
                 }
 
                 if (handshake.ProtocolString != VersionInfo.ProtocolStringV100)
@@ -202,13 +200,12 @@ namespace MonoTorrent.Client
             HandshakeMessage message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
 
             ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
-            id.BytesSent = 0;
-            id.BytesToSend = message.Encode(id.sendBuffer, 0);
-            id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
+            int bytesToSend = message.Encode(id.sendBuffer, 0);
+            id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, bytesToSend);
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
             AsyncTransfer callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;
-            NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, id.BytesToSend,
+            NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, bytesToSend,
                                     callback, id);
         }
 
@@ -234,7 +231,6 @@ namespace MonoTorrent.Client
                     CleanupSocket(id);
                     return;
                 }
-                id.BytesReceived += read;
                 Logger.Log(id.Connection, "ListenManager - Recieved handshake. Beginning to handle");
 
                 handleHandshake(id);

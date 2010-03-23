@@ -146,9 +146,8 @@ namespace MonoTorrent.Client
             id.Connection = connection;
             id.recieveBuffer = new ArraySegment<byte>(new byte[68]);
             byte[] data = id.recieveBuffer.Array;
-            id.BytesToRecieve = 68;
 
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
+            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
             TestHandshake(data, connection);

@@ -79,12 +79,12 @@ namespace MonoTorrent.Client.Encryption
             return t;
         }
 
-        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state)
+        internal static IAsyncResult BeginCheckEncryption(PeerId id, int bytesToReceive, AsyncCallback callback, object state)
         {
-            return BeginCheckEncryption(id, callback, state, null);
+            return BeginCheckEncryption(id, bytesToReceive, callback, state, null);
         }
 
-        internal static IAsyncResult BeginCheckEncryption(PeerId id, AsyncCallback callback, object state, InfoHash[] sKeys)
+        internal static IAsyncResult BeginCheckEncryption(PeerId id, int bytesToReceive, AsyncCallback callback, object state, InfoHash[] sKeys)
         {
             EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
             result.SKeys = sKeys;
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client.Encryption
                 // trying to decide what encryption to use
                 if (id.Connection.IsIncoming)
                 {
-                    result.Buffer = new byte[id.BytesToRecieve];
+                    result.Buffer = new byte[bytesToReceive];
                     NetworkIO.EnqueueReceive(c, result.Buffer, 0, result.Buffer.Length, HandshakeReceivedCallback, result);
                 }
                 else

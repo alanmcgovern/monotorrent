@@ -112,10 +112,6 @@ namespace MonoTorrent.Client
         private bool amInterested;
         private int amRequestingPiecesCount;
         private BitField bitField;
-        private int bytesReceived;
-        private int bytesSent;
-        private int bytesToRecieve;
-        private int bytesToSend;
         private Software clientApp;
         private IConnection connection;
         private PeerMessage currentlySendingMessage;
@@ -190,30 +186,6 @@ namespace MonoTorrent.Client
         {
             get { return this.bitField; }
             set { this.bitField = value; }
-        }
-
-        internal int BytesReceived
-        {
-            get { return this.bytesReceived; }
-            set { this.bytesReceived = value; }
-        }
-
-        internal int BytesSent
-        {
-            get { return this.bytesSent; }
-            set { this.bytesSent = value; }
-        }
-
-        internal int BytesToRecieve
-        {
-            get { return this.bytesToRecieve; }
-            set { this.bytesToRecieve = value; }
-        }
-
-        internal int BytesToSend
-        {
-            get { return this.bytesToSend; }
-            set { this.bytesToSend = value; }
         }
 
         public Software ClientApp

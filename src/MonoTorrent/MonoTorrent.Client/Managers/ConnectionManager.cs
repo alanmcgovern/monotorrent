@@ -235,7 +235,7 @@ namespace MonoTorrent.Client
 
                 id.ProcessingQueue = true;
                 // Increase the count of the "open" connections
-                EncryptorFactory.BeginCheckEncryption(id, this.endCheckEncryptionCallback, id);
+                EncryptorFactory.BeginCheckEncryption(id, 0, this.endCheckEncryptionCallback, id);
                 
                 id.TorrentManager.Peers.ConnectedPeers.Add(id);
                 id.WhenConnected = DateTime.Now;
@@ -304,11 +304,9 @@ namespace MonoTorrent.Client
                 if (id.Connection == null)
                     return;
 
-                // If we have sent zero bytes, that is a sign the connection has been closed
                 if (!succeeded)
                     throw new SocketException((int)SocketError.SocketError);
 
-                id.BytesSent += count;
                 // Invoke the callback which we were told to invoke after we sent this message
                 id.MessageSentCallback(id);
             }
@@ -412,9 +410,8 @@ namespace MonoTorrent.Client
                 id.MessageSentCallback = callback;
                 id.CurrentlySendingMessage = message;
 
-                id.BytesSent = 0;
-                id.BytesToSend = message.Encode(id.sendBuffer, 0);
-                id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, id.BytesToSend);
+                int bytesToSend = message.Encode(id.sendBuffer, 0);
+                id.Encryptor.Encrypt(id.sendBuffer.Array, id.sendBuffer.Offset, bytesToSend);
 
                 if (message is PieceMessage)
                 {
@@ -423,7 +420,7 @@ namespace MonoTorrent.Client
                 }
 
                 RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
-                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, id.BytesSent, id.BytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
+                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, bytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)
             {
