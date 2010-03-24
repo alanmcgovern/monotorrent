@@ -3,6 +3,7 @@ using MonoTorrent.Dht.Messages;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 using System;
+using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -39,9 +40,11 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = true;
-            IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
-            foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
-                SendGetPeers(n);
+            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
+                IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
+                foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
+                    SendGetPeers(n);
+            });
         }
 
         private void SendGetPeers(Node n)
