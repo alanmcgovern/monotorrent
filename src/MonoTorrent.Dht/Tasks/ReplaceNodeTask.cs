@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht.Tasks
 {
@@ -21,12 +22,15 @@ namespace MonoTorrent.Dht.Tasks
 
         public override void Execute()
         {
-            if (bucket.Nodes.Count == 0)
-            {
-                RaiseComplete(new TaskCompleteEventArgs(this));
-                return;
-            }
-            SendPingToOldest();
+            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
+                if (bucket.Nodes.Count == 0)
+                {
+                    RaiseComplete(new TaskCompleteEventArgs(this));
+                    return;
+                }
+    
+                SendPingToOldest();
+            });
         }
 
         private void SendPingToOldest()
