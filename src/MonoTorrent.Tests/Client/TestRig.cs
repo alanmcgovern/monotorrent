@@ -120,6 +120,9 @@ namespace MonoTorrent.Client
 
         private Socket s;
         private bool incoming;
+        public bool SlowConnection {
+            get; set;
+        }
 
         public CustomConnection(Socket s, bool incoming)
         {
@@ -165,7 +168,9 @@ namespace MonoTorrent.Client
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             if (BeginReceiveStarted != null)
-                BeginReceiveStarted(null, EventArgs.Empty);
+                BeginReceiveStarted (this, EventArgs.Empty);
+            if (SlowConnection)
+                count = 1;
             return s.BeginReceive(buffer, offset, count, SocketFlags.None, callback, state);
         }
 
@@ -188,6 +193,8 @@ namespace MonoTorrent.Client
             if (BeginSendStarted != null)
                 BeginSendStarted(null, EventArgs.Empty);
 
+            if (SlowConnection)
+                count = 1;
             return s.BeginSend(buffer, offset, count, SocketFlags.None, callback, state);
         }
 
@@ -216,15 +223,27 @@ namespace MonoTorrent.Client
             return Name;
         }
 
-        #region IConnection Members
-
-
         public Uri Uri
         {
             get { return new Uri("tcp://127.0.0.1:1234"); }
         }
 
-        #endregion
+
+        public int Receive (byte[] buffer, int offset, int count)
+        {
+            var r = BeginReceive (buffer, offset, count, null, null);
+            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                throw new Exception ("Could not receive required data");
+            return EndReceive (r);
+        }
+
+        public int Send (byte[] buffer, int offset, int count)
+        {
+            var r = BeginSend (buffer, offset, count, null, null);
+            if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                throw new Exception ("Could not receive required data");
+            return EndSend (r);
+        }
     }
 
     public class CustomListener : PeerListener
