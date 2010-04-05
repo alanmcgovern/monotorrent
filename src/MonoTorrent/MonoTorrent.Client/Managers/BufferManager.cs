@@ -117,6 +117,13 @@ namespace MonoTorrent.Client
         }
 
 
+        public byte[] GetBuffer (int minCapacity)
+        {
+            var buffer = EmptyBuffer;
+            GetBuffer (ref buffer, minCapacity);
+            return buffer;
+        }
+
         /// <summary>
         /// Allocates an existing buffer from the pool
         /// </summary>
@@ -152,11 +159,11 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// Returns a buffer to the pool after it has finished being used.
-        /// </summary>
-        /// <param name="buffer">The buffer to add back into the pool</param>
-        /// <returns></returns>
+        public void FreeBuffer(byte[] buffer)
+        {
+            FreeBuffer (ref buffer);
+        }
+
         public void FreeBuffer(ref byte[] buffer)
         {
             if (buffer == EmptyBuffer)
