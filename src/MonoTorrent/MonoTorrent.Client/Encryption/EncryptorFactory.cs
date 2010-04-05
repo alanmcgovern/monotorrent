@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
-        private static readonly AsyncTransfer HandshakeReceivedCallback = HandshakeReceived;
+        private static readonly AsyncIOCallback HandshakeReceivedCallback = HandshakeReceived;
 
         private static EncryptionTypes CheckRC4(PeerId id)
         {
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client.Encryption
                 if (id.Connection.IsIncoming)
                 {
                     result.Buffer = new byte[bytesToReceive];
-                    NetworkIO.EnqueueReceive(c, result.Buffer, 0, result.Buffer.Length, HandshakeReceivedCallback, result);
+                    NetworkIO.EnqueueReceive(c, result.Buffer, 0, result.Buffer.Length, null, null, null, HandshakeReceivedCallback, result);
                 }
                 else
                 {
@@ -174,13 +174,6 @@ namespace MonoTorrent.Client.Encryption
                     throw new EncryptionException("Couldn't receive the handshake");
                 
                 result.Available += count;
-                if (count < result.Buffer.Length)
-                {
-                    NetworkIO.EnqueueReceive(connection, result.Buffer, result.Available, result.Buffer.Length - result.Available,
-                                    HandshakeReceivedCallback, result);
-                    return;
-                }
-
                 HandshakeMessage message = new HandshakeMessage();
                 message.Decode(result.Buffer, 0, result.Buffer.Length);
                 bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;

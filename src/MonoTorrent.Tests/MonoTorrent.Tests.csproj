@@ -122,6 +122,7 @@
     <Compile Include="Tracker\TrackerTestRig.cs" />
     <Compile Include="Tracker\TrackerTests.cs" />
     <Compile Include="Common\CustomFileSource.cs" />
+    <Compile Include="Client\NetworkIOTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
@@ -161,4 +162,7 @@
   <ProjectExtensions>
     <VisualStudio />
   </ProjectExtensions>
+  <ItemGroup>
+    <EmbeddedResource Include="xdb.il" />
+  </ItemGroup>
 </Project>

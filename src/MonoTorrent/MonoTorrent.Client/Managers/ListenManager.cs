@@ -19,7 +19,7 @@ namespace MonoTorrent.Client
         private ClientEngine engine;
         private MonoTorrentCollection<PeerListener> listeners;
         private AsyncCallback endCheckEncryptionCallback;
-        private AsyncTransfer handshakeReceivedCallback;
+        private AsyncIOCallback handshakeReceivedCallback;
 
         #endregion Member Variables
 
@@ -47,7 +47,7 @@ namespace MonoTorrent.Client
             Engine = engine;
             listeners = new MonoTorrentCollection<PeerListener>();
             endCheckEncryptionCallback = ClientEngine.MainLoop.Wrap(EndCheckEncryption);
-            handshakeReceivedCallback = ClientEngine.MainLoop.Wrap(onPeerHandshakeReceived);
+            handshakeReceivedCallback = (a, b, c) => ClientEngine.MainLoop.Queue(() => onPeerHandshakeReceived(a, b, c));
         }
 
         #endregion Constructors
@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
                 if (initialData.Length == HandshakeMessage.HandshakeLength)
                     handleHandshake(id);
                 else
-                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, HandshakeMessage.HandshakeLength - initialData.Length, handshakeReceivedCallback, id);
+                    NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, initialData.Length, HandshakeMessage.HandshakeLength - initialData.Length, null, null, null, handshakeReceivedCallback, id);
             }
             catch
             {
@@ -204,9 +204,9 @@ namespace MonoTorrent.Client
             id.Encryptor.Encrypt(id.sendBuffer, 0, bytesToSend);
 
             Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
-            AsyncTransfer callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;
-            NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, bytesToSend,
-                                    callback, id);
+            var callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;
+            NetworkIO.EnqueueSend (id.Connection, id.sendBuffer, 0, bytesToSend, id.TorrentManager.UploadLimiter,
+                                    id.Monitor, id.TorrentManager.Monitor, callback, id);
         }
 
         /// <summary>

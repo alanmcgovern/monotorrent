@@ -323,6 +323,11 @@
     <Compile Include="MonoTorrent.Client\Managers\PeerExchangeManager.cs" />
     <Compile Include="MonoTorrent.Client\Messages\uTorrent\PeerExchangeMessage.cs" />
     <Compile Include="MonoTorrent.Tracker\Listeners\UdpListener.cs" />
+    <Compile Include="MonoTorrent.Client\AsyncConnectState.cs" />
+    <Compile Include="MonoTorrent.Client\AsyncIOState.cs" />
+    <Compile Include="MonoTorrent.Client\PeerIO.cs" />
+    <Compile Include="MonoTorrent.Client\NetworkIO\State.cs" />
+    <Compile Include="MonoTorrent.Client\NetworkIO\ReceiveMessageState.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -367,4 +372,7 @@
     </MonoDevelop>
     <VisualStudio />
   </ProjectExtensions>
+  <ItemGroup>
+    <Folder Include="MonoTorrent.Client\NetworkIO\" />
+  </ItemGroup>
 </Project>

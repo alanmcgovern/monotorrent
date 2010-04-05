@@ -68,14 +68,15 @@ namespace MonoTorrent.Client
         internal static readonly int ChunkLength = 2096 + 64;   // Download in 2kB chunks to allow for better rate limiting
 
         // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
-        private AsyncTransfer handshakeReceievedCallback;
+        private AsyncIOCallback handshakeReceievedCallback;
         private MessagingCallback handshakeSentCallback;
         private MessagingCallback messageSentCallback;
 
         private AsyncCallback endCheckEncryptionCallback;
-        private AsyncConnect endCreateConnectionCallback;
-        internal AsyncTransfer incomingConnectionAcceptedCallback;
-        private AsyncTransfer endSendMessageCallback;
+        private AsyncIOCallback endCreateConnectionCallback;
+        internal AsyncIOCallback incomingConnectionAcceptedCallback;
+        private AsyncIOCallback endSendMessageCallback;
+        internal AsyncMessageReceivedCallback messageReceivedCallback;
 
         private List<AsyncConnectState> pendingConnects;
 
@@ -138,13 +139,14 @@ namespace MonoTorrent.Client
             this.engine = engine;
 
             this.endCheckEncryptionCallback = ClientEngine.MainLoop.Wrap(EndCheckEncryption);
-            this.endSendMessageCallback = ClientEngine.MainLoop.Wrap(EndSendMessage);
-            this.endCreateConnectionCallback = ClientEngine.MainLoop.Wrap(EndCreateConnection);
-            this.incomingConnectionAcceptedCallback = ClientEngine.MainLoop.Wrap(IncomingConnectionAccepted);
+            this.endSendMessageCallback = (a, b, c) => ClientEngine.MainLoop.Queue(() => EndSendMessage(a, b, c));
+            this.endCreateConnectionCallback = (a, b, c) => ClientEngine.MainLoop.Queue (() => EndCreateConnection (a, b, c));
+            this.incomingConnectionAcceptedCallback = (a, b, c) => ClientEngine.MainLoop.Queue (() => IncomingConnectionAccepted(a, b, c));
 
             this.handshakeSentCallback = PeerHandshakeSent;
-            this.handshakeReceievedCallback = ClientEngine.MainLoop.Wrap(PeerHandshakeReceived);
+            this.handshakeReceievedCallback = (a, b, c) => ClientEngine.MainLoop.Queue (() => PeerHandshakeReceived (a, b, c));
             this.messageSentCallback = PeerMessageSent;
+            this.messageReceivedCallback = (a, b, c) => ClientEngine.MainLoop.Queue (() => MessageReceived (a, b, c));
 
             this.pendingConnects = new List<AsyncConnectState>();
         }
@@ -162,14 +164,14 @@ namespace MonoTorrent.Client
                 return;
 
             peer.LastConnectionAttempt = DateTime.Now;
-            AsyncConnectState c = new AsyncConnectState(manager, peer, connection, endCreateConnectionCallback);
+            AsyncConnectState c = new AsyncConnectState(manager, peer, connection);
             pendingConnects.Add(c);
 
             manager.Peers.ConnectingToPeers.Add(peer);
-            NetworkIO.EnqueueConnect(c);
+            NetworkIO.EnqueueConnect(connection, endCreateConnectionCallback, c);
         }
 
-        private void EndCreateConnection(bool succeeded, object state)
+        private void EndCreateConnection(bool succeeded, int count, object state)
         {
             AsyncConnectState connect = (AsyncConnectState)state;
             pendingConnects.Remove(connect);
@@ -331,7 +333,7 @@ namespace MonoTorrent.Client
             // FIXME: Will fail if protocol version changes. FIX THIS
             //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
-            NetworkIO.EnqueueReceive(id.Connection, id.recieveBuffer, 0, 68, handshakeReceievedCallback, id);
+            NetworkIO.EnqueueReceive (id.Connection, id.recieveBuffer, 0, 68, null, null, null, handshakeReceievedCallback, id);
         }
 
         private void PeerHandshakeReceived(bool succeeded, int count, object state)
@@ -364,7 +366,7 @@ namespace MonoTorrent.Client
 
                 // Start the infinite receive loop which reads incoming messages
                 ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
-                NetworkIO.ReceiveMessage(id);
+                PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, messageReceivedCallback, id);
 
                 // Alert the engine that there is a new usable connection
                 id.TorrentManager.HandlePeerConnected(id, Direction.Outgoing);
@@ -405,22 +407,16 @@ namespace MonoTorrent.Client
             {
                 if (id.Connection == null)
                     return;
-                ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
-                ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
                 id.MessageSentCallback = callback;
                 id.CurrentlySendingMessage = message;
 
-                int bytesToSend = message.Encode(id.sendBuffer, 0);
-                id.Encryptor.Encrypt(id.sendBuffer, 0, bytesToSend);
-
+                RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
+                PeerIO.EnqueueSendMessage (id.Connection, id.Encryptor, message, limiter, id.Monitor, id.TorrentManager.Monitor, endSendMessageCallback, id);
                 if (message is PieceMessage)
                 {
                     ClientEngine.BufferManager.FreeBuffer(ref ((PieceMessage)message).Data);
                     id.IsRequestingPiecesCount--;
                 }
-
-                RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
-                NetworkIO.EnqueueSend(id.Connection, id.sendBuffer, 0, bytesToSend, endSendMessageCallback, id, limiter, id.TorrentManager.Monitor, id.Monitor);
             }
             catch (Exception)
             {
@@ -563,7 +559,7 @@ namespace MonoTorrent.Client
                 // We've sent our handshake so begin our looping to receive incoming message
                 // FIXME: This used to free the receiveBuffer, surely it's sendBuffer - VERIFY
                 ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
-                NetworkIO.ReceiveMessage(id);
+                PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, messageReceivedCallback, id);
             }
             catch (Exception e)
             {
@@ -583,9 +579,42 @@ namespace MonoTorrent.Client
         }
 
 
-        /// <summary>
-        /// This method should be called to begin processing messages stored in the SendQueue
-        /// </summary>
+
+        private void MessageReceived (bool successful, PeerMessage message, object state)
+        {
+            bool cleanUp = false;
+            string reason = "";
+            PeerId id = (PeerId) state;
+            if (!successful)
+            {
+                id.ConnectionManager.CleanupSocket (id, "Could not receive a message");
+                return;
+            }
+
+            try
+            {
+                PeerMessageEventArgs e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)message, Direction.Incoming, id);
+                id.ConnectionManager.RaisePeerMessageTransferred(e);
+
+                message.Handle(id);
+
+                cleanUp = id.Peer.TotalHashFails == 5;
+                id.LastMessageReceived = DateTime.Now;
+                PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, messageReceivedCallback, id);
+            }
+            catch (TorrentException ex)
+            {
+                reason = ex.Message;
+                Logger.Log(id.Connection, "Invalid message recieved: {0}", ex.Message);
+                cleanUp = true;
+            }
+            finally
+            {
+                if (cleanUp)
+                    id.ConnectionManager.CleanupSocket(id, reason);
+            }
+        }
+
         /// <param name="id">The peer whose message queue you want to start processing</param>
         internal void ProcessQueue(PeerId id)
         {

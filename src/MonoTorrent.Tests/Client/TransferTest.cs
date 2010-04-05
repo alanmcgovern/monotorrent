@@ -162,7 +162,7 @@ namespace MonoTorrent.Client
             if (buffer == null || buffer.Length == 0)
             {
                 buffer = new byte[68];
-                connection.EndReceive(connection.BeginReceive(buffer, 0, 68, null, null));
+                Receive (connection, buffer, 0, 68);
                 decryptor.Decrypt(buffer);
             }
 
@@ -199,33 +199,52 @@ namespace MonoTorrent.Client
             ReceiveMessage(connection);
         }
 
+        void Send (CustomConnection connection, byte[] buffer, int offset, int count)
+        {
+            while (count > 0) {
+                var r = connection.BeginSend (buffer, offset, count, null, null);
+                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                    throw new Exception ("Could not send required data");
+                int transferred = connection.EndSend (r);
+                if (transferred == 0)
+                    throw new Exception ("The socket was gracefully killed");
+                offset += transferred;
+                count -= transferred;
+            }
+        }
+
         private void SendMessage(PeerMessage message, CustomConnection connection)
         {
             byte[] b = message.Encode();
             encryptor.Encrypt(b);
-            IAsyncResult result = connection.BeginSend(b, 0, b.Length, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
-                throw new Exception("Message didn't send correctly");
-            connection.EndSend(result);
+            Send (connection, b, 0, b.Length);
+        }
+
+        private void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
+        {
+            while (count > 0) {
+                var r = connection.BeginReceive (buffer, offset, count, null, null);
+                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
+                    throw new Exception ("Could not receive required data");
+                int transferred = connection.EndReceive (r);
+                if (transferred == 0)
+                    throw new Exception ("The socket was gracefully killed");
+                offset += transferred;
+                count -= transferred;
+            }
         }
 
         private PeerMessage ReceiveMessage(CustomConnection connection)
         {
             byte[] buffer = new byte[4];
-            IAsyncResult result = connection.BeginReceive(buffer, 0, 4, null, null);
-            if(!result.AsyncWaitHandle.WaitOne (5000, true))
-                throw new Exception("Message length didn't receive correctly");
-            connection.EndReceive(result);
+            Receive (connection, buffer, 0, buffer.Length);
             decryptor.Decrypt(buffer);
 
             int count = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
             byte[] message = new byte[count + 4];
             Buffer.BlockCopy(buffer, 0, message, 0, 4);
 
-            result = connection.BeginReceive(message, 4, count, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
-                throw new Exception("Message body didn't receive correctly");
-            connection.EndReceive(result);
+            Receive (connection, message, 4, count);
             decryptor.Decrypt(message, 4, count);
 
             return PeerMessage.DecodeMessage(message, 0, message.Length, rig.Manager);

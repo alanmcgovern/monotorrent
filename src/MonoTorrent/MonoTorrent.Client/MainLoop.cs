@@ -267,23 +267,5 @@ namespace MonoTorrent.Client
                 });
             };
         }
-
-        public AsyncConnect Wrap(AsyncConnect connect)
-        {
-            return delegate(bool b, object o) {
-                Queue (delegate {
-                    connect(b, o);
-                });
-            };
-        }
-
-        public AsyncTransfer Wrap(AsyncTransfer transfer)
-        {
-            return delegate (bool s, int c, object o) {
-                Queue (delegate {
-                    transfer(s, c, o);
-                });
-            };
-        }
     }
 }
