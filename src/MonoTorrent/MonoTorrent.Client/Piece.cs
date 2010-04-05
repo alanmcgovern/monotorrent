@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
 {
     public class Piece : IComparable<Piece>
     {
-        internal static readonly int BlockSize = (1 << 14); // 16kB
+        internal const int BlockSize = (1 << 14); // 16kB
 
         #region Member Variables
 
