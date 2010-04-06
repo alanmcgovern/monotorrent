@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
             }
             catch
             {
-                CleanupSocket(id);
+                id.Connection.Dispose ();
             }
         }
 
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
             catch(Exception ex)
             {
                 Logger.Log(id.Connection, ex.Message);
-                CleanupSocket(id);
+                id.Connection.Dispose ();
                 return;
             }
 
@@ -164,19 +164,19 @@ namespace MonoTorrent.Client
             if (man == null)        // We're not hosting that torrent
             {
                 Logger.Log(id.Connection, "ListenManager - Handshake requested nonexistant torrent");
-                CleanupSocket(id);
+                id.Connection.Dispose ();
                 return;
             }
 			if (man.State == TorrentState.Stopped)
 			{
 				Logger.Log(id.Connection, "ListenManager - Handshake requested for torrent which is not running");
-				CleanupSocket(id);
+				id.Connection.Dispose ();
 				return;
 			}
             if (!man.Mode.CanAcceptConnections)
             {
                 Logger.Log(id.Connection, "ListenManager - Current mode does not support connections");
-                CleanupSocket(id);
+                id.Connection.Dispose ();
                 return;
             }
 
@@ -187,7 +187,7 @@ namespace MonoTorrent.Client
             if ((id.Encryptor is PlainTextEncryption && !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText)) && ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id.Connection, "ListenManager - Encryption is required but was not active");
-                CleanupSocket(id);
+                id.Connection.Dispose ();
                 return;
             }
 
@@ -215,14 +215,14 @@ namespace MonoTorrent.Client
             {
                 if (!succeeded)
                 {
-                    CleanupSocket(id);
+                    id.Connection.Dispose ();
                     return;
                 }
 
                 int read = count;
                 if (read == 0)
                 {
-                    CleanupSocket(id);
+                    id.Connection.Dispose ();
                     return;
                 }
                 Logger.Log(id.Connection, "ListenManager - Recieved handshake. Beginning to handle");
@@ -232,34 +232,12 @@ namespace MonoTorrent.Client
             catch (NullReferenceException)
             {
                 Logger.Log(id.Connection, "ListenManager - Null ref receiving handshake");
-                CleanupSocket(id);
+                id.Connection.Dispose ();
             }
             catch (Exception)
             {
                 Logger.Log(id.Connection, "ListenManager - Socket exception receiving handshake");
-                CleanupSocket(id);
-            }
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        private void CleanupSocket(PeerId id)
-        {
-            if (id == null) // Sometimes onEncryptionError fires with a null id
-                return;
-
-            Logger.Log(id.Connection, "ListenManager - Cleaning up socket");
-            if (id.Connection != null)
-            {
-                ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
-                id.Connection.Dispose();
-            }
-            else
-            {
-                Logger.Log(id.Connection, "!!!!!!!!!!CE Already null!!!!!!!!");
+                id.Connection.Dispose ();
             }
         }
     }
