@@ -88,7 +88,6 @@ namespace MonoTorrent.Client
 
             if (id.Connection.IsIncoming)
             {
-                ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
                 List<InfoHash> skeys = new List<InfoHash>();
 
                 ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
@@ -184,7 +183,6 @@ namespace MonoTorrent.Client
             message.Handle(id);
             Logger.Log(id.Connection, "ListenManager - Handshake successful handled");
 
-            ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
             id.ClientApp = new Software(message.PeerId);
 
             message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);

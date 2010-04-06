@@ -41,8 +41,7 @@ namespace MonoTorrent.Tests
             var connection = pair.Incoming;
             PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
             id.Connection = connection;
-            id.recieveBuffer = new byte[68];
-            byte[] data = id.recieveBuffer;
+            byte[] data;
 
             EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
             decryptor = id.Decryptor;
