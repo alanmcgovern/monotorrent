@@ -33,6 +33,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
@@ -78,18 +79,24 @@ namespace MonoTorrent.Client
         static void MessageLengthReceived (bool successful, int transferred, object state)
         {
             var data = (ReceiveMessageState) state;
-            if (!successful) {
+            int messageLength = -1;
+
+            if (successful) {
+                data.Decryptor.Decrypt (data.Buffer, 0, transferred);
+                messageLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (data.Buffer, 0));
+            }
+
+            if (!successful || messageLength < 0 || messageLength > MaxMessageLength) {
                 ClientEngine.BufferManager.FreeBuffer (data.Buffer);
                 data.Callback (false, null, data.State);
                 receiveCache.Enqueue (data);
                 return;
             }
 
-            data.Decryptor.Decrypt (data.Buffer, 0, transferred);
-            int messageLength = IPAddress.HostToNetworkOrder (BitConverter.ToInt32 (data.Buffer, 0));
-            if (messageLength < 0 || messageLength > MaxMessageLength) {
+            if (messageLength == 0) {
                 ClientEngine.BufferManager.FreeBuffer (data.Buffer);
-                data.Callback (false, null, data.State);
+                data.Callback (true, new KeepAliveMessage (), data.State);
+                receiveCache.Enqueue (data);
                 return;
             }
 
