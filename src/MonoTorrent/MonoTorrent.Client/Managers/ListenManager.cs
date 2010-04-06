@@ -112,12 +112,7 @@ namespace MonoTorrent.Client
                 byte[] initialData;
                 EncryptorFactory.EndCheckEncryption(result, out initialData);
 
-                if(initialData == null)
-                    initialData = BufferManager.EmptyBuffer;
-                    
-                Message.Write(id.recieveBuffer, 0, initialData);
-
-                if (initialData.Length == HandshakeMessage.HandshakeLength) {
+                if (initialData != null && initialData.Length == HandshakeMessage.HandshakeLength) {
                     HandshakeMessage message = new HandshakeMessage ();
                     message.Decode (initialData, 0, initialData.Length);
                     handleHandshake(id, message);

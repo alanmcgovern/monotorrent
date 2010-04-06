@@ -443,8 +443,6 @@ namespace MonoTorrent.Client
                 if (id.PeerExchangeManager != null)
                     id.PeerExchangeManager.Dispose();
 
-                ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
-
                 if (!id.AmChoking)
                     id.TorrentManager.UploadingTo--;
 
