@@ -328,7 +328,6 @@ namespace MonoTorrent.Client
         protected virtual void HandlePieceMessage(PeerId id, PieceMessage message)
         {
             id.PiecesReceived++;
-            string path = manager.SavePath;
             manager.PieceManager.PieceDataReceived(id, message);
 
             // Keep adding new piece requests to this peers queue until we reach the max pieces we're allowed queue

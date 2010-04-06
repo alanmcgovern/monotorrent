@@ -126,9 +126,13 @@ namespace MonoTorrent.Client
 							    if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
 								    peers.Add(piece.Blocks[i].RequestedOff);
 
-						    for (int i = 0; i < peers.Count; i++)
-							    if (peers[i].Connection != null)
+						    for (int i = 0; i < peers.Count; i++) {
+							    if (peers[i].Connection != null) {
 								    peers[i].Peer.HashedPiece(result);
+									if (peers [i].Peer.TotalHashFails == 5)
+										peers[i].ConnectionManager.CleanupSocket (id, "Too many hash fails");
+								}
+							}
 
 						    // If the piece was successfully hashed, enqueue a new "have" message to be sent out
 						    if (result)

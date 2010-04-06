@@ -494,23 +494,19 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void IncomingConnectionAccepted(bool succeeded, int count, object state)
         {
-            string reason = null;
-            bool cleanUp = false;
             PeerId id = (PeerId)state;
 
             try
             {
-                if (!succeeded)
-                {
-                    cleanUp = true;
-                    return;
+                if (!succeeded) {
+                    var args = new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Incoming, "Incoming connection coult not be accepted");
+                    id.TorrentManager.RaiseConnectionAttemptFailed (args);
                 }
 
-                if (id.Peer.PeerId == engine.PeerId) // The tracker gave us our own IP/Port combination
+                bool maxAlreadyOpen = OpenConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections);
+                if (!succeeded || id.Peer.PeerId == engine.PeerId || maxAlreadyOpen)
                 {
-                    Logger.Log(id.Connection, "ConnectionManager - Recieved myself");
-                    reason = "Received myself";
-                    cleanUp = true;
+                    CleanupSocket (id, "Connection was not accepted");
                     return;
                 }
 
@@ -529,13 +525,6 @@ namespace MonoTorrent.Client
                 // Baseline the time the last block was received
                 id.LastBlockReceived = DateTime.Now;
 
-                if (OpenConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections))
-                {
-                    reason = "Too many peers";
-                    cleanUp = true;
-                    return;
-                }
-
                 id.TorrentManager.HandlePeerConnected(id, Direction.Incoming);
 
                 // We've sent our handshake so begin our looping to receive incoming message
@@ -543,18 +532,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception e)
             {
-                reason = "Exception for incoming connection: {0}" + e.Message;
-                cleanUp = true;
-            }
-            finally
-            {
-                if (cleanUp)
-                {
-                    CleanupSocket(id, reason);
-
-                    id.TorrentManager.RaiseConnectionAttemptFailed(
-                        new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Incoming, reason));
-                }
+                CleanupSocket (id, e.Message);
             }
         }
 
@@ -562,8 +540,6 @@ namespace MonoTorrent.Client
 
         private void MessageReceived (bool successful, PeerMessage message, object state)
         {
-            bool cleanUp = false;
-            string reason = "";
             PeerId id = (PeerId) state;
             if (!successful)
             {
@@ -578,20 +554,12 @@ namespace MonoTorrent.Client
 
                 message.Handle(id);
 
-                cleanUp = id.Peer.TotalHashFails == 5;
                 id.LastMessageReceived = DateTime.Now;
                 PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, messageReceivedCallback, id);
             }
             catch (TorrentException ex)
             {
-                reason = ex.Message;
-                Logger.Log(id.Connection, "Invalid message recieved: {0}", ex.Message);
-                cleanUp = true;
-            }
-            finally
-            {
-                if (cleanUp)
-                    id.ConnectionManager.CleanupSocket(id, reason);
+                id.ConnectionManager.CleanupSocket (id, ex.Message);
             }
         }
 
