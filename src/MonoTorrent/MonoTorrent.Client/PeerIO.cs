@@ -47,6 +47,7 @@ namespace MonoTorrent.Client
         static AsyncIOCallback MessageLengthReceivedCallback = MessageLengthReceived;
         static AsyncIOCallback EndSendCallback = EndSend;
         static AsyncIOCallback MessageBodyReceivedCallback = MessageBodyReceived;
+        static AsyncIOCallback HandshakeReceivedCallback = HandshakeReceived;
 
         public static void EnqueueSendMessage (IConnection connection, IEncryption encryptor, PeerMessage message, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, AsyncIOCallback callback, object state)
         {
@@ -65,6 +66,29 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer (data.Buffer);
             data.Callback (successful, count, data.State);
             sendCache.Enqueue (data);
+        }
+
+        public static void EnqueueReceiveHandshake (IConnection connection, IEncryption decryptor, AsyncMessageReceivedCallback callback, object state)
+        {
+            var buffer = ClientEngine.BufferManager.GetBuffer (HandshakeMessage.HandshakeLength);
+            var data = receiveCache.Dequeue ().Initialise (connection, decryptor, null, buffer, callback, state);
+            NetworkIO.EnqueueReceive (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null, HandshakeReceivedCallback, data);
+        }
+
+        static void HandshakeReceived (bool successful, int transferred, object state)
+        {
+            var data = (ReceiveMessageState) state;
+            PeerMessage message = null;
+
+            if (successful) {
+                data.Decryptor.Decrypt (data.Buffer, 0, transferred);
+                message = new HandshakeMessage ();
+                message.Decode (data.Buffer, 0, transferred);
+            }
+
+            data.Callback (successful, message, data.State);
+            ClientEngine.BufferManager.FreeBuffer (data.Buffer);
+            receiveCache.Enqueue (data);
         }
 
         public static void EnqueueReceiveMessage (IConnection connection, IEncryption decryptor, IRateLimiter rateLimiter, ConnectionMonitor monitor, TorrentManager manager, AsyncMessageReceivedCallback callback, object state)
