@@ -329,9 +329,6 @@ namespace MonoTorrent.Client
         {
             Logger.Log(id.Connection, "ConnectionManager - Sent Handshake");
 
-            // Receive the handshake
-            // FIXME: Will fail if protocol version changes. FIX THIS
-            //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
             ClientEngine.BufferManager.GetBuffer(ref id.recieveBuffer, 68);
             NetworkIO.EnqueueReceive (id.Connection, id.recieveBuffer, 0, 68, null, null, null, handshakeReceievedCallback, id);
         }
@@ -394,7 +391,6 @@ namespace MonoTorrent.Client
             // Fire the event to let the user know a message was sent
             RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager, (PeerMessage)id.CurrentlySendingMessage, Direction.Outgoing, id));
 
-            //ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
             id.LastMessageSent = DateTime.Now;
             this.ProcessQueue(id);
         }
@@ -458,7 +454,6 @@ namespace MonoTorrent.Client
                 if (id.PeerExchangeManager != null)
                     id.PeerExchangeManager.Dispose();
 
-                ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
                 ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
 
                 if (!id.AmChoking)
@@ -557,8 +552,6 @@ namespace MonoTorrent.Client
                 id.TorrentManager.HandlePeerConnected(id, Direction.Incoming);
 
                 // We've sent our handshake so begin our looping to receive incoming message
-                // FIXME: This used to free the receiveBuffer, surely it's sendBuffer - VERIFY
-                ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
                 PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, id.TorrentManager.DownloadLimiter, id.Monitor, id.TorrentManager, messageReceivedCallback, id);
             }
             catch (Exception e)

@@ -198,14 +198,8 @@ namespace MonoTorrent.Client
             id.ClientApp = new Software(handshake.PeerId);
 
             HandshakeMessage message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
-
-            ClientEngine.BufferManager.GetBuffer(ref id.sendBuffer, message.ByteLength);
-            int bytesToSend = message.Encode(id.sendBuffer, 0);
-            id.Encryptor.Encrypt(id.sendBuffer, 0, bytesToSend);
-
-            Logger.Log(id.Connection, "ListenManager - Sending connection to torrent manager");
             var callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;
-            NetworkIO.EnqueueSend (id.Connection, id.sendBuffer, 0, bytesToSend, id.TorrentManager.UploadLimiter,
+            PeerIO.EnqueueSendMessage (id.Connection, id.Encryptor, message, id.TorrentManager.UploadLimiter,
                                     id.Monitor, id.TorrentManager.Monitor, callback, id);
         }
 
@@ -261,7 +255,6 @@ namespace MonoTorrent.Client
             if (id.Connection != null)
             {
                 ClientEngine.BufferManager.FreeBuffer(ref id.recieveBuffer);
-                ClientEngine.BufferManager.FreeBuffer(ref id.sendBuffer);
                 id.Connection.Dispose();
             }
             else
