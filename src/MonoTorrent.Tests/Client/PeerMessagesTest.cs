@@ -35,6 +35,8 @@ using MonoTorrent.Common;
 using System.Net;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
@@ -294,6 +296,17 @@ namespace MonoTorrent.Client
         {
             EncodeDecode(new UnchokeMessage());
         }
+
+		[Test]
+		public void PeerExchangeMessageTest ()
+		{
+			var data = new BEncodedDictionary ().Encode ();
+			var message = new PeerExchangeMessage ();
+			message.Decode (data, 0, data.Length);
+			Assert.IsNotNull (message.Added, "#1");
+			Assert.IsNotNull (message.AddedDotF, "#1");
+			Assert.IsNotNull (message.Dropped, "#1");
+		}
 
         private void EncodeDecode(Message orig)
         {
