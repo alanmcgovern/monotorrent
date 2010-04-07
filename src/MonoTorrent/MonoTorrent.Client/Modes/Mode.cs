@@ -317,7 +317,7 @@ namespace MonoTorrent.Client
         
         protected virtual void HandleKeepAliveMessage(PeerId id, KeepAliveMessage message)
         {
-            throw new Exception("The method or operation is not implemented.");
+            id.LastMessageReceived = DateTime.Now;
         }
 
         protected virtual void HandleNotInterested(PeerId id, NotInterestedMessage message)
