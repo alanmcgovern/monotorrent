@@ -126,15 +126,20 @@ namespace MonoTorrent.Client
             var data = (AsyncIOState) result.AsyncState;
             try {
                 int transferred = data.Connection.EndReceive (result);
-                data.Offset += transferred;
-                data.Remaining -= transferred;
-                if (data.Remaining == 0) {
-                    data.Callback (true, data.Count, data.State);
+                if (transferred == 0) {
+                    data.Callback (false, 0, data.State);
                     transferCache.Enqueue (data);
                 } else {
-                    data.Connection.BeginReceive (data.Buffer, data.Offset, data.Remaining, EndReceiveCallback, data);
+                    data.Offset += transferred;
+                    data.Remaining -= transferred;
+                    if (data.Remaining == 0) {
+                        data.Callback (true, data.Count, data.State);
+                        transferCache.Enqueue (data);
+                    } else {
+                        data.Connection.BeginReceive (data.Buffer, data.Offset, data.Remaining, EndReceiveCallback, data);
+                    }
                 }
-            } catch (Exception ex) {
+            } catch {
                 data.Callback (false, 0, data.State);
                 transferCache.Enqueue (data);
             }
@@ -145,13 +150,18 @@ namespace MonoTorrent.Client
             var data = (AsyncIOState) result.AsyncState;
             try {
                 int transferred = data.Connection.EndSend (result);
-                data.Offset += transferred;
-                data.Remaining -= transferred;
-                if (data.Remaining == 0) {
-                    data.Callback (true, data.Count, data.State);
+                if (transferred == 0) {
+                    data.Callback (false, 0, data.State);
                     transferCache.Enqueue (data);
                 } else {
-                    data.Connection.BeginSend (data.Buffer, data.Offset, data.Remaining, EndSendCallback, data);
+                    data.Offset += transferred;
+                    data.Remaining -= transferred;
+                    if (data.Remaining == 0) {
+                        data.Callback (true, data.Count, data.State);
+                        transferCache.Enqueue (data);
+                    } else {
+                        data.Connection.BeginSend (data.Buffer, data.Offset, data.Remaining, EndSendCallback, data);
+                    }
                 }
             } catch {
                 data.Callback (false, 0, data.State);

@@ -120,6 +120,15 @@ namespace MonoTorrent.Client
 
         private Socket s;
         private bool incoming;
+
+        public int? ManualBytesReceived {
+            get; set;
+        }
+
+        public int? ManualBytesSent {
+            get; set;
+        }
+
         public bool SlowConnection {
             get; set;
         }
@@ -178,6 +187,10 @@ namespace MonoTorrent.Client
         {
             if (EndReceiveStarted != null)
                 EndReceiveStarted(null, EventArgs.Empty);
+
+            if (ManualBytesReceived.HasValue)
+                return ManualBytesReceived.Value;
+
             try
             {
                 return s.EndReceive(result);
@@ -202,6 +215,10 @@ namespace MonoTorrent.Client
         {
             if (EndSendStarted != null)
                 EndSendStarted(null, EventArgs.Empty);
+
+            if (ManualBytesSent.HasValue)
+                return ManualBytesSent.Value;
+
             try
             {
                 return s.EndSend(result);

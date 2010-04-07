@@ -204,6 +204,38 @@ namespace MonoTorrent.Client
             PeerIO.EnqueueReceiveMessage (Incoming, new PlainTextEncryption (), null, null, null, callback, null);
             Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (2)), "#Should receive second message");
         }
+
+        [Test]
+        public void ZeroReceivedClosesConnection ()
+        {
+            bool connectionOpen = true;
+            AutoResetEvent handle = new AutoResetEvent(false);
+            Incoming.ManualBytesReceived = 0;
+            NetworkIO.EnqueueReceive (Incoming, data, 0, 100, null, null, null, (successful, count, state) => {
+                connectionOpen = successful;
+                handle.Set ();
+            }, null);
+
+            NetworkIO.EnqueueSend (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
+            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
+            Assert.IsFalse (connectionOpen, "#2");
+        }
+
+        [Test]
+        public void ZeroSentClosesConnection ()
+        {
+            bool connectionOpen = true;
+            AutoResetEvent handle = new AutoResetEvent(false);
+            Incoming.ManualBytesSent = 0;
+            NetworkIO.EnqueueSend (Incoming, data, 0, 100, null, null, null, (successful, count, state) => {
+                connectionOpen = successful;
+                handle.Set ();
+            }, null);
+
+            NetworkIO.EnqueueReceive (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
+            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
+            Assert.IsFalse (connectionOpen, "#2");
+        }
     }
 }
 
