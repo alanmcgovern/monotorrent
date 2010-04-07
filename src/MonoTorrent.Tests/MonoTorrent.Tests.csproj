@@ -162,7 +162,4 @@
   <ProjectExtensions>
     <VisualStudio />
   </ProjectExtensions>
-  <ItemGroup>
-    <EmbeddedResource Include="xdb.il" />
-  </ItemGroup>
 </Project>
