@@ -73,7 +73,7 @@ namespace TrackerApp
                                 req.EndGetResponse(r).Close();
                                 requests.AddDelta(1);
                             }
-                            catch(Exception ex)
+                            catch
                             {
                             }
                             finally
