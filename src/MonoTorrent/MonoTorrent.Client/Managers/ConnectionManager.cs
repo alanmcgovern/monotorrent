@@ -224,7 +224,7 @@ namespace MonoTorrent.Client
             // If we have too many open connections, close the connection
             if (OpenConnections > this.MaxOpenConnections)
             {
-                CleanupSocket ("Too many connections");
+                CleanupSocket (id, "Too many connections");
                 return;
             }
 
@@ -286,7 +286,7 @@ namespace MonoTorrent.Client
             PeerId id = (PeerId)state;
             if (!succeeded)
             {
-                CleanupSocket (id);
+                CleanupSocket (id, "Could not send message");
                 return;
             }
 
@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
             }
             catch (TorrentException ex)
             {
-                CleanupSocket(id, ex);
+                CleanupSocket(id, ex.Message);
             }
         }
 
