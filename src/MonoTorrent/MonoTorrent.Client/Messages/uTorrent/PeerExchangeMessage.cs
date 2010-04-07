@@ -36,16 +36,9 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
         {
-            if (added == null)
-                added = BufferManager.EmptyBuffer;;
-            if (addedDotF == null)
-                addedDotF = BufferManager.EmptyBuffer;;
-            if (dropped == null)
-                dropped = BufferManager.EmptyBuffer;;
-
-            peerDict[AddedKey] = (BEncodedString)added;
-            peerDict[AddedDotFKey] = (BEncodedString)addedDotF;
-            peerDict[DroppedKey] = (BEncodedString)dropped;
+            peerDict[AddedKey] = (BEncodedString)(added ?? BufferManager.EmptyBuffer);
+            peerDict[AddedDotFKey] = (BEncodedString)(addedDotF ?? BufferManager.EmptyBuffer);
+            peerDict[DroppedKey] = (BEncodedString)(dropped ?? BufferManager.EmptyBuffer);
         }
 
         public byte[] Added
@@ -74,6 +67,12 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public override void Decode(byte[] buffer, int offset, int length)
         {
             peerDict = BEncodedValue.Decode<BEncodedDictionary>(buffer, offset, length, false);
+            if (!peerDict.ContainsKey(AddedKey))
+                peerDict.Add(AddedKey, (BEncodedString)"");
+            if (!peerDict.ContainsKey(AddedDotFKey))
+                peerDict.Add(AddedDotFKey, (BEncodedString)"");
+            if (!peerDict.ContainsKey(DroppedKey))
+                peerDict.Add(DroppedKey, (BEncodedString)"");
         }
 
         public override int Encode(byte[] buffer, int offset)
