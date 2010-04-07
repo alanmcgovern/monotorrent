@@ -221,20 +221,15 @@ namespace MonoTorrent.Client
 
         internal void ProcessFreshConnection(PeerId id)
         {
-            bool cleanUp = false;
-            string reason = null;
+            // If we have too many open connections, close the connection
+            if (OpenConnections > this.MaxOpenConnections)
+            {
+                CleanupSocket ("Too many connections");
+                return;
+            }
 
             try
             {
-                // If we have too many open connections, close the connection
-                if (OpenConnections > this.MaxOpenConnections)
-                {
-                    Logger.Log(id.Connection, "ConnectionManager - Too many connections");
-                    reason = "Too many connections";
-                    cleanUp = true;
-                    return;
-                }
-
                 id.ProcessingQueue = true;
                 // Increase the count of the "open" connections
                 EncryptorFactory.BeginCheckEncryption(id, 0, this.endCheckEncryptionCallback, id);
@@ -246,19 +241,11 @@ namespace MonoTorrent.Client
             }
             catch (Exception)
             {
-                Logger.Log(id.Connection, "failed to encrypt");
-
                 id.TorrentManager.RaiseConnectionAttemptFailed(
                     new PeerConnectionFailedEventArgs(id.TorrentManager, id.Peer, Direction.Outgoing, "ProcessFreshConnection: failed to encrypt"));
 
                 id.Connection.Dispose();
                 id.Connection = null;
-            }
-            finally
-            {
-                // Decrement the half open connections
-                if (cleanUp)
-                    CleanupSocket(id, reason);
             }
         }
 
@@ -296,32 +283,22 @@ namespace MonoTorrent.Client
 
         private void EndSendMessage(bool succeeded, int count, object state)
         {
-            string reason = null;
-            bool cleanup = false;
             PeerId id = (PeerId)state;
+            if (!succeeded)
+            {
+                CleanupSocket (id);
+                return;
+            }
 
             try
             {
-                // If the peer has disconnected, don't continue
-                if (id.Connection == null)
-                    return;
-
-                if (!succeeded)
-                    throw new SocketException((int)SocketError.SocketError);
 
                 // Invoke the callback which we were told to invoke after we sent this message
                 id.MessageSentCallback(id);
             }
             catch (Exception)
             {
-                reason = "Exception EndSending";
-                Logger.Log(id.Connection, "ConnectionManager - Socket exception sending message");
-                cleanup = true;
-            }
-            finally
-            {
-                if (cleanup)
-                    CleanupSocket(id, reason);
+                CleanupSocket (id, "Could not send message");
             }
         }
 
@@ -333,17 +310,14 @@ namespace MonoTorrent.Client
         private void PeerHandshakeReceived(bool succeeded, PeerMessage message, object state)
         {
             PeerId id = (PeerId)state;
-            string reason = null;
-            bool cleanUp = false;
+            if (!succeeded)
+            {
+                CleanupSocket(id, "Handshaking failed");
+                return;
+            }
 
             try
             {
-                // If the connection is closed, just return
-                if (!succeeded)
-                {
-                    CleanupSocket(id, "Handshaking failed");
-                    return;
-                }
                 message.Handle(id);
 
                 // If there are any pending messages, send them otherwise set the queue
@@ -357,17 +331,9 @@ namespace MonoTorrent.Client
                 // Alert the engine that there is a new usable connection
                 id.TorrentManager.HandlePeerConnected(id, Direction.Outgoing);
             }
-            catch (TorrentException)
+            catch (TorrentException ex)
             {
-                Logger.Log(id.Connection, "ConnectionManager - Couldn't decode the message");
-                reason = "Couldn't decode handshake";
-                cleanUp = true;
-                return;
-            }
-            finally
-            {
-                if (cleanUp)
-                    CleanupSocket(id, reason);
+                CleanupSocket(id, ex);
             }
         }
 
@@ -386,12 +352,8 @@ namespace MonoTorrent.Client
 
         private void SendMessage(PeerId id, PeerMessage message, MessagingCallback callback)
         {
-            bool cleanup = false;
-
             try
             {
-                if (id.Connection == null)
-                    return;
                 id.MessageSentCallback = callback;
                 id.CurrentlySendingMessage = message;
 
@@ -403,15 +365,9 @@ namespace MonoTorrent.Client
                     id.IsRequestingPiecesCount--;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Logger.Log(id.Connection, "ConnectionManager - Socket error sending message");
-                cleanup = true;
-            }
-            finally
-            {
-                if (cleanup)
-                    CleanupSocket(id, "Couldn't SendMessage");
+                CleanupSocket(id, ex.Message);
             }
         }
 
