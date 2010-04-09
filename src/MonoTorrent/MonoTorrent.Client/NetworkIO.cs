@@ -130,6 +130,11 @@ namespace MonoTorrent.Client
                     data.Callback (false, 0, data.State);
                     transferCache.Enqueue (data);
                 } else {
+                    if (data.PeerMonitor != null)
+                        data.PeerMonitor.BytesReceived (transferred, data.TransferType);
+                    if (data.ManagerMonitor != null)
+                        data.ManagerMonitor.BytesReceived (transferred, data.TransferType);
+
                     data.Offset += transferred;
                     data.Remaining -= transferred;
                     if (data.Remaining == 0) {
@@ -154,6 +159,11 @@ namespace MonoTorrent.Client
                     data.Callback (false, 0, data.State);
                     transferCache.Enqueue (data);
                 } else {
+                    if (data.PeerMonitor != null)
+                        data.PeerMonitor.BytesSent (transferred, data.TransferType);
+                    if (data.ManagerMonitor != null)
+                        data.ManagerMonitor.BytesSent (transferred, data.TransferType);
+
                     data.Offset += transferred;
                     data.Remaining -= transferred;
                     if (data.Remaining == 0) {

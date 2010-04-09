@@ -82,6 +82,10 @@ namespace MonoTorrent.Client
                 get; set;
             }
 
+            public TransferType TransferType {
+                get { return Count >= Piece.BlockSize ? TransferType.Data : TransferType.Protocol; }
+            }
+
             public AsyncIOState Initialise (IConnection connection, byte[] buffer, int offset, int count,
                                     AsyncIOCallback callback,
                                     object state, IRateLimiter limiter,
