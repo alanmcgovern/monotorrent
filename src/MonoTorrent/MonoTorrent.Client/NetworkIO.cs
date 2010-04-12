@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 using MonoTorrent.Client;
@@ -55,12 +56,38 @@ namespace MonoTorrent.Client
 
     internal partial class NetworkIO
     {
+        // The biggest message is a PieceMessage which is 16kB + some overhead
+        // so send in chunks of 2kB + a little so we do 8 transfers per piece.
+        const int ChunkLength = 2048 + 32;
+
+        static Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState> ();
+        static Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState> ();
+
         static ICache <AsyncConnectState> connectCache = new Cache <AsyncConnectState> (true).Synchronize ();
         static ICache <AsyncIOState> transferCache = new Cache <AsyncIOState> (true).Synchronize ();
 
         static AsyncCallback EndConnectCallback = EndConnect;
         static AsyncCallback EndReceiveCallback = EndReceive;
         static AsyncCallback EndSendCallback = EndSend;
+
+        static NetworkIO()
+        {
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
+                lock (sendQueue)
+                {
+                    int count = sendQueue.Count;
+                    for (int i = 0; i < count;)
+                         SendOrEnqueue (sendQueue.Dequeue ());
+                }
+                lock (receiveQueue)
+                {
+                    int count = receiveQueue.Count;
+                    for (int i = 0; i < count;)
+                        ReceiveOrEnqueue (receiveQueue.Dequeue ());
+                }
+                return true;
+            });
+        }
 
         static int halfOpens;
         public static int HalfOpens {
@@ -89,7 +116,8 @@ namespace MonoTorrent.Client
         {
             var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
             try {
-                connection.BeginReceive (buffer, offset, count, EndReceiveCallback, data);
+                lock (receiveQueue)
+                    ReceiveOrEnqueue (data);
             } catch {
                 data.Callback (false, 0, state);
                 transferCache.Enqueue (data);
@@ -100,7 +128,8 @@ namespace MonoTorrent.Client
         {
             var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
             try {
-                connection.BeginSend (buffer, offset, count, EndSendCallback, data);
+                lock (sendQueue)
+                    SendOrEnqueue (data);
             } catch {
                 callback (false, 0, state);
                 transferCache.Enqueue (data);
@@ -141,7 +170,8 @@ namespace MonoTorrent.Client
                         data.Callback (true, data.Count, data.State);
                         transferCache.Enqueue (data);
                     } else {
-                        data.Connection.BeginReceive (data.Buffer, data.Offset, data.Remaining, EndReceiveCallback, data);
+                        lock (receiveQueue)
+                            ReceiveOrEnqueue (data);
                     }
                 }
             } catch {
@@ -170,12 +200,33 @@ namespace MonoTorrent.Client
                         data.Callback (true, data.Count, data.State);
                         transferCache.Enqueue (data);
                     } else {
-                        data.Connection.BeginSend (data.Buffer, data.Offset, data.Remaining, EndSendCallback, data);
+                        lock (sendQueue)
+                            SendOrEnqueue (data);
                     }
                 }
             } catch {
                 data.Callback (false, 0, data.State);
                 transferCache.Enqueue (data);
+            }
+        }
+
+        static void ReceiveOrEnqueue (AsyncIOState data)
+        {
+            int count = Math.Min (ChunkLength, data.Remaining);
+            if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
+                data.Connection.BeginReceive (data.Buffer, data.Offset, count, EndReceiveCallback, data);
+            } else {
+                receiveQueue.Enqueue (data);
+            }
+        }
+
+        static void SendOrEnqueue (AsyncIOState data)
+        {
+            int count = Math.Min (ChunkLength, data.Remaining);
+            if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
+                data.Connection.BeginSend (data.Buffer, data.Offset, count, EndSendCallback, data);
+            } else {
+                sendQueue.Enqueue (data);
             }
         }
     }
