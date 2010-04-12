@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
             if (temp.AllFalse)
                 return false;
 
-            return base.IsInteresting(bitfield);
+            return base.IsInteresting(temp);
         }
     }
 }
