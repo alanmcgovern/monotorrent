@@ -369,7 +369,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, List<MonoTorrentCollection<string>> announces)
+        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, List<List<string>> announces)
         {
             Check.InfoHash(infoHash);
             Check.SavePath(savePath);
@@ -384,7 +384,24 @@ namespace MonoTorrent.Client
             Initialise(savePath, "", announces);
         }
 
-        void Initialise(string savePath, string baseDirectory, List<MonoTorrentCollection<string>> announces)
+        public TorrentManager(MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        {
+            Check.MagnetLink(magnetLink);
+            Check.InfoHash(magnetLink.InfoHash);
+            Check.SavePath(savePath);
+            Check.Settings(settings);
+            Check.TorrentSave(torrentSave);
+
+            this.infohash = magnetLink.InfoHash;
+            this.settings = settings;
+            this.torrentSave = torrentSave;
+            List<List<string>> announces = new List<List<string>> ();
+            if (magnetLink.AnnounceUrls != null)
+                announces.Add (magnetLink.AnnounceUrls);
+            Initialise(savePath, "", announces);
+        }
+
+        void Initialise(string savePath, string baseDirectory, List<List<string>> announces)
         {
             this.bitfield = new BitField(HasMetadata ? torrent.Pieces.Count : 1);
             this.savePath = Path.Combine(savePath, baseDirectory);

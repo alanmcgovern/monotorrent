@@ -328,6 +328,7 @@
     <Compile Include="MonoTorrent.Client\PeerIO.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO\State.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO\ReceiveMessageState.cs" />
+    <Compile Include="MonoTorrent.Common\MagnetLink.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

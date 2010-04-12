@@ -123,6 +123,7 @@
     <Compile Include="Tracker\TrackerTests.cs" />
     <Compile Include="Common\CustomFileSource.cs" />
     <Compile Include="Client\NetworkIOTests.cs" />
+    <Compile Include="Common\MagnetLinkTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
