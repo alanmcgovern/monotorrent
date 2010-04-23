@@ -76,13 +76,13 @@ namespace MonoTorrent.Client
                 lock (sendQueue)
                 {
                     int count = sendQueue.Count;
-                    for (int i = 0; i < count;)
+                    for (int i = 0; i < count; i++)
                          SendOrEnqueue (sendQueue.Dequeue ());
                 }
                 lock (receiveQueue)
                 {
                     int count = receiveQueue.Count;
-                    for (int i = 0; i < count;)
+                    for (int i = 0; i < count; i++)
                         ReceiveOrEnqueue (receiveQueue.Dequeue ());
                 }
                 return true;
