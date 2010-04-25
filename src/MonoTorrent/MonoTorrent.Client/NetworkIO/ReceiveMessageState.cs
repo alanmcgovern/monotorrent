@@ -52,8 +52,20 @@ namespace MonoTorrent.Client
                 get; set;
             }
 
+            public IRateLimiter RateLimiter {
+                get; set;
+            }
+
             public TorrentManager Manager {
                 get; private set;
+            }
+
+            public ConnectionMonitor ManagerMonitor {
+                get; set;
+            }
+
+            public ConnectionMonitor PeerMonitor {
+                get; set;
             }
 
             public object State {
@@ -62,15 +74,18 @@ namespace MonoTorrent.Client
 
             public void Initialise ()
             {
-                Initialise (null, null, null, null, null, null);
+                Initialise (null, null, null, null, null, null, null, null);
             }
 
-            public ReceiveMessageState Initialise (IConnection connection, IEncryption decryptor, TorrentManager manager, byte[] buffer, AsyncMessageReceivedCallback callback, object state)
+            public ReceiveMessageState Initialise (IConnection connection, IEncryption decryptor, IRateLimiter limiter, ConnectionMonitor peerMonitor, TorrentManager manager, byte[] buffer, AsyncMessageReceivedCallback callback, object state)
             {
                 Connection = connection;
                 Decryptor = decryptor;
                 Manager = manager;
                 Buffer = buffer;
+                PeerMonitor = peerMonitor;
+                RateLimiter = limiter;
+                ManagerMonitor = manager == null ? null : manager.Monitor;
                 Callback = callback;
                 State = state;
                 return this;

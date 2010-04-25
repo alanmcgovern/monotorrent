@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         public static void EnqueueReceiveHandshake (IConnection connection, IEncryption decryptor, AsyncMessageReceivedCallback callback, object state)
         {
             var buffer = ClientEngine.BufferManager.GetBuffer (HandshakeMessage.HandshakeLength);
-            var data = receiveCache.Dequeue ().Initialise (connection, decryptor, null, buffer, callback, state);
+            var data = receiveCache.Dequeue ().Initialise (connection, decryptor, null, null, null, buffer, callback, state);
             NetworkIO.EnqueueReceive (connection, buffer, 0, HandshakeMessage.HandshakeLength, null, null, null, HandshakeReceivedCallback, data);
         }
 
@@ -96,8 +96,8 @@ namespace MonoTorrent.Client
             // FIXME: Hardcoded number
             int count = 4;
             var buffer = ClientEngine.BufferManager.GetBuffer (count);
-            var data = receiveCache.Dequeue ().Initialise (connection, decryptor, manager, buffer, callback, state);
-            NetworkIO.EnqueueReceive (connection, buffer, 0, count, rateLimiter, monitor, manager == null ? null : manager.Monitor, MessageLengthReceivedCallback, data);
+            var data = receiveCache.Dequeue ().Initialise (connection, decryptor, rateLimiter, monitor, manager, buffer, callback, state);
+            NetworkIO.EnqueueReceive (connection, buffer, 0, count, rateLimiter, monitor, data.ManagerMonitor, MessageLengthReceivedCallback, data);
         }
 
         static void MessageLengthReceived (bool successful, int transferred, object state)
@@ -129,8 +129,8 @@ namespace MonoTorrent.Client
             ClientEngine.BufferManager.FreeBuffer (data.Buffer);
             data.Buffer = buffer;
 
-            NetworkIO.EnqueueReceive (data.Connection, buffer, transferred, messageLength, null, null, null,
-                                       MessageBodyReceivedCallback, data);
+            NetworkIO.EnqueueReceive (data.Connection, buffer, transferred, messageLength, data.RateLimiter, data.PeerMonitor,
+                                      data.ManagerMonitor, MessageBodyReceivedCallback, data);
         }
 
         static void MessageBodyReceived (bool successful, int transferred, object state)
