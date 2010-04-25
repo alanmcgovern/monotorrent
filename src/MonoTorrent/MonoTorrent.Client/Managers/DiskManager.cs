@@ -346,13 +346,18 @@ namespace MonoTorrent.Client
             DiskIOCallback readCallback = null;
             readCallback = delegate(bool successful) {
                 
-                hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
+                if (successful)
+                    hasher.TransformBlock(hashBuffer, 0, count, hashBuffer, 0);
                 offset += count;
 
                 if (!successful || offset == endOffset)
                 {
-                    hasher.TransformFinalBlock(hashBuffer, 0, 0);
-                    object hash = successful ? hasher.Hash : null;
+                    object hash = null;
+                    if (successful)
+                    {
+                        hasher.TransformFinalBlock(hashBuffer, 0, 0);
+                        hash = hasher.Hash;
+                    }
                     ((IDisposable)hasher).Dispose();
                     ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
                     ClientEngine.MainLoop.Queue(delegate {
