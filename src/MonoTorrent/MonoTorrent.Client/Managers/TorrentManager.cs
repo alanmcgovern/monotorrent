@@ -886,7 +886,7 @@ namespace MonoTorrent.Client
         {
             if (HasMetadata) {
                 foreach (var file in Torrent.Files)
-                    if (!file.BitField.AllFalse)
+                    if (!file.BitField.AllFalse && hashChecked)
                         hashChecked &= Engine.DiskManager.CheckFileExists (this, file);
             }
         }
