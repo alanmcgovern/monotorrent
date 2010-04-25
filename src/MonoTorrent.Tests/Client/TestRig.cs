@@ -17,10 +17,15 @@ namespace MonoTorrent.Client
 {
     public class TestWriter : PieceWriter
     {
+        public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
+        public List<TorrentFile> DoNotReadFrom = new List<TorrentFile>();
         public bool DontWrite;
         public List<String> Paths = new List<string>();
         public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
+            if (DoNotReadFrom.Contains(file))
+                return 0;
+
             if (!Paths.Contains(file.FullPath))
                 Paths.Add(file.FullPath);
 
@@ -47,7 +52,7 @@ namespace MonoTorrent.Client
 
         public override bool Exists(TorrentFile file)
         {
-            return false;
+            return FilesThatExist.Contains(file);
         }
 
         public override void Move(string oldPath, string newPath, bool ignoreExisting)
@@ -350,6 +355,10 @@ namespace MonoTorrent.Client
             }
         }
 
+        public TestWriter Writer {
+            get; set;
+        }
+
         public ClientEngine Engine
         {
             get { return engine; }
@@ -435,13 +444,13 @@ namespace MonoTorrent.Client
         #region Rig Creation
 
         TorrentFile[] files;
-        TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files)
+        TestRig(string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
             : this (savePath, piecelength, writer, trackers, files, false)
         {
             
         }
 
-        TestRig(string savePath, int piecelength, PieceWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
+        TestRig(string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files, bool metadataMode)
         {
             this.files = files;
             this.savePath = savePath;
@@ -451,6 +460,7 @@ namespace MonoTorrent.Client
             MetadataPath = "metadataSave.torrent";
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
+            Writer = writer;
 
             RecreateManager();
         }
@@ -534,7 +544,7 @@ namespace MonoTorrent.Client
             return new TestRig("", StandardPieceSize(), StandardWriter(), tier, StandardMultiFile());
         }
 
-        internal static TestRig CreateMultiFile(PieceWriter writer)
+        internal static TestRig CreateMultiFile(TestWriter writer)
         {
             return new TestRig ("", StandardPieceSize (), writer, StandardTrackers (), StandardMultiFile());
         }
@@ -576,7 +586,7 @@ namespace MonoTorrent.Client
             };
         }
 
-        static PieceWriter StandardWriter()
+        static TestWriter StandardWriter()
         {
             return new TestWriter();
         }
