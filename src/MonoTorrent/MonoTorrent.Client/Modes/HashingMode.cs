@@ -28,14 +28,14 @@ namespace MonoTorrent.Client
 			this.autostart = autostart;
 			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
             this.pieceCompleteCallback = PieceComplete;
-			if (!filesExist)
-				HashingComplete();
 		}
 
 		private void QueueNextHash()
 		{
 			if (Manager.Mode != this || index == Manager.Torrent.Pieces.Count)
 				HashingComplete();
+			else if (!filesExist)
+				PieceComplete(null);
 			else
 				Manager.Engine.DiskManager.BeginGetHash(Manager, index, pieceCompleteCallback);
 		}
