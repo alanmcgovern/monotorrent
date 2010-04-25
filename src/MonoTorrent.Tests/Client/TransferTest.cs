@@ -198,7 +198,7 @@ namespace MonoTorrent.Client
             ReceiveMessage(connection);
         }
 
-        void Send (CustomConnection connection, byte[] buffer, int offset, int count)
+        public static void Send(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
                 var r = connection.BeginSend (buffer, offset, count, null, null);
@@ -212,14 +212,14 @@ namespace MonoTorrent.Client
             }
         }
 
-        private void SendMessage(PeerMessage message, CustomConnection connection)
+        void SendMessage(PeerMessage message, CustomConnection connection)
         {
             byte[] b = message.Encode();
             encryptor.Encrypt(b);
             Send (connection, b, 0, b.Length);
         }
 
-        private void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
+        public static void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
         {
             while (count > 0) {
                 var r = connection.BeginReceive (buffer, offset, count, null, null);
@@ -233,7 +233,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        private PeerMessage ReceiveMessage(CustomConnection connection)
+        PeerMessage ReceiveMessage(CustomConnection connection)
+        {
+            return ReceiveMessage(connection, decryptor, rig.Manager);
+        }
+
+        public static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
         {
             byte[] buffer = new byte[4];
             Receive (connection, buffer, 0, buffer.Length);
@@ -246,7 +251,7 @@ namespace MonoTorrent.Client
             Receive (connection, message, 4, count);
             decryptor.Decrypt(message, 4, count);
 
-            return PeerMessage.DecodeMessage(message, 0, message.Length, rig.Manager);
+            return PeerMessage.DecodeMessage(message, 0, message.Length, manager);
         }
     }
 }

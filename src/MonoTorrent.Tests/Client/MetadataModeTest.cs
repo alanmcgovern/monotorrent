@@ -73,7 +73,6 @@ namespace MonoTorrent.Tests
             int length = (rig.TorrentDict.LengthInBytes() + 16383) / 16384;
             for (int i = 0; i < length; i++)
                 SendMessage(new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Request, i, null), connection);
-
             // 3) Receive all the metadata chunks
             PeerMessage m;
             var stream = new MemoryStream();
@@ -159,24 +158,7 @@ namespace MonoTorrent.Tests
 
         private PeerMessage ReceiveMessage(CustomConnection connection)
         {
-            byte[] buffer = new byte[4];
-            IAsyncResult result = connection.BeginReceive(buffer, 0, 4, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
-                throw new Exception("Message length didn't receive correctly");
-            connection.EndReceive(result);
-            decryptor.Decrypt(buffer);
-
-            int count = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
-            byte[] message = new byte[count + 4];
-            Buffer.BlockCopy(buffer, 0, message, 0, 4);
-
-            result = connection.BeginReceive(message, 4, count, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
-                throw new Exception("Message body didn't receive correctly");
-            connection.EndReceive(result);
-            decryptor.Decrypt(message, 4, count);
-
-            return PeerMessage.DecodeMessage(message, 0, message.Length, rig.Manager);
+            return TransferTest.ReceiveMessage(connection, decryptor, rig.Manager);
         }
     }
 }
