@@ -463,7 +463,7 @@ namespace MonoTorrent.Client
         /// <returns></returns>
         public override string ToString( )
         {
-            return this.Torrent.Name;
+            return Torrent == null ? "<Metadata Mode>" : this.Torrent.Name;
         }
 
 
