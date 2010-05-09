@@ -115,25 +115,15 @@ namespace MonoTorrent.Client
         public static void EnqueueReceive (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, AsyncIOCallback callback, object state)
         {
             var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
-            try {
-                lock (receiveQueue)
-                    ReceiveOrEnqueue (data);
-            } catch {
-                data.Callback (false, 0, state);
-                transferCache.Enqueue (data);
-            }
+            lock (receiveQueue)
+                ReceiveOrEnqueue (data);
         }
 
         public static void EnqueueSend (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, AsyncIOCallback callback, object state)
         {
             var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
-            try {
-                lock (sendQueue)
-                    SendOrEnqueue (data);
-            } catch {
-                callback (false, 0, state);
-                transferCache.Enqueue (data);
-            }
+            lock (sendQueue)
+                SendOrEnqueue (data);
         }
 
         static void EndConnect (IAsyncResult result)
@@ -214,7 +204,12 @@ namespace MonoTorrent.Client
         {
             int count = Math.Min (ChunkLength, data.Remaining);
             if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
-                data.Connection.BeginReceive (data.Buffer, data.Offset, count, EndReceiveCallback, data);
+                try {
+                    data.Connection.BeginReceive (data.Buffer, data.Offset, count, EndReceiveCallback, data);
+                } catch {
+                    data.Callback (false, 0, data.State);
+                    transferCache.Enqueue (data);
+                }
             } else {
                 receiveQueue.Enqueue (data);
             }
@@ -224,7 +219,12 @@ namespace MonoTorrent.Client
         {
             int count = Math.Min (ChunkLength, data.Remaining);
             if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
-                data.Connection.BeginSend (data.Buffer, data.Offset, count, EndSendCallback, data);
+                try {
+                    data.Connection.BeginSend (data.Buffer, data.Offset, count, EndSendCallback, data);
+                } catch {
+                    data.Callback (false, 0, data.State);
+                    transferCache.Enqueue (data);
+                }
             } else {
                 sendQueue.Enqueue (data);
             }
