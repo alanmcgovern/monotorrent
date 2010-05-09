@@ -35,7 +35,6 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using System.Threading;
-using System.Xml.Serialization;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
