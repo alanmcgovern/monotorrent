@@ -1,3 +1,31 @@
+//
+// SpeedMonitor.cs
+//
+// Authors:
+//   Alan McGovern alan.mcgovern@gmail.com
+//
+// Copyright (C) 2010 Alan McGovern
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -8,10 +36,10 @@ namespace MonoTorrent.Common
     {
         private const int DefaultAveragePeriod = 12;
 
-        private int averagingPeriod;
         private long total;
         private int speed;
-        private List<int> speeds;
+        private int[] speeds;
+        private int speedsIndex;
         private int lastUpdated;
         private long tempRecvCount;
 
@@ -35,9 +63,12 @@ namespace MonoTorrent.Common
 
         public SpeedMonitor(int averagingPeriod)
         {
-            this.averagingPeriod = averagingPeriod;
+            if (averagingPeriod < 0)
+                throw new ArgumentOutOfRangeException ("averagingPeriod");
+
             this.lastUpdated = Environment.TickCount;
-            this.speeds = new List<int>(averagingPeriod);
+            this.speeds = new int [Math.Max (1, averagingPeriod)];
+            this.speedsIndex = -speeds.Length;
         }
 
 
@@ -47,12 +78,11 @@ namespace MonoTorrent.Common
             this.tempRecvCount += speed;
         }
 
-		public void AddDelta(long speed)
-		{
-			this.total += speed;
-			this.tempRecvCount += speed;
-		}
-
+        public void AddDelta(long speed)
+        {
+            this.total += speed;
+            this.tempRecvCount += speed;
+        }
 
         public void Reset()
         {
@@ -60,49 +90,58 @@ namespace MonoTorrent.Common
             this.speed = 0;
             this.tempRecvCount = 0;
             this.lastUpdated = Environment.TickCount;
-            this.speeds.Clear();
+            this.speedsIndex = -speeds.Length;
         }
 
-
-        private void TimePeriodPassed()
+        private void TimePeriodPassed(int difference)
         {
-            int count = 0;
-            long total = 0;
+            lastUpdated = Environment.TickCount;
 
-            // Find how many milliseconds have passed since the last update and the current tick count
-            int difference = Environment.TickCount - this.lastUpdated;
             if (difference < 0)
                 difference = 1000;
 
-            // Take the amount of bytes sent since the last tick and divide it by the number of seconds
-            // since the last tick. This gives the calculated bytes/second transfer rate.
-            // difference is in miliseconds, so divide by 1000 to get it in seconds
-            if (speeds.Count == this.averagingPeriod)
-                speeds.RemoveAt (0);
-            speeds.Add ((int)(tempRecvCount / (difference / 1000.0)));
+            int currSpeed = (int)(tempRecvCount * 1000 / difference);
+            tempRecvCount = 0;
 
-            // What we do here is add up all the bytes/second readings held in each array
-            // and divide that by the number of non-zero entries. The number of non-zero entries
-            // is given by ArraySize - count. This is to avoid the problem where a connection which
-            // is just starting would have a lot of zero entries making the speed estimate inaccurate.
-            for (int i = 0; i < this.speeds.Count; i++)
+            int speedsCount;
+            if( speedsIndex < 0 )
             {
-                if (speeds.Count != averagingPeriod)
-                    count++;
+                //speeds array hasn't been filled yet
 
-                total += this.speeds[i];
+                int idx = speeds.Length + speedsIndex;
+
+                speeds[idx] = currSpeed;
+                speedsCount = idx + 1;
+
+                speedsIndex++;
             }
+            else
+            {
+                //speeds array is full, keep wrapping around overwriting the oldest value
+                speeds[speedsIndex] = currSpeed;
+                speedsCount = speeds.Length;
+        
+                speedsIndex = (speedsIndex + 1) % speeds.Length;
+            }
+        
+            int total = speeds[0];
+            for( int i = 1; i < speedsCount; i++ )
+                total += speeds[i];
 
-            this.speed = (int)(total / Math.Max (1, speeds.Count - count));
-            this.tempRecvCount = 0;
-            this.lastUpdated = Environment.TickCount;
+            speed = total / speedsCount;
         }
+
 
         public void Tick()
         {
-            long difference = (long)Environment.TickCount - lastUpdated;
+            int difference = Environment.TickCount - lastUpdated;
             if (difference >= 800 || difference < 0)
-                TimePeriodPassed();
+                TimePeriodPassed(difference);
+        }
+
+        internal void Tick (int difference)
+        {
+            TimePeriodPassed (difference);
         }
     }
 }

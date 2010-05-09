@@ -122,6 +122,7 @@
     <Compile Include="Common\CustomFileSource.cs" />
     <Compile Include="Client\NetworkIOTests.cs" />
     <Compile Include="Common\MagnetLinkTest.cs" />
+    <Compile Include="Common\SpeedMonitorTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
