@@ -218,6 +218,7 @@ namespace MonoTorrent.Client
                     io.ActualCount = io.Count;
                 else
                     io.ActualCount = 0;
+                readMonitor.AddDelta(io.ActualCount);
             } finally {
                 io.Complete = true;
                 if (io.Callback != null)
