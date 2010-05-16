@@ -35,7 +35,7 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 
-namespace MonoTorrent.Tests.Client
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class InitialSeedUnchokerTests

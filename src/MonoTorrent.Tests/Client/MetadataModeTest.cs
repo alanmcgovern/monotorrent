@@ -10,7 +10,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 
-namespace MonoTorrent.Tests
+namespace MonoTorrent.Client
 {
     [TestFixture]
     public class MetadataModeTests
