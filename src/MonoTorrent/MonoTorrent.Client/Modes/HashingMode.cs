@@ -34,8 +34,6 @@ namespace MonoTorrent.Client
 		{
 			if (Manager.Mode != this || index == Manager.Torrent.Pieces.Count)
 				HashingComplete();
-			else if (!filesExist)
-				PieceComplete(null);
 			else
 				Manager.Engine.DiskManager.BeginGetHash(Manager, index, pieceCompleteCallback);
 		}
@@ -48,7 +46,6 @@ namespace MonoTorrent.Client
 			}
 			else
 			{
-
 				Manager.Bitfield[index] = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
 				Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, index, Manager.Bitfield[index]));
 				index++;
@@ -92,7 +89,15 @@ namespace MonoTorrent.Client
 
 		public override void Tick(int counter)
 		{
-			if (index == -1)
+            if (!filesExist)
+            {
+                Manager.Bitfield.SetAll(false);
+                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                    Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
+                index = Manager.Torrent.Pieces.Count;
+                HashingComplete();
+            }
+            else if (index == -1)
 			{
 				index++;
 				QueueNextHash();
