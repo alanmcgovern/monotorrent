@@ -97,8 +97,16 @@ namespace MonoTorrent.Client
         public override void Tick(int counter)
         {
             base.Tick(counter);
-            if (unchoker.Complete)
+            if (unchoker.Complete) {
+                PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
+                PeerMessage haveAllMessage = new HaveAllMessage();
+                foreach (var peer in Manager.Peers.ConnectedPeers)
+                {
+                    PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
+                    peer.Enqueue(message);
+                }
                 Manager.Mode = new DownloadMode(Manager);
+            }
         }
     }
 }
