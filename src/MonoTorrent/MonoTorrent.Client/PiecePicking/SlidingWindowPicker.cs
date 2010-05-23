@@ -113,8 +113,8 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Empty constructor for changing piece pickers
         /// </summary>
-        public SlidingWindowPicker()
-            : base(null)
+        public SlidingWindowPicker(PiecePicker picker)
+            : base(picker)
         {
         }
 
@@ -126,8 +126,8 @@ namespace MonoTorrent.Client
         /// <param name="bitField">The bitfield associated with the torrent</param>
         /// <param name="torrentFiles">The files that are available in this torrent</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
-        internal SlidingWindowPicker(int highPrioritySetSize)
-            : this(highPrioritySetSize, 4)
+        internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize)
+            : this(picker, highPrioritySetSize, 4)
         {
         }
 
@@ -140,8 +140,8 @@ namespace MonoTorrent.Client
         /// <param name="torrentFiles">The files that are available in this torrent</param>
         /// <param name="highPrioritySetSize">Size of high priority set</param>
         /// <param name="mediumToHighRatio">Size of medium priority set as a multiple of the high priority set size</param>
-        internal SlidingWindowPicker(int highPrioritySetSize, int mediumToHighRatio)
-            : base(null)
+        internal SlidingWindowPicker(PiecePicker picker, int highPrioritySetSize, int mediumToHighRatio)
+            : base(picker)
         {
             this.highPrioritySetSize = highPrioritySetSize;
             this.ratio = mediumToHighRatio;
