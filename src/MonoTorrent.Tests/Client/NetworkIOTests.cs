@@ -172,12 +172,12 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy (BitConverter.GetBytes (IPAddress.HostToNetworkOrder (16)), 0, data, 0, 4);
             for (int i = 4; i < 16; i++)
                 data [i] = byte.MaxValue;
-            PeerIO.EnqueueReceiveMessage (Incoming, null, null, null, null, (successful, count, state) => {
+            PeerIO.EnqueueReceiveMessage (Incoming, new PlainTextEncryption (), null, null, null, (successful, count, state) => {
                 success = successful;
                 handle.Set ();
             }, null);
 
-            NetworkIO.EnqueueSend (Outgoing, data, 0, 16, null, null, null, delegate { }, null);
+            NetworkIO.EnqueueSend (Outgoing, data, 0, 20, null, null, null, delegate { }, null);
             Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#Should have closed");;
             Assert.IsFalse (success, "#1");
         }
