@@ -619,7 +619,7 @@ namespace MonoTorrent.Client
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
 
-                if (this.Complete && ClientEngine.SupportsInitialSeed) {
+                if (this.Complete && this.settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
 					Mode = new InitialSeedingMode(this);
                 }
                 else {
