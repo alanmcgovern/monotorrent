@@ -327,6 +327,7 @@
     <Compile Include="MonoTorrent.Client\NetworkIO\ReceiveMessageState.cs" />
     <Compile Include="MonoTorrent.Common\MagnetLink.cs" />
     <Compile Include="MonoTorrent.Common\UriHelper.cs" />
+    <Compile Include="MonoTorrent.Common\TorrentEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
