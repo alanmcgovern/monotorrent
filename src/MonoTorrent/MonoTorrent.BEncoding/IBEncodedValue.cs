@@ -63,6 +63,12 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public abstract int Encode(byte[] buffer, int offset);
 
+        public static T Clone <T> (T value)
+            where T : BEncodedValue
+        {
+            Check.Value (value);
+            return (T) BEncodedValue.Decode (value.Encode ());
+        }
 
         /// <summary>
         /// Interface for all BEncoded values
