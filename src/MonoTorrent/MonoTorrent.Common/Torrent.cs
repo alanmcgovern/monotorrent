@@ -337,7 +337,7 @@ namespace MonoTorrent.Common
         internal BEncodedDictionary ToDictionary ()
         {
             // Give the user a copy of the original dictionary.
-            return (BEncodedDictionary) BEncodedValue.Decode (ToBytes ());
+            return BEncodedValue.Clone (originalDictionary);
         }
 
         public override string ToString()
