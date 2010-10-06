@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.Tracker
             byte[] passwordKey = new byte[8];
             lock (random)
                 random.NextBytes(passwordKey);
-            Key = HttpUtility.UrlEncode(passwordKey);
+            Key = UriHelper.UrlEncode(passwordKey);
         }
 
         public override void Announce(AnnounceParameters parameters, object state)
