@@ -27,6 +27,13 @@ namespace MonoTorrent
             Tier = tier;
         }
 
+        public RawTrackerTier (IEnumerable<string> announces)
+            : this ()
+        {
+            foreach (var v in announces)
+                Add (v);
+        }
+
         public int IndexOf (string item)
         {
             return Tier.IndexOf ((BEncodedString) item);

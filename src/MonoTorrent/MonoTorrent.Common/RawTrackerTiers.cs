@@ -52,6 +52,12 @@ namespace MonoTorrent
             Tiers.Add (item.Tier);
         }
 
+        public void AddRange (IEnumerable<RawTrackerTier> tiers)
+        {
+            foreach (var v in tiers)
+                Add (v);
+        }
+
         public void Clear ()
         {
             Tiers.Clear ();

@@ -32,7 +32,7 @@ namespace MonoTorrent.Common
         private BEncodedString CustomKey = "Custom Key";
         private BEncodedString CustomValue = "My custom value";
 
-        List<List<string>> announces;
+        RawTrackerTiers announces;
         private TorrentCreator creator;
         List<TorrentFile> files;
         TestWriter writer;
@@ -53,10 +53,9 @@ namespace MonoTorrent.Common
         public void Setup()
         {
             creator = new TestTorrentCreator();
-            announces = new List<List<string>>();
-
-            announces.Add(new List<string>(new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
-            announces.Add(new List<string>(new string[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
+            announces = new RawTrackerTiers ();
+            announces.Add(new RawTrackerTier (new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
+            announces.Add(new RawTrackerTier (new string[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
 
             creator.Comment = Comment;
             creator.CreatedBy = CreatedBy;

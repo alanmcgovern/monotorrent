@@ -330,6 +330,7 @@
     <Compile Include="MonoTorrent.Common\TorrentEditor.cs" />
     <Compile Include="MonoTorrent.Common\RawTrackerTiers.cs" />
     <Compile Include="MonoTorrent.Common\RawTrackerTier.cs" />
+    <Compile Include="MonoTorrent.Common\EditableTorrent.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
