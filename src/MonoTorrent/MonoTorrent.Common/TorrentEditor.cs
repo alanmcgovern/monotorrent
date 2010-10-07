@@ -26,9 +26,23 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+using System;
+
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
+
 namespace MonoTorrent {
 
     public class TorrentEditor {
+
+        public string Announce {
+            get { return GetString (Metadata, "announce"); }
+            set { SetString (Metadata, "announce", value); }
+        }
+
+        public RawTrackerTiers Announces {
+            get; private set;
+        }
 
         public bool CanEditSecureMetadata {
             get; set;
@@ -80,13 +94,25 @@ namespace MonoTorrent {
         public TorrentEditor (Torrent torrent)
         {
             Check.Torrent (torrent);
-            Metadata = torrent.ToDictionary ();
+            LoadFrom (torrent.ToDictionary ());
         }
 
         public TorrentEditor (BEncodedDictionary metadata)
         {
             Check.Metadata (metadata);
-            Metadata = (BEncodedDictionary) BEncodedValue.Decode (metadata.Encode ());
+            LoadFrom (BEncodedValue.Clone (metadata));
+        }
+
+        void LoadFrom (BEncodedDictionary metadata)
+        {
+            Metadata = metadata;
+            BEncodedValue value;
+            if (!Metadata.TryGetValue ("announce-list", out value)) {
+                value = new BEncodedList ();
+                Metadata.Add ("announce-list", value);
+            }
+
+            Announces = new RawTrackerTiers ((BEncodedList) value);
         }
 
         void CheckCanEditSecure ()
