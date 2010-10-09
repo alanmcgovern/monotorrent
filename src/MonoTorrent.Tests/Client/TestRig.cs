@@ -440,7 +440,7 @@ namespace MonoTorrent.Client
             torrentDict = CreateTorrent(piecelength, files, tier);
             torrent = Torrent.Load(torrentDict);
             if (MetadataMode)
-                manager = new TorrentManager(torrent.infoHash, savePath, new TorrentSettings(), MetadataPath, new List<List<string>>());
+                manager = new TorrentManager(torrent.infoHash, savePath, new TorrentSettings(), MetadataPath, new RawTrackerTiers ());
             else
                 manager = new TorrentManager(torrent, savePath, new TorrentSettings());
             engine.Register(manager);

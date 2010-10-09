@@ -6,7 +6,7 @@ namespace MonoTorrent
 {
     public class MagnetLink
     {
-        public List<string> AnnounceUrls {
+        public RawTrackerTier AnnounceUrls {
             get; private set;
         }
 
@@ -25,7 +25,7 @@ namespace MonoTorrent
         public MagnetLink (string url)
         {
             Check.Url (url);
-            AnnounceUrls = new List<string> ();
+            AnnounceUrls = new RawTrackerTier ();
             Webseeds  = new List<string> ();
 
             ParseMagnetLink (url);

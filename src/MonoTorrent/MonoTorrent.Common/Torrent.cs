@@ -49,7 +49,7 @@ namespace MonoTorrent.Common
 
         private BEncodedDictionary originalDictionary;
         private BEncodedValue azureusProperties;
-        private List<List<string>> announceUrls;
+        private IList<RawTrackerTier> announceUrls;
         private string comment;
         private string createdBy;
         private DateTime creationDate;
@@ -84,7 +84,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The announce URLs contained within the .torrent file
         /// </summary>
-        public List<List<string>> AnnounceUrls
+        public IList<RawTrackerTier> AnnounceUrls
         {
             get { return this.announceUrls; }
         }
@@ -294,7 +294,7 @@ namespace MonoTorrent.Common
 
         protected Torrent()
         {
-            this.announceUrls = new List<List<string>>();
+            this.announceUrls = new RawTrackerTiers ();
             this.comment = string.Empty;
             this.createdBy = string.Empty;
             this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -774,7 +774,7 @@ namespace MonoTorrent.Common
                             // Ignore this if we have an announce-list
                             if (torrentInformation.ContainsKey("announce-list"))
                                 break;
-                            announceUrls.Add(new List<string>());
+                            announceUrls.Add(new RawTrackerTier ());
                             announceUrls[0].Add(keypair.Value.ToString());
                             break;
 
@@ -865,7 +865,7 @@ namespace MonoTorrent.Common
 
                                     Toolbox.Randomize<string>(tier);
 
-                                    List<string> collection = new List<string>(tier.Count);
+                                    RawTrackerTier collection = new RawTrackerTier ();
                                     for (int k = 0; k < tier.Count; k++)
                                         collection.Add(tier[k]);
 

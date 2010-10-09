@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager, InfoHash infoHash, List<List<string>> announces)
+        public TrackerManager(TorrentManager manager, InfoHash infoHash, IList<RawTrackerTier> announces)
         {
             this.manager = manager;
             this.infoHash = infoHash;
