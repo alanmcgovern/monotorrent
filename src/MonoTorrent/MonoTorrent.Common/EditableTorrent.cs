@@ -111,22 +111,6 @@ namespace MonoTorrent
                 InfoDict = new BEncodedDictionary ();
         }
 
-        public void AddCustom (BEncodedString key, BEncodedValue value)
-        {
-            Check.Key (key);
-            Check.Value (value);
-            Metadata [key] = value;
-        }
-
-        public void AddCustomSecure (BEncodedString key, BEncodedValue value)
-        {
-            CheckCanEditSecure ();
-
-            Check.Key (key);
-            Check.Value (value);
-            InfoDict [key] = value;
-        }
-
         protected void CheckCanEditSecure ()
         {
             if (!CanEditSecureMetadata)
@@ -148,6 +132,25 @@ namespace MonoTorrent
             if (InfoDict.TryGetValue (key, out value))
                 return value;
             return null;
+        }
+
+        public void SetCustom (BEncodedString key, BEncodedValue value)
+        {
+            Check.Key (key);
+            Check.Value (value);
+
+            if (key == InfoKey)
+                CheckCanEditSecure ();
+            Metadata [key] = value;
+        }
+
+        public void SetCustomSecure (BEncodedString key, BEncodedValue value)
+        {
+            CheckCanEditSecure ();
+
+            Check.Key (key);
+            Check.Value (value);
+            InfoDict [key] = value;
         }
 
         public void RemoveCustom (BEncodedString key)

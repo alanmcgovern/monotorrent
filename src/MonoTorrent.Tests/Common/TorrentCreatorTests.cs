@@ -62,7 +62,7 @@ namespace MonoTorrent.Common
             creator.PieceLength = PieceLength;
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
-            creator.AddCustom(CustomKey, CustomValue);
+            creator.SetCustom(CustomKey, CustomValue);
             files = new List<TorrentFile>(new TorrentFile[] { 
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), (int)(PieceLength * 2.30), 0, 1),
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), (int)(PieceLength * 36.5), 1, 3),
