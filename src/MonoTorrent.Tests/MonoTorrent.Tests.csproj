@@ -123,6 +123,7 @@
     <Compile Include="Common\MagnetLinkTest.cs" />
     <Compile Include="Common\SpeedMonitorTest.cs" />
     <Compile Include="Client\InitialSeedingModeTest.cs" />
+    <Compile Include="Common\TorrentEditorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">

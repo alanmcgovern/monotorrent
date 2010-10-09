@@ -41,7 +41,7 @@ namespace MonoTorrent {
         }
 
         public TorrentEditor (Torrent torrent)
-            : base (torrent.ToDictionary ())
+            : base (torrent)
         {
 
         }

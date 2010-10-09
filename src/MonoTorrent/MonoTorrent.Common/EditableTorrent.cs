@@ -71,7 +71,19 @@ namespace MonoTorrent
 
         }
 
+        public EditableTorrent (Torrent torrent)
+        {
+            Check.Torrent (torrent);
+            Initialise (torrent.ToDictionary ());
+        }
+
         public EditableTorrent (BEncodedDictionary metadata)
+        {
+            Check.Metadata (metadata);
+            Initialise (BEncodedValue.Clone (metadata));
+        }
+
+        void Initialise (BEncodedDictionary metadata)
         {
             Metadata = metadata;
 
