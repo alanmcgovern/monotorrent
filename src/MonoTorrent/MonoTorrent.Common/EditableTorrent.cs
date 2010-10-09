@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
@@ -23,7 +24,7 @@ namespace MonoTorrent
             set { SetString (Metadata, AnnounceKey, value); }
         }
 
-        public RawTrackerTiers Announces {
+        public IList<RawTrackerTier> Announces {
             get; private set;
         }
 

@@ -78,7 +78,8 @@ namespace MonoTorrent.Common
         [Test]
         public void CreateMultiTest()
         {
-            creator.Announces.AddRange(announces);
+            foreach (var v in announces)
+                creator.Announces.Add (v);
 
             BEncodedDictionary dict = creator.Create("TorrentName", files);
             Torrent torrent = Torrent.Load(dict);
@@ -98,7 +99,8 @@ namespace MonoTorrent.Common
         [Test]
         public void CreateSingleTest()
         {
-            creator.Announces.AddRange(announces);
+            foreach (var v in announces)
+                creator.Announces.Add (v);
 
             TorrentFile f = new TorrentFile(Path.GetFileName(files[0].Path),
                                             files[0].Length,
