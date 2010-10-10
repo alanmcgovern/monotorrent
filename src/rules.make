@@ -14,7 +14,7 @@ clean:
 	-rm $(OUT)
 
 install: 
-	cp $(OUT) $(prefix)/lib/bitsharp
+	cp $(OUT) $(prefix)/lib/monotorrent
 
 distlocal:
 	cp Makefile $(EXTRA_DIST) $(DESTDIR)
