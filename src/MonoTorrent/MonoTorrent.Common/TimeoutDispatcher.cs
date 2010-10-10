@@ -152,7 +152,7 @@ namespace Mono.Ssdp.Internal
                 }
 
                 TimeSpan interval = hasItem ? item.Trigger - DateTime.UtcNow : TimeSpan.FromMilliseconds (-1);
-                if (interval < TimeSpan.Zero) {
+                if (hasItem && interval < TimeSpan.Zero) {
                     interval = TimeSpan.Zero;
                 }
 
