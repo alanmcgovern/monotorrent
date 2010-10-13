@@ -271,15 +271,16 @@ namespace MonoTorrent.Client
 
         public override void UnchokeReview()
         {
-            List<ChokeData> dupePieces = new List<ChokeData>(peers);
-            foreach (ChokeData data in dupePieces)
-                TryChoke(data);
+            if (PendingUnchoke) {
+                List<ChokeData> dupePeers = new List<ChokeData>(peers);
+                foreach (ChokeData data in dupePieces)
+                    TryChoke(data);
 
-            List<ChokeData> dupe = new List<ChokeData>(peers);
-
-            // See if there's anyone interesting to unchoke
-            foreach (ChokeData data in dupe)
-                TryUnchoke(data);
+                dupePeers = new List<ChokeData>(peers);
+                // See if there's anyone interesting to unchoke
+                foreach (ChokeData data in dupePieces)
+                    TryUnchoke(data);
+            }
 
             // Make sure our list of pieces available in the swarm is up to date
             foreach (ChokeData data in peers)
@@ -290,7 +291,6 @@ namespace MonoTorrent.Client
             // Send have messages to anyone that needs them
             foreach (ChokeData data in peers)
                 TryAdvertisePiece(data);
-
         }
     }
 }
