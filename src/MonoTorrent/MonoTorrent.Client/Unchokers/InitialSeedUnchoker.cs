@@ -148,6 +148,8 @@ namespace MonoTorrent.Client
                 {
                     data.CurrentPieces[pieceIndex] = false;
                     data.SharedPieces++;
+                    // Give him another piece if no-one else is waiting.
+                    TryAdvertisePiece(data);
                     break;
                 }
             }
