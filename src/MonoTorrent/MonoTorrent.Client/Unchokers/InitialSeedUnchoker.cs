@@ -275,12 +275,12 @@ namespace MonoTorrent.Client
         {
             if (PendingUnchoke) {
                 List<ChokeData> dupePeers = new List<ChokeData>(peers);
-                foreach (ChokeData data in dupePieces)
+                foreach (ChokeData data in dupePeers)
                     TryChoke(data);
 
                 dupePeers = new List<ChokeData>(peers);
                 // See if there's anyone interesting to unchoke
-                foreach (ChokeData data in dupePieces)
+                foreach (ChokeData data in dupePeers)
                     TryUnchoke(data);
             }
 
