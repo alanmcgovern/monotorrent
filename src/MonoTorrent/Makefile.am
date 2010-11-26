@@ -233,6 +233,7 @@ FILES = \
 	MonoTorrent.Common/BitField.cs \
 	MonoTorrent.Common/Cache.cs \
 	MonoTorrent.Common/Check.cs \
+	MonoTorrent.Common/EditableTorrent.cs\
 	MonoTorrent.Common/Enums.cs \
 	MonoTorrent.Common/Hashes.cs \
 	MonoTorrent.Common/HashAlgoFactory.cs \
@@ -243,6 +244,8 @@ FILES = \
 	MonoTorrent.Common/MagnetLink.cs \
 	MonoTorrent.Common/MonoTorrentCollectionBase.cs \
 	MonoTorrent.Common/PeerID.cs \
+	MonoTorrent.Common/RawTrackerTier.cs\
+	MonoTorrent.Common/RawTrackerTiers.cs\
 	MonoTorrent.Common/SpeedMonitor.cs \
 	MonoTorrent.Common/TimeoutDispatcher.cs \
 	MonoTorrent.Common/ToolBox.cs \
@@ -252,6 +255,7 @@ FILES = \
 	MonoTorrent.Common/TorrentException.cs \
 	MonoTorrent.Common/TorrentFile.cs \
 	MonoTorrent.Common/UriQueryBuilder.cs \
+	MonoTorrent.Common/UriHelper.cs \
 	MonoTorrent.Common/VersionInfo.cs \
 	MonoTorrent.Common/EventArgs/TorrentCreatorEventArgs.cs \
 	MonoTorrent.Tracker/EventArgs/AnnounceEventArgs.cs \
