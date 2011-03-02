@@ -130,7 +130,6 @@
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
     <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\Managers\LocalPeerManager.cs" />
-    <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
     <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\IFastPeerMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\ExtensionSupports.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\MessageType.cs" />
@@ -331,6 +330,7 @@
     <Compile Include="MonoTorrent.Common\RawTrackerTiers.cs" />
     <Compile Include="MonoTorrent.Common\RawTrackerTier.cs" />
     <Compile Include="MonoTorrent.Common\EditableTorrent.cs" />
+    <Compile Include="MonoTorrent.Client\WaitHandleGroup.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

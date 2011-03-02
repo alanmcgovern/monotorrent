@@ -7,7 +7,7 @@ namespace MonoTorrent.Client
 {
 	class StoppingMode : Mode
 	{
-		ManagerWaitHandle handle = new ManagerWaitHandle("Global");
+		WaitHandleGroup handle = new WaitHandleGroup("Global");
 
 		public override TorrentState State
 		{

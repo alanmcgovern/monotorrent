@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    public class ManagerWaitHandle : WaitHandle
+    class WaitHandleGroup : WaitHandle
     {
         private List<WaitHandle> handles;
         private string name;
@@ -15,7 +15,7 @@ namespace MonoTorrent.Client
             get { return name; }
         }
 
-        public ManagerWaitHandle(string name)
+        public WaitHandleGroup(string name)
         {
             this.name = name;
             handles = new List<WaitHandle>();
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client
 
         public void AddHandle(WaitHandle handle, string name)
         {
-            ManagerWaitHandle h = new ManagerWaitHandle(name);
+            WaitHandleGroup h = new WaitHandleGroup(name);
             h.handles.Add(handle);
             handles.Add(h);
         }
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
             foreach (WaitHandle h in handles)
             {
                 sb.Append("WaitHandle from: ");
-                sb.Append(((ManagerWaitHandle)h).name);
+                sb.Append(((WaitHandleGroup)h).name);
                 sb.Append(". State: ");
                 sb.Append(h.WaitOne(0, false) ? "Signalled" : "Unsignalled");
                 sb.AppendLine();
