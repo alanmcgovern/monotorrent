@@ -8,74 +8,74 @@ namespace MonoTorrent.Client
     class WaitHandleGroup : WaitHandle
     {
         private List<WaitHandle> handles;
-        private string name;
+        private List<string> names;
 
-        public string Name
+        public WaitHandleGroup()
         {
-            get { return name; }
-        }
-
-        public WaitHandleGroup(string name)
-        {
-            this.name = name;
             handles = new List<WaitHandle>();
+            names = new List<string> ();
         }
 
         public void AddHandle(WaitHandle handle, string name)
         {
-            WaitHandleGroup h = new WaitHandleGroup(name);
-            h.handles.Add(handle);
-            handles.Add(h);
+            handles.Add (handle);
+            names.Add (name);
+        }
+
+        public override void Close ()
+        {
+            for (int i = 0; i < handles.Count; i++)
+                handles [i].Close ();
         }
 
         public override bool WaitOne()
         {
             if (handles.Count == 0)
                 return true;
+            return WaitHandle.WaitAll (handles.ToArray ());
+        }
 
-            for (int i = 0; i < handles.Count; i++)
-                handles[i].WaitOne();
+        public override bool WaitOne (int millisecondsTimeout)
+        {
+            if (handles.Count == 0)
+                return true;
+            return WaitHandle.WaitAll (handles.ToArray (), millisecondsTimeout);
+        }
 
-            return true;
+        public override bool WaitOne (TimeSpan timeout)
+        {
+            if (handles.Count == 0)
+                return true;
+            return WaitHandle.WaitAll (handles.ToArray (), timeout);
         }
 
         public override bool WaitOne(int millisecondsTimeout, bool exitContext)
         {
-            return WaitOne(TimeSpan.FromMilliseconds(millisecondsTimeout), exitContext);
+            if (handles.Count == 0)
+                return true;
+            return WaitHandle.WaitAll (handles.ToArray (), millisecondsTimeout, exitContext);
         }
 
         public override bool WaitOne(TimeSpan timeout, bool exitContext)
         {
             if (handles.Count == 0)
                 return true;
-
-            for (int i = 0; i < handles.Count; i++)
-            {
-                int startTime = Environment.TickCount;
-
-                if (!handles[i].WaitOne(timeout, exitContext))
-                    return false;
-                
-                timeout.Subtract(TimeSpan.FromMilliseconds(Environment.TickCount - startTime));
-                if (timeout.TotalMilliseconds < 0)
-                    return false;
-            }
-
-            return true;
+            return WaitHandle.WaitAll (handles.ToArray (), timeout, exitContext);
         }
 
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (WaitHandle h in handles)
+            for (int i = 0; i < handles.Count; i ++)
             {
-                sb.Append("WaitHandle from: ");
-                sb.Append(((WaitHandleGroup)h).name);
+                sb.Append("WaitHandle: ");
+                sb.Append(names [i]);
                 sb.Append(". State: ");
-                sb.Append(h.WaitOne(0, false) ? "Signalled" : "Unsignalled");
+                sb.Append(handles [i].WaitOne(0) ? "Signalled" : "Unsignalled");
                 sb.AppendLine();
             }
             return sb.ToString();
         }
     }
 }
+
