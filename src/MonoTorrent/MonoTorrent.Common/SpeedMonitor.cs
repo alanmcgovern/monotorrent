@@ -40,7 +40,7 @@ namespace MonoTorrent.Common
         private int speed;
         private int[] speeds;
         private int speedsIndex;
-        private int lastUpdated;
+        private DateTime lastUpdated;
         private long tempRecvCount;
 
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.Common
             if (averagingPeriod < 0)
                 throw new ArgumentOutOfRangeException ("averagingPeriod");
 
-            this.lastUpdated = Environment.TickCount;
+            this.lastUpdated = DateTime.UtcNow;
             this.speeds = new int [Math.Max (1, averagingPeriod)];
             this.speedsIndex = -speeds.Length;
         }
@@ -89,17 +89,12 @@ namespace MonoTorrent.Common
             this.total = 0;
             this.speed = 0;
             this.tempRecvCount = 0;
-            this.lastUpdated = Environment.TickCount;
+            this.lastUpdated = DateTime.UtcNow;
             this.speedsIndex = -speeds.Length;
         }
 
         private void TimePeriodPassed(int difference)
         {
-            lastUpdated = Environment.TickCount;
-
-            if (difference < 0)
-                difference = 1000;
-
             int currSpeed = (int)(tempRecvCount * 1000 / difference);
             tempRecvCount = 0;
 
@@ -134,13 +129,18 @@ namespace MonoTorrent.Common
 
         public void Tick()
         {
-            int difference = Environment.TickCount - lastUpdated;
-            if (difference >= 800 || difference < 0)
+            DateTime old = lastUpdated;
+            lastUpdated = DateTime.UtcNow;
+            int difference = (int) (lastUpdated - old).TotalMilliseconds;
+
+            if (difference > 800)
                 TimePeriodPassed(difference);
         }
 
+        // Used purely for unit testing purposes.
         internal void Tick (int difference)
         {
+            lastUpdated = DateTime.UtcNow;
             TimePeriodPassed (difference);
         }
     }
