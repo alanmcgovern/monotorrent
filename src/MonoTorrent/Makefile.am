@@ -254,6 +254,7 @@ FILES = \
 	MonoTorrent.Common/TorrentCreatorAsyncResult.cs \
 	MonoTorrent.Common/TorrentException.cs \
 	MonoTorrent.Common/TorrentFile.cs \
+	MonoTorrent.Common/TorrentFileSource.cs \
 	MonoTorrent.Common/UriQueryBuilder.cs \
 	MonoTorrent.Common/UriHelper.cs \
 	MonoTorrent.Common/VersionInfo.cs \
