@@ -86,7 +86,7 @@ FILES = \
 	MonoTorrent.Client/Logger.cs \
 	MonoTorrent.Client/MainLoop.cs \
 	MonoTorrent.Client/Managers/InactivePeerManager.cs \
-	MonoTorrent.Client/ManagerWaitHandle.cs \
+	MonoTorrent.Client/WaitHandleGroup.cs \
 	MonoTorrent.Client/Messages/FastPeerExtensions/IFastPeerMessage.cs \
 	MonoTorrent.Client/Messages/LibtorrentMessages/ExtensionSupports.cs \
 	MonoTorrent.Client/Messages/UdpTrackerMessages/MessageType.cs \
