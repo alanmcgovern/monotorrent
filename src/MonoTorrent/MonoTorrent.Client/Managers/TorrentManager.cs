@@ -630,8 +630,8 @@ namespace MonoTorrent.Client
 #if !DISABLE_DHT
                 StartDHT();
 #endif
-                this.startTime = DateTime.Now;
                 this.pieceManager.Reset();
+                this.startTime = DateTime.Now;
 
                 ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
                     if (State != TorrentState.Downloading && State != TorrentState.Seeding)
