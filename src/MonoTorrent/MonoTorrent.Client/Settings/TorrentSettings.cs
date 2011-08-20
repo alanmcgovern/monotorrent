@@ -37,6 +37,13 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
+        public bool ConnectToWebSeedsImmediately
+        {
+            get { return connectToWebSeedsImmediately; }
+            set { connectToWebSeedsImmediately = value; }
+        }
+        private bool connectToWebSeedsImmediately;
+
         public bool EnablePeerExchange
         {
             get { return enablePeerExchange; }
@@ -238,4 +245,4 @@ namespace MonoTorrent.Client
 
         #endregion Methods
     }
-}
+} 
