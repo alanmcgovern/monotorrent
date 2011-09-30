@@ -1,197 +1,123 @@
-//
-// TimeoutDispatcher.cs
-//
-// Author:
-//   Aaron Bockover <abockover@novell.com>
-//
-// Copyright (C) 2008 Novell, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace Mono.Ssdp.Internal
 {
-    internal delegate bool TimeoutHandler (object state, ref TimeSpan interval);
+    public delegate bool TimeoutHandler(object state, ref TimeSpan interval);
 
-    internal class TimeoutDispatcher : IDisposable
+    public class TimeoutDispatcher : IDisposable
     {
-        private static uint timeout_ids = 1;
+        private static long _timeoutIds;
 
-        private struct TimeoutItem : IComparable<TimeoutItem>
+        private readonly object _lock = new object();
+        private readonly ConcurrentDictionary<long, TimeoutItem> _timeouts = new ConcurrentDictionary<long, TimeoutItem>();
+        private bool _disposed;
+
+
+        #region IDisposable Members
+
+        public void Dispose()
         {
-            public uint Id;
-            public TimeSpan Timeout;
-            public DateTime Trigger;
-            public TimeoutHandler Handler;
-            public object State;
+            if (_disposed)
+                return;
+            Clear();
+            _disposed = true;
+        }
 
-            public int CompareTo (TimeoutItem item)
+        #endregion
+
+        private void TimerCallback(object state)
+        {
+            lock (_lock)
             {
-                return Trigger.CompareTo (item.Trigger);
+                var item = (TimeoutItem) state;
+                if (item.Handler == null)
+                {
+                    _timeouts.TryRemove(item.Id, out item);
+                    return;
+                }
+                var oldTimeout = item.Timeout;
+                var requeue = item.Handler(item.State, ref item.Timeout);
+                if (!requeue)
+                {
+                    item.Handler = null;
+                    item.Timer.Dispose();
+                    _timeouts.TryRemove(item.Id, out item);
+                }
+                else if(oldTimeout!=item.Timeout)
+                {
+                    item.Timer.Change(item.Timeout, item.Timeout);
+                }
             }
-
-            public override string ToString ()
-            {
-                return String.Format ("{0} ({1})", Id, Trigger);
-            }
         }
 
-        private bool disposed;
-        private AutoResetEvent wait = new AutoResetEvent (false);
-
-        private List<TimeoutItem> timeouts = new List<TimeoutItem> ();
-
-        public TimeoutDispatcher()
+        public long Add(uint timeoutMs, TimeoutHandler handler)
         {
-            Thread t = new Thread(TimerThread);
-            t.IsBackground = true;
-            t.Start();
+            return Add(timeoutMs, handler, null);
         }
 
-        public uint Add (uint timeoutMs, TimeoutHandler handler)
+        public long Add(TimeSpan timeout, TimeoutHandler handler)
         {
-            return Add (timeoutMs, handler, null);
+            return Add(timeout, handler, null);
         }
 
-        public uint Add (TimeSpan timeout, TimeoutHandler handler)
+        public long Add(uint timeoutMs, TimeoutHandler handler, object state)
         {
-            return Add (timeout, handler, null);
+            return Add(TimeSpan.FromMilliseconds(timeoutMs), handler, state);
         }
 
-        public uint Add (uint timeoutMs, TimeoutHandler handler, object state)
+        public long Add(TimeSpan timeout, TimeoutHandler handler, object state)
         {
-            return Add (TimeSpan.FromMilliseconds (timeoutMs), handler, state);
-        }
+            CheckDisposed();
+            var item = new TimeoutItem
+                {Id = Interlocked.Increment(ref _timeoutIds), Timeout = timeout, Handler = handler, State = state};
+            item.Timer = new Timer(TimerCallback, item, timeout, timeout);
 
-        public uint Add (TimeSpan timeout, TimeoutHandler handler, object state)
-        {
-            CheckDisposed ();
-            TimeoutItem item = new TimeoutItem ();
-            item.Id = timeout_ids++;
-            item.Timeout = timeout;
-            item.Trigger = DateTime.UtcNow + timeout;
-            item.Handler = handler;
-            item.State = state;
-
-            Add (ref item);
+            Add(ref item);
 
             return item.Id;
         }
 
-        private void Add (ref TimeoutItem item)
+        private void Add(ref TimeoutItem item)
         {
-            lock (timeouts) {
-                int index = timeouts.BinarySearch (item);
-                index = index >= 0 ? index : ~index;
-                timeouts.Insert (index, item);
+            _timeouts.TryAdd(item.Id, item);
+        }
 
-                if (index == 0) {
-                    wait.Set ();
+        private void CheckDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(ToString());
+        }
+
+        private void Clear()
+        {
+            lock (_timeouts)
+            {
+                foreach (var item in _timeouts.Values)
+                {
+                    item.Timer.Dispose();
                 }
+                _timeouts.Clear();
             }
         }
 
-        public void Remove (uint id)
+        #region Nested type: TimeoutItem
+
+        private class TimeoutItem
         {
-            lock (timeouts) {
-                CheckDisposed ();
-                // FIXME: Comparer for BinarySearch
-                for (int i = 0; i < timeouts.Count; i++) {
-                    if (timeouts[i].Id == id) {
-                        timeouts.RemoveAt (i);
-                        if (i == 0) {
-                            wait.Set ();
-                        }
-                        return;
-                    }
-                }
+            public TimeoutHandler Handler;
+            public long Id;
+            public object State;
+            public TimeSpan Timeout;
+            public Timer Timer;
+
+            public override string ToString()
+            {
+                return String.Format("{0} ({1})", Id, Timeout);
             }
         }
 
-        private void Start ()
-        {
-            wait.Reset ();
-        }
-
-        private void TimerThread (object state)
-        {
-            bool hasItem;
-            TimeoutItem item = default (TimeoutItem);
-            
-            while (true) {
-                if (disposed) {
-                    wait.Close();
-                    return;
-                }
-
-                lock (timeouts) {
-                    hasItem = timeouts.Count > 0;
-                    if (hasItem)
-                        item = timeouts[0];
-                }
-
-                TimeSpan interval = hasItem ? item.Trigger - DateTime.UtcNow : TimeSpan.FromMilliseconds (-1);
-                if (hasItem && interval < TimeSpan.Zero) {
-                    interval = TimeSpan.Zero;
-                }
-
-                if (!wait.WaitOne (interval, false) && hasItem) {
-                    bool requeue = item.Handler (item.State, ref item.Timeout);
-                    lock (timeouts) {
-                        Remove(item.Id);
-                        if (requeue) {
-                            item.Trigger += item.Timeout;
-                            Add(ref item);
-                        }
-                    }
-                }
-            }
-        }
-
-        public void Clear ()
-        {
-            lock (timeouts) {
-                timeouts.Clear ();
-                wait.Set ();
-            }
-        }
-
-        private void CheckDisposed ()
-        {
-            if (disposed) {
-                throw new ObjectDisposedException (ToString ());
-            }
-        }
-
-        public void Dispose ()
-        {
-            if (disposed) {
-                return;
-            }
-            Clear ();
-            wait.Close ();
-            disposed = true;
-        }
+        #endregion
     }
 }
