@@ -1,0 +1,16 @@
+
+/src/_ReSharper.MonoTorrent
+/src/MonoTorrent.Dht/obj
+/src/MonoTorrent.Dht/bin
+/src/MonoTorrent/bin
+/src/MonoTorrent/obj
+/src/MonoTorrent.6.0.ReSharper.user
+/src/TrackerApp/bin
+/src/TrackerApp/obj
+/src/MonoTorrent.Tests/bin
+/src/MonoTorrent.Tests/obj
+/src/MonoTorrent.suo
+/src/MonoTorrent.Tests/MonoTorrent.Tests.csproj.user
+/src/SampleClient/SampleClient.csproj.user
+/src/TrackerApp/TrackerApp.csproj.user
+/src/SampleClient/obj
