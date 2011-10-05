@@ -79,6 +79,7 @@ namespace MonoTorrent.Client
 
         public event EventHandler<TorrentEventArgs> TorrentRegistered;
         public event EventHandler<TorrentEventArgs> TorrentUnregistered;
+        public event EventHandler<ManagerNotFoundEventArgs> ManagerNotFound;
 
         #endregion
 
@@ -512,5 +513,11 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+        internal void OnManagerNotFound(ManagerNotFoundEventArgs args)
+        {
+            if (ManagerNotFound != null)
+                ManagerNotFound(this, args);
+        }
     }
 }

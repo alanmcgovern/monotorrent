@@ -252,11 +252,11 @@ namespace MonoTorrent.Client
 		void QueueRead(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread) {
+			/*if (Thread.CurrentThread == IOLoop.thread) {
 				PerformRead(io);
 				cache.Enqueue (io);
 			}
-			else
+			else*/
 				lock (bufferLock)
 				{
 					bufferedReads.Enqueue(io);
@@ -275,11 +275,11 @@ namespace MonoTorrent.Client
 		void QueueWrite(BufferedIO io, DiskIOCallback callback)
 		{
 			io.Callback = callback;
-			if (Thread.CurrentThread == IOLoop.thread) {
+			/*if (Thread.CurrentThread == IOLoop.thread) {
 				PerformWrite(io);
 				cache.Enqueue (io);
 			}
-			else
+			else*/
 				lock (bufferLock)
 				{
 					bufferedWrites.Enqueue(io);

@@ -36,8 +36,17 @@ namespace MonoTorrent.Client
 {
     class NullDhtEngine : IDhtEngine
     {
-        public event EventHandler<PeersFoundEventArgs> PeersFound;
-        public event EventHandler StateChanged;
+        public event EventHandler<PeersFoundEventArgs> PeersFound
+        {
+            add {  }
+            remove {  }
+        }
+
+        public event EventHandler StateChanged
+        {
+            add {  }
+            remove {  }
+        }
 
         public bool Disposed
         {

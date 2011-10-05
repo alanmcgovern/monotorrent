@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -58,7 +59,7 @@ namespace MonoTorrent.Dht.Messages
             queryDecoders.Add("ping",          delegate(BEncodedDictionary d) { return new Ping(d); });
         }
 
-        private static Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage>();
+        private static ConcurrentDictionary<BEncodedValue, QueryMessage> messages = new ConcurrentDictionary<BEncodedValue, QueryMessage>();
         private static Dictionary<BEncodedString, Creator> queryDecoders = new Dictionary<BEncodedString, Creator>();
 
         internal static bool IsRegistered(BEncodedValue transactionId)
@@ -68,12 +69,12 @@ namespace MonoTorrent.Dht.Messages
 
         public static void RegisterSend(QueryMessage message)
         {
-            messages.Add(message.TransactionId, message);
+            messages.TryAdd(message.TransactionId, message);
         }
 
         public static bool UnregisterSend(QueryMessage message)
         {
-            return messages.Remove(message.TransactionId);
+            return messages.TryRemove(message.TransactionId, out message);
         }
 
         public static Message DecodeMessage(BEncodedDictionary dictionary)
@@ -112,7 +113,7 @@ namespace MonoTorrent.Dht.Messages
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
                 if (messages.TryGetValue(key, out query))
                 {
-                    messages.Remove(key);
+                    messages.TryRemove(key, out query);
                     try
                     {
                         message = query.ResponseCreator(dictionary, query);

@@ -64,6 +64,7 @@ namespace MonoTorrent.Client
 
         public void HandleMessage(PeerId id, PeerMessage message)
         {
+            manager.LastActivity = DateTime.UtcNow;
             if (message is IFastPeerMessage && !id.SupportsFastPeer)
                 throw new MessageException("Peer shouldn't support fast peer messages");
 
@@ -642,4 +643,4 @@ namespace MonoTorrent.Client
             manager.finishedPieces.Clear();
         }
     }
-} 
+}

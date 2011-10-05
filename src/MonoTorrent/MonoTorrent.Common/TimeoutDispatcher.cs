@@ -10,10 +10,10 @@ namespace Mono.Ssdp.Internal
     {
         private static long _timeoutIds;
 
-        private readonly object _lock = new object();
-        private readonly ConcurrentDictionary<long, TimeoutItem> _timeouts = new ConcurrentDictionary<long, TimeoutItem>();
-        private bool _disposed;
+        private readonly ConcurrentDictionary<long, TimeoutItem> _timeouts =
+            new ConcurrentDictionary<long, TimeoutItem>();
 
+        private bool _disposed;
 
         #region IDisposable Members
 
@@ -29,7 +29,7 @@ namespace Mono.Ssdp.Internal
 
         private void TimerCallback(object state)
         {
-            lock (_lock)
+            lock (state)
             {
                 var item = (TimeoutItem) state;
                 if (item.Handler == null)
@@ -45,10 +45,8 @@ namespace Mono.Ssdp.Internal
                     item.Timer.Dispose();
                     _timeouts.TryRemove(item.Id, out item);
                 }
-                else if(oldTimeout!=item.Timeout)
-                {
+                else if (oldTimeout != item.Timeout)
                     item.Timer.Change(item.Timeout, item.Timeout);
-                }
             }
         }
 
@@ -92,14 +90,9 @@ namespace Mono.Ssdp.Internal
 
         private void Clear()
         {
-            lock (_timeouts)
-            {
-                foreach (var item in _timeouts.Values)
-                {
-                    item.Timer.Dispose();
-                }
-                _timeouts.Clear();
-            }
+            foreach (TimeoutItem item in _timeouts.Values)
+                item.Timer.Dispose();
+            _timeouts.Clear();
         }
 
         #region Nested type: TimeoutItem

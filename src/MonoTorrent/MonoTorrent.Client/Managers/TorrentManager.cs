@@ -329,6 +329,8 @@ namespace MonoTorrent.Client
 			get { return inactivePeerManager.InactivePeerList; }
 		}
 
+        public DateTime LastActivity { get; internal set; }
+
         #endregion
 
         #region Constructors
@@ -648,7 +650,7 @@ namespace MonoTorrent.Client
 			if (dhtInitialised)
 				return;
 			dhtInitialised = true;
-            engine.DhtEngine.PeersFound += delegate (object o, PeersFoundEventArgs e) { DhtPeersFound(o, e);};
+            engine.DhtEngine.PeersFound += DhtPeersFound;
  
             // First get some peers
             engine.DhtEngine.GetPeers(InfoHash);

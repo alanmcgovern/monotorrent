@@ -149,6 +149,18 @@ namespace MonoTorrent.Client
                         man = engine.Torrents[i];
             });
 
+            if(man==null)
+            {
+                var args = new ManagerNotFoundEventArgs(message.InfoHash);
+                engine.OnManagerNotFound(args);
+                man = args.Manager;
+                if(man!=null)
+                {
+                    engine.Register(man);
+                    man.Start();
+                }
+            }
+
             //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
             if (man == null)        // We're not hosting that torrent
             {
