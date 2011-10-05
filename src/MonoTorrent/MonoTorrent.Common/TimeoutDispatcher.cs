@@ -68,6 +68,8 @@ namespace Mono.Ssdp.Internal
         public long Add(TimeSpan timeout, TimeoutHandler handler, object state)
         {
             CheckDisposed();
+            if (timeout == TimeSpan.Zero)
+                timeout = TimeSpan.FromMilliseconds(1);
             var item = new TimeoutItem
                 {Id = Interlocked.Increment(ref _timeoutIds), Timeout = timeout, Handler = handler, State = state};
             item.Timer = new Timer(TimerCallback, item, timeout, timeout);
