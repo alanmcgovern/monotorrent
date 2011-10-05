@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
 
                 return true;
             });
-            Assert.IsTrue(handle.WaitOne(500000, true), "#1: Executed {0} times", count);
+            Assert.IsTrue(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
             Assert.AreEqual(3, count, "#2");
         }
 
