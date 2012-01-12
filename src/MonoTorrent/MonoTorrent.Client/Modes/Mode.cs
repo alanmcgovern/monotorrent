@@ -37,6 +37,7 @@ using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.BEncoding;
+using System.Linq;
 
 namespace MonoTorrent.Client
 {
@@ -541,51 +542,51 @@ namespace MonoTorrent.Client
             }
         }
 
-        void DownloadLogic(int counter)
-        {
-            // FIXME: Hardcoded 15kB/sec - is this ok?
-            if ((DateTime.Now - manager.StartTime) > TimeSpan.FromMinutes(1) && manager.Monitor.DownloadSpeed < 15 * 1024)
-            {
-                foreach (string s in manager.Torrent.GetRightHttpSeeds)
-                {
-                    string peerId = "-WebSeed-";
-                    peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
+		void DownloadLogic(int counter)
+		{
+			// FIXME: Hardcoded 15kB/sec - is this ok?
+			if ((DateTime.Now - manager.StartTime) > TimeSpan.FromMinutes(1) && manager.Monitor.DownloadSpeed < 15 * 1024)
+			{
+				//if we don't have a webseed, insert it
+				if (!manager.Peers.ConnectedPeers.Any(a => a.Peer.PeerId.Contains("-WebSeed-")))
+				{
+					foreach (string s in manager.Torrent.GetRightHttpSeeds)
+					{
+						string peerId = "-WebSeed-";
+						peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
 
-                    Uri uri = new Uri(s);
-                    Peer peer = new Peer(peerId, uri);
-                    PeerId id = new PeerId(peer, manager);
-                    HttpConnection connection = new HttpConnection(new Uri(s));
-                    connection.Manager = this.manager;
-                    peer.IsSeeder = true;
-                    id.BitField.SetAll(true);
-                    id.Encryptor = new PlainTextEncryption();
-                    id.Decryptor = new PlainTextEncryption();
-                    id.IsChoking = false;
-					id.AmInterested = !manager.Complete;
-                    id.Connection = connection;
-					id.ClientApp = new Software(id.PeerID);
-                    manager.Peers.ConnectedPeers.Add(id);
-					manager.RaisePeerConnected(new PeerConnectionEventArgs(manager, id, Direction.Outgoing));
-                    PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, Manager.DownloadLimiter, id.Monitor, id.TorrentManager, id.ConnectionManager.messageReceivedCallback, id);
-                }
+						Uri uri = new Uri(s);
+						Peer peer = new Peer(peerId, uri);
+						PeerId id = new PeerId(peer, manager);
+						HttpConnection connection = new HttpConnection(new Uri(s));
+						connection.Manager = this.manager;
+						peer.IsSeeder = true;
+						id.BitField.SetAll(true);
+						id.Encryptor = new PlainTextEncryption();
+						id.Decryptor = new PlainTextEncryption();
+						id.IsChoking = false;
+						id.AmInterested = !manager.Complete;
+						id.Connection = connection;
+						id.ClientApp = new Software(id.PeerID);
+						manager.Peers.ConnectedPeers.Add(id);
+						manager.RaisePeerConnected(new PeerConnectionEventArgs(manager, id, Direction.Outgoing));
+						PeerIO.EnqueueReceiveMessage(id.Connection, id.Decryptor, Manager.DownloadLimiter, id.Monitor, id.TorrentManager, id.ConnectionManager.messageReceivedCallback, id);
+					}
+				}
+			}
 
-                // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
-                // Add a boolean or something so that we don't add them twice.
-                manager.Torrent.GetRightHttpSeeds.Clear();
-            }
+			// Remove inactive peers we haven't heard from if we're downloading
+			if (manager.State == TorrentState.Downloading && manager.lastCalledInactivePeerManager + TimeSpan.FromSeconds(5) < DateTime.Now)
+			{
+				manager.InactivePeerManager.TimePassed();
+				manager.lastCalledInactivePeerManager = DateTime.Now;
+			}
 
-            // Remove inactive peers we haven't heard from if we're downloading
-            if (manager.State == TorrentState.Downloading && manager.lastCalledInactivePeerManager + TimeSpan.FromSeconds(5) < DateTime.Now)
-            {
-                manager.InactivePeerManager.TimePassed();
-                manager.lastCalledInactivePeerManager = DateTime.Now;
-            }
-
-            // Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
-            if (manager.chokeUnchoker == null)
-                manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
-            manager.chokeUnchoker.UnchokeReview();
-        }
+			// Now choke/unchoke peers; first instantiate the choke/unchoke manager if we haven't done so already
+			if (manager.chokeUnchoker == null)
+				manager.chokeUnchoker = new ChokeUnchokeManager(manager, manager.Settings.MinimumTimeBetweenReviews, manager.Settings.PercentOfMaxRateToSkipReview);
+			manager.chokeUnchoker.UnchokeReview();
+		}
 
         void SeedingLogic(int counter)
         {
