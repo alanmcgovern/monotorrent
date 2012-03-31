@@ -50,12 +50,10 @@
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\build\Tracker\Debug\</OutputPath>
     <RegisterForComInterop>False</RegisterForComInterop>
     <RemoveIntegerChecks>False</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>TrackerApp</RootNamespace>
     <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -67,17 +65,15 @@
     </DocumentationFile>
     <FileAlignment>4096</FileAlignment>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\build\Tracker\Release\</OutputPath>
     <RegisterForComInterop>False</RegisterForComInterop>
     <RemoveIntegerChecks>False</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>TrackerApp</RootNamespace>
     <DebugType>none</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Stats\</OutputPath>
+    <OutputPath>..\..\build\Tracker\Stats\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <DebugType>full</DebugType>
