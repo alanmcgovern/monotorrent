@@ -46,4 +46,4 @@ $(CONFIG):
 
 include $(CONFIG)
 
-.PHONY: all clean dist dist-clean dist-check install
+.PHONY: all clean dist dist-clean dist-check install uninstall
