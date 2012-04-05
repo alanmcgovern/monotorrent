@@ -311,7 +311,6 @@
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentFolderWatcher.cs" />
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatcherEventArgs.cs" />
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatchers.cs" />
-    <Compile Include="MonoTorrent.Common\SHA1Fast.cs" />
     <Compile Include="MonoTorrent.Client\Managers\PeerExchangeManager.cs" />
     <Compile Include="MonoTorrent.Client\Messages\uTorrent\PeerExchangeMessage.cs" />
     <Compile Include="MonoTorrent.Tracker\Listeners\UdpListener.cs" />
