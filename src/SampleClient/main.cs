@@ -11,8 +11,11 @@ using System.Threading;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
+
+#if !DISABLE_DHT
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
+#endif
 
 namespace MonoTorrent
 {
@@ -80,6 +83,7 @@ namespace MonoTorrent
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
             engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
+#if !DISABLE_DHT
             byte[] nodes = null;
             try
             {
@@ -95,7 +99,7 @@ namespace MonoTorrent
             engine.RegisterDht(dht);
             dhtListner.Start();
             engine.DhtEngine.Start(nodes);
-            
+#endif
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
