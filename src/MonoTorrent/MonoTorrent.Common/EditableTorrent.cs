@@ -140,7 +140,7 @@ namespace MonoTorrent
             Check.Key (key);
             Check.Value (value);
 
-            if (key == InfoKey)
+            if (InfoKey.Equals (key))
                 CheckCanEditSecure ();
             Metadata [key] = value;
         }
