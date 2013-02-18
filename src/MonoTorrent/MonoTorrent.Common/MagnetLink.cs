@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace MonoTorrent
 {
@@ -53,9 +54,6 @@ namespace MonoTorrent
                         if (InfoHash != null)
                             throw new FormatException ("More than one infohash in magnet link is not allowed.");
 
-                        if (keyval[1].Length != 49 && keyval[1].Length != 41)
-                            throw new FormatException ("Infohash must be base32 or hex encoded.");
-
                         string val = keyval[1].Substring(9);
                         switch (keyval[1].Substring(0, 9))
                         {
@@ -65,11 +63,14 @@ namespace MonoTorrent
                                 InfoHash = InfoHash.FromBase32 (val);
                             else if (val.Length == 40)
                                 InfoHash = InfoHash.FromHex (val);
+                            else
+                                throw new FormatException("Infohash must be base32 or hex encoded.");
                             break;
                         }
                     break;
                     case "tr" ://address tracker
-                        AnnounceUrls.Add (keyval[1]);
+                        var bytes = UriHelper.UrlDecode(keyval[1]);
+                        AnnounceUrls.Add(Encoding.UTF8.GetString(bytes));
                     break;
                     case "as"://Acceptable Source
                         Webseeds.Add (keyval[1]);
