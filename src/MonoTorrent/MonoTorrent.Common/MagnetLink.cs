@@ -76,7 +76,8 @@ namespace MonoTorrent
                         Webseeds.Add (keyval[1]);
                     break;
                     case "dn"://display name
-                        Name = keyval[1];
+                        var name = UriHelper.UrlDecode(keyval[1]);
+                        Name = Encoding.UTF8.GetString(name);
                     break;
                     case "xl"://exact length
                     case "xs":// eXact Source - P2P link.
