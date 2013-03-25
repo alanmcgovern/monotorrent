@@ -216,6 +216,11 @@ namespace MonoTorrent.Client
             Manager.Start();
         }
 
+        protected override void HandleAllowedFastMessage (PeerId id, MonoTorrent.Client.Messages.FastPeer.AllowedFastMessage message)
+        {
+            // Disregard these when in metadata mode as we can't request regular pieces anyway
+        }
+
         protected override void HandleHaveAllMessage(PeerId id, MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)
         {
             // Nothing
