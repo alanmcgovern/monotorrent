@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Tracker
 {

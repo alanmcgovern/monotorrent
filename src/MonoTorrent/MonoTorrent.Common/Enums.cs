@@ -72,7 +72,7 @@ namespace MonoTorrent.Common
         Hashing,
         Stopping,
         Error,
-		Metadata
+        Metadata
     }
 
     public enum Priority
@@ -117,10 +117,10 @@ namespace MonoTorrent.Common
         HashFailed
     }
 
-	public enum PeerListType
-	{
-		NascentPeers,
-		CandidatePeers,
-		OptimisticUnchokeCandidatePeers
-	}
+    public enum PeerListType
+    {
+        NascentPeers,
+        CandidatePeers,
+        OptimisticUnchokeCandidatePeers
+    }
 }

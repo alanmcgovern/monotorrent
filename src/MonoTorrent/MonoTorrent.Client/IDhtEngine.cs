@@ -27,12 +27,12 @@
 //
 
 
+#if !DISABLE_DHT
 using System;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent
 {
-#if !DISABLE_DHT
     public interface IDhtEngine : IDisposable
     {
         bool Disposed { get; }
@@ -47,5 +47,5 @@ namespace MonoTorrent
         event EventHandler StateChanged;
         void Stop();
     }
-#endif
 }
+#endif

@@ -8,6 +8,7 @@ namespace MonoTorrent
 {
     public class InfoHash : IEquatable <InfoHash>
     {
+        public const int HASH_SIZE = 20;
         static Dictionary<char, byte> base32DecodeTable;
 
         static InfoHash()

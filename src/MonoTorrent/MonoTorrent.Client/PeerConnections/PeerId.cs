@@ -150,7 +150,12 @@ namespace MonoTorrent.Client
 
         internal byte[] AddressBytes
         {
-            get { return Connection.AddressBytes; }
+            get 
+            { 
+                if(Connection == null)
+                    return null;
+                return Connection.AddressBytes; 
+            }
         }
 
         /// <summary>
@@ -318,7 +323,7 @@ namespace MonoTorrent.Client
             get { return this.monitor; }
         }
 
-        internal Peer Peer
+        public Peer Peer
         {
             get { return this.peer; }
             set { this.peer = value; }
