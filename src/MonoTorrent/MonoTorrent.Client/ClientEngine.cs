@@ -440,6 +440,9 @@ namespace MonoTorrent.Client
             Check.Manager(manager);
 
             MainLoop.QueueWait((MainLoopTask)delegate {
+                if(manager.Engine == null)
+                    return;
+
                 if (manager.Engine != this)
                     throw new TorrentException("The manager has not been registered with this engine");
 
