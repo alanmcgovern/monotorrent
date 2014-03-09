@@ -112,7 +112,7 @@ namespace MonoTorrent.Client.Tracker
         /// Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
-        public TrackerManager(TorrentManager manager, InfoHash infoHash, List<List<string>> announces)
+        public TrackerManager(TorrentManager manager, InfoHash infoHash, IList<RawTrackerTier> announces)
         {
             this.manager = manager;
             this.infoHash = infoHash;
@@ -263,6 +263,7 @@ namespace MonoTorrent.Client.Tracker
 
             if (e.Successful)
             {
+		manager.Peers.BusyPeers.Clear ();
                 int count = manager.AddPeersCore(e.Peers);
                 manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Peers.Count, e.Tracker));
 

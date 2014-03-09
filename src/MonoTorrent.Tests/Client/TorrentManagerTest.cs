@@ -47,9 +47,9 @@ namespace MonoTorrent.Client
 
             try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
             catch {
-            	Assert.IsFalse(conn.Incoming.Connected, "#1");
+                Assert.IsFalse(conn.Incoming.Connected, "#1");
 //                Assert.IsFalse(conn.Outgoing.Connected, "#2");
-            	return;
+                return;
             }
 
             Assert.Fail ("The outgoing connection should've thrown an exception");
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
         public void StopTest()
         {
             bool started = false;
-			AutoResetEvent h = new AutoResetEvent(false);
+            AutoResetEvent h = new AutoResetEvent(false);
 
             rig.Manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
             {
@@ -124,8 +124,8 @@ namespace MonoTorrent.Client
 
             rig.Manager.Start();
             Assert.IsTrue (h.WaitOne(5000, true), "Started");
-			rig.Manager.Stop();
-			Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
+            rig.Manager.Stop();
+            Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
         }
 
         [Test]
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager(t, "", new TorrentSettings());
             rig.Engine.Register(manager);
 
-			AutoResetEvent handle = new AutoResetEvent(false);
+            AutoResetEvent handle = new AutoResetEvent(false);
             manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {
                 if (e.NewState == TorrentState.Downloading || e.NewState == TorrentState.Stopped)
                     handle.Set();
@@ -146,24 +146,25 @@ namespace MonoTorrent.Client
             manager.Start();
             handle.WaitOne();
             System.Threading.Thread.Sleep(1000);
-			manager.Stop();
+            manager.Stop();
 
             Assert.IsTrue(handle.WaitOne(10000, true), "#1");
             Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
         }
 
-		[Test]
-		public void UnsupportedTrackers ()
-		{
-			MonoTorrentCollection<string> tier = new MonoTorrentCollection<string> ();
-			tier.Add ("fake://123.123.123.2:5665");
-			rig.Torrent.AnnounceUrls.Add (tier);
-			TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
-			foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
-			{
-				Assert.IsTrue (t.Trackers.Count > 0, "#1");
-			}
-		}
+        [Test]
+        public void UnsupportedTrackers ()
+        {
+            RawTrackerTier tier = new RawTrackerTier {
+                "fake://123.123.123.2:5665"
+            };
+            rig.Torrent.AnnounceUrls.Add (tier);
+            TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
+            foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
+            {
+                Assert.IsTrue (t.Trackers.Count > 0, "#1");
+            }
+        }
 
         [Test]
         public void AnnounceWhenComplete()
@@ -184,27 +185,27 @@ namespace MonoTorrent.Client
             Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
             Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
 
-			rig.Manager.Stop();
+            rig.Manager.Stop();
             Assert.IsTrue (handle.WaitOne (5000, false), "Announce when torrent stops");
             Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }
 
-		[Test]
+        [Test]
         public void InvalidFastResume_NoneExist()
-		{
-			var handle = new ManualResetEvent (false);
-			var bf = new BitField (rig.Pieces).Not ();
-			rig.Manager.LoadFastResume (new FastResume (rig.Manager.InfoHash, bf));
-			rig.Manager.TorrentStateChanged += (o, e) => {
-				if (rig.Manager.State == TorrentState.Downloading)
-					handle.Set ();
-			};
-			rig.Manager.Start ();
+        {
+            var handle = new ManualResetEvent (false);
+            var bf = new BitField (rig.Pieces).Not ();
+            rig.Manager.LoadFastResume (new FastResume (rig.Manager.InfoHash, bf));
+            rig.Manager.TorrentStateChanged += (o, e) => {
+                if (rig.Manager.State == TorrentState.Downloading)
+                    handle.Set ();
+            };
+            rig.Manager.Start ();
             Assert.IsTrue(handle.WaitOne(), "#1");
             Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 Assert.IsTrue(file.BitField.AllFalse, "#3." + file.Path);
-		}
+        }
 
         [Test]
         public void InvalidFastResume_SomeExist()

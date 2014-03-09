@@ -1,0 +1,59 @@
+prefix=/usr/local
+bindir=$prefix/bin
+libdir=$prefix/lib
+profile=Debug
+pkgconfigdir=$prefix/pkgconfig
+monotorrent_version=`grep 'AssemblyFileVersion' src/MonoTorrent/AssemblyInfo.cs | grep -Eo '([0-9]\.[0-9]\.[0-9])'`
+
+while test x$1 != x; do
+        case $1 in
+		--bindir=*)
+			bindir=`echo $1 | sed s/--bindir=//`
+			;;
+		--libdir=*)
+			libdir=`echo $1i | sed s/--libdir=//`
+			;;
+                --prefix=*)
+                        prefix=`echo $1 | sed s/--prefix=//`
+                        ;;
+		--profile=*)
+			profile=`echo $1 | sed s/--profile=//`
+			;;
+		--pkgconfigdir=*)
+			pkgconfigdir=`echo $1 s/--pkgconfigdir=//`
+			;;
+                *)
+                        echo Unknown argument $1 >&2
+                        usage
+                        exit 1
+                        ;;
+        esac
+        shift
+done
+
+monotorrent_install_dir=$libdir/monotorrent
+
+mt_pc=src/MonoTorrent/monotorrent.pc
+cp src/MonoTorrent/monotorrent.pc.in $mt_pc
+sed -i '' s,@monotorrent_version@,$monotorrent_version, $mt_pc
+sed -i '' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
+
+mt_pc=src/MonoTorrent.Dht/monotorrent.dht.pc
+cp $mt_pc.in $mt_pc
+sed -i '' s,@monotorrent_version@,$monotorrent_version, $mt_pc
+sed -i '' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
+
+echo prefix=$prefix > config.make
+echo bindir=$bindir >> config.make
+echo libdir=$libdir >> config.make
+echo pkgconfigdir=$pkgconfigdir >> config.make
+echo '' >> config.make
+echo MONOTORRENT_INSTALL_DIR=$monotorrent_install_dir >> config.make
+echo MONOTORRENT_VERSION=$monotorrent_version >> config.make
+echo MONOTORRENT_PROFILE=$profile >> config.make
+
+echo "MonoTorrent has been configured with "
+echo "    prefix = $prefix"
+echo "    profile = $profile"
+echo
+

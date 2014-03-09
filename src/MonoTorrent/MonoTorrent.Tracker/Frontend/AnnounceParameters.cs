@@ -163,7 +163,7 @@ namespace MonoTorrent.Tracker
                 Response.Add(FailureKey, (BEncodedString)("mandatory announce parameter " + field + " in query missing"));
                 return;
             }
-            byte[] hash = HttpUtility.UrlDecodeToBytes(Parameters["info_hash"]);
+            byte[] hash = UriHelper.UrlDecode(Parameters["info_hash"]);
             if (hash.Length != 20)
             {
                 Response.Add(FailureKey, (BEncodedString)(string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));

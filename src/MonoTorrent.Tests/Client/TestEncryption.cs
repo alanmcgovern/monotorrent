@@ -48,19 +48,19 @@ namespace MonoTorrent.Client
         [TearDown]
         public void Teardown()
         {
-			conn.Dispose();
+            conn.Dispose();
             rig.Engine.StopAll();
 
-			for (int i = 0; i < 1000; i++)
-			{
-				System.Threading.Thread.Sleep(4);
-				bool result = rig.Engine.Torrents.TrueForAll (delegate (TorrentManager e) {
-					return e.State == TorrentState.Stopped;
-				});
+            for (int i = 0; i < 1000; i++)
+            {
+                System.Threading.Thread.Sleep(4);
+                bool result = true;
+                foreach (var torrent in rig.Engine.Torrents)
+                    result &= torrent.State == TorrentState.Stopped;
 
-				if (result)
-					return;
-			}
+                if (result)
+                    return;
+            }
 
             Assert.Fail ("Timed out waiting for handle");
         }

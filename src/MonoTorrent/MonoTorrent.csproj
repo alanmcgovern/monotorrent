@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.21022</ProductVersion>
@@ -20,10 +20,10 @@
     <RootNamespace>MonoTorrent</RootNamespace>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
-    <OldToolsVersion>2.0</OldToolsVersion>
+    <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v3.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -51,12 +51,10 @@
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\build\MonoTorrent\Debug\</OutputPath>
     <RegisterForComInterop>False</RegisterForComInterop>
     <RemoveIntegerChecks>False</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
-    <OutputType>Library</OutputType>
-    <RootNamespace>MonoTorrent</RootNamespace>
     <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -69,17 +67,15 @@
     </DocumentationFile>
     <FileAlignment>4096</FileAlignment>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\build\MonoTorrent\Release\</OutputPath>
     <RegisterForComInterop>False</RegisterForComInterop>
     <RemoveIntegerChecks>False</RemoveIntegerChecks>
     <WarningLevel>4</WarningLevel>
-    <OutputType>Library</OutputType>
-    <RootNamespace>MonoTorrent</RootNamespace>
     <DebugType>none</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Stats\</OutputPath>
+    <OutputPath>..\..\build\MonoTorrent\Stats\</OutputPath>
     <DefineConstants>TRACE;DEBUG;STATS</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -90,7 +86,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -131,7 +126,6 @@
     <Compile Include="MonoTorrent.Client\MainLoop.cs" />
     <Compile Include="MonoTorrent.Client\Managers\InactivePeerManager.cs" />
     <Compile Include="MonoTorrent.Client\Managers\LocalPeerManager.cs" />
-    <Compile Include="MonoTorrent.Client\ManagerWaitHandle.cs" />
     <Compile Include="MonoTorrent.Client\Messages\FastPeerExtensions\IFastPeerMessage.cs" />
     <Compile Include="MonoTorrent.Client\Messages\LibtorrentMessages\ExtensionSupports.cs" />
     <Compile Include="MonoTorrent.Client\Messages\UdpTrackerMessages\MessageType.cs" />
@@ -317,7 +311,6 @@
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentFolderWatcher.cs" />
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatcherEventArgs.cs" />
     <Compile Include="MonoTorrent.TorrentWatchers\TorrentWatchers.cs" />
-    <Compile Include="MonoTorrent.Common\SHA1Fast.cs" />
     <Compile Include="MonoTorrent.Client\Managers\PeerExchangeManager.cs" />
     <Compile Include="MonoTorrent.Client\Messages\uTorrent\PeerExchangeMessage.cs" />
     <Compile Include="MonoTorrent.Tracker\Listeners\UdpListener.cs" />
@@ -327,6 +320,12 @@
     <Compile Include="MonoTorrent.Client\NetworkIO\State.cs" />
     <Compile Include="MonoTorrent.Client\NetworkIO\ReceiveMessageState.cs" />
     <Compile Include="MonoTorrent.Common\MagnetLink.cs" />
+    <Compile Include="MonoTorrent.Common\UriHelper.cs" />
+    <Compile Include="MonoTorrent.Common\TorrentEditor.cs" />
+    <Compile Include="MonoTorrent.Common\RawTrackerTiers.cs" />
+    <Compile Include="MonoTorrent.Common\RawTrackerTier.cs" />
+    <Compile Include="MonoTorrent.Common\EditableTorrent.cs" />
+    <Compile Include="MonoTorrent.Client\WaitHandleGroup.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

@@ -32,7 +32,7 @@ namespace MonoTorrent.Common
         private BEncodedString CustomKey = "Custom Key";
         private BEncodedString CustomValue = "My custom value";
 
-        List<List<string>> announces;
+        RawTrackerTiers announces;
         private TorrentCreator creator;
         List<TorrentFile> files;
         TestWriter writer;
@@ -53,17 +53,16 @@ namespace MonoTorrent.Common
         public void Setup()
         {
             creator = new TestTorrentCreator();
-            announces = new List<List<string>>();
-
-            announces.Add(new List<string>(new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
-            announces.Add(new List<string>(new string[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
+            announces = new RawTrackerTiers ();
+            announces.Add(new RawTrackerTier (new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));
+            announces.Add(new RawTrackerTier (new string[] { "http://tier2.com/announce1", "http://tier2.com/announce2" }));
 
             creator.Comment = Comment;
             creator.CreatedBy = CreatedBy;
             creator.PieceLength = PieceLength;
             creator.Publisher = Publisher;
             creator.PublisherUrl = PublisherUrl;
-            creator.AddCustom(CustomKey, CustomValue);
+            creator.SetCustom(CustomKey, CustomValue);
             files = new List<TorrentFile>(new TorrentFile[] { 
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File1"), (int)(PieceLength * 2.30), 0, 1),
                 new TorrentFile(Path.Combine(Path.Combine("Dir1", "SDir1"), "File2"), (int)(PieceLength * 36.5), 1, 3),
@@ -79,7 +78,8 @@ namespace MonoTorrent.Common
         [Test]
         public void CreateMultiTest()
         {
-            creator.Announces.AddRange(announces);
+            foreach (var v in announces)
+                creator.Announces.Add (v);
 
             BEncodedDictionary dict = creator.Create("TorrentName", files);
             Torrent torrent = Torrent.Load(dict);
@@ -99,7 +99,8 @@ namespace MonoTorrent.Common
         [Test]
         public void CreateSingleTest()
         {
-            creator.Announces.AddRange(announces);
+            foreach (var v in announces)
+                creator.Announces.Add (v);
 
             TorrentFile f = new TorrentFile(Path.GetFileName(files[0].Path),
                                             files[0].Length,

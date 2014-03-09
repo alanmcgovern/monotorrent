@@ -186,6 +186,10 @@ namespace MonoTorrent.Client
             if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
                 return;
 
+            // If we already have lots of peers, don't process the messages anymore.
+            if ((Manager.Peers.Available + Manager.OpenConnections) >= manager.Settings.MaxConnections)
+                return;
+
             IList<Peer> peers = Peer.Decode((BEncodedString)message.Added);
             int count = id.TorrentManager.AddPeersCore(peers);
             id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, peers.Count, id));

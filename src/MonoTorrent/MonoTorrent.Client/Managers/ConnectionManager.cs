@@ -358,12 +358,15 @@ namespace MonoTorrent.Client
                 id.CurrentlySendingMessage = message;
 
                 RateLimiterGroup limiter = id.TorrentManager.UploadLimiter;
-                PeerIO.EnqueueSendMessage (id.Connection, id.Encryptor, message, limiter, id.Monitor, id.TorrentManager.Monitor, endSendMessageCallback, id);
+                
                 if (message is PieceMessage)
                 {
+                    PeerIO.EnqueueSendMessage (id.Connection, id.Encryptor, message, limiter, id.Monitor, id.TorrentManager.Monitor, endSendMessageCallback, id);
                     ClientEngine.BufferManager.FreeBuffer(ref ((PieceMessage)message).Data);
                     id.IsRequestingPiecesCount--;
                 }
+                else
+                    PeerIO.EnqueueSendMessage (id.Connection, id.Encryptor, message, null, id.Monitor, id.TorrentManager.Monitor, endSendMessageCallback, id);
             }
             catch (Exception ex)
             {

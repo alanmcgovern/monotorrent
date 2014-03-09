@@ -41,12 +41,7 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent.Common {
 
-    public class TorrentCreator {
-
-        static BEncodedValue Get (BEncodedDictionary dictionary, BEncodedString key)
-        {
-            return dictionary.ContainsKey (key) ? dictionary [key] : null;
-        }
+    public class TorrentCreator : EditableTorrent {
 
         public static int RecommendedPieceSize (long totalSize)
         {
@@ -89,44 +84,9 @@ namespace MonoTorrent.Common {
         public event EventHandler<TorrentCreatorEventArgs> Hashed;
 
 
-        List<List<string>> announces;
         TorrentCreatorAsyncResult asyncResult;
-        BEncodedDictionary dict;
         List<string> getrightHttpSeeds;
-        BEncodedDictionary info;
         bool storeMD5;
-
-
-        public List<List<string>> Announces
-        {
-            get { return this.announces; }
-        }
-
-        public string Comment
-        {
-            get
-            {
-                BEncodedValue val = Get (this.dict, new BEncodedString ("comment"));
-                return val == null ? string.Empty : val.ToString ();
-            }
-            set { dict ["comment"] = new BEncodedString (value); }
-        }
-
-        public string CreatedBy
-        {
-            get
-            {
-                BEncodedValue val = Get (this.dict, new BEncodedString ("created by"));
-                return val == null ? string.Empty : val.ToString ();
-            }
-            set { dict ["created by"] = new BEncodedString (value); }
-        }
-
-        public string Encoding
-        {
-            get { return Get (this.dict, (BEncodedString) "encoding").ToString (); }
-            private set { dict ["encoding"] = (BEncodedString) value; }
-        }
 
         public List<string> GetrightHttpSeeds
         {
@@ -139,61 +99,11 @@ namespace MonoTorrent.Common {
             set { storeMD5 = value; }
         }
 
-        public long? PieceLength
-        {
-            get
-            {
-                BEncodedValue val = Get (info, new BEncodedString ("piece length"));
-                return val == null ? (long?)null : ((BEncodedNumber) val).Number;
-            }
-            set {
-                if (value.HasValue)
-                    info ["piece length"] = new BEncodedNumber (value.Value);
-                else
-                    this.info.Remove ("piece length");
-            }
-        }
-
-        public bool Private
-        {
-            get
-            {
-                BEncodedValue val = Get (info, new BEncodedString ("private"));
-                return val == null ? false : ((BEncodedNumber) val).Number == 1;
-            }
-            set { info ["private"] = new BEncodedNumber (value ? 1 : 0); }
-        }
-
-        public string Publisher
-        {
-            get
-            {
-                BEncodedValue val = Get (info, new BEncodedString ("publisher"));
-                return val == null ? string.Empty : val.ToString ();
-            }
-            set { info ["publisher"] = new BEncodedString (value); }
-        }
-
-        public string PublisherUrl
-        {
-            get
-            {
-                BEncodedValue val = Get (info, new BEncodedString ("publisher-url"));
-                return val == null ? string.Empty : val.ToString ();
-            }
-            set { info ["publisher-url"] = new BEncodedString (value); }
-        }
-
-
         public TorrentCreator ()
         {
-            announces = new List<List<string>> ();
-            dict = new BEncodedDictionary ();
             getrightHttpSeeds = new List<string> ();
-            info = new BEncodedDictionary ();
-
+            CanEditSecureMetadata = true;
             CreatedBy = string.Format ("MonoTorrent {0}", VersionInfo.Version);
-            Encoding = "UTF-8";
         }
 
 
@@ -206,22 +116,8 @@ namespace MonoTorrent.Common {
 
         void AddCommonStuff (BEncodedDictionary torrent)
         {
-            if (announces.Count > 0 && announces [0].Count > 0)
-                torrent.Add ("announce", new BEncodedString (announces [0] [0]));
-
-            // If there is more than one tier or the first tier has more than 1 tracker
-            if (announces.Count > 1 || (announces.Count > 0 && announces [0].Count > 1)) {
-                BEncodedList announceList = new BEncodedList ();
-                for (int i = 0; i < this.announces.Count; i++) {
-                    BEncodedList tier = new BEncodedList ();
-                    for (int j = 0; j < this.announces [i].Count; j++)
-                        tier.Add (new BEncodedString (this.announces [i] [j]));
-
-                    announceList.Add (tier);
-                }
-
-                torrent.Add ("announce-list", announceList);
-            }
+            if (Announces.Count > 0 && Announces [0].Count > 0)
+                Announce = Announces [0] [0];
 
             if (getrightHttpSeeds.Count > 0) {
                 BEncodedList seedlist = new BEncodedList ();
@@ -231,20 +127,6 @@ namespace MonoTorrent.Common {
 
             TimeSpan span = DateTime.Now - new DateTime (1970, 1, 1);
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
-        }
-
-        public void AddCustom (BEncodedString key, BEncodedValue value)
-        {
-            Check.Key (key);
-            Check.Value (value);
-            dict [key] = value;
-        }
-
-        public void AddCustomSecure (BEncodedString key, BEncodedValue value)
-        {
-            Check.Key (key);
-            Check.Value (value);
-            info [key] = value;
         }
 
         public IAsyncResult BeginCreate (ITorrentFileSource fileSource, AsyncCallback callback, object asyncState)
@@ -284,7 +166,7 @@ namespace MonoTorrent.Common {
             torrentHashes = new List<byte> ();
             overallTotal = Toolbox.Accumulate<TorrentFile> (files, delegate (TorrentFile m) { return m.Length; });
 
-            long pieceLength = PieceLength.Value;
+            long pieceLength = PieceLength;
             buffer = new byte [pieceLength];
 
             if (StoreMD5)
@@ -371,12 +253,11 @@ namespace MonoTorrent.Common {
 
         internal BEncodedDictionary Create(string name, List<TorrentFile> files)
         {
-            if (!PieceLength.HasValue)
+            if (PieceLength == 0)
                 PieceLength = RecommendedPieceSize(files);
 
-            BEncodedDictionary torrent = BEncodedDictionary.Decode<BEncodedDictionary> (dict.Encode ());
-            BEncodedDictionary info = BEncodedDictionary.Decode<BEncodedDictionary> (this.info.Encode ());
-            torrent ["info"] = info;
+            BEncodedDictionary torrent = BEncodedValue.Clone (Metadata);
+            BEncodedDictionary info = (BEncodedDictionary) torrent ["info"];
 
             info ["name"] = (BEncodedString) name;
             AddCommonStuff (torrent);
@@ -447,18 +328,6 @@ namespace MonoTorrent.Common {
 
             var buffer = EndCreate (result).Encode ();
             stream.Write (buffer, 0, buffer.Length);
-        }
-
-        public void RemoveCustom (BEncodedString key)
-        {
-            Check.Key (key);
-            dict.Remove (key);
-        }
-
-        public void RemoveCustomSecure (BEncodedString key)
-        {
-            Check.Key (key);
-            info.Remove (key);
         }
 
         void RaiseHashed (TorrentCreatorEventArgs e)

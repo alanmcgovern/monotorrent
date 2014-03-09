@@ -368,7 +368,7 @@ namespace MonoTorrent.Client
         }
 
 
-        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, List<List<string>> announces)
+        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces)
         {
             Check.InfoHash(infoHash);
             Check.SavePath(savePath);
@@ -394,13 +394,13 @@ namespace MonoTorrent.Client
             this.infohash = magnetLink.InfoHash;
             this.settings = settings;
             this.torrentSave = torrentSave;
-            List<List<string>> announces = new List<List<string>> ();
+            IList<RawTrackerTier> announces = new RawTrackerTiers ();
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
             Initialise(savePath, "", announces);
         }
 
-        void Initialise(string savePath, string baseDirectory, List<List<string>> announces)
+        void Initialise(string savePath, string baseDirectory, IList<RawTrackerTier> announces)
         {
             this.bitfield = new BitField(HasMetadata ? torrent.Pieces.Count : 1);
             this.savePath = Path.Combine(savePath, baseDirectory);
@@ -619,7 +619,7 @@ namespace MonoTorrent.Client
                     this.trackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
                 }
 
-                if (this.Complete && ClientEngine.SupportsInitialSeed) {
+                if (this.Complete && this.settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
 					Mode = new InitialSeedingMode(this);
                 }
                 else {

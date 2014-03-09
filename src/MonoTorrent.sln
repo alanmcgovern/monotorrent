@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Dht", "MonoTorrent.Dht\MonoTorrent.Dht.csproj", "{7A2A7E73-FD43-4171-AA34-DA413D35459E}"
@@ -15,42 +15,34 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
-		Stats|Any CPU = Stats|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}.Stats|Any CPU.Build.0 = Stats|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Stats|Any CPU.Build.0 = Stats|Any CPU
 		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Stats|Any CPU.ActiveCfg = Release|Any CPU
-		{7A2A7E73-FD43-4171-AA34-DA413D35459E}.Stats|Any CPU.Build.0 = Release|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{7A647552-B5F0-419F-9395-4DC24990ED20}.Stats|Any CPU.Build.0 = Stats|Any CPU
+		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{526928D8-DBC8-4717-BCF0-A4FEDA80A0BD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Stats|Any CPU.ActiveCfg = Stats|Any CPU
-		{9CC2CC3A-4041-4857-AF8B-D58745FD3066}.Stats|Any CPU.Build.0 = Stats|Any CPU
+		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = MonoTorrent\MonoTorrent.csproj
+		StartupItem = SampleClient\SampleClient.csproj
 		Policies = $0
 		$0.TextStylePolicy = $1
 		$1.FileWidth = 120
@@ -64,9 +56,6 @@ Global
 		$2.scope = text/x-csharp
 		$0.StandardHeader = $3
 		$3.Text = 
-		$3.inheritsSet = MITX11License
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
+		$3.inheritsSet = Apache2License
 	EndGlobalSection
 EndGlobal

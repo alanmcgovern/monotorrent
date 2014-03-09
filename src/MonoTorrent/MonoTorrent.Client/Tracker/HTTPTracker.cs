@@ -76,7 +76,7 @@ namespace MonoTorrent.Client.Tracker
             byte[] passwordKey = new byte[8];
             lock (random)
                 random.NextBytes(passwordKey);
-            Key = HttpUtility.UrlEncode(passwordKey);
+            Key = UriHelper.UrlEncode(passwordKey);
         }
 
         public override void Announce(AnnounceParameters parameters, object state)
@@ -85,6 +85,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 Uri announceString = CreateAnnounceString(parameters);
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
+                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
                 request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
                 RaiseBeforeAnnounce();
                 BeginRequest(request, AnnounceReceived, new object[] { request, state });
@@ -291,7 +292,8 @@ namespace MonoTorrent.Client.Tracker
                 else
                     url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
 
-                WebRequest request = WebRequest.Create(url);
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
                 BeginRequest(request, ScrapeReceived, new object[] { request, state });
             }
             catch

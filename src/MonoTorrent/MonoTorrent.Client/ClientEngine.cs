@@ -39,6 +39,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client.PieceWriters;
+using System.Collections.ObjectModel;
 
 namespace MonoTorrent.Client
 {
@@ -98,7 +99,8 @@ namespace MonoTorrent.Client
         private readonly string peerId;
         private EngineSettings settings;
         private int tickCount;
-        private MonoTorrentCollection<TorrentManager> torrents;
+        private List<TorrentManager> torrents;
+        private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private RateLimiterGroup uploadLimiter;
         private RateLimiterGroup downloadLimiter;
 
@@ -160,10 +162,9 @@ namespace MonoTorrent.Client
             get { return this.settings; }
         }
 
-        internal MonoTorrentCollection<TorrentManager> Torrents
+        public IList<TorrentManager> Torrents
         {
-            get { return this.torrents; }
-            set { this.torrents = value; }
+            get { return torrentsReadonly; }
         }
 
         #endregion
@@ -208,7 +209,8 @@ namespace MonoTorrent.Client
                     LogicTick();
                 return !disposed;
             });
-            this.torrents = new MonoTorrentCollection<TorrentManager>();
+            this.torrents = new List<TorrentManager>();
+            this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
             CreateRateLimiters();
             this.peerId = GeneratePeerId();
 

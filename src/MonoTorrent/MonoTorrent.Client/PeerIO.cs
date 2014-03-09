@@ -145,6 +145,7 @@ namespace MonoTorrent.Client
 
             data.Decryptor.Decrypt (data.Buffer, 4, transferred);
             var message = PeerMessage.DecodeMessage (data.Buffer, 0, transferred + 4, data.Manager);
+            ClientEngine.BufferManager.FreeBuffer (data.Buffer);
             data.Callback (true, message, data.State);
             receiveCache.Enqueue (data);
         }

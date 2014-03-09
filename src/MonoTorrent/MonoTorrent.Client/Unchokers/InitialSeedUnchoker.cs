@@ -148,6 +148,8 @@ namespace MonoTorrent.Client
                 {
                     data.CurrentPieces[pieceIndex] = false;
                     data.SharedPieces++;
+                    // Give him another piece if no-one else is waiting.
+                    TryAdvertisePiece(data);
                     break;
                 }
             }
@@ -271,15 +273,16 @@ namespace MonoTorrent.Client
 
         public override void UnchokeReview()
         {
-            List<ChokeData> dupePieces = new List<ChokeData>(peers);
-            foreach (ChokeData data in dupePieces)
-                TryChoke(data);
+            if (PendingUnchoke) {
+                List<ChokeData> dupePeers = new List<ChokeData>(peers);
+                foreach (ChokeData data in dupePeers)
+                    TryChoke(data);
 
-            List<ChokeData> dupe = new List<ChokeData>(peers);
-
-            // See if there's anyone interesting to unchoke
-            foreach (ChokeData data in dupe)
-                TryUnchoke(data);
+                dupePeers = new List<ChokeData>(peers);
+                // See if there's anyone interesting to unchoke
+                foreach (ChokeData data in dupePeers)
+                    TryUnchoke(data);
+            }
 
             // Make sure our list of pieces available in the swarm is up to date
             foreach (ChokeData data in peers)
@@ -290,7 +293,6 @@ namespace MonoTorrent.Client
             // Send have messages to anyone that needs them
             foreach (ChokeData data in peers)
                 TryAdvertisePiece(data);
-
         }
     }
 }

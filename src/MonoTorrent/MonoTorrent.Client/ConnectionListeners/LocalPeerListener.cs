@@ -104,10 +104,12 @@ namespace MonoTorrent.Client
                 if (portcheck < 0 || portcheck > 65535)
                     return;
 
-                TorrentManager manager = engine.Torrents.Find(delegate(TorrentManager m)
-                {
-                    return m.InfoHash == InfoHash.FromHex(match.Groups["hash"].Value);
-                });
+                TorrentManager manager = null;
+                InfoHash matchHash = InfoHash.FromHex(match.Groups["hash"].Value);
+                for (int i = 0; manager == null && i < engine.Torrents.Count; i ++)
+                    if (engine.Torrents [i].InfoHash == matchHash)
+                        manager = engine.Torrents [i];
+                
                 if (manager == null)
                     return;
 

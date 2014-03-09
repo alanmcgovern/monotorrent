@@ -58,7 +58,7 @@ namespace MonoTorrent.Common
             
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx");
             byte[] infoHash = new byte[6] {0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc};
-            bld.Add ("key", HttpUtility.UrlEncode(infoHash));
+            bld.Add ("key", UriHelper.UrlEncode(infoHash));
             Assert.AreEqual(new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (),"#4");
             
             
