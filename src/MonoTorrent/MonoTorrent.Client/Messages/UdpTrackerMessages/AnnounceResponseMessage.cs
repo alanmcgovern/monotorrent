@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             {
                 int ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
                 ushort port = (ushort)ReadShort(buffer, ref offset);
-                peers.Add(new Peer("", new Uri("tcp://" + new IPEndPoint(new IPAddress(ip), port).ToString())));
+                peers.Add(new Peer("", new Uri("tcp://" + new IPEndPoint(new IPAddress((uint)ip), port).ToString())));
             }
         }
 

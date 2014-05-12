@@ -255,6 +255,10 @@ namespace MonoTorrent.Client
 
                 port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
                 i += 2;
+
+                if (port == 0)
+                    continue;
+
                 sb.Append(':');
                 sb.Append(port);
 
