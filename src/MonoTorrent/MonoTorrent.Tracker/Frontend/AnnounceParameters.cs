@@ -30,6 +30,7 @@ using System;
 using MonoTorrent.Common;
 using System.Collections.Specialized;
 using System.Collections.Generic;
+using MonoTorrent.BEncoding;
 using System.Web;
 using System.Net;
 
