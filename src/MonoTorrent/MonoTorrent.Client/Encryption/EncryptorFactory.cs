@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.Encryption
                     id.CloseConnection();
                 return false;
             });
-            
+
             try
             {
                 // If the connection is incoming, receive the handshake before
@@ -147,11 +147,13 @@ namespace MonoTorrent.Client.Encryption
         {
             EncryptorAsyncResult r = (EncryptorAsyncResult)result;
 
+            if (r == null)
+                throw new ArgumentException("Invalid async result");
+
             if (!r.IsCompleted)
                 r.AsyncWaitHandle.WaitOne();
 
-            if (r == null)
-                throw new ArgumentException("Invalid async result");
+            r.AsyncWaitHandle.Close();
 
             if (r.SavedException != null)
                 throw r.SavedException;
@@ -159,8 +161,6 @@ namespace MonoTorrent.Client.Encryption
             r.Id.Encryptor = r.Encryptor;
             r.Id.Decryptor = r.Decryptor;
             initialData = r.InitialData;
-
-            r.AsyncWaitHandle.Close();
         }
 
         private static void HandshakeReceived(bool succeeded, int count, object state)
@@ -172,7 +172,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 if (!succeeded)
                     throw new EncryptionException("Couldn't receive the handshake");
-                
+
                 result.Available += count;
                 HandshakeMessage message = new HandshakeMessage();
                 message.Decode(result.Buffer, 0, result.Buffer.Length);
