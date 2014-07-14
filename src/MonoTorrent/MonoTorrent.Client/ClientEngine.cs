@@ -319,11 +319,11 @@ namespace MonoTorrent.Client
 
         private static string GeneratePeerId()
         {
-            StringBuilder sb = new StringBuilder(20);
+            StringBuilder sb = new StringBuilder(InfoHash.HASH_SIZE);
 
             sb.Append(Common.VersionInfo.ClientVersion);
             lock (random)
-                while (sb.Length < 20)
+                while (sb.Length < InfoHash.HASH_SIZE)
                     sb.Append (random.Next (0, 9));
 
             return sb.ToString();
