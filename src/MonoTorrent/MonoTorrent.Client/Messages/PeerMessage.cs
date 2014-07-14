@@ -20,7 +20,7 @@ namespace MonoTorrent.Client.Messages
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
             Register(AllowedFastMessage.MessageId,   delegate (TorrentManager manager) { return new AllowedFastMessage(); });
-            Register(BitfieldMessage.MessageId,      delegate (TorrentManager manager) { return new BitfieldMessage(manager.Torrent.Pieces.Count); });
+            Register(BitfieldMessage.MessageId,      delegate (TorrentManager manager) { return new BitfieldMessage(manager.Bitfield.Length); });
             Register(CancelMessage.MessageId,        delegate (TorrentManager manager) { return new CancelMessage(); });
             Register(ChokeMessage.MessageId,         delegate (TorrentManager manager) { return new ChokeMessage(); });
             Register(HaveAllMessage.MessageId,       delegate (TorrentManager manager) { return new HaveAllMessage(); });

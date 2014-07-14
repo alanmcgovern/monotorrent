@@ -24,7 +24,7 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentNullException("connectionType");
 
             lock (locker)
-                trackerTypes.Add(protocol, connectionType);
+                trackerTypes[protocol] = connectionType;
         }
 
         public static IConnection Create(Uri connectionUri)
