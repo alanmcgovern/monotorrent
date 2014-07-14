@@ -35,6 +35,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using System.Threading;
+using System.Linq;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
@@ -68,7 +69,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsDht = false;
 #endif
         internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
-       
+
         #endregion
 
 
@@ -87,7 +88,7 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
-        
+
 #if !DISABLE_DHT
         private IDhtEngine dhtEngine;
 #endif
@@ -101,10 +102,13 @@ namespace MonoTorrent.Client
         private readonly string peerId;
         private EngineSettings settings;
         private int tickCount;
+        private HashSet<InfoHash> skeys;
         private List<TorrentManager> torrents;
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private RateLimiterGroup uploadLimiter;
         private RateLimiterGroup downloadLimiter;
+        private GlobalRateLimiter globalUploadLimiter; // wrapper around upload limiter to pass to torrent managers
+        private GlobalRateLimiter globalDownloadLimiter; // wrapper around download limiter to pass to torrent managers
 
         #endregion
 
@@ -214,6 +218,7 @@ namespace MonoTorrent.Client
                 return !disposed;
             });
             this.torrents = new List<TorrentManager>();
+            this.skeys = new HashSet<InfoHash>();
             this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
             CreateRateLimiters();
             this.peerId = GeneratePeerId();
@@ -233,11 +238,13 @@ namespace MonoTorrent.Client
             downloadLimiter = new RateLimiterGroup();
             downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
             downloadLimiter.Add(downloader);
+            globalDownloadLimiter = new GlobalRateLimiter(downloadLimiter);
 
             RateLimiter uploader = new RateLimiter();
             uploadLimiter = new RateLimiterGroup();
             downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
             uploadLimiter.Add(uploader);
+            globalUploadLimiter = new GlobalRateLimiter(uploadLimiter);
 
             ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 downloader.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
@@ -288,7 +295,7 @@ namespace MonoTorrent.Client
             CheckDisposed();
             if (manager == null)
                 return false;
-            
+
             return Contains(manager.Torrent);
         }
 
@@ -302,6 +309,7 @@ namespace MonoTorrent.Client
 #if !DISABLE_DHT
                 this.dhtEngine.Dispose();
 #endif                
+                this.listener.Stop();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
                 this.localPeerListener.Stop();
@@ -344,8 +352,10 @@ namespace MonoTorrent.Client
                 this.torrents.Add(manager);
                 manager.PieceHashed += PieceHashed;
                 manager.Engine = this;
-                manager.DownloadLimiter.Add(downloadLimiter);
-                manager.UploadLimiter.Add(uploadLimiter);
+                manager.DownloadLimiter.Add(globalDownloadLimiter);
+                manager.UploadLimiter.Add(globalUploadLimiter);
+                lock (skeys)
+                    skeys.Add(manager.InfoHash);
 #if !DISABLE_DHT
                 if (dhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && dhtEngine.State != DhtState.Ready)
                 {
@@ -418,6 +428,15 @@ namespace MonoTorrent.Client
             });
         }
 
+        public InfoHash[] SKeys
+        {
+            get
+            {
+                lock (skeys)
+                    return skeys.ToArray();
+            }
+        }
+
         public int TotalDownloadSpeed
         {
             get
@@ -455,6 +474,8 @@ namespace MonoTorrent.Client
                 manager.Engine = null;
                 manager.DownloadLimiter.Remove(downloadLimiter);
                 manager.UploadLimiter.Remove(uploadLimiter);
+                lock (skeys)
+                    skeys.Remove(manager.InfoHash);
             });
 
             if (TorrentUnregistered != null)

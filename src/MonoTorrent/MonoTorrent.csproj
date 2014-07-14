@@ -160,6 +160,7 @@
     <Compile Include="MonoTorrent.Client\PieceWriter\IPieceWriter.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\NtfsSparseFile.cs" />
     <Compile Include="MonoTorrent.Client\PieceWriter\PieceWriter.cs" />
+    <Compile Include="MonoTorrent.Client\RateLimiters\GlobalRateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\RateLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\DiskWriterLimiter.cs" />
     <Compile Include="MonoTorrent.Client\RateLimiters\IRateLimiter.cs" />
@@ -370,7 +371,5 @@
     </MonoDevelop>
     <VisualStudio />
   </ProjectExtensions>
-  <ItemGroup>
-    <Folder Include="MonoTorrent.Client\NetworkIO\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

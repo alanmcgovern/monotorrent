@@ -88,14 +88,7 @@ namespace MonoTorrent.Client
 
             if (id.Connection.IsIncoming)
             {
-                List<InfoHash> skeys = new List<InfoHash>();
-
-                ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                    for (int i = 0; i < engine.Torrents.Count; i++)
-                        skeys.Add(engine.Torrents[i].InfoHash);
-                });
-
-                EncryptorFactory.BeginCheckEncryption(id, HandshakeMessage.HandshakeLength, endCheckEncryptionCallback, id, skeys.ToArray());
+                EncryptorFactory.BeginCheckEncryption(id, HandshakeMessage.HandshakeLength, endCheckEncryptionCallback, id, engine.SKeys);
             }
             else
             {
