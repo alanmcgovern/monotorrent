@@ -462,7 +462,7 @@ namespace MonoTorrent.Client
                     id.TorrentManager.RaiseConnectionAttemptFailed (args);
                 }
 
-                bool maxAlreadyOpen = OpenConnections >= Math.Min(this.MaxOpenConnections, id.TorrentManager.Settings.MaxConnections);
+                bool maxAlreadyOpen = (OpenConnections >= this.MaxOpenConnections) || (id.TorrentManager.OpenConnections >= id.TorrentManager.Settings.MaxConnections);
                 if (!succeeded || id.Peer.PeerId == engine.PeerId || maxAlreadyOpen)
                 {
                     CleanupSocket (id, "Connection was not accepted");
