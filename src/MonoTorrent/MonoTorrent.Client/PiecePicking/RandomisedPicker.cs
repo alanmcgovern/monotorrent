@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
             if (peerBitfield.AllFalse)
                 return null;
 
-            if (count > 1)
+            if ((count > 1) || id.IsChoking)
                 return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
 
             int midpoint = random.Next(startIndex, endIndex);

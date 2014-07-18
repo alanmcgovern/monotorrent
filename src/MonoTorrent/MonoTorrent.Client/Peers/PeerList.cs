@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-	class PeerList
+	class PeerList : IEnumerable<PeerId>
 	{
 		#region Private Fields
 
@@ -63,6 +63,11 @@ namespace MonoTorrent.Client
 		{
 			peers.Add(peer);
 		}
+
+        public void AddRange(IEnumerable<PeerId> peerList)
+        {
+            this.peers.AddRange(peerList);
+        }
 
 		public void Clear()
 		{
@@ -268,5 +273,23 @@ namespace MonoTorrent.Client
 		}
 
 		#endregion
-	}
+
+        #region IEnumerable<PeerId> Members
+
+        public IEnumerator<PeerId> GetEnumerator()
+        {
+            foreach(var peer in this.peers)
+                yield return peer;
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+        #endregion
+    }
 }
