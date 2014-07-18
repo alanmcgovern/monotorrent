@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    abstract class Unchoker : IUnchoker
+    public abstract class Unchoker : IUnchoker
     {
         public virtual void Choke(PeerId id)
         {

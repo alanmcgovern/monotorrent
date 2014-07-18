@@ -451,6 +451,13 @@ namespace MonoTorrent.Client
             });
         }
 
+        public void ChangeUnchoker(IUnchoker unchoker)
+        {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
+                this.chokeUnchoker = unchoker;
+            });
+        }
+
         public void Dispose()
         {
             disposed = true;

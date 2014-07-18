@@ -34,7 +34,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    interface IUnchoker
+    public interface IUnchoker
     {
         void Choke(PeerId id);
         void UnchokeReview();

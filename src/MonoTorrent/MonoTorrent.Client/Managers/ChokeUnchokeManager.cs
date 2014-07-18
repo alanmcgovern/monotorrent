@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Common;
 using System.IO;
+using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -69,11 +69,13 @@ namespace MonoTorrent.Client
             int interestedCount = 0;
             int unchokedCount = 0;
 
-            bool skipDownload = (isDownloading && (owningTorrent.Monitor.DownloadSpeed < (owningTorrent.Settings.MaxDownloadSpeed * percentOfMaxRateToSkipReview / 100.0)));
-            bool skipUpload = (!isDownloading && (owningTorrent.Monitor.UploadSpeed < (owningTorrent.Settings.MaxUploadSpeed * percentOfMaxRateToSkipReview / 100.0)));
-            
-            skipDownload = skipDownload && owningTorrent.Settings.MaxDownloadSpeed > 0;
-            skipUpload = skipUpload && owningTorrent.Settings.MaxUploadSpeed > 0;
+            // Run a review if we are downloading way below capacity, or if the max download speed is infinite.
+            // If we are seeding, then use upload speed and limits to decide instead of download values.
+            bool downloadingNearCapacity = owningTorrent.Monitor.DownloadSpeed >= (owningTorrent.Settings.MaxDownloadSpeed * percentOfMaxRateToSkipReview / 100.0);
+            bool uploadingNearCapacity   = owningTorrent.Monitor.UploadSpeed >= (owningTorrent.Settings.MaxUploadSpeed * percentOfMaxRateToSkipReview / 100.0);
+
+            bool runDownloadReview = isDownloading && (!downloadingNearCapacity || owningTorrent.Settings.MaxDownloadSpeed == 0);
+            bool runUploadReview = !isDownloading && (!uploadingNearCapacity || owningTorrent.Settings.MaxUploadSpeed == 0);
 
             foreach (PeerId connectedPeer in owningTorrent.Peers.ConnectedPeers)
             {
@@ -129,7 +131,7 @@ namespace MonoTorrent.Client
                 UnchokePeerList(chokedInterestedPeers);
 
             else if (minimumTimeBetweenReviews > 0 && (SecondsBetween(timeOfLastReview, DateTime.Now) >= minimumTimeBetweenReviews) &&
-                (skipDownload || skipUpload))
+                (runDownloadReview || runUploadReview))
                 //Based on the time of the last review, a new review is due
                 //There are more interested peers than available upload slots
                 //If we're downloading, the download rate is insufficient to skip the review
