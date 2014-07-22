@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        internal WaitHandle CloseFileStreams(TorrentManager manager)
+        public WaitHandle CloseFileStreams(TorrentManager manager)
         {
             ManualResetEvent handle = new ManualResetEvent(false);
 
