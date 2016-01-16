@@ -7,11 +7,11 @@ DIST_FILE=monotorrent-$(MONOTORRENT_VERSION).tar.gz
 
 all:
 	@echo Building $(MAIN_SLN)
-	@$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN)
+	$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN)
 
 clean:
 	@echo Cleaning $(MAIN_SLN)
-	@$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN) /t:Clean
+	$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN) /t:Clean
 
 dist:
 	git archive --format=tar HEAD | gzip > $(DIST_FILE)

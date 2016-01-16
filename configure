@@ -35,13 +35,13 @@ monotorrent_install_dir=$libdir/monotorrent
 
 mt_pc=src/MonoTorrent/monotorrent.pc
 cp src/MonoTorrent/monotorrent.pc.in $mt_pc
-sed -i '' s,@monotorrent_version@,$monotorrent_version, $mt_pc
-sed -i '' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
+sed -i'' s,@monotorrent_version@,$monotorrent_version, $mt_pc
+sed -i'' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
 
 mt_pc=src/MonoTorrent.Dht/monotorrent.dht.pc
 cp $mt_pc.in $mt_pc
-sed -i '' s,@monotorrent_version@,$monotorrent_version, $mt_pc
-sed -i '' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
+sed -i'' s,@monotorrent_version@,$monotorrent_version, $mt_pc
+sed -i'' s,@monotorrent_install_dir@,$monotorrent_install_dir, $mt_pc
 
 echo prefix=$prefix > config.make
 echo bindir=$bindir >> config.make
