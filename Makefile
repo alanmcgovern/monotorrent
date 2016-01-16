@@ -1,7 +1,7 @@
 CONFIG=config.make
 
 XBUILD=xbuild
-XBUILD_ARGS=/verbosity:quiet /nologo /property:Configuration=$(MONOTORRENT_PROFILE)
+XBUILD_ARGS=/verbosity:quiet /nologo /property:Configuration=$(MONOTORRENT_PROFILE) /property:TargetFrameworkVersion="v4.5"
 MAIN_SLN=src/MonoTorrent.sln
 DIST_FILE=monotorrent-$(MONOTORRENT_VERSION).tar.gz
 
