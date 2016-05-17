@@ -26,17 +26,15 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException (typeof(ArgumentException))]
         public void InvalidHex()
         {
-            InfoHash.FromHex("123123123123123123123");
+            Assert.Throws<ArgumentException>(() => InfoHash.FromHex("123123123123123123123"));
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void NullHex()
         {
-            InfoHash.FromHex(null);
+            Assert.Throws<ArgumentException>(() => InfoHash.FromHex(null));
         }
     }
 }

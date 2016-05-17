@@ -27,13 +27,13 @@ namespace MonoTorrent.Client
         private int count;
         MainLoop loop;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             loop = new MainLoop("Test Loop");
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             //loop.Dispose();

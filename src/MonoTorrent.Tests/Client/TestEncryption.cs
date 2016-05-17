@@ -30,7 +30,7 @@ namespace MonoTorrent.Client
         private TestRig rig;
         private ConnectionPair conn;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -65,7 +65,7 @@ namespace MonoTorrent.Client
             Assert.Fail ("Timed out waiting for handle");
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();
@@ -83,16 +83,15 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [ExpectedException(typeof(EncryptionException))]
         public void Full_HeaderTestNoInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false);
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
         }
+
         [Test]
-        [ExpectedException(typeof(EncryptionException))]
         public void Full_HeaderTestInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true);
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true));
         }
 
         [Test]
@@ -107,16 +106,14 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [ExpectedException(typeof(EncryptionException))]
         public void Full_NoneTestNoInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false);
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
         }
         [Test]
-        [ExpectedException(typeof(EncryptionException))]
         public void Full_NoneTestInitial()
         {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true);
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true));
         }
 
         [Test]

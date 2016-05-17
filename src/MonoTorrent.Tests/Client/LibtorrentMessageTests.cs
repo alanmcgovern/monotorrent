@@ -14,13 +14,13 @@ namespace MonoTorrent.Client
         TestRig rig;
         byte[] buffer;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void GlobalSetup()
         {
             rig = TestRig.CreateMultiFile();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void GlobalTeardown()
         {
             rig.Dispose();

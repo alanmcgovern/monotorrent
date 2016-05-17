@@ -22,7 +22,7 @@ namespace MonoTorrent.Client
         int pieceLength;
         long torrentSize;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             pieceLength = Piece.BlockSize * 2;

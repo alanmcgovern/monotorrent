@@ -22,7 +22,7 @@ namespace MonoTorrent.Client
         string prefix ="http://localhost:47124/announce/";
         List<string> keys;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             keys = new List<string>();
@@ -43,7 +43,7 @@ namespace MonoTorrent.Client
             keys.Clear();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();

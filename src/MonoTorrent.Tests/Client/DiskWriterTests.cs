@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
         TestRig rig;
         ExceptionWriter writer;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
             handle.Close();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

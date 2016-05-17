@@ -47,14 +47,14 @@ namespace MonoTorrent.Client
         byte[] buffer;
         int offset = 2362;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             buffer = new byte[100000];
             testRig = TestRig.CreateMultiFile();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             testRig.Dispose();
@@ -107,14 +107,13 @@ namespace MonoTorrent.Client
             EncodeDecode(msg);
         }
 
-        [ExpectedException(typeof(MessageException))]
         [Ignore("Deliberately broken to work around bugs in azureus")]
         public void BitfieldCorrupt()
         {
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
+            Assert.Throws<MessageException>(() => PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager));
         }
 
 

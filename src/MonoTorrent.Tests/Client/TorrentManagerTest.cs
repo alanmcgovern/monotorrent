@@ -56,7 +56,6 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [ExpectedException (typeof (InvalidOperationException))]
         public void AddPeers_PrivateTorrent ()
         {
             // You can't manually add peers to private torrents
@@ -64,7 +63,7 @@ namespace MonoTorrent.Client
             dict ["private"] = (BEncodedString) "1";
             Torrent t = Torrent.Load (rig.TorrentDict);
             TorrentManager manager = new TorrentManager (t, "path", new TorrentSettings ());
-            manager.AddPeers (new Peer ("id", new Uri ("tcp:://whatever.com")));
+            Assert.Throws<InvalidOperationException>(() => manager.AddPeers(new Peer("id", new Uri("tcp:://whatever.com"))));
         }
 
         [Test]

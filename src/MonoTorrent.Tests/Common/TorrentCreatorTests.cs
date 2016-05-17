@@ -37,13 +37,13 @@ namespace MonoTorrent.Common
         List<TorrentFile> files;
         TestWriter writer;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             HashAlgoFactory.Register<SHA1, SHA1Fake>();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             HashAlgoFactory.Register<SHA1, SHA1CryptoServiceProvider>();
@@ -156,17 +156,15 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException (typeof (ArgumentException))]
         public void IllegalDestinationPath ()
         {
             var source = new CustomFileSource (new List <FileMapping> {
                 new FileMapping("a", "../../dest1"),
             });
-            new TorrentCreator ().Create (source);
+            Assert.Throws<ArgumentException>(() => new TorrentCreator().Create(source));       
         }
 
         [Test]
-        [ExpectedException (typeof (ArgumentException))]
         public void TwoFilesSameDestionation ()
         {
             var source = new CustomFileSource (new List <FileMapping> {
@@ -174,7 +172,7 @@ namespace MonoTorrent.Common
                 new FileMapping ("b", "dest2"),
                 new FileMapping ("c", "dest1"),
             });
-            new TorrentCreator ().Create (source);
+            Assert.Throws<ArgumentException>(() => new TorrentCreator().Create(source));
         }
 
         void VerifyCommonParts(Torrent torrent)

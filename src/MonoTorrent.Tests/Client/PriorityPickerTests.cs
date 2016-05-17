@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
         TestRig rig;
         TestPicker tester;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(true);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

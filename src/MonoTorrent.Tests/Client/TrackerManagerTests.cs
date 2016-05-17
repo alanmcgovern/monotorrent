@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
         List<List<CustomTracker>> trackers;
         TrackerManager trackerManager;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             string[][] trackers = new string[][] {
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
             rig = TestRig.CreateTrackers(trackers);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

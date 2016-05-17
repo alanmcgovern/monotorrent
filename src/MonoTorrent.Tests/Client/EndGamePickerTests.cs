@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
         List<Piece> pieces;
         TestRig rig;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
             other.BitField.SetAll(false);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

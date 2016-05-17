@@ -24,7 +24,7 @@ namespace MonoTorrent.Tracker
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         MonoTorrent.Tracker.Tracker server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
@@ -34,7 +34,7 @@ namespace MonoTorrent.Tracker
             listener.Start();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();

@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
         List<string> keys;
         string prefix = "udp://localhost:6767/announce/";
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             keys = new List<string>();
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             keys.Clear();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();
