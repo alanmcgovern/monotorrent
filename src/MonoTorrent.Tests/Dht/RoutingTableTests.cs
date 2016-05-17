@@ -47,8 +47,8 @@ namespace MonoTorrent.Dht
             }
 
             Assert.Equal(1, addedCount, "#a");
-            Assert.Equal(1, table.Buckets.Count, "#1");
-            Assert.Equal(1, table.Buckets[0].Nodes.Count, "#2");
+            Assert.Equal(1, table.Buckets.Count);
+            Assert.Equal(1, table.Buckets[0].Nodes.Count);
 
             CheckBuckets();
         }
@@ -63,14 +63,14 @@ namespace MonoTorrent.Dht
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
-            Assert.Equal(Bucket.MaxCapacity * 3 - 1, addedCount, "#1");
-            Assert.Equal(6, table.Buckets.Count, "#2");
-            Assert.Equal(8, table.Buckets[0].Nodes.Count, "#3");
-            Assert.Equal(8, table.Buckets[1].Nodes.Count, "#4");
-            Assert.Equal(8, table.Buckets[2].Nodes.Count, "#5");
-            Assert.Equal(0, table.Buckets[3].Nodes.Count, "#6");
-            Assert.Equal(0, table.Buckets[4].Nodes.Count, "#7");
-            Assert.Equal(0, table.Buckets[5].Nodes.Count, "#8");
+            Assert.Equal(Bucket.MaxCapacity * 3 - 1, addedCount);
+            Assert.Equal(6, table.Buckets.Count);
+            Assert.Equal(8, table.Buckets[0].Nodes.Count);
+            Assert.Equal(8, table.Buckets[1].Nodes.Count);
+            Assert.Equal(8, table.Buckets[2].Nodes.Count);
+            Assert.Equal(0, table.Buckets[3].Nodes.Count);
+            Assert.Equal(0, table.Buckets[4].Nodes.Count);
+            Assert.Equal(0, table.Buckets[5].Nodes.Count);
             CheckBuckets();
         }
 
@@ -82,7 +82,7 @@ namespace MonoTorrent.Dht
             
 
             List<Node> closest = table.GetClosest(table.LocalNode.Id);
-            Assert.Equal(8, closest.Count, "#1");
+            Assert.Equal(8, closest.Count);
             for (int i = 0; i < 8; i++)
                 Assert.True(closest.Exists(delegate(Node node) { return nodes[i].Equals(closest[i].Id); }));
         }

@@ -49,15 +49,15 @@ namespace MonoTorrent.Client
 	//            infohash[i] = (byte)170;
 
 	//        List<UInt32> results = AllowedFastAlgorithm.Calculate(endpoint.Address.GetAddressBytes(), infohash, 9, (UInt32)1313);
-	//        Assert.Equal(1059, results[0], "#1");
-	//        Assert.Equal(431, results[1], "#2");
-	//        Assert.Equal(808, results[2], "#3");
-	//        Assert.Equal(1217, results[3], "#4");
-	//        Assert.Equal(287, results[4], "#5");
-	//        Assert.Equal(376, results[5], "#6");
-	//        Assert.Equal(1188, results[6], "#7");
-	//        Assert.Equal(353, results[7], "#8");
-	//        Assert.Equal(508, results[8], "#9");
+	//        Assert.Equal(1059, results[0]);
+	//        Assert.Equal(431, results[1]);
+	//        Assert.Equal(808, results[2]);
+	//        Assert.Equal(1217, results[3]);
+	//        Assert.Equal(287, results[4]);
+	//        Assert.Equal(376, results[5]);
+	//        Assert.Equal(1188, results[6]);
+	//        Assert.Equal(353, results[7]);
+	//        Assert.Equal(508, results[8]);
 	//    }
 	//}
 }

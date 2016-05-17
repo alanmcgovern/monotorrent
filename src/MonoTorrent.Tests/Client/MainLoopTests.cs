@@ -48,11 +48,11 @@ namespace MonoTorrent.Client
         [Fact]
         public void TaskTest()
         {
-            Assert.Equal(5, loop.QueueWait((MainLoopJob) delegate { return 5; }), "#1");
+            Assert.Equal(5, loop.QueueWait((MainLoopJob) delegate { return 5; }));
 
             ManualResetEvent handle = new ManualResetEvent(false);
             loop.QueueWait((MainLoopTask)delegate { handle.Set(); });
-            Assert.True(handle.WaitOne(5000, true), "#2");
+            Assert.True(handle.WaitOne(5000, true));
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
                 return true;
             });
             Assert.True(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
-            Assert.Equal(3, count, "#2");
+            Assert.Equal(3, count);
         }
 
         [Fact]
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
                 return true;
             });
             Assert.True(handle.WaitOne(5000, false), "#1: Executed {0} times", count);
-            Assert.Equal(3, count, "#2");
+            Assert.Equal(3, count);
         }
     }
 }

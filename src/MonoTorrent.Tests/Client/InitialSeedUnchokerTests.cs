@@ -68,11 +68,11 @@ namespace MonoTorrent.Client
         [Fact]
         public void Advertise()
         {
-            Assert.True(!peer.IsInterested, "#1");
-            Assert.True(peer.AmChoking, "#2");
+            Assert.True(!peer.IsInterested);
+            Assert.True(peer.AmChoking);
             unchoker.UnchokeReview();
-            Assert.True(!peer.IsInterested, "#3");
-            Assert.True(peer.AmChoking, "#4");
+            Assert.True(!peer.IsInterested);
+            Assert.True(peer.AmChoking);
         }
 
         [Fact]

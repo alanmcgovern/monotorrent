@@ -57,8 +57,8 @@ namespace MonoTorrent.Common
         public void ConstructorIntTest()
         {
             BitField bf2 = new BitField(initialByteValues, initalValues.Length);
-            Assert.Equal(bf, bf2, "#1");
-            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf2.TrueCount, "#1");
+            Assert.Equal(bf, bf2);
+            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf2.TrueCount);
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < initalValues.Length; i++)
                 Assert.Equal(initalValues[i], bf[i], "#1:{0}", i);
 
-            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf.TrueCount, "#1");
+            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf.TrueCount);
         }
 
         [Ignore("This is deliberately broken to work around bugs in azureus")]
@@ -119,7 +119,7 @@ namespace MonoTorrent.Common
             list.Add(byte.MaxValue);
 
             BitField b = new BitField(list.ToArray(), initalValues.Length);
-            Assert.Equal(b, bf, "#1");
+            Assert.Equal(b, bf);
         }
 
         [Fact]
@@ -222,12 +222,12 @@ namespace MonoTorrent.Common
         [Fact]
         public void LengthInBytes()
         {
-            Assert.Equal(1, new BitField(1).LengthInBytes, "#1");
-            Assert.Equal(1, new BitField(8).LengthInBytes, "#2");
-            Assert.Equal(2, new BitField(9).LengthInBytes, "#3");
-            Assert.Equal(2, new BitField(15).LengthInBytes, "#4");
-            Assert.Equal(2, new BitField(16).LengthInBytes, "#5");
-            Assert.Equal(3, new BitField(17).LengthInBytes, "#6");
+            Assert.Equal(1, new BitField(1).LengthInBytes);
+            Assert.Equal(1, new BitField(8).LengthInBytes);
+            Assert.Equal(2, new BitField(9).LengthInBytes);
+            Assert.Equal(2, new BitField(15).LengthInBytes);
+            Assert.Equal(2, new BitField(16).LengthInBytes);
+            Assert.Equal(3, new BitField(17).LengthInBytes);
         }
 
         [Fact]
@@ -238,14 +238,14 @@ namespace MonoTorrent.Common
 
             Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
-                Assert.Equal(initalValues[i] && secondValues[i], bf[i], "#2");
+                Assert.Equal(initalValues[i] && secondValues[i], bf[i]);
 
             int count = 0;
             for (int i = 0; i < initalValues.Length; i++)
                 if (initalValues[i] && secondValues[i])
                     count++;
 
-            Assert.Equal(count, bf.TrueCount, "#3");
+            Assert.Equal(count, bf.TrueCount);
         }
 
         [Fact]
@@ -274,14 +274,14 @@ namespace MonoTorrent.Common
 
             Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
-                Assert.Equal(initalValues[i] || secondValues[i], bf[i], "#2");
+                Assert.Equal(initalValues[i] || secondValues[i], bf[i]);
 
             int count = 0;
             for (int i = 0; i < initalValues.Length; i++)
                 if (initalValues[i] || secondValues[i])
                     count++;
 
-            Assert.Equal(count, bf.TrueCount, "#3");
+            Assert.Equal(count, bf.TrueCount);
         }
 
         [Fact]
@@ -289,9 +289,9 @@ namespace MonoTorrent.Common
         {
             bf.Not();
             for (int i = 0; i < bf.Length; i++)
-                Assert.Equal(!initalValues[i], bf[i], "#1");
+                Assert.Equal(!initalValues[i], bf[i]);
 
-            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return !b; }), bf.TrueCount, "#2");
+            Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return !b; }), bf.TrueCount);
         }
 
         [Fact]
@@ -302,14 +302,14 @@ namespace MonoTorrent.Common
 
             Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
             for (int i = 0; i < bf.Length; i++)
-                Assert.Equal((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]), bf[i], "#2");
+                Assert.Equal((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]), bf[i]);
 
             int count = 0;
             for (int i = 0; i < initalValues.Length; i++)
                 if ((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]))
                     count++;
 
-            Assert.Equal(count, bf.TrueCount, "#3");
+            Assert.Equal(count, bf.TrueCount);
         }
 
         [Fact]
@@ -317,18 +317,18 @@ namespace MonoTorrent.Common
         {
             BitField b = new BitField(31);
             b.SetAll(true);
-            Assert.Equal(31, b.TrueCount, "#1");
-            Assert.True(b.AllTrue, "#1b");
+            Assert.Equal(31, b.TrueCount);
+            Assert.True(b.AllTrue);
 
             b = new BitField(32);
             b.SetAll(true);
-            Assert.Equal(32, b.TrueCount, "#2");
-            Assert.True(b.AllTrue, "#2b");
+            Assert.Equal(32, b.TrueCount);
+            Assert.True(b.AllTrue);
 
             b = new BitField(33);
             b.SetAll(true);
-            Assert.Equal(33, b.TrueCount, "#3");
-            Assert.True(b.AllTrue, "#3b");
+            Assert.Equal(33, b.TrueCount);
+            Assert.True(b.AllTrue);
         }
     }
 }

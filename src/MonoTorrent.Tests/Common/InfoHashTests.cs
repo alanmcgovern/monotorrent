@@ -20,9 +20,9 @@ namespace MonoTorrent.Common
         {
             InfoHash hash = Create();
             string hex = hash.ToHex();
-            Assert.Equal(40, hex.Length, "#1");
+            Assert.Equal(40, hex.Length);
             InfoHash other = InfoHash.FromHex(hex);
-            Assert.Equal(hash, other, "#2");
+            Assert.Equal(hash, other);
         }
 
         [Fact]

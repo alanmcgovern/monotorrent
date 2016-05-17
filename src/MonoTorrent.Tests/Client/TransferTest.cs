@@ -167,10 +167,10 @@ namespace MonoTorrent.Client
 
             HandshakeMessage handshake = new HandshakeMessage();
             handshake.Decode(buffer, 0, buffer.Length);
-            Assert.Equal(rig.Engine.PeerId, handshake.PeerId, "#2");
-            Assert.Equal(VersionInfo.ProtocolStringV100, handshake.ProtocolString, "#3");
-            Assert.Equal(ClientEngine.SupportsFastPeer, handshake.SupportsFastPeer, "#4");
-            Assert.Equal(ClientEngine.SupportsExtended, handshake.SupportsExtendedMessaging, "#5");
+            Assert.Equal(rig.Engine.PeerId, handshake.PeerId);
+            Assert.Equal(VersionInfo.ProtocolStringV100, handshake.ProtocolString);
+            Assert.Equal(ClientEngine.SupportsFastPeer, handshake.SupportsFastPeer);
+            Assert.Equal(ClientEngine.SupportsExtended, handshake.SupportsExtendedMessaging);
 
             // 2) Send local bitfield
             SendMessage(new BitfieldMessage(rig.Manager.Bitfield), connection);

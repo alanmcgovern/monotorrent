@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
 
             byte[] compact = p.CompactPeer();
             Peer peer = Peer.Decode((BEncoding.BEncodedString)compact)[0];
-            Assert.Equal(p.ConnectionUri, peer.ConnectionUri, "#1");
+            Assert.Equal(p.ConnectionUri, peer.ConnectionUri);
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace MonoTorrent.Client
             BEncodedDictionary d = new BEncodedDictionary();
             l.Add(d);
             IList<Peer> decoded = Peer.Decode(l);
-            Assert.Equal(0, decoded.Count, "#1");
+            Assert.Equal(0, decoded.Count);
         }
 
         [Fact]
@@ -67,22 +67,22 @@ namespace MonoTorrent.Client
             list.Clear();
             list.Add(new BEncodedString(new byte[3]));
             IList<Peer> decoded = Peer.Decode(list);
-            Assert.Equal(0, decoded.Count, "#1");
+            Assert.Equal(0, decoded.Count);
         }
 
         [Fact]
         public void CorruptString()
         {
             IList<Peer> p = Peer.Decode((BEncodedString)"1234");
-            Assert.Equal(0, p.Count, "#1");
+            Assert.Equal(0, p.Count);
 
             byte[] b = new byte[] { 255, 255, 255, 255, 255, 255 };
             p = Peer.Decode((BEncodedString)b);
-            Assert.Equal(1, p.Count, "#2");
+            Assert.Equal(1, p.Count);
 
             b = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             p = Peer.Decode((BEncodedString)b);
-            Assert.Equal(1, p.Count, "#3");
+            Assert.Equal(1, p.Count);
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
 
         private void VerifyDecodedPeers(List<Peer> decoded)
         {
-            Assert.Equal(peers.Count, decoded.Count, "#1");
+            Assert.Equal(peers.Count, decoded.Count);
             foreach (Peer dec in decoded)
                 Assert.True(peers.Exists(delegate(Peer p) { return p.ConnectionUri.Equals(dec.ConnectionUri); }));
         }

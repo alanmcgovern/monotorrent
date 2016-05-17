@@ -179,7 +179,7 @@ namespace MonoTorrent.Client
 
             NetworkIO.EnqueueSend (Outgoing, data, 0, 20, null, null, null, delegate { }, null);
             Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#Should have closed");;
-            Assert.False (success, "#1");
+            Assert.False (success);
         }
 
         [Fact]
@@ -217,8 +217,8 @@ namespace MonoTorrent.Client
             }, null);
 
             NetworkIO.EnqueueSend (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
-            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
-            Assert.False (connectionOpen, "#2");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)));
+            Assert.False (connectionOpen);
         }
 
         [Fact]
@@ -233,8 +233,8 @@ namespace MonoTorrent.Client
             }, null);
 
             NetworkIO.EnqueueReceive (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
-            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
-            Assert.False (connectionOpen, "#2");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)));
+            Assert.False (connectionOpen);
         }
     }
 }

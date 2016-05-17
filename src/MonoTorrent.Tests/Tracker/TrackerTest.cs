@@ -29,13 +29,13 @@ namespace MonoTorrent.Tracker
             AddAllTrackables();
 
             // Ensure none are added a second time
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t), "#2"); });
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t)); });
 
             // Clone each one and ensure that the clone can't be added
             List<Trackable> clones = new List<Trackable>();
             rig.Trackables.ForEach(delegate(Trackable t) { clones.Add(new Trackable(Clone(t.InfoHash), t.Name)); });
 
-            clones.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t), "#3"); });
+            clones.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t)); });
 
             Assert.Equal(rig.Trackables.Count, rig.Tracker.Count);
         }
@@ -152,13 +152,13 @@ namespace MonoTorrent.Tracker
 
                 Assert.True(peers.Exists(delegate(PeerDetails pd) {
                     return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId == peerId;
-                }), "#2");
+                }));
             }
         }
 
         private void AddAllTrackables()
         {
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.True(rig.Tracker.Add(t), "#1"); });
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.True(rig.Tracker.Add(t)); });
         }
 
         private InfoHash Clone(InfoHash p)

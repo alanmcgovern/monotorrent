@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
 
             // 4) Verify the hash is the same.
             stream.Position = 0;
-            Assert.Equal(rig.Torrent.InfoHash, new InfoHash(new SHA1Managed().ComputeHash(stream)), "#1");
+            Assert.Equal(rig.Torrent.InfoHash, new InfoHash(new SHA1Managed().ComputeHash(stream)));
         }
 
         [Fact]
@@ -141,9 +141,9 @@ namespace MonoTorrent.Client
             while (rig.Manager.Mode is MetadataMode)
                 System.Threading.Thread.Sleep(10);
 
-            Assert.True(File.Exists(expectedPath), "#1");
+            Assert.True(File.Exists(expectedPath));
             Torrent torrent = Torrent.Load(expectedPath);
-            Assert.Equal(rig.Manager.InfoHash, torrent.InfoHash, "#2");
+            Assert.Equal(rig.Manager.InfoHash, torrent.InfoHash);
         }
 
         private void SendMessage(PeerMessage message, CustomConnection connection)

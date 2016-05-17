@@ -1,36 +1,26 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
+using System;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class InitialSeedingModeTest
+
+    public class InitialSeedingModeTest : IDisposable
     {
-        InitialSeedingMode Mode {
-            get { return Rig.Manager.Mode as InitialSeedingMode; }
-        }
+        InitialSeedingMode Mode { get { return Rig.Manager.Mode as InitialSeedingMode; } }
 
-        TestRig Rig {
-            get; set;
-        }
+        TestRig Rig { get; set; }
 
-        [SetUp]
-        public void Setup()
+        public InitialSeedingModeTest()
         {
             Rig = TestRig.CreateSingleFile(Piece.BlockSize * 20, Piece.BlockSize * 2);
             Rig.Manager.Bitfield.Not ();
             Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager);
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             Rig.Dispose();
         }
@@ -46,9 +36,9 @@ namespace MonoTorrent.Client
             Mode.HandlePeerConnected(peer, Direction.Incoming);
             Mode.Tick(0);
 
-            Assert.True(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage, "#1");
+            Assert.True(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage);
             BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue();
-            Assert.True(m.BitField.AllTrue, "#2");
+            Assert.True(m.BitField.AllTrue);
         }
     }
 }

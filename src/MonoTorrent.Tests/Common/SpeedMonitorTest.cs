@@ -13,7 +13,7 @@ namespace MonoTorrent.Common
             monitor.AddDelta (1000);
             monitor.Tick (1000);
 
-            Assert.Equal (1000, monitor.Rate, "#1");
+            Assert.Equal (1000, monitor.Rate);
         }
 
         [Fact]
@@ -23,7 +23,7 @@ namespace MonoTorrent.Common
             monitor.AddDelta (1000);
             monitor.Tick (1000);
 
-            Assert.Equal (1000, monitor.Rate, "#1");
+            Assert.Equal (1000, monitor.Rate);
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.Equal (500, monitor.Rate, "#1");
+            Assert.Equal (500, monitor.Rate);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.Equal (400, monitor.Rate, "#1");
+            Assert.Equal (400, monitor.Rate);
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.Equal (0, monitor.Rate, "#1");
+            Assert.Equal (0, monitor.Rate);
         }
     }
 }

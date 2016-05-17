@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
+using System;
+using System.Collections.Generic;
 using System.Threading;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class HttpTrackerTests
+
+    public class HttpTrackerTests : IDisposable
     {
         //static void Main()
         //{
@@ -22,8 +21,7 @@ namespace MonoTorrent.Client
         string prefix ="http://localhost:47124/announce/";
         List<string> keys;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public HttpTrackerTests()
         {
             keys = new List<string>();
             server = new MonoTorrent.Tracker.Tracker();
@@ -35,16 +33,11 @@ namespace MonoTorrent.Client
             server.RegisterListener(listener);
             
             listener.Start();
-        }
 
-        [SetUp]
-        public void Setup()
-        {
             keys.Clear();
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             listener.Stop();
             server.Dispose();
@@ -54,21 +47,21 @@ namespace MonoTorrent.Client
         public void CanAnnouceOrScrapeTest()
         {
             Tracker.Tracker t = TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
-            Assert.False(t.CanScrape, "#1");
-            Assert.True(t.CanAnnounce, "#1b");
+            Assert.False(t.CanScrape);
+            Assert.True(t.CanAnnounce);
 
             t = TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah"));
-            Assert.False(t.CanScrape, "#2");
-            Assert.True(t.CanAnnounce, "#2b");
+            Assert.False(t.CanScrape);
+            Assert.True(t.CanAnnounce);
 
             t = TrackerFactory.Create(new Uri("http://mytracker.com/announce"));
-            Assert.True(t.CanScrape, "#3");
-            Assert.True(t.CanAnnounce, "#4");
+            Assert.True(t.CanScrape);
+            Assert.True(t.CanAnnounce);
 
             HTTPTracker tracker = (HTTPTracker)TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah/announce"));
-            Assert.True(tracker.CanScrape, "#4");
-            Assert.True(tracker.CanAnnounce, "#4");
-            Assert.Equal("http://mytracker.com/announce/yeah/scrape", tracker.ScrapeUri.ToString(), "#5");
+            Assert.True(tracker.CanScrape);
+            Assert.True(tracker.CanAnnounce);
+            Assert.Equal("http://mytracker.com/announce/yeah/scrape", tracker.ScrapeUri.ToString());
         }
 
         [Fact]
@@ -88,9 +81,9 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#1");
+            Assert.NotNull(p);
             Assert.True(p.Successful);
-            Assert.Equal(keys[0], t.Key, "#2");
+            Assert.Equal(keys[0], t.Key);
         }
 
         [Fact]
@@ -105,14 +98,14 @@ namespace MonoTorrent.Client
             t.AnnounceComplete += delegate { id.WaitHandle.Set(); };
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.Equal("value", keys[0], "#1");
+            Assert.Equal("value", keys[0]);
         }
 
         [Fact]
         public void ScrapeTest()
         {
             Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length -1)));
-            Assert.True(t.CanScrape, "#1");
+            Assert.True(t.CanScrape);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
@@ -126,11 +119,11 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#2");
-            Assert.True(p.Successful, "#3");
-            Assert.Equal(1, t.Complete, "#1");
-            Assert.Equal(0, t.Incomplete, "#2");
-            Assert.Equal(0, t.Downloaded, "#3");
+            Assert.NotNull(p);
+            Assert.True(p.Successful);
+            Assert.Equal(1, t.Complete);
+            Assert.Equal(0, t.Incomplete);
+            Assert.Equal(0, t.Downloaded);
         }
 
 

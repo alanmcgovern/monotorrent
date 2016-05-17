@@ -93,7 +93,7 @@ namespace MonoTorrent.Common
         {
             BEncodedDictionary dict = creator.Create("TorrentName", files);
             Torrent t = Torrent.Load(dict);
-            Assert.Equal(0, t.AnnounceUrls.Count, "#1");
+            Assert.Equal(0, t.AnnounceUrls.Count);
         }
 
         [Fact]
@@ -111,8 +111,8 @@ namespace MonoTorrent.Common
             Torrent torrent = Torrent.Load(dict);
 
             VerifyCommonParts(torrent);
-            Assert.Equal(1, torrent.Files.Length, "#1");
-            Assert.Equal(f, torrent.Files[0], "#2");
+            Assert.Equal(1, torrent.Files.Length);
+            Assert.Equal(f, torrent.Files[0]);
         }
         [Fact]
         public void CreateSingleFromFolder()
@@ -122,9 +122,9 @@ namespace MonoTorrent.Common
 
             Torrent t = Torrent.Load(dict);
 
-            Assert.Equal(1, t.Files.Length, "#1");
-            Assert.Equal(Path.GetFileName(assembly.Location), t.Name, "#2");
-            Assert.Equal(Path.GetFileName(assembly.Location), t.Files[0].Path, "#3");
+            Assert.Equal(1, t.Files.Length);
+            Assert.Equal(Path.GetFileName(assembly.Location), t.Name);
+            Assert.Equal(Path.GetFileName(assembly.Location), t.Files[0].Path);
 
             // Create it again
             creator.Create(new TorrentFileSource(assembly.Location));
@@ -147,12 +147,12 @@ namespace MonoTorrent.Common
             });
 
             Torrent torrent = Torrent.Load (creator.Create("BaseDir", files));
-            Assert.Equal(5, torrent.Files.Length, "#1");
-            Assert.Equal(name1, torrent.Files[0].Path, "#2");
-            Assert.Equal(name2, torrent.Files[1].Path, "#3");
-            Assert.Equal(name3, torrent.Files[2].Path, "#4");
-            Assert.Equal(name4, torrent.Files[3].Path, "#5");
-            Assert.Equal(name5, torrent.Files[4].Path, "#6");
+            Assert.Equal(5, torrent.Files.Length);
+            Assert.Equal(name1, torrent.Files[0].Path);
+            Assert.Equal(name2, torrent.Files[1].Path);
+            Assert.Equal(name3, torrent.Files[2].Path);
+            Assert.Equal(name4, torrent.Files[3].Path);
+            Assert.Equal(name5, torrent.Files[4].Path);
         }
 
         [Fact]
@@ -177,15 +177,15 @@ namespace MonoTorrent.Common
 
         void VerifyCommonParts(Torrent torrent)
         {
-            Assert.Equal(Comment, torrent.Comment, "#1");
-            Assert.Equal(CreatedBy, torrent.CreatedBy, "#2");
-            Assert.True((DateTime.Now - torrent.CreationDate) < TimeSpan.FromSeconds(5), "#3");
-            Assert.Equal(PieceLength, torrent.PieceLength, "#4");
-            Assert.Equal(Publisher, torrent.Publisher, "#5");
-            Assert.Equal(PublisherUrl, torrent.PublisherUrl, "#6");
-            Assert.Equal(2, torrent.AnnounceUrls.Count, "#7");
-            Assert.Equal(2, torrent.AnnounceUrls[0].Count, "#8");
-            Assert.Equal(2, torrent.AnnounceUrls[1].Count, "#9");
+            Assert.Equal(Comment, torrent.Comment);
+            Assert.Equal(CreatedBy, torrent.CreatedBy);
+            Assert.True((DateTime.Now - torrent.CreationDate) < TimeSpan.FromSeconds(5));
+            Assert.Equal(PieceLength, torrent.PieceLength);
+            Assert.Equal(Publisher, torrent.Publisher);
+            Assert.Equal(PublisherUrl, torrent.PublisherUrl);
+            Assert.Equal(2, torrent.AnnounceUrls.Count);
+            Assert.Equal(2, torrent.AnnounceUrls[0].Count);
+            Assert.Equal(2, torrent.AnnounceUrls[1].Count);
         }
     }
 }

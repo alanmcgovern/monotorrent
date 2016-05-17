@@ -138,11 +138,11 @@ namespace MonoTorrent.Client
             ConnectMessage d = (ConnectMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
             
-            Assert.Equal(0, m.Action, "#0");
-            Assert.Equal(m.Action, d.Action, "#1");
-            Assert.Equal(m.ConnectionId, d.ConnectionId, "#2");
-            Assert.Equal(m.TransactionId, d.TransactionId, "#3");
-            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
+            Assert.Equal(0, m.Action);
+            Assert.Equal(m.Action, d.Action);
+            Assert.Equal(m.ConnectionId, d.ConnectionId);
+            Assert.Equal(m.TransactionId, d.TransactionId);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
         }
 
         [Fact]
@@ -152,11 +152,11 @@ namespace MonoTorrent.Client
             ConnectResponseMessage d = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
             
-            Assert.Equal(0, m.Action, "#0"); 
-            Assert.Equal(m.Action, d.Action, "#1");
-            Assert.Equal(m.ConnectionId, d.ConnectionId, "#2");
-            Assert.Equal(m.TransactionId, d.TransactionId, "#3");
-            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
+            Assert.Equal(0, m.Action); 
+            Assert.Equal(m.Action, d.Action);
+            Assert.Equal(m.ConnectionId, d.ConnectionId);
+            Assert.Equal(m.TransactionId, d.TransactionId);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
             Assert.Equal(12345, d.ConnectionId);
             Assert.Equal(5371, d.TransactionId);
 
@@ -207,8 +207,8 @@ namespace MonoTorrent.Client
         void Check(UdpTrackerMessage message, MessageType type)
         {
             byte[] e = message.Encode();
-            Assert.Equal(e.Length, message.ByteLength, "#1");
-            Assert.True(Toolbox.ByteMatch(e, UdpTrackerMessage.DecodeMessage(e, 0, e.Length, type).Encode()), "#2");
+            Assert.Equal(e.Length, message.ByteLength);
+            Assert.True(Toolbox.ByteMatch(e, UdpTrackerMessage.DecodeMessage(e, 0, e.Length, type).Encode()));
         }
 
         [Fact]
@@ -229,9 +229,9 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#1");
+            Assert.NotNull(p);
             Assert.True(p.Successful);
-            //Assert.Equal(keys[0], t.Key, "#2");
+            //Assert.Equal(keys[0], t.Key);
         }
 
         [Fact]
@@ -315,7 +315,7 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#1");
+            Assert.NotNull(p);
             Assert.False(p.Successful);
         }
 
@@ -337,7 +337,7 @@ namespace MonoTorrent.Client
 
             t.Scrape(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#1");
+            Assert.NotNull(p);
             Assert.False(p.Successful);
         }
 
@@ -345,7 +345,7 @@ namespace MonoTorrent.Client
         public void ScrapeTest()
         {
             UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
-            Assert.True(t.CanScrape, "#1");
+            Assert.True(t.CanScrape);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             ScrapeResponseEventArgs p = null;
@@ -358,11 +358,11 @@ namespace MonoTorrent.Client
 
             t.Scrape(pars, id);
             Wait(id.WaitHandle);
-            Assert.NotNull(p, "#2");
-            Assert.True(p.Successful, "#3");
-            Assert.Equal(0, t.Complete, "#1");
-            Assert.Equal(0, t.Incomplete, "#2");
-            Assert.Equal(0, t.Downloaded, "#3");
+            Assert.NotNull(p);
+            Assert.True(p.Successful);
+            Assert.Equal(0, t.Complete);
+            Assert.Equal(0, t.Incomplete);
+            Assert.Equal(0, t.Downloaded);
         }
 
         void Wait(WaitHandle handle)

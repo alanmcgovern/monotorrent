@@ -56,16 +56,16 @@ namespace MonoTorrent.Dht
             BEncodedString s = m.GenerateToken(n);
             BEncodedString s2 = m.GenerateToken(n);
 
-            Assert.Equal(s, s2, "#1");
+            Assert.Equal(s, s2);
 
             Assert.True(m.VerifyToken(n, s),"#2");
             Assert.False(m.VerifyToken(n2, s),"#3");
 
             System.Threading.Thread.Sleep(100);
-            Assert.True(m.VerifyToken(n, s), "#4");
+            Assert.True(m.VerifyToken(n, s));
 
             System.Threading.Thread.Sleep(100);
-            Assert.False(m.VerifyToken(n, s), "#5");
+            Assert.False(m.VerifyToken(n, s));
         }
     }
 }

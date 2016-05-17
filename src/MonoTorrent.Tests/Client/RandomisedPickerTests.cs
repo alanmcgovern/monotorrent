@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         {
             tester.ReturnNoPiece = false;
             while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
-            Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
+            Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count);
             List<int> pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();
             for (int i = 0; i < pieces.Count; i++)

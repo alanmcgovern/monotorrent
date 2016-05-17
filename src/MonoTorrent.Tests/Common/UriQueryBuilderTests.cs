@@ -32,12 +32,11 @@
 
 using System;
 using Xunit;
-using System.Web;
 
 namespace MonoTorrent.Common
 {
-	
-	public class UriQueryBuilderTest
+
+    public class UriQueryBuilderTest
 	{
 
 		[Fact]
@@ -47,30 +46,30 @@ namespace MonoTorrent.Common
             bld.Add ("key", 2);
             bld.Add ("foo", 2);
             bld.Add ("foo", "bar");
-            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=2&foo=bar"), bld.ToUri (),"#1");
-            
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=2&foo=bar"), bld.ToUri ());
+
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx?passkey=1");
             bld.Add ("key", 2);
-            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?passkey=1&key=2"), bld.ToUri (),"#2");
-            
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?passkey=1&key=2"), bld.ToUri ());
+
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx");
-            Assert.Equal(new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (),"#3");
-            
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx"), bld.ToUri ());
+
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx");
             byte[] infoHash = new byte[6] {0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc};
             bld.Add ("key", UriHelper.UrlEncode(infoHash));
-            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (),"#4");
-            
-            
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri ());
+
+
         }
         
         [Fact]
         public void ContainQuery ()
         {
             UriQueryBuilder bld = new UriQueryBuilder("http://mytest.com/announce.aspx?key=1&foo=bar");
-            Assert.True(bld.Contains ("key"), "#1");
-            Assert.True(bld.Contains ("foo"), "#2");
-            Assert.False(bld.Contains ("bar"), "#3");
+            Assert.True(bld.Contains ("key"));
+            Assert.True(bld.Contains ("foo"));
+            Assert.False(bld.Contains ("bar"));
         }
 
         [Fact]
@@ -87,7 +86,7 @@ namespace MonoTorrent.Common
             UriQueryBuilder b = new UriQueryBuilder ("http://example.com");
             b ["Test"] = "2";
             b ["Test"] = "7";
-            Assert.Equal ("7", b ["Test"], "#1");
+            Assert.Equal ("7", b ["Test"]);
         }
 	}
 }

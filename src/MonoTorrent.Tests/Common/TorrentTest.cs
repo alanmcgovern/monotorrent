@@ -29,17 +29,14 @@
 
 
 
-using System;
-using Xunit;
-using MonoTorrent.Common;
-using System.Diagnostics;
-using System.IO;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
+using System;
+using System.IO;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
-    
+
     public class TorrentTest
     {
         //static void Main(string[] args)
@@ -55,8 +52,7 @@ namespace MonoTorrent.Common
         /// <summary>
         /// 
         /// </summary>
-        [SetUp]
-        public void StartUp()
+        public TorrentTest()
         {
             DateTime current = new DateTime(2006, 7, 1, 5, 5, 5);
             DateTime epochStart = new DateTime(1970, 1, 1, 0, 0, 0);
@@ -181,12 +177,12 @@ namespace MonoTorrent.Common
         [Fact]
         public void CreationDate()
         {
-            Assert.Equal(2006, torrent.CreationDate.Year, "Year wrong");
-            Assert.Equal(7, torrent.CreationDate.Month, "Month Wrong");
-            Assert.Equal(1, torrent.CreationDate.Day, "Day Wrong");
-            Assert.Equal(5, torrent.CreationDate.Hour, "Hour Wrong");
-            Assert.Equal(5, torrent.CreationDate.Minute, "Minute Wrong");
-            Assert.Equal(5, torrent.CreationDate.Second, "Second Wrong");
+            Assert.Equal(2006, torrent.CreationDate.Year);
+            Assert.Equal(7, torrent.CreationDate.Month);
+            Assert.Equal(1, torrent.CreationDate.Day);
+            Assert.Equal(5, torrent.CreationDate.Hour);
+            Assert.Equal(5, torrent.CreationDate.Minute);
+            Assert.Equal(5, torrent.CreationDate.Second);
             Assert.Equal(new DateTime(2006, 7, 1, 5, 5, 5), torrent.CreationDate);
         }
 
@@ -316,26 +312,26 @@ namespace MonoTorrent.Common
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
-            Assert.Equal(0, t.Files[0].StartPieceIndex, "#0a");
-            Assert.Equal(0, t.Files[0].EndPieceIndex, "#0b");
+            Assert.Equal(0, t.Files[0].StartPieceIndex);
+            Assert.Equal(0, t.Files[0].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[1].StartPieceIndex, "#1");
-            Assert.Equal(0, t.Files[1].EndPieceIndex, "#2");
+            Assert.Equal(0, t.Files[1].StartPieceIndex);
+            Assert.Equal(0, t.Files[1].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[2].StartPieceIndex, "#3");
-            Assert.Equal(0, t.Files[2].EndPieceIndex, "#4");
+            Assert.Equal(0, t.Files[2].StartPieceIndex);
+            Assert.Equal(0, t.Files[2].EndPieceIndex);
 
-            Assert.Equal(1, t.Files[3].StartPieceIndex, "#5");
-            Assert.Equal(1, t.Files[3].EndPieceIndex, "#6");
+            Assert.Equal(1, t.Files[3].StartPieceIndex);
+            Assert.Equal(1, t.Files[3].EndPieceIndex);
 
-            Assert.Equal(1, t.Files[4].StartPieceIndex, "#7");
-            Assert.Equal(1, t.Files[4].EndPieceIndex, "#8");
+            Assert.Equal(1, t.Files[4].StartPieceIndex);
+            Assert.Equal(1, t.Files[4].EndPieceIndex);
 
-            Assert.Equal(2, t.Files[5].StartPieceIndex, "#9");
-            Assert.Equal(2, t.Files[5].EndPieceIndex, "#10");
+            Assert.Equal(2, t.Files[5].StartPieceIndex);
+            Assert.Equal(2, t.Files[5].EndPieceIndex);
 
-            Assert.Equal(2, t.Files[6].StartPieceIndex, "#11");
-            Assert.Equal(9, t.Files[6].EndPieceIndex, "#12");
+            Assert.Equal(2, t.Files[6].StartPieceIndex);
+            Assert.Equal(9, t.Files[6].EndPieceIndex);
         }
 
         [Fact]
@@ -348,11 +344,11 @@ namespace MonoTorrent.Common
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
-            Assert.Equal(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.Equal(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.Equal(0, t.Files[0].StartPieceIndex);
+            Assert.Equal(0, t.Files[0].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.Equal(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.Equal(0, t.Files[1].StartPieceIndex);
+            Assert.Equal(0, t.Files[1].EndPieceIndex);
         }
 
         [Fact]
@@ -365,11 +361,11 @@ namespace MonoTorrent.Common
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
-            Assert.Equal(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.Equal(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.Equal(0, t.Files[0].StartPieceIndex);
+            Assert.Equal(0, t.Files[0].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.Equal(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.Equal(0, t.Files[1].StartPieceIndex);
+            Assert.Equal(0, t.Files[1].EndPieceIndex);
         }
 
         [Fact]
@@ -382,11 +378,11 @@ namespace MonoTorrent.Common
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
-            Assert.Equal(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.Equal(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.Equal(0, t.Files[0].StartPieceIndex);
+            Assert.Equal(0, t.Files[0].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.Equal(1, t.Files[1].EndPieceIndex, "#4");
+            Assert.Equal(0, t.Files[1].StartPieceIndex);
+            Assert.Equal(1, t.Files[1].EndPieceIndex);
         }
 
         [Fact]
@@ -400,14 +396,14 @@ namespace MonoTorrent.Common
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
-            Assert.Equal(0, t.Files[0].StartPieceIndex, "#1");
-            Assert.Equal(0, t.Files[0].EndPieceIndex, "#2");
+            Assert.Equal(0, t.Files[0].StartPieceIndex);
+            Assert.Equal(0, t.Files[0].EndPieceIndex);
 
-            Assert.Equal(0, t.Files[1].StartPieceIndex, "#3");
-            Assert.Equal(0, t.Files[1].EndPieceIndex, "#4");
+            Assert.Equal(0, t.Files[1].StartPieceIndex);
+            Assert.Equal(0, t.Files[1].EndPieceIndex);
 
-            Assert.Equal(1, t.Files[2].StartPieceIndex, "#5");
-            Assert.Equal(1, t.Files[2].EndPieceIndex, "#6");
+            Assert.Equal(1, t.Files[2].StartPieceIndex);
+            Assert.Equal(1, t.Files[2].EndPieceIndex);
         }
 
         /// <summary>

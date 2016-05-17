@@ -14,7 +14,7 @@ namespace MonoTorrent.Common
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
-            Assert.Equal ("a", d ["comment"].ToString (), "#1");
+            Assert.Equal ("a", d ["comment"].ToString ());
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace MonoTorrent.Common
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
             d = editor.ToDictionary ();
-            Assert.Equal ("b", d ["comment"].ToString (), "#1");
+            Assert.Equal ("b", d ["comment"].ToString ());
         }
 
         [Fact]

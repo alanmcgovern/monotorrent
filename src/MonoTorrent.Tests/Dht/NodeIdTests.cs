@@ -27,12 +27,12 @@ namespace MonoTorrent.Dht
         [Fact]
         public void GreaterLessThanTest()
         {
-            Assert.True(nodes[0] < nodes[1], "#1");
-            Assert.True(nodes[1] > nodes[0], "#2");
-            Assert.True(nodes[0] == nodes[0], "#3");
-            Assert.Equal(nodes[0], nodes[0], "#4");
-            Assert.True(nodes[2] > nodes[1], "#5");
-            Assert.True(nodes[15] < nodes[10], "#6");
+            Assert.True(nodes[0] < nodes[1]);
+            Assert.True(nodes[1] > nodes[0]);
+            Assert.True(nodes[0] == nodes[0]);
+            Assert.Equal(nodes[0], nodes[0]);
+            Assert.True(nodes[2] > nodes[1]);
+            Assert.True(nodes[15] < nodes[10]);
         }
 
         [Fact]
@@ -44,12 +44,12 @@ namespace MonoTorrent.Dht
             NodeId one = new NodeId(b);
 
             NodeId r = one.Xor(zero);
-            Assert.Equal(one, r, "#1");
-            Assert.True(one > zero, "#2");
-            Assert.True(one.CompareTo(zero) > 0, "#3");
+            Assert.Equal(one, r);
+            Assert.True(one > zero);
+            Assert.True(one.CompareTo(zero) > 0);
 
             NodeId z = one.Xor(r);
-            Assert.Equal(zero, z, "#4");
+            Assert.Equal(zero, z);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace MonoTorrent.Dht
             BigInteger a = new BigInteger(data);
             BigInteger b = new BigInteger(new byte[0]);
 
-            Assert.NotEqual(a, b, "#1");
+            Assert.NotEqual(a, b);
         }
     }
 }

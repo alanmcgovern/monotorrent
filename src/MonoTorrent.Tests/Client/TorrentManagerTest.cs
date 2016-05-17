@@ -47,8 +47,8 @@ namespace MonoTorrent.Client
 
             try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
             catch {
-                Assert.False(conn.Incoming.Connected, "#1");
-//                Assert.False(conn.Outgoing.Connected, "#2");
+                Assert.False(conn.Incoming.Connected);
+//                Assert.False(conn.Outgoing.Connected);
                 return;
             }
 
@@ -71,9 +71,9 @@ namespace MonoTorrent.Client
         {
             rig.Engine.Unregister(rig.Manager);
             rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
-            Assert.Equal(0, rig.Manager.Peers.Available, "#1");
+            Assert.Equal(0, rig.Manager.Peers.Available);
             rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
-            Assert.Equal(0, rig.Manager.Peers.Available, "#2");
+            Assert.Equal(0, rig.Manager.Peers.Available);
         }
 
         [Fact]
@@ -147,8 +147,8 @@ namespace MonoTorrent.Client
             System.Threading.Thread.Sleep(1000);
             manager.Stop();
 
-            Assert.True(handle.WaitOne(10000, true), "#1");
-            Assert.True(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
+            Assert.True(handle.WaitOne(10000, true));
+            Assert.True(manager.TrackerManager.Announce().WaitOne(10000, true)); ;
         }
 
         [Fact]
@@ -161,7 +161,7 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
             foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
             {
-                Assert.True (t.Trackers.Count > 0, "#1");
+                Assert.True (t.Trackers.Count > 0);
             }
         }
 
@@ -177,16 +177,16 @@ namespace MonoTorrent.Client
 
             rig.Manager.Start();
             Assert.True (handle.WaitOne(5000, false), "Announce on startup");
-            Assert.Equal(1, rig.Tracker.AnnouncedAt.Count, "#2");
+            Assert.Equal(1, rig.Tracker.AnnouncedAt.Count);
 
             rig.Manager.Bitfield.SetAll(true);
             Assert.True (handle.WaitOne (5000, false), "Announce when download completes");
-            Assert.Equal(TorrentState.Seeding, rig.Manager.State, "#3");
-            Assert.Equal(2, rig.Tracker.AnnouncedAt.Count, "#4");
+            Assert.Equal(TorrentState.Seeding, rig.Manager.State);
+            Assert.Equal(2, rig.Tracker.AnnouncedAt.Count);
 
             rig.Manager.Stop();
             Assert.True (handle.WaitOne (5000, false), "Announce when torrent stops");
-            Assert.Equal(3, rig.Tracker.AnnouncedAt.Count, "#6");
+            Assert.Equal(3, rig.Tracker.AnnouncedAt.Count);
         }
 
         [Fact]
@@ -200,8 +200,8 @@ namespace MonoTorrent.Client
                     handle.Set ();
             };
             rig.Manager.Start ();
-            Assert.True(handle.WaitOne(), "#1");
-            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne());
+            Assert.True(rig.Manager.Bitfield.AllFalse);
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 Assert.True(file.BitField.AllFalse, "#3." + file.Path);
         }
@@ -222,8 +222,8 @@ namespace MonoTorrent.Client
                     handle.Set();
             };
             rig.Manager.Start();
-            Assert.True(handle.WaitOne(), "#1");
-            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne());
+            Assert.True(rig.Manager.Bitfield.AllFalse);
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 Assert.True(file.BitField.AllFalse, "#3." + file.Path);
         }
@@ -249,8 +249,8 @@ namespace MonoTorrent.Client
                     handle.Set();
             };
             rig.Manager.Start();
-            Assert.True(handle.WaitOne(), "#1");
-            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne());
+            Assert.True(rig.Manager.Bitfield.AllFalse);
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
                 Assert.True (file.BitField.AllFalse, "#3." + file.Path);
         }

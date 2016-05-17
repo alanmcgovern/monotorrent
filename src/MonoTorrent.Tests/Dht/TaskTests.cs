@@ -53,7 +53,7 @@ namespace MonoTorrent.Dht
             SendQueryTask task = new SendQueryTask(engine, ping, node);
             task.Completed += delegate { handle.Set(); };
             task.Execute();
-            Assert.True(handle.WaitOne(3000, false), "#1");
+            Assert.True(handle.WaitOne(3000, false));
             Assert.Equal(task.Retries, counter);
         }
 
@@ -78,11 +78,11 @@ namespace MonoTorrent.Dht
             task.Completed += delegate { handle.Set(); };
             task.Execute();
 
-            Assert.True(handle.WaitOne(3000, false), "#1");
+            Assert.True(handle.WaitOne(3000, false));
             System.Threading.Thread.Sleep(200);
-            Assert.Equal(1, counter, "#2");
+            Assert.Equal(1, counter);
             Node n = engine.RoutingTable.FindNode(this.node.Id);
-            Assert.NotNull(n, "#3");
+            Assert.NotNull(n);
             Assert.True(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
         }
 
@@ -133,7 +133,7 @@ namespace MonoTorrent.Dht
             task.Completed += delegate(object o, TaskCompleteEventArgs e) { handle.Set(); };
             task.Execute();
 
-            Assert.True(handle.WaitOne(4000, false), "#10");
+            Assert.True(handle.WaitOne(4000, false));
         }
 
         [Fact]
@@ -198,8 +198,8 @@ namespace MonoTorrent.Dht
             task.Completed += delegate { handle.Set(); };
             task.Execute();
             Assert.True(handle.WaitOne(1000, true), "#a");
-            Assert.False(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace), "#1");
-            Assert.True(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement), "#2");
+            Assert.False(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace));
+            Assert.True(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement));
         }
     }
 }

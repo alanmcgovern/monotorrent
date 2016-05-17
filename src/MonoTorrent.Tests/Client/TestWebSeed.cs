@@ -176,9 +176,9 @@ namespace MonoTorrent.Client
                 }
                 PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager);
                 RequestMessage request = (RequestMessage)requests.Messages[0];
-                Assert.Equal(request.PieceIndex, m.PieceIndex, "#1");
-                Assert.Equal(request.RequestLength, m.RequestLength, "#1");
-                Assert.Equal(request.StartOffset, m.StartOffset, "#1");
+                Assert.Equal(request.PieceIndex, m.PieceIndex);
+                Assert.Equal(request.RequestLength, m.RequestLength);
+                Assert.Equal(request.StartOffset, m.StartOffset);
 
                 for (int i = 0; i < request.RequestLength; i++)
                     if (buffer[i + 13] != (byte)(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))

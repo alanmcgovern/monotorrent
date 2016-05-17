@@ -210,7 +210,7 @@ namespace MonoTorrent.Common
         {
             BEncodedNumber a = -123;
             BEncodedNumber b = BEncodedNumber.Decode<BEncodedNumber>(a.Encode());
-            Assert.Equal(a.Number, b.Number, "#1");
+            Assert.Equal(a.Number, b.Number);
         }
 
         [Fact]

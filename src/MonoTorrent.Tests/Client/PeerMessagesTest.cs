@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
             byte[] encoded = new BitfieldMessage(new BitField(data)).Encode();
 
             BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
-            Assert.Equal(data.Length, m.BitField.Length, "#1");
+            Assert.Equal(data.Length, m.BitField.Length);
             for (int i = 0; i < data.Length; i++)
                 Assert.Equal(data[i], m.BitField[i], "#2." + i);
         }
@@ -163,7 +163,7 @@ namespace MonoTorrent.Client
             Assert.Equal(length, 68, "6");
 
             length = new HandshakeMessage(new InfoHash (infohash), "12312312345645645678", VersionInfo.ProtocolStringV100, true, false).Encode(buffer, offset);
-            Assert.Equal(BitConverter.ToString(buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38", "#7");
+            Assert.Equal(BitConverter.ToString(buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38");
         }
 
         [Fact]
@@ -302,9 +302,9 @@ namespace MonoTorrent.Client
 			var data = new BEncodedDictionary ().Encode ();
 			var message = new PeerExchangeMessage ();
 			message.Decode (data, 0, data.Length);
-			Assert.NotNull (message.Added, "#1");
-			Assert.NotNull (message.AddedDotF, "#1");
-			Assert.NotNull (message.Dropped, "#1");
+			Assert.NotNull (message.Added);
+			Assert.NotNull (message.AddedDotF);
+			Assert.NotNull (message.Dropped);
 		}
 
         private void EncodeDecode(Message orig)

@@ -17,12 +17,12 @@ namespace MonoTorrent.Client
         [Fact]
         public void BannedTest()
         {
-            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.1")), "#1");
-            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.10")), "#2");
-            Assert.False(list.IsBanned(IPAddress.Parse("1.0.0.0")), "#3");
-            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.0")), "#4");
-            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.5")), "#5");
-            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.255")), "#6");
+            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.1")));
+            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.10")));
+            Assert.False(list.IsBanned(IPAddress.Parse("1.0.0.0")));
+            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.0")));
+            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.5")));
+            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.255")));
         }
 
         [Fact]
@@ -33,15 +33,15 @@ namespace MonoTorrent.Client
             list.Remove(IPAddress.Parse("0.0.0.10"));
             list.Remove(IPAddress.Parse("255.255.255.200"));
 
-            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.1")), "#1");
-            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.2")), "#2");
-            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.3")), "#3");
-            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.4")), "#4");
-            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.9")), "#5");
-            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.10")), "#6");
-            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.199")), "#7");
-            Assert.False(list.IsBanned(IPAddress.Parse("255.255.255.200")), "#8");
-            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.201")), "#9");
+            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.1")));
+            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.2")));
+            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.3")));
+            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.4")));
+            Assert.True(list.IsBanned(IPAddress.Parse("0.0.0.9")));
+            Assert.False(list.IsBanned(IPAddress.Parse("0.0.0.10")));
+            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.199")));
+            Assert.False(list.IsBanned(IPAddress.Parse("255.255.255.200")));
+            Assert.True(list.IsBanned(IPAddress.Parse("255.255.255.201")));
         }
     }
 }

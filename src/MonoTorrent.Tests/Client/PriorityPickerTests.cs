@@ -81,8 +81,8 @@ namespace MonoTorrent.Client
         public void AllAllowed()
         {
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(1, tester.PickPieceBitfield.Count, "#1");
-            Assert.True(tester.PickPieceBitfield[0].AllTrue, "#2");
+            Assert.Equal(1, tester.PickPieceBitfield.Count);
+            Assert.True(tester.PickPieceBitfield[0].AllTrue);
         }
 
         [Fact]
@@ -92,21 +92,21 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[1].Priority = Priority.High;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(2, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(2, tester.PickPieceBitfield.Count);
             for (int i = 0; i < rig.Pieces; i++)
             {
                 if (i <= rig.Torrent.Files[1].EndPieceIndex)
-                    Assert.True(tester.PickPieceBitfield[0][i], "#2");
+                    Assert.True(tester.PickPieceBitfield[0][i]);
                 else
-                    Assert.False(tester.PickPieceBitfield[0][i], "#2");
+                    Assert.False(tester.PickPieceBitfield[0][i]);
             }
 
             for (int i = 0; i < rig.Pieces; i++)
             {
                 if (i < rig.Torrent.Files[1].EndPieceIndex)
-                    Assert.False(tester.PickPieceBitfield[1][i], "#2");
+                    Assert.False(tester.PickPieceBitfield[1][i]);
                 else
-                    Assert.True(tester.PickPieceBitfield[1][i], "#2");
+                    Assert.True(tester.PickPieceBitfield[1][i]);
             }
         }
 
@@ -117,13 +117,13 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[1].Priority = Priority.DoNotDownload;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(1, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(1, tester.PickPieceBitfield.Count);
             for (int i = 0; i < rig.Pieces; i++)
             {
                 if (i < rig.Torrent.Files[1].EndPieceIndex)
-                    Assert.False(tester.PickPieceBitfield[0][i], "#2");
+                    Assert.False(tester.PickPieceBitfield[0][i]);
                 else
-                    Assert.True(tester.PickPieceBitfield[0][i], "#2");
+                    Assert.True(tester.PickPieceBitfield[0][i]);
             }
         }
 
@@ -140,7 +140,7 @@ namespace MonoTorrent.Client
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
 
-            Assert.Equal(3, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(3, tester.PickPieceBitfield.Count);
 
             bf = tester.PickPieceBitfield[0];
             file = rig.Torrent.Files[0];
@@ -180,7 +180,7 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[0].Priority = Priority.DoNotDownload;
             
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
@@ -190,7 +190,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(false);
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(false);
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
                 file.Priority = Priority.DoNotDownload;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
             rig.Torrent.Files[0].Priority = Priority.High;
             id.BitField.SetAll(false);   
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
