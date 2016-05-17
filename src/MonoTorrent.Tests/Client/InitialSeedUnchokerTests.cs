@@ -28,17 +28,15 @@
 
 
 
+using MonoTorrent.Client.Messages.Standard;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    
-    public class InitialSeedUnchokerTests
+
+    public class InitialSeedUnchokerTests : IDisposable
     {
         //static void Main()
         //{
@@ -50,27 +48,21 @@ namespace MonoTorrent.Client
         PeerId peer;
         TestRig rig;
         InitialSeedUnchoker unchoker;
-        
-        [OneTimeSetUp]
-        public void FixtureSetup()
+
+        public InitialSeedUnchokerTests()
         {
             rig = TestRig.CreateMultiFile();
-        }
 
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            rig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
             rig.Manager.UploadingTo = 0;
             rig.Manager.Settings.UploadSlots = 4;
             peer = rig.CreatePeer(true);
             unchoker = new InitialSeedUnchoker(rig.Manager);
             unchoker.PeerConnected(peer);
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
         }
 
         [Fact]
@@ -87,9 +79,9 @@ namespace MonoTorrent.Client
         public void Advertise2()
         {
             unchoker.UnchokeReview();
-            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength, "#2");
+            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
-                Assert.Equal(i, ((HaveMessage)peer.Dequeue()).PieceIndex, "#3." + i);
+                Assert.Equal(i, ((HaveMessage)peer.Dequeue()).PieceIndex);
         }
 
         [Fact]
@@ -98,9 +90,9 @@ namespace MonoTorrent.Client
             peer.BitField.SetTrue(1).SetTrue(3).SetTrue(5).SetTrue(7);
 
             unchoker.UnchokeReview();
-            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength, "#2");
+            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
-                Assert.Equal(i * 2, ((HaveMessage)peer.Dequeue()).PieceIndex, "#3." + i);
+                Assert.Equal(i * 2, ((HaveMessage)peer.Dequeue()).PieceIndex);
         }
 
         [Fact]
@@ -110,7 +102,7 @@ namespace MonoTorrent.Client
             while (peer.QueueLength > 0)
                 peer.Dequeue();
             unchoker.UnchokeReview();
-            Assert.Equal(0, peer.QueueLength, "#4");
+            Assert.Equal(0, peer.QueueLength);
         }
 
         [Fact]
@@ -140,14 +132,14 @@ namespace MonoTorrent.Client
         public void Advertise6()
         {
             unchoker.UnchokeReview();
-            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength, "#2");
+            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
-                Assert.Equal(i, ((HaveMessage)peer.Dequeue()).PieceIndex, "#3." + i);
+                Assert.Equal(i, ((HaveMessage)peer.Dequeue()).PieceIndex);
             peer.BitField.SetTrue(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
             unchoker.UnchokeReview();
-            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength, "#4");
+            Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
             for (int i = 0; i < unchoker.MaxAdvertised; i++)
-                Assert.Equal(i + 11, ((HaveMessage)peer.Dequeue()).PieceIndex, "#5." + i);
+                Assert.Equal(i + 11, ((HaveMessage)peer.Dequeue()).PieceIndex);
         }
 
         [Fact]
@@ -168,31 +160,31 @@ namespace MonoTorrent.Client
             while (peers[0].QueueLength > 1)
                 unchoker.ReceivedHave(peers[0], ((HaveMessage)peers[0].Dequeue()).PieceIndex);
             unchoker.UnchokeReview();
-            Assert.InstanceOf(typeof (UnchokeMessage), peers[0].Dequeue());
-            Assert.InstanceOf(typeof (ChokeMessage), peers[0].Dequeue());
+            Assert.IsType(typeof (UnchokeMessage), peers[0].Dequeue());
+            Assert.IsType(typeof (ChokeMessage), peers[0].Dequeue());
 
             Assert.Equal(unchoker.MaxAdvertised + 1, peers[1].QueueLength);
             while (peers[1].QueueLength > 1)
                 unchoker.ReceivedHave(other, ((HaveMessage)peers[1].Dequeue()).PieceIndex);
             unchoker.UnchokeReview();
-            Assert.InstanceOf(typeof (UnchokeMessage), peers[1].Dequeue());
-            Assert.InstanceOf(typeof (ChokeMessage), peers[1].Dequeue());
+            Assert.IsType(typeof (UnchokeMessage), peers[1].Dequeue());
+            Assert.IsType(typeof (ChokeMessage), peers[1].Dequeue());
 
             // He didn't share any, he should get 1 piece.
             Assert.Equal(1 + 1, peers[0].QueueLength);
             while (peers[0].QueueLength > 1)
                 unchoker.ReceivedHave(peers[0], ((HaveMessage)peers[0].Dequeue()).PieceIndex);
             unchoker.UnchokeReview();
-            Assert.InstanceOf(typeof (UnchokeMessage), peers[0].Dequeue());
-            Assert.InstanceOf(typeof (ChokeMessage), peers[0].Dequeue());
+            Assert.IsType(typeof (UnchokeMessage), peers[0].Dequeue());
+            Assert.IsType(typeof (ChokeMessage), peers[0].Dequeue());
 
             // He shared them all, he should get max allowance
             Assert.Equal(unchoker.MaxAdvertised + 1, peers[1].QueueLength);
             while (peers[1].QueueLength > 1)
                 unchoker.ReceivedHave(other, ((HaveMessage)peers[1].Dequeue()).PieceIndex);
             unchoker.UnchokeReview();
-            Assert.InstanceOf(typeof (UnchokeMessage), peers[1].Dequeue());
-            Assert.InstanceOf(typeof (ChokeMessage), peers[1].Dequeue());
+            Assert.IsType(typeof (UnchokeMessage), peers[1].Dequeue());
+            Assert.IsType(typeof (ChokeMessage), peers[1].Dequeue());
         }
 
         [Fact]
@@ -203,9 +195,9 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 25; i++)
             {
                 unchoker.UnchokeReview();
-                Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength, "#1." + i);
+                Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
                 HaveMessage h = (HaveMessage)peer.Dequeue();
-                Assert.Equal(i, h.PieceIndex, "#2." + i);
+                Assert.Equal(i, h.PieceIndex);
                 unchoker.ReceivedHave(peer, h.PieceIndex);
                 unchoker.ReceivedHave(other, h.PieceIndex);
             }
@@ -238,7 +230,7 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < unchoker.MaxAdvertised; i++)
                     haves.Enqueue(((HaveMessage)peer.Dequeue()).PieceIndex);
-                Assert.InstanceOf(typeof (UnchokeMessage), peer.Dequeue());
+                Assert.IsType(typeof (UnchokeMessage), peer.Dequeue());
 
                 while(haves.Count > 0)
                 {
@@ -251,14 +243,14 @@ namespace MonoTorrent.Client
 
                 unchoker.UnchokeReview();
                 Assert.True(peer.AmChoking);
-                Assert.InstanceOf(typeof (ChokeMessage), peer.Dequeue());
+                Assert.IsType(typeof (ChokeMessage), peer.Dequeue());
             }
 
             Assert.False(peers[0].AmChoking);
             Assert.True(peers[1].AmChoking);
             Assert.True(peers[2].AmChoking);
 
-            peers.ForEach(delegate(PeerId p) { Assert.Less(0, p.QueueLength); });
+            peers.ForEach(delegate (PeerId p) { Assert.True(p.QueueLength > 0); });
         }
 
         [Fact]
@@ -270,34 +262,34 @@ namespace MonoTorrent.Client
             PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("tcp://127.0.0.5:5356")), rig.Manager);
 
             unchoker.PeerDisconnected(a);
-            Assert.Equal(1, unchoker.PeerCount, "#1");
+            Assert.Equal(1, unchoker.PeerCount);
             
             unchoker.PeerDisconnected(b);
             unchoker.PeerDisconnected(c);
-            Assert.Equal(1, unchoker.PeerCount, "#2");
+            Assert.Equal(1, unchoker.PeerCount);
             
             unchoker.PeerConnected(a);
-            Assert.Equal(2, unchoker.PeerCount, "#3");
-            
+            Assert.Equal(2, unchoker.PeerCount);
+
             unchoker.PeerConnected(b);
-            Assert.Equal(3, unchoker.PeerCount, "#4");
+            Assert.Equal(3, unchoker.PeerCount);
 
             unchoker.PeerDisconnected(d);
-            Assert.Equal(3, unchoker.PeerCount, "#5");
+            Assert.Equal(3, unchoker.PeerCount);
 
             unchoker.PeerDisconnected(b);
-            Assert.Equal(2, unchoker.PeerCount, "#6");
+            Assert.Equal(2, unchoker.PeerCount);
         }
 
         [Fact]
         public void Unchoke()
         {
             unchoker.UnchokeReview();
-            while (peer.QueueLength > 0) Assert.InstanceOf(typeof (HaveMessage), peer.Dequeue(), "#1");
+            while (peer.QueueLength > 0) Assert.IsType(typeof (HaveMessage), peer.Dequeue());
             peer.IsInterested = true;
             unchoker.UnchokeReview();
             Assert.Equal(1, peer.QueueLength);
-            Assert.InstanceOf(typeof (UnchokeMessage), peer.Dequeue(), "#2");
+            Assert.IsType(typeof (UnchokeMessage), peer.Dequeue());
             unchoker.UnchokeReview();
             unchoker.UnchokeReview();
             Assert.Equal(0, peer.QueueLength);
@@ -314,14 +306,14 @@ namespace MonoTorrent.Client
             peer.IsInterested = true;
             unchoker.UnchokeReview();
             Assert.Equal(1, peer.QueueLength);
-            Assert.InstanceOf(typeof (UnchokeMessage), peer.Dequeue(), "#2");
+            Assert.IsType(typeof (UnchokeMessage), peer.Dequeue());
 
             while (pieces.Count > 0)
             {
                 unchoker.ReceivedHave(peer, pieces.Dequeue());
                 unchoker.UnchokeReview();
                 Assert.Equal(1, peer.QueueLength);
-                Assert.InstanceOf(typeof (HaveMessage), peer.Dequeue(), "#3");
+                Assert.IsType(typeof (HaveMessage), peer.Dequeue());
             }
         }
     }

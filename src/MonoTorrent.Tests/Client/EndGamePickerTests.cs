@@ -1,16 +1,13 @@
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    
-    public class EndGamePickerTests
+
+    public class EndGamePickerTests : IDisposable
     {
         //static void Main()
         //{
@@ -26,15 +23,10 @@ namespace MonoTorrent.Client
         List<Piece> pieces;
         TestRig rig;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public EndGamePickerTests()
         {
             rig = TestRig.CreateMultiFile();
-        }
 
-        [SetUp]
-        public void Setup()
-        {
             bitfield = new BitField(40).SetAll(true)
                                        .Set(4, false)
                                        .Set(6, false)
@@ -57,8 +49,7 @@ namespace MonoTorrent.Client
             other.BitField.SetAll(false);
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             rig.Dispose();
         }
@@ -103,21 +94,21 @@ namespace MonoTorrent.Client
             while (picker.PickPiece(id, new List<PeerId>()) != null) ;
             while (picker.PickPiece(other, new List<PeerId>()) != null) ;
 
-            Assert.Equal(2, id.AmRequestingPiecesCount, "#1");
-            Assert.Equal(2, other.AmRequestingPiecesCount, "#1");
+            Assert.Equal(2, id.AmRequestingPiecesCount);
+            Assert.Equal(2, other.AmRequestingPiecesCount);
 
             Piece piece;
             if (!picker.ValidatePiece(id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
-                Assert.Fail("I should've validated!");
+                Assert.True(false, "I should've validated!");
 
             if (picker.ValidatePiece(other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
-                Assert.Fail("I should not have validated!");
+                Assert.True(false, "I should not have validated!");
 
-            Assert.Equal(1, id.AmRequestingPiecesCount, "#1");
-            Assert.Equal(1, other.AmRequestingPiecesCount, "#1");
-            Assert.True(pieces[0][0].Received, "#5");
-            Assert.Equal(16, pieces[0].TotalRequested, "#6");
-            Assert.Equal(15, pieces[0].TotalReceived, "#7");
+            Assert.Equal(1, id.AmRequestingPiecesCount);
+            Assert.Equal(1, other.AmRequestingPiecesCount);
+            Assert.True(pieces[0][0].Received);
+            Assert.Equal(16, pieces[0].TotalRequested);
+            Assert.Equal(15, pieces[0].TotalReceived);
         }
 
         [Fact]

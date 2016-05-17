@@ -28,9 +28,8 @@
 
 
 
+using System;
 using System.IO;
-using Xunit;
-using System.Text;
 
 namespace MonoTorrent.Client
 {
@@ -38,7 +37,7 @@ namespace MonoTorrent.Client
     /// 
     /// </summary>
     //
-    public class FileManagerTest
+    public class FileManagerTest : IDisposable
     {
         private string path = string.Empty;
         private string directoryName = string.Empty;
@@ -47,8 +46,7 @@ namespace MonoTorrent.Client
         /// <summary>
         /// 
         /// </summary>
-        [SetUp]
-        public void Setup()
+        public FileManagerTest()
         {
             this.path = GetType().Assembly.Location;
             for (int i = 0; i >= 0; i++)
@@ -61,6 +59,17 @@ namespace MonoTorrent.Client
                 }
 
             GenerateTestFiles();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (string str in Directory.GetFiles(Path.Combine(this.path, this.directoryName)))
+                File.Delete(str);
+
+            Directory.Delete(Path.Combine(path, "temp"));
         }
 
         /// <summary>
@@ -81,18 +90,6 @@ namespace MonoTorrent.Client
 
             file1.Close();
             file2.Close();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [TearDown]
-        public void RemoveTempFiles()
-        {
-            foreach (string str in Directory.GetFiles(Path.Combine(this.path, this.directoryName)))
-                File.Delete(str);
-
-            Directory.Delete(Path.Combine(path, "temp"));
         }
     }
 }

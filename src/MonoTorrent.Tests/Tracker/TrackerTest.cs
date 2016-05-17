@@ -1,30 +1,23 @@
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Tracker;
-using MonoTorrent.Common;
-using MonoTorrent.BEncoding;
 using System.Net;
+using Xunit;
 
 namespace MonoTorrent.Tracker
 {
-    
-    public class TrackerTest
+
+    public class TrackerTest : IDisposable
     {
-        public TrackerTest()
-        {
-        }
         private TrackerTestRig rig;
 
-        [SetUp]
-        public void Setup()
+        public TrackerTest()
         {
             rig = new TrackerTestRig();
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             rig.Dispose();
         }
@@ -44,7 +37,7 @@ namespace MonoTorrent.Tracker
 
             clones.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t), "#3"); });
 
-            Assert.Equal(rig.Trackables.Count, rig.Tracker.Count, "#4");
+            Assert.Equal(rig.Trackables.Count, rig.Tracker.Count);
         }
 
         [Fact]
@@ -62,13 +55,13 @@ namespace MonoTorrent.Tracker
 
             SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[0]);
 
-            Assert.Equal(rig.Peers.Count, manager.Count, "#1");
+            Assert.Equal(rig.Peers.Count, manager.Count);
             foreach (ITrackable t in rig.Trackables)
             {
                 SimpleTorrentManager m = rig.Tracker.GetManager(t);
                 if (m == manager)
                     continue;
-                Assert.Equal(0, m.Count, "#2");
+                Assert.Equal(0, m.Count);
             }
 
             foreach (Peer p in manager.GetPeers())
@@ -76,10 +69,10 @@ namespace MonoTorrent.Tracker
                 PeerDetails d = rig.Peers.Find(delegate(PeerDetails details) {
                     return details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port;
                 });
-                Assert.Equal(d.Downloaded, p.Downloaded, "#3");
-                Assert.Equal(d.peerId, p.PeerId, "#4");
-                Assert.Equal(d.Remaining, p.Remaining, "#5");
-                Assert.Equal(d.Uploaded, p.Uploaded, "#6");
+                Assert.Equal(d.Downloaded, p.Downloaded);
+                Assert.Equal(d.peerId, p.PeerId);
+                Assert.Equal(d.Remaining, p.Remaining);
+                Assert.Equal(d.Uploaded, p.Uploaded);
             }
         }
 
@@ -88,7 +81,7 @@ namespace MonoTorrent.Tracker
         {
             int i = 0;
             rig.Peers.ForEach(delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent)((i++) % 4), rig.Trackables[0]); });
-            Assert.Equal(0, rig.Tracker.Count, "#1");
+            Assert.Equal(0, rig.Tracker.Count);
         }
 
         [Fact]
@@ -107,7 +100,7 @@ namespace MonoTorrent.Tracker
             {
                 SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[i]);
                 List<Peer> peers = manager.GetPeers();
-                Assert.Equal(25, peers.Count, "#1");
+                Assert.Equal(25, peers.Count);
 
                 foreach (Peer p in peers)
                 {
@@ -131,7 +124,7 @@ namespace MonoTorrent.Tracker
             rig.Peers[0].ClientAddress = IPAddress.Broadcast;
             rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
 
-            Assert.Equal(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count, "#1");
+            Assert.Equal(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count);
         }
 
         [Fact]
@@ -149,7 +142,7 @@ namespace MonoTorrent.Tracker
 
             BEncodedDictionary dict = (BEncodedDictionary)rig.Listener.Handle(rig.Peers[24], TorrentEvent.None, rig.Trackables[0]);
             BEncodedList list = (BEncodedList)dict["peers"];
-            Assert.Equal(25, list.Count, "#1");
+            Assert.Equal(25, list.Count);
 
             foreach (BEncodedDictionary d in list)
             {
