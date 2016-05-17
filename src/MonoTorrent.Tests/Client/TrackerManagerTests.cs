@@ -1,10 +1,8 @@
+using MonoTorrent.Client.Tracker;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client;
 using System.Threading;
+using Xunit;
 
 namespace MonoTorrent.Client
 {

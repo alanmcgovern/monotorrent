@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Client;
 using System.Threading;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class MainLoopTests
+
+    public class MainLoopTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -27,22 +24,15 @@ namespace MonoTorrent.Client
         private int count;
         MainLoop loop;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public MainLoopTests()
         {
             loop = new MainLoop("Test Loop");
+            count = 0;
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             //loop.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            count = 0;
         }
 
         [Fact]
@@ -70,7 +60,7 @@ namespace MonoTorrent.Client
 
                 return true;
             });
-            Assert.True(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
+            Assert.True(handle.WaitOne(5000, true));
             Assert.Equal(3, count);
         }
 
@@ -88,7 +78,7 @@ namespace MonoTorrent.Client
 
                 return true;
             });
-            Assert.True(handle.WaitOne(5000, false), "#1: Executed {0} times", count);
+            Assert.True(handle.WaitOne(5000, false));
             Assert.Equal(3, count);
         }
     }
