@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
-    [TestFixture]
+    
     public class InfoHashTests
     {
         InfoHash Create()
@@ -15,23 +15,23 @@ namespace MonoTorrent.Common
             });
         }
 
-        [Test]
+        [Fact]
         public void HexTest()
         {
             InfoHash hash = Create();
             string hex = hash.ToHex();
-            Assert.AreEqual(40, hex.Length, "#1");
+            Assert.Equal(40, hex.Length, "#1");
             InfoHash other = InfoHash.FromHex(hex);
-            Assert.AreEqual(hash, other, "#2");
+            Assert.Equal(hash, other, "#2");
         }
 
-        [Test]
+        [Fact]
         public void InvalidHex()
         {
             Assert.Throws<ArgumentException>(() => InfoHash.FromHex("123123123123123123123"));
         }
 
-        [Test]
+        [Fact]
         public void NullHex()
         {
             Assert.Throws<ArgumentException>(() => InfoHash.FromHex(null));

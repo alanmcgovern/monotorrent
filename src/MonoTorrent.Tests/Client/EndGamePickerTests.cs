@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
@@ -9,7 +9,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class EndGamePickerTests
     {
         //static void Main()
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void CancelTest()
         {
             foreach (Piece p in pieces)
@@ -82,10 +82,10 @@ namespace MonoTorrent.Client
             picker.CancelRequests(other);
 
             id.BitField[4] = true;
-            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+            Assert.NotNull(picker.PickPiece(id, new List<PeerId>()));
         }
 
-        [Test]
+        [Fact]
         public void MultiPick()
         {
             id.BitField.Set(pieces[0].Index, true);
@@ -103,8 +103,8 @@ namespace MonoTorrent.Client
             while (picker.PickPiece(id, new List<PeerId>()) != null) ;
             while (picker.PickPiece(other, new List<PeerId>()) != null) ;
 
-            Assert.AreEqual(2, id.AmRequestingPiecesCount, "#1");
-            Assert.AreEqual(2, other.AmRequestingPiecesCount, "#1");
+            Assert.Equal(2, id.AmRequestingPiecesCount, "#1");
+            Assert.Equal(2, other.AmRequestingPiecesCount, "#1");
 
             Piece piece;
             if (!picker.ValidatePiece(id, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
@@ -113,14 +113,14 @@ namespace MonoTorrent.Client
             if (picker.ValidatePiece(other, pieces[0].Index, pieces[0][0].StartOffset, pieces[0][0].RequestLength, out piece))
                 Assert.Fail("I should not have validated!");
 
-            Assert.AreEqual(1, id.AmRequestingPiecesCount, "#1");
-            Assert.AreEqual(1, other.AmRequestingPiecesCount, "#1");
-            Assert.IsTrue(pieces[0][0].Received, "#5");
-            Assert.AreEqual(16, pieces[0].TotalRequested, "#6");
-            Assert.AreEqual(15, pieces[0].TotalReceived, "#7");
+            Assert.Equal(1, id.AmRequestingPiecesCount, "#1");
+            Assert.Equal(1, other.AmRequestingPiecesCount, "#1");
+            Assert.True(pieces[0][0].Received, "#5");
+            Assert.Equal(16, pieces[0].TotalRequested, "#6");
+            Assert.Equal(15, pieces[0].TotalReceived, "#7");
         }
 
-        [Test]
+        [Fact]
         public void HashFail()
         {
             Piece piece;
@@ -134,9 +134,9 @@ namespace MonoTorrent.Client
                 requests.Add(m);
 
             foreach (RequestMessage message in requests)
-                Assert.IsTrue(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
+                Assert.True(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength, out piece));
 
-            Assert.IsNotNull(picker.PickPiece(id, new List<PeerId>()));
+            Assert.NotNull(picker.PickPiece(id, new List<PeerId>()));
         }
     }
 }

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Messages.Standard;
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
             level1 = new MemoryWriter(level2, Piece.BlockSize * 3);
 		}
 
-        [Test]
+        [Fact]
         public void FillFirstBuffer()
         {
             // Write 4 blocks to the stream and then verify they can all be read
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void ReadWriteBlock()
         {
             level1.Write(singleFile, 0, buffer, 0, buffer.Length);
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client
             Verify(buffer, 1);
         }
 
-        [Test]
+        [Fact]
         public void ReadWriteBlockChangeOriginal()
         {
             level1.Write(singleFile, 0, buffer, 0, buffer.Length);
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
             Verify(buffer, 1);
         }
 
-        [Test]
+        [Fact]
         public void ReadWriteSpanningBlock()
         {
             // Write one block of data to the memory stream. 
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
         void Verify(byte[] buffer, int startOffset, int count, byte expected)
         {
             for (int i = startOffset; i < startOffset + count; i++)
-                Assert.AreEqual(buffer[i], expected, "#" + i);
+                Assert.Equal(buffer[i], expected, "#" + i);
         }
 	}
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client;
 using System.Threading;
@@ -9,7 +9,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
-    [TestFixture]
+    
     public class TrackerTests
     {
         //static void Main(string[] args)
@@ -47,7 +47,7 @@ namespace MonoTorrent.Tracker
             //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
-        [Test]
+        [Fact]
         public void MultipleAnnounce()
         {
             int announceCount = 0;
@@ -70,7 +70,7 @@ namespace MonoTorrent.Tracker
                 tier.Trackers[0].Announce(parameters, id);
             }
 
-            Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");
+            Assert.True(handle.WaitOne(5000, true), "Some of the responses weren't received");
         }
     }
 }

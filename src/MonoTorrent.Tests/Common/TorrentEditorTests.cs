@@ -1,40 +1,40 @@
 using System;
 
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Common
 {
-    [TestFixture]
+    
     public class TorrentEditorTests
     {
-        [Test]
+        [Fact]
         public void EditingCreatesCopy ()
         {
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
-            Assert.AreEqual ("a", d ["comment"].ToString (), "#1");
+            Assert.Equal ("a", d ["comment"].ToString (), "#1");
         }
 
-        [Test]
+        [Fact]
         public void EditComment ()
         {
             var d = Create ("comment", "a");
             var editor = new TorrentEditor (d);
             editor.Comment = "b";
             d = editor.ToDictionary ();
-            Assert.AreEqual ("b", d ["comment"].ToString (), "#1");
+            Assert.Equal ("b", d ["comment"].ToString (), "#1");
         }
 
-        [Test]
+        [Fact]
         public void ReplaceInfoDict ()
         {
             var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };
             Assert.Throws<InvalidOperationException>(() => editor.SetCustom("info", new BEncodedDictionary()));
         }
 
-        [Test]
+        [Fact]
         public void EditProtectedProperty_NotAllowed ()
         {
             var editor = new TorrentEditor (new BEncodedDictionary ()) { CanEditSecureMetadata = false };

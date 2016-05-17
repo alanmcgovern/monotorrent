@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
 using System.Net;
@@ -11,7 +11,7 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    [TestFixture]
+    
     public class MessageHandlingTests
     {
         //static void Main(string[] args)
@@ -40,7 +40,7 @@ namespace MonoTorrent.Dht
             engine.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void SendPing()
         {
             engine.Add(node);
@@ -57,17 +57,17 @@ namespace MonoTorrent.Dht
                 listener.RaiseMessageReceived(response, e.EndPoint);
             };
 
-            Assert.AreEqual(NodeState.Unknown, node.State, "#1");
+            Assert.Equal(NodeState.Unknown, node.State, "#1");
 
             DateTime lastSeen = node.LastSeen;
-            Assert.IsTrue(handle.WaitOne(1000, false), "#1a");
+            Assert.True(handle.WaitOne(1000, false), "#1a");
             Node nnnn = node;
             node = engine.RoutingTable.FindNode(nnnn.Id);
-            Assert.IsTrue (lastSeen < node.LastSeen, "#2");
-            Assert.AreEqual(NodeState.Good, node.State, "#3");
+            Assert.True (lastSeen < node.LastSeen, "#2");
+            Assert.Equal(NodeState.Good, node.State, "#3");
         }
 
-        [Test]
+        [Fact]
         public void PingTimeout()
         {
             engine.TimeOut = TimeSpan.FromHours(1);
@@ -86,7 +86,7 @@ namespace MonoTorrent.Dht
             PingResponse response = new PingResponse(node.Id, transactionId);
             listener.RaiseMessageReceived(response, node.EndPoint);
 
-            Assert.IsTrue(handle.WaitOne(1000, true), "#0");
+            Assert.True(handle.WaitOne(1000, true), "#0");
 
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
             DateTime lastSeen = node.LastSeen;
@@ -102,9 +102,9 @@ namespace MonoTorrent.Dht
             task.Execute();
             handle.WaitOne();
 
-            Assert.AreEqual(4, node.FailedCount, "#1");
-            Assert.AreEqual(NodeState.Bad, node.State, "#2");
-            Assert.AreEqual(lastSeen, node.LastSeen, "#3");
+            Assert.Equal(4, node.FailedCount, "#1");
+            Assert.Equal(NodeState.Bad, node.State, "#2");
+            Assert.Equal(lastSeen, node.LastSeen, "#3");
         }
 
 //        void FakePingResponse(object sender, SendQueryEventArgs e)

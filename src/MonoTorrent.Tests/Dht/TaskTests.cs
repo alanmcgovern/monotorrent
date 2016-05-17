@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using System.Net;
 using MonoTorrent.Dht.Tasks;
 using MonoTorrent.Dht.Messages;
@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace MonoTorrent.Dht
 {
-    [TestFixture]
+    
     public class TaskTests
     {
         //static void Main(string[] args)
@@ -38,7 +38,7 @@ namespace MonoTorrent.Dht
         }
 
         int counter;
-        [Test]
+        [Fact]
         public void SendQueryTaskTimeout()
         {
             engine.TimeOut = TimeSpan.FromMilliseconds(25);
@@ -53,11 +53,11 @@ namespace MonoTorrent.Dht
             SendQueryTask task = new SendQueryTask(engine, ping, node);
             task.Completed += delegate { handle.Set(); };
             task.Execute();
-            Assert.IsTrue(handle.WaitOne(3000, false), "#1");
-            Assert.AreEqual(task.Retries, counter);
+            Assert.True(handle.WaitOne(3000, false), "#1");
+            Assert.Equal(task.Retries, counter);
         }
 
-        [Test]
+        [Fact]
         public void SendQueryTaskSucceed()
         {
             engine.TimeOut = TimeSpan.FromMilliseconds(25);
@@ -78,16 +78,16 @@ namespace MonoTorrent.Dht
             task.Completed += delegate { handle.Set(); };
             task.Execute();
 
-            Assert.IsTrue(handle.WaitOne(3000, false), "#1");
+            Assert.True(handle.WaitOne(3000, false), "#1");
             System.Threading.Thread.Sleep(200);
-            Assert.AreEqual(1, counter, "#2");
+            Assert.Equal(1, counter, "#2");
             Node n = engine.RoutingTable.FindNode(this.node.Id);
-            Assert.IsNotNull(n, "#3");
-            Assert.IsTrue(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
+            Assert.NotNull(n, "#3");
+            Assert.True(n.LastSeen > DateTime.UtcNow.AddSeconds(-2));
         }
 
         int nodeCount = 0;
-        [Test]
+        [Fact]
         public void NodeReplaceTest()
         {
             engine.TimeOut = TimeSpan.FromMilliseconds(25);
@@ -133,10 +133,10 @@ namespace MonoTorrent.Dht
             task.Completed += delegate(object o, TaskCompleteEventArgs e) { handle.Set(); };
             task.Execute();
 
-            Assert.IsTrue(handle.WaitOne(4000, false), "#10");
+            Assert.True(handle.WaitOne(4000, false), "#10");
         }
 
-        [Test]
+        [Fact]
         public void BucketRefreshTest()
         {
             List<Node> nodes = new List<Node>();
@@ -176,12 +176,12 @@ namespace MonoTorrent.Dht
             System.Threading.Thread.Sleep(500);
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
-                Assert.IsTrue(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
-                Assert.IsTrue(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
+                Assert.True(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
+                Assert.True(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
             }
         }
 
-        [Test]
+        [Fact]
         public void ReplaceNodeTest()
         {
             engine.TimeOut = TimeSpan.FromMilliseconds(25);
@@ -197,9 +197,9 @@ namespace MonoTorrent.Dht
             ReplaceNodeTask task = new ReplaceNodeTask(engine, engine.RoutingTable.Buckets[0], replacement);
             task.Completed += delegate { handle.Set(); };
             task.Execute();
-            Assert.IsTrue(handle.WaitOne(1000, true), "#a");
-            Assert.IsFalse(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace), "#1");
-            Assert.IsTrue(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement), "#2");
+            Assert.True(handle.WaitOne(1000, true), "#a");
+            Assert.False(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace), "#1");
+            Assert.True(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement), "#2");
         }
     }
 }

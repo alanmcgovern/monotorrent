@@ -31,7 +31,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Messages.UdpTracker;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
@@ -41,7 +41,7 @@ using System.Net;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class UdpTrackerTests
     {
         static void Main(string[] args)
@@ -100,20 +100,20 @@ namespace MonoTorrent.Client
             server.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void AnnounceMessageTest()
         {
             AnnounceMessage m = new AnnounceMessage(0, 12345, announceparams);
             AnnounceMessage d = (AnnounceMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
 
-            Assert.AreEqual(1, m.Action);
-            Assert.AreEqual(m.Action, d.Action);
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
-            Assert.AreEqual(12345, d.ConnectionId);
+            Assert.Equal(1, m.Action);
+            Assert.Equal(m.Action, d.Action);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.Equal(12345, d.ConnectionId);
         }
 
-        [Test]
+        [Fact]
         public void AnnounceResponseTest()
         {
             List<Peer> peers = new List<Peer>();
@@ -125,44 +125,44 @@ namespace MonoTorrent.Client
             AnnounceResponseMessage d = (AnnounceResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
 
-            Assert.AreEqual(1, m.Action);
-            Assert.AreEqual(m.Action, d.Action);
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
-            Assert.AreEqual(12345, d.TransactionId);
+            Assert.Equal(1, m.Action);
+            Assert.Equal(m.Action, d.Action);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.Equal(12345, d.TransactionId);
         }
 
-        [Test]
+        [Fact]
         public void ConnectMessageTest()
         {
             ConnectMessage m = new ConnectMessage();
             ConnectMessage d = (ConnectMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
             
-            Assert.AreEqual(0, m.Action, "#0");
-            Assert.AreEqual(m.Action, d.Action, "#1");
-            Assert.AreEqual(m.ConnectionId, d.ConnectionId, "#2");
-            Assert.AreEqual(m.TransactionId, d.TransactionId, "#3");
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
+            Assert.Equal(0, m.Action, "#0");
+            Assert.Equal(m.Action, d.Action, "#1");
+            Assert.Equal(m.ConnectionId, d.ConnectionId, "#2");
+            Assert.Equal(m.TransactionId, d.TransactionId, "#3");
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
         }
 
-        [Test]
+        [Fact]
         public void ConnectResponseTest()
         {
             ConnectResponseMessage m = new ConnectResponseMessage(5371, 12345);
             ConnectResponseMessage d = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
             
-            Assert.AreEqual(0, m.Action, "#0"); 
-            Assert.AreEqual(m.Action, d.Action, "#1");
-            Assert.AreEqual(m.ConnectionId, d.ConnectionId, "#2");
-            Assert.AreEqual(m.TransactionId, d.TransactionId, "#3");
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
-            Assert.AreEqual(12345, d.ConnectionId);
-            Assert.AreEqual(5371, d.TransactionId);
+            Assert.Equal(0, m.Action, "#0"); 
+            Assert.Equal(m.Action, d.Action, "#1");
+            Assert.Equal(m.ConnectionId, d.ConnectionId, "#2");
+            Assert.Equal(m.TransactionId, d.TransactionId, "#3");
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()), "#4");
+            Assert.Equal(12345, d.ConnectionId);
+            Assert.Equal(5371, d.TransactionId);
 
         }
 
-        [Test]
+        [Fact]
         public void ScrapeMessageTest()
         {
             List<byte[]> hashes = new List<byte[]>();
@@ -181,12 +181,12 @@ namespace MonoTorrent.Client
             ScrapeMessage d = (ScrapeMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
             
-            Assert.AreEqual(2, m.Action);
-            Assert.AreEqual(m.Action, d.Action);
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.Equal(2, m.Action);
+            Assert.Equal(m.Action, d.Action);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
         }
 
-        [Test]
+        [Fact]
         public void ScrapeResponseTest()
         {
             List<ScrapeDetails> details = new List<ScrapeDetails>();
@@ -198,20 +198,20 @@ namespace MonoTorrent.Client
             ScrapeResponseMessage d = (ScrapeResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
             
-            Assert.AreEqual(2, m.Action);
-            Assert.AreEqual(m.Action, d.Action);
-            Assert.IsTrue(Toolbox.ByteMatch(m.Encode(), d.Encode()));
-            Assert.AreEqual(12345, d.TransactionId);
+            Assert.Equal(2, m.Action);
+            Assert.Equal(m.Action, d.Action);
+            Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
+            Assert.Equal(12345, d.TransactionId);
         }
 
         void Check(UdpTrackerMessage message, MessageType type)
         {
             byte[] e = message.Encode();
-            Assert.AreEqual(e.Length, message.ByteLength, "#1");
-            Assert.IsTrue(Toolbox.ByteMatch(e, UdpTrackerMessage.DecodeMessage(e, 0, e.Length, type).Encode()), "#2");
+            Assert.Equal(e.Length, message.ByteLength, "#1");
+            Assert.True(Toolbox.ByteMatch(e, UdpTrackerMessage.DecodeMessage(e, 0, e.Length, type).Encode()), "#2");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceTest()
         {
             UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
@@ -229,12 +229,12 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#1");
-            Assert.IsTrue(p.Successful);
-            //Assert.AreEqual(keys[0], t.Key, "#2");
+            Assert.NotNull(p, "#1");
+            Assert.True(p.Successful);
+            //Assert.Equal(keys[0], t.Key, "#2");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceTest_NoConnect()
         {
             IgnoringListener listener = new IgnoringListener(57532);
@@ -250,7 +250,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void AnnounceTest_NoAnnounce()
         {
             IgnoringListener listener = new IgnoringListener(57532);
@@ -266,7 +266,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void ScrapeTest_NoConnect()
         {
             IgnoringListener listener = new IgnoringListener(57532);
@@ -282,7 +282,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void ScrapeTest_NoScrapes()
         {
             IgnoringListener listener = new IgnoringListener(57532);
@@ -315,8 +315,8 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#1");
-            Assert.IsFalse(p.Successful);
+            Assert.NotNull(p, "#1");
+            Assert.False(p.Successful);
         }
 
         void OfflineScrapeTest()
@@ -337,15 +337,15 @@ namespace MonoTorrent.Client
 
             t.Scrape(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#1");
-            Assert.IsFalse(p.Successful);
+            Assert.NotNull(p, "#1");
+            Assert.False(p.Successful);
         }
 
-        [Test]
+        [Fact]
         public void ScrapeTest()
         {
             UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
-            Assert.IsTrue(t.CanScrape, "#1");
+            Assert.True(t.CanScrape, "#1");
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             ScrapeResponseEventArgs p = null;
@@ -358,16 +358,16 @@ namespace MonoTorrent.Client
 
             t.Scrape(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#2");
-            Assert.IsTrue(p.Successful, "#3");
-            Assert.AreEqual(0, t.Complete, "#1");
-            Assert.AreEqual(0, t.Incomplete, "#2");
-            Assert.AreEqual(0, t.Downloaded, "#3");
+            Assert.NotNull(p, "#2");
+            Assert.True(p.Successful, "#3");
+            Assert.Equal(0, t.Complete, "#1");
+            Assert.Equal(0, t.Incomplete, "#2");
+            Assert.Equal(0, t.Downloaded, "#3");
         }
 
         void Wait(WaitHandle handle)
         {
-            Assert.IsTrue(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
+            Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }
     }
 

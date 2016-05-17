@@ -1,32 +1,32 @@
 using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
-    [TestFixture]
+    
     public class SpeedMonitorTest
     {
-        [Test]
+        [Fact]
         public void ZeroAveragingPeriod ()
         {
             var monitor = new SpeedMonitor (0);
             monitor.AddDelta (1000);
             monitor.Tick (1000);
 
-            Assert.AreEqual (1000, monitor.Rate, "#1");
+            Assert.Equal (1000, monitor.Rate, "#1");
         }
 
-        [Test]
+        [Fact]
         public void Tick ()
         {
             var monitor = new SpeedMonitor ();
             monitor.AddDelta (1000);
             monitor.Tick (1000);
 
-            Assert.AreEqual (1000, monitor.Rate, "#1");
+            Assert.Equal (1000, monitor.Rate, "#1");
         }
 
-        [Test]
+        [Fact]
         public void TickTwice ()
         {
             // Send 1000 bytes in 2000 milliseconds. Check
@@ -36,10 +36,10 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.AreEqual (500, monitor.Rate, "#1");
+            Assert.Equal (500, monitor.Rate, "#1");
         }
 
-        [Test]
+        [Fact]
         public void TickFull ()
         {
             // Averaging period is 3, tick 3 times.
@@ -49,10 +49,10 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.AreEqual (400, monitor.Rate, "#1");
+            Assert.Equal (400, monitor.Rate, "#1");
         }
 
-        [Test]
+        [Fact]
         public void Tick_AveragingTwo_TickThree ()
         {
             // Send data only in the first tick. When we tick a third time
@@ -63,7 +63,7 @@ namespace MonoTorrent.Common
             monitor.Tick (1000);
             monitor.Tick (1000);
 
-            Assert.AreEqual (0, monitor.Rate, "#1");
+            Assert.Equal (0, monitor.Rate, "#1");
         }
     }
 }

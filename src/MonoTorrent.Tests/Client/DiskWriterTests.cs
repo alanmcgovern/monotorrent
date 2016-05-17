@@ -33,7 +33,7 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Common;
-using NUnit.Framework;
+using Xunit;
 using System.IO;
 using System.Threading;
 
@@ -82,8 +82,8 @@ namespace MonoTorrent.Client
         }
     }
 
-    [TestFixture]
-    public class DiskWriterTests
+    
+    public class DiskWriterTests : IDisposable
     {
         byte [] data = new byte [Piece.BlockSize];
         DiskManager diskManager;
@@ -91,35 +91,24 @@ namespace MonoTorrent.Client
         TestRig rig;
         ExceptionWriter writer;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public DiskWriterTests()
         {
             rig = TestRig.CreateMultiFile();
             diskManager = rig.Engine.DiskManager;
-        }
 
-        [SetUp]
-        public void Setup()
-        {
             writer = new ExceptionWriter();
             diskManager.Writer = writer;
             handle = new ManualResetEvent(false);
             rig.Manager.Stop();
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             handle.Close();
-        }
-
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void CloseFail()
         {
             writer.close = true;
@@ -128,7 +117,7 @@ namespace MonoTorrent.Client
             CheckFail();
         }
 
-        [Test]
+        [Fact]
         public void FlushFail()
         {
             writer.flush = true;
@@ -137,7 +126,7 @@ namespace MonoTorrent.Client
             CheckFail();
         }
 
-        [Test]
+        [Fact]
         public void MoveFail()
         {
             writer.move = true;
@@ -146,7 +135,7 @@ namespace MonoTorrent.Client
             CheckFail();
         }
 
-        [Test]
+        [Fact]
         public void ReadFail()
         {
             bool called = false;
@@ -154,10 +143,10 @@ namespace MonoTorrent.Client
             Hookup();
             diskManager.QueueRead(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
-            Assert.IsTrue (called, "#delegate called");
+            Assert.True (called, "#delegate called");
         }
 
-        [Test]
+        [Fact]
         public void WriteFail()
         {
             bool called = false;
@@ -165,7 +154,7 @@ namespace MonoTorrent.Client
             Hookup();
             diskManager.QueueWrite(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
-            Assert.IsTrue (called, "#delegate called");
+            Assert.True (called, "#delegate called");
         }
 
         void Hookup()
@@ -178,7 +167,7 @@ namespace MonoTorrent.Client
 
         void CheckFail()
         {
-            Assert.IsTrue(handle.WaitOne(5000, true), "Failure was not handled");
+            Assert.True(handle.WaitOne(5000, true), "Failure was not handled");
         }
     }
 }

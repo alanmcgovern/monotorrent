@@ -6,11 +6,11 @@ using System.Text;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class InitialSeedingModeTest
     {
         InitialSeedingMode Mode {
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
             Rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void SwitchingModesSendsHaves()
         {
             Rig.Manager.Peers.ConnectedPeers.Add(Rig.CreatePeer(true, true));
@@ -46,9 +46,9 @@ namespace MonoTorrent.Client
             Mode.HandlePeerConnected(peer, Direction.Incoming);
             Mode.Tick(0);
 
-            Assert.IsTrue(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage, "#1");
+            Assert.True(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage, "#1");
             BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue();
-            Assert.IsTrue(m.BitField.AllTrue, "#2");
+            Assert.True(m.BitField.AllTrue, "#2");
         }
     }
 }

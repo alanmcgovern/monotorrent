@@ -29,7 +29,7 @@
 
 
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 using System.Text;
 
 namespace MonoTorrent.Client
@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
     /// <summary>
     /// 
     /// </summary>
-    //[TestFixture]
+    //
     public class FileManagerTest
     {
         private string path = string.Empty;

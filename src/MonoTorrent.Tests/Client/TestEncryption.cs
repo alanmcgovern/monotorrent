@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using System.Threading;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
@@ -9,7 +9,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class TestEncryption
     {
         //public static void Main(string[] args)
@@ -71,74 +71,74 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void Full_FullTestNoInitial()
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, false);
         }
-        [Test]
+        [Fact]
         public void Full_FullTestInitial()
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, true);
         }
 
-        [Test]
+        [Fact]
         public void Full_HeaderTestNoInitial()
         {
             Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
         }
 
-        [Test]
+        [Fact]
         public void Full_HeaderTestInitial()
         {
             Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true));
         }
 
-        [Test]
+        [Fact]
         public void Full_AutoTestNoInitial()
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, false);
         }
-        [Test]
+        [Fact]
         public void Full_AutoTestInitial()
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, true);
         }
 
-        [Test]
+        [Fact]
         public void Full_NoneTestNoInitial()
         {
             Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
         }
-        [Test]
+        [Fact]
         public void Full_NoneTestInitial()
         {
             Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true));
         }
 
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerAFullInitial()
         {
             PeerATest(EncryptionTypes.RC4Full, true);
         }
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerAFullNoInitial()
         {
             PeerATest(EncryptionTypes.RC4Full, false);
         }
 
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerAHeaderNoInitial()
         {
             PeerATest(EncryptionTypes.RC4Header, false);
         }
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerAHeaderInitial()
         {
             PeerATest(EncryptionTypes.RC4Header, true);
         }
 
-        [Test]
+        [Fact]
         public void EncryptorFactoryPeerAPlain()
         {
             rig.Engine.StartAll();
@@ -152,17 +152,17 @@ namespace MonoTorrent.Client
             conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
 
             message.Decode(buffer, 0, buffer.Length);
-            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+            Assert.Equal(VersionInfo.ProtocolStringV100, message.ProtocolString);
         }
 
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerBFull()
         {
             rig.Engine.Settings.PreferEncryption = true;
             PeerBTest(EncryptionTypes.RC4Full);
         }
 
-        [Test]
+        [Fact]
         public void EncrytorFactoryPeerBHeader()
         {
             rig.Engine.Settings.PreferEncryption = false;
@@ -193,18 +193,18 @@ namespace MonoTorrent.Client
             }
          
             int received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
-            Assert.AreEqual (68, received, "Recived handshake");
+            Assert.Equal (68, received, "Recived handshake");
 
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
-            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+            Assert.Equal(VersionInfo.ProtocolStringV100, message.ProtocolString);
 
             if (encryption == EncryptionTypes.RC4Full)
-                Assert.IsTrue(a.Encryptor is RC4);
+                Assert.True(a.Encryptor is RC4);
             else if (encryption == EncryptionTypes.RC4Header)
-                Assert.IsTrue(a.Encryptor is RC4Header);
+                Assert.True(a.Encryptor is RC4Header);
             else if (encryption == EncryptionTypes.PlainText)
-                Assert.IsTrue(a.Encryptor is RC4Header);
+                Assert.True(a.Encryptor is RC4Header);
         }
 
         private void PeerBTest(EncryptionTypes encryption)
@@ -226,13 +226,13 @@ namespace MonoTorrent.Client
 
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
-            Assert.AreEqual(VersionInfo.ProtocolStringV100, message.ProtocolString);
+            Assert.Equal(VersionInfo.ProtocolStringV100, message.ProtocolString);
             if (encryption == EncryptionTypes.RC4Full)
-                Assert.IsTrue(a.Encryptor is RC4);
+                Assert.True(a.Encryptor is RC4);
             else if (encryption == EncryptionTypes.RC4Header)
-                Assert.IsTrue(a.Encryptor is RC4Header);
+                Assert.True(a.Encryptor is RC4Header);
             else if (encryption == EncryptionTypes.PlainText)
-                Assert.IsTrue(a.Encryptor is RC4Header);
+                Assert.True(a.Encryptor is RC4Header);
         }
 
 
@@ -282,23 +282,23 @@ namespace MonoTorrent.Client
             {
                 d.Decode(b.InitialData, 0, b.InitialData.Length);
             }
-            Assert.AreEqual(m, d);
+            Assert.Equal(m, d);
 
 
             if (encryptionA == EncryptionTypes.RC4Full || encryptionB == EncryptionTypes.RC4Full)
             {
-                Assert.IsTrue(a.Encryptor is RC4);
-                Assert.IsTrue(b.Encryptor is RC4);
+                Assert.True(a.Encryptor is RC4);
+                Assert.True(b.Encryptor is RC4);
             }
             else if (encryptionA == EncryptionTypes.RC4Header || encryptionB == EncryptionTypes.RC4Header)
             {
-                Assert.IsTrue(a.Encryptor is RC4Header);
-                Assert.IsTrue(b.Encryptor is RC4Header);
+                Assert.True(a.Encryptor is RC4Header);
+                Assert.True(b.Encryptor is RC4Header);
             }
             else if (encryptionA == EncryptionTypes.PlainText || encryptionB == EncryptionTypes.PlainText)
             {
-                Assert.IsTrue(a.Encryptor is PlainTextEncryption);
-                Assert.IsTrue(b.Encryptor is PlainTextEncryption);
+                Assert.True(a.Encryptor is PlainTextEncryption);
+                Assert.True(b.Encryptor is PlainTextEncryption);
             }
         }
     }

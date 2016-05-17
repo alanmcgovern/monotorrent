@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
@@ -12,7 +12,7 @@ using MonoTorrent.BEncoding;
 namespace MonoTorrent.Client
 {
 
-    [TestFixture]
+    
     public class TorrentManagerTest
     {
         TestRig rig;
@@ -31,7 +31,7 @@ namespace MonoTorrent.Client
             conn.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void AddConnectionToStoppedManager()
         {
             MessageBundle bundle = new MessageBundle();
@@ -47,15 +47,15 @@ namespace MonoTorrent.Client
 
             try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
             catch {
-                Assert.IsFalse(conn.Incoming.Connected, "#1");
-//                Assert.IsFalse(conn.Outgoing.Connected, "#2");
+                Assert.False(conn.Incoming.Connected, "#1");
+//                Assert.False(conn.Outgoing.Connected, "#2");
                 return;
             }
 
             Assert.Fail ("The outgoing connection should've thrown an exception");
         }
 
-        [Test]
+        [Fact]
         public void AddPeers_PrivateTorrent ()
         {
             // You can't manually add peers to private torrents
@@ -66,17 +66,17 @@ namespace MonoTorrent.Client
             Assert.Throws<InvalidOperationException>(() => manager.AddPeers(new Peer("id", new Uri("tcp:://whatever.com"))));
         }
 
-        [Test]
+        [Fact]
         public void UnregisteredAnnounce()
         {
             rig.Engine.Unregister(rig.Manager);
             rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
+            Assert.Equal(0, rig.Manager.Peers.Available, "#1");
             rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
-            Assert.AreEqual(0, rig.Manager.Peers.Available, "#2");
+            Assert.Equal(0, rig.Manager.Peers.Available, "#2");
         }
 
-        [Test]
+        [Fact]
         public void ReregisterManager()
         {
             ManualResetEvent handle = new ManualResetEvent(false);
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
             rig2.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void StopTest()
         {
             bool started = false;
@@ -122,12 +122,12 @@ namespace MonoTorrent.Client
             };
 
             rig.Manager.Start();
-            Assert.IsTrue (h.WaitOne(5000, true), "Started");
+            Assert.True (h.WaitOne(5000, true), "Started");
             rig.Manager.Stop();
-            Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
+            Assert.True (h.WaitOne(5000, true), "Stopped");
         }
 
-        [Test]
+        [Fact]
         public void NoAnnouncesTest()
         {
             rig.TorrentDict.Remove("announce-list");
@@ -147,11 +147,11 @@ namespace MonoTorrent.Client
             System.Threading.Thread.Sleep(1000);
             manager.Stop();
 
-            Assert.IsTrue(handle.WaitOne(10000, true), "#1");
-            Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
+            Assert.True(handle.WaitOne(10000, true), "#1");
+            Assert.True(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
         }
 
-        [Test]
+        [Fact]
         public void UnsupportedTrackers ()
         {
             RawTrackerTier tier = new RawTrackerTier {
@@ -161,11 +161,11 @@ namespace MonoTorrent.Client
             TorrentManager manager = new TorrentManager (rig.Torrent, "", new TorrentSettings());
             foreach (MonoTorrent.Client.Tracker.TrackerTier t in manager.TrackerManager)
             {
-                Assert.IsTrue (t.Trackers.Count > 0, "#1");
+                Assert.True (t.Trackers.Count > 0, "#1");
             }
         }
 
-        [Test]
+        [Fact]
         public void AnnounceWhenComplete()
         {
             // Check that the engine announces when the download starts, completes
@@ -176,20 +176,20 @@ namespace MonoTorrent.Client
             };
 
             rig.Manager.Start();
-            Assert.IsTrue (handle.WaitOne(5000, false), "Announce on startup");
-            Assert.AreEqual(1, rig.Tracker.AnnouncedAt.Count, "#2");
+            Assert.True (handle.WaitOne(5000, false), "Announce on startup");
+            Assert.Equal(1, rig.Tracker.AnnouncedAt.Count, "#2");
 
             rig.Manager.Bitfield.SetAll(true);
-            Assert.IsTrue (handle.WaitOne (5000, false), "Announce when download completes");
-            Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
-            Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
+            Assert.True (handle.WaitOne (5000, false), "Announce when download completes");
+            Assert.Equal(TorrentState.Seeding, rig.Manager.State, "#3");
+            Assert.Equal(2, rig.Tracker.AnnouncedAt.Count, "#4");
 
             rig.Manager.Stop();
-            Assert.IsTrue (handle.WaitOne (5000, false), "Announce when torrent stops");
-            Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
+            Assert.True (handle.WaitOne (5000, false), "Announce when torrent stops");
+            Assert.Equal(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }
 
-        [Test]
+        [Fact]
         public void InvalidFastResume_NoneExist()
         {
             var handle = new ManualResetEvent (false);
@@ -200,13 +200,13 @@ namespace MonoTorrent.Client
                     handle.Set ();
             };
             rig.Manager.Start ();
-            Assert.IsTrue(handle.WaitOne(), "#1");
-            Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne(), "#1");
+            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
-                Assert.IsTrue(file.BitField.AllFalse, "#3." + file.Path);
+                Assert.True(file.BitField.AllFalse, "#3." + file.Path);
         }
 
-        [Test]
+        [Fact]
         public void InvalidFastResume_SomeExist()
         {
             rig.Writer.FilesThatExist.AddRange(new[]{
@@ -222,13 +222,13 @@ namespace MonoTorrent.Client
                     handle.Set();
             };
             rig.Manager.Start();
-            Assert.IsTrue(handle.WaitOne(), "#1");
-            Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne(), "#1");
+            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
-                Assert.IsTrue(file.BitField.AllFalse, "#3." + file.Path);
+                Assert.True(file.BitField.AllFalse, "#3." + file.Path);
         }
 
-        [Test]
+        [Fact]
         public void HashTorrent_ReadZero()
         {
             rig.Writer.FilesThatExist.AddRange(new[]{
@@ -249,10 +249,10 @@ namespace MonoTorrent.Client
                     handle.Set();
             };
             rig.Manager.Start();
-            Assert.IsTrue(handle.WaitOne(), "#1");
-            Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
+            Assert.True(handle.WaitOne(), "#1");
+            Assert.True(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
-                Assert.IsTrue (file.BitField.AllFalse, "#3." + file.Path);
+                Assert.True (file.BitField.AllFalse, "#3." + file.Path);
         }
     }
 }

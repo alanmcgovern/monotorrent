@@ -1,15 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
 using System.Net;
 using System.Net.Sockets;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
-    public class ConnectionListenerTests
+
+    public class ConnectionListenerTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -20,8 +17,8 @@ namespace MonoTorrent.Client
         //}
         private SocketListener listener;
         private IPEndPoint endpoint;
-        [SetUp]
-        public void Setup()
+
+        public ConnectionListenerTests()
         {
             endpoint = new IPEndPoint(IPAddress.Loopback, 55652);
             listener = new SocketListener(endpoint);
@@ -29,13 +26,12 @@ namespace MonoTorrent.Client
             System.Threading.Thread.Sleep(100);
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             listener.Stop();
         }
 
-        [Test]
+        [Fact]
         public void AcceptThree()
         {
             using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
@@ -46,7 +42,7 @@ namespace MonoTorrent.Client
                 c.Connect(endpoint);
         }
 
-        [Test]
+        [Fact]
         public void ChangePortThree()
         {
             endpoint.Port++;

@@ -31,63 +31,63 @@
 
 
 using System;
-using NUnit.Framework;
+using Xunit;
 using System.Web;
 
 namespace MonoTorrent.Common
 {
-	[TestFixture]
+	
 	public class UriQueryBuilderTest
 	{
 
-		[Test]
+		[Fact]
         public void TestToString ()
         {
             UriQueryBuilder bld = new UriQueryBuilder("http://mytest.com/announce.aspx?key=1");
             bld.Add ("key", 2);
             bld.Add ("foo", 2);
             bld.Add ("foo", "bar");
-            Assert.AreEqual(new Uri ("http://mytest.com/announce.aspx?key=2&foo=bar"), bld.ToUri (),"#1");
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=2&foo=bar"), bld.ToUri (),"#1");
             
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx?passkey=1");
             bld.Add ("key", 2);
-            Assert.AreEqual(new Uri ("http://mytest.com/announce.aspx?passkey=1&key=2"), bld.ToUri (),"#2");
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?passkey=1&key=2"), bld.ToUri (),"#2");
             
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx");
-            Assert.AreEqual(new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (),"#3");
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx"), bld.ToUri (),"#3");
             
             bld = new UriQueryBuilder("http://mytest.com/announce.aspx");
             byte[] infoHash = new byte[6] {0x01, 0x47, 0xff, 0xaa, 0xbb, 0xcc};
             bld.Add ("key", UriHelper.UrlEncode(infoHash));
-            Assert.AreEqual(new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (),"#4");
+            Assert.Equal(new Uri ("http://mytest.com/announce.aspx?key=%01G%ff%aa%bb%cc"), bld.ToUri (),"#4");
             
             
         }
         
-        [Test]
+        [Fact]
         public void ContainQuery ()
         {
             UriQueryBuilder bld = new UriQueryBuilder("http://mytest.com/announce.aspx?key=1&foo=bar");
-            Assert.IsTrue(bld.Contains ("key"), "#1");
-            Assert.IsTrue(bld.Contains ("foo"), "#2");
-            Assert.IsFalse(bld.Contains ("bar"), "#3");
+            Assert.True(bld.Contains ("key"), "#1");
+            Assert.True(bld.Contains ("foo"), "#2");
+            Assert.False(bld.Contains ("bar"), "#3");
         }
 
-        [Test]
+        [Fact]
         public void CaseInsensitiveTest ()
         {
             UriQueryBuilder b = new UriQueryBuilder ("http://www.example.com?first=1&second=2&third=4");
-            Assert.IsTrue (b.Contains ("FiRsT"));
-            Assert.AreEqual (b ["FiRst"], "1");
+            Assert.True (b.Contains ("FiRsT"));
+            Assert.Equal (b ["FiRst"], "1");
         }
 
-        [Test]
+        [Fact]
         public void AddParams ()
         {
             UriQueryBuilder b = new UriQueryBuilder ("http://example.com");
             b ["Test"] = "2";
             b ["Test"] = "7";
-            Assert.AreEqual ("7", b ["Test"], "#1");
+            Assert.Equal ("7", b ["Test"], "#1");
         }
 	}
 }

@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
-    [TestFixture]
+    
     public class MessageTests
     {
         //static void Main(string[] args)
@@ -38,7 +38,7 @@ namespace MonoTorrent.Dht
         
         #region Encode Tests
 
-        [Test]
+        [Fact]
         public void AnnouncePeerEncode()
         {
             Node n = new MonoTorrent.Dht.Node(NodeId.Create(), null);
@@ -49,7 +49,7 @@ namespace MonoTorrent.Dht
             Compare(m, "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
         }
 
-        [Test]
+        [Fact]
         public void AnnouncePeerResponseEncode()
         {
             AnnouncePeerResponse m = new AnnouncePeerResponse(infohash, transactionId);
@@ -57,7 +57,7 @@ namespace MonoTorrent.Dht
             Compare(m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
         }
 
-        [Test]
+        [Fact]
         public void FindNodeEncode()
         {
             FindNode m = new FindNode(id, infohash);
@@ -67,7 +67,7 @@ namespace MonoTorrent.Dht
             message = m;
         }
 
-        [Test]
+        [Fact]
         public void FindNodeResponseEncode()
         {
             FindNodeResponse m = new FindNodeResponse(id, transactionId);
@@ -76,7 +76,7 @@ namespace MonoTorrent.Dht
             Compare(m, "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re");
         }
 
-        [Test]
+        [Fact]
         public void GetPeersEncode()
         {
             GetPeers m = new GetPeers(id, infohash);
@@ -86,7 +86,7 @@ namespace MonoTorrent.Dht
             message = m;
         }
 
-        [Test]
+        [Fact]
         public void GetPeersResponseEncode()
         {
             GetPeersResponse m = new GetPeersResponse(id, transactionId, token);
@@ -96,7 +96,7 @@ namespace MonoTorrent.Dht
             Compare(m, "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re");
         }
 
-        [Test]
+        [Fact]
         public void PingEncode()
         {
             Ping m = new Ping(id);
@@ -106,7 +106,7 @@ namespace MonoTorrent.Dht
             message = m;
         }
 
-        [Test]
+        [Fact]
         public void PingResponseEncode()
         {
             PingResponse m = new PingResponse(infohash, transactionId);
@@ -119,24 +119,24 @@ namespace MonoTorrent.Dht
 
         #region Decode Tests
 
-        [Test]
+        [Fact]
         public void AnnouncePeerDecode()
         {
             string text = "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe";
             AnnouncePeer m = (AnnouncePeer)Decode("d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz1234564:porti6881e5:token8:aoeusnthe1:q13:announce_peer1:t2:aa1:y1:qe");
-            Assert.AreEqual(m.TransactionId, transactionId, "#1");
-            Assert.AreEqual(m.MessageType, QueryMessage.QueryType, "#2");
-            Assert.AreEqual(id, m.Id, "#3");
-            Assert.AreEqual(infohash, m.InfoHash, "#3");
-            Assert.AreEqual((BEncodedNumber)6881, m.Port, "#4");
-            Assert.AreEqual(token, m.Token, "#5");
+            Assert.Equal(m.TransactionId, transactionId, "#1");
+            Assert.Equal(m.MessageType, QueryMessage.QueryType, "#2");
+            Assert.Equal(id, m.Id, "#3");
+            Assert.Equal(infohash, m.InfoHash, "#3");
+            Assert.Equal((BEncodedNumber)6881, m.Port, "#4");
+            Assert.Equal(token, m.Token, "#5");
 
             Compare(m, text);
             message = m;
         }
 
 
-        [Test]
+        [Fact]
         public void AnnouncePeerResponseDecode()
         {
             // Register the query as being sent so we can decode the response
@@ -145,23 +145,23 @@ namespace MonoTorrent.Dht
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
 
             AnnouncePeerResponse m = (AnnouncePeerResponse)Decode(text);
-            Assert.AreEqual(infohash, m.Id, "#1");
+            Assert.Equal(infohash, m.Id, "#1");
 
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void FindNodeDecode()
         {
             string text ="d1:ad2:id20:abcdefghij01234567896:target20:mnopqrstuvwxyz123456e1:q9:find_node1:t2:aa1:y1:qe";
             FindNode m = (FindNode)Decode(text);
 
-            Assert.AreEqual(id, m.Id, "#1");
-            Assert.AreEqual(infohash, m.Target, "#1");
+            Assert.Equal(id, m.Id, "#1");
+            Assert.Equal(infohash, m.Target, "#1");
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void FindNodeResponseDecode()
         {
             FindNodeEncode();
@@ -169,27 +169,27 @@ namespace MonoTorrent.Dht
             string text = "d1:rd2:id20:abcdefghij01234567895:nodes9:def456...e1:t2:aa1:y1:re";
             FindNodeResponse m = (FindNodeResponse)Decode(text);
 
-            Assert.AreEqual(id, m.Id, "#1");
-            Assert.AreEqual((BEncodedString)"def456...", m.Nodes, "#2");
-            Assert.AreEqual(transactionId, m.TransactionId, "#3");
+            Assert.Equal(id, m.Id, "#1");
+            Assert.Equal((BEncodedString)"def456...", m.Nodes, "#2");
+            Assert.Equal(transactionId, m.TransactionId, "#3");
 
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void GetPeersDecode()
         {
             string text = "d1:ad2:id20:abcdefghij01234567899:info_hash20:mnopqrstuvwxyz123456e1:q9:get_peers1:t2:aa1:y1:qe";
             GetPeers m = (GetPeers)Decode(text);
 
-            Assert.AreEqual(infohash, m.InfoHash, "#1");
-            Assert.AreEqual(id, m.Id, "#2");
-            Assert.AreEqual(transactionId, m.TransactionId, "#3");
+            Assert.Equal(infohash, m.InfoHash, "#1");
+            Assert.Equal(id, m.Id, "#2");
+            Assert.Equal(transactionId, m.TransactionId, "#3");
 
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void GetPeersResponseDecode()
         {
             GetPeersEncode();
@@ -198,29 +198,29 @@ namespace MonoTorrent.Dht
             string text = "d1:rd2:id20:abcdefghij01234567895:token8:aoeusnth6:valuesl6:axje.u6:idhtnmee1:t2:aa1:y1:re";
             GetPeersResponse m = (GetPeersResponse)Decode(text);
 
-            Assert.AreEqual(token, m.Token, "#1");
-            Assert.AreEqual(id, m.Id, "#2");
+            Assert.Equal(token, m.Token, "#1");
+            Assert.Equal(id, m.Id, "#2");
 
             BEncodedList l = new BEncodedList();
             l.Add((BEncodedString)"axje.u");
             l.Add((BEncodedString)"idhtnm");
-            Assert.AreEqual(l, m.Values, "#3");
+            Assert.Equal(l, m.Values, "#3");
 
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void PingDecode()
         {
             string text = "d1:ad2:id20:abcdefghij0123456789e1:q4:ping1:t2:aa1:y1:qe";
             Ping m = (Ping) Decode(text);
 
-            Assert.AreEqual(id, m.Id, "#1");
+            Assert.Equal(id, m.Id, "#1");
 
             Compare(m, text);
         }
 
-        [Test]
+        [Fact]
         public void PingResponseDecode()
         {
             PingEncode();
@@ -229,7 +229,7 @@ namespace MonoTorrent.Dht
             string text = "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re";
             PingResponse m = (PingResponse)Decode(text);
 
-            Assert.AreEqual(infohash, m.Id);
+            Assert.Equal(infohash, m.Id);
 
             Compare(m, "d1:rd2:id20:mnopqrstuvwxyz123456e1:t2:aa1:y1:re");
         }
@@ -240,7 +240,7 @@ namespace MonoTorrent.Dht
         private void Compare(Message m, string expected)
         {
             byte[] b = m.Encode();
-            Assert.AreEqual(Encoding.UTF8.GetString(b), expected);
+            Assert.Equal(Encoding.UTF8.GetString(b), expected);
         }
 
         private Message Decode(string p)

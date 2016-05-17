@@ -34,7 +34,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -44,7 +44,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class TransferTest
     {
         //static void Main(string[] args)
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void IncomingEncrypted()
         {
             rig.Engine.Settings.PreferEncryption = true;
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
             InitiateTransfer(pair.Incoming);
         }
 
-        [Test]
+        [Fact]
         public void IncomingUnencrypted()
         {
             rig.Engine.Settings.PreferEncryption = false;
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
             InitiateTransfer(pair.Incoming);
         }
 
-        [Test]
+        [Fact]
         public void OutgoingEncrypted()
         {
             rig.Engine.Settings.PreferEncryption = true;
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
             InitiateTransfer(pair.Outgoing);
         }
 
-        [Test]
+        [Fact]
         public void OutgoingUnencrypted()
         {
             rig.Engine.Settings.PreferEncryption = false;
@@ -110,7 +110,7 @@ namespace MonoTorrent.Client
             InitiateTransfer(pair.Outgoing);
         }
 
-        [Test]
+        [Fact]
         public void MassiveMessage()
         {
             rig.AddConnection(pair.Incoming);
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
                 Assert.Fail("Connection should've been closed");
         }
 
-        [Test]
+        [Fact]
         public void NegativeData()
         {
             rig.AddConnection(pair.Incoming);
@@ -167,17 +167,17 @@ namespace MonoTorrent.Client
 
             HandshakeMessage handshake = new HandshakeMessage();
             handshake.Decode(buffer, 0, buffer.Length);
-            Assert.AreEqual(rig.Engine.PeerId, handshake.PeerId, "#2");
-            Assert.AreEqual(VersionInfo.ProtocolStringV100, handshake.ProtocolString, "#3");
-            Assert.AreEqual(ClientEngine.SupportsFastPeer, handshake.SupportsFastPeer, "#4");
-            Assert.AreEqual(ClientEngine.SupportsExtended, handshake.SupportsExtendedMessaging, "#5");
+            Assert.Equal(rig.Engine.PeerId, handshake.PeerId, "#2");
+            Assert.Equal(VersionInfo.ProtocolStringV100, handshake.ProtocolString, "#3");
+            Assert.Equal(ClientEngine.SupportsFastPeer, handshake.SupportsFastPeer, "#4");
+            Assert.Equal(ClientEngine.SupportsExtended, handshake.SupportsExtendedMessaging, "#5");
 
             // 2) Send local bitfield
             SendMessage(new BitfieldMessage(rig.Manager.Bitfield), connection);
 
             // 3) Receive remote bitfield - have none
             PeerMessage message = ReceiveMessage(connection);
-			Assert.IsTrue (message is HaveNoneMessage || message is BitfieldMessage, "HaveNone");
+			Assert.True (message is HaveNoneMessage || message is BitfieldMessage, "HaveNone");
 			
             // 4) Send a few allowed fast
             SendMessage(new AllowedFastMessage(1), connection);

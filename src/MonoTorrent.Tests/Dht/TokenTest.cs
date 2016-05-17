@@ -30,7 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using System.Net;
 
 using MonoTorrent.Dht;
@@ -38,7 +38,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    [TestFixture]
+    
     public class TokenTest
     {
         //static void Main(string[] args)
@@ -46,7 +46,7 @@ namespace MonoTorrent.Dht
         //    TokenTest t = new TokenTest();
         //    t.CheckTokenGenerator();
         //}
-        [Test]
+        [Fact]
         public void CheckTokenGenerator()
         {
             TokenManager m = new TokenManager();
@@ -56,16 +56,16 @@ namespace MonoTorrent.Dht
             BEncodedString s = m.GenerateToken(n);
             BEncodedString s2 = m.GenerateToken(n);
 
-            Assert.AreEqual(s, s2, "#1");
+            Assert.Equal(s, s2, "#1");
 
-            Assert.IsTrue(m.VerifyToken(n, s),"#2");
-            Assert.IsFalse(m.VerifyToken(n2, s),"#3");
-
-            System.Threading.Thread.Sleep(100);
-            Assert.IsTrue(m.VerifyToken(n, s), "#4");
+            Assert.True(m.VerifyToken(n, s),"#2");
+            Assert.False(m.VerifyToken(n2, s),"#3");
 
             System.Threading.Thread.Sleep(100);
-            Assert.IsFalse(m.VerifyToken(n, s), "#5");
+            Assert.True(m.VerifyToken(n, s), "#4");
+
+            System.Threading.Thread.Sleep(100);
+            Assert.False(m.VerifyToken(n, s), "#5");
         }
     }
 }

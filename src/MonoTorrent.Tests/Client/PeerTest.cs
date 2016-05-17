@@ -31,14 +31,14 @@ using System;
 using System.Net;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class PeerTest
     {
-        [Test]
+        [Fact]
         public void CompactPeerTest()
         {
             string peerId = "12345abcde12345abcde";
@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
             Peer p = new Peer(peerId, uri);
             byte[] compact = p.CompactPeer();
             Peer peer = Peer.Decode((BEncoding.BEncodedString)compact)[0];
-            Assert.AreEqual(p.ConnectionUri, peer.ConnectionUri);
+            Assert.Equal(p.ConnectionUri, peer.ConnectionUri);
         }
     }
 }

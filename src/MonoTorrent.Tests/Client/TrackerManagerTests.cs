@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client;
 using System.Threading;
@@ -25,7 +25,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    [TestFixture]
+    
     public class TrackerManagerTests
     {
         //static void Main()
@@ -81,59 +81,59 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void Defaults()
         {
             DefaultTracker tracker = new DefaultTracker();
-            Assert.AreEqual(TimeSpan.FromMinutes(3), tracker.MinUpdateInterval, "#1");
-            Assert.AreEqual(TimeSpan.FromMinutes(30), tracker.UpdateInterval, "#2");
-            Assert.IsNotNull(tracker.WarningMessage, "#3");
-            Assert.IsNotNull(tracker.FailureMessage, "#5");
+            Assert.Equal(TimeSpan.FromMinutes(3), tracker.MinUpdateInterval, "#1");
+            Assert.Equal(TimeSpan.FromMinutes(30), tracker.UpdateInterval, "#2");
+            Assert.NotNull(tracker.WarningMessage, "#3");
+            Assert.NotNull(tracker.FailureMessage, "#5");
         }
 
-        [Test]
+        [Fact]
         public void ScrapeTest()
         {
             bool scrapeStarted = false;
             trackers[0][0].BeforeScrape += delegate { scrapeStarted = true; };
             trackers[0][0].ScrapeComplete += delegate { if (!scrapeStarted) throw new Exception("Scrape didn't start"); };
             Wait(trackerManager.Scrape());
-            Assert.IsTrue(scrapeStarted);
-            Assert.AreEqual(1, trackers[0][0].ScrapedAt.Count, "#2");
+            Assert.True(scrapeStarted);
+            Assert.Equal(1, trackers[0][0].ScrapedAt.Count, "#2");
             Assert.That((DateTime.Now - trackers[0][0].ScrapedAt[0]) < TimeSpan.FromSeconds(1), "#3");
             for (int i = 1; i < trackers.Count; i++)
-                Assert.AreEqual(0, trackers[i][0].ScrapedAt.Count, "#4." + i);
+                Assert.Equal(0, trackers[i][0].ScrapedAt.Count, "#4." + i);
             Wait(trackerManager.Scrape(trackers[0][1]));
-            Assert.AreEqual(1, trackers[0][1].ScrapedAt.Count, "#6");
+            Assert.Equal(1, trackers[0][1].ScrapedAt.Count, "#6");
             Assert.That((DateTime.Now - trackers[0][1].ScrapedAt[0]) < TimeSpan.FromSeconds(1), "#7");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceTest()
         {
             Wait(trackerManager.Announce());
-            Assert.AreEqual(1, trackers[0][0].AnnouncedAt.Count, "#2");
+            Assert.Equal(1, trackers[0][0].AnnouncedAt.Count, "#2");
             Assert.That((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds(1), "#3");
             for (int i = 1; i < trackers.Count; i++)
-                Assert.AreEqual(0, trackers[0][i].AnnouncedAt.Count, "#4." + i);
+                Assert.Equal(0, trackers[0][i].AnnouncedAt.Count, "#4." + i);
             Wait(trackerManager.Announce(trackers[0][1]));
-            Assert.AreEqual(1, trackers[0][1].AnnouncedAt.Count, "#6");
+            Assert.Equal(1, trackers[0][1].AnnouncedAt.Count, "#6");
             Assert.That((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds(1), "#7");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceFailedTest()
         {
             trackers[0][0].FailAnnounce = true;
             trackers[0][1].FailAnnounce = true;
             Wait(trackerManager.Announce());
-            Assert.AreEqual(trackers[0][2], trackerManager.CurrentTracker, "#1");
-            Assert.AreEqual(1, trackers[0][0].AnnouncedAt.Count, "#2");
-            Assert.AreEqual(1, trackers[0][1].AnnouncedAt.Count, "#3");
-            Assert.AreEqual(1, trackers[0][2].AnnouncedAt.Count, "#4");
+            Assert.Equal(trackers[0][2], trackerManager.CurrentTracker, "#1");
+            Assert.Equal(1, trackers[0][0].AnnouncedAt.Count, "#2");
+            Assert.Equal(1, trackers[0][1].AnnouncedAt.Count, "#3");
+            Assert.Equal(1, trackers[0][2].AnnouncedAt.Count, "#4");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceFailedTest2()
         {
             for (int i = 0; i < trackers[0].Count; i++)
@@ -142,14 +142,14 @@ namespace MonoTorrent.Client
             Wait(trackerManager.Announce());
             
             for (int i = 0; i < trackers[0].Count; i++)
-                Assert.AreEqual(1, trackers[0][i].AnnouncedAt.Count, "#1." + i);
+                Assert.Equal(1, trackers[0][i].AnnouncedAt.Count, "#1." + i);
 
-            Assert.AreEqual(trackers[1][0], trackerManager.CurrentTracker, "#2");
+            Assert.Equal(trackers[1][0], trackerManager.CurrentTracker, "#2");
         }
 
         void Wait(WaitHandle handle)
         {
-            Assert.IsTrue(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
+            Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }
     }
 }

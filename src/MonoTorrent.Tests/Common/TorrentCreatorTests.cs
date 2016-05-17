@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -21,7 +21,7 @@ namespace MonoTorrent.Common
         }
     }
 
-    [TestFixture]
+    
     public class TorrentCreatorTests
     {
         private string Comment = "My Comment";
@@ -75,7 +75,7 @@ namespace MonoTorrent.Common
             writer.DontWrite = true;
         }
 
-        [Test]
+        [Fact]
         public void CreateMultiTest()
         {
             foreach (var v in announces)
@@ -86,17 +86,17 @@ namespace MonoTorrent.Common
 
             VerifyCommonParts(torrent);
             for (int i = 0; i < torrent.Files.Length; i++)
-                Assert.IsTrue(files.Exists (delegate(TorrentFile f) { return f.Equals(torrent.Files[i]); }));
+                Assert.True(files.Exists (delegate(TorrentFile f) { return f.Equals(torrent.Files[i]); }));
         }
-        [Test]
+        [Fact]
         public void NoTrackersTest()
         {
             BEncodedDictionary dict = creator.Create("TorrentName", files);
             Torrent t = Torrent.Load(dict);
-            Assert.AreEqual(0, t.AnnounceUrls.Count, "#1");
+            Assert.Equal(0, t.AnnounceUrls.Count, "#1");
         }
 
-        [Test]
+        [Fact]
         public void CreateSingleTest()
         {
             foreach (var v in announces)
@@ -111,10 +111,10 @@ namespace MonoTorrent.Common
             Torrent torrent = Torrent.Load(dict);
 
             VerifyCommonParts(torrent);
-            Assert.AreEqual(1, torrent.Files.Length, "#1");
-            Assert.AreEqual(f, torrent.Files[0], "#2");
+            Assert.Equal(1, torrent.Files.Length, "#1");
+            Assert.Equal(f, torrent.Files[0], "#2");
         }
-        [Test]
+        [Fact]
         public void CreateSingleFromFolder()
         {
             System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -122,15 +122,15 @@ namespace MonoTorrent.Common
 
             Torrent t = Torrent.Load(dict);
 
-            Assert.AreEqual(1, t.Files.Length, "#1");
-            Assert.AreEqual(Path.GetFileName(assembly.Location), t.Name, "#2");
-            Assert.AreEqual(Path.GetFileName(assembly.Location), t.Files[0].Path, "#3");
+            Assert.Equal(1, t.Files.Length, "#1");
+            Assert.Equal(Path.GetFileName(assembly.Location), t.Name, "#2");
+            Assert.Equal(Path.GetFileName(assembly.Location), t.Files[0].Path, "#3");
 
             // Create it again
             creator.Create(new TorrentFileSource(assembly.Location));
         }
 
-        [Test]
+        [Fact]
         public void LargeMultiTorrent()
         {
             string name1 = Path.Combine(Path.Combine("Dir1", "SDir1"), "File1");
@@ -147,15 +147,15 @@ namespace MonoTorrent.Common
             });
 
             Torrent torrent = Torrent.Load (creator.Create("BaseDir", files));
-            Assert.AreEqual(5, torrent.Files.Length, "#1");
-            Assert.AreEqual(name1, torrent.Files[0].Path, "#2");
-            Assert.AreEqual(name2, torrent.Files[1].Path, "#3");
-            Assert.AreEqual(name3, torrent.Files[2].Path, "#4");
-            Assert.AreEqual(name4, torrent.Files[3].Path, "#5");
-            Assert.AreEqual(name5, torrent.Files[4].Path, "#6");
+            Assert.Equal(5, torrent.Files.Length, "#1");
+            Assert.Equal(name1, torrent.Files[0].Path, "#2");
+            Assert.Equal(name2, torrent.Files[1].Path, "#3");
+            Assert.Equal(name3, torrent.Files[2].Path, "#4");
+            Assert.Equal(name4, torrent.Files[3].Path, "#5");
+            Assert.Equal(name5, torrent.Files[4].Path, "#6");
         }
 
-        [Test]
+        [Fact]
         public void IllegalDestinationPath ()
         {
             var source = new CustomFileSource (new List <FileMapping> {
@@ -164,7 +164,7 @@ namespace MonoTorrent.Common
             Assert.Throws<ArgumentException>(() => new TorrentCreator().Create(source));       
         }
 
-        [Test]
+        [Fact]
         public void TwoFilesSameDestionation ()
         {
             var source = new CustomFileSource (new List <FileMapping> {
@@ -177,15 +177,15 @@ namespace MonoTorrent.Common
 
         void VerifyCommonParts(Torrent torrent)
         {
-            Assert.AreEqual(Comment, torrent.Comment, "#1");
-            Assert.AreEqual(CreatedBy, torrent.CreatedBy, "#2");
-            Assert.IsTrue((DateTime.Now - torrent.CreationDate) < TimeSpan.FromSeconds(5), "#3");
-            Assert.AreEqual(PieceLength, torrent.PieceLength, "#4");
-            Assert.AreEqual(Publisher, torrent.Publisher, "#5");
-            Assert.AreEqual(PublisherUrl, torrent.PublisherUrl, "#6");
-            Assert.AreEqual(2, torrent.AnnounceUrls.Count, "#7");
-            Assert.AreEqual(2, torrent.AnnounceUrls[0].Count, "#8");
-            Assert.AreEqual(2, torrent.AnnounceUrls[1].Count, "#9");
+            Assert.Equal(Comment, torrent.Comment, "#1");
+            Assert.Equal(CreatedBy, torrent.CreatedBy, "#2");
+            Assert.True((DateTime.Now - torrent.CreationDate) < TimeSpan.FromSeconds(5), "#3");
+            Assert.Equal(PieceLength, torrent.PieceLength, "#4");
+            Assert.Equal(Publisher, torrent.Publisher, "#5");
+            Assert.Equal(PublisherUrl, torrent.PublisherUrl, "#6");
+            Assert.Equal(2, torrent.AnnounceUrls.Count, "#7");
+            Assert.Equal(2, torrent.AnnounceUrls[0].Count, "#8");
+            Assert.Equal(2, torrent.AnnounceUrls[1].Count, "#9");
         }
     }
 }

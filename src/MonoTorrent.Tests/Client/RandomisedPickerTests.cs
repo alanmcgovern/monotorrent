@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class RandomisedPickerTests
     {
         //static void Main()
@@ -43,12 +43,12 @@ namespace MonoTorrent.Client
             picker = new RandomisedPicker(tester);
         }
 
-        [Test]
+        [Fact]
         public void EnsureRandomlyPicked()
         {
             tester.ReturnNoPiece = false;
             while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
-            Assert.AreEqual(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
+            Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
             List<int> pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();
             for (int i = 0; i < pieces.Count; i++)

@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class HttpTrackerTests
     {
         //static void Main()
@@ -50,28 +50,28 @@ namespace MonoTorrent.Client
             server.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void CanAnnouceOrScrapeTest()
         {
             Tracker.Tracker t = TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
-            Assert.IsFalse(t.CanScrape, "#1");
-            Assert.IsTrue(t.CanAnnounce, "#1b");
+            Assert.False(t.CanScrape, "#1");
+            Assert.True(t.CanAnnounce, "#1b");
 
             t = TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah"));
-            Assert.IsFalse(t.CanScrape, "#2");
-            Assert.IsTrue(t.CanAnnounce, "#2b");
+            Assert.False(t.CanScrape, "#2");
+            Assert.True(t.CanAnnounce, "#2b");
 
             t = TrackerFactory.Create(new Uri("http://mytracker.com/announce"));
-            Assert.IsTrue(t.CanScrape, "#3");
-            Assert.IsTrue(t.CanAnnounce, "#4");
+            Assert.True(t.CanScrape, "#3");
+            Assert.True(t.CanAnnounce, "#4");
 
             HTTPTracker tracker = (HTTPTracker)TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah/announce"));
-            Assert.IsTrue(tracker.CanScrape, "#4");
-            Assert.IsTrue(tracker.CanAnnounce, "#4");
-            Assert.AreEqual("http://mytracker.com/announce/yeah/scrape", tracker.ScrapeUri.ToString(), "#5");
+            Assert.True(tracker.CanScrape, "#4");
+            Assert.True(tracker.CanAnnounce, "#4");
+            Assert.Equal("http://mytracker.com/announce/yeah/scrape", tracker.ScrapeUri.ToString(), "#5");
         }
 
-        [Test]
+        [Fact]
         public void AnnounceTest()
         {
             HTTPTracker t = (HTTPTracker)TrackerFactory.Create(new Uri(prefix));
@@ -88,12 +88,12 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#1");
-            Assert.IsTrue(p.Successful);
-            Assert.AreEqual(keys[0], t.Key, "#2");
+            Assert.NotNull(p, "#1");
+            Assert.True(p.Successful);
+            Assert.Equal(keys[0], t.Key, "#2");
         }
 
-        [Test]
+        [Fact]
         public void KeyTest()
         {
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
@@ -105,14 +105,14 @@ namespace MonoTorrent.Client
             t.AnnounceComplete += delegate { id.WaitHandle.Set(); };
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.AreEqual("value", keys[0], "#1");
+            Assert.Equal("value", keys[0], "#1");
         }
 
-        [Test]
+        [Fact]
         public void ScrapeTest()
         {
             Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length -1)));
-            Assert.IsTrue(t.CanScrape, "#1");
+            Assert.True(t.CanScrape, "#1");
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
@@ -126,17 +126,17 @@ namespace MonoTorrent.Client
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
-            Assert.IsNotNull(p, "#2");
-            Assert.IsTrue(p.Successful, "#3");
-            Assert.AreEqual(1, t.Complete, "#1");
-            Assert.AreEqual(0, t.Incomplete, "#2");
-            Assert.AreEqual(0, t.Downloaded, "#3");
+            Assert.NotNull(p, "#2");
+            Assert.True(p.Successful, "#3");
+            Assert.Equal(1, t.Complete, "#1");
+            Assert.Equal(0, t.Incomplete, "#2");
+            Assert.Equal(0, t.Downloaded, "#3");
         }
 
 
         void Wait(WaitHandle handle)
         {
-            Assert.IsTrue(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
+            Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }
     }
 }

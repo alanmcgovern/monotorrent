@@ -2,11 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Dht
 {
-    [TestFixture]
+    
     public class NodeIdTests
     {
         private NodeId[] nodes;
@@ -24,18 +24,18 @@ namespace MonoTorrent.Dht
             }
         }
 
-        [Test]
+        [Fact]
         public void GreaterLessThanTest()
         {
-            Assert.IsTrue(nodes[0] < nodes[1], "#1");
-            Assert.IsTrue(nodes[1] > nodes[0], "#2");
-            Assert.IsTrue(nodes[0] == nodes[0], "#3");
-            Assert.AreEqual(nodes[0], nodes[0], "#4");
-            Assert.IsTrue(nodes[2] > nodes[1], "#5");
-            Assert.IsTrue(nodes[15] < nodes[10], "#6");
+            Assert.True(nodes[0] < nodes[1], "#1");
+            Assert.True(nodes[1] > nodes[0], "#2");
+            Assert.True(nodes[0] == nodes[0], "#3");
+            Assert.Equal(nodes[0], nodes[0], "#4");
+            Assert.True(nodes[2] > nodes[1], "#5");
+            Assert.True(nodes[15] < nodes[10], "#6");
         }
 
-        [Test]
+        [Fact]
         public void XorTest()
         {
             NodeId zero = new NodeId(new byte[20]);
@@ -44,15 +44,15 @@ namespace MonoTorrent.Dht
             NodeId one = new NodeId(b);
 
             NodeId r = one.Xor(zero);
-            Assert.AreEqual(one, r, "#1");
-            Assert.IsTrue(one > zero, "#2");
-            Assert.IsTrue(one.CompareTo(zero) > 0, "#3");
+            Assert.Equal(one, r, "#1");
+            Assert.True(one > zero, "#2");
+            Assert.True(one.CompareTo(zero) > 0, "#3");
 
             NodeId z = one.Xor(r);
-            Assert.AreEqual(zero, z, "#4");
+            Assert.Equal(zero, z, "#4");
         }
 
-        [Test]
+        [Fact]
         public void CompareTest()
         {
             byte[] i = new byte[20];
@@ -61,19 +61,19 @@ namespace MonoTorrent.Dht
             j[19] = 2;
             NodeId one = new NodeId(i);
             NodeId two = new NodeId(j);
-            Assert.IsTrue(one.CompareTo(two) < 0);
-            Assert.IsTrue(two.CompareTo(one) > 0);
-            Assert.IsTrue(one.CompareTo(one) == 0);
+            Assert.True(one.CompareTo(two) < 0);
+            Assert.True(two.CompareTo(one) > 0);
+            Assert.True(one.CompareTo(one) == 0);
         }
 
-        [Test]
+        [Fact]
         public void CompareTest2()
         {
             byte[] data = new byte[] { 1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199 };
             BigInteger a = new BigInteger(data);
             BigInteger b = new BigInteger(new byte[0]);
 
-            Assert.AreNotEqual(a, b, "#1");
+            Assert.NotEqual(a, b, "#1");
         }
     }
 }

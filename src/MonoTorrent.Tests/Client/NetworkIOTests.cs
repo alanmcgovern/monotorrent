@@ -27,7 +27,7 @@
 //
 
 using System;
-using NUnit.Framework;
+using Xunit;
 using System.Threading;
 using MonoTorrent.Common;
 using System.Net;
@@ -36,7 +36,7 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class NetworkIOTests
     {
         byte[] buffer;
@@ -67,25 +67,25 @@ namespace MonoTorrent.Client
             pair.Dispose ();
         }
 
-        [Test]
+        [Fact]
         public void ReceiveData_SlowIncoming_SlowOutgoing ()
         {
             DoReceive (true, true);
         }
 
-        [Test]
+        [Fact]
         public void ReceiveData_SlowIncoming ()
         {
             DoReceive (false, true);
         }
 
-        [Test]
+        [Fact]
         public void ReceiveData_SlowOutgoing ()
         {
             DoReceive (true, false);
         }
 
-        [Test]
+        [Fact]
         public void ReceiveData ()
         {
             DoReceive (false, false);
@@ -101,43 +101,43 @@ namespace MonoTorrent.Client
 
             var handle = new ManualResetEvent (false);
             NetworkIO.EnqueueReceive (Outgoing, buffer, 0, buffer.Length, null, null, null, (s, t, o) => {
-                Assert.IsTrue (s, "#Receive successful");
-                Assert.AreEqual (buffer.Length, t, "#data was all received");
+                Assert.True (s, "#Receive successful");
+                Assert.Equal (buffer.Length, t, "#data was all received");
                 handle.Set ();
             }, null);
 
             while (sent != buffer.Length) {
                 int r = Incoming.Send (data, sent, data.Length - sent);
-                Assert.AreNotEqual (0, r, "#Received data");
+                Assert.NotEqual (0, r, "#Received data");
                 sent += r;
             }
 
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "Data should be all received");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "Data should be all received");
             for (int i = 0; i < buffer.Length; i++) {
                 if (data[i] != buffer[i])
                     Assert.Fail ("Buffers differ at position " + i);
             }
         }
 
-        [Test]
+        [Fact]
         public void SendData_SlowIncoming_SlowOutgoing ()
         {
             DoSend (true, true);
         }
 
-        [Test]
+        [Fact]
         public void SendData_SlowOutgoing ()
         {
             DoSend (true, false);
         }
 
-        [Test]
+        [Fact]
         public void SendData_SlowIncoming ()
         {
             DoSend (false, true);
         }
 
-        [Test]
+        [Fact]
         public void SendData ()
         {
             DoSend (false, false);
@@ -157,14 +157,14 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte [data.Length];
             while (received != buffer.Length) {
                 int r = Incoming.Receive (buffer, received, buffer.Length - received);
-                Assert.AreNotEqual (0, r, "#Received data");
+                Assert.NotEqual (0, r, "#Received data");
                 received += r;
             }
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (1)), "Data should be all sent");
-            Assert.IsTrue (Toolbox.ByteMatch (buffer, data), "Data matches");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (1)), "Data should be all sent");
+            Assert.True (Toolbox.ByteMatch (buffer, data), "Data matches");
         }
 
-        [Test]
+        [Fact]
         public void InvalidMessage ()
         {
             bool success = true;
@@ -178,11 +178,11 @@ namespace MonoTorrent.Client
             }, null);
 
             NetworkIO.EnqueueSend (Outgoing, data, 0, 20, null, null, null, delegate { }, null);
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#Should have closed");;
-            Assert.IsFalse (success, "#1");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#Should have closed");;
+            Assert.False (success, "#1");
         }
 
-        [Test]
+        [Fact]
         public void ReceiveTwoKeepAlives ()
         {
             var message = new KeepAliveMessage ();
@@ -198,14 +198,14 @@ namespace MonoTorrent.Client
             };
 
             PeerIO.EnqueueReceiveMessage (Incoming, new PlainTextEncryption (), null, null, null, callback, null);
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (2)), "#Should receive first message");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (2)), "#Should receive first message");
 
 
             PeerIO.EnqueueReceiveMessage (Incoming, new PlainTextEncryption (), null, null, null, callback, null);
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (2)), "#Should receive second message");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (2)), "#Should receive second message");
         }
 
-        [Test]
+        [Fact]
         public void ZeroReceivedClosesConnection ()
         {
             bool connectionOpen = true;
@@ -217,11 +217,11 @@ namespace MonoTorrent.Client
             }, null);
 
             NetworkIO.EnqueueSend (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
-            Assert.IsFalse (connectionOpen, "#2");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
+            Assert.False (connectionOpen, "#2");
         }
 
-        [Test]
+        [Fact]
         public void ZeroSentClosesConnection ()
         {
             bool connectionOpen = true;
@@ -233,8 +233,8 @@ namespace MonoTorrent.Client
             }, null);
 
             NetworkIO.EnqueueReceive (Outgoing, data, 0, 100, null, null, null, delegate { }, null);
-            Assert.IsTrue (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
-            Assert.IsFalse (connectionOpen, "#2");
+            Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "#1");
+            Assert.False (connectionOpen, "#2");
         }
     }
 }

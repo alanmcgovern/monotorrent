@@ -4,7 +4,7 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using NUnit.Framework;
+using Xunit;
 using System;
 using System.IO;
 using System.Net;
@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class MetadataModeTests
     {
         //static void Main(string[] args)
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void RequestMetadata()
         {
             Setup(false, "path.torrent");
@@ -91,17 +91,17 @@ namespace MonoTorrent.Client
 
             // 4) Verify the hash is the same.
             stream.Position = 0;
-            Assert.AreEqual(rig.Torrent.InfoHash, new InfoHash(new SHA1Managed().ComputeHash(stream)), "#1");
+            Assert.Equal(rig.Torrent.InfoHash, new InfoHash(new SHA1Managed().ComputeHash(stream)), "#1");
         }
 
-        [Test]
+        [Fact]
         public void SendMetadata_ToFile()
         {
             Setup(true, "file.torrent");
             SendMetadataCore("file.torrent");
         }
 
-        [Test]
+        [Fact]
         public void SendMetadata_ToFolder()
         {
             Setup(true, Environment.CurrentDirectory);
@@ -141,9 +141,9 @@ namespace MonoTorrent.Client
             while (rig.Manager.Mode is MetadataMode)
                 System.Threading.Thread.Sleep(10);
 
-            Assert.IsTrue(File.Exists(expectedPath), "#1");
+            Assert.True(File.Exists(expectedPath), "#1");
             Torrent torrent = Torrent.Load(expectedPath);
-            Assert.AreEqual(rig.Manager.InfoHash, torrent.InfoHash, "#2");
+            Assert.Equal(rig.Manager.InfoHash, torrent.InfoHash, "#2");
         }
 
         private void SendMessage(PeerMessage message, CustomConnection connection)

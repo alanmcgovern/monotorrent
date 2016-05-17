@@ -11,7 +11,7 @@ using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.Client.Encryption;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client
             AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, true);
             e.Peers.Add(p);
             RaiseAnnounceComplete(e);
-            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#1 Tracker never raised the AnnounceComplete event");
+            Assert.True(id.WaitHandle.WaitOne(1000, true), "#1 Tracker never raised the AnnounceComplete event");
         }
 
         public void AddFailedPeer(Peer p)
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client
             AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, false);
             e.Peers.Add(p);
             RaiseAnnounceComplete(e);
-            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#2 Tracker never raised the AnnounceComplete event");
+            Assert.True(id.WaitHandle.WaitOne(1000, true), "#2 Tracker never raised the AnnounceComplete event");
         }
 
         public override string ToString()

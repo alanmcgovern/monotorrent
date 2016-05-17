@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 using System.Net;

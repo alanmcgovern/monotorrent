@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class RarestFirstPickerTests
     {
         //static void Main()
@@ -53,26 +53,26 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void RarestPieceTest()
         {
             rarest.PickPiece(peers[0], peers);
-            Assert.AreEqual(5, tester.PickPieceBitfield.Count, "#1");
+            Assert.Equal(5, tester.PickPieceBitfield.Count, "#1");
             BitField bf = tester.PickPieceBitfield[0];
             int[] trueIndices = new int[] { 1, 7, 11, 13, 17, 19, 23, 29, 31, 37 };
             for (int i = 0; i < bf.Length; i++)
                 if (Array.IndexOf<int>(trueIndices, i) > -1)
-                    Assert.IsTrue(bf[i]);
+                    Assert.True(bf[i]);
                 else
-                    Assert.IsFalse(bf[i]);
+                    Assert.False(bf[i]);
 
             bf = tester.PickPieceBitfield[1];
             trueIndices = new int[] { 1, 5, 7, 11, 13, 17, 19, 23, 25, 29, 31, 35, 37 };
             for (int i = 0; i < bf.Length; i++)
                 if (Array.IndexOf<int>(trueIndices, i) > -1)
-                    Assert.IsTrue(bf[i]);
+                    Assert.True(bf[i]);
                 else
-                    Assert.IsFalse(bf[i]);
+                    Assert.False(bf[i]);
         }
     }
 }

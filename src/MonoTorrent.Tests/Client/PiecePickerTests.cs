@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -9,7 +9,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class PiecePickerTests
     {
         //static void Main(string[] args)
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void RequestFastSeeder()
         {
             int[] allowedFast = new int[] { 1, 2, 3, 5, 8, 13, 21 };
@@ -84,13 +84,13 @@ namespace MonoTorrent.Client
                 for (int j = 0; j < 16; j++)
                 {
                     RequestMessage msg = picker.PickPiece(peers[0], peers);
-                    Assert.IsNotNull(msg, "#1." + j);
-                    Assert.IsTrue(Array.IndexOf<int>(allowedFast, msg.PieceIndex) > -1, "#2." + j);
+                    Assert.NotNull(msg, "#1." + j);
+                    Assert.True(Array.IndexOf<int>(allowedFast, msg.PieceIndex) > -1, "#2." + j);
                 }
             }
-            Assert.IsNull(picker.PickPiece(peers[0], peers));
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
-        [Test]
+        [Fact]
         public void RequestFastNotSeeder()
         {
             peers[0].SupportsFastPeer = true;
@@ -105,12 +105,12 @@ namespace MonoTorrent.Client
                 for (int j = 0; j < 16; j++)
                 {
                     RequestMessage m = picker.PickPiece(peers[0], peers);
-                    Assert.IsTrue(m.PieceIndex == 2 || m.PieceIndex == 8 || m.PieceIndex == 13 || m.PieceIndex == 21);
+                    Assert.True(m.PieceIndex == 2 || m.PieceIndex == 8 || m.PieceIndex == 13 || m.PieceIndex == 21);
                 } 
 
-            Assert.IsNull(picker.PickPiece(peers[0], peers));
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
-        [Test]
+        [Fact]
         public void RequestFastHaveEverything()
         {
             peers[0].SupportsFastPeer = true;
@@ -119,26 +119,26 @@ namespace MonoTorrent.Client
             peers[0].BitField.SetAll(true);
             rig.Manager.Bitfield.SetAll(true);
 
-            Assert.IsNull(picker.PickPiece(peers[0], peers));
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
 
-        [Test]
+        [Fact]
         public void RequestChoked()
         {
-            Assert.IsNull(picker.PickPiece(peers[0], peers));
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
 
-        [Test]
+        [Fact]
         public void RequestWhenSeeder()
         {
             rig.Manager.Bitfield.SetAll(true);
             peers[0].BitField.SetAll(true);
             peers[0].IsChoking = false;
 
-            Assert.IsNull(picker.PickPiece(peers[0], peers));
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
 
-        [Test]
+        [Fact]
         public void NoInterestingPieces()
         {
             peer.IsChoking = false;
@@ -148,10 +148,10 @@ namespace MonoTorrent.Client
                     peer.BitField[i] = true;
                     rig.Manager.Bitfield[i] = true;
                 }
-            Assert.IsNull(picker.PickPiece(peer, peers));
+            Assert.Null(picker.PickPiece(peer, peers));
         }
 
-        [Test]
+        [Fact]
         public virtual void CancelRequests()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -163,19 +163,19 @@ namespace MonoTorrent.Client
                 messages.Add(m);
 
             picker.PickPiece(peer, peers);
-            Assert.AreEqual(rig.TotalBlocks, messages.Count, "#0");
+            Assert.Equal(rig.TotalBlocks, messages.Count, "#0");
             picker.CancelRequests(peer);
 
             List<RequestMessage> messages2 = new List<RequestMessage>();
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages2.Add(m);
 
-            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            Assert.Equal(messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
-                Assert.IsTrue(messages2.Contains(messages[i]));
+                Assert.True(messages2.Contains(messages[i]));
         }
 
-        [Test]
+        [Fact]
         public void RejectRequests()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -193,12 +193,12 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages2.Add(m);
 
-            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            Assert.Equal(messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
-                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
+                Assert.True(messages2.Contains(messages[i]), "#2." + i);
         }
 
-        [Test]
+        [Fact]
         public void PeerChoked()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -215,12 +215,12 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages2.Add(m);
 
-            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            Assert.Equal(messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
-                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
+                Assert.True(messages2.Contains(messages[i]), "#2." + i);
         }
 
-        [Test]
+        [Fact]
         [Ignore("If a fast peer sends a choke message, CancelRequests will not be called")]
         public void FastPeerChoked()
         {
@@ -239,10 +239,10 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages2.Add(m);
 
-            Assert.AreEqual(0, messages2.Count, "#1");
+            Assert.Equal(0, messages2.Count, "#1");
         }
 
-        [Test]
+        [Fact]
         public void ChokeThenClose()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -260,12 +260,12 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(peer, peers)) != null)
                 messages2.Add(m);
 
-            Assert.AreEqual(messages.Count, messages2.Count, "#1");
+            Assert.Equal(messages.Count, messages2.Count, "#1");
             for (int i = 0; i < messages.Count; i++)
-                Assert.IsTrue(messages2.Contains(messages[i]), "#2." + i);
+                Assert.True(messages2.Contains(messages[i]), "#2." + i);
         }
 
-        [Test]
+        [Fact]
         public void RequestBlock()
         {
             peer.IsChoking = false;
@@ -273,12 +273,12 @@ namespace MonoTorrent.Client
             for (int i = 0; i < 1000; i++)
             {
                 MessageBundle b = picker.PickPiece(peer, peers, i);
-                Assert.AreEqual(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
+                Assert.Equal(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
                 picker.CancelRequests(peer);
             }
         }
 
-        [Test]
+        [Fact]
         public void InvalidFastPiece()
         {
             peer.IsChoking = true;
@@ -288,15 +288,15 @@ namespace MonoTorrent.Client
             for (int i = 0; i < rig.BlocksPerPiece * 3; i++)
             {
                 RequestMessage m = picker.PickPiece(peer, peers);
-                Assert.IsNotNull(m, "#1." + i.ToString());
-                Assert.IsTrue(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5, "#2");
+                Assert.NotNull(m, "#1." + i.ToString());
+                Assert.True(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5, "#2");
             }
 
             for (int i = 0; i < 10; i++)
-                Assert.IsNull(picker.PickPiece(peer, peers), "#3");
+                Assert.Null(picker.PickPiece(peer, peers), "#3");
         }
 
-        [Test]
+        [Fact]
         public void CompletePartialTest()
         {
             Piece piece;
@@ -304,19 +304,19 @@ namespace MonoTorrent.Client
             peer.AmInterested = true;
             peer.BitField.SetAll(true);
             RequestMessage message = picker.PickPiece(peer, peers);
-            Assert.IsTrue(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece), "#1");
+            Assert.True(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece), "#1");
             picker.CancelRequests(peer);
             for (int i = 0; i < piece.BlockCount; i++)
             {
                 message = picker.PickPiece(peer, peers);
                 Piece p;
-                Assert.IsTrue(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out p), "#2." + i);
+                Assert.True(picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out p), "#2." + i);
             }
-            Assert.IsTrue(piece.AllBlocksRequested, "#3");
-            Assert.IsTrue(piece.AllBlocksReceived, "#4");
+            Assert.True(piece.AllBlocksRequested, "#3");
+            Assert.True(piece.AllBlocksReceived, "#4");
         }
 
-        [Test]
+        [Fact]
         public void DoesntHaveFastPiece()
         {
             peer.IsChoking = true;
@@ -326,11 +326,11 @@ namespace MonoTorrent.Client
             picker = new StandardPicker();
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             MessageBundle bundle = picker.PickPiece(peer, new MonoTorrent.Common.BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
-            Assert.IsNull(bundle);
+            Assert.Null(bundle);
         }
 
 
-        [Test]
+        [Fact]
         public void DoesntHaveSuggestedPiece()
         {
             peer.IsChoking = false;
@@ -340,10 +340,10 @@ namespace MonoTorrent.Client
             picker = new StandardPicker();
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             MessageBundle bundle = picker.PickPiece(peer, new MonoTorrent.Common.BitField(peer.BitField.Length), peers, 1, 0, peer.BitField.Length);
-            Assert.IsNull(bundle);
+            Assert.Null(bundle);
         }
 
-        [Test]
+        [Fact]
         public void InvalidSuggestPiece()
         {
             peer.IsChoking = true;
@@ -353,7 +353,7 @@ namespace MonoTorrent.Client
             picker.PickPiece(peer, peers);
         }
 
-        [Test]
+        [Fact]
         public void PickBundle()
         {
             peer.IsChoking = false;
@@ -364,14 +364,14 @@ namespace MonoTorrent.Client
             
             while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
             {
-                Assert.IsTrue(bundle.Messages.Count == rig.BlocksPerPiece * 5
+                Assert.True(bundle.Messages.Count == rig.BlocksPerPiece * 5
                               || (bundle.Messages.Count + messages.Count) == rig.TotalBlocks, "#1");
                 messages.AddRange(bundle.Messages);
             }
-            Assert.AreEqual(rig.TotalBlocks, messages.Count, "#2");
+            Assert.Equal(rig.TotalBlocks, messages.Count, "#2");
         }
 
-        [Test]
+        [Fact]
         public void PickBundle_2()
         {
             peer.IsChoking = false;
@@ -384,14 +384,14 @@ namespace MonoTorrent.Client
 
             while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
             {
-                Assert.IsTrue(bundle.Messages.Count == rig.BlocksPerPiece * 5
+                Assert.True(bundle.Messages.Count == rig.BlocksPerPiece * 5
                               || (bundle.Messages.Count + messages.Count) == rig.BlocksPerPiece * 7, "#1");
                 messages.AddRange(bundle.Messages);
             }
-            Assert.AreEqual(rig.BlocksPerPiece * 7, messages.Count, "#2");
+            Assert.Equal(rig.BlocksPerPiece * 7, messages.Count, "#2");
         }
 
-        [Test]
+        [Fact]
         public void PickBundle_3()
         {
             List<PeerMessage> messages = new List<PeerMessage>();
@@ -409,10 +409,10 @@ namespace MonoTorrent.Client
             while ((bundle = picker.PickPiece(peer, peers, rig.BlocksPerPiece * 5)) != null)
                 messages.AddRange(bundle.Messages);
 
-            Assert.AreEqual(rig.BlocksPerPiece * 7, messages.Count, "#2");
+            Assert.Equal(rig.BlocksPerPiece * 7, messages.Count, "#2");
         }
 
-        [Test]
+        [Fact]
         public void PickBundle4()
         {
             peers[0].IsChoking = false;
@@ -426,10 +426,10 @@ namespace MonoTorrent.Client
             MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 20 * rig.BlocksPerPiece);
 
             foreach (RequestMessage m in b.Messages)
-                Assert.IsTrue(m.PieceIndex > 6);
+                Assert.True(m.PieceIndex > 6);
         }
 
-        [Test]
+        [Fact]
         public void PickBundle5()
         {
             rig.Manager.Bitfield.SetAll(true);
@@ -449,12 +449,12 @@ namespace MonoTorrent.Client
                 picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 6, 6);
 
             MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 20 * rig.BlocksPerPiece);
-            Assert.AreEqual(20 * rig.BlocksPerPiece, b.Messages.Count);
+            Assert.Equal(20 * rig.BlocksPerPiece, b.Messages.Count);
             foreach (RequestMessage m in b.Messages)
-                Assert.IsTrue(m.PieceIndex >=10 && m.PieceIndex < 30);
+                Assert.True(m.PieceIndex >=10 && m.PieceIndex < 30);
         }
 
-        [Test]
+        [Fact]
         public void PickBundle6()
         {
             rig.Manager.Bitfield.SetAll(false);
@@ -472,12 +472,12 @@ namespace MonoTorrent.Client
                 picker.PickPiece(peers[0], peers[0].BitField, new List<PeerId>(), 1, 6, 6);
 
             MessageBundle b = picker.PickPiece(peers[0], new List<PeerId>(), 2 * rig.BlocksPerPiece);
-            Assert.AreEqual(2 * rig.BlocksPerPiece, b.Messages.Count);
+            Assert.Equal(2 * rig.BlocksPerPiece, b.Messages.Count);
             foreach (RequestMessage m in b.Messages)
-                Assert.IsTrue(m.PieceIndex >= 4 && m.PieceIndex < 6);
+                Assert.True(m.PieceIndex >= 4 && m.PieceIndex < 6);
         }
 
-        [Test]
+        [Fact]
         public void FastPieceTest()
         {
             for (int i = 0; i < 2; i++)
@@ -489,7 +489,7 @@ namespace MonoTorrent.Client
             }
             RequestMessage m1 = picker.PickPiece(peers[0], new List<PeerId>());
             RequestMessage m2 = picker.PickPiece(peers[1], new List<PeerId>());
-            Assert.AreNotEqual(m1.PieceIndex, m2.PieceIndex, "#1");
+            Assert.NotEqual(m1.PieceIndex, m2.PieceIndex, "#1");
         }
     }
 }

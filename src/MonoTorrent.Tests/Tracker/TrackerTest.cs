@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
@@ -9,7 +9,7 @@ using System.Net;
 
 namespace MonoTorrent.Tracker
 {
-    [TestFixture]
+    
     public class TrackerTest
     {
         public TrackerTest()
@@ -29,32 +29,32 @@ namespace MonoTorrent.Tracker
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void AddTrackableTest()
         {
             // Make sure they all add in
             AddAllTrackables();
 
             // Ensure none are added a second time
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.IsFalse(rig.Tracker.Add(t), "#2"); });
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t), "#2"); });
 
             // Clone each one and ensure that the clone can't be added
             List<Trackable> clones = new List<Trackable>();
             rig.Trackables.ForEach(delegate(Trackable t) { clones.Add(new Trackable(Clone(t.InfoHash), t.Name)); });
 
-            clones.ForEach(delegate(Trackable t) { Assert.IsFalse(rig.Tracker.Add(t), "#3"); });
+            clones.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t), "#3"); });
 
-            Assert.AreEqual(rig.Trackables.Count, rig.Tracker.Count, "#4");
+            Assert.Equal(rig.Trackables.Count, rig.Tracker.Count, "#4");
         }
 
-        [Test]
+        [Fact]
         public void GetManagerTest()
         {
             AddAllTrackables();
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.IsNotNull(rig.Tracker.GetManager(t)); });
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.NotNull(rig.Tracker.GetManager(t)); });
         }
 
-        [Test]
+        [Fact]
         public void AnnouncePeersTest()
         {
             AddAllTrackables();
@@ -62,13 +62,13 @@ namespace MonoTorrent.Tracker
 
             SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[0]);
 
-            Assert.AreEqual(rig.Peers.Count, manager.Count, "#1");
+            Assert.Equal(rig.Peers.Count, manager.Count, "#1");
             foreach (ITrackable t in rig.Trackables)
             {
                 SimpleTorrentManager m = rig.Tracker.GetManager(t);
                 if (m == manager)
                     continue;
-                Assert.AreEqual(0, m.Count, "#2");
+                Assert.Equal(0, m.Count, "#2");
             }
 
             foreach (Peer p in manager.GetPeers())
@@ -76,22 +76,22 @@ namespace MonoTorrent.Tracker
                 PeerDetails d = rig.Peers.Find(delegate(PeerDetails details) {
                     return details.ClientAddress == p.ClientAddress.Address && details.Port == p.ClientAddress.Port;
                 });
-                Assert.AreEqual(d.Downloaded, p.Downloaded, "#3");
-                Assert.AreEqual(d.peerId, p.PeerId, "#4");
-                Assert.AreEqual(d.Remaining, p.Remaining, "#5");
-                Assert.AreEqual(d.Uploaded, p.Uploaded, "#6");
+                Assert.Equal(d.Downloaded, p.Downloaded, "#3");
+                Assert.Equal(d.peerId, p.PeerId, "#4");
+                Assert.Equal(d.Remaining, p.Remaining, "#5");
+                Assert.Equal(d.Uploaded, p.Uploaded, "#6");
             }
         }
 
-        [Test]
+        [Fact]
         public void AnnounceInvalidTest()
         {
             int i = 0;
             rig.Peers.ForEach(delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent)((i++) % 4), rig.Trackables[0]); });
-            Assert.AreEqual(0, rig.Tracker.Count, "#1");
+            Assert.Equal(0, rig.Tracker.Count, "#1");
         }
 
-        [Test]
+        [Fact]
         public void CheckPeersAdded()
         {
             int i = 0;
@@ -107,11 +107,11 @@ namespace MonoTorrent.Tracker
             {
                 SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[i]);
                 List<Peer> peers = manager.GetPeers();
-                Assert.AreEqual(25, peers.Count, "#1");
+                Assert.Equal(25, peers.Count, "#1");
 
                 foreach (Peer p in peers)
                 {
-                    Assert.IsTrue(lists[i].Exists(delegate(PeerDetails d) {
+                    Assert.True(lists[i].Exists(delegate(PeerDetails d) {
                         return d.Port == p.ClientAddress.Port &&
                             d.ClientAddress == p.ClientAddress.Address;
                     }));
@@ -119,7 +119,7 @@ namespace MonoTorrent.Tracker
             }
         }
 
-        [Test]
+        [Fact]
         public void CustomKeyTest()
         {
             rig.Tracker.Add(rig.Trackables[0], new CustomComparer());
@@ -131,10 +131,10 @@ namespace MonoTorrent.Tracker
             rig.Peers[0].ClientAddress = IPAddress.Broadcast;
             rig.Listener.Handle(rig.Peers[0], TorrentEvent.Started, rig.Trackables[0]);
 
-            Assert.AreEqual(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count, "#1");
+            Assert.Equal(1, rig.Tracker.GetManager(rig.Trackables[0]).GetPeers().Count, "#1");
         }
 
-        [Test]
+        [Fact]
         public void TestReturnedPeers()
         {
             rig.Tracker.AllowNonCompact = true;
@@ -149,7 +149,7 @@ namespace MonoTorrent.Tracker
 
             BEncodedDictionary dict = (BEncodedDictionary)rig.Listener.Handle(rig.Peers[24], TorrentEvent.None, rig.Trackables[0]);
             BEncodedList list = (BEncodedList)dict["peers"];
-            Assert.AreEqual(25, list.Count, "#1");
+            Assert.Equal(25, list.Count, "#1");
 
             foreach (BEncodedDictionary d in list)
             {
@@ -157,7 +157,7 @@ namespace MonoTorrent.Tracker
                 int port = (int)((BEncodedNumber)d["port"]).Number;
                 string peerId = ((BEncodedString)d["peer id"]).Text;
 
-                Assert.IsTrue(peers.Exists(delegate(PeerDetails pd) {
+                Assert.True(peers.Exists(delegate(PeerDetails pd) {
                     return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId == peerId;
                 }), "#2");
             }
@@ -165,7 +165,7 @@ namespace MonoTorrent.Tracker
 
         private void AddAllTrackables()
         {
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.IsTrue(rig.Tracker.Add(t), "#1"); });
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.True(rig.Tracker.Add(t), "#1"); });
         }
 
         private InfoHash Clone(InfoHash p)

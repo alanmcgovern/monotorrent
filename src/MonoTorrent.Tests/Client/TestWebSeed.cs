@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 using MonoTorrent.Client.Connections;
 using System.Net;
 using MonoTorrent.Client.Messages.Standard;
@@ -13,7 +13,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    [TestFixture]
+    
     public class TestWebSeed
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
@@ -83,14 +83,14 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void TestPartialData()
         {
             partialData = true;
             Assert.Throws<WebException>(() => RecieveFirst());
         }
 
-        [Test]
+        [Fact]
         public void TestInactiveServer()
         {
             connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
             Assert.Throws<WebException>(() => RecieveFirst());
         }
 
-        [Test]
+        [Fact]
         public void RecieveFirst()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
             CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
         }
 
-        [Test]
+        [Fact]
         public void SendFirst()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
@@ -120,7 +120,7 @@ namespace MonoTorrent.Client
             CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
         }
 
-        [Test]
+        [Fact]
         public void ChunkedRequest()
         {
             if (requests.Messages.Count != 0)
@@ -134,7 +134,7 @@ namespace MonoTorrent.Client
             IAsyncResult sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
             while (sendResult.AsyncWaitHandle.WaitOne(10, true))
             {
-                Assert.AreEqual(amountSent, connection.EndSend(sendResult), "#1." + amountSent);
+                Assert.Equal(amountSent, connection.EndSend(sendResult), "#1." + amountSent);
                 offset += amountSent;
                 amountSent = Math.Min(sendBuffer.Length - offset, 2048);
                 if (amountSent == 0)
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
             CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
         }
 
-        [Test]
+        [Fact]
         public void MultipleChunkedRequests()
         {
             ChunkedRequest();
@@ -176,9 +176,9 @@ namespace MonoTorrent.Client
                 }
                 PieceMessage m = (PieceMessage)PeerMessage.DecodeMessage(buffer, 0, size + 4, rig.Manager);
                 RequestMessage request = (RequestMessage)requests.Messages[0];
-                Assert.AreEqual(request.PieceIndex, m.PieceIndex, "#1");
-                Assert.AreEqual(request.RequestLength, m.RequestLength, "#1");
-                Assert.AreEqual(request.StartOffset, m.StartOffset, "#1");
+                Assert.Equal(request.PieceIndex, m.PieceIndex, "#1");
+                Assert.Equal(request.RequestLength, m.RequestLength, "#1");
+                Assert.Equal(request.StartOffset, m.StartOffset, "#1");
 
                 for (int i = 0; i < request.RequestLength; i++)
                     if (buffer[i + 13] != (byte)(m.PieceIndex * rig.Torrent.PieceLength + m.StartOffset + i))
@@ -190,7 +190,7 @@ namespace MonoTorrent.Client
                 {
                     //receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
                     Wait(sendResult.AsyncWaitHandle);
-                    Assert.AreEqual(connection.EndSend(sendResult), amountSent);
+                    Assert.Equal(connection.EndSend(sendResult), amountSent);
                     break;
                 }
                 else
@@ -203,8 +203,8 @@ namespace MonoTorrent.Client
             baseUri = new Uri(baseUri, rig.Manager.Torrent.Name + "/");
             if (rig.Manager.Torrent.Files.Length > 1)
             {
-                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
-                Assert.AreEqual(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
+                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
+                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
             }
         }
 
@@ -273,7 +273,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [Test]
+        [Fact]
         public void SingleFileTorrent()
         {
             rig.Dispose();
@@ -291,12 +291,12 @@ namespace MonoTorrent.Client
 
             requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces);
             RecieveFirst();
-            Assert.AreEqual(url, requestedUrl[0]);
+            Assert.Equal(url, requestedUrl[0]);
         }
 
         void Wait(WaitHandle handle)
         {
-            Assert.IsTrue(handle.WaitOne(5000, true), "WaitHandle did not trigger");
+            Assert.True(handle.WaitOne(5000, true), "WaitHandle did not trigger");
         }
     }
 }
