@@ -28,14 +28,14 @@
 
 
 
-using System;
-using Xunit;
 using MonoTorrent.Client;
+using System;
 using System.Collections.Generic;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
-    
+
     public class BitFieldTest
     {
         BitField bf;
@@ -43,8 +43,7 @@ namespace MonoTorrent.Common
         byte[] initialByteValues;
         bool[] secondValues;
 
-        [SetUp]
-        public void SetUp()
+        public BitFieldTest()
         {
             // The bool[] must be kept in sync with the byte[] constructor. They represent exactly the same thing.
             initalValues = new bool[] { true, false, true, false, true, false, true, true, true, false, false, true };
@@ -65,12 +64,12 @@ namespace MonoTorrent.Common
         public void ConstructorBoolTest()
         {
             for (int i = 0; i < initalValues.Length; i++)
-                Assert.Equal(initalValues[i], bf[i], "#1:{0}", i);
+                Assert.Equal(initalValues[i], bf[i]);
 
             Assert.Equal(Toolbox.Count<bool>(initalValues, delegate(bool b) { return b; }), bf.TrueCount);
         }
 
-        [Ignore("This is deliberately broken to work around bugs in azureus")]
+        // "This is deliberately broken to work around bugs in azureus"
         public void InvalidBitfieldTest()
         {
             // Set each of the 4 trailing bits to 1 to force a decode error
@@ -80,7 +79,7 @@ namespace MonoTorrent.Common
                 {
                     initialByteValues[1] += i;
                     bf = new BitField(initialByteValues, initalValues.Length);
-                    Assert.Fail("The bitfield was corrupt but decoded correctly: Loop {0}", i);
+                    Assert.True(false, string.Format("The bitfield was corrupt but decoded correctly: Loop {0}", i));
                 }
                 catch (MessageException) { initialByteValues[1] -= i; }
             }
@@ -129,7 +128,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -140,7 +139,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -151,7 +150,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -165,7 +164,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -179,7 +178,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -193,7 +192,7 @@ namespace MonoTorrent.Common
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
-                Assert.Equal(first[i], second[i], "#" + i);
+                Assert.Equal(first[i], second[i]);
             }
         }
 
@@ -236,7 +235,7 @@ namespace MonoTorrent.Common
             BitField bf2 = new BitField(secondValues);
             bf.And(bf2);
 
-            Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.Equal(new BitField(secondValues), bf2);
             for (int i = 0; i < bf.Length; i++)
                 Assert.Equal(initalValues[i] && secondValues[i], bf[i]);
 
@@ -272,7 +271,7 @@ namespace MonoTorrent.Common
             BitField bf2 = new BitField(secondValues);
             bf.Or(bf2);
 
-            Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.Equal(new BitField(secondValues), bf2);
             for (int i = 0; i < bf.Length; i++)
                 Assert.Equal(initalValues[i] || secondValues[i], bf[i]);
 
@@ -300,7 +299,7 @@ namespace MonoTorrent.Common
             BitField bf2 = new BitField(secondValues);
             bf.Xor(bf2);
 
-            Assert.Equal(new BitField(secondValues), bf2, "#1: bf2 should be unmodified");
+            Assert.Equal(new BitField(secondValues), bf2);
             for (int i = 0; i < bf.Length; i++)
                 Assert.Equal((initalValues[i] || secondValues[i]) && !(initalValues[i] && secondValues[i]), bf[i]);
 

@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
     }
 
     
-    public class TrackerManagerTests
+    public class TrackerManagerTests : IDisposable
     {
         //static void Main()
         //{
@@ -39,8 +39,7 @@ namespace MonoTorrent.Client
         List<List<CustomTracker>> trackers;
         TrackerManager trackerManager;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public TrackerManagerTests()
         {
             string[][] trackers = new string[][] {
                 new string [] {
@@ -58,17 +57,7 @@ namespace MonoTorrent.Client
             };
 
             rig = TestRig.CreateTrackers(trackers);
-        }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
             rig.RecreateManager();
             trackerManager = rig.Manager.TrackerManager;
             this.trackers = new List<List<CustomTracker>>();
@@ -79,6 +68,11 @@ namespace MonoTorrent.Client
                     list.Add((CustomTracker)tracker);
                 this.trackers.Add(list);
             }
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
         }
 
         [Fact]
@@ -100,12 +94,12 @@ namespace MonoTorrent.Client
             Wait(trackerManager.Scrape());
             Assert.True(scrapeStarted);
             Assert.Equal(1, trackers[0][0].ScrapedAt.Count);
-            Assert.That((DateTime.Now - trackers[0][0].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True((DateTime.Now - trackers[0][0].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
             for (int i = 1; i < trackers.Count; i++)
-                Assert.Equal(0, trackers[i][0].ScrapedAt.Count, "#4." + i);
+                Assert.Equal(0, trackers[i][0].ScrapedAt.Count);
             Wait(trackerManager.Scrape(trackers[0][1]));
             Assert.Equal(1, trackers[0][1].ScrapedAt.Count);
-            Assert.That((DateTime.Now - trackers[0][1].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True((DateTime.Now - trackers[0][1].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -113,12 +107,12 @@ namespace MonoTorrent.Client
         {
             Wait(trackerManager.Announce());
             Assert.Equal(1, trackers[0][0].AnnouncedAt.Count);
-            Assert.That((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
             for (int i = 1; i < trackers.Count; i++)
-                Assert.Equal(0, trackers[0][i].AnnouncedAt.Count, "#4." + i);
+                Assert.Equal(0, trackers[0][i].AnnouncedAt.Count);
             Wait(trackerManager.Announce(trackers[0][1]));
             Assert.Equal(1, trackers[0][1].AnnouncedAt.Count);
-            Assert.That((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -142,7 +136,7 @@ namespace MonoTorrent.Client
             Wait(trackerManager.Announce());
             
             for (int i = 0; i < trackers[0].Count; i++)
-                Assert.Equal(1, trackers[0][i].AnnouncedAt.Count, "#1." + i);
+                Assert.Equal(1, trackers[0][i].AnnouncedAt.Count);
 
             Assert.Equal(trackers[1][0], trackerManager.CurrentTracker);
         }

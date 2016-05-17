@@ -129,7 +129,7 @@ namespace MonoTorrent.Dht
             };
 
             ReplaceNodeTask task = new ReplaceNodeTask(engine, b, null);
-            // FIXME: Need to assert that node 0.0.0.0:0 is the one which failed - i.e. it should be replaced
+            // FIXME: Need to Assert.True node 0.0.0.0:0 is the one which failed - i.e. it should be replaced
             task.Completed += delegate(object o, TaskCompleteEventArgs e) { handle.Set(); };
             task.Execute();
 
