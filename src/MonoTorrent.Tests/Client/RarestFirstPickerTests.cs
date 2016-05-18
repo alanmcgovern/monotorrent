@@ -1,14 +1,11 @@
+using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    
-    public class RarestFirstPickerTests
+    public class RarestFirstPickerTests : IDisposable
     {
         //static void Main()
         //{
@@ -22,16 +19,10 @@ namespace MonoTorrent.Client
         RarestFirstPicker rarest;
         TestPicker tester;
 
-
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public RarestFirstPickerTests()
         {
             rig = TestRig.CreateMultiFile ();
-        }
 
-        [SetUp]
-        public void Setup()
-        {
             tester = new TestPicker();
             rarest = new RarestFirstPicker(tester);
             rarest.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
@@ -47,8 +38,7 @@ namespace MonoTorrent.Client
             peers[0].BitField.SetAll(true);
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             rig.Dispose();
         }

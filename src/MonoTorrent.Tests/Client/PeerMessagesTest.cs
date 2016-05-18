@@ -27,50 +27,37 @@
 //
 
 
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 using System;
-using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using MonoTorrent.Common;
-using System.Net;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
-    
-    public class PeerMessagesTest
+
+    public class PeerMessagesTest : IDisposable
     {
         TestRig testRig;
         byte[] buffer;
         int offset = 2362;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public PeerMessagesTest()
         {
             buffer = new byte[100000];
             testRig = TestRig.CreateMultiFile();
-        }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            testRig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
         }
 
-        [TearDown]
-        public void GlobalTeardown()
+        public void Dispose()
         {
             testRig.Dispose();
+
         }
 
         [Fact]
@@ -85,7 +72,7 @@ namespace MonoTorrent.Client
             BitfieldMessage m = (BitfieldMessage)PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
             Assert.Equal(data.Length, m.BitField.Length);
             for (int i = 0; i < data.Length; i++)
-                Assert.Equal(data[i], m.BitField[i], "#2." + i);
+                Assert.Equal(data[i], m.BitField[i]);
         }
 
         [Fact]
@@ -107,7 +94,7 @@ namespace MonoTorrent.Client
             EncodeDecode(msg);
         }
 
-        [Ignore("Deliberately broken to work around bugs in azureus")]
+        //Deliberately broken to work around bugs in azureus
         public void BitfieldCorrupt()
         {
             bool[] data = new bool[] { true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true };
@@ -155,12 +142,12 @@ namespace MonoTorrent.Client
             Console.WriteLine(BitConverter.ToString(buffer, offset, length));
             byte[] peerId = Encoding.ASCII.GetBytes("12312312345645645678");
             byte[] protocolVersion = Encoding.ASCII.GetBytes(VersionInfo.ProtocolStringV100);
-            Assert.Equal(19, buffer[offset], "1");
+            Assert.Equal(19, buffer[offset]);
             Assert.True(Toolbox.ByteMatch(protocolVersion, 0, buffer, offset + 1, 19), "2");
             Assert.True(Toolbox.ByteMatch(new byte[8], 0, buffer, offset + 20, 8), "3");
             Assert.True(Toolbox.ByteMatch(infohash, 0, buffer, offset + 28, 20), "4");
             Assert.True(Toolbox.ByteMatch(peerId, 0, buffer, offset + 48, 20), "5");
-            Assert.Equal(length, 68, "6");
+            Assert.Equal(length, 68);
 
             length = new HandshakeMessage(new InfoHash (infohash), "12312312345645645678", VersionInfo.ProtocolStringV100, true, false).Encode(buffer, offset);
             Assert.Equal(BitConverter.ToString(buffer, offset, length), "13-42-69-74-54-6F-72-72-65-6E-74-20-70-72-6F-74-6F-63-6F-6C-00-00-00-00-00-00-00-04-01-02-03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-00-0C-0F-0C-34-31-32-33-31-32-33-31-32-33-34-35-36-34-35-36-34-35-36-37-38");

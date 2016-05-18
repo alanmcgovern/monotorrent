@@ -27,17 +27,15 @@
 //
 
 
+using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
 
 namespace MonoTorrent.Client
 {
-    
-    public class PriorityPickerTests
+
+    public class PriorityPickerTests : IDisposable
     {
         //static void Main()
         //{
@@ -52,29 +50,23 @@ namespace MonoTorrent.Client
         TestRig rig;
         TestPicker tester;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public PriorityPickerTests()
         {
             rig = TestRig.CreateMultiFile();
             id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             id.BitField.SetAll(true);
-        }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
             id.BitField.SetAll(true);
             tester = new TestPicker();
             picker = new PriorityPicker(tester);
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             foreach (TorrentFile file in rig.Torrent.Files)
                 file.Priority = Priority.Normal;
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
         }
 
         [Fact]

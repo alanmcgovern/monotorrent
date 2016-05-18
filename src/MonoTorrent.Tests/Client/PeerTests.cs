@@ -1,12 +1,11 @@
+using MonoTorrent.BEncoding;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
-    
+
     public class PeerTests
     {
         //static void Main(string[] args)
@@ -17,8 +16,7 @@ namespace MonoTorrent.Client
         //}
         private List<Peer> peers;
 
-        [SetUp]
-        public void Setup()
+        public PeerTests()
         {
             peers = new List<Peer>();
             for (int i=0; i < 10; i++)

@@ -1,19 +1,17 @@
-﻿using MonoTorrent.Client;
-using MonoTorrent.Client.Encryption;
+﻿using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using Xunit;
 using System;
 using System.IO;
-using System.Net;
 using System.Security.Cryptography;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class MetadataModeTests
+
+    public class MetadataModeTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -48,8 +46,7 @@ namespace MonoTorrent.Client
             encryptor = id.Encryptor;
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             rig.Manager.Stop();
             pair.Dispose();

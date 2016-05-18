@@ -26,18 +26,18 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-using System;
-using Xunit;
-using System.Threading;
-using MonoTorrent.Common;
-using System.Net;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
+using System;
+using System.Net;
+using System.Threading;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class NetworkIOTests
+
+    public class NetworkIOTests : IDisposable
     {
         byte[] buffer;
         byte[] data;
@@ -51,8 +51,7 @@ namespace MonoTorrent.Client
             get { return pair.Outgoing; }
         }
 
-        [SetUp]
-        public void Setup ()
+        public NetworkIOTests()
         {
             if (data == null) {
                 data = new byte [32768];
@@ -61,8 +60,7 @@ namespace MonoTorrent.Client
             pair = new ConnectionPair (34567);
         }
 
-        [TearDown]
-        public void Teardown ()
+        public void Dispose ()
         {
             pair.Dispose ();
         }
@@ -102,20 +100,20 @@ namespace MonoTorrent.Client
             var handle = new ManualResetEvent (false);
             NetworkIO.EnqueueReceive (Outgoing, buffer, 0, buffer.Length, null, null, null, (s, t, o) => {
                 Assert.True (s, "#Receive successful");
-                Assert.Equal (buffer.Length, t, "#data was all received");
+                Assert.Equal (buffer.Length, t);
                 handle.Set ();
             }, null);
 
             while (sent != buffer.Length) {
                 int r = Incoming.Send (data, sent, data.Length - sent);
-                Assert.NotEqual (0, r, "#Received data");
+                Assert.NotEqual (0, r);
                 sent += r;
             }
 
             Assert.True (handle.WaitOne (TimeSpan.FromSeconds (4)), "Data should be all received");
             for (int i = 0; i < buffer.Length; i++) {
                 if (data[i] != buffer[i])
-                    Assert.Fail ("Buffers differ at position " + i);
+                    Assert.True(false, "Buffers differ at position " + i);
             }
         }
 
@@ -157,7 +155,7 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte [data.Length];
             while (received != buffer.Length) {
                 int r = Incoming.Receive (buffer, received, buffer.Length - received);
-                Assert.NotEqual (0, r, "#Received data");
+                Assert.NotEqual (0, r);
                 received += r;
             }
             Assert.True (handle.WaitOne (TimeSpan.FromSeconds (1)), "Data should be all sent");

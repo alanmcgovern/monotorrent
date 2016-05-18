@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
-    public class RandomisedPickerTests
+
+    public class RandomisedPickerTests : IDisposable
     {
         //static void Main()
         //{
@@ -21,26 +20,20 @@ namespace MonoTorrent.Client
         TestRig rig;
         TestPicker tester;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public RandomisedPickerTests()
         {
             rig = TestRig.CreateMultiFile();
             id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < id.BitField.Length; i += 2)
                 id.BitField[i] = true;
-        }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
             tester = new TestPicker();
             picker = new RandomisedPicker(tester);
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
         }
 
         [Fact]
@@ -54,7 +47,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < pieces.Count; i++)
                 if (pieces[i] != tester.PickedPieces[i])
                     return;
-            Assert.Fail("The piece were picked in order");
+            Assert.True(false, "The piece were picked in order");
         }
     }
 }

@@ -1,16 +1,13 @@
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    
-    public class PiecePickerTests
+
+    public class PiecePickerTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -47,9 +44,7 @@ namespace MonoTorrent.Client
         protected PiecePicker picker;
         protected TestRig rig;
 
-
-        [SetUp]
-        public virtual void Setup()
+        public PiecePickerTests()
         {
             // Yes, this is horrible. Deal with it.
             rig = TestRig.CreateMultiFile();
@@ -65,8 +60,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        [TearDown]
-        public void GlobalTeardown()
+        public void Dispose()
         {
             rig.Dispose();
         }
@@ -84,7 +78,7 @@ namespace MonoTorrent.Client
                 for (int j = 0; j < 16; j++)
                 {
                     RequestMessage msg = picker.PickPiece(peers[0], peers);
-                    Assert.NotNull(msg, "#1." + j);
+                    Assert.NotNull(msg);
                     Assert.True(Array.IndexOf<int>(allowedFast, msg.PieceIndex) > -1, "#2." + j);
                 }
             }
@@ -221,7 +215,7 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        [Ignore("If a fast peer sends a choke message, CancelRequests will not be called")]
+        //If a fast peer sends a choke message, CancelRequests will not be called"
         public void FastPeerChoked()
         {
             List<RequestMessage> messages = new List<RequestMessage>();
@@ -288,7 +282,7 @@ namespace MonoTorrent.Client
             for (int i = 0; i < rig.BlocksPerPiece * 3; i++)
             {
                 RequestMessage m = picker.PickPiece(peer, peers);
-                Assert.NotNull(m, "#1." + i.ToString());
+                Assert.NotNull(m);
                 Assert.True(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5);
             }
 
