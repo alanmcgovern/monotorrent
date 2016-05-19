@@ -29,23 +29,20 @@
 
 
 
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
-using System.Threading;
-using Xunit;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Encryption;
+using System;
+using System.Net;
+using Xunit;
 
 
 namespace MonoTorrent.Client
 {
-    
-    public class TransferTest
+
+    public class TransferTest : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -61,8 +58,7 @@ namespace MonoTorrent.Client
         private ConnectionPair pair;
         private TestRig rig;
 
-        [SetUp]
-        public void Setup()
+        public TransferTest()
         {
             pair = new ConnectionPair(55432);
             rig = TestRig.CreateMultiFile();
@@ -70,8 +66,7 @@ namespace MonoTorrent.Client
             rig.Manager.Start();
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             rig.Manager.Stop();
             pair.Dispose();
@@ -118,11 +113,11 @@ namespace MonoTorrent.Client
             pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
-                Assert.Fail("Connection never closed");
+                Assert.True(false, "Connection never closed");
 
             int r = pair.Outgoing.EndReceive(result);
             if (r != 0)
-                Assert.Fail("Connection should've been closed");
+                Assert.True(false, "Connection should've been closed");
         }
 
         [Fact]
@@ -133,11 +128,11 @@ namespace MonoTorrent.Client
             pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
-                Assert.Fail("Connection never closed");
+                Assert.True(false, "Connection never closed");
 
             int r = pair.Outgoing.EndReceive(result);
             if (r != 0)
-                Assert.Fail("Connection should've been closed");
+                Assert.True(false, "Connection should've been closed");
         }
 
         public void InitiateTransfer(CustomConnection connection)

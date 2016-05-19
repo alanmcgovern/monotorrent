@@ -1,14 +1,11 @@
 #if !DISABLE_DHT
-using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Dht;
-using Xunit;
 using System.Net;
+using Xunit;
 
 namespace MonoTorrent.Dht
 {
-    
+
     public class RoutingTableTests
     {
         //static void Main(string[] args)
@@ -23,9 +20,7 @@ namespace MonoTorrent.Dht
         RoutingTable table;
         Node n;
         int addedCount;
-        
-        [SetUp]
-        public void Setup()
+        public RoutingTableTests()
         {
             id = new byte[20];
             id[1] = 128;
@@ -46,7 +41,7 @@ namespace MonoTorrent.Dht
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
-            Assert.Equal(1, addedCount, "#a");
+            Assert.Equal(1, addedCount);
             Assert.Equal(1, table.Buckets.Count);
             Assert.Equal(1, table.Buckets[0].Nodes.Count);
 

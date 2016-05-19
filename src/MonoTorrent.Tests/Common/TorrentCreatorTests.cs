@@ -1,13 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
-using System.IO;
 using MonoTorrent.Client.PieceWriters;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
@@ -22,7 +20,7 @@ namespace MonoTorrent.Common
     }
 
     
-    public class TorrentCreatorTests
+    public class TorrentCreatorTests : IDisposable
     {
         private string Comment = "My Comment";
         private string CreatedBy = "Created By MonoTorrent";
@@ -37,21 +35,15 @@ namespace MonoTorrent.Common
         List<TorrentFile> files;
         TestWriter writer;
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
-        {
-            HashAlgoFactory.Register<SHA1, SHA1Fake>();
-        }
-
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             HashAlgoFactory.Register<SHA1, SHA1CryptoServiceProvider>();
         }
 
-        [SetUp]
-        public void Setup()
+        public TorrentCreatorTests()
         {
+            HashAlgoFactory.Register<SHA1, SHA1Fake>();
+
             creator = new TestTorrentCreator();
             announces = new RawTrackerTiers ();
             announces.Add(new RawTrackerTier (new string[] { "http://tier1.com/announce1", "http://tier1.com/announce2" }));

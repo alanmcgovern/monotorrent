@@ -1,16 +1,14 @@
 #if !DISABLE_DHT
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
 using System;
-using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using MonoTorrent.Dht.Messages;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
-    
-    public class MessageTests
+
+    public class MessageTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -24,14 +22,12 @@ namespace MonoTorrent.Dht
 
         private QueryMessage message;
 
-        [SetUp]
-        public void Setup()
+        public MessageTests()
         {
             Message.UseVersionKey = false;
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             Message.UseVersionKey = true;
         }

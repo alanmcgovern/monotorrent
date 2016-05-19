@@ -42,7 +42,7 @@ using System.Net;
 namespace MonoTorrent.Client
 {
     
-    public class UdpTrackerTests
+    public class UdpTrackerTests : IDisposable
     {
         static void Main(string[] args)
         {
@@ -53,13 +53,11 @@ namespace MonoTorrent.Client
             t.AnnounceResponseTest();
             t.ScrapeMessageTest();
             t.ScrapeResponseTest();
-            t.FixtureSetup();
 
             t.AnnounceTest();
-            t.Setup();
             t.ScrapeTest();
 
-            t.FixtureTeardown();
+            t.Dispose();
         }
 
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
@@ -71,8 +69,7 @@ namespace MonoTorrent.Client
         List<string> keys;
         string prefix = "udp://localhost:6767/announce/";
 
-        [OneTimeSetUp]
-        public void FixtureSetup()
+        public UdpTrackerTests()
         {
             keys = new List<string>();
             server = new MonoTorrent.Tracker.Tracker();
@@ -85,16 +82,11 @@ namespace MonoTorrent.Client
             server.RegisterListener(listener);
 
             listener.Start();
-        }
 
-        [SetUp]
-        public void Setup()
-        {
             keys.Clear();
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             listener.Stop();
             server.Dispose();
@@ -375,7 +367,7 @@ namespace MonoTorrent.Client
     {
         public bool IgnoreConnects;
         public bool IgnoreAnnounces;
-        public bool IgnoreErrors;
+        public bool IgnoreErrors = false;
         public bool IgnoreScrapes;
 
         public IgnoringListener(int port)

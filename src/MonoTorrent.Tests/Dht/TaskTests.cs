@@ -27,8 +27,7 @@ namespace MonoTorrent.Dht
         BEncodedString transactionId = "aa";
         ManualResetEvent handle;
 
-        [SetUp]
-        public void Setup()
+        public TaskTests()
         {
             counter = 0;
             listener = new TestListener();

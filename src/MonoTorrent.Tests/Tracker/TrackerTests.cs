@@ -10,7 +10,7 @@ using MonoTorrent.Common;
 namespace MonoTorrent.Tracker
 {
     
-    public class TrackerTests
+    public class TrackerTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -24,27 +24,22 @@ namespace MonoTorrent.Tracker
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         MonoTorrent.Tracker.Tracker server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
-        [OneTimeSetUp]
-        public void FixtureSetup()
+
+        public TrackerTests()
         {
             listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
             listener.Start();
             server = new MonoTorrent.Tracker.Tracker();
             server.RegisterListener(listener);
             listener.Start();
+
+            //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
-        [OneTimeTearDown]
-        public void FixtureTeardown()
+        public void Dispose()
         {
             listener.Stop();
             server.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
         }
 
         [Fact]

@@ -1,31 +1,27 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Client.Connections;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using MonoTorrent.Client.Messages;
+using System;
 using System.Threading;
-using MonoTorrent.BEncoding;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
 
-    
-    public class TorrentManagerTest
+
+    public class TorrentManagerTest : IDisposable
     {
         TestRig rig;
         ConnectionPair conn;
 
-        [SetUp]
-        public void Setup()
+        public TorrentManagerTest()
         {
             rig = TestRig.CreateMultiFile (new TestWriter());
             conn = new ConnectionPair(51515);
         }
-        [TearDown]
-        public void Teardown()
+
+        public void Dispose()
         {
             rig.Dispose();
             conn.Dispose();
@@ -52,7 +48,7 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            Assert.Fail ("The outgoing connection should've thrown an exception");
+            Assert.True(false, "The outgoing connection should've thrown an exception");
         }
 
         [Fact]

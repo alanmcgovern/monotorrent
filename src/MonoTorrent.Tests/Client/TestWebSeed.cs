@@ -14,7 +14,7 @@ using MonoTorrent.Common;
 namespace MonoTorrent.Client
 {
     
-    public class TestWebSeed
+    public class TestWebSeed : IDisposable
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
         //static void Main(string[] args)
@@ -41,8 +41,7 @@ namespace MonoTorrent.Client
         MessageBundle requests;
         int numberOfPieces = 50;
 
-        [SetUp]
-        public void Setup()
+        public TestWebSeed()
         {
             requestedUrl.Clear();
             partialData = false;
@@ -76,8 +75,7 @@ namespace MonoTorrent.Client
             requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces);
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             listener.Close();
             rig.Dispose();
@@ -134,11 +132,11 @@ namespace MonoTorrent.Client
             IAsyncResult sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
             while (sendResult.AsyncWaitHandle.WaitOne(10, true))
             {
-                Assert.Equal(amountSent, connection.EndSend(sendResult), "#1." + amountSent);
+                Assert.Equal(amountSent, connection.EndSend(sendResult));
                 offset += amountSent;
                 amountSent = Math.Min(sendBuffer.Length - offset, 2048);
                 if (amountSent == 0)
-                    Assert.Fail("This should never happen");
+                    Assert.True(false, "This should never happen");
                 sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
             }
 
@@ -203,8 +201,8 @@ namespace MonoTorrent.Client
             baseUri = new Uri(baseUri, rig.Manager.Torrent.Name + "/");
             if (rig.Manager.Torrent.Files.Length > 1)
             {
-                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path), requestedUrl[0]);
-                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path), requestedUrl[1]);
+                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[0].Path).ToString(), requestedUrl[0]);
+                Assert.Equal(new Uri(baseUri, rig.Manager.Torrent.Files[1].Path).ToString(), requestedUrl[1]);
             }
         }
 
@@ -220,7 +218,7 @@ namespace MonoTorrent.Client
                 string range = c.Request.Headers["range"];
 
                 if (!(range != null && (match = rangeMatcher.Match(range)) != null))
-                    Assert.Fail("No valid range specified");
+                    Assert.True(false, "No valid range specified");
 
                 int start = int.Parse(match.Groups[1].Captures[0].Value);
                 int end = int.Parse(match.Groups[2].Captures[0].Value);

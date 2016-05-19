@@ -12,7 +12,7 @@ using MonoTorrent.Dht.Tasks;
 namespace MonoTorrent.Dht
 {
     
-    public class MessageHandlingTests
+    public class MessageHandlingTests : IDisposable
     {
         //static void Main(string[] args)
         //{
@@ -25,8 +25,7 @@ namespace MonoTorrent.Dht
         Node node;
         TestListener listener;
 
-        [SetUp]
-        public void Setup()
+        public MessageHandlingTests()
         {
             listener = new TestListener();
             node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
@@ -34,8 +33,7 @@ namespace MonoTorrent.Dht
             //engine.Add(node);
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             engine.Dispose();
         }

@@ -1,18 +1,14 @@
 #if !DISABLE_DHT
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace MonoTorrent.Dht
 {
-    
+
     public class NodeIdTests
     {
         private NodeId[] nodes;
 
-        [SetUp]
-        public void Setup()
+        public NodeIdTests()
         {
             nodes = new NodeId[20];
             for (int i = 0; i < nodes.Length; i++)
