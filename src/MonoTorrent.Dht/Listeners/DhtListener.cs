@@ -21,7 +21,7 @@ namespace MonoTorrent.Dht.Listeners
 
         protected override void OnMessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
-            MessageReceived h = MessageReceived;
+            var h = MessageReceived;
             if (h != null)
                 h(buffer, endpoint);
         }

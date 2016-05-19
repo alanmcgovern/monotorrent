@@ -35,7 +35,7 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    class ChokeData
+    internal class ChokeData
     {
         public DateTime LastChoked;
         public PeerId Peer;
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class SeededPiece
+    internal class SeededPiece
     {
         public int Index;
         public PeerId Peer;
@@ -74,15 +74,15 @@ namespace MonoTorrent.Client
         }
     }
 
-    class InitialSeedUnchoker : Unchoker
+    internal class InitialSeedUnchoker : Unchoker
     {
-        List<SeededPiece> advertisedPieces;
-        BitField bitfield;
-        TorrentManager manager;
-        List<ChokeData> peers;
-        BitField temp;
+        private List<SeededPiece> advertisedPieces;
+        private BitField bitfield;
+        private TorrentManager manager;
+        private List<ChokeData> peers;
+        private BitField temp;
 
-        bool PendingUnchoke
+        private bool PendingUnchoke
         {
             get { return peers.Exists(delegate(ChokeData d) { return d.Peer.AmChoking && d.Peer.IsInterested; }); }
         }
@@ -104,11 +104,11 @@ namespace MonoTorrent.Client
 
         public InitialSeedUnchoker(TorrentManager manager)
         {
-            this.advertisedPieces = new List<SeededPiece>();
-            this.bitfield = new BitField(manager.Bitfield.Length);
+            advertisedPieces = new List<SeededPiece>();
+            bitfield = new BitField(manager.Bitfield.Length);
             this.manager = manager;
-            this.peers = new List<ChokeData>();
-            this.temp = new BitField(bitfield.Length);
+            peers = new List<ChokeData>();
+            temp = new BitField(bitfield.Length);
         }
 
         public override void Choke(PeerId id)
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
 
             // Place the peer at the end of the list so the rest of the peers
             // will get an opportunity to unchoke before this peer gets tried again
-            ChokeData data = peers.Find(delegate(ChokeData d) { return d.Peer == id; });
+            var data = peers.Find(delegate(ChokeData d) { return d.Peer == id; });
             peers.Remove(data);
             peers.Add(data);
         }
@@ -141,7 +141,7 @@ namespace MonoTorrent.Client
 
             // If a peer reports they have a piece that *isn't* the peer
             // we uploaded it to, then the peer we uploaded to has shared it
-            foreach (ChokeData data in peers)
+            foreach (var data in peers)
             {
                 if (data.CurrentPieces[pieceIndex] && data.Peer != peer)
                 {
@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            foreach (SeededPiece piece in advertisedPieces)
+            foreach (var piece in advertisedPieces)
             {
                 if (piece.Index == pieceIndex)
                 {
@@ -170,7 +170,7 @@ namespace MonoTorrent.Client
 
         public void SentBlock(PeerId peer, int pieceIndex)
         {
-            SeededPiece piece =
+            var piece =
                 advertisedPieces.Find(delegate(SeededPiece p) { return p.Peer == peer && p.Index == pieceIndex; });
             if (piece == null)
                 return;
@@ -181,15 +181,15 @@ namespace MonoTorrent.Client
                 advertisedPieces.Remove(piece);
         }
 
-        void TryAdvertisePiece(ChokeData data)
+        private void TryAdvertisePiece(ChokeData data)
         {
             // If we are seeding to this peer and we have a peer waiting to unchoke
             // don't advertise more data
             if (!data.Peer.AmChoking && PendingUnchoke)
                 return;
 
-            int advertised = advertisedPieces.FindAll(delegate(SeededPiece p) { return p.Peer == data.Peer; }).Count;
-            int max = MaxAdvertised;
+            var advertised = advertisedPieces.FindAll(delegate(SeededPiece p) { return p.Peer == data.Peer; }).Count;
+            var max = MaxAdvertised;
             if (manager.UploadingTo < manager.Settings.UploadSlots)
                 max = MaxAdvertised;
             else if (data.ShareRatio < 0.25)
@@ -211,10 +211,10 @@ namespace MonoTorrent.Client
             temp.NAnd(data.Peer.BitField);
 
             // Ignore all the pieces we've already started sharing
-            foreach (SeededPiece p in advertisedPieces)
+            foreach (var p in advertisedPieces)
                 temp[p.Index] = false;
 
-            int index = 0;
+            var index = 0;
             while (advertised < max)
             {
                 // Get the index of the first piece we can send him
@@ -233,7 +233,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        void TryChoke(ChokeData data)
+        private void TryChoke(ChokeData data)
         {
             // Already choked
             if (data.Peer.AmChoking)
@@ -254,7 +254,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        void TryUnchoke(ChokeData data)
+        private void TryUnchoke(ChokeData data)
         {
             // Already unchoked
             if (!data.Peer.AmChoking)
@@ -276,24 +276,24 @@ namespace MonoTorrent.Client
         {
             if (PendingUnchoke)
             {
-                List<ChokeData> dupePeers = new List<ChokeData>(peers);
-                foreach (ChokeData data in dupePeers)
+                var dupePeers = new List<ChokeData>(peers);
+                foreach (var data in dupePeers)
                     TryChoke(data);
 
                 dupePeers = new List<ChokeData>(peers);
                 // See if there's anyone interesting to unchoke
-                foreach (ChokeData data in dupePeers)
+                foreach (var data in dupePeers)
                     TryUnchoke(data);
             }
 
             // Make sure our list of pieces available in the swarm is up to date
-            foreach (ChokeData data in peers)
+            foreach (var data in peers)
                 bitfield.Or(data.Peer.BitField);
 
             advertisedPieces.RemoveAll(delegate(SeededPiece p) { return bitfield[p.Index]; });
 
             // Send have messages to anyone that needs them
-            foreach (ChokeData data in peers)
+            foreach (var data in peers)
                 TryAdvertisePiece(data);
         }
     }

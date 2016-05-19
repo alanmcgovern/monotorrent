@@ -38,21 +38,21 @@ namespace MonoTorrent.Client
 {
     internal static partial class PeerIO
     {
-        const int MaxMessageLength = Piece.BlockSize*4;
+        private const int MaxMessageLength = Piece.BlockSize*4;
 
-        static ICache<ReceiveMessageState> receiveCache = new Cache<ReceiveMessageState>(true).Synchronize();
-        static ICache<SendMessageState> sendCache = new Cache<SendMessageState>(true).Synchronize();
+        private static ICache<ReceiveMessageState> receiveCache = new Cache<ReceiveMessageState>(true).Synchronize();
+        private static ICache<SendMessageState> sendCache = new Cache<SendMessageState>(true).Synchronize();
 
-        static AsyncIOCallback MessageLengthReceivedCallback = MessageLengthReceived;
-        static AsyncIOCallback EndSendCallback = EndSend;
-        static AsyncIOCallback MessageBodyReceivedCallback = MessageBodyReceived;
-        static AsyncIOCallback HandshakeReceivedCallback = HandshakeReceived;
+        private static AsyncIOCallback MessageLengthReceivedCallback = MessageLengthReceived;
+        private static AsyncIOCallback EndSendCallback = EndSend;
+        private static AsyncIOCallback MessageBodyReceivedCallback = MessageBodyReceived;
+        private static AsyncIOCallback HandshakeReceivedCallback = HandshakeReceived;
 
         public static void EnqueueSendMessage(IConnection connection, IEncryption encryptor, PeerMessage message,
             IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor,
             AsyncIOCallback callback, object state)
         {
-            int count = message.ByteLength;
+            var count = message.ByteLength;
             var buffer = ClientEngine.BufferManager.GetBuffer(count);
             message.Encode(buffer, 0);
             encryptor.Encrypt(buffer, 0, count);
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
                 EndSendCallback, data);
         }
 
-        static void EndSend(bool successful, int count, object state)
+        private static void EndSend(bool successful, int count, object state)
         {
             var data = (SendMessageState) state;
             ClientEngine.BufferManager.FreeBuffer(data.Buffer);
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client
                 HandshakeReceivedCallback, data);
         }
 
-        static void HandshakeReceived(bool successful, int transferred, object state)
+        private static void HandshakeReceived(bool successful, int transferred, object state)
         {
             var data = (ReceiveMessageState) state;
             PeerMessage message = null;
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
             ConnectionMonitor monitor, TorrentManager manager, AsyncMessageReceivedCallback callback, object state)
         {
             // FIXME: Hardcoded number
-            int count = 4;
+            var count = 4;
             var buffer = ClientEngine.BufferManager.GetBuffer(count);
             var data = receiveCache.Dequeue()
                 .Initialise(connection, decryptor, rateLimiter, monitor, manager, buffer, callback, state);
@@ -109,10 +109,10 @@ namespace MonoTorrent.Client
                 MessageLengthReceivedCallback, data);
         }
 
-        static void MessageLengthReceived(bool successful, int transferred, object state)
+        private static void MessageLengthReceived(bool successful, int transferred, object state)
         {
             var data = (ReceiveMessageState) state;
-            int messageLength = -1;
+            var messageLength = -1;
 
             if (successful)
             {
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
                 data.ManagerMonitor, MessageBodyReceivedCallback, data);
         }
 
-        static void MessageBodyReceived(bool successful, int transferred, object state)
+        private static void MessageBodyReceived(bool successful, int transferred, object state)
         {
             var data = (ReceiveMessageState) state;
             if (!successful)

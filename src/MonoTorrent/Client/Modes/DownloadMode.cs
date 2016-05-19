@@ -5,9 +5,9 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    class DownloadMode : Mode
+    internal class DownloadMode : Mode
     {
-        TorrentState state;
+        private TorrentState state;
 
         public override TorrentState State
         {
@@ -20,7 +20,7 @@ namespace MonoTorrent.Client
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
         }
 
-        public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+        public override void HandlePeerConnected(PeerId id, Direction direction)
         {
             if (!ShouldConnect(id))
                 id.CloseConnection();
@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
                     TorrentState.Seeding));
                 Manager.TrackerManager.Announce(TorrentEvent.Completed);
             }
-            for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
+            for (var i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
                 if (!ShouldConnect(Manager.Peers.ConnectedPeers[i]))
                     Manager.Peers.ConnectedPeers[i].CloseConnection();
             base.Tick(counter);

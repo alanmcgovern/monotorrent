@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    class WaitHandleGroup : WaitHandle
+    internal class WaitHandleGroup : WaitHandle
     {
         private List<WaitHandle> handles;
         private List<string> names;
@@ -24,7 +24,7 @@ namespace MonoTorrent.Client
 
         public override void Close()
         {
-            for (int i = 0; i < handles.Count; i++)
+            for (var i = 0; i < handles.Count; i++)
                 handles[i].Close();
         }
 
@@ -32,41 +32,41 @@ namespace MonoTorrent.Client
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray());
+            return WaitAll(handles.ToArray());
         }
 
         public override bool WaitOne(int millisecondsTimeout)
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray(), millisecondsTimeout);
+            return WaitAll(handles.ToArray(), millisecondsTimeout);
         }
 
         public override bool WaitOne(TimeSpan timeout)
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray(), timeout);
+            return WaitAll(handles.ToArray(), timeout);
         }
 
         public override bool WaitOne(int millisecondsTimeout, bool exitContext)
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray(), millisecondsTimeout, exitContext);
+            return WaitAll(handles.ToArray(), millisecondsTimeout, exitContext);
         }
 
         public override bool WaitOne(TimeSpan timeout, bool exitContext)
         {
             if (handles.Count == 0)
                 return true;
-            return WaitHandle.WaitAll(handles.ToArray(), timeout, exitContext);
+            return WaitAll(handles.ToArray(), timeout, exitContext);
         }
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < handles.Count; i ++)
+            var sb = new StringBuilder();
+            for (var i = 0; i < handles.Count; i ++)
             {
                 sb.Append("WaitHandle: ");
                 sb.Append(names[i]);

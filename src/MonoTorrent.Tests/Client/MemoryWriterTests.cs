@@ -6,15 +6,15 @@ namespace MonoTorrent.Client
 {
     public class MemoryWriterTests
     {
-        byte[] buffer;
-        MemoryWriter level1;
-        MemoryWriter level2;
+        private byte[] buffer;
+        private MemoryWriter level1;
+        private MemoryWriter level2;
 
-        TorrentFile singleFile;
-        TorrentFile[] multiFile;
+        private TorrentFile singleFile;
+        private TorrentFile[] multiFile;
 
-        int pieceLength;
-        long torrentSize;
+        private int pieceLength;
+        private long torrentSize;
 
         public MemoryWriterTests()
         {
@@ -38,14 +38,14 @@ namespace MonoTorrent.Client
         public void FillFirstBuffer()
         {
             // Write 4 blocks to the stream and then verify they can all be read
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 Initialise(buffer, (byte) (i + 1));
                 level1.Write(singleFile, Piece.BlockSize*i, buffer, 0, buffer.Length);
             }
 
             // Read them all back out and verify them
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 level1.Read(singleFile, Piece.BlockSize*i, buffer, 0, Piece.BlockSize);
                 Verify(buffer, (byte) (i + 1));
@@ -73,9 +73,9 @@ namespace MonoTorrent.Client
         public void ReadWriteSpanningBlock()
         {
             // Write one block of data to the memory stream. 
-            int file1 = (int) multiFile[0].Length;
-            int file2 = (int) multiFile[1].Length;
-            int file3 = Piece.BlockSize - file1 - file2;
+            var file1 = (int) multiFile[0].Length;
+            var file2 = (int) multiFile[1].Length;
+            var file3 = Piece.BlockSize - file1 - file2;
 
             Initialise(buffer, 1);
             level1.Write(multiFile[0], 0, buffer, 0, file1);
@@ -95,20 +95,20 @@ namespace MonoTorrent.Client
             Verify(buffer, file1 + file2, file3, 3);
         }
 
-        void Initialise(byte[] buffer, byte value)
+        private void Initialise(byte[] buffer, byte value)
         {
-            for (int i = 0; i < buffer.Length; i++)
+            for (var i = 0; i < buffer.Length; i++)
                 buffer[i] = value;
         }
 
-        void Verify(byte[] buffer, byte expected)
+        private void Verify(byte[] buffer, byte expected)
         {
             Verify(buffer, 0, buffer.Length, expected);
         }
 
-        void Verify(byte[] buffer, int startOffset, int count, byte expected)
+        private void Verify(byte[] buffer, int startOffset, int count, byte expected)
         {
-            for (int i = startOffset; i < startOffset + count; i++)
+            for (var i = startOffset; i < startOffset + count; i++)
                 Assert.Equal(buffer[i], expected);
         }
     }

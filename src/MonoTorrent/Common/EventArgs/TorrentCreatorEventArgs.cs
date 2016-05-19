@@ -47,7 +47,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public long OverallBytesHashed
         {
-            get { return this.overallHashed; }
+            get { return overallHashed; }
         }
 
         /// <summary>

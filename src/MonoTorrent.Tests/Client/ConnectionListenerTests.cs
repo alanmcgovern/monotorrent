@@ -33,11 +33,11 @@ namespace MonoTorrent.Client
         [Fact]
         public void AcceptThree()
         {
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
         }
 

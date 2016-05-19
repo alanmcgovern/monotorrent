@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    class TaskCompleteEventArgs : EventArgs
+    internal class TaskCompleteEventArgs : EventArgs
     {
         private Task task;
 

@@ -9,14 +9,14 @@ namespace MonoTorrent.Client
     {
         private Peer peer;
         private Direction connectionDirection;
-        private String message;
+        private string message;
 
         /// <summary>
         /// Peer from which this event happened
         /// </summary>
         public Peer Peer
         {
-            get { return this.peer; }
+            get { return peer; }
         }
 
         /// <summary>
@@ -24,13 +24,13 @@ namespace MonoTorrent.Client
         /// </summary>
         public Direction ConnectionDirection
         {
-            get { return this.connectionDirection; }
+            get { return connectionDirection; }
         }
 
         /// <summary>
         /// Any message that might be associated with this event
         /// </summary>
-        public String Message
+        public string Message
         {
             get { return message; }
         }
@@ -43,11 +43,11 @@ namespace MonoTorrent.Client
         /// <param name="peer"></param>
         /// <param name="direction">Which direction the connection attempt was</param>
         /// <param name="message">Message associated with the failure</param>
-        public PeerConnectionFailedEventArgs(TorrentManager manager, Peer peer, Direction direction, String message)
+        public PeerConnectionFailedEventArgs(TorrentManager manager, Peer peer, Direction direction, string message)
             : base(manager)
         {
             this.peer = peer;
-            this.connectionDirection = direction;
+            connectionDirection = direction;
             this.message = message;
         }
     }

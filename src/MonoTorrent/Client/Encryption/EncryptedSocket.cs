@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    class EncryptedSocket : IEncryptor
+    internal class EncryptedSocket : IEncryptor
     {
         protected AsyncResult asyncResult;
 
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client.Encryption
 
         public EncryptedSocket(EncryptionTypes allowedEncryption)
         {
-            random = RNGCryptoServiceProvider.Create();
+            random = RandomNumberGenerator.Create();
             hasher = HashAlgoFactory.Create<SHA1>();
 
             GenerateX();
@@ -203,7 +203,7 @@ namespace MonoTorrent.Client.Encryption
             if (result == null)
                 throw new ArgumentNullException("result");
 
-            if (result != this.asyncResult)
+            if (result != asyncResult)
                 throw new ArgumentException("Wrong IAsyncResult supplied");
 
             if (!result.IsCompleted)
@@ -225,8 +225,8 @@ namespace MonoTorrent.Client.Encryption
             AsyncCallback callback, object state)
         {
             this.initialBuffer = initialBuffer;
-            this.initialBufferOffset = offset;
-            this.initialBufferCount = count;
+            initialBufferOffset = offset;
+            initialBufferCount = count;
             return BeginHandshake(socket, callback, state);
         }
 
@@ -255,9 +255,9 @@ namespace MonoTorrent.Client.Encryption
 
         private int RandomNumber(int max)
         {
-            byte[] b = new byte[4];
+            var b = new byte[4];
             random.GetBytes(b);
-            uint val = BitConverter.ToUInt32(b, 0);
+            var val = BitConverter.ToUInt32(b, 0);
             return (int) (val%max);
         }
 
@@ -271,7 +271,7 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected void SendY()
         {
-            byte[] toSend = new byte[96 + RandomNumber(512)];
+            var toSend = new byte[96 + RandomNumber(512)];
             random.GetBytes(toSend);
 
             Buffer.BlockCopy(Y, 0, toSend, 0, 96);
@@ -334,9 +334,9 @@ namespace MonoTorrent.Client.Encryption
                     throw new MessageException("Could not fill sync. bytes");
 
                 bytesReceived += count;
-                int filled = (int) state + count; // count of the bytes currently in synchronizeWindow
-                bool matched = true;
-                for (int i = 0; i < filled && matched; i++)
+                var filled = (int) state + count; // count of the bytes currently in synchronizeWindow
+                var matched = true;
+                for (var i = 0; i < filled && matched; i++)
                     matched &= synchronizeData[i] == synchronizeWindow[i];
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
@@ -350,8 +350,8 @@ namespace MonoTorrent.Client.Encryption
 
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
-                    int shift = -1;
-                    for (int i = 1; i < synchronizeWindow.Length && shift == -1; i++)
+                    var shift = -1;
+                    for (var i = 1; i < synchronizeWindow.Length && shift == -1; i++)
                         if (synchronizeWindow[i] == synchronizeData[0])
                             shift = i;
 
@@ -397,7 +397,7 @@ namespace MonoTorrent.Client.Encryption
                 }
                 if (initialBuffer != null)
                 {
-                    int toCopy = Math.Min(initialBufferCount, length);
+                    var toCopy = Math.Min(initialBufferCount, length);
                     Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
                     initialBufferOffset += toCopy;
                     initialBufferCount -= toCopy;
@@ -430,7 +430,7 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                AsyncCallback callback = (AsyncCallback) state;
+                var callback = (AsyncCallback) state;
                 if (!succeeded)
                     throw new MessageException("Could not receive");
 
@@ -543,16 +543,16 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>Resulting concatenated buffer</returns>
         protected byte[] Combine(params byte[][] data)
         {
-            int cursor = 0;
-            int totalLength = 0;
+            var cursor = 0;
+            var totalLength = 0;
             byte[] combined;
 
-            foreach (byte[] datum in data)
+            foreach (var datum in data)
                 totalLength += datum.Length;
 
             combined = new byte[totalLength];
 
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
                 cursor += Message.Write(combined, cursor, data[i]);
 
             return combined;
@@ -583,9 +583,9 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         protected byte[] Len(byte[] data)
         {
-            byte[] lenBuffer = new byte[2];
+            var lenBuffer = new byte[2];
             lenBuffer[0] = (byte) ((data.Length >> 8) & 0xff);
-            lenBuffer[1] = (byte) ((data.Length) & 0xff);
+            lenBuffer[1] = (byte) (data.Length & 0xff);
             return lenBuffer;
         }
 
@@ -603,7 +603,7 @@ namespace MonoTorrent.Client.Encryption
 
         protected byte[] DoEncrypt(byte[] data)
         {
-            byte[] d = (byte[]) data.Clone();
+            var d = (byte[]) data.Clone();
             encryptor.Encrypt(d);
             return d;
         }
@@ -626,7 +626,7 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>Buffer with decrypted data</returns>
         protected byte[] DoDecrypt(byte[] data)
         {
-            byte[] d = (byte[]) data.Clone();
+            var d = (byte[]) data.Clone();
             decryptor.Decrypt(d);
             return d;
         }
@@ -677,7 +677,7 @@ namespace MonoTorrent.Client.Encryption
 
         public void AddPayload(byte[] buffer, int offset, int count)
         {
-            byte[] newBuffer = new byte[InitialPayload.Length + count];
+            var newBuffer = new byte[InitialPayload.Length + count];
 
             Message.Write(newBuffer, 0, InitialPayload);
             Message.Write(newBuffer, InitialPayload.Length, buffer, offset, count);

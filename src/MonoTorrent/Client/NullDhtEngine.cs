@@ -34,7 +34,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client
 {
-    class NullDhtEngine : IDhtEngine
+    internal class NullDhtEngine : IDhtEngine
     {
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;

@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    class StoppedMode : Mode
+    internal class StoppedMode : Mode
     {
         public override bool CanHashCheck
         {
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client
             CanAcceptConnections = false;
         }
 
-        public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+        public override void HandlePeerConnected(PeerId id, Direction direction)
         {
             id.CloseConnection();
         }

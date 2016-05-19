@@ -4,13 +4,13 @@ namespace MonoTorrent
 {
     public static class Check
     {
-        static void DoCheck(object toCheck, string name)
+        private static void DoCheck(object toCheck, string name)
         {
             if (toCheck == null)
                 throw new ArgumentNullException(name);
         }
 
-        static void IsNullOrEmpty(string toCheck, string name)
+        private static void IsNullOrEmpty(string toCheck, string name)
         {
             DoCheck(toCheck, name);
             if (toCheck.Length == 0)

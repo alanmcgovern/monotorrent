@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
 
         public int IndexOf(T item)
         {
-            int index = list.BinarySearch(item);
+            var index = list.BinarySearch(item);
             return index < 0 ? -1 : index;
         }
 
@@ -86,7 +86,7 @@ namespace MonoTorrent.Client
 
         public void Add(T item)
         {
-            int index = list.BinarySearch(item);
+            var index = list.BinarySearch(item);
             if (index < 0)
                 list.Insert(~index, item);
             else
@@ -125,7 +125,7 @@ namespace MonoTorrent.Client
 
         public bool Remove(T item)
         {
-            int index = list.BinarySearch(item);
+            var index = list.BinarySearch(item);
             if (index < 0)
                 return false;
             list.RemoveAt(index);

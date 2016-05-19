@@ -39,34 +39,34 @@ namespace MonoTorrent.Client
     {
         public IEnumerable<AddressRange> Parse(Stream stream)
         {
-            StreamReader reader = new StreamReader(stream);
+            var reader = new StreamReader(stream);
 
             string result = null;
-            Regex r = new Regex(@"([0-9]{1,3}\.){3,3}[0-9]{1,3}");
+            var r = new Regex(@"([0-9]{1,3}\.){3,3}[0-9]{1,3}");
 
             while ((result = reader.ReadLine()) != null)
             {
-                MatchCollection collection = r.Matches(result);
+                var collection = r.Matches(result);
                 if (collection.Count == 1)
                 {
-                    AddressRange range = new AddressRange();
-                    string[] s = collection[0].Captures[0].Value.Split('.');
+                    var range = new AddressRange();
+                    var s = collection[0].Captures[0].Value.Split('.');
                     range.Start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) |
-                                  (int.Parse(s[3]));
+                                  int.Parse(s[3]);
                     range.End = range.Start;
                     yield return range;
                 }
                 else if (collection.Count == 2)
                 {
-                    string[] s = collection[0].Captures[0].Value.Split('.');
-                    int start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) |
-                                (int.Parse(s[3]));
+                    var s = collection[0].Captures[0].Value.Split('.');
+                    var start = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) |
+                                int.Parse(s[3]);
 
                     s = collection[1].Captures[0].Value.Split('.');
-                    int end = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) |
-                              (int.Parse(s[3]));
+                    var end = (int.Parse(s[0]) << 24) | (int.Parse(s[1]) << 16) | (int.Parse(s[2]) << 8) |
+                              int.Parse(s[3]);
 
-                    AddressRange range = new AddressRange();
+                    var range = new AddressRange();
                     range.Start = start;
                     range.End = end;
                     yield return range;

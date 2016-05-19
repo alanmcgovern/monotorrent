@@ -8,7 +8,7 @@ namespace MonoTorrent.Client
 {
     internal class TorrentFileStream : FileStream
     {
-        TorrentFile file;
+        private TorrentFile file;
 
         public TorrentFile File
         {

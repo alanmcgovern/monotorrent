@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
         public int QueuedWrites
         {
-            get { return this.bufferedWrites.Count; }
+            get { return bufferedWrites.Count; }
         }
 
         public int ReadRate
@@ -79,14 +79,14 @@ namespace MonoTorrent.Client
 
         internal DiskManager(ClientEngine engine, PieceWriter writer)
         {
-            this.bufferedReads = new Queue<BufferedIO>();
-            this.bufferedWrites = new Queue<BufferedIO>();
-            this.cache = new Cache<BufferedIO>(true).Synchronize();
+            bufferedReads = new Queue<BufferedIO>();
+            bufferedWrites = new Queue<BufferedIO>();
+            cache = new Cache<BufferedIO>(true).Synchronize();
             this.engine = engine;
-            this.readLimiter = new RateLimiter();
-            this.readMonitor = new SpeedMonitor();
-            this.writeMonitor = new SpeedMonitor();
-            this.writeLimiter = new RateLimiter();
+            readLimiter = new RateLimiter();
+            readMonitor = new SpeedMonitor();
+            writeMonitor = new SpeedMonitor();
+            writeLimiter = new RateLimiter();
             this.writer = writer;
 
             LoopTask = delegate
@@ -94,12 +94,12 @@ namespace MonoTorrent.Client
                 if (disposed)
                     return;
 
-                while (this.bufferedWrites.Count > 0 &&
+                while (bufferedWrites.Count > 0 &&
                        writeLimiter.TryProcess(bufferedWrites.Peek().buffer.Length/2048))
                 {
                     BufferedIO write;
                     lock (bufferLock)
-                        write = this.bufferedWrites.Dequeue();
+                        write = bufferedWrites.Dequeue();
                     try
                     {
                         PerformWrite(write);
@@ -112,11 +112,11 @@ namespace MonoTorrent.Client
                     }
                 }
 
-                while (this.bufferedReads.Count > 0 && readLimiter.TryProcess(bufferedReads.Peek().Count/2048))
+                while (bufferedReads.Count > 0 && readLimiter.TryProcess(bufferedReads.Peek().Count/2048))
                 {
                     BufferedIO read;
                     lock (bufferLock)
-                        read = this.bufferedReads.Dequeue();
+                        read = bufferedReads.Dequeue();
 
                     try
                     {
@@ -149,7 +149,7 @@ namespace MonoTorrent.Client
 
         internal WaitHandle CloseFileStreams(TorrentManager manager)
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var handle = new ManualResetEvent(false);
 
             IOLoop.Queue(delegate
             {
@@ -186,7 +186,7 @@ namespace MonoTorrent.Client
         {
             IOLoop.QueueWait(delegate
             {
-                foreach (TorrentManager manager in engine.Torrents)
+                foreach (var manager in engine.Torrents)
                     writer.Flush(manager.Torrent.Files);
             });
         }
@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
         private void PerformWrite(BufferedIO io)
         {
             // Find the block that this data belongs to and set it's state to "Written"
-            int index = io.PieceOffset/Piece.BlockSize;
+            var index = io.PieceOffset/Piece.BlockSize;
             try
             {
                 // Perform the actual write
@@ -239,7 +239,7 @@ namespace MonoTorrent.Client
             {
                 try
                 {
-                    foreach (TorrentFile file in manager.Torrent.Files)
+                    foreach (var file in manager.Torrent.Files)
                         if (file.StartPieceIndex >= index && file.EndPieceIndex <= index)
                             writer.Flush(file);
                 }
@@ -252,12 +252,12 @@ namespace MonoTorrent.Client
 
         internal void QueueRead(TorrentManager manager, long offset, byte[] buffer, int count, DiskIOCallback callback)
         {
-            BufferedIO io = cache.Dequeue();
+            var io = cache.Dequeue();
             io.Initialise(manager, buffer, offset, count, manager.Torrent.PieceLength, manager.Torrent.Files);
             QueueRead(io, callback);
         }
 
-        void QueueRead(BufferedIO io, DiskIOCallback callback)
+        private void QueueRead(BufferedIO io, DiskIOCallback callback)
         {
             io.Callback = callback;
             if (Thread.CurrentThread == IOLoop.thread)
@@ -270,18 +270,18 @@ namespace MonoTorrent.Client
                 {
                     bufferedReads.Enqueue(io);
                     if (bufferedReads.Count == 1)
-                        DiskManager.IOLoop.Queue(LoopTask);
+                        IOLoop.Queue(LoopTask);
                 }
         }
 
         internal void QueueWrite(TorrentManager manager, long offset, byte[] buffer, int count, DiskIOCallback callback)
         {
-            BufferedIO io = cache.Dequeue();
+            var io = cache.Dequeue();
             io.Initialise(manager, buffer, offset, count, manager.Torrent.PieceLength, manager.Torrent.Files);
             QueueWrite(io, callback);
         }
 
-        void QueueWrite(BufferedIO io, DiskIOCallback callback)
+        private void QueueWrite(BufferedIO io, DiskIOCallback callback)
         {
             io.Callback = callback;
             if (Thread.CurrentThread == IOLoop.thread)
@@ -294,18 +294,18 @@ namespace MonoTorrent.Client
                 {
                     bufferedWrites.Enqueue(io);
                     if (bufferedWrites.Count == 1)
-                        DiskManager.IOLoop.Queue(LoopTask);
+                        IOLoop.Queue(LoopTask);
                 }
         }
 
         internal bool CheckAnyFilesExist(TorrentManager manager)
         {
-            bool result = false;
+            var result = false;
             IOLoop.QueueWait(delegate
             {
                 try
                 {
-                    for (int i = 0; i < manager.Torrent.Files.Length && !result; i++)
+                    for (var i = 0; i < manager.Torrent.Files.Length && !result; i++)
                         result = writer.Exists(manager.Torrent.Files[i]);
                 }
                 catch (Exception ex)
@@ -318,7 +318,7 @@ namespace MonoTorrent.Client
 
         internal bool CheckFileExists(TorrentManager manager, TorrentFile file)
         {
-            bool result = false;
+            var result = false;
             IOLoop.QueueWait(delegate
             {
                 try
@@ -333,7 +333,7 @@ namespace MonoTorrent.Client
             return result;
         }
 
-        void SetError(TorrentManager manager, Reason reason, Exception ex)
+        private void SetError(TorrentManager manager, Reason reason, Exception ex)
         {
             ClientEngine.MainLoop.Queue(delegate
             {
@@ -347,14 +347,14 @@ namespace MonoTorrent.Client
 
         internal void BeginGetHash(TorrentManager manager, int pieceIndex, MainLoopResult callback)
         {
-            int count = 0;
-            long offset = (long) manager.Torrent.PieceLength*pieceIndex;
-            long endOffset = Math.Min(offset + manager.Torrent.PieceLength, manager.Torrent.Size);
+            var count = 0;
+            var offset = (long) manager.Torrent.PieceLength*pieceIndex;
+            var endOffset = Math.Min(offset + manager.Torrent.PieceLength, manager.Torrent.Size);
 
-            byte[] hashBuffer = BufferManager.EmptyBuffer;
+            var hashBuffer = BufferManager.EmptyBuffer;
             ClientEngine.BufferManager.GetBuffer(ref hashBuffer, Piece.BlockSize);
 
-            SHA1 hasher = HashAlgoFactory.Create<SHA1>();
+            var hasher = HashAlgoFactory.Create<SHA1>();
             hasher.Initialize();
 
             DiskIOCallback readCallback = null;

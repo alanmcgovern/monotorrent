@@ -52,8 +52,8 @@ namespace MonoTorrent
         {
             try
             {
-                IPEndPoint e = new IPEndPoint(IPAddress.Any, Endpoint.Port);
-                byte[] buffer = client.EndReceive(result, ref e);
+                var e = new IPEndPoint(IPAddress.Any, Endpoint.Port);
+                var buffer = client.EndReceive(result, ref e);
 
                 OnMessageReceived(buffer, e);
                 client.BeginReceive(EndReceive, null);

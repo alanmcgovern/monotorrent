@@ -68,9 +68,9 @@ namespace MonoTorrent.Tracker
         internal void Tick()
         {
             lock (announces)
-                this.announces.Tick();
+                announces.Tick();
             lock (scrapes)
-                this.scrapes.Tick();
+                scrapes.Tick();
         }
     }
 }

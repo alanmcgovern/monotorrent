@@ -29,8 +29,8 @@ namespace MonoTorrent.Common
 
         private void LoadFiles()
         {
-            char sep = System.IO.Path.DirectorySeparatorChar;
-            string fullPath = System.IO.Path.GetFullPath(Path);
+            var sep = System.IO.Path.DirectorySeparatorChar;
+            var fullPath = System.IO.Path.GetFullPath(Path);
             if (File.Exists(fullPath))
             {
                 TorrentName = System.IO.Path.GetFileName(fullPath);
@@ -43,20 +43,20 @@ namespace MonoTorrent.Common
 
             // Process all directories and subdirectories of this folder
             // and add all the files to the 'files' list.
-            List<string> files = new List<string>();
-            Queue<string> directories = new Queue<string>();
+            var files = new List<string>();
+            var directories = new Queue<string>();
             directories.Enqueue(fullPath);
             while (directories.Count > 0)
             {
-                string current = directories.Dequeue();
+                var current = directories.Dequeue();
                 if (IgnoreHidden)
                 {
-                    DirectoryInfo info = new DirectoryInfo(current);
+                    var info = new DirectoryInfo(current);
                     if ((info.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
                         continue;
                 }
 
-                foreach (string s in Directory.GetDirectories(current))
+                foreach (var s in Directory.GetDirectories(current))
                     directories.Enqueue(s);
 
                 files.AddRange(Directory.GetFiles(current));

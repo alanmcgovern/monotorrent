@@ -37,10 +37,10 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    class InitialSeedingMode : Mode
+    internal class InitialSeedingMode : Mode
     {
-        BitField zero;
-        InitialSeedUnchoker unchoker;
+        private BitField zero;
+        private InitialSeedUnchoker unchoker;
 
         public override TorrentState State
         {
@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
                 PeerMessage haveAllMessage = new HaveAllMessage();
                 foreach (var peer in Manager.Peers.ConnectedPeers)
                 {
-                    PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
+                    var message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
                     peer.Enqueue(message);
                 }
                 Manager.Mode = new DownloadMode(Manager);

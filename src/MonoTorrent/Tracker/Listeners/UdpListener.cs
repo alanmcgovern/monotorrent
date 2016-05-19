@@ -86,7 +86,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             if (!Running)
                 return;
-            System.Net.Sockets.UdpClient listener = this.listener;
+            var listener = this.listener;
             this.listener = null;
             listener.Close();
         }
@@ -95,12 +95,12 @@ namespace MonoTorrent.Tracker.Listeners
         {
             try
             {
-                System.Net.Sockets.UdpClient listener = (System.Net.Sockets.UdpClient) ar.AsyncState;
-                byte[] data = listener.EndReceive(ar, ref endpoint);
+                var listener = (System.Net.Sockets.UdpClient) ar.AsyncState;
+                var data = listener.EndReceive(ar, ref endpoint);
                 if (data.Length < 16)
                     return; //bad request
 
-                UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
+                var request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
 
                 switch (request.Action)
                 {
@@ -134,7 +134,7 @@ namespace MonoTorrent.Tracker.Listeners
         protected virtual void ReceiveConnect(ConnectMessage connectMessage)
         {
             UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID());
-            byte[] data = m.Encode();
+            var data = m.Encode();
             listener.Send(data, data.Length, endpoint);
         }
 
@@ -152,38 +152,38 @@ namespace MonoTorrent.Tracker.Listeners
         protected virtual void ReceiveAnnounce(AnnounceMessage announceMessage)
         {
             UdpTrackerMessage m;
-            BEncodedDictionary dict = Handle(getCollection(announceMessage), endpoint.Address, false);
+            var dict = Handle(getCollection(announceMessage), endpoint.Address, false);
             if (dict.ContainsKey(RequestParameters.FailureKey))
             {
                 m = new ErrorMessage(announceMessage.TransactionId, dict[RequestParameters.FailureKey].ToString());
             }
             else
             {
-                TimeSpan interval = TimeSpan.Zero;
-                int leechers = 0;
-                int seeders = 0;
-                List<MonoTorrent.Client.Peer> peers = new List<MonoTorrent.Client.Peer>();
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
+                var interval = TimeSpan.Zero;
+                var leechers = 0;
+                var seeders = 0;
+                var peers = new List<Client.Peer>();
+                foreach (var keypair in dict)
                 {
                     switch (keypair.Key.Text)
                     {
-                        case ("complete"):
+                        case "complete":
                             seeders = Convert.ToInt32(keypair.Value.ToString()); //same as seeder?
                             break;
 
-                        case ("incomplete"):
+                        case "incomplete":
                             leechers = Convert.ToInt32(keypair.Value.ToString()); //same as leecher?
                             break;
 
-                        case ("interval"):
+                        case "interval":
                             interval = TimeSpan.FromSeconds(int.Parse(keypair.Value.ToString()));
                             break;
 
-                        case ("peers"):
+                        case "peers":
                             if (keypair.Value is BEncodedList) // Non-compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedList) keypair.Value));
+                                peers.AddRange(Client.Peer.Decode((BEncodedList) keypair.Value));
                             else if (keypair.Value is BEncodedString) // Compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedString) keypair.Value));
+                                peers.AddRange(Client.Peer.Decode((BEncodedString) keypair.Value));
                             break;
 
                         default:
@@ -192,13 +192,13 @@ namespace MonoTorrent.Tracker.Listeners
                 }
                 m = new AnnounceResponseMessage(announceMessage.TransactionId, interval, leechers, seeders, peers);
             }
-            byte[] data = m.Encode();
+            var data = m.Encode();
             listener.Send(data, data.Length, endpoint);
         }
 
         private NameValueCollection getCollection(AnnounceMessage announceMessage)
         {
-            NameValueCollection res = new NameValueCollection();
+            var res = new NameValueCollection();
             res.Add("info_hash", announceMessage.Infohash.UrlEncode());
             res.Add("peer_id", announceMessage.PeerId);
             res.Add("port", announceMessage.Port.ToString());
@@ -215,7 +215,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         protected virtual void ReceiveScrape(ScrapeMessage scrapeMessage)
         {
-            BEncodedDictionary val = Handle(getCollection(scrapeMessage), endpoint.Address, true);
+            var val = Handle(getCollection(scrapeMessage), endpoint.Address, true);
 
             UdpTrackerMessage m;
             byte[] data;
@@ -225,15 +225,15 @@ namespace MonoTorrent.Tracker.Listeners
             }
             else
             {
-                List<ScrapeDetails> scrapes = new List<ScrapeDetails>();
+                var scrapes = new List<ScrapeDetails>();
 
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val)
+                foreach (var keypair in val)
                 {
-                    BEncodedDictionary dict = (BEncodedDictionary) keypair.Value;
-                    int seeds = 0;
-                    int leeches = 0;
-                    int complete = 0;
-                    foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair2 in dict)
+                    var dict = (BEncodedDictionary) keypair.Value;
+                    var seeds = 0;
+                    var leeches = 0;
+                    var complete = 0;
+                    foreach (var keypair2 in dict)
                     {
                         switch (keypair2.Key.Text)
                         {
@@ -248,7 +248,7 @@ namespace MonoTorrent.Tracker.Listeners
                                 break;
                         }
                     }
-                    ScrapeDetails sd = new ScrapeDetails(seeds, leeches, complete);
+                    var sd = new ScrapeDetails(seeds, leeches, complete);
                     scrapes.Add(sd);
                     if (scrapes.Count == 74) //protocole do not support to send more than 74 scrape at once...
                     {
@@ -266,18 +266,18 @@ namespace MonoTorrent.Tracker.Listeners
 
         private NameValueCollection getCollection(ScrapeMessage scrapeMessage)
         {
-            NameValueCollection res = new NameValueCollection();
+            var res = new NameValueCollection();
             if (scrapeMessage.InfoHashes.Count == 0)
                 return res; //no infohash????
             //TODO more than one infohash : paid attention to order in response!!!
-            InfoHash hash = new InfoHash(scrapeMessage.InfoHashes[0]);
+            var hash = new InfoHash(scrapeMessage.InfoHashes[0]);
             res.Add("info_hash", hash.UrlEncode());
             return res;
         }
 
         protected virtual void ReceiveError(ErrorMessage errorMessage)
         {
-            throw new ProtocolException(String.Format("ErrorMessage from :{0}", endpoint.Address));
+            throw new ProtocolException(string.Format("ErrorMessage from :{0}", endpoint.Address));
         }
     }
 }

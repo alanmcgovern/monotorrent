@@ -19,7 +19,7 @@ namespace SampleClient
         public CustomTracker(Uri uri)
             : base(uri)
         {
-            this.CanScrape = false;
+            CanScrape = false;
         }
 
         public override void Announce(AnnounceParameters parameters, object state)
@@ -34,8 +34,8 @@ namespace SampleClient
 
         public void AddPeer(Peer p)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
+            var id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
+            var e = new AnnounceResponseEventArgs(this, null, true);
             e.Peers.Add(p);
             e.Successful = true;
             RaiseAnnounceComplete(e);
@@ -43,8 +43,8 @@ namespace SampleClient
 
         public void AddFailedPeer(Peer p)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
+            var id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
+            var e = new AnnounceResponseEventArgs(this, null, true);
             e.Peers.Add(p);
             e.Successful = false;
             RaiseAnnounceComplete(e);
@@ -183,15 +183,15 @@ namespace SampleClient
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"),
+            var p = new Peer("", new Uri("tcp://12.123.123.1:2342"),
                 EncryptionTypes.All);
-            base.RaiseConnectionReceived(p, connection, manager);
+            RaiseConnectionReceived(p, connection, manager);
         }
     }
 
     public class ConnectionPair : IDisposable
     {
-        TcpListener socketListener;
+        private TcpListener socketListener;
         public IConnection Incoming;
         public IConnection Outgoing;
 
@@ -200,9 +200,9 @@ namespace SampleClient
             socketListener = new TcpListener(port);
             socketListener.Start();
 
-            Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             s1a.Connect(IPAddress.Loopback, port);
-            Socket s1b = socketListener.AcceptSocket();
+            var s1b = socketListener.AcceptSocket();
 
             Incoming = new CustomConnection(s1a, true, "1A");
             Outgoing = new CustomConnection(s1b, false, "1B");
@@ -251,7 +251,7 @@ namespace SampleClient
 
         public CustomTracker Tracker
         {
-            get { return (CustomTracker) this.manager.TrackerManager.CurrentTracker; }
+            get { return (CustomTracker) manager.TrackerManager.CurrentTracker; }
         }
 
 
@@ -290,30 +290,30 @@ namespace SampleClient
 
         private static BEncodedDictionary CreateTorrent(int pieceLength)
         {
-            BEncodedDictionary infoDict = new BEncodedDictionary();
+            var infoDict = new BEncodedDictionary();
             infoDict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
             infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20*15]);
             infoDict[new BEncodedString("length")] = new BEncodedNumber(15*256*1024 - 1);
             infoDict[new BEncodedString("name")] = new BEncodedString("test.files");
 
-            BEncodedDictionary dict = new BEncodedDictionary();
+            var dict = new BEncodedDictionary();
             dict[new BEncodedString("info")] = infoDict;
 
-            BEncodedList announceTier = new BEncodedList();
+            var announceTier = new BEncodedList();
             announceTier.Add(new BEncodedString("custom://transfers1/announce"));
             announceTier.Add(new BEncodedString("custom://transfers2/announce"));
             announceTier.Add(new BEncodedString("http://transfers3/announce"));
-            BEncodedList announceList = new BEncodedList();
+            var announceList = new BEncodedList();
             announceList.Add(announceTier);
             dict[new BEncodedString("announce-list")] = announceList;
             return dict;
         }
     }
 
-    class TestManualConnection
+    internal class TestManualConnection
     {
-        EngineTestRig rig1;
-        EngineTestRig rig2;
+        private EngineTestRig rig1;
+        private EngineTestRig rig2;
 
         public TestManualConnection()
         {
@@ -322,7 +322,7 @@ namespace SampleClient
             rig2 = new EngineTestRig("Downloads2");
             rig2.Manager.Start();
 
-            ConnectionPair p = new ConnectionPair(5151);
+            var p = new ConnectionPair(5151);
 
             rig1.AddConnection(p.Incoming);
             rig2.AddConnection(p.Outgoing);
@@ -331,7 +331,7 @@ namespace SampleClient
             {
                 Console.WriteLine("Connection 1A active: {0}", p.Incoming.Connected);
                 Console.WriteLine("Connection 2A active: {0}", p.Outgoing.Connected);
-                System.Threading.Thread.Sleep(1000);
+                Thread.Sleep(1000);
             }
         }
     }

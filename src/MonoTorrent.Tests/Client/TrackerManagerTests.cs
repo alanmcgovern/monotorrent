@@ -32,13 +32,13 @@ namespace MonoTorrent.Client
         //    t.Setup();
         //    t.ScrapeTest();
         //}
-        TestRig rig;
-        List<List<CustomTracker>> trackers;
-        TrackerManager trackerManager;
+        private TestRig rig;
+        private List<List<CustomTracker>> trackers;
+        private TrackerManager trackerManager;
 
         public TrackerManagerTests()
         {
-            string[][] trackers = new string[][]
+            var trackers = new string[][]
             {
                 new string[]
                 {
@@ -61,10 +61,10 @@ namespace MonoTorrent.Client
             rig.RecreateManager();
             trackerManager = rig.Manager.TrackerManager;
             this.trackers = new List<List<CustomTracker>>();
-            foreach (TrackerTier t in trackerManager)
+            foreach (var t in trackerManager)
             {
-                List<CustomTracker> list = new List<CustomTracker>();
-                foreach (Tracker.Tracker tracker in t)
+                var list = new List<CustomTracker>();
+                foreach (var tracker in t)
                     list.Add((CustomTracker) tracker);
                 this.trackers.Add(list);
             }
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void Defaults()
         {
-            DefaultTracker tracker = new DefaultTracker();
+            var tracker = new DefaultTracker();
             Assert.Equal(TimeSpan.FromMinutes(3), tracker.MinUpdateInterval);
             Assert.Equal(TimeSpan.FromMinutes(30), tracker.UpdateInterval);
             Assert.NotNull(tracker.WarningMessage);
@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void ScrapeTest()
         {
-            bool scrapeStarted = false;
+            var scrapeStarted = false;
             trackers[0][0].BeforeScrape += delegate { scrapeStarted = true; };
             trackers[0][0].ScrapeComplete += delegate
             {
@@ -97,12 +97,12 @@ namespace MonoTorrent.Client
             Wait(trackerManager.Scrape());
             Assert.True(scrapeStarted);
             Assert.Equal(1, trackers[0][0].ScrapedAt.Count);
-            Assert.True((DateTime.Now - trackers[0][0].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
-            for (int i = 1; i < trackers.Count; i++)
+            Assert.True(DateTime.Now - trackers[0][0].ScrapedAt[0] < TimeSpan.FromSeconds(1));
+            for (var i = 1; i < trackers.Count; i++)
                 Assert.Equal(0, trackers[i][0].ScrapedAt.Count);
             Wait(trackerManager.Scrape(trackers[0][1]));
             Assert.Equal(1, trackers[0][1].ScrapedAt.Count);
-            Assert.True((DateTime.Now - trackers[0][1].ScrapedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True(DateTime.Now - trackers[0][1].ScrapedAt[0] < TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -110,12 +110,12 @@ namespace MonoTorrent.Client
         {
             Wait(trackerManager.Announce());
             Assert.Equal(1, trackers[0][0].AnnouncedAt.Count);
-            Assert.True((DateTime.Now - trackers[0][0].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
-            for (int i = 1; i < trackers.Count; i++)
+            Assert.True(DateTime.Now - trackers[0][0].AnnouncedAt[0] < TimeSpan.FromSeconds(1));
+            for (var i = 1; i < trackers.Count; i++)
                 Assert.Equal(0, trackers[0][i].AnnouncedAt.Count);
             Wait(trackerManager.Announce(trackers[0][1]));
             Assert.Equal(1, trackers[0][1].AnnouncedAt.Count);
-            Assert.True((DateTime.Now - trackers[0][1].AnnouncedAt[0]) < TimeSpan.FromSeconds(1));
+            Assert.True(DateTime.Now - trackers[0][1].AnnouncedAt[0] < TimeSpan.FromSeconds(1));
         }
 
         [Fact]
@@ -133,18 +133,18 @@ namespace MonoTorrent.Client
         [Fact]
         public void AnnounceFailedTest2()
         {
-            for (int i = 0; i < trackers[0].Count; i++)
+            for (var i = 0; i < trackers[0].Count; i++)
                 trackers[0][i].FailAnnounce = true;
 
             Wait(trackerManager.Announce());
 
-            for (int i = 0; i < trackers[0].Count; i++)
+            for (var i = 0; i < trackers[0].Count; i++)
                 Assert.Equal(1, trackers[0][i].AnnouncedAt.Count);
 
             Assert.Equal(trackers[1][0], trackerManager.CurrentTracker);
         }
 
-        void Wait(WaitHandle handle)
+        private void Wait(WaitHandle handle)
         {
             Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }

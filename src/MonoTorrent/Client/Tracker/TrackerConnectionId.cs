@@ -36,10 +36,10 @@ namespace MonoTorrent.Client.Tracker
 {
     internal class TrackerConnectionID
     {
-        TorrentEvent torrentEvent;
-        Tracker tracker;
-        bool trySubsequent;
-        ManualResetEvent waitHandle;
+        private TorrentEvent torrentEvent;
+        private Tracker tracker;
+        private bool trySubsequent;
+        private ManualResetEvent waitHandle;
 
         public TorrentEvent TorrentEvent
         {

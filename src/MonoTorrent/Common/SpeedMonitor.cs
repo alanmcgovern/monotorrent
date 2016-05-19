@@ -46,12 +46,12 @@ namespace MonoTorrent.Common
 
         public int Rate
         {
-            get { return this.speed; }
+            get { return speed; }
         }
 
         public long Total
         {
-            get { return this.total; }
+            get { return total; }
         }
 
 
@@ -65,36 +65,36 @@ namespace MonoTorrent.Common
             if (averagingPeriod < 0)
                 throw new ArgumentOutOfRangeException("averagingPeriod");
 
-            this.lastUpdated = DateTime.UtcNow;
-            this.speeds = new int[Math.Max(1, averagingPeriod)];
-            this.speedsIndex = -speeds.Length;
+            lastUpdated = DateTime.UtcNow;
+            speeds = new int[Math.Max(1, averagingPeriod)];
+            speedsIndex = -speeds.Length;
         }
 
 
         public void AddDelta(int speed)
         {
-            this.total += speed;
-            this.tempRecvCount += speed;
+            total += speed;
+            tempRecvCount += speed;
         }
 
         public void AddDelta(long speed)
         {
-            this.total += speed;
-            this.tempRecvCount += speed;
+            total += speed;
+            tempRecvCount += speed;
         }
 
         public void Reset()
         {
-            this.total = 0;
-            this.speed = 0;
-            this.tempRecvCount = 0;
-            this.lastUpdated = DateTime.UtcNow;
-            this.speedsIndex = -speeds.Length;
+            total = 0;
+            speed = 0;
+            tempRecvCount = 0;
+            lastUpdated = DateTime.UtcNow;
+            speedsIndex = -speeds.Length;
         }
 
         private void TimePeriodPassed(int difference)
         {
-            int currSpeed = (int) (tempRecvCount*1000/difference);
+            var currSpeed = (int) (tempRecvCount*1000/difference);
             tempRecvCount = 0;
 
             int speedsCount;
@@ -102,7 +102,7 @@ namespace MonoTorrent.Common
             {
                 //speeds array hasn't been filled yet
 
-                int idx = speeds.Length + speedsIndex;
+                var idx = speeds.Length + speedsIndex;
 
                 speeds[idx] = currSpeed;
                 speedsCount = idx + 1;
@@ -118,8 +118,8 @@ namespace MonoTorrent.Common
                 speedsIndex = (speedsIndex + 1)%speeds.Length;
             }
 
-            int total = speeds[0];
-            for (int i = 1; i < speedsCount; i++)
+            var total = speeds[0];
+            for (var i = 1; i < speedsCount; i++)
                 total += speeds[i];
 
             speed = total/speedsCount;
@@ -128,9 +128,9 @@ namespace MonoTorrent.Common
 
         public void Tick()
         {
-            DateTime old = lastUpdated;
+            var old = lastUpdated;
             lastUpdated = DateTime.UtcNow;
-            int difference = (int) (lastUpdated - old).TotalMilliseconds;
+            var difference = (int) (lastUpdated - old).TotalMilliseconds;
 
             if (difference > 800)
                 TimePeriodPassed(difference);

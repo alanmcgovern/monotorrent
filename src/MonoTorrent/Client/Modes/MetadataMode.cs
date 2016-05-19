@@ -41,13 +41,13 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    class MetadataMode : Mode
+    internal class MetadataMode : Mode
     {
         private MemoryStream stream; //the stream of the torrent metadata
         private BitField bitField;
-        static readonly TimeSpan timeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan timeout = TimeSpan.FromSeconds(10);
         private PeerId currentId;
-        string savePath;
+        private string savePath;
         private DateTime requestTimeout;
 
         public override bool CanHashCheck
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client
 
         internal MemoryStream Stream
         {
-            get { return this.stream; }
+            get { return stream; }
         }
 
         public MetadataMode(TorrentManager manager, string savePath)
@@ -98,9 +98,9 @@ namespace MonoTorrent.Client
 
         private void NextPeer()
         {
-            bool flag = false;
+            var flag = false;
 
-            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+            foreach (var id in Manager.Peers.ConnectedPeers)
             {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports(LTMetadata.Support.Name))
                 {
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
                 }
             }
             //second pass without removing the currentid and previous ones
-            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+            foreach (var id in Manager.Peers.ConnectedPeers)
             {
                 if (id.SupportsLTMessages && id.ExtensionSupports.Supports(LTMetadata.Support.Name))
                 {
@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
                     {
                         byte[] hash;
                         stream.Position = 0;
-                        using (SHA1 hasher = HashAlgoFactory.Create<SHA1>())
+                        using (var hasher = HashAlgoFactory.Create<SHA1>())
                             hash = hasher.ComputeHash(stream);
 
                         if (!Manager.InfoHash.Equals(hash))
@@ -154,7 +154,7 @@ namespace MonoTorrent.Client
                         {
                             Torrent t;
                             stream.Position = 0;
-                            BEncodedDictionary dict = new BEncodedDictionary();
+                            var dict = new BEncodedDictionary();
                             dict.Add("info", BEncodedValue.Decode(stream));
                             // FIXME: Add the trackers too
                             if (Torrent.TryLoad(dict.Encode(), out t))
@@ -204,52 +204,52 @@ namespace MonoTorrent.Client
 
         private void SwitchToRegular()
         {
-            Torrent torrent = Manager.Torrent;
-            foreach (PeerId peer in Manager.Peers.ConnectedPeers)
+            var torrent = Manager.Torrent;
+            foreach (var peer in Manager.Peers.ConnectedPeers)
                 peer.CloseConnection();
             Manager.Bitfield = new BitField(torrent.Pieces.Count);
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
-            foreach (TorrentFile file in torrent.Files)
+            foreach (var file in torrent.Files)
                 file.FullPath = Path.Combine(Manager.SavePath, file.Path);
             Manager.Start();
         }
 
         protected override void HandleAllowedFastMessage(PeerId id,
-            MonoTorrent.Client.Messages.FastPeer.AllowedFastMessage message)
+            Messages.FastPeer.AllowedFastMessage message)
         {
             // Disregard these when in metadata mode as we can't request regular pieces anyway
         }
 
         protected override void HandleHaveAllMessage(PeerId id,
-            MonoTorrent.Client.Messages.FastPeer.HaveAllMessage message)
+            Messages.FastPeer.HaveAllMessage message)
         {
             // Nothing
         }
 
-        protected override void HandleHaveMessage(PeerId id, MonoTorrent.Client.Messages.Standard.HaveMessage message)
+        protected override void HandleHaveMessage(PeerId id, Messages.Standard.HaveMessage message)
         {
             // Nothing
         }
 
         protected override void HandleHaveNoneMessage(PeerId id,
-            MonoTorrent.Client.Messages.FastPeer.HaveNoneMessage message)
+            Messages.FastPeer.HaveNoneMessage message)
         {
             // Nothing
         }
 
         protected override void HandleInterestedMessage(PeerId id,
-            MonoTorrent.Client.Messages.Standard.InterestedMessage message)
+            Messages.Standard.InterestedMessage message)
         {
             // Nothing
         }
 
         private void RequestNextNeededPiece(PeerId id)
         {
-            int index = bitField.FirstFalse();
+            var index = bitField.FirstFalse();
             if (index == -1)
                 return; //throw exception or switch to regular?
 
-            LTMetadata m = new LTMetadata(id, LTMetadata.eMessageType.Request, index);
+            var m = new LTMetadata(id, LTMetadata.eMessageType.Request, index);
             id.Enqueue(m);
             requestTimeout = DateTime.Now.Add(timeout);
         }
@@ -257,13 +257,13 @@ namespace MonoTorrent.Client
         internal Torrent GetTorrent()
         {
             byte[] calculatedInfoHash;
-            using (SHA1 sha = HashAlgoFactory.Create<SHA1>())
+            using (var sha = HashAlgoFactory.Create<SHA1>())
                 calculatedInfoHash = sha.ComputeHash(stream.ToArray());
             if (!Manager.InfoHash.Equals(calculatedInfoHash))
                 throw new Exception("invalid metadata"); //restart ?
 
-            BEncodedValue d = BEncodedValue.Decode(stream);
-            BEncodedDictionary dict = new BEncodedDictionary();
+            var d = BEncodedValue.Decode(stream);
+            var dict = new BEncodedDictionary();
             dict.Add("info", d);
 
             return Torrent.LoadCore(dict);
@@ -282,7 +282,7 @@ namespace MonoTorrent.Client
             if (id.ExtensionSupports.Supports(LTMetadata.Support.Name))
             {
                 stream = new MemoryStream(new byte[message.MetadataSize], 0, message.MetadataSize, true, true);
-                int size = message.MetadataSize%LTMetadata.BlockSize;
+                var size = message.MetadataSize%LTMetadata.BlockSize;
                 if (size > 0)
                     size = 1;
                 size += message.MetadataSize/LTMetadata.BlockSize;

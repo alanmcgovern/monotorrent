@@ -46,10 +46,10 @@ namespace MonoTorrent.Common
             // Check all piece sizes that are multiples of 32kB and
             // choose the smallest piece size which results in a
             // .torrent file smaller than 60kb
-            for (int i = 32768; i < 4*1024*1024; i *= 2)
+            for (var i = 32768; i < 4*1024*1024; i *= 2)
             {
-                int pieces = (int) (totalSize/i) + 1;
-                if ((pieces*20) < (60*1024))
+                var pieces = (int) (totalSize/i) + 1;
+                if (pieces*20 < 60*1024)
                     return i;
             }
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Common
         public static int RecommendedPieceSize(IEnumerable<string> files)
         {
             long total = 0;
-            foreach (string file in files)
+            foreach (var file in files)
                 total += new FileInfo(file).Length;
             return RecommendedPieceSize(total);
         }
@@ -69,7 +69,7 @@ namespace MonoTorrent.Common
         public static int RecommendedPieceSize(IEnumerable<TorrentFile> files)
         {
             long total = 0;
-            foreach (TorrentFile file in files)
+            foreach (var file in files)
                 total += file.Length;
             return RecommendedPieceSize(total);
         }
@@ -77,7 +77,7 @@ namespace MonoTorrent.Common
         public static int RecommendedPieceSize(IEnumerable<FileMapping> files)
         {
             long total = 0;
-            foreach (FileMapping file in files)
+            foreach (var file in files)
                 total += new FileInfo(file.Source).Length;
             return RecommendedPieceSize(total);
         }
@@ -86,9 +86,9 @@ namespace MonoTorrent.Common
         public event EventHandler<TorrentCreatorEventArgs> Hashed;
 
 
-        TorrentCreatorAsyncResult asyncResult;
-        List<string> getrightHttpSeeds;
-        bool storeMD5;
+        private TorrentCreatorAsyncResult asyncResult;
+        private List<string> getrightHttpSeeds;
+        private bool storeMD5;
 
         public List<string> GetrightHttpSeeds
         {
@@ -111,25 +111,25 @@ namespace MonoTorrent.Common
 
         public void AbortCreation()
         {
-            TorrentCreatorAsyncResult r = asyncResult;
+            var r = asyncResult;
             if (r != null)
                 r.Aborted = true;
         }
 
-        void AddCommonStuff(BEncodedDictionary torrent)
+        private void AddCommonStuff(BEncodedDictionary torrent)
         {
             if (Announces.Count > 0 && Announces[0].Count > 0)
                 Announce = Announces[0][0];
 
             if (getrightHttpSeeds.Count > 0)
             {
-                BEncodedList seedlist = new BEncodedList();
+                var seedlist = new BEncodedList();
                 seedlist.AddRange(
                     getrightHttpSeeds.ConvertAll<BEncodedValue>(delegate(string s) { return (BEncodedString) s; }));
                 torrent["url-list"] = seedlist;
             }
 
-            TimeSpan span = DateTime.Now - new DateTime(1970, 1, 1);
+            var span = DateTime.Now - new DateTime(1970, 1, 1);
             torrent["creation date"] = new BEncodedNumber((long) span.TotalSeconds);
         }
 
@@ -138,7 +138,7 @@ namespace MonoTorrent.Common
             return BeginCreate(delegate { return Create(fileSource); }, callback, asyncState);
         }
 
-        IAsyncResult BeginCreate(MainLoopJob task, AsyncCallback callback, object asyncState)
+        private IAsyncResult BeginCreate(MainLoopJob task, AsyncCallback callback, object asyncState)
         {
             if (asyncResult != null)
                 throw new InvalidOperationException("Two asynchronous operations cannot be executed simultaenously");
@@ -159,10 +159,10 @@ namespace MonoTorrent.Common
             return asyncResult;
         }
 
-        byte[] CalcPiecesHash(List<TorrentFile> files, PieceWriter writer)
+        private byte[] CalcPiecesHash(List<TorrentFile> files, PieceWriter writer)
         {
             byte[] buffer = null;
-            int bufferRead = 0;
+            var bufferRead = 0;
             long fileRead = 0;
             long overallRead = 0;
             long overallTotal = 0;
@@ -174,7 +174,7 @@ namespace MonoTorrent.Common
             torrentHashes = new List<byte>();
             overallTotal = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile m) { return m.Length; });
 
-            long pieceLength = PieceLength;
+            var pieceLength = PieceLength;
             buffer = new byte[pieceLength];
 
             if (StoreMD5)
@@ -182,7 +182,7 @@ namespace MonoTorrent.Common
 
             try
             {
-                foreach (TorrentFile file in files)
+                foreach (var file in files)
                 {
                     fileRead = 0;
                     if (md5Hasher != null)
@@ -190,8 +190,8 @@ namespace MonoTorrent.Common
 
                     while (fileRead < file.Length)
                     {
-                        int toRead = (int) Math.Min(buffer.Length - bufferRead, file.Length - fileRead);
-                        int read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
+                        var toRead = (int) Math.Min(buffer.Length - bufferRead, file.Length - fileRead);
+                        var read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
 
                         if (md5Hasher != null)
                             md5Hasher.TransformBlock(buffer, bufferRead, read, buffer, bufferRead);
@@ -238,15 +238,15 @@ namespace MonoTorrent.Common
         {
             Check.FileSource(fileSource);
 
-            List<FileMapping> mappings = new List<FileMapping>(fileSource.Files);
+            var mappings = new List<FileMapping>(fileSource.Files);
             if (mappings.Count == 0)
                 throw new ArgumentException("The file source must contain one or more files", "fileSource");
 
             mappings.Sort((left, right) => left.Destination.CompareTo(right.Destination));
             Validate(mappings);
 
-            List<TorrentFile> maps = new List<TorrentFile>();
-            foreach (FileMapping m in fileSource.Files)
+            var maps = new List<TorrentFile>();
+            foreach (var m in fileSource.Files)
                 maps.Add(ToTorrentFile(m));
             return Create(fileSource.TorrentName, maps);
         }
@@ -271,13 +271,13 @@ namespace MonoTorrent.Common
             if (PieceLength == 0)
                 PieceLength = RecommendedPieceSize(files);
 
-            BEncodedDictionary torrent = BEncodedValue.Clone(Metadata);
-            BEncodedDictionary info = (BEncodedDictionary) torrent["info"];
+            var torrent = BEncodedValue.Clone(Metadata);
+            var info = (BEncodedDictionary) torrent["info"];
 
             info["name"] = (BEncodedString) name;
             AddCommonStuff(torrent);
 
-            using (PieceWriter reader = CreateReader())
+            using (var reader = CreateReader())
             {
                 info["pieces"] = (BEncodedString) CalcPiecesHash(files, reader);
 
@@ -290,11 +290,11 @@ namespace MonoTorrent.Common
             return torrent;
         }
 
-        void CreateMultiFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
+        private void CreateMultiFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
             string name)
         {
-            BEncodedDictionary info = (BEncodedDictionary) dictionary["info"];
-            List<BEncodedValue> files = mappings.ConvertAll<BEncodedValue>(ToFileInfoDict);
+            var info = (BEncodedDictionary) dictionary["info"];
+            var files = mappings.ConvertAll<BEncodedValue>(ToFileInfoDict);
             info.Add("files", new BEncodedList(files));
         }
 
@@ -303,10 +303,10 @@ namespace MonoTorrent.Common
             return new DiskWriter();
         }
 
-        void CreateSingleFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
+        private void CreateSingleFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
             string name)
         {
-            BEncodedDictionary infoDict = (BEncodedDictionary) dictionary["info"];
+            var infoDict = (BEncodedDictionary) dictionary["info"];
             infoDict.Add("length", new BEncodedNumber(mappings[0].Length));
             if (mappings[0].MD5 != null)
                 infoDict["md5sum"] = (BEncodedString) mappings[0].MD5;
@@ -316,7 +316,7 @@ namespace MonoTorrent.Common
         {
             Check.Result(result);
 
-            if (result != this.asyncResult)
+            if (result != asyncResult)
                 throw new ArgumentException(
                     "The supplied async result does not correspond to currently active async result");
 
@@ -325,14 +325,14 @@ namespace MonoTorrent.Common
                 if (!result.IsCompleted)
                     result.AsyncWaitHandle.WaitOne();
 
-                if (this.asyncResult.SavedException != null)
-                    throw this.asyncResult.SavedException;
+                if (asyncResult.SavedException != null)
+                    throw asyncResult.SavedException;
 
-                return this.asyncResult.Aborted ? null : this.asyncResult.Dictionary;
+                return asyncResult.Aborted ? null : asyncResult.Dictionary;
             }
             finally
             {
-                this.asyncResult = null;
+                asyncResult = null;
             }
         }
 
@@ -352,25 +352,25 @@ namespace MonoTorrent.Common
             stream.Write(buffer, 0, buffer.Length);
         }
 
-        void RaiseHashed(TorrentCreatorEventArgs e)
+        private void RaiseHashed(TorrentCreatorEventArgs e)
         {
             Toolbox.RaiseAsyncEvent<TorrentCreatorEventArgs>(Hashed, this, e);
         }
 
-        TorrentFile ToTorrentFile(FileMapping mapping)
+        private TorrentFile ToTorrentFile(FileMapping mapping)
         {
-            FileInfo info = new FileInfo(mapping.Source);
+            var info = new FileInfo(mapping.Source);
             return new TorrentFile(mapping.Destination, info.Length, mapping.Source);
         }
 
-        BEncodedValue ToFileInfoDict(TorrentFile file)
+        private BEncodedValue ToFileInfoDict(TorrentFile file)
         {
-            BEncodedDictionary fileDict = new BEncodedDictionary();
+            var fileDict = new BEncodedDictionary();
 
-            BEncodedList filePath = new BEncodedList();
-            string[] splittetPath = file.Path.Split(new char[] {Path.DirectorySeparatorChar},
+            var filePath = new BEncodedList();
+            var splittetPath = file.Path.Split(new char[] {Path.DirectorySeparatorChar},
                 StringSplitOptions.RemoveEmptyEntries);
-            foreach (string s in splittetPath)
+            foreach (var s in splittetPath)
                 filePath.Add(new BEncodedString(s));
 
             fileDict["length"] = new BEncodedNumber(file.Length);
@@ -381,7 +381,7 @@ namespace MonoTorrent.Common
             return fileDict;
         }
 
-        void Validate(List<FileMapping> maps)
+        private void Validate(List<FileMapping> maps)
         {
             // Make sure the user doesn't try to overwrite system files. Ensure
             // that the path is relative and doesn't try to access its parent folder
@@ -403,7 +403,7 @@ namespace MonoTorrent.Common
             }
 
             // Ensure all the destination files are unique too. The files should already be sorted.
-            for (int i = 1; i < maps.Count; i++)
+            for (var i = 1; i < maps.Count; i++)
                 if (maps[i - 1].Destination == maps[i].Destination)
                     throw new ArgumentException(
                         string.Format("Files '{0}' and '{1}' both map to the same destination '{2}'",

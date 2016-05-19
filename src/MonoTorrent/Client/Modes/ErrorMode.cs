@@ -15,8 +15,8 @@ namespace MonoTorrent.Client
 
     public class Error
     {
-        Exception exception;
-        Reason reason;
+        private Exception exception;
+        private Reason reason;
 
         public Error(Reason reason, Exception exception)
         {
@@ -35,7 +35,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    class ErrorMode : Mode
+    internal class ErrorMode : Mode
     {
         public override TorrentState State
         {
@@ -55,9 +55,9 @@ namespace MonoTorrent.Client
             CloseConnections();
         }
 
-        void CloseConnections()
+        private void CloseConnections()
         {
-            foreach (PeerId peer in Manager.Peers.ConnectedPeers)
+            foreach (var peer in Manager.Peers.ConnectedPeers)
                 peer.CloseConnection();
         }
     }

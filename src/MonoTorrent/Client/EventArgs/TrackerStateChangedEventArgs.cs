@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public Tracker Tracker
         {
-            get { return this.tracker; }
+            get { return tracker; }
         }
 
         private Tracker tracker;
@@ -52,7 +52,7 @@ namespace MonoTorrent.Client.Tracker
 
         public TrackerState OldState
         {
-            get { return this.oldState; }
+            get { return oldState; }
         }
 
         private TrackerState oldState;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client.Tracker
 
         public TrackerState NewState
         {
-            get { return this.newState; }
+            get { return newState; }
         }
 
         private TrackerState newState;

@@ -37,8 +37,8 @@ namespace MonoTorrent.Common
 {
     public class UriQueryBuilder
     {
-        UriBuilder builder;
-        Dictionary<string, string> queryParams;
+        private UriBuilder builder;
+        private Dictionary<string, string> queryParams;
 
         public UriQueryBuilder(string uri)
             : this(new Uri(uri))
@@ -54,7 +54,7 @@ namespace MonoTorrent.Common
 
         public UriQueryBuilder(Uri uri)
         {
-            builder = new System.UriBuilder(uri);
+            builder = new UriBuilder(uri);
             queryParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             ParseParameters();
         }
@@ -73,15 +73,15 @@ namespace MonoTorrent.Common
             return queryParams.ContainsKey(key);
         }
 
-        void ParseParameters()
+        private void ParseParameters()
         {
             if (builder.Query.Length == 0 || !builder.Query.StartsWith("?"))
                 return;
 
-            string[] strs = builder.Query.Remove(0, 1).Split('&');
-            for (int i = 0; i < strs.Length; i++)
+            var strs = builder.Query.Remove(0, 1).Split('&');
+            for (var i = 0; i < strs.Length; i++)
             {
-                string[] kv = strs[i].Split('=');
+                var kv = strs[i].Split('=');
                 if (kv.Length == 2)
                     queryParams.Add(kv[0].Trim(), kv[1].Trim());
             }
@@ -94,8 +94,8 @@ namespace MonoTorrent.Common
 
         public Uri ToUri()
         {
-            string result = "";
-            foreach (KeyValuePair<string, string> keypair in queryParams)
+            var result = "";
+            foreach (var keypair in queryParams)
                 result += keypair.Key + "=" + keypair.Value + "&";
             builder.Query = result.Length == 0 ? result : result.Remove(result.Length - 1);
             return builder.Uri;

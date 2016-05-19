@@ -35,7 +35,7 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentException("Not an IPV6 socket", "socket");
 
             this.socket = socket;
-            this.endpoint = socket.RemoteEndPoint;
+            endpoint = socket.RemoteEndPoint;
             this.isIncoming = isIncoming;
         }
 

@@ -78,10 +78,10 @@ namespace MonoTorrent.Client.Encryption
 
             if (bytes.Length < 96)
             {
-                byte[] oldBytes = bytes;
+                var oldBytes = bytes;
                 bytes = new byte[96];
                 Array.Copy(oldBytes, 0, bytes, 96 - oldBytes.Length, oldBytes.Length);
-                for (int i = 0; i < (96 - oldBytes.Length); i++)
+                for (var i = 0; i < 96 - oldBytes.Length; i++)
                     bytes[i] = 0;
             }
 

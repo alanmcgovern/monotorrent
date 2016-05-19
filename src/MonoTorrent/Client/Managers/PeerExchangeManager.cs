@@ -56,8 +56,8 @@ namespace MonoTorrent.Client
         {
             this.id = id;
 
-            this.addedPeers = new List<Peer>();
-            this.droppedPeers = new List<Peer>();
+            addedPeers = new List<Peer>();
+            droppedPeers = new List<Peer>();
             id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
             Start();
         }
@@ -88,10 +88,10 @@ namespace MonoTorrent.Client
             if (!id.TorrentManager.Settings.EnablePeerExchange)
                 return;
 
-            int len = (addedPeers.Count <= MAX_PEERS) ? addedPeers.Count : MAX_PEERS;
-            byte[] added = new byte[len*6];
-            byte[] addedDotF = new byte[len];
-            for (int i = 0; i < len; i++)
+            var len = addedPeers.Count <= MAX_PEERS ? addedPeers.Count : MAX_PEERS;
+            var added = new byte[len*6];
+            var addedDotF = new byte[len];
+            for (var i = 0; i < len; i++)
             {
                 addedPeers[i].CompactPeer(added, i*6);
                 if ((addedPeers[i].Encryption & (EncryptionTypes.RC4Full | EncryptionTypes.RC4Header)) !=
@@ -110,8 +110,8 @@ namespace MonoTorrent.Client
 
             len = Math.Min(MAX_PEERS - len, droppedPeers.Count);
 
-            byte[] dropped = new byte[len*6];
-            for (int i = 0; i < len; i++)
+            var dropped = new byte[len*6];
+            for (var i = 0; i < len; i++)
                 droppedPeers[i].CompactPeer(dropped, i*6);
 
             droppedPeers.RemoveRange(0, len);

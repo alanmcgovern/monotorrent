@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent
 {
-    class SHA1Fake : SHA1
+    internal class SHA1Fake : SHA1
     {
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {

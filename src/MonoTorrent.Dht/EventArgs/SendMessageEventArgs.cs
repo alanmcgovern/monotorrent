@@ -7,7 +7,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht
 {
-    class SendQueryEventArgs : TaskCompleteEventArgs
+    internal class SendQueryEventArgs : TaskCompleteEventArgs
     {
         private IPEndPoint endpoint;
         private QueryMessage query;

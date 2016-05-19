@@ -36,7 +36,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class FindNodeResponse : ResponseMessage
+    internal class FindNodeResponse : ResponseMessage
     {
         private static readonly BEncodedString NodesKey = "nodes";
 

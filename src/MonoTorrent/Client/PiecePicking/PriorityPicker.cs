@@ -37,9 +37,9 @@ namespace MonoTorrent.Client
 {
     public class PriorityPicker : PiecePicker
     {
-        Predicate<Files> AllSamePriority;
+        private Predicate<Files> AllSamePriority;
 
-        struct Files : IComparable<Files>
+        private struct Files : IComparable<Files>
         {
             public TorrentFile File;
             public BitField Selector;
@@ -56,8 +56,8 @@ namespace MonoTorrent.Client
             }
         }
 
-        List<Files> files = new List<Files>();
-        BitField temp;
+        private List<Files> files = new List<Files>();
+        private BitField temp;
 
         public PriorityPicker(PiecePicker picker)
             : base(picker)
@@ -90,14 +90,14 @@ namespace MonoTorrent.Client
                 return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
 
             temp.From(files[0].Selector);
-            for (int i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
+            for (var i = 1; i < files.Count && files[i].File.Priority != Priority.DoNotDownload; i++)
             {
                 if (files[i].File.Priority != files[i - 1].File.Priority)
                 {
                     temp.And(peerBitfield);
                     if (!temp.AllFalse)
                     {
-                        MessageBundle message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
+                        var message = base.PickPiece(id, temp, otherPeers, count, startIndex, endIndex);
                         if (message != null)
                             return message;
                         temp.SetAll(false);
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
             temp = new BitField(bitfield.Length);
 
             this.files.Clear();
-            for (int i = 0; i < files.Length; i++)
+            for (var i = 0; i < files.Length; i++)
                 this.files.Add(new Files(files[i], files[i].GetSelector(bitfield.Length)));
         }
 
@@ -129,7 +129,7 @@ namespace MonoTorrent.Client
             temp.SetAll(false);
 
             // OR all the files together which we want to download
-            for (int i = 0; i < files.Count; i++)
+            for (var i = 0; i < files.Count; i++)
                 if (files[i].File.Priority != Priority.DoNotDownload)
                     temp.Or(files[i].Selector);
 

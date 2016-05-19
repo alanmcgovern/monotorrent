@@ -42,26 +42,26 @@ namespace MonoTorrent.Client
         private static SHA1 hasher = HashAlgoFactory.Create<SHA1>();
 
         internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, InfoHash infohash,
-            UInt32 numberOfPieces)
+            uint numberOfPieces)
         {
             return Calculate(addressBytes, infohash, AllowedFastPieceCount, numberOfPieces);
         }
 
         internal static MonoTorrentCollection<int> Calculate(byte[] addressBytes, InfoHash infohash, int count,
-            UInt32 numberOfPieces)
+            uint numberOfPieces)
         {
-            byte[] hashBuffer = new byte[24]; // The hash buffer to be used in hashing
-            MonoTorrentCollection<int> results = new MonoTorrentCollection<int>(count);
+            var hashBuffer = new byte[24]; // The hash buffer to be used in hashing
+            var results = new MonoTorrentCollection<int>(count);
                 // The results array which will be returned
 
             // 1) Convert the bytes into an int32 and make them Network order
-            int ip = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(addressBytes, 0));
+            var ip = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(addressBytes, 0));
 
             // 2) binary AND this value with 0xFFFFFF00 to select the three most sigificant bytes
-            int ipMostSignificant = (int) (0xFFFFFF00 & ip);
+            var ipMostSignificant = (int) (0xFFFFFF00 & ip);
 
             // 3) Make ipMostSignificant into NetworkOrder
-            UInt32 ip2 = (UInt32) IPAddress.HostToNetworkOrder(ipMostSignificant);
+            var ip2 = (uint) IPAddress.HostToNetworkOrder(ipMostSignificant);
 
             // 4) Copy ip2 into the hashBuffer
             Buffer.BlockCopy(BitConverter.GetBytes(ip2), 0, hashBuffer, 0, 4);
@@ -76,9 +76,9 @@ namespace MonoTorrent.Client
                 lock (hasher)
                     hashBuffer = hasher.ComputeHash(hashBuffer);
 
-                for (int i = 0; i < 20; i += 4)
+                for (var i = 0; i < 20; i += 4)
                 {
-                    UInt32 result = (UInt32) IPAddress.HostToNetworkOrder(BitConverter.ToInt32(hashBuffer, i));
+                    var result = (uint) IPAddress.HostToNetworkOrder(BitConverter.ToInt32(hashBuffer, i));
 
                     result = result%numberOfPieces;
                     if (result > int.MaxValue)

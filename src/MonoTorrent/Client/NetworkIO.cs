@@ -58,17 +58,17 @@ namespace MonoTorrent.Client
     {
         // The biggest message is a PieceMessage which is 16kB + some overhead
         // so send in chunks of 2kB + a little so we do 8 transfers per piece.
-        const int ChunkLength = 2048 + 32;
+        private const int ChunkLength = 2048 + 32;
 
-        static Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState>();
-        static Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState>();
+        private static Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState>();
+        private static Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState>();
 
-        static ICache<AsyncConnectState> connectCache = new Cache<AsyncConnectState>(true).Synchronize();
-        static ICache<AsyncIOState> transferCache = new Cache<AsyncIOState>(true).Synchronize();
+        private static ICache<AsyncConnectState> connectCache = new Cache<AsyncConnectState>(true).Synchronize();
+        private static ICache<AsyncIOState> transferCache = new Cache<AsyncIOState>(true).Synchronize();
 
-        static AsyncCallback EndConnectCallback = EndConnect;
-        static AsyncCallback EndReceiveCallback = EndReceive;
-        static AsyncCallback EndSendCallback = EndSend;
+        private static AsyncCallback EndConnectCallback = EndConnect;
+        private static AsyncCallback EndReceiveCallback = EndReceive;
+        private static AsyncCallback EndSendCallback = EndSend;
 
         static NetworkIO()
         {
@@ -76,21 +76,21 @@ namespace MonoTorrent.Client
             {
                 lock (sendQueue)
                 {
-                    int count = sendQueue.Count;
-                    for (int i = 0; i < count; i++)
+                    var count = sendQueue.Count;
+                    for (var i = 0; i < count; i++)
                         SendOrEnqueue(sendQueue.Dequeue());
                 }
                 lock (receiveQueue)
                 {
-                    int count = receiveQueue.Count;
-                    for (int i = 0; i < count; i++)
+                    var count = receiveQueue.Count;
+                    for (var i = 0; i < count; i++)
                         ReceiveOrEnqueue(receiveQueue.Dequeue());
                 }
                 return true;
             });
         }
 
-        static int halfOpens;
+        private static int halfOpens;
 
         public static int HalfOpens
         {
@@ -139,7 +139,7 @@ namespace MonoTorrent.Client
                 SendOrEnqueue(data);
         }
 
-        static void EndConnect(IAsyncResult result)
+        private static void EndConnect(IAsyncResult result)
         {
             var data = (AsyncConnectState) result.AsyncState;
             try
@@ -158,12 +158,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        static void EndReceive(IAsyncResult result)
+        private static void EndReceive(IAsyncResult result)
         {
             var data = (AsyncIOState) result.AsyncState;
             try
             {
-                int transferred = data.Connection.EndReceive(result);
+                var transferred = data.Connection.EndReceive(result);
                 if (transferred == 0)
                 {
                     data.Callback(false, 0, data.State);
@@ -197,12 +197,12 @@ namespace MonoTorrent.Client
             }
         }
 
-        static void EndSend(IAsyncResult result)
+        private static void EndSend(IAsyncResult result)
         {
             var data = (AsyncIOState) result.AsyncState;
             try
             {
-                int transferred = data.Connection.EndSend(result);
+                var transferred = data.Connection.EndSend(result);
                 if (transferred == 0)
                 {
                     data.Callback(false, 0, data.State);
@@ -236,9 +236,9 @@ namespace MonoTorrent.Client
             }
         }
 
-        static void ReceiveOrEnqueue(AsyncIOState data)
+        private static void ReceiveOrEnqueue(AsyncIOState data)
         {
-            int count = Math.Min(ChunkLength, data.Remaining);
+            var count = Math.Min(ChunkLength, data.Remaining);
             if (data.RateLimiter == null || data.RateLimiter.TryProcess(1))
             {
                 try
@@ -257,9 +257,9 @@ namespace MonoTorrent.Client
             }
         }
 
-        static void SendOrEnqueue(AsyncIOState data)
+        private static void SendOrEnqueue(AsyncIOState data)
         {
-            int count = Math.Min(ChunkLength, data.Remaining);
+            var count = Math.Min(ChunkLength, data.Remaining);
             if (data.RateLimiter == null || data.RateLimiter.TryProcess(1))
             {
                 try

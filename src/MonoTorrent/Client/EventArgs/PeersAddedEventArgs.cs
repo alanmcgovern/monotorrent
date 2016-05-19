@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
 
         public int NewPeers
         {
-            get { return this.count; }
+            get { return count; }
         }
 
         #endregion
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client
         protected PeersAddedEventArgs(TorrentManager manager, int peersAdded, int total)
             : base(manager)
         {
-            this.count = peersAdded;
+            count = peersAdded;
             this.total = total;
         }
 

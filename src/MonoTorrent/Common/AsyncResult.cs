@@ -82,8 +82,8 @@ namespace MonoTorrent.Common
 
         protected internal Exception SavedException
         {
-            get { return this.savedException; }
-            set { this.savedException = value; }
+            get { return savedException; }
+            set { savedException = value; }
         }
 
         #endregion Properties
@@ -94,7 +94,7 @@ namespace MonoTorrent.Common
         {
             this.asyncState = asyncState;
             this.callback = callback;
-            this.waitHandle = new ManualResetEvent(false);
+            waitHandle = new ManualResetEvent(false);
         }
 
         #endregion Constructors

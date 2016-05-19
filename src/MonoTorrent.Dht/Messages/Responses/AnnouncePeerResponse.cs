@@ -36,7 +36,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class AnnouncePeerResponse : ResponseMessage
+    internal class AnnouncePeerResponse : ResponseMessage
     {
         public AnnouncePeerResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)

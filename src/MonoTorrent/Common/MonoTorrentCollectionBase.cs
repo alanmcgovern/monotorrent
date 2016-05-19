@@ -34,7 +34,7 @@ namespace MonoTorrent.Common
 
         public T Dequeue()
         {
-            T result = this[0];
+            var result = this[0];
             RemoveAt(0);
             return result;
         }

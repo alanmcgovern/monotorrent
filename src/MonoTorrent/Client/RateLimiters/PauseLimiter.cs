@@ -33,13 +33,13 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class PauseLimiter : IRateLimiter
+    internal class PauseLimiter : IRateLimiter
     {
-        TorrentManager manager;
+        private TorrentManager manager;
 
         public bool Unlimited
         {
-            get { return manager.State != MonoTorrent.Common.TorrentState.Paused; }
+            get { return manager.State != Common.TorrentState.Paused; }
         }
 
         public PauseLimiter(TorrentManager manager)

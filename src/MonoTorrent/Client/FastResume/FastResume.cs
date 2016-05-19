@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
             infoHash = new InfoHash(((BEncodedString) dict[InfoHashKey]).TextBytes);
             bitfield = new BitField((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
-            byte[] data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
+            var data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
             bitfield.FromArray(data, 0, data.Length);
         }
 
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
 
         public BEncodedDictionary Encode()
         {
-            BEncodedDictionary dict = new BEncodedDictionary();
+            var dict = new BEncodedDictionary();
             dict.Add(VersionKey, (BEncodedNumber) 1);
             dict.Add(InfoHashKey, new BEncodedString(infoHash.Hash));
             dict.Add(BitfieldKey, new BEncodedString(bitfield.ToByteArray()));
@@ -83,7 +83,7 @@ namespace MonoTorrent.Client
 
         public void Encode(Stream s)
         {
-            byte[] data = Encode().Encode();
+            var data = Encode().Encode();
             s.Write(data, 0, data.Length);
         }
     }

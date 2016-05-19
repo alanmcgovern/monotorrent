@@ -7,7 +7,7 @@ namespace MonoTorrent.Client.Tracker
     public abstract class TrackerResponseEventArgs : EventArgs
     {
         private bool successful;
-        TrackerConnectionID id;
+        private TrackerConnectionID id;
         private Tracker tracker;
 
         internal TrackerConnectionID Id
@@ -45,7 +45,7 @@ namespace MonoTorrent.Client.Tracker
             if (!(state is TrackerConnectionID))
                 throw new ArgumentException("The state object must be the same object as in the call to Announce",
                     "state");
-            this.id = (TrackerConnectionID) state;
+            id = (TrackerConnectionID) state;
             this.successful = successful;
             this.tracker = tracker;
         }

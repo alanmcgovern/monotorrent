@@ -40,9 +40,9 @@ using System.Collections.Generic;
 
 namespace MonoTorrent
 {
-    static class UriHelper
+    internal static class UriHelper
     {
-        static readonly char[] hexChars = "0123456789abcdef".ToCharArray();
+        private static readonly char[] hexChars = "0123456789abcdef".ToCharArray();
 
         public static string UrlEncode(byte[] bytes)
         {
@@ -50,7 +50,7 @@ namespace MonoTorrent
                 throw new ArgumentNullException("bytes");
 
             var result = new MemoryStream(bytes.Length);
-            for (int i = 0; i < bytes.Length; i++)
+            for (var i = 0; i < bytes.Length; i++)
                 UrlEncodeChar((char) bytes[i], result, false);
 
             return Encoding.ASCII.GetString(result.ToArray());
@@ -70,7 +70,7 @@ namespace MonoTorrent
             int xchar;
             char ch;
 
-            for (int i = 0; i < len; i++)
+            for (var i = 0; i < len; i++)
             {
                 ch = s[i];
                 if (ch == '%' && i + 2 < len && s[i + 1] != '%')
@@ -108,7 +108,7 @@ namespace MonoTorrent
             return bytes.ToArray();
         }
 
-        static void UrlEncodeChar(char c, Stream result, bool isUnicode)
+        private static void UrlEncodeChar(char c, Stream result, bool isUnicode)
         {
             if (c > ' ' && NotEncoded(c))
             {
@@ -135,9 +135,9 @@ namespace MonoTorrent
                 else
                     result.WriteByte((byte) '%');
 
-                int idx = ((int) c) >> 4;
+                var idx = (int) c >> 4;
                 result.WriteByte((byte) hexChars[idx]);
-                idx = ((int) c) & 0x0F;
+                idx = (int) c & 0x0F;
                 result.WriteByte((byte) hexChars[idx]);
             }
             else
@@ -146,17 +146,17 @@ namespace MonoTorrent
             }
         }
 
-        static int GetChar(string str, int offset, int length)
+        private static int GetChar(string str, int offset, int length)
         {
-            int val = 0;
-            int end = length + offset;
-            for (int i = offset; i < end; i++)
+            var val = 0;
+            var end = length + offset;
+            for (var i = offset; i < end; i++)
             {
-                char c = str[i];
+                var c = str[i];
                 if (c > 127)
                     return -1;
 
-                int current = GetInt((byte) c);
+                var current = GetInt((byte) c);
                 if (current == -1)
                     return -1;
                 val = (val << 4) + current;
@@ -165,9 +165,9 @@ namespace MonoTorrent
             return val;
         }
 
-        static int GetInt(byte b)
+        private static int GetInt(byte b)
         {
-            char c = (char) b;
+            var c = (char) b;
             if (c >= '0' && c <= '9')
                 return c - '0';
 
@@ -180,16 +180,16 @@ namespace MonoTorrent
             return -1;
         }
 
-        static bool NotEncoded(char c)
+        private static bool NotEncoded(char c)
         {
             return c == '!' || c == '(' || c == ')' || c == '*' || c == '-' || c == '.' || c == '_' || c == '\'';
         }
 
-        static void WriteCharBytes(List<byte> buf, char ch, Encoding e)
+        private static void WriteCharBytes(List<byte> buf, char ch, Encoding e)
         {
             if (ch > 255)
             {
-                foreach (byte b in e.GetBytes(new char[] {ch}))
+                foreach (var b in e.GetBytes(new char[] {ch}))
                     buf.Add(b);
             }
             else

@@ -65,15 +65,15 @@ namespace MonoTorrent.Dht
 
         internal static MainLoop MainLoop = new MainLoop("DhtLoop");
 
-        bool bootStrap = true;
-        TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
-        bool disposed;
-        MessageLoop messageLoop;
-        DhtState state = DhtState.NotReady;
-        RoutingTable table = new RoutingTable();
-        TimeSpan timeout;
-        Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
-        TokenManager tokenManager;
+        private bool bootStrap = true;
+        private TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
+        private bool disposed;
+        private MessageLoop messageLoop;
+        private DhtState state = DhtState.NotReady;
+        private RoutingTable table = new RoutingTable();
+        private TimeSpan timeout;
+        private Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
+        private TokenManager tokenManager;
 
         #endregion Fields
 
@@ -156,7 +156,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
+            var task = new InitialiseTask(this, Node.FromCompactNode(nodes));
             task.Execute();
         }
 
@@ -165,7 +165,7 @@ namespace MonoTorrent.Dht
             if (nodes == null)
                 throw new ArgumentNullException("nodes");
 
-            foreach (Node n in nodes)
+            foreach (var n in nodes)
                 Add(n);
         }
 
@@ -174,7 +174,7 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            SendQueryTask task = new SendQueryTask(this, new Ping(RoutingTable.LocalNode.Id), node);
+            var task = new SendQueryTask(this, new Ping(RoutingTable.LocalNode.Id), node);
             task.Execute();
         }
 
@@ -185,7 +185,7 @@ namespace MonoTorrent.Dht
             new AnnounceTask(this, infoHash, port).Execute();
         }
 
-        void CheckDisposed()
+        private void CheckDisposed()
         {
             if (Disposed)
                 throw new ObjectDisposedException(GetType().Name);
@@ -197,7 +197,7 @@ namespace MonoTorrent.Dht
                 return;
 
             // Ensure we don't break any threads actively running right now
-            DhtEngine.MainLoop.QueueWait((MainLoopTask) delegate { disposed = true; });
+            MainLoop.QueueWait((MainLoopTask) delegate { disposed = true; });
         }
 
         public void GetPeers(InfoHash infoHash)
@@ -223,13 +223,13 @@ namespace MonoTorrent.Dht
 
         public byte[] SaveNodes()
         {
-            BEncodedList details = new BEncodedList();
+            var details = new BEncodedList();
 
             MainLoop.QueueWait((MainLoopTask) delegate
             {
-                foreach (Bucket b in RoutingTable.Buckets)
+                foreach (var b in RoutingTable.Buckets)
                 {
-                    foreach (Node n in b.Nodes)
+                    foreach (var n in b.Nodes)
                         if (n.State != NodeState.Bad)
                             details.Add(n.CompactNode());
 
@@ -263,17 +263,17 @@ namespace MonoTorrent.Dht
                 RaiseStateChanged(DhtState.Ready);
             }
 
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
+            MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
             {
                 if (Disposed)
                     return false;
 
-                foreach (Bucket b in RoutingTable.Buckets)
+                foreach (var b in RoutingTable.Buckets)
                 {
-                    if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
+                    if (DateTime.UtcNow - b.LastChanged > BucketRefreshTimeout)
                     {
                         b.LastChanged = DateTime.UtcNow;
-                        RefreshBucketTask task = new RefreshBucketTask(this, b);
+                        var task = new RefreshBucketTask(this, b);
                         task.Execute();
                     }
                 }

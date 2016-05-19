@@ -42,12 +42,12 @@ namespace MonoTorrent.Client.Tracker
 {
     public class HTTPTracker : Tracker
     {
-        static Random random = new Random();
-        static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+        private static Random random = new Random();
+        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
-        Uri scrapeUrl;
-        string key;
-        string TrackerId;
+        private Uri scrapeUrl;
+        private string key;
+        private string TrackerId;
 
         public string Key
         {
@@ -64,18 +64,18 @@ namespace MonoTorrent.Client.Tracker
             : base(announceUrl)
         {
             CanAnnounce = true;
-            int index = announceUrl.OriginalString.LastIndexOf('/');
-            string part = (index + 9 <= announceUrl.OriginalString.Length)
+            var index = announceUrl.OriginalString.LastIndexOf('/');
+            var part = index + 9 <= announceUrl.OriginalString.Length
                 ? announceUrl.OriginalString.Substring(index + 1, 8)
                 : "";
             if (part.Equals("announce", StringComparison.OrdinalIgnoreCase))
             {
                 CanScrape = true;
-                Regex r = new Regex("announce");
-                this.scrapeUrl = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
+                var r = new Regex("announce");
+                scrapeUrl = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
             }
 
-            byte[] passwordKey = new byte[8];
+            var passwordKey = new byte[8];
             lock (random)
                 random.NextBytes(passwordKey);
             Key = UriHelper.UrlEncode(passwordKey);
@@ -85,9 +85,9 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                Uri announceString = CreateAnnounceString(parameters);
-                HttpWebRequest request = (HttpWebRequest) HttpWebRequest.Create(announceString);
-                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
+                var announceString = CreateAnnounceString(parameters);
+                var request = (HttpWebRequest) WebRequest.Create(announceString);
+                request.UserAgent = VersionInfo.ClientVersion;
                 request.Proxy = new WebProxy(); // If i don't do this, i can't run the webrequest. It's wierd.
                 RaiseBeforeAnnounce();
                 BeginRequest(request, AnnounceReceived, new object[] {request, state});
@@ -95,14 +95,14 @@ namespace MonoTorrent.Client.Tracker
             catch (Exception ex)
             {
                 Status = TrackerState.Offline;
-                FailureMessage = ("Could not initiate announce request: " + ex.Message);
+                FailureMessage = "Could not initiate announce request: " + ex.Message;
                 RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, false));
             }
         }
 
-        void BeginRequest(WebRequest request, AsyncCallback callback, object state)
+        private void BeginRequest(WebRequest request, AsyncCallback callback, object state)
         {
-            IAsyncResult result = request.BeginGetResponse(callback, state);
+            var result = request.BeginGetResponse(callback, state);
             ClientEngine.MainLoop.QueueTimeout(RequestTimeout, delegate
             {
                 if (!result.IsCompleted)
@@ -111,17 +111,17 @@ namespace MonoTorrent.Client.Tracker
             });
         }
 
-        void AnnounceReceived(IAsyncResult result)
+        private void AnnounceReceived(IAsyncResult result)
         {
             FailureMessage = "";
             WarningMessage = "";
-            object[] stateOb = (object[]) result.AsyncState;
-            WebRequest request = (WebRequest) stateOb[0];
-            object state = stateOb[1];
-            List<Peer> peers = new List<Peer>();
+            var stateOb = (object[]) result.AsyncState;
+            var request = (WebRequest) stateOb[0];
+            var state = stateOb[1];
+            var peers = new List<Peer>();
             try
             {
-                BEncodedDictionary dict = DecodeResponse(request, result);
+                var dict = DecodeResponse(request, result);
                 HandleAnnounce(dict, peers);
                 Status = TrackerState.Ok;
             }
@@ -142,9 +142,9 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        Uri CreateAnnounceString(AnnounceParameters parameters)
+        private Uri CreateAnnounceString(AnnounceParameters parameters)
         {
-            UriQueryBuilder b = new UriQueryBuilder(Uri);
+            var b = new UriQueryBuilder(Uri);
             b.Add("info_hash", parameters.InfoHash.UrlEncode())
                 .Add("peer_id", parameters.PeerId)
                 .Add("port", parameters.Port)
@@ -179,18 +179,18 @@ namespace MonoTorrent.Client.Tracker
             return b.ToUri();
         }
 
-        BEncodedDictionary DecodeResponse(WebRequest request, IAsyncResult result)
+        private BEncodedDictionary DecodeResponse(WebRequest request, IAsyncResult result)
         {
-            int bytesRead = 0;
-            int totalRead = 0;
-            byte[] buffer = new byte[2048];
+            var bytesRead = 0;
+            var totalRead = 0;
+            var buffer = new byte[2048];
 
-            WebResponse response = request.EndGetResponse(result);
+            var response = request.EndGetResponse(result);
             using (
-                MemoryStream dataStream =
+                var dataStream =
                     new MemoryStream(response.ContentLength > 0 ? (int) response.ContentLength : 256))
             {
-                using (BinaryReader reader = new BinaryReader(response.GetResponseStream()))
+                using (var reader = new BinaryReader(response.GetResponseStream()))
                 {
                     // If there is a ContentLength, use that to decide how much we read.
                     if (response.ContentLength > 0)
@@ -219,12 +219,12 @@ namespace MonoTorrent.Client.Tracker
 
         public override bool Equals(object obj)
         {
-            HTTPTracker tracker = obj as HTTPTracker;
+            var tracker = obj as HTTPTracker;
             if (tracker == null)
                 return false;
 
             // If the announce URL matches, then CanScrape and the scrape URL must match too
-            return (Uri.Equals(tracker.Uri));
+            return Uri.Equals(tracker.Uri);
         }
 
         public override int GetHashCode()
@@ -232,48 +232,48 @@ namespace MonoTorrent.Client.Tracker
             return Uri.GetHashCode();
         }
 
-        void HandleAnnounce(BEncodedDictionary dict, List<Peer> peers)
+        private void HandleAnnounce(BEncodedDictionary dict, List<Peer> peers)
         {
-            foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in dict)
+            foreach (var keypair in dict)
             {
                 switch (keypair.Key.Text)
                 {
-                    case ("complete"):
+                    case "complete":
                         Complete = Convert.ToInt32(keypair.Value.ToString());
                         break;
 
-                    case ("incomplete"):
+                    case "incomplete":
                         Incomplete = Convert.ToInt32(keypair.Value.ToString());
                         break;
 
-                    case ("downloaded"):
+                    case "downloaded":
                         Downloaded = Convert.ToInt32(keypair.Value.ToString());
                         break;
 
-                    case ("tracker id"):
+                    case "tracker id":
                         TrackerId = keypair.Value.ToString();
                         break;
 
-                    case ("min interval"):
+                    case "min interval":
                         MinUpdateInterval = TimeSpan.FromSeconds(int.Parse(keypair.Value.ToString()));
                         break;
 
-                    case ("interval"):
+                    case "interval":
                         UpdateInterval = TimeSpan.FromSeconds(int.Parse(keypair.Value.ToString()));
                         break;
 
-                    case ("peers"):
+                    case "peers":
                         if (keypair.Value is BEncodedList) // Non-compact response
                             peers.AddRange(Peer.Decode((BEncodedList) keypair.Value));
                         else if (keypair.Value is BEncodedString) // Compact response
                             peers.AddRange(Peer.Decode((BEncodedString) keypair.Value));
                         break;
 
-                    case ("failure reason"):
+                    case "failure reason":
                         FailureMessage = keypair.Value.ToString();
                         break;
 
-                    case ("warning message"):
+                    case "warning message":
                         WarningMessage = keypair.Value.ToString();
                         break;
 
@@ -289,7 +289,7 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                string url = scrapeUrl.OriginalString;
+                var url = scrapeUrl.OriginalString;
 
                 // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
                 if (url.IndexOf('?') == -1)
@@ -297,8 +297,8 @@ namespace MonoTorrent.Client.Tracker
                 else
                     url += "&info_hash=" + parameters.InfoHash.UrlEncode();
 
-                HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
+                var request = (HttpWebRequest) WebRequest.Create(url);
+                request.UserAgent = VersionInfo.ClientVersion;
                 BeginRequest(request, ScrapeReceived, new object[] {request, state});
             }
             catch
@@ -307,17 +307,17 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        void ScrapeReceived(IAsyncResult result)
+        private void ScrapeReceived(IAsyncResult result)
         {
-            string message = "";
-            object[] stateOb = (object[]) result.AsyncState;
-            WebRequest request = (WebRequest) stateOb[0];
-            object state = stateOb[1];
+            var message = "";
+            var stateOb = (object[]) result.AsyncState;
+            var request = (WebRequest) stateOb[0];
+            var state = stateOb[1];
 
             try
             {
                 BEncodedDictionary d;
-                BEncodedDictionary dict = DecodeResponse(request, result);
+                var dict = DecodeResponse(request, result);
 
                 // FIXME: Log the failure?
                 if (!dict.ContainsKey("files"))
@@ -325,23 +325,23 @@ namespace MonoTorrent.Client.Tracker
                     message = "Response contained no data";
                     return;
                 }
-                BEncodedDictionary files = (BEncodedDictionary) dict["files"];
-                foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in files)
+                var files = (BEncodedDictionary) dict["files"];
+                foreach (var keypair in files)
                 {
                     d = (BEncodedDictionary) keypair.Value;
-                    foreach (KeyValuePair<BEncodedString, BEncodedValue> kp in d)
+                    foreach (var kp in d)
                     {
                         switch (kp.Key.ToString())
                         {
-                            case ("complete"):
+                            case "complete":
                                 Complete = (int) ((BEncodedNumber) kp.Value).Number;
                                 break;
 
-                            case ("downloaded"):
+                            case "downloaded":
                                 Downloaded = (int) ((BEncodedNumber) kp.Value).Number;
                                 break;
 
-                            case ("incomplete"):
+                            case "incomplete":
                                 Incomplete = (int) ((BEncodedNumber) kp.Value).Number;
                                 break;
 

@@ -8,12 +8,12 @@ namespace MonoTorrent.Client
 {
     public class InitialSeedingModeTest : IDisposable
     {
-        InitialSeedingMode Mode
+        private InitialSeedingMode Mode
         {
             get { return Rig.Manager.Mode as InitialSeedingMode; }
         }
 
-        TestRig Rig { get; set; }
+        private TestRig Rig { get; set; }
 
         public InitialSeedingModeTest()
         {
@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
             Mode.Tick(0);
 
             Assert.True(Rig.Manager.Peers.ConnectedPeers[0].Dequeue() is HaveAllMessage);
-            BitfieldMessage m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue();
+            var m = (BitfieldMessage) Rig.Manager.Peers.ConnectedPeers[1].Dequeue();
             Assert.True(m.BitField.AllTrue);
         }
     }

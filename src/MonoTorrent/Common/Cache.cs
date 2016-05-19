@@ -33,18 +33,18 @@ using System.Text;
 
 namespace MonoTorrent.Common
 {
-    interface ICache<T>
+    internal interface ICache<T>
     {
         int Count { get; }
         T Dequeue();
         void Enqueue(T instance);
     }
 
-    class Cache<T> : ICache<T>
+    internal class Cache<T> : ICache<T>
         where T : class, ICacheable, new()
     {
-        bool autoCreate;
-        Queue<T> cache;
+        private bool autoCreate;
+        private Queue<T> cache;
 
         public int Count
         {
@@ -59,7 +59,7 @@ namespace MonoTorrent.Common
         public Cache(bool autoCreate)
         {
             this.autoCreate = autoCreate;
-            this.cache = new Queue<T>();
+            cache = new Queue<T>();
         }
 
         public T Dequeue()
@@ -81,9 +81,9 @@ namespace MonoTorrent.Common
         }
     }
 
-    class SynchronizedCache<T> : ICache<T>
+    internal class SynchronizedCache<T> : ICache<T>
     {
-        ICache<T> cache;
+        private ICache<T> cache;
 
         public int Count
         {

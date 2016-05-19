@@ -23,7 +23,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public DiskWriter(int maxOpenFiles)
         {
-            this.streamsBuffer = new FileStreamBuffer(maxOpenFiles);
+            streamsBuffer = new FileStreamBuffer(maxOpenFiles);
         }
 
         public override void Close(TorrentFile file)
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client.PieceWriters
             if (offset < 0 || offset + count > file.Length)
                 throw new ArgumentOutOfRangeException("offset");
 
-            TorrentFileStream stream = GetStream(file, FileAccess.ReadWrite);
+            var stream = GetStream(file, FileAccess.ReadWrite);
             stream.Seek(offset, SeekOrigin.Begin);
             stream.Write(buffer, bufferOffset, count);
         }

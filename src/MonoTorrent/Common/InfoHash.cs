@@ -8,17 +8,17 @@ namespace MonoTorrent
 {
     public class InfoHash : IEquatable<InfoHash>
     {
-        static Dictionary<char, byte> base32DecodeTable;
+        private static Dictionary<char, byte> base32DecodeTable;
 
         static InfoHash()
         {
             base32DecodeTable = new Dictionary<char, byte>();
-            string table = "abcdefghijklmnopqrstuvwxyz234567";
-            for (int i = 0; i < table.Length; i++)
+            var table = "abcdefghijklmnopqrstuvwxyz234567";
+            for (var i = 0; i < table.Length; i++)
                 base32DecodeTable[table[i]] = (byte) i;
         }
 
-        byte[] hash;
+        private byte[] hash;
 
         internal byte[] Hash
         {
@@ -62,10 +62,10 @@ namespace MonoTorrent
 
         public string ToHex()
         {
-            StringBuilder sb = new StringBuilder(40);
-            for (int i = 0; i < hash.Length; i++)
+            var sb = new StringBuilder(40);
+            for (var i = 0; i < hash.Length; i++)
             {
-                string hex = hash[i].ToString("X");
+                var hex = hash[i].ToString("X");
                 if (hex.Length != 2)
                     sb.Append("0");
                 sb.Append(hex);
@@ -104,12 +104,12 @@ namespace MonoTorrent
                 throw new ArgumentException("Infohash must be a base32 encoded 32 character string");
 
             infoHash = infoHash.ToLower();
-            int infohashOffset = 0;
-            byte[] hash = new byte[20];
+            var infohashOffset = 0;
+            var hash = new byte[20];
             var temp = new byte[8];
-            for (int i = 0; i < hash.Length;)
+            for (var i = 0; i < hash.Length;)
             {
-                for (int j = 0; j < 8; j++)
+                for (var j = 0; j < 8; j++)
                     if (!base32DecodeTable.TryGetValue(infoHash[infohashOffset++], out temp[j]))
                         throw new ArgumentException("infoHash", "Value is not a valid base32 encoded string");
 
@@ -130,8 +130,8 @@ namespace MonoTorrent
             if (infoHash.Length != 40)
                 throw new ArgumentException("Infohash must be 40 characters long");
 
-            byte[] hash = new byte[20];
-            for (int i = 0; i < hash.Length; i++)
+            var hash = new byte[20];
+            for (var i = 0; i < hash.Length; i++)
                 hash[i] = byte.Parse(infoHash.Substring(i*2, 2), System.Globalization.NumberStyles.HexNumber);
 
             return new InfoHash(hash);
@@ -143,12 +143,12 @@ namespace MonoTorrent
             if (!magnetLink.StartsWith("magnet:?"))
                 throw new ArgumentException("Invalid magnet link format");
             magnetLink = magnetLink.Substring("magnet:?".Length);
-            int hashStart = magnetLink.IndexOf("xt=urn:btih:");
+            var hashStart = magnetLink.IndexOf("xt=urn:btih:");
             if (hashStart == -1)
                 throw new ArgumentException("Magnet link does not contain an infohash");
             hashStart += "xt=urn:btih:".Length;
 
-            int hashEnd = magnetLink.IndexOf('&', hashStart);
+            var hashEnd = magnetLink.IndexOf('&', hashStart);
             if (hashEnd == -1)
                 hashEnd = magnetLink.Length;
 

@@ -69,7 +69,7 @@ namespace MonoTorrent.Dht
 
         public bool VerifyToken(Node node, BEncodedString token)
         {
-            return (token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret)));
+            return token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret));
         }
 
         private BEncodedString GetToken(Node node, byte[] s)
@@ -82,7 +82,7 @@ namespace MonoTorrent.Dht
                 random.GetNonZeroBytes(secret);
             }
 
-            byte[] n = node.CompactPort().TextBytes;
+            var n = node.CompactPort().TextBytes;
             sha1.Initialize();
             sha1.TransformBlock(n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock(s, 0, s.Length);

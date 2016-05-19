@@ -46,8 +46,8 @@ namespace MonoTorrent.Client
 
         public AddressRange(IPAddress start, IPAddress end)
         {
-            Start = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(start.GetAddressBytes(), 0)));
-            End = (IPAddress.NetworkToHostOrder(BitConverter.ToInt32(end.GetAddressBytes(), 0)));
+            Start = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(start.GetAddressBytes(), 0));
+            End = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(end.GetAddressBytes(), 0));
         }
 
         public bool Contains(int value)
@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
 
     public class BanList
     {
-        RangeCollection addresses = new RangeCollection();
+        private RangeCollection addresses = new RangeCollection();
 
         public void Add(IPAddress address)
         {
@@ -93,7 +93,7 @@ namespace MonoTorrent.Client
             return addresses.Contains(new AddressRange(address, address));
         }
 
-        void Remove(AddressRange addressRange)
+        private void Remove(AddressRange addressRange)
         {
             addresses.Remove(addressRange);
         }
@@ -107,7 +107,7 @@ namespace MonoTorrent.Client
         public void Remove(IEnumerable<AddressRange> addressRanges)
         {
             Check.AddressRanges(addressRanges);
-            foreach (AddressRange address in addressRanges)
+            foreach (var address in addressRanges)
                 Remove(address);
         }
     }

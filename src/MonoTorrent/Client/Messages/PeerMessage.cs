@@ -66,9 +66,9 @@ namespace MonoTorrent.Client.Messages
             if (count < 4)
                 throw new ArgumentException("A message must contain a 4 byte length prefix");
 
-            int messageLength = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, offset));
+            var messageLength = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, offset));
 
-            if (messageLength > (count - 4))
+            if (messageLength > count - 4)
                 throw new ArgumentException("Incomplete message detected");
 
             if (buffer[offset + 4] == ExtensionMessage.MessageId)

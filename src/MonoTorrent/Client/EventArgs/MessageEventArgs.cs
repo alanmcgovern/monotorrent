@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public PeerMessage Message
         {
-            get { return this.message; }
+            get { return message; }
         }
 
         private PeerMessage message;
@@ -56,14 +56,14 @@ namespace MonoTorrent.Client
         /// </summary>
         public Direction Direction
         {
-            get { return this.direction; }
+            get { return direction; }
         }
 
         private Direction direction;
 
         public PeerId ID
         {
-            get { return this.id; }
+            get { return id; }
         }
 
         private PeerId id;

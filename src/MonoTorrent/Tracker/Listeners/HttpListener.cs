@@ -76,7 +76,7 @@ namespace MonoTorrent.Tracker.Listeners
             if (string.IsNullOrEmpty(httpPrefix))
                 throw new ArgumentNullException("httpPrefix");
 
-            this.prefix = httpPrefix;
+            prefix = httpPrefix;
         }
 
         #endregion Constructors
@@ -105,7 +105,7 @@ namespace MonoTorrent.Tracker.Listeners
             if (!Running)
                 return;
 
-            IDisposable d = (IDisposable) listener;
+            var d = (IDisposable) listener;
             listener = null;
             d.Dispose();
         }
@@ -113,7 +113,7 @@ namespace MonoTorrent.Tracker.Listeners
         private void EndGetRequest(IAsyncResult result)
         {
             HttpListenerContext context = null;
-            System.Net.HttpListener listener = (System.Net.HttpListener) result.AsyncState;
+            var listener = (System.Net.HttpListener) result.AsyncState;
 
             try
             {
@@ -141,11 +141,11 @@ namespace MonoTorrent.Tracker.Listeners
 
         private void HandleRequest(HttpListenerContext context)
         {
-            bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
+            var isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
 
             BEncodedValue responseData = Handle(context.Request.RawUrl, context.Request.RemoteEndPoint.Address, isScrape);
 
-            byte[] response = responseData.Encode();
+            var response = responseData.Encode();
             context.Response.ContentType = "text/plain";
             context.Response.StatusCode = 200;
             context.Response.ContentLength64 = response.LongLength;

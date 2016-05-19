@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             Reject = 2
         }
 
-        BEncodedDictionary dict;
+        private BEncodedDictionary dict;
         private eMessageType messageType;
         private int piece;
 
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             : this()
         {
             ExtensionId = extensionId;
-            this.messageType = type;
+            messageType = type;
             this.metadata = metadata;
             this.piece = piece;
 
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
             get
             {
-                int length = 4 + 1 + 1 + dict.LengthInBytes();
+                var length = 4 + 1 + 1 + dict.LengthInBytes();
                 if (messageType == eMessageType.Data)
                     length += Math.Min(metadata.Length - piece*BlockSize, BlockSize);
                 return length;
@@ -124,10 +124,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public override void Decode(byte[] buffer, int offset, int length)
         {
             BEncodedValue val;
-            using (RawReader reader = new RawReader(new MemoryStream(buffer, offset, length, false), false))
+            using (var reader = new RawReader(new MemoryStream(buffer, offset, length, false), false))
             {
-                BEncodedDictionary d = BEncodedDictionary.Decode<BEncodedDictionary>(reader);
-                int totalSize = 0;
+                var d = BEncodedValue.Decode<BEncodedDictionary>(reader);
+                var totalSize = 0;
 
                 if (d.TryGetValue(MessageTypeKey, out val))
                     messageType = (eMessageType) ((BEncodedNumber) val).Number;
@@ -147,10 +147,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             if (!ClientEngine.SupportsFastPeer)
                 throw new MessageException("Libtorrent extension messages not supported");
 
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, ByteLength - 4);
-            written += Write(buffer, written, ExtensionMessage.MessageId);
+            written += Write(buffer, written, MessageId);
             written += Write(buffer, written, ExtensionId);
             written += dict.Encode(buffer, written);
             if (messageType == eMessageType.Data)

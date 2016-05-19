@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    class PausedMode : Mode
+    internal class PausedMode : Mode
     {
         public override TorrentState State
         {

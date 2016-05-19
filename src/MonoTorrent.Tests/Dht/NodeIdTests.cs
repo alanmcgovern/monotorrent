@@ -10,10 +10,10 @@ namespace MonoTorrent.Dht
         public NodeIdTests()
         {
             nodes = new NodeId[20];
-            for (int i = 0; i < nodes.Length; i++)
+            for (var i = 0; i < nodes.Length; i++)
             {
-                byte[] id = new byte[20];
-                for (int j = 0; j < id.Length; j++)
+                var id = new byte[20];
+                for (var j = 0; j < id.Length; j++)
                     id[j] = (byte) (i*20 + j);
                 nodes[i] = new NodeId(id);
             }
@@ -33,30 +33,30 @@ namespace MonoTorrent.Dht
         [Fact]
         public void XorTest()
         {
-            NodeId zero = new NodeId(new byte[20]);
+            var zero = new NodeId(new byte[20]);
 
-            byte[] b = new byte[20];
+            var b = new byte[20];
             b[0] = 1;
-            NodeId one = new NodeId(b);
+            var one = new NodeId(b);
 
-            NodeId r = one.Xor(zero);
+            var r = one.Xor(zero);
             Assert.Equal(one, r);
             Assert.True(one > zero);
             Assert.True(one.CompareTo(zero) > 0);
 
-            NodeId z = one.Xor(r);
+            var z = one.Xor(r);
             Assert.Equal(zero, z);
         }
 
         [Fact]
         public void CompareTest()
         {
-            byte[] i = new byte[20];
-            byte[] j = new byte[20];
+            var i = new byte[20];
+            var j = new byte[20];
             i[19] = 1;
             j[19] = 2;
-            NodeId one = new NodeId(i);
-            NodeId two = new NodeId(j);
+            var one = new NodeId(i);
+            var two = new NodeId(j);
             Assert.True(one.CompareTo(two) < 0);
             Assert.True(two.CompareTo(one) > 0);
             Assert.True(one.CompareTo(one) == 0);
@@ -65,10 +65,10 @@ namespace MonoTorrent.Dht
         [Fact]
         public void CompareTest2()
         {
-            byte[] data = new byte[]
+            var data = new byte[]
             {1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199};
-            BigInteger a = new BigInteger(data);
-            BigInteger b = new BigInteger(new byte[0]);
+            var a = new BigInteger(data);
+            var b = new BigInteger(new byte[0]);
 
             Assert.NotEqual(a, b);
         }

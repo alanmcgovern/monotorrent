@@ -62,7 +62,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public BitField BitField
         {
-            get { return this.bitfield; }
+            get { return bitfield; }
         }
 
         public long BytesDownloaded
@@ -83,7 +83,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public int EndPieceIndex
         {
-            get { return this.endPiece; }
+            get { return endPiece; }
         }
 
         public string FullPath
@@ -105,7 +105,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public byte[] MD5
         {
-            get { return this.md5; }
+            get { return md5; }
             internal set { md5 = value; }
         }
 
@@ -124,8 +124,8 @@ namespace MonoTorrent.Common
         /// </summary>
         public Priority Priority
         {
-            get { return this.priority; }
-            set { this.priority = value; }
+            get { return priority; }
+            set { priority = value; }
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public byte[] SHA1
         {
-            get { return this.sha1; }
+            get { return sha1; }
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public int StartPieceIndex
         {
-            get { return this.startPiece; }
+            get { return startPiece; }
         }
 
         #endregion
@@ -171,16 +171,16 @@ namespace MonoTorrent.Common
         public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, byte[] md5,
             byte[] ed2k, byte[] sha1)
         {
-            this.bitfield = new BitField(endIndex - startIndex + 1);
+            bitfield = new BitField(endIndex - startIndex + 1);
             this.ed2k = ed2k;
-            this.endPiece = endIndex;
+            endPiece = endIndex;
             this.fullPath = fullPath;
             this.length = length;
             this.md5 = md5;
             this.path = path;
-            this.priority = Priority.Normal;
+            priority = Priority.Normal;
             this.sha1 = sha1;
-            this.startPiece = startIndex;
+            startPiece = startIndex;
         }
 
         #endregion
@@ -209,14 +209,14 @@ namespace MonoTorrent.Common
                 return selector;
 
             selector = new BitField(totalPieces);
-            for (int i = StartPieceIndex; i <= EndPieceIndex; i++)
+            for (var i = StartPieceIndex; i <= EndPieceIndex; i++)
                 selector[i] = true;
             return selector;
         }
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(32);
+            var sb = new StringBuilder(32);
             sb.Append("File: ");
             sb.Append(path);
             sb.Append(" StartIndex: ");

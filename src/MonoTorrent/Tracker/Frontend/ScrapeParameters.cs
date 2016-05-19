@@ -69,8 +69,8 @@ namespace MonoTorrent.Tracker
 
             if (infoHash.IndexOf(',') > 0)
             {
-                string[] stringHashs = infoHash.Split(',');
-                for (int i = 0; i < stringHashs.Length; i++)
+                var stringHashs = infoHash.Split(',');
+                for (var i = 0; i < stringHashs.Length; i++)
                     hashs.Add(InfoHash.UrlDecode(stringHashs[i]));
             }
             else

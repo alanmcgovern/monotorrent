@@ -7,16 +7,16 @@ namespace MonoTorrent
 {
     public abstract class EditableTorrent
     {
-        static readonly BEncodedString AnnounceKey = "announce";
-        static readonly BEncodedString AnnounceListKey = "announce-list";
-        static readonly BEncodedString CommentKey = "comment";
-        static readonly BEncodedString CreatedByKey = "created by";
-        static readonly BEncodedString EncodingKey = "encoding";
-        static readonly BEncodedString InfoKey = "info";
-        static readonly BEncodedString PieceLengthKey = "piece length";
-        static readonly BEncodedString PrivateKey = "private";
-        static readonly BEncodedString PublisherKey = "publisher";
-        static readonly BEncodedString PublisherUrlKey = "publisher-url";
+        private static readonly BEncodedString AnnounceKey = "announce";
+        private static readonly BEncodedString AnnounceListKey = "announce-list";
+        private static readonly BEncodedString CommentKey = "comment";
+        private static readonly BEncodedString CreatedByKey = "created by";
+        private static readonly BEncodedString EncodingKey = "encoding";
+        private static readonly BEncodedString InfoKey = "info";
+        private static readonly BEncodedString PieceLengthKey = "piece length";
+        private static readonly BEncodedString PrivateKey = "private";
+        private static readonly BEncodedString PublisherKey = "publisher";
+        private static readonly BEncodedString PublisherUrlKey = "publisher-url";
 
         public string Announce
         {
@@ -95,7 +95,7 @@ namespace MonoTorrent
             Initialise(BEncodedValue.Clone(metadata));
         }
 
-        void Initialise(BEncodedDictionary metadata)
+        private void Initialise(BEncodedDictionary metadata)
         {
             Metadata = metadata;
 

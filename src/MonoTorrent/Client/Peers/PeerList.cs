@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    class PeerList
+    internal class PeerList
     {
         #region Private Fields
 
@@ -47,8 +47,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                int peersCount = 0;
-                foreach (PeerId peer in peers)
+                var peersCount = 0;
+                foreach (var peer in peers)
                     if (!peer.AmChoking)
                         peersCount++;
                 return peersCount;
@@ -84,7 +84,7 @@ namespace MonoTorrent.Client
         public PeerId GetFirstInterestedChokedPeer()
         {
             //Look for a choked peer
-            foreach (PeerId peer in peers)
+            foreach (var peer in peers)
                 if (peer.Connection != null)
                     if (peer.IsInterested && peer.AmChoking)
                         return peer;
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
             //Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
             PeerId longestIntervalPeer = null;
             double longestIntervalPeerTime = 0;
-            foreach (PeerId peer in peers)
+            foreach (var peer in peers)
                 if (peer.Connection != null)
                     if (peer.AmChoking)
                     {
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
                             {
                                 //Compare dates to determine whether the new one has a longer interval (but halve the interval
                                 //  if the peer has never sent us any data)
-                                double newInterval = SecondsBetween(peer.LastUnchoked.Value, DateTime.Now);
+                                var newInterval = SecondsBetween(peer.LastUnchoked.Value, DateTime.Now);
                                 if (peer.Monitor.DataBytesDownloaded == 0)
                                     newInterval = newInterval/2;
                                 if (newInterval > longestIntervalPeerTime)
@@ -142,18 +142,18 @@ namespace MonoTorrent.Client
         {
             switch (listType)
             {
-                case (PeerListType.NascentPeers):
+                case PeerListType.NascentPeers:
                     peers.Sort(CompareNascentPeers);
                     break;
 
-                case (PeerListType.CandidatePeers):
+                case PeerListType.CandidatePeers:
                     if (IsSeeding)
                         peers.Sort(CompareCandidatePeersWhileSeeding);
                     else
                         peers.Sort(CompareCandidatePeersWhileDownloading);
                     break;
 
-                case (PeerListType.OptimisticUnchokeCandidatePeers):
+                case PeerListType.OptimisticUnchokeCandidatePeers:
                     if (IsSeeding)
                         peers.Sort(CompareOptimisticUnchokeCandidatesWhileSeeding);
                     else

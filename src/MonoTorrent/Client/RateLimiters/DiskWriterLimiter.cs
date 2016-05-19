@@ -33,9 +33,9 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class DiskWriterLimiter : IRateLimiter
+    internal class DiskWriterLimiter : IRateLimiter
     {
-        DiskManager manager;
+        private DiskManager manager;
 
         public bool Unlimited
         {

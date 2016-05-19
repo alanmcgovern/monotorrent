@@ -29,7 +29,7 @@ namespace MonoTorrent.Client
 
             public int BlockIndex
             {
-                get { return PieceOffset/MonoTorrent.Client.Piece.BlockSize; }
+                get { return PieceOffset/Piece.BlockSize; }
             }
 
             public byte[] Buffer
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client
 
             internal TorrentManager Manager
             {
-                get { return this.manager; }
+                get { return manager; }
             }
 
             public bool Complete
@@ -108,15 +108,15 @@ namespace MonoTorrent.Client
             public void Initialise(TorrentManager manager, byte[] buffer, long offset, int count, int pieceLength,
                 IList<TorrentFile> files)
             {
-                this.actualCount = 0;
+                actualCount = 0;
                 this.buffer = buffer;
-                this.callback = null;
-                this.complete = false;
+                callback = null;
+                complete = false;
                 this.count = count;
                 this.files = files;
                 this.manager = manager;
                 this.offset = offset;
-                this.peerId = null;
+                peerId = null;
                 this.pieceLength = pieceLength;
             }
 

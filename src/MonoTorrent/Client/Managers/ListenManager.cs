@@ -75,18 +75,18 @@ namespace MonoTorrent.Client
                 e.Connection.Dispose();
                 return;
             }
-            PeerId id = new PeerId(e.Peer, e.TorrentManager);
+            var id = new PeerId(e.Peer, e.TorrentManager);
             id.Connection = e.Connection;
 
             Logger.Log(id.Connection, "ListenManager - ConnectionReceived");
 
             if (id.Connection.IsIncoming)
             {
-                List<InfoHash> skeys = new List<InfoHash>();
+                var skeys = new List<InfoHash>();
 
                 ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
                 {
-                    for (int i = 0; i < engine.Torrents.Count; i++)
+                    for (var i = 0; i < engine.Torrents.Count; i++)
                         skeys.Add(engine.Torrents[i].InfoHash);
                 });
 
@@ -101,7 +101,7 @@ namespace MonoTorrent.Client
 
         private void EndCheckEncryption(IAsyncResult result)
         {
-            PeerId id = (PeerId) result.AsyncState;
+            var id = (PeerId) result.AsyncState;
             try
             {
                 byte[] initialData;
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
 
                 if (initialData != null && initialData.Length == HandshakeMessage.HandshakeLength)
                 {
-                    HandshakeMessage message = new HandshakeMessage();
+                    var message = new HandshakeMessage();
                     message.Decode(initialData, 0, initialData.Length);
                     handleHandshake(id, message);
                 }
@@ -146,7 +146,7 @@ namespace MonoTorrent.Client
 
             ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
             {
-                for (int i = 0; i < engine.Torrents.Count; i++)
+                for (var i = 0; i < engine.Torrents.Count; i++)
                     if (message.infoHash == engine.Torrents[i].InfoHash)
                         man = engine.Torrents[i];
             });
@@ -175,8 +175,8 @@ namespace MonoTorrent.Client
             id.TorrentManager = man;
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
-            if ((id.Encryptor is PlainTextEncryption &&
-                 !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText)) &&
+            if (id.Encryptor is PlainTextEncryption &&
+                !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText) &&
                 ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id.Connection, "ListenManager - Encryption is required but was not active");
@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(bool succeeded, PeerMessage message, object state)
         {
-            PeerId id = (PeerId) state;
+            var id = (PeerId) state;
 
             try
             {

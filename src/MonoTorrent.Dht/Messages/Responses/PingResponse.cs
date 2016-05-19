@@ -36,7 +36,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class PingResponse : ResponseMessage
+    internal class PingResponse : ResponseMessage
     {
         public PingResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)

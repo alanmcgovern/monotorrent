@@ -37,7 +37,7 @@ namespace MonoTorrent.Client
 {
     public class RandomisedPicker : PiecePicker
     {
-        Random random = new Random();
+        private Random random = new Random();
 
         public RandomisedPicker(PiecePicker picker)
             : base(picker)
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client
             if (count > 1)
                 return base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
 
-            int midpoint = random.Next(startIndex, endIndex);
+            var midpoint = random.Next(startIndex, endIndex);
             return base.PickPiece(id, peerBitfield, otherPeers, count, midpoint, endIndex) ??
                    base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, midpoint);
         }

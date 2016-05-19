@@ -35,16 +35,16 @@ using System.Net;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    class AnnounceResponseMessage : UdpTrackerMessage
+    internal class AnnounceResponseMessage : UdpTrackerMessage
     {
-        TimeSpan interval;
-        int leechers;
-        int seeders;
-        List<Peer> peers;
+        private TimeSpan interval;
+        private int leechers;
+        private int seeders;
+        private List<Peer> peers;
 
         public override int ByteLength
         {
-            get { return (4*5 + peers.Count*6); }
+            get { return 4*5 + peers.Count*6; }
         }
 
         public int Leechers
@@ -95,17 +95,17 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         private void LoadPeerDetails(byte[] buffer, int offset)
         {
-            while (offset <= (buffer.Length - 6))
+            while (offset <= buffer.Length - 6)
             {
-                int ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
-                ushort port = (ushort) ReadShort(buffer, ref offset);
+                var ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
+                var port = (ushort) ReadShort(buffer, ref offset);
                 peers.Add(new Peer("", new Uri("tcp://" + new IPEndPoint(new IPAddress(ip), port).ToString())));
             }
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
@@ -113,8 +113,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write(buffer, written, leechers);
             written += Write(buffer, written, seeders);
 
-            for (int i = 0; i < peers.Count; i++)
-                Peers[i].CompactPeer(buffer, written + (i*6));
+            for (var i = 0; i < peers.Count; i++)
+                Peers[i].CompactPeer(buffer, written + i*6);
 
             return written - offset;
         }

@@ -88,10 +88,10 @@ namespace MonoTorrent.Client.Encryption
         internal static IAsyncResult BeginCheckEncryption(PeerId id, int bytesToReceive, AsyncCallback callback,
             object state, InfoHash[] sKeys)
         {
-            EncryptorAsyncResult result = new EncryptorAsyncResult(id, callback, state);
+            var result = new EncryptorAsyncResult(id, callback, state);
             result.SKeys = sKeys;
 
-            IConnection c = id.Connection;
+            var c = id.Connection;
             ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(10), delegate
             {
                 if (id.Encryptor == null || id.Decryptor == null)
@@ -111,9 +111,9 @@ namespace MonoTorrent.Client.Encryption
                 }
                 else
                 {
-                    EncryptionTypes usable = CheckRC4(id);
-                    bool hasPlainText = Toolbox.HasEncryption(usable, EncryptionTypes.PlainText);
-                    bool hasRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full) ||
+                    var usable = CheckRC4(id);
+                    var hasPlainText = Toolbox.HasEncryption(usable, EncryptionTypes.PlainText);
+                    var hasRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full) ||
                                   Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header);
                     if (id.Engine.Settings.PreferEncryption)
                     {
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client.Encryption
 
         internal static void EndCheckEncryption(IAsyncResult result, out byte[] initialData)
         {
-            EncryptorAsyncResult r = (EncryptorAsyncResult) result;
+            var r = (EncryptorAsyncResult) result;
 
             if (!r.IsCompleted)
                 r.AsyncWaitHandle.WaitOne();
@@ -170,8 +170,8 @@ namespace MonoTorrent.Client.Encryption
 
         private static void HandshakeReceived(bool succeeded, int count, object state)
         {
-            EncryptorAsyncResult result = (EncryptorAsyncResult) state;
-            IConnection connection = result.Id.Connection;
+            var result = (EncryptorAsyncResult) state;
+            var connection = result.Id.Connection;
 
             try
             {
@@ -179,12 +179,12 @@ namespace MonoTorrent.Client.Encryption
                     throw new EncryptionException("Couldn't receive the handshake");
 
                 result.Available += count;
-                HandshakeMessage message = new HandshakeMessage();
+                var message = new HandshakeMessage();
                 message.Decode(result.Buffer, 0, result.Buffer.Length);
-                bool valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
-                EncryptionTypes usable = CheckRC4(result.Id);
+                var valid = message.ProtocolString == VersionInfo.ProtocolStringV100;
+                var usable = CheckRC4(result.Id);
 
-                bool canUseRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header) ||
+                var canUseRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header) ||
                                  Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full);
                 // If encryption is disabled and we received an invalid handshake - abort!
                 if (valid)
@@ -219,7 +219,7 @@ namespace MonoTorrent.Client.Encryption
 
         private static void CompletedEncryptedHandshake(IAsyncResult result)
         {
-            EncryptorAsyncResult r = (EncryptorAsyncResult) result.AsyncState;
+            var r = (EncryptorAsyncResult) result.AsyncState;
             try
             {
                 r.EncSocket.EndHandshake(result);

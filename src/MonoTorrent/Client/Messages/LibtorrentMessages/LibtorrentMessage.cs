@@ -67,7 +67,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public ExtensionMessage(byte messageId)
         {
-            this.extensionId = messageId;
+            extensionId = messageId;
         }
 
         public static void Register(byte identifier, CreateMessage creator)

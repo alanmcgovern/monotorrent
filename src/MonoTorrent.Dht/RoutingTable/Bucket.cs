@@ -41,19 +41,19 @@ namespace MonoTorrent.Dht
     /// </summary>
     internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>
     {
-        static NodeId Minimum = new NodeId(new byte[20]);
+        private static NodeId Minimum = new NodeId(new byte[20]);
 
-        static NodeId Maximum =
+        private static NodeId Maximum =
             new NodeId(new byte[]
             {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
 
         public const int MaxCapacity = 8;
 
-        DateTime lastChanged = DateTime.UtcNow;
-        NodeId max;
-        NodeId min;
-        List<Node> nodes = new List<Node>(MaxCapacity);
-        Node replacement;
+        private DateTime lastChanged = DateTime.UtcNow;
+        private NodeId max;
+        private NodeId min;
+        private List<Node> nodes = new List<Node>(MaxCapacity);
+        private Node replacement;
 
         public DateTime LastChanged
         {
@@ -104,7 +104,7 @@ namespace MonoTorrent.Dht
             }
             //test replace
 
-            for (int i = nodes.Count - 1; i >= 0; i--)
+            for (var i = nodes.Count - 1; i >= 0; i--)
             {
                 if (nodes[i].State != NodeState.Bad)
                     continue;

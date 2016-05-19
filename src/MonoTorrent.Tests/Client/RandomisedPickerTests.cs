@@ -14,16 +14,16 @@ namespace MonoTorrent.Client
         //    t.Pick();
         //}
 
-        PeerId id;
-        RandomisedPicker picker;
-        TestRig rig;
-        TestPicker tester;
+        private PeerId id;
+        private RandomisedPicker picker;
+        private TestRig rig;
+        private TestPicker tester;
 
         public RandomisedPickerTests()
         {
             rig = TestRig.CreateMultiFile();
             id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
-            for (int i = 0; i < id.BitField.Length; i += 2)
+            for (var i = 0; i < id.BitField.Length; i += 2)
                 id.BitField[i] = true;
 
             tester = new TestPicker();
@@ -43,9 +43,9 @@ namespace MonoTorrent.Client
             {
             }
             Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count);
-            List<int> pieces = new List<int>(tester.PickedPieces);
+            var pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();
-            for (int i = 0; i < pieces.Count; i++)
+            for (var i = 0; i < pieces.Count; i++)
                 if (pieces[i] != tester.PickedPieces[i])
                     return;
             Assert.True(false, "The piece were picked in order");

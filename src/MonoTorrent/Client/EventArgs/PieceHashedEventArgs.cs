@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int PieceIndex
         {
-            get { return this.pieceIndex; }
+            get { return pieceIndex; }
         }
 
         private int pieceIndex;
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public bool HashPassed
         {
-            get { return this.hashPassed; }
+            get { return hashPassed; }
         }
 
         private bool hashPassed;

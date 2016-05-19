@@ -40,11 +40,11 @@ namespace MonoTorrent.Client
         [Fact]
         public void CompactPeerTest()
         {
-            string peerId = "12345abcde12345abcde";
-            Uri uri = new Uri("tcp://192.168.0.5:12345");
-            Peer p = new Peer(peerId, uri);
-            byte[] compact = p.CompactPeer();
-            Peer peer = Peer.Decode((BEncoding.BEncodedString) compact)[0];
+            var peerId = "12345abcde12345abcde";
+            var uri = new Uri("tcp://192.168.0.5:12345");
+            var p = new Peer(peerId, uri);
+            var compact = p.CompactPeer();
+            var peer = Peer.Decode((BEncodedString) compact)[0];
             Assert.Equal(p.ConnectionUri, peer.ConnectionUri);
         }
     }

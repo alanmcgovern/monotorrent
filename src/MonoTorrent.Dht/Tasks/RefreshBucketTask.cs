@@ -7,7 +7,7 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    class RefreshBucketTask : Task
+    internal class RefreshBucketTask : Task
     {
         private Bucket bucket;
         private DhtEngine engine;
@@ -38,11 +38,11 @@ namespace MonoTorrent.Dht
         {
             task.Completed -= TaskComplete;
 
-            SendQueryEventArgs args = (SendQueryEventArgs) e;
+            var args = (SendQueryEventArgs) e;
             if (args.TimedOut)
             {
                 bucket.SortBySeen();
-                int index = bucket.Nodes.IndexOf(node);
+                var index = bucket.Nodes.IndexOf(node);
                 if (index == -1 || (++index < bucket.Nodes.Count))
                 {
                     QueryNode(bucket.Nodes[0]);

@@ -15,10 +15,10 @@ namespace TrackerApp
 {
     public class StressTest
     {
-        List<string> hashes = new List<string>();
-        Random random = new Random(1);
-        SpeedMonitor requests = new SpeedMonitor();
-        Thread[] threads;
+        private List<string> hashes = new List<string>();
+        private Random random = new Random(1);
+        private SpeedMonitor requests = new SpeedMonitor();
+        private Thread[] threads;
         private int threadSleepTime = 0;
 
         public int RequestRate
@@ -33,9 +33,9 @@ namespace TrackerApp
 
         public StressTest(int torrents, int peers, int requests)
         {
-            for (int i = 0; i < torrents; i++)
+            for (var i = 0; i < torrents; i++)
             {
-                byte[] infoHash = new byte[20];
+                var infoHash = new byte[20];
                 random.NextBytes(infoHash);
                 hashes.Add(new InfoHash(infoHash).UrlEncode());
             }
@@ -46,17 +46,17 @@ namespace TrackerApp
 
         public void Start(string trackerAddress)
         {
-            for (int i = 0; i < threads.Length; i++)
+            for (var i = 0; i < threads.Length; i++)
             {
                 threads[i] = new Thread((ThreadStart) delegate
                 {
-                    StringBuilder sb = new StringBuilder();
-                    int torrent = 0;
+                    var sb = new StringBuilder();
+                    var torrent = 0;
                     while (true)
                     {
                         sb.Remove(0, sb.Length);
 
-                        int ipaddress = random.Next(0, hashes.Count);
+                        var ipaddress = random.Next(0, hashes.Count);
 
                         sb.Append(trackerAddress);
                         sb.Append("?info_hash=");
@@ -74,7 +74,7 @@ namespace TrackerApp
                         sb.Append("&compact=");
                         sb.Append("1");
 
-                        WebRequest req = HttpWebRequest.Create(sb.ToString());
+                        var req = WebRequest.Create(sb.ToString());
                         req.BeginGetResponse(delegate(IAsyncResult r)
                         {
                             try
@@ -91,7 +91,7 @@ namespace TrackerApp
                             }
                         }, null);
 
-                        System.Threading.Thread.Sleep(threadSleepTime);
+                        Thread.Sleep(threadSleepTime);
                     }
                 });
                 threads[i].Start();

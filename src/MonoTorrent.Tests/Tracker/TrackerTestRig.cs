@@ -10,7 +10,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {
-    public class CustomComparer : MonoTorrent.Tracker.IPeerComparer
+    public class CustomComparer : IPeerComparer
     {
         public new bool Equals(object left, object right)
         {
@@ -30,9 +30,9 @@ namespace MonoTorrent.Tracker
 
     public class CustomListener : ListenerBase
     {
-        public BEncodedValue Handle(PeerDetails d, MonoTorrent.Common.TorrentEvent e, ITrackable trackable)
+        public BEncodedValue Handle(PeerDetails d, Common.TorrentEvent e, ITrackable trackable)
         {
-            NameValueCollection c = new NameValueCollection();
+            var c = new NameValueCollection();
             c.Add("info_hash", trackable.InfoHash.UrlEncode());
             c.Add("peer_id", d.peerId);
             c.Add("port", d.Port.ToString());
@@ -104,7 +104,7 @@ namespace MonoTorrent.Tracker
 
         public TrackerTestRig()
         {
-            Tracker = new MonoTorrent.Tracker.Tracker();
+            Tracker = new Tracker();
             Listener = new CustomListener();
             Tracker.RegisterListener(Listener);
 
@@ -115,9 +115,9 @@ namespace MonoTorrent.Tracker
         private void GenerateTrackables()
         {
             Trackables = new List<Trackable>();
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
-                byte[] infoHash = new byte[20];
+                var infoHash = new byte[20];
                 r.NextBytes(infoHash);
                 Trackables.Add(new Trackable(new InfoHash(infoHash), i.ToString()));
             }
@@ -126,9 +126,9 @@ namespace MonoTorrent.Tracker
         private void GeneratePeers()
         {
             Peers = new List<PeerDetails>();
-            for (int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
-                PeerDetails d = new PeerDetails();
+                var d = new PeerDetails();
                 d.ClientAddress = IPAddress.Parse(string.Format("127.0.{0}.2", i));
                 d.Downloaded = (int) (10000*r.NextDouble());
                 d.peerId = string.Format("-----------------{0:0.000}", i);

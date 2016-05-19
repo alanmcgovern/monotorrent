@@ -7,12 +7,12 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class InitialiseTask : Task
+    internal class InitialiseTask : Task
     {
-        int activeRequests = 0;
-        List<Node> initialNodes;
-        SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
-        DhtEngine engine;
+        private int activeRequests = 0;
+        private List<Node> initialNodes;
+        private SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
+        private DhtEngine engine;
 
         public InitialiseTask(DhtEngine engine)
         {
@@ -29,10 +29,10 @@ namespace MonoTorrent.Dht.Tasks
             Initialise(engine, nodes);
         }
 
-        void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
+        private void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
         {
             this.engine = engine;
-            this.initialNodes = new List<Node>();
+            initialNodes = new List<Node>();
             if (nodes != null)
                 initialNodes.AddRange(nodes);
         }
@@ -47,7 +47,7 @@ namespace MonoTorrent.Dht.Tasks
             // If we were given a list of nodes to load at the start, use them
             if (initialNodes.Count > 0)
             {
-                foreach (Node node in initialNodes)
+                foreach (var node in initialNodes)
                     engine.Add(node);
                 SendFindNode(initialNodes);
             }
@@ -55,8 +55,8 @@ namespace MonoTorrent.Dht.Tasks
             {
                 try
                 {
-                    Node utorrent = new Node(NodeId.Create(),
-                        new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                    var utorrent = new Node(NodeId.Create(),
+                        new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
                     SendFindNode(new Node[] {utorrent});
                 }
                 catch
@@ -71,10 +71,10 @@ namespace MonoTorrent.Dht.Tasks
             e.Task.Completed -= FindNodeComplete;
             activeRequests--;
 
-            SendQueryEventArgs args = (SendQueryEventArgs) e;
+            var args = (SendQueryEventArgs) e;
             if (!args.TimedOut)
             {
-                FindNodeResponse response = (FindNodeResponse) args.Response;
+                var response = (FindNodeResponse) args.Response;
                 SendFindNode(Node.FromCompactNode(response.Nodes));
             }
 
@@ -104,11 +104,11 @@ namespace MonoTorrent.Dht.Tasks
 
         private void SendFindNode(IEnumerable<Node> newNodes)
         {
-            foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
+            foreach (var node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
             {
                 activeRequests++;
-                FindNode request = new FindNode(engine.LocalId, engine.LocalId);
-                SendQueryTask task = new SendQueryTask(engine, request, node);
+                var request = new FindNode(engine.LocalId, engine.LocalId);
+                var task = new SendQueryTask(engine, request, node);
                 task.Completed += FindNodeComplete;
                 task.Execute();
             }

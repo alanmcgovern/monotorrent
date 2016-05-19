@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         /// </summary>
         public int PieceIndex
         {
-            get { return this.pieceIndex; }
+            get { return pieceIndex; }
         }
 
         private int pieceIndex;
@@ -81,7 +81,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, messageLength);
             written += Write(buffer, written, MessageId);
@@ -95,12 +95,12 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            this.pieceIndex = ReadInt(buffer, ref offset);
+            pieceIndex = ReadInt(buffer, ref offset);
         }
 
         public override int ByteLength
         {
-            get { return this.messageLength + 4; }
+            get { return messageLength + 4; }
         }
 
         #endregion
@@ -109,24 +109,24 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public override bool Equals(object obj)
         {
-            SuggestPieceMessage msg = obj as SuggestPieceMessage;
+            var msg = obj as SuggestPieceMessage;
             if (msg == null)
                 return false;
 
-            return this.pieceIndex == msg.pieceIndex;
+            return pieceIndex == msg.pieceIndex;
         }
 
         public override int GetHashCode()
         {
-            return this.pieceIndex.GetHashCode();
+            return pieceIndex.GetHashCode();
         }
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(24);
+            var sb = new StringBuilder(24);
             sb.Append("Suggest Piece");
             sb.Append(" Index: ");
-            sb.Append(this.pieceIndex);
+            sb.Append(pieceIndex);
             return sb.ToString();
         }
 

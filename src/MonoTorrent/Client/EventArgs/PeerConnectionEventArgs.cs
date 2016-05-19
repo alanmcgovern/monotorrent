@@ -41,7 +41,7 @@ namespace MonoTorrent.Client
 
         public PeerId PeerID
         {
-            get { return this.peerConnectionId; }
+            get { return peerConnectionId; }
         }
 
         private PeerId peerConnectionId;
@@ -52,17 +52,17 @@ namespace MonoTorrent.Client
         /// </summary>
         public Direction ConnectionDirection
         {
-            get { return this.connectionDirection; }
+            get { return connectionDirection; }
         }
 
         private Direction connectionDirection;
 
-        private String message;
+        private string message;
 
         /// <summary>
         /// Any message that might be associated with this event
         /// </summary>
-        public String Message
+        public string Message
         {
             get { return message; }
         }
@@ -77,11 +77,11 @@ namespace MonoTorrent.Client
         }
 
 
-        internal PeerConnectionEventArgs(TorrentManager manager, PeerId id, Direction direction, String message)
+        internal PeerConnectionEventArgs(TorrentManager manager, PeerId id, Direction direction, string message)
             : base(manager)
         {
-            this.peerConnectionId = id;
-            this.connectionDirection = direction;
+            peerConnectionId = id;
+            connectionDirection = direction;
             this.message = message;
         }
 

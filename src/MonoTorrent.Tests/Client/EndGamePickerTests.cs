@@ -15,12 +15,12 @@ namespace MonoTorrent.Client
         //    t.Setup();
         //    t.CancelTest();
         //}
-        BitField bitfield;
-        PeerId id;
-        PeerId other;
-        EndGamePicker picker;
-        List<Piece> pieces;
-        TestRig rig;
+        private BitField bitfield;
+        private PeerId id;
+        private PeerId other;
+        private EndGamePicker picker;
+        private List<Piece> pieces;
+        private TestRig rig;
 
         public EndGamePickerTests()
         {
@@ -57,9 +57,9 @@ namespace MonoTorrent.Client
         [Fact]
         public void CancelTest()
         {
-            foreach (Piece p in pieces)
+            foreach (var p in pieces)
             {
-                for (int i = 0; i < p.BlockCount; i++)
+                for (var i = 0; i < p.BlockCount; i++)
                 {
                     if (i%2 == 0)
                         p.Blocks[i].CreateRequest(id);
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             id.BitField.Set(pieces[0].Index, true);
             other.BitField.Set(pieces[0].Index, true);
 
-            for (int i = 2; i < pieces[0].BlockCount; i++)
+            for (var i = 2; i < pieces[0].BlockCount; i++)
             {
                 pieces[0].Blocks[i].Requested = true;
                 pieces[0].Blocks[i].Received = true;
@@ -119,7 +119,7 @@ namespace MonoTorrent.Client
         {
             Piece piece;
             RequestMessage m;
-            List<RequestMessage> requests = new List<RequestMessage>();
+            var requests = new List<RequestMessage>();
 
             id.BitField[0] = true;
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
@@ -127,7 +127,7 @@ namespace MonoTorrent.Client
             while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
                 requests.Add(m);
 
-            foreach (RequestMessage message in requests)
+            foreach (var message in requests)
                 Assert.True(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength,
                     out piece));
 

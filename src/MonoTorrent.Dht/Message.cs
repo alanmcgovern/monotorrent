@@ -36,7 +36,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Messages
 {
-    internal abstract class Message : MonoTorrent.Client.Messages.Message
+    internal abstract class Message : Client.Messages.Message
     {
         internal static bool UseVersionKey = true;
 

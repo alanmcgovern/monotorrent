@@ -39,7 +39,7 @@ namespace MonoTorrent.Common
             Assert.Throws<InvalidOperationException>(() => editor.PieceLength = 16);
         }
 
-        BEncodedDictionary Create(string key, string value)
+        private BEncodedDictionary Create(string key, string value)
         {
             var d = new BEncodedDictionary();
             d.Add(key, (BEncodedString) value);

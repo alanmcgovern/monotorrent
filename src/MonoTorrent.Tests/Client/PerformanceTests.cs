@@ -10,7 +10,7 @@ namespace MonoTorrent.Client
 {
     public class PerformanceTests
     {
-        static void Time(MainLoopTask task, string title)
+        private static void Time(MainLoopTask task, string title)
         {
             long start = Environment.TickCount;
             task();

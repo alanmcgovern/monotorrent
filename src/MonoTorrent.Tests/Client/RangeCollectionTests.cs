@@ -17,7 +17,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void AddTest()
         {
-            RangeCollection c = new RangeCollection();
+            var c = new RangeCollection();
             c.Add(new AddressRange(50, 50));
             c.Add(new AddressRange(50, 50));
             Assert.Equal(1, c.Ranges.Count);
@@ -40,8 +40,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void AddTest2()
         {
-            RangeCollection c = new RangeCollection();
-            List<AddressRange> ranges = c.Ranges;
+            var c = new RangeCollection();
+            var ranges = c.Ranges;
             c.Add(new AddressRange(0, 100));
             c.Add(new AddressRange(101, 200));
             Assert.Equal(1, ranges.Count);
@@ -66,8 +66,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void AddTest3()
         {
-            RangeCollection c = new RangeCollection();
-            List<AddressRange> ranges = c.Ranges;
+            var c = new RangeCollection();
+            var ranges = c.Ranges;
             c.Add(new AddressRange(0, 100));
             c.Add(new AddressRange(200, 300));
             c.Add(new AddressRange(150, 600));
@@ -85,12 +85,12 @@ namespace MonoTorrent.Client
         [Fact]
         public void ContainsTest()
         {
-            RangeCollection c = new RangeCollection();
+            var c = new RangeCollection();
             c.Add(new AddressRange(1, 100));
             c.Add(new AddressRange(-10, -1));
-            for (int i = -15; i < 120; i++)
+            for (var i = -15; i < 120; i++)
             {
-                bool shouldContain = (i >= -10 && i <= -1) || (i >= 1 && i <= 100);
+                var shouldContain = (i >= -10 && i <= -1) || (i >= 1 && i <= 100);
                 Assert.Equal(shouldContain, c.Contains(new AddressRange(i, i)));
             }
         }
@@ -98,7 +98,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void RemoveTest()
         {
-            RangeCollection c = new RangeCollection();
+            var c = new RangeCollection();
             c.Add(new AddressRange(0, 100));
             c.Remove(new AddressRange(50, 50));
             Assert.Equal(2, c.Ranges.Count);

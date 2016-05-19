@@ -36,7 +36,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class AnnouncePeer : QueryMessage
+    internal class AnnouncePeer : QueryMessage
     {
         private static BEncodedString InfoHashKey = "info_hash";
         private static BEncodedString QueryName = "announce_peer";

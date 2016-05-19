@@ -23,7 +23,7 @@ namespace MonoTorrent.Client.Connections
             public HttpRequestData(RequestMessage request)
             {
                 Request = request;
-                PieceMessage m = new PieceMessage(request.PieceIndex, request.StartOffset, request.RequestLength);
+                var m = new PieceMessage(request.PieceIndex, request.StartOffset, request.RequestLength);
                 TotalToReceive = m.ByteLength;
             }
         }

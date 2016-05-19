@@ -38,18 +38,18 @@ namespace MonoTorrent.Client
 {
     public class EndGameSwitcher : PiecePicker
     {
-        const int Threshold = 20;
+        private const int Threshold = 20;
 
-        BitField bitfield;
-        int blocksPerPiece;
-        bool inEndgame;
-        PiecePicker endgame;
-        BitField endgameSelector;
-        TorrentFile[] files;
-        PiecePicker standard;
-        TorrentManager torrentManager;
+        private BitField bitfield;
+        private int blocksPerPiece;
+        private bool inEndgame;
+        private PiecePicker endgame;
+        private BitField endgameSelector;
+        private TorrentFile[] files;
+        private PiecePicker standard;
+        private TorrentManager torrentManager;
 
-        PiecePicker ActivePicker
+        private PiecePicker ActivePicker
         {
             get { return inEndgame ? endgame : standard; }
         }
@@ -97,14 +97,14 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             this.bitfield = bitfield;
-            this.endgameSelector = new BitField(bitfield.Length);
+            endgameSelector = new BitField(bitfield.Length);
             this.files = files;
             inEndgame = false;
             TryEnableEndgame();
             ActivePicker.Initialise(bitfield, files, requests);
         }
 
-        public override bool IsInteresting(MonoTorrent.Common.BitField bitfield)
+        public override bool IsInteresting(BitField bitfield)
         {
             return ActivePicker.IsInteresting(bitfield);
         }
@@ -112,7 +112,7 @@ namespace MonoTorrent.Client
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
             int startIndex, int endIndex)
         {
-            MessageBundle bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            var bundle = ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             if (bundle == null && TryEnableEndgame())
                 return ActivePicker.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             return bundle;
@@ -132,7 +132,7 @@ namespace MonoTorrent.Client
 
             // Create the bitfield of pieces which are downloadable
             endgameSelector.SetAll(false);
-            for (int i = 0; i < files.Length; i++)
+            for (var i = 0; i < files.Length; i++)
                 if (files[i].Priority != Priority.DoNotDownload)
                     endgameSelector.Or(files[i].GetSelector(bitfield.Length));
 
@@ -140,11 +140,11 @@ namespace MonoTorrent.Client
             endgameSelector.NAnd(bitfield);
 
             // If the total number of blocks remaining is less than Threshold, activate Endgame mode.
-            int count = 0;
-            List<Piece> pieces = standard.ExportActiveRequests();
-            for (int i = 0; i < pieces.Count; i++)
+            var count = 0;
+            var pieces = standard.ExportActiveRequests();
+            for (var i = 0; i < pieces.Count; i++)
                 count += pieces[i].TotalReceived;
-            inEndgame = Math.Max(blocksPerPiece, (endgameSelector.TrueCount*blocksPerPiece)) - count < Threshold;
+            inEndgame = Math.Max(blocksPerPiece, endgameSelector.TrueCount*blocksPerPiece) - count < Threshold;
             if (inEndgame)
             {
                 endgame.Initialise(bitfield, files, standard.ExportActiveRequests());

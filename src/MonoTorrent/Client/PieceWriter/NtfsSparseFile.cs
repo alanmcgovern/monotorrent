@@ -11,7 +11,7 @@ namespace MonoTorrent.Client
     internal static class SparseFile
     {
         [StructLayout(LayoutKind.Sequential)]
-        struct FILE_ZERO_DATA_INFORMATION
+        private struct FILE_ZERO_DATA_INFORMATION
         {
             public FILE_ZERO_DATA_INFORMATION(long offset, long count)
             {
@@ -45,13 +45,13 @@ namespace MonoTorrent.Client
                 // Create a file with the sparse flag enabled
 
                 uint bytesReturned = 0;
-                uint access = (uint) 0x40000000; // GenericWrite
+                var access = (uint) 0x40000000; // GenericWrite
                 uint sharing = 0; // none
-                uint attributes = (uint) 0x00000080; // Normal
-                uint creation = (uint) 1; // Only create if new
+                var attributes = (uint) 0x00000080; // Normal
+                var creation = (uint) 1; // Only create if new
 
                 using (
-                    SafeFileHandle handle = CreateFileW(filename, access, sharing, IntPtr.Zero, creation, attributes,
+                    var handle = CreateFileW(filename, access, sharing, IntPtr.Zero, creation, attributes,
                         IntPtr.Zero))
                 {
                     // If we couldn't create the file, bail out
@@ -65,9 +65,9 @@ namespace MonoTorrent.Client
                         return;
 
                     // Tell the filesystem to mark bytes 0 -> length as sparse zeros
-                    FILE_ZERO_DATA_INFORMATION data = new FILE_ZERO_DATA_INFORMATION(0, length);
-                    uint structSize = (uint) Marshal.SizeOf(data);
-                    IntPtr ptr = Marshal.AllocHGlobal((int) structSize);
+                    var data = new FILE_ZERO_DATA_INFORMATION(0, length);
+                    var structSize = (uint) Marshal.SizeOf(data);
+                    var ptr = Marshal.AllocHGlobal((int) structSize);
 
                     try
                     {
@@ -100,12 +100,12 @@ namespace MonoTorrent.Client
             // Ensure full path is supplied
             volume = Path.GetPathRoot(volume);
 
-            StringBuilder volumeName = new StringBuilder(MAX_PATH);
-            StringBuilder systemName = new StringBuilder(MAX_PATH);
+            var volumeName = new StringBuilder(MAX_PATH);
+            var systemName = new StringBuilder(MAX_PATH);
 
             uint fsFlags, serialNumber, maxComponent;
 
-            bool result = GetVolumeInformationW(volume, volumeName, MAX_PATH, out serialNumber, out maxComponent,
+            var result = GetVolumeInformationW(volume, volumeName, MAX_PATH, out serialNumber, out maxComponent,
                 out fsFlags, systemName, MAX_PATH);
             return result && (fsFlags & FILE_SUPPORTS_SPARSE_FILES) == FILE_SUPPORTS_SPARSE_FILES;
         }

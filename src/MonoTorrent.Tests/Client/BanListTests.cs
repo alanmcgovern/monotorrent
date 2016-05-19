@@ -5,7 +5,7 @@ namespace MonoTorrent.Client
 {
     public class BanListTests
     {
-        BanList list;
+        private BanList list;
 
         public BanListTests()
         {

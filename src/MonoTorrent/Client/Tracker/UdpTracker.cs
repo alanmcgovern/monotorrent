@@ -15,10 +15,10 @@ namespace MonoTorrent.Client.Tracker
         private long connectionId;
         private UdpClient tracker;
         private IPEndPoint endpoint;
-        bool hasConnected;
-        bool amConnecting;
+        private bool hasConnected;
+        private bool amConnecting;
         internal TimeSpan RetryDelay;
-        int timeout;
+        private int timeout;
 
         public UdpTracker(Uri announceUrl)
             : base(announceUrl)
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void DoAnnounce(AnnounceParameters parameters, object state)
         {
-            ConnectAnnounceState announceState = new ConnectAnnounceState(parameters, AnnounceCallback, state);
+            var announceState = new ConnectAnnounceState(parameters, AnnounceCallback, state);
             announceState.Message = new AnnounceMessage(DateTime.Now.GetHashCode(), connectionId, parameters);
             try
             {
@@ -71,7 +71,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void ConnectAnnounceCallback(IAsyncResult ar)
         {
-            ConnectAnnounceState announceState = (ConnectAnnounceState) ar;
+            var announceState = (ConnectAnnounceState) ar;
             try
             {
                 if (announceState.SavedException != null)
@@ -96,7 +96,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void AnnounceCallback(IAsyncResult ar)
         {
-            ConnectAnnounceState announceState = (ConnectAnnounceState) ar;
+            var announceState = (ConnectAnnounceState) ar;
             try
             {
                 if (announceState.SavedException != null)
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Tracker
                     DoAnnounceComplete(false, announceState.AsyncState, new List<Peer>());
                     return;
                 }
-                UdpTrackerMessage rsp = Receive(announceState, announceState.Data);
+                var rsp = Receive(announceState, announceState.Data);
                 if (!(rsp is AnnounceResponseMessage))
                 {
                     DoAnnounceComplete(false, announceState.AsyncState, new List<Peer>());
@@ -123,7 +123,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void CompleteAnnounce(UdpTrackerMessage message, object state)
         {
-            ErrorMessage error = message as ErrorMessage;
+            var error = message as ErrorMessage;
             if (error != null)
             {
                 FailureMessage = error.Error;
@@ -131,7 +131,7 @@ namespace MonoTorrent.Client.Tracker
             }
             else
             {
-                AnnounceResponseMessage response = (AnnounceResponseMessage) message;
+                var response = (AnnounceResponseMessage) message;
                 DoAnnounceComplete(true, state, response.Peers);
 
                 //TODO seeders and leechers is not used in event.
@@ -156,13 +156,13 @@ namespace MonoTorrent.Client.Tracker
 
         private bool ConnectCallback(IAsyncResult ar)
         {
-            UdpTrackerAsyncState trackerState = (UdpTrackerAsyncState) ar;
+            var trackerState = (UdpTrackerAsyncState) ar;
             try
             {
-                UdpTrackerMessage msg = Receive(trackerState, trackerState.Data);
+                var msg = Receive(trackerState, trackerState.Data);
                 if (msg == null)
                     return false; //bad transaction id
-                ConnectResponseMessage rsp = msg as ConnectResponseMessage;
+                var rsp = msg as ConnectResponseMessage;
                 if (rsp == null)
                 {
                     //is there a possibility to have a message which is not error message or connect rsp but udp msg
@@ -209,7 +209,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void ConnectScrapeCallback(IAsyncResult ar)
         {
-            ConnectScrapeState scrapeState = (ConnectScrapeState) ar;
+            var scrapeState = (ConnectScrapeState) ar;
             try
             {
                 if (scrapeState.SavedException != null)
@@ -236,9 +236,9 @@ namespace MonoTorrent.Client.Tracker
         {
             //strange because here only one infohash???
             //or get all torrent infohash so loop on torrents of client engine
-            List<byte[]> infohashs = new List<byte[]>(1);
+            var infohashs = new List<byte[]>(1);
             infohashs.Add(parameters.InfoHash.Hash);
-            ConnectScrapeState scrapeState = new ConnectScrapeState(parameters, ScrapeCallback, state);
+            var scrapeState = new ConnectScrapeState(parameters, ScrapeCallback, state);
             scrapeState.Message = new ScrapeMessage(DateTime.Now.GetHashCode(), connectionId, infohashs);
             try
             {
@@ -254,14 +254,14 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                ConnectScrapeState scrapeState = (ConnectScrapeState) ar;
+                var scrapeState = (ConnectScrapeState) ar;
                 if (scrapeState.SavedException != null)
                 {
                     FailureMessage = scrapeState.SavedException.Message;
                     DoScrapeComplete(false, scrapeState.AsyncState);
                     return;
                 }
-                UdpTrackerMessage rsp = Receive(scrapeState, scrapeState.Data);
+                var rsp = Receive(scrapeState, scrapeState.Data);
                 if (!(rsp is ScrapeResponseMessage))
                 {
                     DoScrapeComplete(false, scrapeState.AsyncState);
@@ -277,7 +277,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void CompleteScrape(UdpTrackerMessage message, object state)
         {
-            ErrorMessage error = message as ErrorMessage;
+            var error = message as ErrorMessage;
             if (error != null)
             {
                 FailureMessage = error.Error;
@@ -293,7 +293,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void DoScrapeComplete(bool successful, object state)
         {
-            ScrapeResponseEventArgs e = new ScrapeResponseEventArgs(this, state, successful);
+            var e = new ScrapeResponseEventArgs(this, state, successful);
             RaiseScrapeComplete(e);
         }
 
@@ -310,7 +310,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void EndReceiveMessage(IAsyncResult result)
         {
-            UdpTrackerAsyncState trackerState = (UdpTrackerAsyncState) result.AsyncState;
+            var trackerState = (UdpTrackerAsyncState) result.AsyncState;
             try
             {
                 IPEndPoint endpoint = null;
@@ -326,7 +326,7 @@ namespace MonoTorrent.Client.Tracker
         private void SendRequest(UdpTrackerAsyncState requestState)
         {
             //TODO BeginSend
-            byte[] buffer = requestState.Message.Encode();
+            var buffer = requestState.Message.Encode();
             tracker.Send(buffer, buffer.Length);
 
             //response timeout: we try 4 times every 15 sec
@@ -362,8 +362,8 @@ namespace MonoTorrent.Client.Tracker
         private UdpTrackerMessage Receive(UdpTrackerAsyncState trackerState, byte[] receivedMessage)
         {
             timeout = 0; //we have receive so unactive the timeout
-            byte[] data = receivedMessage;
-            UdpTrackerMessage rsp = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Response);
+            var data = receivedMessage;
+            var rsp = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Response);
 
             if (trackerState.Message.TransactionId != rsp.TransactionId)
             {
@@ -382,7 +382,7 @@ namespace MonoTorrent.Client.Tracker
 
         #region async state
 
-        abstract class UdpTrackerAsyncState : AsyncResult
+        private abstract class UdpTrackerAsyncState : AsyncResult
         {
             public byte[] Data;
             public UdpTrackerMessage Message;
@@ -393,7 +393,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        class ConnectAnnounceState : UdpTrackerAsyncState
+        private class ConnectAnnounceState : UdpTrackerAsyncState
         {
             public AnnounceParameters Parameters;
 
@@ -404,7 +404,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        class ConnectScrapeState : UdpTrackerAsyncState
+        private class ConnectScrapeState : UdpTrackerAsyncState
         {
             public ScrapeParameters Parameters;
 

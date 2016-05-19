@@ -19,10 +19,10 @@ namespace MonoTorrent.Dht
         //    t.Setup();
         //    t.BucketRefreshTest();
         //}
-        BEncodedString transactionId = "cc";
-        DhtEngine engine;
-        Node node;
-        TestListener listener;
+        private BEncodedString transactionId = "cc";
+        private DhtEngine engine;
+        private Node node;
+        private TestListener listener;
 
         public MessageHandlingTests()
         {
@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht
         {
             engine.Add(node);
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var handle = new ManualResetEvent(false);
             engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
             {
                 if (!e.TimedOut && e.Query is Ping)
@@ -51,15 +51,15 @@ namespace MonoTorrent.Dht
                 if (!e.TimedOut || !(e.Query is Ping))
                     return;
 
-                PingResponse response = new PingResponse(node.Id, e.Query.TransactionId);
+                var response = new PingResponse(node.Id, e.Query.TransactionId);
                 listener.RaiseMessageReceived(response, e.EndPoint);
             };
 
             Assert.Equal(NodeState.Unknown, node.State);
 
-            DateTime lastSeen = node.LastSeen;
+            var lastSeen = node.LastSeen;
             Assert.True(handle.WaitOne(1000, false));
-            Node nnnn = node;
+            var nnnn = node;
             node = engine.RoutingTable.FindNode(nnnn.Id);
             Assert.True(lastSeen < node.LastSeen);
             Assert.Equal(NodeState.Good, node.State);
@@ -70,22 +70,22 @@ namespace MonoTorrent.Dht
         {
             engine.TimeOut = TimeSpan.FromHours(1);
             // Send ping
-            Ping ping = new Ping(node.Id);
+            var ping = new Ping(node.Id);
             ping.TransactionId = transactionId;
 
-            ManualResetEvent handle = new ManualResetEvent(false);
-            SendQueryTask task = new SendQueryTask(engine, ping, node);
+            var handle = new ManualResetEvent(false);
+            var task = new SendQueryTask(engine, ping, node);
             task.Completed += delegate { handle.Set(); };
             task.Execute();
 
             // Receive response
-            PingResponse response = new PingResponse(node.Id, transactionId);
+            var response = new PingResponse(node.Id, transactionId);
             listener.RaiseMessageReceived(response, node.EndPoint);
 
             Assert.True(handle.WaitOne(1000, true));
 
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            DateTime lastSeen = node.LastSeen;
+            var lastSeen = node.LastSeen;
 
             // Time out a ping
             ping = new Ping(node.Id);

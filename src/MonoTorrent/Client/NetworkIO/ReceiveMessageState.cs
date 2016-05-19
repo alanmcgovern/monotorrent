@@ -34,7 +34,7 @@ namespace MonoTorrent.Client
 {
     internal static partial class PeerIO
     {
-        class ReceiveMessageState : ICacheable
+        private class ReceiveMessageState : ICacheable
         {
             public byte[] Buffer { get; set; }
 

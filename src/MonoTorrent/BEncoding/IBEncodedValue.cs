@@ -46,7 +46,7 @@ namespace MonoTorrent.BEncoding
         /// <returns>Byte array containing the BEncoded Data</returns>
         public byte[] Encode()
         {
-            byte[] buffer = new byte[LengthInBytes()];
+            var buffer = new byte[LengthInBytes()];
             if (Encode(buffer, 0) != buffer.Length)
                 throw new BEncodingException("Error encoding the data");
 
@@ -66,7 +66,7 @@ namespace MonoTorrent.BEncoding
             where T : BEncodedValue
         {
             Check.Value(value);
-            return (T) BEncodedValue.Decode(value.Encode());
+            return (T) Decode(value.Encode());
         }
 
         /// <summary>
@@ -79,8 +79,8 @@ namespace MonoTorrent.BEncoding
             if (data == null)
                 throw new ArgumentNullException("data");
 
-            using (RawReader stream = new RawReader(new MemoryStream(data)))
-                return (Decode(stream));
+            using (var stream = new RawReader(new MemoryStream(data)))
+                return Decode(stream);
         }
 
         internal static BEncodedValue Decode(byte[] buffer, bool strictDecoding)
@@ -111,8 +111,8 @@ namespace MonoTorrent.BEncoding
             if (offset > buffer.Length - length)
                 throw new ArgumentOutOfRangeException("length");
 
-            using (RawReader reader = new RawReader(new MemoryStream(buffer, offset, length), strictDecoding))
-                return (BEncodedValue.Decode(reader));
+            using (var reader = new RawReader(new MemoryStream(buffer, offset, length), strictDecoding))
+                return Decode(reader);
         }
 
 
@@ -143,28 +143,28 @@ namespace MonoTorrent.BEncoding
             BEncodedValue data;
             switch (reader.PeekByte())
             {
-                case ('i'): // Integer
+                case 'i': // Integer
                     data = new BEncodedNumber();
                     break;
 
-                case ('d'): // Dictionary
+                case 'd': // Dictionary
                     data = new BEncodedDictionary();
                     break;
 
-                case ('l'): // List
+                case 'l': // List
                     data = new BEncodedList();
                     break;
 
-                case ('1'): // String
-                case ('2'):
-                case ('3'):
-                case ('4'):
-                case ('5'):
-                case ('6'):
-                case ('7'):
-                case ('8'):
-                case ('9'):
-                case ('0'):
+                case '1': // String
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '0':
                     data = new BEncodedString();
                     break;
 
@@ -184,7 +184,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static T Decode<T>(byte[] data) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode(data);
+            return (T) Decode(data);
         }
 
 
@@ -197,12 +197,12 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the byte[]</returns>
         public static T Decode<T>(byte[] buffer, int offset, int length) where T : BEncodedValue
         {
-            return BEncodedValue.Decode<T>(buffer, offset, length, true);
+            return Decode<T>(buffer, offset, length, true);
         }
 
         public static T Decode<T>(byte[] buffer, int offset, int length, bool strictDecoding) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode(buffer, offset, length, strictDecoding);
+            return (T) Decode(buffer, offset, length, strictDecoding);
         }
 
 
@@ -213,13 +213,13 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static T Decode<T>(Stream stream) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode(stream);
+            return (T) Decode(stream);
         }
 
 
         public static T Decode<T>(RawReader reader) where T : BEncodedValue
         {
-            return (T) BEncodedValue.Decode(reader);
+            return (T) Decode(reader);
         }
 
 

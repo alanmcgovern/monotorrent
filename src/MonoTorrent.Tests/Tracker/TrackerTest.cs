@@ -31,7 +31,7 @@ namespace MonoTorrent.Tracker
             rig.Trackables.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t)); });
 
             // Clone each one and ensure that the clone can't be added
-            List<Trackable> clones = new List<Trackable>();
+            var clones = new List<Trackable>();
             rig.Trackables.ForEach(delegate(Trackable t) { clones.Add(new Trackable(Clone(t.InfoHash), t.Name)); });
 
             clones.ForEach(delegate(Trackable t) { Assert.False(rig.Tracker.Add(t)); });
@@ -53,23 +53,23 @@ namespace MonoTorrent.Tracker
             rig.Peers.ForEach(
                 delegate(PeerDetails d)
                 {
-                    rig.Listener.Handle(d, MonoTorrent.Common.TorrentEvent.Started, rig.Trackables[0]);
+                    rig.Listener.Handle(d, TorrentEvent.Started, rig.Trackables[0]);
                 });
 
-            SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[0]);
+            var manager = rig.Tracker.GetManager(rig.Trackables[0]);
 
             Assert.Equal(rig.Peers.Count, manager.Count);
             foreach (ITrackable t in rig.Trackables)
             {
-                SimpleTorrentManager m = rig.Tracker.GetManager(t);
+                var m = rig.Tracker.GetManager(t);
                 if (m == manager)
                     continue;
                 Assert.Equal(0, m.Count);
             }
 
-            foreach (Peer p in manager.GetPeers())
+            foreach (var p in manager.GetPeers())
             {
-                PeerDetails d =
+                var d =
                     rig.Peers.Find(
                         delegate(PeerDetails details)
                         {
@@ -86,19 +86,19 @@ namespace MonoTorrent.Tracker
         [Fact]
         public void AnnounceInvalidTest()
         {
-            int i = 0;
+            var i = 0;
             rig.Peers.ForEach(
-                delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent) ((i++)%4), rig.Trackables[0]); });
+                delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent) (i++%4), rig.Trackables[0]); });
             Assert.Equal(0, rig.Tracker.Count);
         }
 
         [Fact]
         public void CheckPeersAdded()
         {
-            int i = 0;
+            var i = 0;
             AddAllTrackables();
 
-            List<PeerDetails>[] lists = new List<PeerDetails>[]
+            var lists = new List<PeerDetails>[]
             {new List<PeerDetails>(), new List<PeerDetails>(), new List<PeerDetails>(), new List<PeerDetails>()};
             rig.Peers.ForEach(delegate(PeerDetails d)
             {
@@ -108,11 +108,11 @@ namespace MonoTorrent.Tracker
 
             for (i = 0; i < 4; i++)
             {
-                SimpleTorrentManager manager = rig.Tracker.GetManager(rig.Trackables[i]);
-                List<Peer> peers = manager.GetPeers();
+                var manager = rig.Tracker.GetManager(rig.Trackables[i]);
+                var peers = manager.GetPeers();
                 Assert.Equal(25, peers.Count);
 
-                foreach (Peer p in peers)
+                foreach (var p in peers)
                 {
                     Assert.True(lists[i].Exists(delegate(PeerDetails d)
                     {
@@ -144,23 +144,23 @@ namespace MonoTorrent.Tracker
             rig.Tracker.AllowNonCompact = true;
             rig.Tracker.Add(rig.Trackables[0]);
 
-            List<PeerDetails> peers = new List<PeerDetails>();
-            for (int i = 0; i < 25; i++)
+            var peers = new List<PeerDetails>();
+            for (var i = 0; i < 25; i++)
                 peers.Add(rig.Peers[i]);
 
-            for (int i = 0; i < peers.Count; i++)
+            for (var i = 0; i < peers.Count; i++)
                 rig.Listener.Handle(peers[i], TorrentEvent.Started, rig.Trackables[0]);
 
-            BEncodedDictionary dict =
+            var dict =
                 (BEncodedDictionary) rig.Listener.Handle(rig.Peers[24], TorrentEvent.None, rig.Trackables[0]);
-            BEncodedList list = (BEncodedList) dict["peers"];
+            var list = (BEncodedList) dict["peers"];
             Assert.Equal(25, list.Count);
 
             foreach (BEncodedDictionary d in list)
             {
-                IPAddress up = IPAddress.Parse(d["ip"].ToString());
-                int port = (int) ((BEncodedNumber) d["port"]).Number;
-                string peerId = ((BEncodedString) d["peer id"]).Text;
+                var up = IPAddress.Parse(d["ip"].ToString());
+                var port = (int) ((BEncodedNumber) d["port"]).Number;
+                var peerId = ((BEncodedString) d["peer id"]).Text;
 
                 Assert.True(
                     peers.Exists(

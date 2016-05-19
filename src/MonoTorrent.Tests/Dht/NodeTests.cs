@@ -19,8 +19,8 @@ namespace MonoTorrent.Dht
         [Fact]
         public void CompactPort()
         {
-            Node n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("1.21.121.3"), 511));
-            BEncodedString port = n.CompactPort();
+            var n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("1.21.121.3"), 511));
+            var port = n.CompactPort();
             Assert.Equal(1, port.TextBytes[0]);
             Assert.Equal(21, port.TextBytes[1]);
             Assert.Equal(121, port.TextBytes[2]);
@@ -32,9 +32,9 @@ namespace MonoTorrent.Dht
         [Fact]
         public void FromCompactNode()
         {
-            byte[] buffer = new byte[]
+            var buffer = new byte[]
             {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 1, 21, 131, 3, 1, 255};
-            Node n = Node.FromCompactNode(buffer, 0);
+            var n = Node.FromCompactNode(buffer, 0);
             Assert.True(Toolbox.ByteMatch(buffer, 0, n.Id.Bytes, 0, 20));
             Assert.Equal(IPAddress.Parse("1.21.131.3"), n.EndPoint.Address);
             Assert.Equal(511, n.EndPoint.Port);
@@ -43,8 +43,8 @@ namespace MonoTorrent.Dht
         [Fact]
         public void CompactNode()
         {
-            Node n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("1.21.121.3"), 511));
-            BEncodedString port = n.CompactNode();
+            var n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("1.21.121.3"), 511));
+            var port = n.CompactNode();
             Assert.True(Toolbox.ByteMatch(n.Id.Bytes, 0, port.TextBytes, 0, 20), "#A");
             Assert.Equal(1, port.TextBytes[20]);
             Assert.Equal(21, port.TextBytes[21]);
@@ -57,11 +57,11 @@ namespace MonoTorrent.Dht
         [Fact]
         public void SortByLastSeen()
         {
-            List<Node> nodes = new List<Node>();
-            DateTime start = DateTime.Now;
-            for (int i = 0; i < 5; i++)
+            var nodes = new List<Node>();
+            var start = DateTime.Now;
+            for (var i = 0; i < 5; i++)
             {
-                Node n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
+                var n = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
                 n.LastSeen = start.AddDays(-i);
                 nodes.Add(n);
             }

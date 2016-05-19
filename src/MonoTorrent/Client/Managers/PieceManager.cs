@@ -72,8 +72,8 @@ namespace MonoTorrent.Client
 
         #endregion Old
 
-        PiecePicker picker;
-        BitField unhashedPieces;
+        private PiecePicker picker;
+        private BitField unhashedPieces;
 
         internal PiecePicker Picker
         {
@@ -96,10 +96,10 @@ namespace MonoTorrent.Client
             Piece piece;
             if (picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece))
             {
-                PeerId id = peer;
-                TorrentManager manager = id.TorrentManager;
-                Block block = piece.Blocks[message.StartOffset/Piece.BlockSize];
-                long offset = (long) message.PieceIndex*id.TorrentManager.Torrent.PieceLength + message.StartOffset;
+                var id = peer;
+                var manager = id.TorrentManager;
+                var block = piece.Blocks[message.StartOffset/Piece.BlockSize];
+                var offset = (long) message.PieceIndex*id.TorrentManager.Torrent.PieceLength + message.StartOffset;
 
                 id.LastBlockReceived = DateTime.Now;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(manager, block, piece, id));
@@ -115,8 +115,8 @@ namespace MonoTorrent.Client
                         // Hashcheck the piece as we now have all the blocks.
                         id.Engine.DiskManager.BeginGetHash(id.TorrentManager, piece.Index, delegate(object o)
                         {
-                            byte[] hash = (byte[]) o;
-                            bool result = hash == null
+                            var hash = (byte[]) o;
+                            var result = hash == null
                                 ? false
                                 : id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
                             id.TorrentManager.Bitfield[message.PieceIndex] = result;
@@ -127,13 +127,13 @@ namespace MonoTorrent.Client
 
                                 id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index,
                                     result));
-                                List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
-                                for (int i = 0; i < piece.Blocks.Length; i++)
+                                var peers = new List<PeerId>(piece.Blocks.Length);
+                                for (var i = 0; i < piece.Blocks.Length; i++)
                                     if (piece.Blocks[i].RequestedOff != null &&
                                         !peers.Contains(piece.Blocks[i].RequestedOff))
                                         peers.Add(piece.Blocks[i].RequestedOff);
 
-                                for (int i = 0; i < peers.Count; i++)
+                                for (var i = 0; i < peers.Count; i++)
                                 {
                                     if (peers[i].Connection != null)
                                     {
@@ -151,7 +151,7 @@ namespace MonoTorrent.Client
                     });
 
                 if (piece.AllBlocksReceived)
-                    this.unhashedPieces[message.PieceIndex] = true;
+                    unhashedPieces[message.PieceIndex] = true;
             }
             else
             {
@@ -161,16 +161,16 @@ namespace MonoTorrent.Client
         internal void AddPieceRequests(PeerId id)
         {
             PeerMessage msg = null;
-            int maxRequests = id.MaxPendingRequests;
+            var maxRequests = id.MaxPendingRequests;
 
             if (id.AmRequestingPiecesCount >= maxRequests)
                 return;
 
-            int count = 1;
+            var count = 1;
             if (id.Connection is HttpConnection)
             {
                 // How many whole pieces fit into 2MB
-                count = (2*1024*1024)/id.TorrentManager.Torrent.PieceLength;
+                count = 2*1024*1024/id.TorrentManager.Torrent.PieceLength;
 
                 // Make sure we have at least one whole piece
                 count = Math.Max(count, 1);
@@ -210,7 +210,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
+            if (id.Peer.IsSeeder = id.BitField.AllTrue)
                 return true;
 
             // Otherwise we need to do a full check
@@ -231,7 +231,7 @@ namespace MonoTorrent.Client
 
         internal void Reset()
         {
-            this.unhashedPieces.SetAll(false);
+            unhashedPieces.SetAll(false);
             if (picker != null)
                 picker.Reset();
         }

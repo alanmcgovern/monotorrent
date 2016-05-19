@@ -5,7 +5,7 @@ namespace MonoTorrent.Common
 {
     public class InfoHashTests
     {
-        InfoHash Create()
+        private InfoHash Create()
         {
             return new InfoHash(new byte[]
             {
@@ -16,10 +16,10 @@ namespace MonoTorrent.Common
         [Fact]
         public void HexTest()
         {
-            InfoHash hash = Create();
-            string hex = hash.ToHex();
+            var hash = Create();
+            var hex = hash.ToHex();
             Assert.Equal(40, hex.Length);
-            InfoHash other = InfoHash.FromHex(hex);
+            var other = InfoHash.FromHex(hex);
             Assert.Equal(hash, other);
         }
 

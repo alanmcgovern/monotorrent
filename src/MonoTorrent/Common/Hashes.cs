@@ -29,7 +29,7 @@ namespace MonoTorrent.Common
         /// </summary>
         public int Count
         {
-            get { return this.count; }
+            get { return count; }
         }
 
         #endregion Properties
@@ -64,9 +64,9 @@ namespace MonoTorrent.Common
                 throw new ArgumentOutOfRangeException("hashIndex",
                     string.Format("hashIndex must be between 0 and {0}", count));
 
-            int start = hashIndex*HashCodeLength;
-            for (int i = 0; i < HashCodeLength; i++)
-                if (hash[i] != this.hashData[i + start])
+            var start = hashIndex*HashCodeLength;
+            for (var i = 0; i < HashCodeLength; i++)
+                if (hash[i] != hashData[i + start])
                     return false;
 
             return true;
@@ -83,8 +83,8 @@ namespace MonoTorrent.Common
                 throw new ArgumentOutOfRangeException("hashIndex");
 
             // Read out our specified piece's hash data
-            byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy(this.hashData, hashIndex*HashCodeLength, hash, 0, HashCodeLength);
+            var hash = new byte[HashCodeLength];
+            Buffer.BlockCopy(hashData, hashIndex*HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

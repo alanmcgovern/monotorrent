@@ -23,20 +23,20 @@ namespace MonoTorrent
             ParseMagnetLink(url);
         }
 
-        void ParseMagnetLink(string url)
+        private void ParseMagnetLink(string url)
         {
-            string[] splitStr = url.Split('?');
+            var splitStr = url.Split('?');
             if (splitStr.Length == 0 || splitStr[0] != "magnet:")
                 throw new FormatException("The magnet link must start with 'magnet:?'.");
 
             if (splitStr.Length == 1)
                 return; //no parametter
 
-            string[] parameters = splitStr[1].Split('&', ';');
+            var parameters = splitStr[1].Split('&', ';');
 
-            for (int i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
-                string[] keyval = parameters[i].Split('=');
+                var keyval = parameters[i].Split('=');
                 if (keyval.Length != 2)
                     throw new FormatException("A field-value pair of the magnet link contain more than one equal'.");
                 switch (keyval[0].Substring(0, 2))
@@ -45,7 +45,7 @@ namespace MonoTorrent
                         if (InfoHash != null)
                             throw new FormatException("More than one infohash in magnet link is not allowed.");
 
-                        string val = keyval[1].Substring(9);
+                        var val = keyval[1].Substring(9);
                         switch (keyval[1].Substring(0, 9))
                         {
                             case "urn:sha1:": //base32 hash

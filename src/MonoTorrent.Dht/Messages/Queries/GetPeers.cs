@@ -64,12 +64,12 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle(engine, node);
 
-            BEncodedString token = engine.TokenManager.GenerateToken(node);
-            GetPeersResponse response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, TransactionId, token);
+            var token = engine.TokenManager.GenerateToken(node);
+            var response = new GetPeersResponse(engine.RoutingTable.LocalNode.Id, TransactionId, token);
             if (engine.Torrents.ContainsKey(InfoHash))
             {
-                BEncodedList list = new BEncodedList();
-                foreach (Node n in engine.Torrents[InfoHash])
+                var list = new BEncodedList();
+                foreach (var n in engine.Torrents[InfoHash])
                     list.Add(n.CompactPort());
                 response.Values = list;
             }

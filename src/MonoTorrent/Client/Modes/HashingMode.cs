@@ -6,14 +6,14 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    class HashingMode : Mode
+    internal class HashingMode : Mode
     {
         internal ManualResetEvent hashingWaitHandle;
 
-        bool autostart;
-        bool filesExist;
-        int index = -1;
-        MainLoopResult pieceCompleteCallback;
+        private bool autostart;
+        private bool filesExist;
+        private int index = -1;
+        private MainLoopResult pieceCompleteCallback;
 
         public override TorrentState State
         {
@@ -24,10 +24,10 @@ namespace MonoTorrent.Client
             : base(manager)
         {
             CanAcceptConnections = false;
-            this.hashingWaitHandle = new ManualResetEvent(false);
+            hashingWaitHandle = new ManualResetEvent(false);
             this.autostart = autostart;
-            this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
-            this.pieceCompleteCallback = PieceComplete;
+            filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
+            pieceCompleteCallback = PieceComplete;
         }
 
         private void QueueNextHash()
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
             if (Manager.HasMetadata && !Manager.HashChecked)
             {
                 Manager.Bitfield.SetAll(false);
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                for (var i = 0; i < Manager.Torrent.Pieces.Count; i++)
                     Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
             }
 
@@ -82,7 +82,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+        public override void HandlePeerConnected(PeerId id, Direction direction)
         {
             id.CloseConnection();
         }
@@ -92,7 +92,7 @@ namespace MonoTorrent.Client
             if (!filesExist)
             {
                 Manager.Bitfield.SetAll(false);
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+                for (var i = 0; i < Manager.Torrent.Pieces.Count; i++)
                     Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
                 index = Manager.Torrent.Pieces.Count;
                 HashingComplete();

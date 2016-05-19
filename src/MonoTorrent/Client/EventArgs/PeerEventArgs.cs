@@ -33,9 +33,9 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class PeerEventArgs : TorrentEventArgs
+    internal class PeerEventArgs : TorrentEventArgs
     {
-        PeerId peer;
+        private PeerId peer;
 
         public PeerId Peer
         {

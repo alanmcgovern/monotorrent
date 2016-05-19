@@ -7,7 +7,7 @@ namespace MonoTorrent
 {
     public class RawTrackerTiers : IList<RawTrackerTier>
     {
-        BEncodedList Tiers { get; set; }
+        private BEncodedList Tiers { get; set; }
 
         public RawTrackerTiers()
             : this(new BEncodedList())
@@ -23,7 +23,7 @@ namespace MonoTorrent
         {
             if (item != null)
             {
-                for (int i = 0; i < Tiers.Count; i++)
+                for (var i = 0; i < Tiers.Count; i++)
                     if (item.Tier == Tiers[i])
                         return i;
             }
@@ -75,7 +75,7 @@ namespace MonoTorrent
 
         public bool Remove(RawTrackerTier item)
         {
-            int index = IndexOf(item);
+            var index = IndexOf(item);
             if (index != -1)
                 RemoveAt(index);
 

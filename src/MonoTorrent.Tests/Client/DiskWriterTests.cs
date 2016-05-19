@@ -84,11 +84,11 @@ namespace MonoTorrent.Client
 
     public class DiskWriterTests : IDisposable
     {
-        byte[] data = new byte[Piece.BlockSize];
-        DiskManager diskManager;
-        ManualResetEvent handle;
-        TestRig rig;
-        ExceptionWriter writer;
+        private byte[] data = new byte[Piece.BlockSize];
+        private DiskManager diskManager;
+        private ManualResetEvent handle;
+        private TestRig rig;
+        private ExceptionWriter writer;
 
         public DiskWriterTests()
         {
@@ -137,7 +137,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void ReadFail()
         {
-            bool called = false;
+            var called = false;
             writer.read = true;
             Hookup();
             diskManager.QueueRead(rig.Manager, 0, data, data.Length, delegate { called = true; });
@@ -148,7 +148,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void WriteFail()
         {
-            bool called = false;
+            var called = false;
             writer.write = true;
             Hookup();
             diskManager.QueueWrite(rig.Manager, 0, data, data.Length, delegate { called = true; });
@@ -156,7 +156,7 @@ namespace MonoTorrent.Client
             Assert.True(called, "#delegate called");
         }
 
-        void Hookup()
+        private void Hookup()
         {
             rig.Manager.TorrentStateChanged += delegate
             {
@@ -165,7 +165,7 @@ namespace MonoTorrent.Client
             };
         }
 
-        void CheckFail()
+        private void CheckFail()
         {
             Assert.True(handle.WaitOne(5000, true), "Failure was not handled");
         }

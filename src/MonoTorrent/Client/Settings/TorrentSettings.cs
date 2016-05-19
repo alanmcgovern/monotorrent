@@ -46,44 +46,44 @@ namespace MonoTorrent.Client
 
         public bool InitialSeedingEnabled
         {
-            get { return this.initialSeedingEnabled; }
-            set { this.initialSeedingEnabled = value; }
+            get { return initialSeedingEnabled; }
+            set { initialSeedingEnabled = value; }
         }
 
         private bool initialSeedingEnabled;
 
         public int MaxDownloadSpeed
         {
-            get { return this.maxDownloadSpeed; }
-            set { this.maxDownloadSpeed = value; }
+            get { return maxDownloadSpeed; }
+            set { maxDownloadSpeed = value; }
         }
 
         private int maxDownloadSpeed;
 
         public int MaxUploadSpeed
         {
-            get { return this.maxUploadSpeed; }
-            set { this.maxUploadSpeed = value; }
+            get { return maxUploadSpeed; }
+            set { maxUploadSpeed = value; }
         }
 
         private int maxUploadSpeed;
 
         public int MaxConnections
         {
-            get { return this.maxConnections; }
-            set { this.maxConnections = value; }
+            get { return maxConnections; }
+            set { maxConnections = value; }
         }
 
         private int maxConnections;
 
         public int UploadSlots
         {
-            get { return this.uploadSlots; }
+            get { return uploadSlots; }
             set
             {
                 if (value < 1)
                     throw new ArgumentOutOfRangeException("You must use at least 1 upload slot");
-                this.uploadSlots = value;
+                uploadSlots = value;
             }
         }
 
@@ -97,8 +97,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MinimumTimeBetweenReviews
         {
-            get { return this.minimumTimeBetweenReviews; }
-            set { this.minimumTimeBetweenReviews = value; }
+            get { return minimumTimeBetweenReviews; }
+            set { minimumTimeBetweenReviews = value; }
         }
 
         private int minimumTimeBetweenReviews = 30;
@@ -111,12 +111,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public int PercentOfMaxRateToSkipReview
         {
-            get { return this.percentOfMaxRateToSkipReview; }
+            get { return percentOfMaxRateToSkipReview; }
             set
             {
                 if (value < 0 || value > 100)
                     throw new ArgumentOutOfRangeException();
-                this.percentOfMaxRateToSkipReview = value;
+                percentOfMaxRateToSkipReview = value;
             }
         }
 
@@ -128,12 +128,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public TimeSpan TimeToWaitUntilIdle
         {
-            get { return this.timeToWaitUntilIdle; }
+            get { return timeToWaitUntilIdle; }
             set
             {
                 if (value.TotalSeconds < 0)
                     throw new ArgumentOutOfRangeException();
-                this.timeToWaitUntilIdle = value;
+                timeToWaitUntilIdle = value;
             }
         }
 
@@ -145,12 +145,12 @@ namespace MonoTorrent.Client
         /// </summary>
         public long ConnectionRetentionFactor
         {
-            get { return this.connectionRetentionFactor; }
+            get { return connectionRetentionFactor; }
             set
             {
                 if (value < 0)
                     throw new ArgumentOutOfRangeException();
-                this.connectionRetentionFactor = value;
+                connectionRetentionFactor = value;
             }
         }
 
@@ -225,28 +225,28 @@ namespace MonoTorrent.Client
 
         public TorrentSettings Clone()
         {
-            return (TorrentSettings) this.MemberwiseClone();
+            return (TorrentSettings) MemberwiseClone();
         }
 
         public override bool Equals(object obj)
         {
-            TorrentSettings settings = obj as TorrentSettings;
-            return (settings == null)
+            var settings = obj as TorrentSettings;
+            return settings == null
                 ? false
-                : this.initialSeedingEnabled == settings.initialSeedingEnabled &&
-                  this.maxConnections == settings.maxConnections &&
-                  this.maxDownloadSpeed == settings.maxDownloadSpeed &&
-                  this.maxUploadSpeed == settings.maxUploadSpeed &&
-                  this.uploadSlots == settings.uploadSlots;
+                : initialSeedingEnabled == settings.initialSeedingEnabled &&
+                  maxConnections == settings.maxConnections &&
+                  maxDownloadSpeed == settings.maxDownloadSpeed &&
+                  maxUploadSpeed == settings.maxUploadSpeed &&
+                  uploadSlots == settings.uploadSlots;
         }
 
         public override int GetHashCode()
         {
-            return this.initialSeedingEnabled.GetHashCode() ^
-                   this.maxConnections ^
-                   this.maxDownloadSpeed ^
-                   this.maxUploadSpeed ^
-                   this.uploadSlots;
+            return initialSeedingEnabled.GetHashCode() ^
+                   maxConnections ^
+                   maxDownloadSpeed ^
+                   maxUploadSpeed ^
+                   uploadSlots;
         }
 
         #endregion Methods

@@ -35,9 +35,9 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    class ConnectResponseMessage : UdpTrackerMessage
+    internal class ConnectResponseMessage : UdpTrackerMessage
     {
-        long connectionId;
+        private long connectionId;
 
         public long ConnectionId
         {
@@ -70,7 +70,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);

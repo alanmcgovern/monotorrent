@@ -5,11 +5,11 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
-    class AuthenticationMessage : Message
+    internal class AuthenticationMessage : Message
     {
-        byte usernameLength;
-        string username;
-        byte[] password;
+        private byte usernameLength;
+        private string username;
+        private byte[] password;
 
         public override int ByteLength
         {
@@ -28,8 +28,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = Write(buffer, offset, usernameLength);
-            byte[] name = Encoding.ASCII.GetBytes(username);
+            var written = Write(buffer, offset, usernameLength);
+            var name = Encoding.ASCII.GetBytes(username);
             written += Write(buffer, offset, name, 0, name.Length);
             written += Write(buffer, offset, password, 0, password.Length);
 

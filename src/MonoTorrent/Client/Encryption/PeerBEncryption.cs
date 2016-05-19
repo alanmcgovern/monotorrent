@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Class to handle message stream encryption for receiving connections
     /// </summary>
-    class PeerBEncryption : EncryptedSocket
+    internal class PeerBEncryption : EncryptedSocket
     {
         private InfoHash[] possibleSKEYs = null;
         private byte[] VerifyBytes;
@@ -62,7 +62,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 base.doneReceiveY(); // 1 A->B: Diffie Hellman Ya, PadA
 
-                byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+                var req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
                 Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
             }
             catch (Exception ex)
@@ -89,17 +89,17 @@ namespace MonoTorrent.Client.Encryption
             }
         }
 
-        byte[] b;
+        private byte[] b;
 
         private void gotVerification(IAsyncResult result)
         {
             try
             {
-                byte[] torrentHash = new byte[20];
+                var torrentHash = new byte[20];
 
-                byte[] myVC = new byte[8];
-                byte[] myCP = new byte[4];
-                byte[] lenPadC = new byte[2];
+                var myVC = new byte[8];
+                var myCP = new byte[4];
+                var lenPadC = new byte[2];
 
                 Array.Copy(VerifyBytes, 0, torrentHash, 0, torrentHash.Length);
                     // HASH('req2', SKEY) xor HASH('req3', S)
@@ -142,7 +142,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 DoDecrypt(PadC, 0, PadC.Length);
 
-                byte[] lenInitialPayload = new byte[2]; // ... len(IA))
+                var lenInitialPayload = new byte[2]; // ... len(IA))
                 Array.Copy(PadC, PadC.Length - 2, lenInitialPayload, 0, 2);
 
                 RemoteInitialPayload = new byte[DeLen(lenInitialPayload)]; // ... ENCRYPT(IA)
@@ -171,12 +171,12 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                byte[] padD = GeneratePad();
+                var padD = GeneratePad();
                 SelectCrypto(b, false);
                 // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
-                byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
+                var buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
 
-                int offset = 0;
+                var offset = 0;
                 offset += Message.Write(buffer, offset, VerificationConstant);
                 offset += Message.Write(buffer, offset, CryptoSelect);
                 offset += Message.Write(buffer, offset, Len(padD));
@@ -206,13 +206,13 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                for (int i = 0; i < possibleSKEYs.Length; i++)
+                for (var i = 0; i < possibleSKEYs.Length; i++)
                 {
-                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
-                    byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+                    var req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
+                    var req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
 
-                    bool match = true;
-                    for (int j = 0; j < req2.Length && match; j++)
+                    var match = true;
+                    for (var j = 0; j < req2.Length && match; j++)
                         match = torrentHash[j] == (req2[j] ^ req3[j]);
 
                     if (match)

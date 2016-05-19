@@ -43,7 +43,7 @@ namespace MonoTorrent.TorrentWatcher
         /// </summary>
         public string TorrentPath
         {
-            get { return this.torrentPath; }
+            get { return torrentPath; }
         }
 
         private string torrentPath;

@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.Tracker
 {
     public static class TrackerFactory
     {
-        static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
+        private static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
 
         static TrackerFactory()
         {

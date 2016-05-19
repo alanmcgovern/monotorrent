@@ -21,7 +21,7 @@ namespace MonoTorrent.Client
         //    t.LongRunningTask();
         //}
         private int count;
-        MainLoop loop;
+        private MainLoop loop;
 
         public MainLoopTests()
         {
@@ -39,7 +39,7 @@ namespace MonoTorrent.Client
         {
             Assert.Equal(5, loop.QueueWait((MainLoopJob) delegate { return 5; }));
 
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var handle = new ManualResetEvent(false);
             loop.QueueWait((MainLoopTask) delegate { handle.Set(); });
             Assert.True(handle.WaitOne(5000, true));
         }
@@ -48,10 +48,10 @@ namespace MonoTorrent.Client
         public void RepeatedTask()
         {
             //Console.WriteLine("Starting");
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var handle = new ManualResetEvent(false);
             loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate
             {
-                this.count++;
+                count++;
                 if (count == 3)
                 {
                     handle.Set();
@@ -67,10 +67,10 @@ namespace MonoTorrent.Client
         [Fact]
         public void LongRunningTask()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var handle = new ManualResetEvent(false);
             loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate
             {
-                System.Threading.Thread.Sleep(50);
+                Thread.Sleep(50);
                 if (++count == 3)
                 {
                     handle.Set();

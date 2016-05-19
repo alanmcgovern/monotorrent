@@ -34,15 +34,15 @@ namespace MonoTorrent.Client
 {
     public class TrackerPeersAdded : PeersAddedEventArgs
     {
-        MonoTorrent.Client.Tracker.Tracker tracker;
+        private Tracker.Tracker tracker;
 
-        public MonoTorrent.Client.Tracker.Tracker Tracker
+        public Tracker.Tracker Tracker
         {
             get { return tracker; }
         }
 
         public TrackerPeersAdded(TorrentManager manager, int peersAdded, int total,
-            MonoTorrent.Client.Tracker.Tracker tracker)
+            Tracker.Tracker tracker)
             : base(manager, peersAdded, total)
         {
             if (tracker == null)

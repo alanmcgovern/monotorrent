@@ -49,7 +49,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, messageLength);
             written += Write(buffer, written, MessageId);
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int ByteLength
         {
-            get { return (messageLength + 4); }
+            get { return messageLength + 4; }
         }
 
         #endregion
@@ -78,12 +78,12 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals(object obj)
         {
-            return (obj is UnchokeMessage);
+            return obj is UnchokeMessage;
         }
 
         public override int GetHashCode()
         {
-            return this.ToString().GetHashCode();
+            return ToString().GetHashCode();
         }
 
         #endregion

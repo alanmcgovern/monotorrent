@@ -36,7 +36,7 @@ using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class FindNode : QueryMessage
+    internal class FindNode : QueryMessage
     {
         private static BEncodedString TargetKey = "target";
         private static BEncodedString QueryName = "find_node";
@@ -64,9 +64,9 @@ namespace MonoTorrent.Dht.Messages
         {
             base.Handle(engine, node);
 
-            FindNodeResponse response = new FindNodeResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
+            var response = new FindNodeResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
 
-            Node targetNode = engine.RoutingTable.FindNode(Target);
+            var targetNode = engine.RoutingTable.FindNode(Target);
             if (targetNode != null)
                 response.Nodes = targetNode.CompactNode();
             else

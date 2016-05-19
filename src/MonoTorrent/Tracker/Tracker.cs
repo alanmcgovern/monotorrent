@@ -230,7 +230,7 @@ namespace MonoTorrent.Tracker
         {
             CheckDisposed();
             lock (torrents)
-                return new List<SimpleTorrentManager>(this.torrents.Values).GetEnumerator();
+                return new List<SimpleTorrentManager>(torrents.Values).GetEnumerator();
         }
 
         public bool IsRegistered(ListenerBase listener)
@@ -294,11 +294,11 @@ namespace MonoTorrent.Tracker
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact);
             }
 
-            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int) AnnounceInterval.TotalSeconds));
-            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int) MinAnnounceInterval.TotalSeconds));
-            e.Response.Add(Tracker.TrackerIdKey, trackerId); // FIXME: Is this right?
-            e.Response.Add(Tracker.CompleteKey, new BEncodedNumber(manager.Complete));
-            e.Response.Add(Tracker.Incomplete, new BEncodedNumber(manager.Incomplete));
+            e.Response.Add(IntervalKey, new BEncodedNumber((int) AnnounceInterval.TotalSeconds));
+            e.Response.Add(MinIntervalKey, new BEncodedNumber((int) MinAnnounceInterval.TotalSeconds));
+            e.Response.Add(TrackerIdKey, trackerId); // FIXME: Is this right?
+            e.Response.Add(CompleteKey, new BEncodedNumber(manager.Complete));
+            e.Response.Add(Incomplete, new BEncodedNumber(manager.Incomplete));
 
             //FIXME is this the right behaivour 
             //if (par.TrackerId == null)
@@ -326,9 +326,9 @@ namespace MonoTorrent.Tracker
                     (BEncodedString) "You must specify at least one infohash when scraping this tracker");
                 return;
             }
-            List<SimpleTorrentManager> managers = new List<SimpleTorrentManager>();
-            BEncodedDictionary files = new BEncodedDictionary();
-            for (int i = 0; i < e.InfoHashes.Count; i++)
+            var managers = new List<SimpleTorrentManager>();
+            var files = new BEncodedDictionary();
+            for (var i = 0; i < e.InfoHashes.Count; i++)
             {
                 SimpleTorrentManager manager;
                 if (!torrents.TryGetValue(e.InfoHashes[i], out manager))
@@ -336,7 +336,7 @@ namespace MonoTorrent.Tracker
 
                 managers.Add(manager);
 
-                BEncodedDictionary dict = new BEncodedDictionary();
+                var dict = new BEncodedDictionary();
                 dict.Add("complete", new BEncodedNumber(manager.Complete));
                 dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
                 dict.Add("incomplete", new BEncodedNumber(manager.Incomplete));
@@ -349,21 +349,21 @@ namespace MonoTorrent.Tracker
 
         internal void RaisePeerAnnounced(AnnounceEventArgs e)
         {
-            EventHandler<AnnounceEventArgs> h = PeerAnnounced;
+            var h = PeerAnnounced;
             if (h != null)
                 h(this, e);
         }
 
         internal void RaisePeerScraped(ScrapeEventArgs e)
         {
-            EventHandler<ScrapeEventArgs> h = PeerScraped;
+            var h = PeerScraped;
             if (h != null)
                 h(this, e);
         }
 
         internal void RaisePeerTimedOut(TimedOutEventArgs e)
         {
-            EventHandler<TimedOutEventArgs> h = PeerTimedOut;
+            var h = PeerTimedOut;
             if (h != null)
                 h(this, e);
         }

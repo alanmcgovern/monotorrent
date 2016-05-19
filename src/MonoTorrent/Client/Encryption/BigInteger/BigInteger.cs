@@ -47,12 +47,12 @@ namespace Mono.Math
         /// <summary>
         /// The Length of this BigInteger
         /// </summary>
-        uint length = 1;
+        private uint length = 1;
 
         /// <summary>
         /// The data for this BigInteger
         /// </summary>
-        uint[] data;
+        private uint[] data;
 
         #endregion
 
@@ -61,7 +61,7 @@ namespace Mono.Math
         /// <summary>
         /// Default length of a BigInteger in bytes
         /// </summary>
-        const uint DEFAULT_LEN = 20;
+        private const uint DEFAULT_LEN = 20;
 
 
         public enum Sign : int
@@ -73,7 +73,7 @@ namespace Mono.Math
 
         #region Exception Messages
 
-        const string WouldReturnNegVal = "Operation would return a negative value";
+        private const string WouldReturnNegVal = "Operation would return a negative value";
 
         #endregion
 
@@ -84,7 +84,7 @@ namespace Mono.Math
         public BigInteger()
         {
             data = new uint[DEFAULT_LEN];
-            this.length = DEFAULT_LEN;
+            length = DEFAULT_LEN;
         }
 
         public BigInteger(uint ui)
@@ -94,24 +94,24 @@ namespace Mono.Math
 
         public BigInteger(Sign sign, uint len)
         {
-            this.data = new uint[len];
-            this.length = len;
+            data = new uint[len];
+            length = len;
         }
 
         public BigInteger(BigInteger bi)
         {
-            this.data = (uint[]) bi.data.Clone();
-            this.length = bi.length;
+            data = (uint[]) bi.data.Clone();
+            length = bi.length;
         }
 
         public BigInteger(BigInteger bi, uint len)
         {
-            this.data = new uint[len];
+            data = new uint[len];
 
             for (uint i = 0; i < bi.length; i++)
-                this.data[i] = bi.data[i];
+                data[i] = bi.data[i];
 
-            this.length = bi.length;
+            length = bi.length;
         }
 
         #endregion
@@ -123,7 +123,7 @@ namespace Mono.Math
             if (inData.Length == 0)
                 inData = new byte[1];
             length = (uint) inData.Length >> 2;
-            int leftOver = inData.Length & 0x3;
+            var leftOver = inData.Length & 0x3;
 
             // length not multiples of 4
             if (leftOver != 0) length++;
@@ -136,7 +136,7 @@ namespace Mono.Math
                     (inData[i - 3] << (3*8)) |
                     (inData[i - 2] << (2*8)) |
                     (inData[i - 1] << (1*8)) |
-                    (inData[i])
+                    inData[i]
                     );
             }
 
@@ -153,13 +153,13 @@ namespace Mono.Math
                     break;
             }
 
-            this.Normalize();
+            Normalize();
         }
 
 
         public static implicit operator BigInteger(uint value)
         {
-            return (new BigInteger(value));
+            return new BigInteger(value);
         }
 
         #endregion
@@ -240,7 +240,7 @@ namespace Mono.Math
             if (bi1.data.Length < bi1.length) throw new IndexOutOfRangeException("bi1 out of range");
             if (bi2.data.Length < bi2.length) throw new IndexOutOfRangeException("bi2 out of range");
 
-            BigInteger ret = new BigInteger(Sign.Positive, bi1.length + bi2.length);
+            var ret = new BigInteger(Sign.Positive, bi1.length + bi2.length);
 
             Kernel.Multiply(bi1.data, 0, bi1.length, bi2.data, 0, bi2.length, ret.data, 0);
 
@@ -273,10 +273,10 @@ namespace Mono.Math
 
         public int BitCount()
         {
-            this.Normalize();
+            Normalize();
 
-            uint value = data[length - 1];
-            uint mask = 0x80000000;
+            var value = data[length - 1];
+            var mask = 0x80000000;
             uint bits = 32;
 
             while (bits > 0 && (value & mask) == 0)
@@ -284,7 +284,7 @@ namespace Mono.Math
                 bits--;
                 mask >>= 1;
             }
-            bits += ((length - 1) << 5);
+            bits += (length - 1) << 5;
 
             return (int) bits;
         }
@@ -294,24 +294,24 @@ namespace Mono.Math
         {
             if (bitNum < 0) throw new IndexOutOfRangeException("bitNum out of range");
 
-            uint bytePos = (uint) bitNum >> 5; // divide by 32
-            byte bitPos = (byte) (bitNum & 0x1F); // get the lowest 5 bits
+            var bytePos = (uint) bitNum >> 5; // divide by 32
+            var bitPos = (byte) (bitNum & 0x1F); // get the lowest 5 bits
 
-            uint mask = (uint) 1 << bitPos;
-            return ((this.data[bytePos] | mask) == this.data[bytePos]);
+            var mask = (uint) 1 << bitPos;
+            return (data[bytePos] | mask) == data[bytePos];
         }
 
         public void SetBit(uint bitNum, bool value)
         {
-            uint bytePos = bitNum >> 5; // divide by 32
+            var bytePos = bitNum >> 5; // divide by 32
 
-            if (bytePos < this.length)
+            if (bytePos < length)
             {
-                uint mask = (uint) 1 << (int) (bitNum & 0x1F);
+                var mask = (uint) 1 << (int) (bitNum & 0x1F);
                 if (value)
-                    this.data[bytePos] |= mask;
+                    data[bytePos] |= mask;
                 else
-                    this.data[bytePos] &= ~mask;
+                    data[bytePos] &= ~mask;
             }
         }
 
@@ -319,21 +319,21 @@ namespace Mono.Math
         {
             if (this == 0) return new byte[1];
 
-            int numBits = BitCount();
-            int numBytes = numBits >> 3;
+            var numBits = BitCount();
+            var numBytes = numBits >> 3;
             if ((numBits & 0x7) != 0)
                 numBytes++;
 
-            byte[] result = new byte[numBytes];
+            var result = new byte[numBytes];
 
-            int numBytesInWord = numBytes & 0x3;
+            var numBytesInWord = numBytes & 0x3;
             if (numBytesInWord == 0) numBytesInWord = 4;
 
-            int pos = 0;
-            for (int i = (int) length - 1; i >= 0; i--)
+            var pos = 0;
+            for (var i = (int) length - 1; i >= 0; i--)
             {
-                uint val = data[i];
-                for (int j = numBytesInWord - 1; j >= 0; j--)
+                var val = data[i];
+                for (var j = numBytesInWord - 1; j >= 0; j--)
                 {
                     result[pos + j] = (byte) (val & 0xFF);
                     val >>= 8;
@@ -363,7 +363,7 @@ namespace Mono.Math
         public static bool operator ==(BigInteger bi1, BigInteger bi2)
         {
             // we need to compare with null
-            if ((bi1 as object) == (bi2 as object))
+            if (bi1 as object == bi2 as object)
                 return true;
             if (null == bi1 || null == bi2)
                 return false;
@@ -373,7 +373,7 @@ namespace Mono.Math
         public static bool operator !=(BigInteger bi1, BigInteger bi2)
         {
             // we need to compare with null
-            if ((bi1 as object) == (bi2 as object))
+            if (bi1 as object == bi2 as object)
                 return false;
             if (null == bi1 || null == bi2)
                 return true;
@@ -424,13 +424,13 @@ namespace Mono.Math
             if (this == 0) return "0";
             if (this == 1) return "1";
 
-            string result = "";
+            var result = "";
 
-            BigInteger a = new BigInteger(this);
+            var a = new BigInteger(this);
 
             while (a != 0)
             {
-                uint rem = Kernel.SingleByteDivideInPlace(a, radix);
+                var rem = Kernel.SingleByteDivideInPlace(a, radix);
                 result = characterSet[(int) rem] + result;
             }
 
@@ -464,8 +464,8 @@ namespace Mono.Math
         {
             uint val = 0;
 
-            for (uint i = 0; i < this.length; i++)
-                val ^= this.data[i];
+            for (uint i = 0; i < length; i++)
+                val ^= data[i];
 
             return (int) val;
         }
@@ -489,7 +489,7 @@ namespace Mono.Math
 
         public BigInteger ModPow(BigInteger exp, BigInteger n)
         {
-            ModulusRing mr = new ModulusRing(n);
+            var mr = new ModulusRing(n);
             return mr.Pow(this, exp);
         }
 
@@ -497,14 +497,15 @@ namespace Mono.Math
 
         public sealed class ModulusRing
         {
-            BigInteger mod, constant;
+            private BigInteger mod;
+            private BigInteger constant;
 
             public ModulusRing(BigInteger modulus)
             {
-                this.mod = modulus;
+                mod = modulus;
 
                 // calculate constant = b^ (2k) / m
-                uint i = mod.length << 1;
+                var i = mod.length << 1;
 
                 constant = new BigInteger(Sign.Positive, i + 1);
                 constant.data[i] = 0x00000001;
@@ -514,7 +515,7 @@ namespace Mono.Math
 
             public void BarrettReduction(BigInteger x)
             {
-                BigInteger n = mod;
+                var n = mod;
                 uint k = n.length,
                     kPlusOne = k + 1,
                     kMinusOne = k - 1;
@@ -540,7 +541,7 @@ namespace Mono.Math
                 // r1 = x mod b^ (k+1)
                 // i.e. keep the lowest (k+1) words
 
-                uint lengthToCopy = (x.length > kPlusOne) ? kPlusOne : x.length;
+                var lengthToCopy = x.length > kPlusOne ? kPlusOne : x.length;
 
                 x.length = lengthToCopy;
                 x.Normalize();
@@ -548,7 +549,7 @@ namespace Mono.Math
                 // r2 = (q3 * n) mod b^ (k+1)
                 // partial multiplication of q3 and n
 
-                BigInteger r2 = new BigInteger(Sign.Positive, kPlusOne);
+                var r2 = new BigInteger(Sign.Positive, kPlusOne);
                 Kernel.MultiplyMod2p32pmod(q3.data, (int) kPlusOne, (int) q3.length - (int) kPlusOne, n.data, 0,
                     (int) n.length, r2.data, 0, (int) kPlusOne);
 
@@ -560,7 +561,7 @@ namespace Mono.Math
                 }
                 else
                 {
-                    BigInteger val = new BigInteger(Sign.Positive, kPlusOne + 1);
+                    var val = new BigInteger(Sign.Positive, kPlusOne + 1);
                     val.data[kPlusOne] = 0x00000001;
 
                     Kernel.MinusEq(val, r2);
@@ -581,7 +582,7 @@ namespace Mono.Math
                 if (b > mod)
                     b %= mod;
 
-                BigInteger ret = a*b;
+                var ret = a*b;
                 BarrettReduction(ret);
 
                 return ret;
@@ -589,7 +590,7 @@ namespace Mono.Math
 
             public BigInteger Difference(BigInteger a, BigInteger b)
             {
-                Sign cmp = Kernel.Compare(a, b);
+                var cmp = Kernel.Compare(a, b);
                 BigInteger diff;
 
                 switch (cmp)
@@ -620,16 +621,16 @@ namespace Mono.Math
 
             public BigInteger Pow(BigInteger a, BigInteger k)
             {
-                BigInteger b = new BigInteger(1);
+                var b = new BigInteger(1);
                 if (k == 0)
                     return b;
 
-                BigInteger A = a;
+                var A = a;
                 if (k.TestBit(0))
                     b = a;
 
-                int bitCount = k.BitCount();
-                for (int i = 1; i < bitCount; i++)
+                var bitCount = k.BitCount();
+                for (var i = 1; i < bitCount; i++)
                 {
                     A = Multiply(A, A);
                     if (k.TestBit(i))
@@ -676,29 +677,29 @@ namespace Mono.Math
                     yMax = bi2.length;
                 }
 
-                BigInteger result = new BigInteger(Sign.Positive, xMax + 1);
+                var result = new BigInteger(Sign.Positive, xMax + 1);
 
-                uint[] r = result.data;
+                var r = result.data;
 
                 ulong sum = 0;
 
                 // Add common parts of both numbers
                 do
                 {
-                    sum = ((ulong) x[i]) + ((ulong) y[i]) + sum;
+                    sum = (ulong) x[i] + (ulong) y[i] + sum;
                     r[i] = (uint) sum;
                     sum >>= 32;
                 } while (++i < yMax);
 
                 // Copy remainder of longer number while carry propagation is required
-                bool carry = (sum != 0);
+                var carry = sum != 0;
 
                 if (carry)
                 {
                     if (i < xMax)
                     {
                         do
-                            carry = ((r[i] = x[i] + 1) == 0); while (++i < xMax && carry);
+                            carry = (r[i] = x[i] + 1) == 0; while (++i < xMax && carry);
                     }
 
                     if (carry)
@@ -722,14 +723,14 @@ namespace Mono.Math
 
             public static BigInteger Subtract(BigInteger big, BigInteger small)
             {
-                BigInteger result = new BigInteger(Sign.Positive, big.length);
+                var result = new BigInteger(Sign.Positive, big.length);
 
                 uint[] r = result.data, b = big.data, s = small.data;
                 uint i = 0, c = 0;
 
                 do
                 {
-                    uint x = s[i];
+                    var x = s[i];
                     if (((x += c) < c) | ((r[i] = b[i] - x) > ~x))
                         c = 1;
                     else
@@ -762,7 +763,7 @@ namespace Mono.Math
 
                 do
                 {
-                    uint x = s[i];
+                    var x = s[i];
                     if (((x += c) < c) | ((b[i] -= x) > ~x))
                         c = 1;
                     else
@@ -791,7 +792,7 @@ namespace Mono.Math
             {
                 uint[] x, y;
                 uint yMax, xMax, i = 0;
-                bool flag = false;
+                var flag = false;
 
                 // x should be bigger
                 if (bi1.length < bi2.length)
@@ -810,27 +811,27 @@ namespace Mono.Math
                     yMax = bi2.length;
                 }
 
-                uint[] r = bi1.data;
+                var r = bi1.data;
 
                 ulong sum = 0;
 
                 // Add common parts of both numbers
                 do
                 {
-                    sum += ((ulong) x[i]) + ((ulong) y[i]);
+                    sum += (ulong) x[i] + (ulong) y[i];
                     r[i] = (uint) sum;
                     sum >>= 32;
                 } while (++i < yMax);
 
                 // Copy remainder of longer number while carry propagation is required
-                bool carry = (sum != 0);
+                var carry = sum != 0;
 
                 if (carry)
                 {
                     if (i < xMax)
                     {
                         do
-                            carry = ((r[i] = x[i] + 1) == 0); while (++i < xMax && carry);
+                            carry = (r[i] = x[i] + 1) == 0; while (++i < xMax && carry);
                     }
 
                     if (carry)
@@ -883,7 +884,7 @@ namespace Mono.Math
                 // Step 2. Compare the bits
                 //
 
-                uint pos = l1 - 1;
+                var pos = l1 - 1;
 
                 while (pos != 0 && bi1.data[pos] == bi2.data[pos]) pos--;
 
@@ -910,7 +911,7 @@ namespace Mono.Math
             public static uint SingleByteDivideInPlace(BigInteger n, uint d)
             {
                 ulong r = 0;
-                uint i = n.length;
+                var i = n.length;
 
                 while (i-- > 0)
                 {
@@ -927,7 +928,7 @@ namespace Mono.Math
             public static uint DwordMod(BigInteger n, uint d)
             {
                 ulong r = 0;
-                uint i = n.length;
+                var i = n.length;
 
                 while (i-- > 0)
                 {
@@ -941,10 +942,10 @@ namespace Mono.Math
 
             public static BigInteger DwordDiv(BigInteger n, uint d)
             {
-                BigInteger ret = new BigInteger(Sign.Positive, n.length);
+                var ret = new BigInteger(Sign.Positive, n.length);
 
                 ulong r = 0;
-                uint i = n.length;
+                var i = n.length;
 
                 while (i-- > 0)
                 {
@@ -960,10 +961,10 @@ namespace Mono.Math
 
             public static BigInteger[] DwordDivMod(BigInteger n, uint d)
             {
-                BigInteger ret = new BigInteger(Sign.Positive, n.length);
+                var ret = new BigInteger(Sign.Positive, n.length);
 
                 ulong r = 0;
-                uint i = n.length;
+                var i = n.length;
 
                 while (i-- > 0)
                 {
@@ -985,7 +986,7 @@ namespace Mono.Math
 
             public static BigInteger[] multiByteDivide(BigInteger bi1, BigInteger bi2)
             {
-                if (Kernel.Compare(bi1, bi2) == Sign.Negative)
+                if (Compare(bi1, bi2) == Sign.Negative)
                     return new BigInteger[2] {0, new BigInteger(bi1)};
 
                 bi1.Normalize();
@@ -994,13 +995,13 @@ namespace Mono.Math
                 if (bi2.length == 1)
                     return DwordDivMod(bi1, bi2.data[0]);
 
-                uint remainderLen = bi1.length + 1;
-                int divisorLen = (int) bi2.length + 1;
+                var remainderLen = bi1.length + 1;
+                var divisorLen = (int) bi2.length + 1;
 
-                uint mask = 0x80000000;
-                uint val = bi2.data[bi2.length - 1];
-                int shift = 0;
-                int resultPos = (int) bi1.length - (int) bi2.length;
+                var mask = 0x80000000;
+                var val = bi2.data[bi2.length - 1];
+                var shift = 0;
+                var resultPos = (int) bi1.length - (int) bi2.length;
 
                 while (mask != 0 && (val & mask) == 0)
                 {
@@ -1008,30 +1009,30 @@ namespace Mono.Math
                     mask >>= 1;
                 }
 
-                BigInteger quot = new BigInteger(Sign.Positive, bi1.length - bi2.length + 1);
-                BigInteger rem = (bi1 << shift);
+                var quot = new BigInteger(Sign.Positive, bi1.length - bi2.length + 1);
+                var rem = bi1 << shift;
 
-                uint[] remainder = rem.data;
+                var remainder = rem.data;
 
                 bi2 = bi2 << shift;
 
-                int j = (int) (remainderLen - bi2.length);
-                int pos = (int) remainderLen - 1;
+                var j = (int) (remainderLen - bi2.length);
+                var pos = (int) remainderLen - 1;
 
-                uint firstDivisorByte = bi2.data[bi2.length - 1];
+                var firstDivisorByte = bi2.data[bi2.length - 1];
                 ulong secondDivisorByte = bi2.data[bi2.length - 2];
 
                 while (j > 0)
                 {
-                    ulong dividend = ((ulong) remainder[pos] << 32) + (ulong) remainder[pos - 1];
+                    var dividend = ((ulong) remainder[pos] << 32) + (ulong) remainder[pos - 1];
 
-                    ulong q_hat = dividend/(ulong) firstDivisorByte;
-                    ulong r_hat = dividend%(ulong) firstDivisorByte;
+                    var q_hat = dividend/(ulong) firstDivisorByte;
+                    var r_hat = dividend%(ulong) firstDivisorByte;
 
                     do
                     {
                         if (q_hat == 0x100000000 ||
-                            (q_hat*secondDivisorByte) > ((r_hat << 32) + remainder[pos - 2]))
+                            q_hat*secondDivisorByte > (r_hat << 32) + remainder[pos - 2])
                         {
                             q_hat--;
                             r_hat += (ulong) firstDivisorByte;
@@ -1051,9 +1052,9 @@ namespace Mono.Math
 
                     uint t;
                     uint dPos = 0;
-                    int nPos = pos - divisorLen + 1;
+                    var nPos = pos - divisorLen + 1;
                     ulong mc = 0;
-                    uint uint_q_hat = (uint) q_hat;
+                    var uint_q_hat = (uint) q_hat;
                     do
                     {
                         mc += (ulong) bi2.data[dPos]*(ulong) uint_q_hat;
@@ -1076,7 +1077,7 @@ namespace Mono.Math
 
                         do
                         {
-                            sum = ((ulong) remainder[nPos]) + ((ulong) bi2.data[dPos]) + sum;
+                            sum = (ulong) remainder[nPos] + (ulong) bi2.data[dPos] + sum;
                             remainder[nPos] = (uint) sum;
                             sum >>= 32;
                             dPos++;
@@ -1092,7 +1093,7 @@ namespace Mono.Math
 
                 quot.Normalize();
                 rem.Normalize();
-                BigInteger[] ret = new BigInteger[2] {quot, rem};
+                var ret = new BigInteger[2] {quot, rem};
 
                 if (shift != 0)
                     ret[1] >>= shift;
@@ -1110,10 +1111,10 @@ namespace Mono.Math
             {
                 if (n == 0) return new BigInteger(bi, bi.length + 1);
 
-                int w = n >> 5;
-                n &= ((1 << 5) - 1);
+                var w = n >> 5;
+                n &= (1 << 5) - 1;
 
-                BigInteger ret = new BigInteger(Sign.Positive, bi.length + 1 + (uint) w);
+                var ret = new BigInteger(Sign.Positive, bi.length + 1 + (uint) w);
 
                 uint i = 0, l = bi.length;
                 if (n != 0)
@@ -1145,11 +1146,11 @@ namespace Mono.Math
             {
                 if (n == 0) return new BigInteger(bi);
 
-                int w = n >> 5;
-                int s = n & ((1 << 5) - 1);
+                var w = n >> 5;
+                var s = n & ((1 << 5) - 1);
 
-                BigInteger ret = new BigInteger(Sign.Positive, bi.length - (uint) w + 1);
-                uint l = (uint) ret.data.Length - 1;
+                var ret = new BigInteger(Sign.Positive, bi.length - (uint) w + 1);
+                var l = (uint) ret.data.Length - 1;
 
                 if (s != 0)
                 {
@@ -1177,7 +1178,7 @@ namespace Mono.Math
 
             public static BigInteger MultiplyByDword(BigInteger n, uint f)
             {
-                BigInteger ret = new BigInteger(Sign.Positive, n.length + 1);
+                var ret = new BigInteger(Sign.Positive, n.length + 1);
 
                 uint i = 0;
                 ulong c = 0;
@@ -1220,10 +1221,10 @@ namespace Mono.Math
 
                         ulong mcarry = 0;
 
-                        uint* dP = dB;
-                        for (uint* yP = yB; yP < yE; yP++, dP++)
+                        var dP = dB;
+                        for (var yP = yB; yP < yE; yP++, dP++)
                         {
-                            mcarry += ((ulong) *xP*(ulong) *yP) + (ulong) *dP;
+                            mcarry += (ulong) *xP*(ulong) *yP + (ulong) *dP;
 
                             *dP = (uint) mcarry;
                             mcarry >>= 32;
@@ -1262,10 +1263,10 @@ namespace Mono.Math
                         if (*xP == 0) continue;
 
                         ulong mcarry = 0;
-                        uint* dP = dB;
-                        for (uint* yP = yB; yP < yE && dP < dE; yP++, dP++)
+                        var dP = dB;
+                        for (var yP = yB; yP < yE && dP < dE; yP++, dP++)
                         {
-                            mcarry += ((ulong) *xP*(ulong) *yP) + (ulong) *dP;
+                            mcarry += (ulong) *xP*(ulong) *yP + (ulong) *dP;
 
                             *dP = (uint) mcarry;
                             mcarry >>= 32;
@@ -1283,10 +1284,10 @@ namespace Mono.Math
 
             public static BigInteger gcd(BigInteger a, BigInteger b)
             {
-                BigInteger x = a;
-                BigInteger y = b;
+                var x = a;
+                var y = b;
 
-                BigInteger g = y;
+                var g = y;
 
                 while (x.length > 1)
                 {
@@ -1303,10 +1304,10 @@ namespace Mono.Math
                 // as it should be faster.
                 //
 
-                uint yy = x.data[0];
-                uint xx = y%yy;
+                var yy = x.data[0];
+                var xx = y%yy;
 
-                int t = 0;
+                var t = 0;
 
                 while (((xx | yy) & 1) == 0)
                 {
@@ -1333,26 +1334,26 @@ namespace Mono.Math
                 if (modulus.length == 1) return modInverse(bi, modulus.data[0]);
 
                 BigInteger[] p = {0, 1};
-                BigInteger[] q = new BigInteger[2]; // quotients
+                var q = new BigInteger[2]; // quotients
                 BigInteger[] r = {0, 0}; // remainders
 
-                int step = 0;
+                var step = 0;
 
-                BigInteger a = modulus;
-                BigInteger b = bi;
+                var a = modulus;
+                var b = bi;
 
-                ModulusRing mr = new ModulusRing(modulus);
+                var mr = new ModulusRing(modulus);
 
                 while (b != 0)
                 {
                     if (step > 1)
                     {
-                        BigInteger pval = mr.Difference(p[0], p[1]*q[0]);
+                        var pval = mr.Difference(p[0], p[1]*q[0]);
                         p[0] = p[1];
                         p[1] = pval;
                     }
 
-                    BigInteger[] divret = multiByteDivide(a, b);
+                    var divret = multiByteDivide(a, b);
 
                     q[0] = q[1];
                     q[1] = divret[0];
@@ -1365,7 +1366,7 @@ namespace Mono.Math
                 }
 
                 if (r[0] != 1)
-                    throw (new ArithmeticException("No inverse!"));
+                    throw new ArithmeticException("No inverse!");
 
                 return mr.Difference(p[0], p[1]*q[0]);
             }

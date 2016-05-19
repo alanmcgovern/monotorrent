@@ -36,9 +36,9 @@ using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client
 {
-    class LoggingPicker : PiecePicker
+    internal class LoggingPicker : PiecePicker
     {
-        class Request : IComparable<Request>
+        private class Request : IComparable<Request>
         {
             public int PieceIndex;
             public int StartOffset;
@@ -57,7 +57,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        SortList<Request> requests = new SortList<Request>();
+        private SortList<Request> requests = new SortList<Request>();
 
         public LoggingPicker(PiecePicker picker)
             : base(picker)
@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
 
         public override RequestMessage ContinueExistingRequest(PeerId peer)
         {
-            RequestMessage m = base.ContinueExistingRequest(peer);
+            var m = base.ContinueExistingRequest(peer);
             if (m != null)
                 HandleRequest(peer, m);
             return m;
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
             int startIndex, int endIndex)
         {
-            MessageBundle bundle = base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
+            var bundle = base.PickPiece(id, peerBitfield, otherPeers, count, startIndex, endIndex);
             if (bundle != null)
             {
                 foreach (RequestMessage m in bundle.Messages)
@@ -89,15 +89,15 @@ namespace MonoTorrent.Client
 
         private void HandleRequest(PeerId id, RequestMessage m)
         {
-            Request r = new Request();
+            var r = new Request();
             r.PieceIndex = m.PieceIndex;
             r.RequestedOff = id;
             r.RequestLength = m.RequestLength;
             r.StartOffset = m.StartOffset;
-            List<Request> current = requests.FindAll(delegate(Request req) { return req.CompareTo(r) == 0; });
+            var current = requests.FindAll(delegate(Request req) { return req.CompareTo(r) == 0; });
             if (current.Count > 0)
             {
-                foreach (Request request in current)
+                foreach (var request in current)
                 {
                     if (request.Verified)
                     {
@@ -119,9 +119,9 @@ namespace MonoTorrent.Client
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)
         {
-            bool validatedOk = base.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
+            var validatedOk = base.ValidatePiece(peer, pieceIndex, startOffset, length, out piece);
 
-            List<Request> list = requests.FindAll(delegate(Request r)
+            var list = requests.FindAll(delegate(Request r)
             {
                 return r.PieceIndex == pieceIndex &&
                        r.RequestLength == length &&
@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
             }
             else
             {
-                List<Request> alreadyVerified = list.FindAll(delegate(Request r) { return r.Verified; });
+                var alreadyVerified = list.FindAll(delegate(Request r) { return r.Verified; });
                 if (alreadyVerified.Count > 0)
                 {
                     if (validatedOk)
@@ -153,7 +153,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            foreach (Request request in list)
+            foreach (var request in list)
             {
                 if (request.RequestedOff == peer)
                     if (!request.Verified)

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MonoTorrent.Dht
 {
-    interface ITask
+    internal interface ITask
     {
         event EventHandler<TaskCompleteEventArgs> Completed;
 

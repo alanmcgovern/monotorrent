@@ -45,7 +45,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public TorrentState OldState
         {
-            get { return this.oldState; }
+            get { return oldState; }
         }
 
         private TorrentState oldState;
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public TorrentState NewState
         {
-            get { return this.newState; }
+            get { return newState; }
         }
 
         private TorrentState newState;

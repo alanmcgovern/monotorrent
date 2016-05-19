@@ -33,7 +33,7 @@ using System.Text;
 
 namespace MonoTorrent.Common
 {
-    interface ICacheable
+    internal interface ICacheable
     {
         void Initialise();
     }

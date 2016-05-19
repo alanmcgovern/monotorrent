@@ -146,10 +146,10 @@ namespace MonoTorrent.Client
             }
         }
 
-        TimeoutDispatcher dispatcher = new TimeoutDispatcher();
-        AutoResetEvent handle = new AutoResetEvent(false);
-        ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
-        Queue<DelegateTask> tasks = new Queue<DelegateTask>();
+        private TimeoutDispatcher dispatcher = new TimeoutDispatcher();
+        private AutoResetEvent handle = new AutoResetEvent(false);
+        private ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
+        private Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
         public MainLoop(string name)
@@ -159,7 +159,7 @@ namespace MonoTorrent.Client
             thread.Start();
         }
 
-        void Loop()
+        private void Loop()
         {
             while (true)
             {
@@ -177,7 +177,7 @@ namespace MonoTorrent.Client
                 }
                 else
                 {
-                    bool reuse = !task.IsBlocking;
+                    var reuse = !task.IsBlocking;
                     task.Execute();
                     if (reuse)
                         cache.Enqueue(task);
@@ -201,14 +201,14 @@ namespace MonoTorrent.Client
 
         public void Queue(MainLoopTask task)
         {
-            DelegateTask dTask = cache.Dequeue();
+            var dTask = cache.Dequeue();
             dTask.Task = task;
             Queue(dTask);
         }
 
         public void QueueWait(MainLoopTask task)
         {
-            DelegateTask dTask = cache.Dequeue();
+            var dTask = cache.Dequeue();
             dTask.Task = task;
             try
             {
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client
 
         public object QueueWait(MainLoopJob task)
         {
-            DelegateTask dTask = cache.Dequeue();
+            var dTask = cache.Dequeue();
             dTask.Job = task;
 
             try
@@ -253,7 +253,7 @@ namespace MonoTorrent.Client
 
         public uint QueueTimeout(TimeSpan span, TimeoutTask task)
         {
-            DelegateTask dTask = cache.Dequeue();
+            var dTask = cache.Dequeue();
             dTask.Timeout = task;
 
             return dispatcher.Add(span, delegate

@@ -63,8 +63,8 @@ namespace MonoTorrent.Client
 
         internal int CleanedUpCount
         {
-            get { return this.cleanedUpCount; }
-            set { this.cleanedUpCount = value; }
+            get { return cleanedUpCount; }
+            set { cleanedUpCount = value; }
         }
 
         public EncryptionTypes Encryption
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
 
         internal int TotalHashFails
         {
-            get { return this.totalHashFails; }
+            get { return totalHashFails; }
         }
 
         internal string PeerId
@@ -86,14 +86,14 @@ namespace MonoTorrent.Client
 
         internal bool IsSeeder
         {
-            get { return this.isSeeder; }
-            set { this.isSeeder = value; }
+            get { return isSeeder; }
+            set { isSeeder = value; }
         }
 
         internal int FailedConnectionAttempts
         {
-            get { return this.failedConnectionAttempts; }
-            set { this.failedConnectionAttempts = value; }
+            get { return failedConnectionAttempts; }
+            set { failedConnectionAttempts = value; }
         }
 
         internal int LocalPort
@@ -104,13 +104,13 @@ namespace MonoTorrent.Client
 
         internal DateTime LastConnectionAttempt
         {
-            get { return this.lastConnectionAttempt; }
-            set { this.lastConnectionAttempt = value; }
+            get { return lastConnectionAttempt; }
+            set { lastConnectionAttempt = value; }
         }
 
         internal int RepeatedHashFails
         {
-            get { return this.repeatedHashFails; }
+            get { return repeatedHashFails; }
         }
 
         #endregion Properties
@@ -148,32 +148,32 @@ namespace MonoTorrent.Client
 
             // FIXME: Don't compare the port, just compare the IP
             if (string.IsNullOrEmpty(peerId) && string.IsNullOrEmpty(other.peerId))
-                return this.connectionUri.Host.Equals(other.connectionUri.Host);
+                return connectionUri.Host.Equals(other.connectionUri.Host);
 
             return peerId == other.peerId;
         }
 
         public override int GetHashCode()
         {
-            return this.connectionUri.Host.GetHashCode();
+            return connectionUri.Host.GetHashCode();
         }
 
         public override string ToString()
         {
-            return this.connectionUri.ToString();
+            return connectionUri.ToString();
         }
 
         internal byte[] CompactPeer()
         {
-            byte[] data = new byte[6];
+            var data = new byte[6];
             CompactPeer(data, 0);
             return data;
         }
 
         internal void CompactPeer(byte[] data, int offset)
         {
-            Buffer.BlockCopy(IPAddress.Parse(this.connectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(((short) this.connectionUri.Port))), 0,
+            Buffer.BlockCopy(IPAddress.Parse(connectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short) connectionUri.Port)), 0,
                 data, offset + 4, 2);
         }
 
@@ -191,15 +191,15 @@ namespace MonoTorrent.Client
 
         public static MonoTorrentCollection<Peer> Decode(BEncodedList peers)
         {
-            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>(peers.Count);
-            foreach (BEncodedValue value in peers)
+            var list = new MonoTorrentCollection<Peer>(peers.Count);
+            foreach (var value in peers)
             {
                 try
                 {
                     if (value is BEncodedDictionary)
                         list.Add(DecodeFromDict((BEncodedDictionary) value));
                     else if (value is BEncodedString)
-                        foreach (Peer p in Decode((BEncodedString) value))
+                        foreach (var p in Decode((BEncodedString) value))
                             list.Add(p);
                 }
                 catch
@@ -222,7 +222,7 @@ namespace MonoTorrent.Client
             else
                 peerId = string.Empty;
 
-            Uri connectionUri = new Uri("tcp://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
+            var connectionUri = new Uri("tcp://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
             return new Peer(peerId, connectionUri, EncryptionTypes.All);
         }
 
@@ -231,12 +231,12 @@ namespace MonoTorrent.Client
             // "Compact Response" peers are encoded in network byte order. 
             // IP's are the first four bytes
             // Ports are the following 2 bytes
-            byte[] byteOrderedData = peers.TextBytes;
-            int i = 0;
-            UInt16 port;
-            StringBuilder sb = new StringBuilder(27);
-            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length/6) + 1);
-            while ((i + 5) < byteOrderedData.Length)
+            var byteOrderedData = peers.TextBytes;
+            var i = 0;
+            ushort port;
+            var sb = new StringBuilder(27);
+            var list = new MonoTorrentCollection<Peer>(byteOrderedData.Length/6 + 1);
+            while (i + 5 < byteOrderedData.Length)
             {
                 sb.Remove(0, sb.Length);
 
@@ -249,12 +249,12 @@ namespace MonoTorrent.Client
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);
 
-                port = (UInt16) IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
+                port = (ushort) IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);
 
-                Uri uri = new Uri(sb.ToString());
+                var uri = new Uri(sb.ToString());
                 list.Add(new Peer("", uri, EncryptionTypes.All));
             }
 
@@ -263,8 +263,8 @@ namespace MonoTorrent.Client
 
         internal static BEncodedList Encode(IEnumerable<Peer> peers)
         {
-            BEncodedList list = new BEncodedList();
-            foreach (Peer p in peers)
+            var list = new BEncodedList();
+            foreach (var p in peers)
                 list.Add((BEncodedString) p.CompactPeer());
             return list;
         }

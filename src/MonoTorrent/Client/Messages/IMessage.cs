@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MonoTorrent.Client.Messages
 {
-    interface IMessage
+    internal interface IMessage
     {
         int ByteLength { get; }
 

@@ -57,7 +57,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         public byte[] TextBytes
         {
-            get { return this.textBytes; }
+            get { return textBytes; }
         }
 
         private byte[] textBytes;
@@ -79,7 +79,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="value"></param>
         public BEncodedString(char[] value)
-            : this(System.Text.Encoding.UTF8.GetBytes(value))
+            : this(Encoding.UTF8.GetBytes(value))
         {
         }
 
@@ -88,7 +88,7 @@ namespace MonoTorrent.BEncoding
         /// </summary>
         /// <param name="value">Initial value for the string</param>
         public BEncodedString(string value)
-            : this(System.Text.Encoding.UTF8.GetBytes(value))
+            : this(Encoding.UTF8.GetBytes(value))
         {
         }
 
@@ -99,7 +99,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="value"></param>
         public BEncodedString(byte[] value)
         {
-            this.textBytes = value;
+            textBytes = value;
         }
 
 
@@ -131,7 +131,7 @@ namespace MonoTorrent.BEncoding
         /// <returns>The number of bytes encoded</returns>
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
             written += Message.WriteAscii(buffer, written, textBytes.Length.ToString());
             written += Message.WriteAscii(buffer, written, ":");
             written += Message.Write(buffer, written, textBytes);
@@ -149,7 +149,7 @@ namespace MonoTorrent.BEncoding
                 throw new ArgumentNullException("reader");
 
             int letterCount;
-            string length = string.Empty;
+            var length = string.Empty;
 
             while ((reader.PeekByte() != -1) && (reader.PeekByte() != ':')) // read in how many characters
                 length += (char) reader.ReadByte(); // the string is
@@ -161,7 +161,7 @@ namespace MonoTorrent.BEncoding
                 throw new BEncodingException(
                     string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
 
-            this.textBytes = new byte[letterCount];
+            textBytes = new byte[letterCount];
             if (reader.Read(textBytes, 0, letterCount) != letterCount)
                 throw new BEncodingException("Couldn't decode string");
         }
@@ -178,10 +178,10 @@ namespace MonoTorrent.BEncoding
         public override int LengthInBytes()
         {
             // The length is equal to the length-prefix + ':' + length of data
-            int prefix = 1; // Account for ':'
+            var prefix = 1; // Account for ':'
 
             // Count the number of characters needed for the length prefix
-            for (int i = textBytes.Length; i != 0; i = i/10)
+            for (var i = textBytes.Length; i != 0; i = i/10)
                 prefix += 1;
 
             if (textBytes.Length == 0)
@@ -201,17 +201,17 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 return 1;
 
-            int difference = 0;
-            int length = this.textBytes.Length > other.textBytes.Length ? other.textBytes.Length : this.textBytes.Length;
+            var difference = 0;
+            var length = textBytes.Length > other.textBytes.Length ? other.textBytes.Length : textBytes.Length;
 
-            for (int i = 0; i < length; i++)
-                if ((difference = this.textBytes[i].CompareTo(other.textBytes[i])) != 0)
+            for (var i = 0; i < length; i++)
+                if ((difference = textBytes[i].CompareTo(other.textBytes[i])) != 0)
                     return difference;
 
-            if (this.textBytes.Length == other.textBytes.Length)
+            if (textBytes.Length == other.textBytes.Length)
                 return 0;
 
-            return this.textBytes.Length > other.textBytes.Length ? 1 : -1;
+            return textBytes.Length > other.textBytes.Length ? 1 : -1;
         }
 
         #endregion
@@ -231,14 +231,14 @@ namespace MonoTorrent.BEncoding
             else
                 return false;
 
-            return Toolbox.ByteMatch(this.textBytes, other.textBytes);
+            return Toolbox.ByteMatch(textBytes, other.textBytes);
         }
 
         public override int GetHashCode()
         {
-            int hash = 0;
-            for (int i = 0; i < this.textBytes.Length; i++)
-                hash += this.textBytes[i];
+            var hash = 0;
+            for (var i = 0; i < textBytes.Length; i++)
+                hash += textBytes[i];
 
             return hash;
         }

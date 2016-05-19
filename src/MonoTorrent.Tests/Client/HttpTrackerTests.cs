@@ -15,10 +15,10 @@ namespace MonoTorrent.Client
         //    t.FixtureSetup();
         //    t.KeyTest();
         //}
-        MonoTorrent.Tracker.Tracker server;
-        MonoTorrent.Tracker.Listeners.HttpListener listener;
-        string prefix = "http://localhost:47124/announce/";
-        List<string> keys;
+        private MonoTorrent.Tracker.Tracker server;
+        private MonoTorrent.Tracker.Listeners.HttpListener listener;
+        private string prefix = "http://localhost:47124/announce/";
+        private List<string> keys;
 
         public HttpTrackerTests()
         {
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void CanAnnouceOrScrapeTest()
         {
-            Tracker.Tracker t = TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
+            var t = TrackerFactory.Create(new Uri("http://mytracker.com/myurl"));
             Assert.False(t.CanScrape);
             Assert.True(t.CanAnnounce);
 
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             Assert.True(t.CanScrape);
             Assert.True(t.CanAnnounce);
 
-            HTTPTracker tracker =
+            var tracker =
                 (HTTPTracker) TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah/announce"));
             Assert.True(tracker.CanScrape);
             Assert.True(tracker.CanAnnounce);
@@ -66,8 +66,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void AnnounceTest()
         {
-            HTTPTracker t = (HTTPTracker) TrackerFactory.Create(new Uri(prefix));
-            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+            var t = (HTTPTracker) TrackerFactory.Create(new Uri(prefix));
+            var id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
             t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
                 p = e;
                 id.WaitHandle.Set();
             };
-            MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
+            var pars = new AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -89,12 +89,12 @@ namespace MonoTorrent.Client
         [Fact]
         public void KeyTest()
         {
-            MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
+            var pars = new AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
-            Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix + "?key=value"));
-            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+            var t = TrackerFactory.Create(new Uri(prefix + "?key=value"));
+            var id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
             t.AnnounceComplete += delegate { id.WaitHandle.Set(); };
             t.Announce(pars, id);
             Wait(id.WaitHandle);
@@ -104,9 +104,9 @@ namespace MonoTorrent.Client
         [Fact]
         public void ScrapeTest()
         {
-            Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length - 1)));
+            var t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length - 1)));
             Assert.True(t.CanScrape);
-            TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+            var id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
             t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
                 p = e;
                 id.WaitHandle.Set();
             };
-            MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
+            var pars = new AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -128,7 +128,7 @@ namespace MonoTorrent.Client
         }
 
 
-        void Wait(WaitHandle handle)
+        private void Wait(WaitHandle handle)
         {
             Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }

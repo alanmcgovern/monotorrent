@@ -46,7 +46,7 @@ namespace MonoTorrent.Client
 
         public bool Supports(string name)
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 if (this[i].Name == name)
                     return true;
             return false;
@@ -54,7 +54,7 @@ namespace MonoTorrent.Client
 
         internal byte MessageId(ExtensionSupport support)
         {
-            for (int i = 0; i < Count; i++)
+            for (var i = 0; i < Count; i++)
                 if (this[i].Name == support.Name)
                     return this[i].MessageId;
 

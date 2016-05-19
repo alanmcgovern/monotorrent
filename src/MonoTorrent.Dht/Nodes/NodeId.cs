@@ -38,9 +38,9 @@ namespace MonoTorrent.Dht
 {
     internal class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
-        static readonly Random random = new Random();
+        private static readonly Random random = new Random();
 
-        BigInteger value;
+        private BigInteger value;
         private byte[] bytes;
 
         internal byte[] Bytes
@@ -51,7 +51,7 @@ namespace MonoTorrent.Dht
         internal NodeId(byte[] value)
             : this(new BigInteger(value))
         {
-            this.bytes = value;
+            bytes = value;
         }
 
         internal NodeId(InfoHash infoHash)
@@ -67,7 +67,7 @@ namespace MonoTorrent.Dht
         internal NodeId(BEncodedString value)
             : this(new BigInteger(value.TextBytes))
         {
-            this.bytes = value.TextBytes;
+            bytes = value.TextBytes;
         }
 
         public override bool Equals(object obj)
@@ -103,7 +103,7 @@ namespace MonoTorrent.Dht
             if ((object) other == null)
                 return 1;
 
-            BigInteger.Sign s = value.Compare(other.value);
+            var s = value.Compare(other.value);
             if (s == BigInteger.Sign.Zero)
                 return 0;
             else if (s == BigInteger.Sign.Positive)
@@ -222,7 +222,7 @@ namespace MonoTorrent.Dht
 
         public static NodeId Create()
         {
-            byte[] b = new byte[20];
+            var b = new byte[20];
             lock (random)
                 random.NextBytes(b);
             return new NodeId(b);

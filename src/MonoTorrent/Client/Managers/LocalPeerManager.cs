@@ -38,7 +38,7 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent.Client
 {
-    class LocalPeerManager : IDisposable
+    internal class LocalPeerManager : IDisposable
     {
         private const int port = 6771;
 
@@ -56,11 +56,11 @@ namespace MonoTorrent.Client
             if (manager.HasMetadata && manager.Torrent.IsPrivate)
                 return;
 
-            string message =
-                String.Format(
+            var message =
+                string.Format(
                     "BT-SEARCH * HTTP/1.1\r\nHost: 239.192.152.143:6771\r\nPort: {0}\r\nInfohash: {1}\r\n\r\n\r\n",
                     manager.Engine.Settings.ListenPort, manager.InfoHash.ToHex());
-            byte[] data = Encoding.ASCII.GetBytes(message);
+            var data = Encoding.ASCII.GetBytes(message);
             try
             {
                 socket.Send(data, data.Length, ep);

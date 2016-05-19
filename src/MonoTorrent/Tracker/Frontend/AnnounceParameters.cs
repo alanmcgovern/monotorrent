@@ -48,7 +48,7 @@ namespace MonoTorrent.Tracker
         internal static readonly bool UseTrackerKey = false;
         private IPEndPoint clientAddress;
         private bool isValid;
-        InfoHash infoHash;
+        private InfoHash infoHash;
 
         public IPEndPoint ClientAddress
         {
@@ -64,7 +64,7 @@ namespace MonoTorrent.Tracker
         {
             get
             {
-                string e = Parameters["event"];
+                var e = Parameters["event"];
                 if (e != null)
                 {
                     if (e.Equals("started"))
@@ -108,7 +108,7 @@ namespace MonoTorrent.Tracker
         {
             get
             {
-                int val = ParseInt(Parameters["numwant"]);
+                var val = ParseInt(Parameters["numwant"]);
                 return val != 0 ? val : DefaultWanted;
             }
         }
@@ -155,8 +155,8 @@ namespace MonoTorrent.Tracker
         {
             isValid = false;
 
-            List<string> keys = new List<string>(Parameters.AllKeys);
-            foreach (string field in mandatoryFields)
+            var keys = new List<string>(Parameters.AllKeys);
+            foreach (var field in mandatoryFields)
             {
                 if (keys.Contains(field))
                     continue;
@@ -165,12 +165,12 @@ namespace MonoTorrent.Tracker
                     (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
                 return;
             }
-            byte[] hash = UriHelper.UrlDecode(Parameters["info_hash"]);
+            var hash = UriHelper.UrlDecode(Parameters["info_hash"]);
             if (hash.Length != 20)
             {
                 Response.Add(FailureKey,
                     (BEncodedString)
-                        (string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
+                        string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length));
                 return;
             }
             infoHash = new InfoHash(hash);
@@ -184,7 +184,7 @@ namespace MonoTorrent.Tracker
 
         public override bool Equals(object obj)
         {
-            AnnounceParameters other = obj as AnnounceParameters;
+            var other = obj as AnnounceParameters;
             return other == null
                 ? false
                 : other.clientAddress.Equals(clientAddress)

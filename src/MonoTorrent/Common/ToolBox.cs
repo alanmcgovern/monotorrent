@@ -44,9 +44,9 @@ namespace MonoTorrent.Common
 
         public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)
         {
-            int count = 0;
+            var count = 0;
 
-            foreach (T t in enumerable)
+            foreach (var t in enumerable)
                 if (predicate(t))
                     count++;
 
@@ -57,7 +57,7 @@ namespace MonoTorrent.Common
         {
             long count = 0;
 
-            foreach (T t in enumerable)
+            foreach (var t in enumerable)
                 count += action(t);
 
             return count;
@@ -83,12 +83,12 @@ namespace MonoTorrent.Common
         /// <param name="array"></param>
         public static void Randomize<T>(List<T> array)
         {
-            List<T> clone = new List<T>(array);
+            var clone = new List<T>(array);
             array.Clear();
 
             while (clone.Count > 0)
             {
-                int index = r.Next(0, clone.Count);
+                var index = r.Next(0, clone.Count);
                 array.Add(clone[index]);
                 clone.RemoveAt(index);
             }
@@ -103,7 +103,7 @@ namespace MonoTorrent.Common
         /// <param name="second"></param>
         public static void Switch<T>(IList<T> array, int first, int second)
         {
-            T obj = array[first];
+            var obj = array[first];
             array[first] = array[second];
             array[second] = obj;
         }
@@ -144,11 +144,11 @@ namespace MonoTorrent.Common
                 throw new ArgumentNullException("array2");
 
             // If either of the arrays is too small, they're not equal
-            if ((array1.Length - offset1) < count || (array2.Length - offset2) < count)
+            if (array1.Length - offset1 < count || array2.Length - offset2 < count)
                 return false;
 
             // Check if any elements are unequal
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
                 if (array1[offset1 + i] != array2[offset2 + i])
                     return false;
 

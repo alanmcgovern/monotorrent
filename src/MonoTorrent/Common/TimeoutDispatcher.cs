@@ -53,7 +53,7 @@ namespace Mono.Ssdp.Internal
 
             public override string ToString()
             {
-                return String.Format("{0} ({1})", Id, Trigger);
+                return string.Format("{0} ({1})", Id, Trigger);
             }
         }
 
@@ -64,7 +64,7 @@ namespace Mono.Ssdp.Internal
 
         public TimeoutDispatcher()
         {
-            Thread t = new Thread(TimerThread);
+            var t = new Thread(TimerThread);
             t.IsBackground = true;
             t.Start();
         }
@@ -87,7 +87,7 @@ namespace Mono.Ssdp.Internal
         public uint Add(TimeSpan timeout, TimeoutHandler handler, object state)
         {
             CheckDisposed();
-            TimeoutItem item = new TimeoutItem();
+            var item = new TimeoutItem();
             item.Id = timeout_ids++;
             item.Timeout = timeout;
             item.Trigger = DateTime.UtcNow + timeout;
@@ -103,7 +103,7 @@ namespace Mono.Ssdp.Internal
         {
             lock (timeouts)
             {
-                int index = timeouts.BinarySearch(item);
+                var index = timeouts.BinarySearch(item);
                 index = index >= 0 ? index : ~index;
                 timeouts.Insert(index, item);
 
@@ -120,7 +120,7 @@ namespace Mono.Ssdp.Internal
             {
                 CheckDisposed();
                 // FIXME: Comparer for BinarySearch
-                for (int i = 0; i < timeouts.Count; i++)
+                for (var i = 0; i < timeouts.Count; i++)
                 {
                     if (timeouts[i].Id == id)
                     {
@@ -143,7 +143,7 @@ namespace Mono.Ssdp.Internal
         private void TimerThread(object state)
         {
             bool hasItem;
-            TimeoutItem item = default(TimeoutItem);
+            var item = default(TimeoutItem);
 
             while (true)
             {
@@ -160,7 +160,7 @@ namespace Mono.Ssdp.Internal
                         item = timeouts[0];
                 }
 
-                TimeSpan interval = hasItem ? item.Trigger - DateTime.UtcNow : TimeSpan.FromMilliseconds(-1);
+                var interval = hasItem ? item.Trigger - DateTime.UtcNow : TimeSpan.FromMilliseconds(-1);
                 if (hasItem && interval < TimeSpan.Zero)
                 {
                     interval = TimeSpan.Zero;
@@ -168,7 +168,7 @@ namespace Mono.Ssdp.Internal
 
                 if (!wait.WaitOne(interval, false) && hasItem)
                 {
-                    bool requeue = item.Handler(item.State, ref item.Timeout);
+                    var requeue = item.Handler(item.State, ref item.Timeout);
                     lock (timeouts)
                     {
                         Remove(item.Id);

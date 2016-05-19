@@ -20,19 +20,19 @@ namespace MonoTorrent.Client.Tracker
 
         internal bool SendingStartedEvent
         {
-            get { return this.sendingStartedEvent; }
-            set { this.sendingStartedEvent = value; }
+            get { return sendingStartedEvent; }
+            set { sendingStartedEvent = value; }
         }
 
         internal bool SentStartedEvent
         {
-            get { return this.sentStartedEvent; }
-            set { this.sentStartedEvent = value; }
+            get { return sentStartedEvent; }
+            set { sentStartedEvent = value; }
         }
 
         internal List<Tracker> Trackers
         {
-            get { return this.trackers; }
+            get { return trackers; }
         }
 
         #endregion Properties
@@ -42,9 +42,9 @@ namespace MonoTorrent.Client.Tracker
         internal TrackerTier(IEnumerable<string> trackerUrls)
         {
             Uri result;
-            List<Tracker> trackerList = new List<Tracker>();
+            var trackerList = new List<Tracker>();
 
-            foreach (string trackerUrl in trackerUrls)
+            foreach (var trackerUrl in trackerUrls)
             {
                 // FIXME: Debug spew?
                 if (!Uri.TryCreate(trackerUrl, UriKind.Absolute, out result))
@@ -53,7 +53,7 @@ namespace MonoTorrent.Client.Tracker
                     continue;
                 }
 
-                Tracker tracker = TrackerFactory.Create(result);
+                var tracker = TrackerFactory.Create(result);
                 if (tracker != null)
                 {
                     trackerList.Add(tracker);
@@ -64,7 +64,7 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            this.trackers = trackerList;
+            trackers = trackerList;
         }
 
         #endregion Constructors

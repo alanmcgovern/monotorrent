@@ -41,14 +41,14 @@ namespace MonoTorrent.Client
     {
         protected static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(45);
 
-        PiecePicker picker;
+        private PiecePicker picker;
 
         protected PiecePicker(PiecePicker picker)
         {
             this.picker = picker;
         }
 
-        void CheckOverriden()
+        private void CheckOverriden()
         {
             if (picker == null)
                 throw new InvalidOperationException("This method must be overridden");
@@ -104,7 +104,7 @@ namespace MonoTorrent.Client
 
         public RequestMessage PickPiece(PeerId peer, List<PeerId> otherPeers)
         {
-            MessageBundle bundle = PickPiece(peer, otherPeers, 1);
+            var bundle = PickPiece(peer, otherPeers, 1);
             return bundle == null ? null : (RequestMessage) bundle.Messages[0];
         }
 

@@ -46,7 +46,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void UTF8Test()
         {
-            string s = "ã";
+            var s = "ã";
             BEncodedString str = s;
             Assert.Equal(s, str.Text);
         }
@@ -76,10 +76,10 @@ namespace MonoTorrent.Common
         [Fact]
         public void benStringDecoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("21:this is a test string");
-            using (MemoryStream stream = new MemoryStream(data))
+            var data = Encoding.UTF8.GetBytes("21:this is a test string");
+            using (var stream = new MemoryStream(data))
             {
-                BEncodedValue result = BEncodedValue.Decode(stream);
+                var result = BEncodedValue.Decode(stream);
                 Assert.Equal("this is a test string", result.ToString());
                 Assert.Equal(result is BEncodedString, true);
                 Assert.Equal(((BEncodedString) result).Text, "this is a test string");
@@ -89,28 +89,28 @@ namespace MonoTorrent.Common
         [Fact]
         public void benStringEncoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("22:this is my test string");
+            var data = Encoding.UTF8.GetBytes("22:this is my test string");
 
-            BEncodedString benString = new BEncodedString("this is my test string");
+            var benString = new BEncodedString("this is my test string");
             Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
         }
 
         [Fact]
         public void benStringEncoding2()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("0:");
+            var data = Encoding.UTF8.GetBytes("0:");
 
-            BEncodedString benString = new BEncodedString("");
+            var benString = new BEncodedString("");
             Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
         }
 
         [Fact]
         public void benStringEncodingBuffered()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("22:this is my test string");
+            var data = Encoding.UTF8.GetBytes("22:this is my test string");
 
-            BEncodedString benString = new BEncodedString("this is my test string");
-            byte[] result = new byte[benString.LengthInBytes()];
+            var benString = new BEncodedString("this is my test string");
+            var result = new byte[benString.LengthInBytes()];
             benString.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
@@ -118,10 +118,10 @@ namespace MonoTorrent.Common
         [Fact]
         public void benStringLengthInBytes()
         {
-            string text = "thisisateststring";
+            var text = "thisisateststring";
 
             BEncodedString str = text;
-            int length = text.Length;
+            var length = text.Length;
             length += text.Length.ToString().Length;
             length++;
 
@@ -131,14 +131,14 @@ namespace MonoTorrent.Common
         [Fact]
         public void corruptBenStringDecode()
         {
-            string testString = "50:i'm too short";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString)));
+            var testString = "50:i'm too short";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
         [Fact]
         public void corruptBenStringDecode2()
         {
-            string s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
+            var s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
             Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.ASCII.GetBytes(s)));
         }
 
@@ -149,10 +149,10 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberDecoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i12412e");
+            var data = Encoding.UTF8.GetBytes("i12412e");
             using (Stream stream = new MemoryStream(data))
             {
-                BEncodedValue result = BEncodedValue.Decode(stream);
+                var result = BEncodedValue.Decode(stream);
                 Assert.Equal(result is BEncodedNumber, true);
                 Assert.Equal(result.ToString(), "12412");
                 Assert.Equal(((BEncodedNumber) result).Number, 12412);
@@ -162,7 +162,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberEncoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i12345e");
+            var data = Encoding.UTF8.GetBytes("i12345e");
             BEncodedNumber number = 12345;
             Assert.True(Toolbox.ByteMatch(data, number.Encode()));
         }
@@ -170,7 +170,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberEncoding2()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i0e");
+            var data = Encoding.UTF8.GetBytes("i0e");
             BEncodedNumber number = 0;
             Assert.Equal(3, number.LengthInBytes());
             Assert.True(Toolbox.ByteMatch(data, number.Encode()));
@@ -179,7 +179,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberEncoding3()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i1230e");
+            var data = Encoding.UTF8.GetBytes("i1230e");
             BEncodedNumber number = 1230;
             Assert.Equal(6, number.LengthInBytes());
             Assert.True(Toolbox.ByteMatch(data, number.Encode()));
@@ -188,7 +188,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberEncoding4()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i-1230e");
+            var data = Encoding.UTF8.GetBytes("i-1230e");
             BEncodedNumber number = -1230;
             Assert.Equal(7, number.LengthInBytes());
             Assert.True(Toolbox.ByteMatch(data, number.Encode()));
@@ -197,7 +197,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberEncoding5()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i-123e");
+            var data = Encoding.UTF8.GetBytes("i-123e");
             BEncodedNumber number = -123;
             Assert.Equal(6, number.LengthInBytes());
             Assert.True(Toolbox.ByteMatch(data, number.Encode()));
@@ -207,16 +207,16 @@ namespace MonoTorrent.Common
         public void benNumberEncoding6()
         {
             BEncodedNumber a = -123;
-            BEncodedNumber b = BEncodedNumber.Decode<BEncodedNumber>(a.Encode());
+            var b = BEncodedValue.Decode<BEncodedNumber>(a.Encode());
             Assert.Equal(a.Number, b.Number);
         }
 
         [Fact]
         public void benNumberEncodingBuffered()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("i12345e");
+            var data = Encoding.UTF8.GetBytes("i12345e");
             BEncodedNumber number = 12345;
-            byte[] result = new byte[number.LengthInBytes()];
+            var result = new byte[number.LengthInBytes()];
             number.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
@@ -224,7 +224,7 @@ namespace MonoTorrent.Common
         [Fact]
         public void benNumberLengthInBytes()
         {
-            int number = 1635;
+            var number = 1635;
             BEncodedNumber num = number;
             Assert.Equal(number.ToString().Length + 2, num.LengthInBytes());
         }
@@ -232,8 +232,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void corruptBenNumberDecode()
         {
-            string testString = "i35212";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString)));
+            var testString = "i35212";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
         #endregion
@@ -243,13 +243,13 @@ namespace MonoTorrent.Common
         [Fact]
         public void benListDecoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
             using (Stream stream = new MemoryStream(data))
             {
-                BEncodedValue result = BEncodedValue.Decode(stream);
+                var result = BEncodedValue.Decode(stream);
                 Assert.Equal(result.ToString(), "l4:test5:tests6:testede");
                 Assert.Equal(result is BEncodedList, true);
-                BEncodedList list = (BEncodedList) result;
+                var list = (BEncodedList) result;
 
                 Assert.Equal(list.Count, 3);
                 Assert.Equal(list[0] is BEncodedString, true);
@@ -262,8 +262,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void benListEncoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            BEncodedList list = new BEncodedList();
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = new BEncodedList();
             list.Add(new BEncodedString("test"));
             list.Add(new BEncodedString("tests"));
             list.Add(new BEncodedString("tested"));
@@ -274,12 +274,12 @@ namespace MonoTorrent.Common
         [Fact]
         public void benListEncodingBuffered()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            BEncodedList list = new BEncodedList();
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = new BEncodedList();
             list.Add(new BEncodedString("test"));
             list.Add(new BEncodedString("tests"));
             list.Add(new BEncodedString("tested"));
-            byte[] result = new byte[list.LengthInBytes()];
+            var result = new byte[list.LengthInBytes()];
             list.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
@@ -287,18 +287,18 @@ namespace MonoTorrent.Common
         [Fact]
         public void benListStackedTest()
         {
-            string benString = "l6:stringl7:stringsl8:stringedei23456eei12345ee";
-            byte[] data = System.Text.Encoding.UTF8.GetBytes(benString);
-            BEncodedList list = (BEncodedList) BEncodedValue.Decode(data);
-            string decoded = System.Text.Encoding.UTF8.GetString(list.Encode());
+            var benString = "l6:stringl7:stringsl8:stringedei23456eei12345ee";
+            var data = Encoding.UTF8.GetBytes(benString);
+            var list = (BEncodedList) BEncodedValue.Decode(data);
+            var decoded = Encoding.UTF8.GetString(list.Encode());
             Assert.Equal(benString, decoded);
         }
 
         [Fact]
         public void benListLengthInBytes()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            BEncodedList list = (BEncodedList) BEncodedValue.Decode(data);
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = (BEncodedList) BEncodedValue.Decode(data);
 
             Assert.Equal(data.Length, list.LengthInBytes());
         }
@@ -306,8 +306,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void corruptBenListDecode()
         {
-            string testString = "l3:3521:a3:ae";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString)));
+            var testString = "l3:3521:a3:ae";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
         #endregion
@@ -317,18 +317,18 @@ namespace MonoTorrent.Common
         [Fact]
         public void benDictionaryDecoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
             using (Stream stream = new MemoryStream(data))
             {
-                BEncodedValue result = BEncodedValue.Decode(stream);
+                var result = BEncodedValue.Decode(stream);
                 Assert.Equal(result.ToString(), "d4:spaml1:a1:bee");
                 Assert.Equal(result is BEncodedDictionary, true);
 
-                BEncodedDictionary dict = (BEncodedDictionary) result;
+                var dict = (BEncodedDictionary) result;
                 Assert.Equal(dict.Count, 1);
                 Assert.True(dict["spam"] is BEncodedList);
 
-                BEncodedList list = (BEncodedList) dict["spam"];
+                var list = (BEncodedList) dict["spam"];
                 Assert.Equal(((BEncodedString) list[0]).Text, "a");
                 Assert.Equal(((BEncodedString) list[1]).Text, "b");
             }
@@ -337,27 +337,27 @@ namespace MonoTorrent.Common
         [Fact]
         public void benDictionaryEncoding()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
 
-            BEncodedDictionary dict = new BEncodedDictionary();
-            BEncodedList list = new BEncodedList();
+            var dict = new BEncodedDictionary();
+            var list = new BEncodedList();
             list.Add(new BEncodedString("a"));
             list.Add(new BEncodedString("b"));
             dict.Add("spam", list);
-            Assert.Equal(System.Text.Encoding.UTF8.GetString(data), System.Text.Encoding.UTF8.GetString(dict.Encode()));
+            Assert.Equal(Encoding.UTF8.GetString(data), Encoding.UTF8.GetString(dict.Encode()));
             Assert.True(Toolbox.ByteMatch(data, dict.Encode()));
         }
 
         [Fact]
         public void benDictionaryEncodingBuffered()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-            BEncodedDictionary dict = new BEncodedDictionary();
-            BEncodedList list = new BEncodedList();
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var dict = new BEncodedDictionary();
+            var list = new BEncodedList();
             list.Add(new BEncodedString("a"));
             list.Add(new BEncodedString("b"));
             dict.Add("spam", list);
-            byte[] result = new byte[dict.LengthInBytes()];
+            var result = new byte[dict.LengthInBytes()];
             dict.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
@@ -365,18 +365,18 @@ namespace MonoTorrent.Common
         [Fact]
         public void benDictionaryStackedTest()
         {
-            string benString = "d4:testd5:testsli12345ei12345ee2:tod3:tomi12345eeee";
-            byte[] data = System.Text.Encoding.UTF8.GetBytes(benString);
-            BEncodedDictionary dict = (BEncodedDictionary) BEncodedValue.Decode(data);
-            string decoded = System.Text.Encoding.UTF8.GetString(dict.Encode());
+            var benString = "d4:testd5:testsli12345ei12345ee2:tod3:tomi12345eeee";
+            var data = Encoding.UTF8.GetBytes(benString);
+            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
+            var decoded = Encoding.UTF8.GetString(dict.Encode());
             Assert.Equal(benString, decoded);
         }
 
         [Fact]
         public void benDictionaryLengthInBytes()
         {
-            byte[] data = System.Text.Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-            BEncodedDictionary dict = (BEncodedDictionary) BEncodedValue.Decode(data);
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
 
             Assert.Equal(data.Length, dict.LengthInBytes());
         }
@@ -385,8 +385,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void corruptBenDictionaryDecode()
         {
-            string testString = "d3:3521:a3:aedddd";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString)));
+            var testString = "d3:3521:a3:aedddd";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
         #endregion
@@ -396,8 +396,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void corruptBenDataDecode()
         {
-            string testString = "corruption!";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString)));
+            var testString = "corruption!";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
         #endregion

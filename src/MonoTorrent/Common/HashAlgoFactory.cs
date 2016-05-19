@@ -36,7 +36,7 @@ namespace MonoTorrent.Common
 {
     public static class HashAlgoFactory
     {
-        static Dictionary<Type, Type> algos = new Dictionary<Type, Type>();
+        private static Dictionary<Type, Type> algos = new Dictionary<Type, Type>();
 
         static HashAlgoFactory()
         {

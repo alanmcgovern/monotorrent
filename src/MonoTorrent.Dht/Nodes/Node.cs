@@ -37,6 +37,7 @@ using MonoTorrent.BEncoding;
 using System.Net;
 using MonoTorrent.Dht.Messages;
 using System.Text;
+using Message = MonoTorrent.Client.Messages.Message;
 
 namespace MonoTorrent.Dht
 {
@@ -44,11 +45,11 @@ namespace MonoTorrent.Dht
     {
         public static readonly int MaxFailures = 4;
 
-        IPEndPoint endpoint;
-        NodeId id;
-        int failedCount;
-        DateTime lastSeen;
-        BEncodedString token;
+        private IPEndPoint endpoint;
+        private NodeId id;
+        private int failedCount;
+        private DateTime lastSeen;
+        private BEncodedString token;
 
         public IPEndPoint EndPoint
         {
@@ -109,7 +110,7 @@ namespace MonoTorrent.Dht
 
         internal BEncodedString CompactPort()
         {
-            byte[] buffer = new byte[6];
+            var buffer = new byte[6];
             CompactPort(buffer, 0);
             return buffer;
         }
@@ -122,8 +123,8 @@ namespace MonoTorrent.Dht
 
         internal static BEncodedString CompactPort(IList<Node> peers)
         {
-            byte[] buffer = new byte[peers.Count*6];
-            for (int i = 0; i < peers.Count; i++)
+            var buffer = new byte[peers.Count*6];
+            for (var i = 0; i < peers.Count; i++)
                 peers[i].CompactPort(buffer, i*6);
 
             return new BEncodedString(buffer);
@@ -131,7 +132,7 @@ namespace MonoTorrent.Dht
 
         internal BEncodedString CompactNode()
         {
-            byte[] buffer = new byte[26];
+            var buffer = new byte[26];
             CompactNode(buffer, 0);
             return buffer;
         }
@@ -144,8 +145,8 @@ namespace MonoTorrent.Dht
 
         internal static BEncodedString CompactNode(IList<Node> nodes)
         {
-            byte[] buffer = new byte[nodes.Count*26];
-            for (int i = 0; i < nodes.Count; i++)
+            var buffer = new byte[nodes.Count*26];
+            for (var i = 0; i < nodes.Count; i++)
                 nodes[i].CompactNode(buffer, i*26);
 
             return new BEncodedString(buffer);
@@ -153,16 +154,16 @@ namespace MonoTorrent.Dht
 
         internal static Node FromCompactNode(byte[] buffer, int offset)
         {
-            byte[] id = new byte[20];
+            var id = new byte[20];
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress((uint) BitConverter.ToInt32(buffer, offset + 20));
-            int port = (int) (ushort) IPAddress.NetworkToHostOrder((short) BitConverter.ToUInt16(buffer, offset + 24));
+            var address = new IPAddress((uint) BitConverter.ToInt32(buffer, offset + 20));
+            var port = (int) (ushort) IPAddress.NetworkToHostOrder((short) BitConverter.ToUInt16(buffer, offset + 24));
             return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
 
         internal static IEnumerable<Node> FromCompactNode(byte[] buffer)
         {
-            for (int i = 0; (i + 26) <= buffer.Length; i += 26)
+            for (var i = 0; i + 26 <= buffer.Length; i += 26)
                 yield return FromCompactNode(buffer, i);
         }
 
@@ -173,15 +174,15 @@ namespace MonoTorrent.Dht
 
         internal static IEnumerable<Node> FromCompactNode(BEncodedList nodes)
         {
-            foreach (BEncodedValue node in nodes)
+            foreach (var node in nodes)
             {
                 //bad format!
                 if (!(node is BEncodedList))
                     continue;
 
-                string host = string.Empty;
+                var host = string.Empty;
                 long port = 0;
-                foreach (BEncodedValue val in (BEncodedList) node)
+                foreach (var val in (BEncodedList) node)
                 {
                     if (val is BEncodedString)
                         host = ((BEncodedString) val).Text;
@@ -228,8 +229,8 @@ namespace MonoTorrent.Dht
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(48);
-            for (int i = 0; i < id.Bytes.Length; i++)
+            var sb = new StringBuilder(48);
+            for (var i = 0; i < id.Bytes.Length; i++)
             {
                 sb.Append(id.Bytes[i]);
                 sb.Append("-");
@@ -240,12 +241,12 @@ namespace MonoTorrent.Dht
         internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, NodeId> currentNodes,
             IEnumerable<Node> newNodes, int maxNodes)
         {
-            foreach (Node node in newNodes)
+            foreach (var node in newNodes)
             {
                 if (currentNodes.ContainsValue(node.Id))
                     continue;
 
-                NodeId distance = node.Id.Xor(target);
+                var distance = node.Id.Xor(target);
                 if (currentNodes.Count < maxNodes)
                 {
                     currentNodes.Add(distance, node.Id);

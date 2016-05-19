@@ -103,16 +103,16 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             if (parameters == null)
                 return;
 
-            this.downloaded = parameters.BytesDownloaded;
-            this.infoHash = parameters.InfoHash;
-            this.ip = 0;
-            this.key = (uint) DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
-            this.left = parameters.BytesLeft;
-            this.numWanted = 50;
-            this.peerId = parameters.PeerId;
-            this.port = (ushort) parameters.Port;
-            this.torrentEvent = parameters.ClientEvent;
-            this.uploaded = parameters.BytesUploaded;
+            downloaded = parameters.BytesDownloaded;
+            infoHash = parameters.InfoHash;
+            ip = 0;
+            key = (uint) DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
+            left = parameters.BytesLeft;
+            numWanted = 50;
+            peerId = parameters.PeerId;
+            port = (ushort) parameters.Port;
+            torrentEvent = parameters.ClientEvent;
+            uploaded = parameters.BytesUploaded;
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
@@ -135,7 +135,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, connectionId);
             written += Write(buffer, written, Action);

@@ -6,7 +6,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    interface ITracker
+    internal interface ITracker
     {
         event EventHandler BeforeAnnounce;
         event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;

@@ -50,12 +50,12 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int ByteLength
         {
-            get { return (messageLength + 4); }
+            get { return messageLength + 4; }
         }
 
         public int Port
         {
-            get { return this.port; }
+            get { return port; }
         }
 
         #endregion
@@ -77,12 +77,12 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            this.port = (ushort) ReadShort(buffer, ref offset);
+            port = (ushort) ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, messageLength);
             written += Write(buffer, written, MessageId);
@@ -93,21 +93,21 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override bool Equals(object obj)
         {
-            PortMessage msg = obj as PortMessage;
-            return (msg == null) ? false : (this.port == msg.port);
+            var msg = obj as PortMessage;
+            return msg == null ? false : port == msg.port;
         }
 
         public override int GetHashCode()
         {
-            return this.port.GetHashCode();
+            return port.GetHashCode();
         }
 
         public override string ToString()
         {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            var sb = new System.Text.StringBuilder();
             sb.Append("PortMessage ");
             sb.Append(" Port ");
-            sb.Append(this.port);
+            sb.Append(port);
             return sb.ToString();
         }
 

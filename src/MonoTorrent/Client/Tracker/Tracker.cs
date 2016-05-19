@@ -41,17 +41,17 @@ namespace MonoTorrent.Client.Tracker
         public event EventHandler BeforeScrape;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
-        bool canAnnounce;
-        bool canScrape;
-        int complete;
-        int downloaded;
-        string failureMessage;
-        int incomplete;
-        TimeSpan minUpdateInterval;
-        TrackerState status;
-        TimeSpan updateInterval;
-        Uri uri;
-        string warningMessage;
+        private bool canAnnounce;
+        private bool canScrape;
+        private int complete;
+        private int downloaded;
+        private string failureMessage;
+        private int incomplete;
+        private TimeSpan minUpdateInterval;
+        private TrackerState status;
+        private TimeSpan updateInterval;
+        private Uri uri;
+        private string warningMessage;
 
         public bool CanAnnounce
         {
@@ -131,28 +131,28 @@ namespace MonoTorrent.Client.Tracker
 
         protected virtual void RaiseBeforeAnnounce()
         {
-            EventHandler h = BeforeAnnounce;
+            var h = BeforeAnnounce;
             if (h != null)
                 h(this, EventArgs.Empty);
         }
 
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
-            EventHandler<AnnounceResponseEventArgs> h = AnnounceComplete;
+            var h = AnnounceComplete;
             if (h != null)
                 h(this, e);
         }
 
         protected virtual void RaiseBeforeScrape()
         {
-            EventHandler h = BeforeScrape;
+            var h = BeforeScrape;
             if (h != null)
                 h(this, EventArgs.Empty);
         }
 
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
-            EventHandler<ScrapeResponseEventArgs> h = ScrapeComplete;
+            var h = ScrapeComplete;
             if (h != null)
                 h(this, e);
         }

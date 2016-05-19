@@ -6,10 +6,10 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Common
 {
-    class TorrentCreatorAsyncResult : AsyncResult
+    internal class TorrentCreatorAsyncResult : AsyncResult
     {
-        bool aborted;
-        BEncodedDictionary dictionary;
+        private bool aborted;
+        private BEncodedDictionary dictionary;
 
         public bool Aborted
         {

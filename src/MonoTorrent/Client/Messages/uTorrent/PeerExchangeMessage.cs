@@ -34,7 +34,7 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             Initialise(added, addedDotF, dropped);
         }
 
-        void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
+        private void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
         {
             peerDict[AddedKey] = (BEncodedString) (added ?? BufferManager.EmptyBuffer);
             peerDict[AddedDotFKey] = (BEncodedString) (addedDotF ?? BufferManager.EmptyBuffer);
@@ -77,10 +77,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, offset, ByteLength - 4);
-            written += Write(buffer, written, ExtensionMessage.MessageId);
+            written += Write(buffer, written, MessageId);
             written += Write(buffer, written, ExtensionId);
             written += peerDict.Encode(buffer, written);
 
@@ -89,10 +89,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         public override string ToString()
         {
-            BEncodedString added = (BEncodedString) peerDict[AddedKey];
-            int numPeers = added.TextBytes.Length/6;
+            var added = (BEncodedString) peerDict[AddedKey];
+            var numPeers = added.TextBytes.Length/6;
 
-            return String.Format("PeerExchangeMessage: {0} peers", numPeers);
+            return string.Format("PeerExchangeMessage: {0} peers", numPeers);
         }
     }
 }

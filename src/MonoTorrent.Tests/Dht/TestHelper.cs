@@ -6,18 +6,18 @@ using System.Net;
 
 namespace MonoTorrent.Dht
 {
-    static class TestHelper
+    internal static class TestHelper
     {
         internal static void ManyNodes(out RoutingTable routingTable, out List<NodeId> nodes)
         {
             // Generate our local id
-            byte[] id = new byte[20];
+            var id = new byte[20];
             id[19] = 7;
 
             nodes = new List<NodeId>();
-            RoutingTable table = new RoutingTable(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
+            var table = new RoutingTable(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
 
-            for (int i = 0; i <= 30; i++)
+            for (var i = 0; i <= 30; i++)
             {
                 if (i == 7)
                     continue;
@@ -30,8 +30,8 @@ namespace MonoTorrent.Dht
 
             nodes.Sort(delegate(NodeId left, NodeId right)
             {
-                NodeId dLeft = left.Xor(table.LocalNode.Id);
-                NodeId dRight = right.Xor(table.LocalNode.Id);
+                var dLeft = left.Xor(table.LocalNode.Id);
+                var dRight = right.Xor(table.LocalNode.Id);
                 return dLeft.CompareTo(dRight);
             });
 

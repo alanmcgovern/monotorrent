@@ -33,7 +33,7 @@ namespace MonoTorrent.Client
 {
     internal static partial class PeerIO
     {
-        class SendMessageState : ICacheable
+        private class SendMessageState : ICacheable
         {
             public byte[] Buffer { get; private set; }
 

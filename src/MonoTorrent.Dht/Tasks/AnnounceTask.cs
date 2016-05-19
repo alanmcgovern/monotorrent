@@ -6,7 +6,7 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class AnnounceTask : Task
+    internal class AnnounceTask : Task
     {
         private int activeAnnounces;
         private NodeId infoHash;
@@ -27,7 +27,7 @@ namespace MonoTorrent.Dht.Tasks
 
         public override void Execute()
         {
-            GetPeersTask task = new GetPeersTask(engine, infoHash);
+            var task = new GetPeersTask(engine, infoHash);
             task.Completed += GotPeers;
             task.Execute();
         }
@@ -35,13 +35,13 @@ namespace MonoTorrent.Dht.Tasks
         private void GotPeers(object o, TaskCompleteEventArgs e)
         {
             e.Task.Completed -= GotPeers;
-            GetPeersTask getpeers = (GetPeersTask) e.Task;
-            foreach (Node n in getpeers.ClosestActiveNodes.Values)
+            var getpeers = (GetPeersTask) e.Task;
+            foreach (var n in getpeers.ClosestActiveNodes.Values)
             {
                 if (n.Token == null)
                     continue;
-                AnnouncePeer query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
-                SendQueryTask task = new SendQueryTask(engine, query, n);
+                var query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
+                var task = new SendQueryTask(engine, query, n);
                 task.Completed += SentAnnounce;
                 task.Execute();
                 activeAnnounces++;

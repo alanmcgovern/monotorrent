@@ -79,9 +79,9 @@ namespace MonoTorrent.Tracker.Listeners
             if (url.IndexOf('?') != -1)
                 url = url.Substring(url.IndexOf('?') + 1);
 
-            string[] parts = url.Split('&', '=');
-            NameValueCollection c = new NameValueCollection(1 + parts.Length/2);
-            for (int i = 0; i < parts.Length; i += 2)
+            var parts = url.Split('&', '=');
+            var c = new NameValueCollection(1 + parts.Length/2);
+            for (var i = 0; i < parts.Length; i += 2)
                 if (parts.Length > i + 1)
                     c.Add(parts[i], parts[i + 1]);
 
@@ -90,14 +90,14 @@ namespace MonoTorrent.Tracker.Listeners
 
         private void RaiseAnnounceReceived(AnnounceParameters e)
         {
-            EventHandler<AnnounceParameters> h = AnnounceReceived;
+            var h = AnnounceReceived;
             if (h != null)
                 h(this, e);
         }
 
         private void RaiseScrapeReceived(ScrapeParameters e)
         {
-            EventHandler<ScrapeParameters> h = ScrapeReceived;
+            var h = ScrapeReceived;
             if (h != null)
                 h(this, e);
         }

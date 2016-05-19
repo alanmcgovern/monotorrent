@@ -37,14 +37,14 @@ namespace MonoTorrent.Client
 {
     public class IgnoringPicker : PiecePicker
     {
-        BitField bitfield;
-        BitField temp;
+        private BitField bitfield;
+        private BitField temp;
 
         public IgnoringPicker(BitField bitfield, PiecePicker picker)
             : base(picker)
         {
             this.bitfield = bitfield;
-            this.temp = new BitField(bitfield.Length);
+            temp = new BitField(bitfield.Length);
         }
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,

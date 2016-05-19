@@ -66,11 +66,11 @@ namespace MonoTorrent.Client
         /// </summary>
         public int HighPrioritySetStart
         {
-            get { return this.highPrioritySetStart; }
+            get { return highPrioritySetStart; }
             set
             {
-                if (this.highPrioritySetStart < value)
-                    this.highPrioritySetStart = value;
+                if (highPrioritySetStart < value)
+                    highPrioritySetStart = value;
             }
         }
 
@@ -79,8 +79,8 @@ namespace MonoTorrent.Client
         /// </summary>
         public int HighPrioritySetSize
         {
-            get { return this.highPrioritySetSize; }
-            set { this.highPrioritySetSize = value; }
+            get { return highPrioritySetSize; }
+            set { highPrioritySetSize = value; }
         }
 
         public int MediumPrioritySetStart
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MediumPrioritySetSize
         {
-            get { return this.highPrioritySetSize*ratio; }
+            get { return highPrioritySetSize*ratio; }
         }
 
         #endregion Member Variables
@@ -144,7 +144,7 @@ namespace MonoTorrent.Client
             : base(picker)
         {
             this.highPrioritySetSize = highPrioritySetSize;
-            this.ratio = mediumToHighRatio;
+            ratio = mediumToHighRatio;
         }
 
 
@@ -160,10 +160,10 @@ namespace MonoTorrent.Client
             base.Initialise(bitfield, files, requests);
 
             // set the high priority set start to the beginning of the first file that we have to download
-            foreach (TorrentFile file in files)
+            foreach (var file in files)
             {
                 if (file.Priority == Priority.DoNotDownload)
-                    this.highPrioritySetStart = file.EndPieceIndex;
+                    highPrioritySetStart = file.EndPieceIndex;
                 else
                     break;
             }

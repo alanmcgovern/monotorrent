@@ -8,15 +8,15 @@ namespace MonoTorrent.Client
 {
     public class LibtorrentMessageTests : IDisposable
     {
-        TestRig rig;
-        byte[] buffer;
+        private TestRig rig;
+        private byte[] buffer;
 
         public LibtorrentMessageTests()
         {
             rig = TestRig.CreateMultiFile();
 
             buffer = new byte[100000];
-            for (int i = 0; i < buffer.Length; i++)
+            for (var i = 0; i < buffer.Length; i++)
                 buffer[i] = 0xff;
         }
 
@@ -28,8 +28,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void HandshakeSupportsTest()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
-            byte[] encoded = m.Encode();
+            var m = new ExtendedHandshakeMessage();
+            var encoded = m.Encode();
 
             Assert.Equal(m.ByteLength, encoded.Length);
             Assert.True(
@@ -43,9 +43,9 @@ namespace MonoTorrent.Client
         [Fact]
         public void HandshakeDecodeTest()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
-            byte[] data = m.Encode();
-            ExtendedHandshakeMessage decoded =
+            var m = new ExtendedHandshakeMessage();
+            var data = m.Encode();
+            var decoded =
                 (ExtendedHandshakeMessage) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
 
             Assert.Equal(m.ByteLength, data.Length);
@@ -61,10 +61,10 @@ namespace MonoTorrent.Client
         [Fact]
         public void LTChatDecodeTest()
         {
-            LTChat m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
+            var m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
 
-            byte[] data = m.Encode();
-            LTChat decoded = (LTChat) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
+            var data = m.Encode();
+            var decoded = (LTChat) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
 
             Assert.Equal(m.Message, decoded.Message);
         }
@@ -73,15 +73,15 @@ namespace MonoTorrent.Client
         public void PeerExchangeMessageTest()
         {
             // Decodes as: 192.168.0.1:100
-            byte[] peer = new byte[] {192, 168, 0, 1, 100, 0};
-            byte[] supports = new byte[] {(byte) (1 | 2)}; // 1 == encryption, 2 == seeder
+            var peer = new byte[] {192, 168, 0, 1, 100, 0};
+            var supports = new byte[] {(byte) (1 | 2)}; // 1 == encryption, 2 == seeder
 
-            byte id = MonoTorrent.Client.Messages.Libtorrent.PeerExchangeMessage.Support.MessageId;
-            PeerExchangeMessage message = new PeerExchangeMessage(id, peer, supports, null);
+            var id = PeerExchangeMessage.Support.MessageId;
+            var message = new PeerExchangeMessage(id, peer, supports, null);
 
-            byte[] buffer = message.Encode();
-            PeerExchangeMessage m =
-                (PeerExchangeMessage) PeerMessage.DecodeMessage(buffer, 0, buffer.Length, this.rig.Manager);
+            var buffer = message.Encode();
+            var m =
+                (PeerExchangeMessage) PeerMessage.DecodeMessage(buffer, 0, buffer.Length, rig.Manager);
             Assert.True(Toolbox.ByteMatch(peer, m.Added));
             Assert.True(Toolbox.ByteMatch(supports, m.AddedDotF));
         }

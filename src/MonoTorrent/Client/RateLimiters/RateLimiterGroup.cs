@@ -33,15 +33,15 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    class RateLimiterGroup : IRateLimiter
+    internal class RateLimiterGroup : IRateLimiter
     {
-        List<IRateLimiter> limiters;
+        private List<IRateLimiter> limiters;
 
         public bool Unlimited
         {
             get
             {
-                for (int i = 0; i < limiters.Count; i++)
+                for (var i = 0; i < limiters.Count; i++)
                     if (!limiters[i].Unlimited)
                         return false;
                 return true;
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
 
         public bool TryProcess(int amount)
         {
-            for (int i = 0; i < limiters.Count; i++)
+            for (var i = 0; i < limiters.Count; i++)
             {
                 if (limiters[i].Unlimited)
                     continue;
@@ -79,7 +79,7 @@ namespace MonoTorrent.Client
 
         public void UpdateChunks(int maxRate, int actualRate)
         {
-            for (int i = 0; i < limiters.Count; i++)
+            for (var i = 0; i < limiters.Count; i++)
                 limiters[i].UpdateChunks(maxRate, actualRate);
         }
     }

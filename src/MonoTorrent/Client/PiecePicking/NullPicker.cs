@@ -64,12 +64,12 @@ namespace MonoTorrent.Client
             return new List<Piece>();
         }
 
-        public override void Initialise(MonoTorrent.Common.BitField bitfield, MonoTorrent.Common.TorrentFile[] files,
+        public override void Initialise(BitField bitfield, TorrentFile[] files,
             IEnumerable<Piece> requests)
         {
         }
 
-        public override bool IsInteresting(MonoTorrent.Common.BitField bitfield)
+        public override bool IsInteresting(BitField bitfield)
         {
             return false;
         }

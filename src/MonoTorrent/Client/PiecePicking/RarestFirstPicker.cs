@@ -37,11 +37,11 @@ namespace MonoTorrent.Client
 {
     public class RarestFirstPicker : PiecePicker
     {
-        Stack<BitField> rarest;
-        Stack<BitField> spares;
-        int length;
+        private Stack<BitField> rarest;
+        private Stack<BitField> spares;
+        private int length;
 
-        BitField DequeueSpare()
+        private BitField DequeueSpare()
         {
             return spares.Count > 0 ? spares.Pop() : new BitField(length);
         }
@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, files, requests);
-            this.length = bitfield.Length;
+            length = bitfield.Length;
         }
 
         public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
@@ -72,8 +72,8 @@ namespace MonoTorrent.Client
 
             while (rarest.Count > 0)
             {
-                BitField current = rarest.Pop();
-                MessageBundle bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
+                var current = rarest.Pop();
+                var bundle = base.PickPiece(id, current, otherPeers, count, startIndex, endIndex);
                 spares.Push(current);
 
                 if (bundle != null)
@@ -83,20 +83,20 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        void GenerateRarestFirst(BitField peerBitfield, List<PeerId> otherPeers)
+        private void GenerateRarestFirst(BitField peerBitfield, List<PeerId> otherPeers)
         {
             // Move anything in the rarest buffer into the spares
             while (rarest.Count > 0)
                 spares.Push(rarest.Pop());
 
-            BitField current = DequeueSpare();
+            var current = DequeueSpare();
             current.From(peerBitfield);
 
             // Store this bitfield as the first iteration of the Rarest First algorithm.
             rarest.Push(current);
 
             // Get a cloned copy of the bitfield and begin iterating to find the rarest pieces
-            for (int i = 0; i < otherPeers.Count; i++)
+            for (var i = 0; i < otherPeers.Count; i++)
             {
                 if (otherPeers[i].BitField.AllTrue)
                     continue;

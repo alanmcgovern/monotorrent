@@ -63,15 +63,15 @@ namespace MonoTorrent.Client
         /// </summary>
         public BufferManager()
         {
-            this.massiveBuffers = new Queue<byte[]>();
-            this.largeMessageBuffers = new Queue<byte[]>();
-            this.mediumMessageBuffers = new Queue<byte[]>();
-            this.smallMessageBuffers = new Queue<byte[]>();
+            massiveBuffers = new Queue<byte[]>();
+            largeMessageBuffers = new Queue<byte[]>();
+            mediumMessageBuffers = new Queue<byte[]>();
+            smallMessageBuffers = new Queue<byte[]>();
 
             // Preallocate some of each buffer to help avoid heap fragmentation due to pinning
-            this.AllocateBuffers(4, BufferType.LargeMessageBuffer);
-            this.AllocateBuffers(4, BufferType.MediumMessageBuffer);
-            this.AllocateBuffers(4, BufferType.SmallMessageBuffer);
+            AllocateBuffers(4, BufferType.LargeMessageBuffer);
+            AllocateBuffers(4, BufferType.MediumMessageBuffer);
+            AllocateBuffers(4, BufferType.SmallMessageBuffer);
         }
 
         /// <summary>
@@ -89,29 +89,29 @@ namespace MonoTorrent.Client
             // If we're getting a small buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
             if (type == BufferType.SmallMessageBuffer)
-                lock (this.smallMessageBuffers)
+                lock (smallMessageBuffers)
                 {
-                    if (this.smallMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.SmallMessageBuffer);
-                    buffer = this.smallMessageBuffers.Dequeue();
+                    if (smallMessageBuffers.Count == 0)
+                        AllocateBuffers(5, BufferType.SmallMessageBuffer);
+                    buffer = smallMessageBuffers.Dequeue();
                 }
 
             else if (type == BufferType.MediumMessageBuffer)
-                lock (this.mediumMessageBuffers)
+                lock (mediumMessageBuffers)
                 {
-                    if (this.mediumMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.MediumMessageBuffer);
-                    buffer = this.mediumMessageBuffers.Dequeue();
+                    if (mediumMessageBuffers.Count == 0)
+                        AllocateBuffers(5, BufferType.MediumMessageBuffer);
+                    buffer = mediumMessageBuffers.Dequeue();
                 }
 
             // If we're getting a large buffer and there are none in the pool, just return a new one.
             // Otherwise return one from the pool.
             else if (type == BufferType.LargeMessageBuffer)
-                lock (this.largeMessageBuffers)
+                lock (largeMessageBuffers)
                 {
-                    if (this.largeMessageBuffers.Count == 0)
-                        this.AllocateBuffers(5, BufferType.LargeMessageBuffer);
-                    buffer = this.largeMessageBuffers.Dequeue();
+                    if (largeMessageBuffers.Count == 0)
+                        AllocateBuffers(5, BufferType.LargeMessageBuffer);
+                    buffer = largeMessageBuffers.Dequeue();
                 }
 
             else
@@ -147,9 +147,9 @@ namespace MonoTorrent.Client
 
             else
             {
-                lock (this.massiveBuffers)
+                lock (massiveBuffers)
                 {
-                    for (int i = 0; i < massiveBuffers.Count; i++)
+                    for (var i = 0; i < massiveBuffers.Count; i++)
                         if ((buffer = massiveBuffers.Dequeue()).Length >= minCapacity)
                             return;
                         else
@@ -172,20 +172,20 @@ namespace MonoTorrent.Client
                 return;
 
             if (buffer.Length == SmallMessageBufferSize)
-                lock (this.smallMessageBuffers)
-                    this.smallMessageBuffers.Enqueue(buffer);
+                lock (smallMessageBuffers)
+                    smallMessageBuffers.Enqueue(buffer);
 
             else if (buffer.Length == MediumMessageBufferSize)
-                lock (this.mediumMessageBuffers)
-                    this.mediumMessageBuffers.Enqueue(buffer);
+                lock (mediumMessageBuffers)
+                    mediumMessageBuffers.Enqueue(buffer);
 
             else if (buffer.Length == LargeMessageBufferSize)
-                lock (this.largeMessageBuffers)
-                    this.largeMessageBuffers.Enqueue(buffer);
+                lock (largeMessageBuffers)
+                    largeMessageBuffers.Enqueue(buffer);
 
             else if (buffer.Length > LargeMessageBufferSize)
-                lock (this.massiveBuffers)
-                    this.massiveBuffers.Enqueue(buffer);
+                lock (massiveBuffers)
+                    massiveBuffers.Enqueue(buffer);
 
             // All buffers should be allocated in this class, so if something else is passed in that isn't the right size
             // We just throw an exception as someone has done something wrong.
@@ -201,15 +201,15 @@ namespace MonoTorrent.Client
             Logger.Log(null, "BufferManager - Allocating {0} buffers of type {1}", number, type);
             if (type == BufferType.LargeMessageBuffer)
                 while (number-- > 0)
-                    this.largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
+                    largeMessageBuffers.Enqueue(new byte[LargeMessageBufferSize]);
 
             else if (type == BufferType.MediumMessageBuffer)
                 while (number-- > 0)
-                    this.mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
+                    mediumMessageBuffers.Enqueue(new byte[MediumMessageBufferSize]);
 
             else if (type == BufferType.SmallMessageBuffer)
                 while (number-- > 0)
-                    this.smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
+                    smallMessageBuffers.Enqueue(new byte[SmallMessageBufferSize]);
 
             else
                 throw new ArgumentException("Unsupported BufferType detected");

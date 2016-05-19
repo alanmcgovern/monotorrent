@@ -77,26 +77,26 @@ namespace MonoTorrent.TorrentWatcher
 
         public void ForceScan()
         {
-            foreach (string path in Directory.GetFiles(torrentDirectory, this.watchFilter))
+            foreach (var path in Directory.GetFiles(torrentDirectory, watchFilter))
                 RaiseTorrentFound(path);
         }
 
         public void Start()
         {
-            if (this.watcher == null)
+            if (watcher == null)
             {
-                this.watcher = new FileSystemWatcher(torrentDirectory);
-                this.watcher.Filter = this.watchFilter;
+                watcher = new FileSystemWatcher(torrentDirectory);
+                watcher.Filter = watchFilter;
                 //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                this.watcher.Created += new FileSystemEventHandler(OnCreated);
-                this.watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+                watcher.Created += new FileSystemEventHandler(OnCreated);
+                watcher.Deleted += new FileSystemEventHandler(OnDeleted);
             }
-            this.watcher.EnableRaisingEvents = true;
+            watcher.EnableRaisingEvents = true;
         }
 
         public void Stop()
         {
-            this.watcher.EnableRaisingEvents = false;
+            watcher.EnableRaisingEvents = false;
         }
 
         #endregion

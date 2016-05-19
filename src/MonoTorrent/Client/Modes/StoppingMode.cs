@@ -5,9 +5,9 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    class StoppingMode : Mode
+    internal class StoppingMode : Mode
     {
-        WaitHandleGroup handle = new WaitHandleGroup();
+        private WaitHandleGroup handle = new WaitHandleGroup();
 
         public override TorrentState State
         {
@@ -18,7 +18,7 @@ namespace MonoTorrent.Client
             : base(manager)
         {
             CanAcceptConnections = false;
-            ClientEngine engine = manager.Engine;
+            var engine = manager.Engine;
             if (manager.Mode is HashingMode)
                 handle.AddHandle(((HashingMode) manager.Mode).hashingWaitHandle, "Hashing");
 
@@ -26,7 +26,7 @@ namespace MonoTorrent.Client
                 manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
                 handle.AddHandle(manager.TrackerManager.Announce(TorrentEvent.Stopped), "Announcing");
 
-            foreach (PeerId id in manager.Peers.ConnectedPeers)
+            foreach (var id in manager.Peers.ConnectedPeers)
                 if (id.Connection != null)
                     id.Connection.Dispose();
 
@@ -40,7 +40,7 @@ namespace MonoTorrent.Client
             engine.Stop();
         }
 
-        public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+        public override void HandlePeerConnected(PeerId id, Direction direction)
         {
             id.CloseConnection();
         }

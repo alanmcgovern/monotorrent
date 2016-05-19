@@ -33,7 +33,7 @@ using System.Text;
 
 namespace MonoTorrent.Client
 {
-    interface IUnchoker
+    internal interface IUnchoker
     {
         void Choke(PeerId id);
         void UnchokeReview();

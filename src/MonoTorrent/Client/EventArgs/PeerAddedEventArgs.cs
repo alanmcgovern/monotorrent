@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public Peer Peer
         {
-            get { return this.peer; }
+            get { return peer; }
         }
 
         private Peer peer;
@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
         public PeerAddedEventArgs(TorrentManager manager, Peer peerAdded)
             : base(manager)
         {
-            this.peer = peerAdded;
+            peer = peerAdded;
         }
 
         #endregion

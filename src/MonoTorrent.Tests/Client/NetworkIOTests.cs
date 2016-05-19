@@ -38,16 +38,16 @@ namespace MonoTorrent.Client
 {
     public class NetworkIOTests : IDisposable
     {
-        byte[] buffer;
-        byte[] data;
-        ConnectionPair pair;
+        private byte[] buffer;
+        private byte[] data;
+        private ConnectionPair pair;
 
-        CustomConnection Incoming
+        private CustomConnection Incoming
         {
             get { return pair.Incoming; }
         }
 
-        CustomConnection Outgoing
+        private CustomConnection Outgoing
         {
             get { return pair.Outgoing; }
         }
@@ -91,12 +91,12 @@ namespace MonoTorrent.Client
             DoReceive(false, false);
         }
 
-        void DoReceive(bool slowOutgoing, bool slowIncoming)
+        private void DoReceive(bool slowOutgoing, bool slowIncoming)
         {
             Incoming.SlowConnection = slowIncoming;
             Outgoing.SlowConnection = slowOutgoing;
 
-            int sent = 0;
+            var sent = 0;
             buffer = new byte[data.Length];
 
             var handle = new ManualResetEvent(false);
@@ -109,13 +109,13 @@ namespace MonoTorrent.Client
 
             while (sent != buffer.Length)
             {
-                int r = Incoming.Send(data, sent, data.Length - sent);
+                var r = Incoming.Send(data, sent, data.Length - sent);
                 Assert.NotEqual(0, r);
                 sent += r;
             }
 
             Assert.True(handle.WaitOne(TimeSpan.FromSeconds(4)), "Data should be all received");
-            for (int i = 0; i < buffer.Length; i++)
+            for (var i = 0; i < buffer.Length; i++)
             {
                 if (data[i] != buffer[i])
                     Assert.True(false, "Buffers differ at position " + i);
@@ -154,11 +154,11 @@ namespace MonoTorrent.Client
             var handle = new ManualResetEvent(false);
             NetworkIO.EnqueueSend(Outgoing, data, 0, data.Length, null, null, null, delegate { handle.Set(); }, null);
 
-            int received = 0;
-            byte[] buffer = new byte[data.Length];
+            var received = 0;
+            var buffer = new byte[data.Length];
             while (received != buffer.Length)
             {
-                int r = Incoming.Receive(buffer, received, buffer.Length - received);
+                var r = Incoming.Receive(buffer, received, buffer.Length - received);
                 Assert.NotEqual(0, r);
                 received += r;
             }
@@ -169,10 +169,10 @@ namespace MonoTorrent.Client
         [Fact]
         public void InvalidMessage()
         {
-            bool success = true;
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var success = true;
+            var handle = new ManualResetEvent(false);
             Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(16)), 0, data, 0, 4);
-            for (int i = 4; i < 16; i++)
+            for (var i = 4; i < 16; i++)
                 data[i] = byte.MaxValue;
             PeerIO.EnqueueReceiveMessage(Incoming, new PlainTextEncryption(), null, null, null,
                 (successful, count, state) =>
@@ -214,8 +214,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void ZeroReceivedClosesConnection()
         {
-            bool connectionOpen = true;
-            AutoResetEvent handle = new AutoResetEvent(false);
+            var connectionOpen = true;
+            var handle = new AutoResetEvent(false);
             Incoming.ManualBytesReceived = 0;
             NetworkIO.EnqueueReceive(Incoming, data, 0, 100, null, null, null, (successful, count, state) =>
             {
@@ -231,8 +231,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void ZeroSentClosesConnection()
         {
-            bool connectionOpen = true;
-            AutoResetEvent handle = new AutoResetEvent(false);
+            var connectionOpen = true;
+            var handle = new AutoResetEvent(false);
             Incoming.ManualBytesSent = 0;
             NetworkIO.EnqueueSend(Incoming, data, 0, 100, null, null, null, (successful, count, state) =>
             {

@@ -70,10 +70,10 @@ namespace MonoTorrent.Client
 
         public PeerManager()
         {
-            this.ActivePeers = new List<Peer>();
-            this.AvailablePeers = new List<Peer>();
-            this.BannedPeers = new List<Peer>();
-            this.BusyPeers = new List<Peer>();
+            ActivePeers = new List<Peer>();
+            AvailablePeers = new List<Peer>();
+            BannedPeers = new List<Peer>();
+            BusyPeers = new List<Peer>();
         }
 
         #endregion Constructors
@@ -82,30 +82,30 @@ namespace MonoTorrent.Client
 
         internal IEnumerable<Peer> AllPeers()
         {
-            for (int i = 0; i < AvailablePeers.Count; i++)
+            for (var i = 0; i < AvailablePeers.Count; i++)
                 yield return AvailablePeers[i];
 
-            for (int i = 0; i < ActivePeers.Count; i++)
+            for (var i = 0; i < ActivePeers.Count; i++)
                 yield return ActivePeers[i];
 
-            for (int i = 0; i < BannedPeers.Count; i++)
+            for (var i = 0; i < BannedPeers.Count; i++)
                 yield return BannedPeers[i];
 
-            for (int i = 0; i < BusyPeers.Count; i++)
+            for (var i = 0; i < BusyPeers.Count; i++)
                 yield return BusyPeers[i];
         }
 
         internal void ClearAll()
         {
-            this.ActivePeers.Clear();
-            this.AvailablePeers.Clear();
-            this.BannedPeers.Clear();
-            this.BusyPeers.Clear();
+            ActivePeers.Clear();
+            AvailablePeers.Clear();
+            BannedPeers.Clear();
+            BusyPeers.Clear();
         }
 
         internal bool Contains(Peer peer)
         {
-            foreach (Peer other in AllPeers())
+            foreach (var other in AllPeers())
                 if (peer.Equals(other))
                     return true;
 

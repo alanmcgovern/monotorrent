@@ -43,9 +43,9 @@ namespace MonoTorrent.Client
         //    t.Setup();
         //    t.Choke();
         //}
-        PeerId peer;
-        TestRig rig;
-        InitialSeedUnchoker unchoker;
+        private PeerId peer;
+        private TestRig rig;
+        private InitialSeedUnchoker unchoker;
 
         public InitialSeedUnchokerTests()
         {
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client
         {
             unchoker.UnchokeReview();
             Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
-            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+            for (var i = 0; i < unchoker.MaxAdvertised; i++)
                 Assert.Equal(i, ((HaveMessage) peer.Dequeue()).PieceIndex);
         }
 
@@ -89,7 +89,7 @@ namespace MonoTorrent.Client
 
             unchoker.UnchokeReview();
             Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
-            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+            for (var i = 0; i < unchoker.MaxAdvertised; i++)
                 Assert.Equal(i*2, ((HaveMessage) peer.Dequeue()).PieceIndex);
         }
 
@@ -106,7 +106,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void Advertise5()
         {
-            List<PeerId> peers =
+            var peers =
                 new List<PeerId>(new PeerId[] {rig.CreatePeer(true), rig.CreatePeer(true), rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
             peers.Add(this.peer);
@@ -117,11 +117,11 @@ namespace MonoTorrent.Client
 
             unchoker.UnchokeReview();
 
-            foreach (PeerId peer in peers)
+            foreach (var peer in peers)
             {
                 while (peer.QueueLength > 0)
                 {
-                    int index = ((HaveMessage) peer.Dequeue()).PieceIndex;
+                    var index = ((HaveMessage) peer.Dequeue()).PieceIndex;
                     Assert.False(peers.Exists(delegate(PeerId p) { return p.BitField[index]; }));
                 }
             }
@@ -132,23 +132,23 @@ namespace MonoTorrent.Client
         {
             unchoker.UnchokeReview();
             Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
-            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+            for (var i = 0; i < unchoker.MaxAdvertised; i++)
                 Assert.Equal(i, ((HaveMessage) peer.Dequeue()).PieceIndex);
             peer.BitField.SetTrue(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
             unchoker.UnchokeReview();
             Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
-            for (int i = 0; i < unchoker.MaxAdvertised; i++)
+            for (var i = 0; i < unchoker.MaxAdvertised; i++)
                 Assert.Equal(i + 11, ((HaveMessage) peer.Dequeue()).PieceIndex);
         }
 
         [Fact]
         public void Advertise7()
         {
-            PeerId other = rig.CreatePeer(true);
+            var other = rig.CreatePeer(true);
             // Check that peers which don't share only get a small number of pieces to share
             rig.Manager.Settings.UploadSlots = 1;
             unchoker.PeerDisconnected(peer);
-            List<PeerId> peers = new List<PeerId>(new PeerId[] {peer, rig.CreatePeer(true)});
+            var peers = new List<PeerId>(new PeerId[] {peer, rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
             unchoker.UnchokeReview();
 
@@ -189,13 +189,13 @@ namespace MonoTorrent.Client
         [Fact]
         public void Choke()
         {
-            PeerId other = rig.CreatePeer(true);
+            var other = rig.CreatePeer(true);
             // More slots than peers
-            for (int i = 0; i < 25; i++)
+            for (var i = 0; i < 25; i++)
             {
                 unchoker.UnchokeReview();
                 Assert.Equal(unchoker.MaxAdvertised, peer.QueueLength);
-                HaveMessage h = (HaveMessage) peer.Dequeue();
+                var h = (HaveMessage) peer.Dequeue();
                 Assert.Equal(i, h.PieceIndex);
                 unchoker.ReceivedHave(peer, h.PieceIndex);
                 unchoker.ReceivedHave(other, h.PieceIndex);
@@ -205,13 +205,13 @@ namespace MonoTorrent.Client
         [Fact]
         public void Choke2()
         {
-            PeerId other = rig.CreatePeer(true);
+            var other = rig.CreatePeer(true);
 
             // More peers than slots
             unchoker.PeerDisconnected(this.peer);
             rig.Manager.Settings.UploadSlots = 1;
 
-            List<PeerId> peers = new List<PeerId>(new PeerId[] {this.peer, rig.CreatePeer(true), rig.CreatePeer(true)});
+            var peers = new List<PeerId>(new PeerId[] {this.peer, rig.CreatePeer(true), rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
 
             unchoker.UnchokeReview();
@@ -221,13 +221,13 @@ namespace MonoTorrent.Client
             Assert.True(peers[1].AmChoking);
             Assert.True(peers[2].AmChoking);
 
-            for (int current = 0; current < peers.Count; current++)
+            for (var current = 0; current < peers.Count; current++)
             {
-                PeerId peer = peers[current];
+                var peer = peers[current];
                 Assert.False(peer.AmChoking);
-                Queue<int> haves = new Queue<int>();
+                var haves = new Queue<int>();
 
-                for (int i = 0; i < unchoker.MaxAdvertised; i++)
+                for (var i = 0; i < unchoker.MaxAdvertised; i++)
                     haves.Enqueue(((HaveMessage) peer.Dequeue()).PieceIndex);
                 Assert.IsType(typeof(UnchokeMessage), peer.Dequeue());
 
@@ -258,10 +258,10 @@ namespace MonoTorrent.Client
         [Fact]
         public void ConnectDisconnect()
         {
-            PeerId a = new PeerId(new Peer(new string('a', 20), new Uri("tcp://127.0.0.5:5353")), rig.Manager);
-            PeerId b = new PeerId(new Peer(new string('b', 20), new Uri("tcp://127.0.0.5:5354")), rig.Manager);
-            PeerId c = new PeerId(new Peer(new string('c', 20), new Uri("tcp://127.0.0.5:5355")), rig.Manager);
-            PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("tcp://127.0.0.5:5356")), rig.Manager);
+            var a = new PeerId(new Peer(new string('a', 20), new Uri("tcp://127.0.0.5:5353")), rig.Manager);
+            var b = new PeerId(new Peer(new string('b', 20), new Uri("tcp://127.0.0.5:5354")), rig.Manager);
+            var c = new PeerId(new Peer(new string('c', 20), new Uri("tcp://127.0.0.5:5355")), rig.Manager);
+            var d = new PeerId(new Peer(new string('d', 20), new Uri("tcp://127.0.0.5:5356")), rig.Manager);
 
             unchoker.PeerDisconnected(a);
             Assert.Equal(1, unchoker.PeerCount);
@@ -300,7 +300,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void Unchoke2()
         {
-            Queue<int> pieces = new Queue<int>();
+            var pieces = new Queue<int>();
             unchoker.UnchokeReview();
             while (peer.QueueLength > 0)
                 pieces.Enqueue(((HaveMessage) peer.Dequeue()).PieceIndex);

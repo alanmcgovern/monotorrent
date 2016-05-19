@@ -51,7 +51,7 @@ namespace MonoTorrent.Client.Tracker
         #region Member Variables
 
         private TorrentManager manager;
-        IList<TrackerTier> tierList;
+        private IList<TrackerTier> tierList;
 
 
         /// <summary>
@@ -61,10 +61,10 @@ namespace MonoTorrent.Client.Tracker
         {
             get
             {
-                if (this.trackerTiers.Count == 0 || this.trackerTiers[0].Trackers.Count == 0)
+                if (trackerTiers.Count == 0 || trackerTiers[0].Trackers.Count == 0)
                     return null;
 
-                return this.trackerTiers[0].Trackers[0];
+                return trackerTiers[0].Trackers[0];
             }
         }
 
@@ -80,7 +80,7 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public bool UpdateSucceeded
         {
-            get { return this.updateSucceeded; }
+            get { return updateSucceeded; }
         }
 
         private bool updateSucceeded;
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client.Tracker
         /// </summary>
         public DateTime LastUpdated
         {
-            get { return this.lastUpdated; }
+            get { return lastUpdated; }
         }
 
         private DateTime lastUpdated;
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Tracker
             get { return tierList; }
         }
 
-        List<TrackerTier> trackerTiers;
+        private List<TrackerTier> trackerTiers;
 
         #endregion
 
@@ -122,13 +122,13 @@ namespace MonoTorrent.Client.Tracker
 
             // Check if this tracker supports scraping
             trackerTiers = new List<TrackerTier>();
-            for (int i = 0; i < announces.Count; i++)
+            for (var i = 0; i < announces.Count; i++)
                 trackerTiers.Add(new TrackerTier(announces[i]));
 
             trackerTiers.RemoveAll(delegate(TrackerTier t) { return t.Trackers.Count == 0; });
-            foreach (TrackerTier tier in trackerTiers)
+            foreach (var tier in trackerTiers)
             {
-                foreach (Tracker tracker in tier)
+                foreach (var tracker in tier)
                 {
                     tracker.AnnounceComplete +=
                         delegate(object o, AnnounceResponseEventArgs e)
@@ -162,11 +162,11 @@ namespace MonoTorrent.Client.Tracker
         public WaitHandle Announce(Tracker tracker)
         {
             Check.Tracker(tracker);
-            TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });
+            var tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });
             if (tier == null)
                 throw new ArgumentException("Tracker has not been registered with the manager", "tracker");
 
-            TorrentEvent tevent = tier.SentStartedEvent ? TorrentEvent.None : TorrentEvent.Started;
+            var tevent = tier.SentStartedEvent ? TorrentEvent.None : TorrentEvent.Started;
             return Announce(tracker, tevent, false, new ManualResetEvent(false));
         }
 
@@ -180,7 +180,7 @@ namespace MonoTorrent.Client.Tracker
         private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent,
             ManualResetEvent waitHandle)
         {
-            ClientEngine engine = manager.Engine;
+            var engine = manager.Engine;
 
             // If the engine is null, we have been unregistered
             if (engine == null)
@@ -189,62 +189,62 @@ namespace MonoTorrent.Client.Tracker
                 return waitHandle;
             }
 
-            this.updateSucceeded = true;
-            this.lastUpdated = DateTime.Now;
+            updateSucceeded = true;
+            lastUpdated = DateTime.Now;
 
-            EncryptionTypes e = engine.Settings.AllowedEncryption;
-            bool requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
-            bool supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
+            var e = engine.Settings.AllowedEncryption;
+            var requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
+            var supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
                                       Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
 
-            IPEndPoint reportedAddress = engine.Settings.ReportedAddress;
-            string ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
-            int port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
+            var reportedAddress = engine.Settings.ReportedAddress;
+            var ip = reportedAddress == null ? null : reportedAddress.Address.ToString();
+            var port = reportedAddress == null ? engine.Listener.Endpoint.Port : reportedAddress.Port;
 
             // FIXME: In metadata mode we need to pretend we need to download data otherwise
             // tracker optimisations might result in no peers being sent back.
             long bytesLeft = 1000;
             if (manager.HasMetadata)
-                bytesLeft = (long) ((1 - this.manager.Bitfield.PercentComplete/100.0)*this.manager.Torrent.Size);
-            AnnounceParameters p = new AnnounceParameters(this.manager.Monitor.DataBytesDownloaded,
-                this.manager.Monitor.DataBytesUploaded,
+                bytesLeft = (long) ((1 - manager.Bitfield.PercentComplete/100.0)*manager.Torrent.Size);
+            var p = new AnnounceParameters(manager.Monitor.DataBytesDownloaded,
+                manager.Monitor.DataBytesUploaded,
                 bytesLeft,
-                clientEvent, this.infoHash, requireEncryption, manager.Engine.PeerId,
+                clientEvent, infoHash, requireEncryption, manager.Engine.PeerId,
                 ip, port);
             p.SupportsEncryption = supportsEncryption;
-            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, waitHandle);
+            var id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, waitHandle);
             tracker.Announce(p, id);
             return waitHandle;
         }
 
         private bool GetNextTracker(Tracker tracker, out TrackerTier trackerTier, out Tracker trackerReturn)
         {
-            for (int i = 0; i < this.trackerTiers.Count; i++)
+            for (var i = 0; i < trackerTiers.Count; i++)
             {
-                for (int j = 0; j < this.trackerTiers[i].Trackers.Count; j++)
+                for (var j = 0; j < trackerTiers[i].Trackers.Count; j++)
                 {
-                    if (this.trackerTiers[i].Trackers[j] != tracker)
+                    if (trackerTiers[i].Trackers[j] != tracker)
                         continue;
 
                     // If we are on the last tracker of this tier, check to see if there are more tiers
-                    if (j == (this.trackerTiers[i].Trackers.Count - 1))
+                    if (j == trackerTiers[i].Trackers.Count - 1)
                     {
-                        if (i == (this.trackerTiers.Count - 1))
+                        if (i == trackerTiers.Count - 1)
                         {
                             trackerTier = null;
                             trackerReturn = null;
                             return false;
                         }
 
-                        trackerTier = this.trackerTiers[i + 1];
+                        trackerTier = trackerTiers[i + 1];
                         trackerReturn = trackerTier.Trackers[0];
                         return true;
                     }
 
-                    trackerTier = this.trackerTiers[i];
+                    trackerTier = trackerTiers[i];
                     trackerReturn = trackerTier.Trackers[j + 1];
                     return true;
                 }
@@ -262,7 +262,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void OnAnnounceComplete(object sender, AnnounceResponseEventArgs e)
         {
-            this.updateSucceeded = e.Successful;
+            updateSucceeded = e.Successful;
             if (manager.Engine == null)
             {
                 e.Id.WaitHandle.Set();
@@ -272,10 +272,10 @@ namespace MonoTorrent.Client.Tracker
             if (e.Successful)
             {
                 manager.Peers.BusyPeers.Clear();
-                int count = manager.AddPeersCore(e.Peers);
+                var count = manager.AddPeersCore(e.Peers);
                 manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Peers.Count, e.Tracker));
 
-                TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
+                var tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
                 if (tier != null)
                 {
                     Toolbox.Switch<Tracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
@@ -304,7 +304,7 @@ namespace MonoTorrent.Client.Tracker
 
         public WaitHandle Scrape(Tracker tracker)
         {
-            TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });
+            var tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });
             if (tier == null)
                 return new ManualResetEvent(true);
 
@@ -319,9 +319,9 @@ namespace MonoTorrent.Client.Tracker
             if (!tracker.CanScrape)
                 throw new TorrentException("This tracker does not support scraping");
 
-            TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, TorrentEvent.None,
+            var id = new TrackerConnectionID(tracker, trySubsequent, TorrentEvent.None,
                 new ManualResetEvent(false));
-            tracker.Scrape(new ScrapeParameters(this.infoHash), id);
+            tracker.Scrape(new ScrapeParameters(infoHash), id);
             return id.WaitHandle;
         }
 

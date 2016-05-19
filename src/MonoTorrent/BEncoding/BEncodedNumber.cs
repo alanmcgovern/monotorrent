@@ -67,7 +67,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="initialValue">The inital value of the BEncodedNumber</param>
         public BEncodedNumber(long value)
         {
-            this.number = value;
+            number = value;
         }
 
         public static implicit operator BEncodedNumber(long value)
@@ -87,9 +87,9 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int Encode(byte[] buffer, int offset)
         {
-            long number = this.number;
+            var number = this.number;
 
-            int written = offset;
+            var written = offset;
             buffer[written++] = (byte) 'i';
 
             if (number < 0)
@@ -99,12 +99,12 @@ namespace MonoTorrent.BEncoding
             }
             // Reverse the number '12345' to get '54321'
             long reversed = 0;
-            for (long i = number; i != 0; i /= 10)
+            for (var i = number; i != 0; i /= 10)
                 reversed = reversed*10 + i%10;
 
             // Write each digit of the reversed number to the array. We write '1'
             // first, then '2', etc
-            for (long i = reversed; i != 0; i /= 10)
+            for (var i = reversed; i != 0; i /= 10)
                 buffer[written++] = (byte) (i%10 + '0');
 
             if (number == 0)
@@ -112,7 +112,7 @@ namespace MonoTorrent.BEncoding
 
             // If the original number ends in one or more zeros, they are lost
             // when we reverse the number. We add them back in here.
-            for (long i = number; i%10 == 0 && number != 0; i /= 10)
+            for (var i = number; i%10 == 0 && number != 0; i /= 10)
                 buffer[written++] = (byte) '0';
 
             buffer[written++] = (byte) 'e';
@@ -126,7 +126,7 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader">RawReader containing a BEncoded Number</param>
         internal override void DecodeInternal(RawReader reader)
         {
-            int sign = 1;
+            var sign = 1;
             if (reader == null)
                 throw new ArgumentNullException("reader");
 
@@ -163,8 +163,8 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int LengthInBytes()
         {
-            long number = this.number;
-            int count = 2; // account for the 'i' and 'e'
+            var number = this.number;
+            var count = 2; // account for the 'i' and 'e'
 
             if (number == 0)
                 return count + 1;
@@ -174,7 +174,7 @@ namespace MonoTorrent.BEncoding
                 number = -number;
                 count++;
             }
-            for (long i = number; i != 0; i /= 10)
+            for (var i = number; i != 0; i /= 10)
                 count++;
 
             return count;
@@ -194,13 +194,13 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 throw new ArgumentNullException("other");
 
-            return this.number.CompareTo(other.number);
+            return number.CompareTo(other.number);
         }
 
 
         public int CompareTo(long other)
         {
-            return this.number.CompareTo(other);
+            return number.CompareTo(other);
         }
 
         #endregion
@@ -214,11 +214,11 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override bool Equals(object obj)
         {
-            BEncodedNumber obj2 = obj as BEncodedNumber;
+            var obj2 = obj as BEncodedNumber;
             if (obj2 == null)
                 return false;
 
-            return (this.number == obj2.number);
+            return number == obj2.number;
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override int GetHashCode()
         {
-            return this.number.GetHashCode();
+            return number.GetHashCode();
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public override string ToString()
         {
-            return (this.number.ToString());
+            return number.ToString();
         }
 
         #endregion

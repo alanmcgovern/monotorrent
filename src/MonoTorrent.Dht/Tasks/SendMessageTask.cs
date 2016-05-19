@@ -6,7 +6,7 @@ using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class SendQueryTask : Task
+    internal class SendQueryTask : Task
     {
         private DhtEngine engine;
         private Node node;
@@ -42,7 +42,7 @@ namespace MonoTorrent.Dht.Tasks
             this.query = query;
             this.node = node;
             this.retries = retries;
-            this.origRetries = retries;
+            origRetries = retries;
         }
 
         public override void Execute()

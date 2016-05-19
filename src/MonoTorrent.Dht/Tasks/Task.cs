@@ -20,7 +20,7 @@ namespace MonoTorrent.Dht
 
         protected virtual void RaiseComplete(TaskCompleteEventArgs e)
         {
-            EventHandler<TaskCompleteEventArgs> h = Completed;
+            var h = Completed;
             if (h != null)
                 h(this, e);
         }

@@ -17,7 +17,7 @@ namespace MonoTorrent
         public Top10Listener(int capacity)
         {
             this.capacity = capacity;
-            this.traces = new LinkedList<string>();
+            traces = new LinkedList<string>();
         }
 
         public override void Write(string message)
@@ -40,7 +40,7 @@ namespace MonoTorrent
         public void ExportTo(TextWriter output)
         {
             lock (traces)
-                foreach (string s in this.traces)
+                foreach (var s in traces)
                     output.WriteLine(s);
         }
     }

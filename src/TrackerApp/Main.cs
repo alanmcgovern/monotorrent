@@ -90,16 +90,16 @@ namespace SampleTracker
         }
     }
 
-    class MySimpleTracker
+    internal class MySimpleTracker
     {
-        Tracker tracker;
-        TorrentFolderWatcher watcher;
-        const string TORRENT_DIR = "Torrents";
+        private Tracker tracker;
+        private TorrentFolderWatcher watcher;
+        private const string TORRENT_DIR = "Torrents";
 
         ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
-            System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
+            var listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
             Console.WriteLine("Listening at: {0}", listenpoint);
             ListenerBase listener = new HttpListener(listenpoint);
             tracker = new Tracker();
@@ -112,7 +112,7 @@ namespace SampleTracker
 
             while (true)
             {
-                System.Threading.Thread.Sleep(10000);
+                Thread.Sleep(10000);
             }
         }
 
@@ -129,9 +129,9 @@ namespace SampleTracker
                     // The best way to handle this depends on the actual application. 
                     // Generally the solution is: Wait a few hundred milliseconds
                     // then try load the file.
-                    System.Threading.Thread.Sleep(500);
+                    Thread.Sleep(500);
 
-                    Torrent t = Torrent.Load(e.TorrentPath);
+                    var t = Torrent.Load(e.TorrentPath);
 
                     // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
                     // just stores the infohash and name of the torrent. This is all that the tracker
@@ -173,7 +173,7 @@ namespace SampleTracker
 
             Console.Write("Choice: ");
 
-            int val = 0;
+            var val = 0;
             while (val != 1 && val != 2)
                 val = GetInt();
 
@@ -187,16 +187,16 @@ namespace SampleTracker
         {
             Console.Clear();
             Console.Write("How many active torrents will be simulated: ");
-            int torrents = GetInt();
+            var torrents = GetInt();
             Console.Write("How many active peers per torrent: ");
-            int peers = GetInt();
+            var peers = GetInt();
             Console.Write("How many requests per second: ");
-            int requests = GetInt();
+            var requests = GetInt();
 
             Console.Write("What is the tracker address: ");
-            string address = Console.ReadLine();
+            var address = Console.ReadLine();
 
-            StressTest test = new StressTest(torrents, peers, requests);
+            var test = new StressTest(torrents, peers, requests);
             test.Start(address);
 
             while (true)
@@ -204,7 +204,7 @@ namespace SampleTracker
                 Console.WriteLine("Measured announces/sec:  {0}", test.RequestRate);
                 Console.WriteLine("Total announces: {0}", test.TotalTrackerRequests);
                 Console.WriteLine(Environment.NewLine);
-                System.Threading.Thread.Sleep(1000);
+                Thread.Sleep(1000);
             }
         }
 
@@ -215,7 +215,7 @@ namespace SampleTracker
 
         private static int GetInt()
         {
-            int ret = 0;
+            var ret = 0;
             while (!int.TryParse(Console.ReadLine(), out ret))
             {
             }

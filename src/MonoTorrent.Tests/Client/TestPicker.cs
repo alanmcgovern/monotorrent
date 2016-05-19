@@ -36,7 +36,7 @@ using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client
 {
-    class TestPicker : PiecePicker
+    internal class TestPicker : PiecePicker
     {
         public List<BitField> IsInterestingBitfield = new List<BitField>();
         public List<PeerId> PickPieceId = new List<PeerId>();
@@ -59,7 +59,7 @@ namespace MonoTorrent.Client
             int startIndex, int endIndex)
         {
             PickPieceId.Add(id);
-            BitField clone = new BitField(peerBitfield.Length);
+            var clone = new BitField(peerBitfield.Length);
             clone.Or(peerBitfield);
             PickPieceBitfield.Add(clone);
             PickPiecePeers.Add(otherPeers);
@@ -67,7 +67,7 @@ namespace MonoTorrent.Client
             PickPieceEndIndex.Add(endIndex);
             PickPieceCount.Add(count);
 
-            for (int i = startIndex; i < endIndex; i++)
+            for (var i = startIndex; i < endIndex; i++)
             {
                 if (PickedPieces.Contains(i))
                     continue;

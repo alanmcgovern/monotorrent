@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// Class to handle message stream encryption for initiating connections
     /// </summary>
-    class PeerAEncryption : EncryptedSocket
+    internal class PeerAEncryption : EncryptedSocket
     {
         private byte[] VerifyBytes;
 
@@ -76,25 +76,25 @@ namespace MonoTorrent.Client.Encryption
                 CreateCryptors("keyA", "keyB");
 
                 // 3 A->B: HASH('req1', S)
-                byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+                var req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
 
                 // ... HASH('req2', SKEY)
-                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY.Hash);
+                var req2 = Hash(Encoding.ASCII.GetBytes("req2"), SKEY.Hash);
 
                 // ... HASH('req3', S)
-                byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+                var req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
 
                 // HASH('req2', SKEY) xor HASH('req3', S)
-                for (int i = 0; i < req2.Length; i++)
+                for (var i = 0; i < req2.Length; i++)
                     req2[i] ^= req3[i];
 
-                byte[] padC = GeneratePad();
+                var padC = GeneratePad();
 
                 // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
-                byte[] buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
+                var buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
                                          + 2 + padC.Length + 2 + InitialPayload.Length];
 
-                int offset = 0;
+                var offset = 0;
                 offset += Message.Write(buffer, offset, req1);
                 offset += Message.Write(buffer, offset, req2);
                 offset += Message.Write(buffer, offset, DoEncrypt(VerificationConstant));
@@ -140,8 +140,8 @@ namespace MonoTorrent.Client.Encryption
         {
             try
             {
-                byte[] myCS = new byte[4];
-                byte[] lenPadD = new byte[2];
+                var myCS = new byte[4];
+                var lenPadD = new byte[2];
 
                 DoDecrypt(VerifyBytes, 0, VerifyBytes.Length);
 

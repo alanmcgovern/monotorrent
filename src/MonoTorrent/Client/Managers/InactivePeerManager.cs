@@ -65,18 +65,18 @@ namespace MonoTorrent.Client
             // Look for a peer that has not given us any data and that is eligible for being marked inactive
             // If we find one that is not interesting, disconnect it straightaway; otherwise disconnect the first interesting one we found
             // If there are no eligible peers that have sent us no data, look for peers that have sent data but not for a while
-            int indexOfFirstUninterestingCandidate = -1; // -1 indicates we haven't found one yet
-            int indexOfFirstInterestingCandidate = -1;
-            int leastAttractiveCandidate = -1; // The least attractive peer that has sent us data
-            int longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
+            var indexOfFirstUninterestingCandidate = -1; // -1 indicates we haven't found one yet
+            var indexOfFirstInterestingCandidate = -1;
+            var leastAttractiveCandidate = -1; // The least attractive peer that has sent us data
+            var longestCalculatedInactiveTime = 0; // Seconds we calculated for the least attractive candidate
 
             // FIXME These three variables aren't used in the calculation - need to fix this.
-            int candidateSecondsConnected = 0;
-            int candidateSecondsSinceLastBlock = -1;
-            int candidateDataBytes = -1;
-            for (int i = 0; i < owningTorrent.Peers.ConnectedPeers.Count; i++)
+            var candidateSecondsConnected = 0;
+            var candidateSecondsSinceLastBlock = -1;
+            var candidateDataBytes = -1;
+            for (var i = 0; i < owningTorrent.Peers.ConnectedPeers.Count; i++)
             {
-                PeerId nextPeer = owningTorrent.Peers.ConnectedPeers[i];
+                var nextPeer = owningTorrent.Peers.ConnectedPeers[i];
                 if (nextPeer.Monitor.DataBytesDownloaded == 0 &&
                     nextPeer.WhenConnected.Add(owningTorrent.Settings.TimeToWaitUntilIdle) < DateTime.Now)
                 {
@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
                     {
                         // This is an eligible peer and we're not interested in it so stop looking
                         indexOfFirstUninterestingCandidate = i;
-                        candidateSecondsConnected = (int) (DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+                        candidateSecondsConnected = (int) DateTime.Now.Subtract(nextPeer.WhenConnected).TotalSeconds;
                         candidateSecondsSinceLastBlock = -1;
                         candidateDataBytes = -1;
                         break;
@@ -94,7 +94,7 @@ namespace MonoTorrent.Client
                     if (indexOfFirstInterestingCandidate < 0)
                     {
                         indexOfFirstInterestingCandidate = i;
-                        candidateSecondsConnected = (int) (DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+                        candidateSecondsConnected = (int) DateTime.Now.Subtract(nextPeer.WhenConnected).TotalSeconds;
                         candidateSecondsSinceLastBlock = -1;
                         candidateDataBytes = -1;
                     }
@@ -112,8 +112,8 @@ namespace MonoTorrent.Client
                         // Calculate an inactive time.
                         // Base time is time since the last message (in seconds)
                         // Give the peer an extra second for every 'ConnectionRetentionFactor' bytes
-                        TimeSpan timeSinceLastBlock = DateTime.Now.Subtract(nextPeer.LastBlockReceived);
-                        int calculatedInactiveTime =
+                        var timeSinceLastBlock = DateTime.Now.Subtract(nextPeer.LastBlockReceived);
+                        var calculatedInactiveTime =
                             Convert.ToInt32(timeSinceLastBlock.TotalSeconds -
                                             Convert.ToInt32(nextPeer.Monitor.DataBytesDownloaded/
                                                             owningTorrent.Settings.ConnectionRetentionFactor));
@@ -124,9 +124,9 @@ namespace MonoTorrent.Client
                             longestCalculatedInactiveTime = calculatedInactiveTime;
                             leastAttractiveCandidate = i;
                             candidateSecondsConnected =
-                                (int) (DateTime.Now.Subtract(nextPeer.WhenConnected)).TotalSeconds;
+                                (int) DateTime.Now.Subtract(nextPeer.WhenConnected).TotalSeconds;
                             candidateSecondsSinceLastBlock =
-                                (int) (DateTime.Now.Subtract(nextPeer.LastBlockReceived)).TotalSeconds;
+                                (int) DateTime.Now.Subtract(nextPeer.LastBlockReceived).TotalSeconds;
                             candidateDataBytes = (int) nextPeer.Monitor.DataBytesDownloaded;
                         }
                     }
@@ -138,7 +138,7 @@ namespace MonoTorrent.Client
             // otherwise disconnect the interesting candidate if found;
             // otherwise disconnect the least attractive candidate
             // otherwise do nothing
-            int peerToDisconnect = indexOfFirstUninterestingCandidate;
+            var peerToDisconnect = indexOfFirstUninterestingCandidate;
             if (peerToDisconnect < 0)
                 peerToDisconnect = indexOfFirstInterestingCandidate;
             if (peerToDisconnect < 0)

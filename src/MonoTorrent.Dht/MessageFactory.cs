@@ -35,9 +35,9 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    delegate Message Creator(BEncodedDictionary dictionary);
+    internal delegate Message Creator(BEncodedDictionary dictionary);
 
-    delegate Message ResponseCreator(BEncodedDictionary dictionary, QueryMessage message);
+    internal delegate Message ResponseCreator(BEncodedDictionary dictionary, QueryMessage message);
 
     internal static class MessageFactory
     {
@@ -109,7 +109,7 @@ namespace MonoTorrent.Dht.Messages
             else
             {
                 QueryMessage query;
-                BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
+                var key = (BEncodedString) dictionary[TransactionIdKey];
                 if (messages.TryGetValue(key, out query))
                 {
                     messages.Remove(key);

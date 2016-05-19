@@ -9,7 +9,7 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class MemoryWriter : PieceWriter
     {
-        struct CachedBlock
+        private struct CachedBlock
         {
             public TorrentFile File;
             public long Offset;
@@ -30,7 +30,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int Used
         {
-            get { return this.cachedBlocks.Count*Piece.BlockSize; }
+            get { return cachedBlocks.Count*Piece.BlockSize; }
         }
 
         public MemoryWriter(PieceWriter writer)
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.PieceWriters
             Check.File(file);
             Check.Buffer(buffer);
 
-            for (int i = 0; i < cachedBlocks.Count; i++)
+            for (var i = 0; i < cachedBlocks.Count; i++)
             {
                 if (cachedBlocks[i].File != file)
                     continue;
@@ -81,14 +81,14 @@ namespace MonoTorrent.Client.PieceWriters
             }
             else
             {
-                if (Used > (Capacity - count))
+                if (Used > Capacity - count)
                     Flush(0);
 
-                byte[] cacheBuffer = BufferManager.EmptyBuffer;
+                var cacheBuffer = BufferManager.EmptyBuffer;
                 ClientEngine.BufferManager.GetBuffer(ref cacheBuffer, count);
                 Buffer.BlockCopy(buffer, bufferOffset, cacheBuffer, 0, count);
 
-                CachedBlock block = new CachedBlock();
+                var block = new CachedBlock();
                 block.Buffer = cacheBuffer;
                 block.Count = count;
                 block.Offset = offset;
@@ -105,16 +105,16 @@ namespace MonoTorrent.Client.PieceWriters
 
         public override bool Exists(TorrentFile file)
         {
-            return this.writer.Exists(file);
+            return writer.Exists(file);
         }
 
         public override void Flush(TorrentFile file)
         {
-            for (int i = 0; i < cachedBlocks.Count; i++)
+            for (var i = 0; i < cachedBlocks.Count; i++)
             {
                 if (cachedBlocks[i].File == file)
                 {
-                    CachedBlock b = cachedBlocks[i];
+                    var b = cachedBlocks[i];
                     writer.Write(b.File, b.Offset, b.Buffer, 0, b.Count);
                     ClientEngine.BufferManager.FreeBuffer(ref b.Buffer);
                 }
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client.PieceWriters
 
         public void Flush(int index)
         {
-            CachedBlock b = cachedBlocks[index];
+            var b = cachedBlocks[index];
             cachedBlocks.RemoveAt(index);
             Write(b.File, b.Offset, b.Buffer, 0, b.Count, true);
             ClientEngine.BufferManager.FreeBuffer(ref b.Buffer);

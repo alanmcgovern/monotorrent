@@ -6,7 +6,7 @@ using System.IO;
 
 namespace MonoTorrent.Client
 {
-    class FileStreamBuffer : IDisposable
+    internal class FileStreamBuffer : IDisposable
     {
         // A list of currently open filestreams. Note: The least recently used is at position 0
         // The most recently used is at the last position in the array
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client
 
         public TorrentFileStream FindStream(string path)
         {
-            for (int i = 0; i < list.Count; i++)
+            for (var i = 0; i < list.Count; i++)
                 if (list[i].Path == path)
                     return list[i];
             return null;
@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
         internal TorrentFileStream GetStream(TorrentFile file, FileAccess access)
         {
-            TorrentFileStream s = FindStream(file.FullPath);
+            var s = FindStream(file.FullPath);
 
             if (s != null)
             {
@@ -109,7 +109,7 @@ namespace MonoTorrent.Client
 
         internal bool CloseStream(string path)
         {
-            TorrentFileStream s = FindStream(path);
+            var s = FindStream(path);
             if (s != null)
                 CloseAndRemove(s);
 

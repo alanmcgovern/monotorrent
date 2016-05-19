@@ -14,10 +14,10 @@ namespace MonoTorrent.Client
         //    t.Setup();
         //    t.RarestPieceTest();
         //}
-        TestRig rig;
-        List<PeerId> peers;
-        RarestFirstPicker rarest;
-        TestPicker tester;
+        private TestRig rig;
+        private List<PeerId> peers;
+        private RarestFirstPicker rarest;
+        private TestPicker tester;
 
         public RarestFirstPickerTests()
         {
@@ -27,12 +27,12 @@ namespace MonoTorrent.Client
             rarest = new RarestFirstPicker(tester);
             rarest.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
             peers = new List<PeerId>();
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
                 peers.Add(new PeerId(new Peer(new string((char) (i + 'a'), 20), new Uri("tcp://aaa")), rig.Manager));
 
-            for (int i = 0; i < rig.Manager.Bitfield.Length; i++)
+            for (var i = 0; i < rig.Manager.Bitfield.Length; i++)
             {
-                for (int j = 0; j < peers.Count; j++)
+                for (var j = 0; j < peers.Count; j++)
                     peers[j].BitField[i] = i%(j + 1) == 0;
             }
             peers[0].BitField.SetAll(true);
@@ -48,9 +48,9 @@ namespace MonoTorrent.Client
         {
             rarest.PickPiece(peers[0], peers);
             Assert.Equal(5, tester.PickPieceBitfield.Count);
-            BitField bf = tester.PickPieceBitfield[0];
-            int[] trueIndices = new int[] {1, 7, 11, 13, 17, 19, 23, 29, 31, 37};
-            for (int i = 0; i < bf.Length; i++)
+            var bf = tester.PickPieceBitfield[0];
+            var trueIndices = new int[] {1, 7, 11, 13, 17, 19, 23, 29, 31, 37};
+            for (var i = 0; i < bf.Length; i++)
                 if (Array.IndexOf<int>(trueIndices, i) > -1)
                     Assert.True(bf[i]);
                 else
@@ -58,7 +58,7 @@ namespace MonoTorrent.Client
 
             bf = tester.PickPieceBitfield[1];
             trueIndices = new int[] {1, 5, 7, 11, 13, 17, 19, 23, 25, 29, 31, 35, 37};
-            for (int i = 0; i < bf.Length; i++)
+            for (var i = 0; i < bf.Length; i++)
                 if (Array.IndexOf<int>(trueIndices, i) > -1)
                     Assert.True(bf[i]);
                 else

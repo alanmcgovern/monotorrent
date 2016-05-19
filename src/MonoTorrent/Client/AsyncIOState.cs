@@ -37,9 +37,9 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    static partial class NetworkIO
+    internal static partial class NetworkIO
     {
-        class AsyncIOState : ICacheable
+        private class AsyncIOState : ICacheable
         {
             public byte[] Buffer { get; private set; }
 

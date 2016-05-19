@@ -36,7 +36,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 {
     public class ErrorMessage : UdpTrackerMessage
     {
-        string errorMessage;
+        private string errorMessage;
 
         public ErrorMessage()
             : this(0, "")
@@ -46,7 +46,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public ErrorMessage(int transactionId, string error)
             : base(3, transactionId)
         {
-            this.errorMessage = error;
+            errorMessage = error;
         }
 
         public string Error
@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int Encode(byte[] buffer, int offset)
         {
-            int written = offset;
+            var written = offset;
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
