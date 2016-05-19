@@ -16,6 +16,7 @@ namespace MonoTorrent.Tracker
         {
             return left.Equals(right);
         }
+
         public object GetKey(AnnounceParameters parameters)
         {
             return parameters.Uploaded;
@@ -50,14 +51,13 @@ namespace MonoTorrent.Tracker
 
         public override void Start()
         {
-            
         }
 
         public override void Stop()
         {
-            
         }
     }
+
     public class Trackable : ITrackable
     {
         private InfoHash infoHash;
@@ -119,7 +119,7 @@ namespace MonoTorrent.Tracker
             {
                 byte[] infoHash = new byte[20];
                 r.NextBytes(infoHash);
-                Trackables.Add(new Trackable(new InfoHash (infoHash), i.ToString()));
+                Trackables.Add(new Trackable(new InfoHash(infoHash), i.ToString()));
             }
         }
 
@@ -130,7 +130,7 @@ namespace MonoTorrent.Tracker
             {
                 PeerDetails d = new PeerDetails();
                 d.ClientAddress = IPAddress.Parse(string.Format("127.0.{0}.2", i));
-                d.Downloaded = (int)(10000 * r.NextDouble());
+                d.Downloaded = (int) (10000*r.NextDouble());
                 d.peerId = string.Format("-----------------{0:0.000}", i);
                 d.Port = r.Next(65000);
                 d.Remaining = r.Next(10000, 100000);

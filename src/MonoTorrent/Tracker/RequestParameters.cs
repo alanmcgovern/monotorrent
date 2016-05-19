@@ -17,7 +17,7 @@ namespace MonoTorrent.Tracker
         private BEncodedDictionary response;
 
         public abstract bool IsValid { get; }
-        
+
         public NameValueCollection Parameters
         {
             get { return parameters; }

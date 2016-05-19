@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -65,7 +64,7 @@ namespace MonoTorrent.Common
             where T : HashAlgorithm
         {
             if (algos.ContainsKey(typeof(T)))
-                return (T)Activator.CreateInstance(algos[typeof(T)]);
+                return (T) Activator.CreateInstance(algos[typeof(T)]);
             return null;
         }
     }

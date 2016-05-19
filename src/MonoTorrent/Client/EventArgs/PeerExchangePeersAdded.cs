@@ -38,11 +38,11 @@ namespace MonoTorrent.Client
 
         public PeerId Id
         {
-            get{return id;}
+            get { return id; }
         }
 
         public PeerExchangePeersAdded(TorrentManager manager, int count, int total, PeerId id)
-            :base(manager, count, total)
+            : base(manager, count, total)
         {
             if (id == null)
                 throw new ArgumentNullException("id");

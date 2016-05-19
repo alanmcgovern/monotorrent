@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -53,7 +52,7 @@ namespace MonoTorrent.Client
             return Unlimited;
         }
 
-        public void UpdateChunks (int maxRate, int actualRate)
+        public void UpdateChunks(int maxRate, int actualRate)
         {
             // This is a simple on/off limiter
         }

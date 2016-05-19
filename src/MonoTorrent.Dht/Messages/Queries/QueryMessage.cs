@@ -30,7 +30,6 @@
 
 using System;
 using System.Collections.Generic;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -45,7 +44,7 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
+            get { return new NodeId((BEncodedString) Parameters[IdKey]); }
         }
 
         internal ResponseCreator ResponseCreator
@@ -56,16 +55,16 @@ namespace MonoTorrent.Dht.Messages
 
         protected BEncodedDictionary Parameters
         {
-            get { return (BEncodedDictionary)properties[QueryArgumentsKey]; }
+            get { return (BEncodedDictionary) properties[QueryArgumentsKey]; }
         }
 
         protected QueryMessage(NodeId id, BEncodedString queryName, ResponseCreator responseCreator)
             : this(id, queryName, new BEncodedDictionary(), responseCreator)
         {
-
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, ResponseCreator responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments,
+            ResponseCreator responseCreator)
             : base(QueryType)
         {
             properties.Add(QueryNameKey, queryName);
@@ -82,4 +81,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

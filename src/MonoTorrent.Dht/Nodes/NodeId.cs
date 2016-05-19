@@ -55,9 +55,8 @@ namespace MonoTorrent.Dht
         }
 
         internal NodeId(InfoHash infoHash)
-            : this(infoHash.ToArray ())
+            : this(infoHash.ToArray())
         {
-
         }
 
         private NodeId(BigInteger value)
@@ -78,7 +77,7 @@ namespace MonoTorrent.Dht
 
         public bool Equals(NodeId other)
         {
-            if ((object)other == null)
+            if ((object) other == null)
                 return false;
 
             return value.Equals(other.value);
@@ -101,7 +100,7 @@ namespace MonoTorrent.Dht
 
         public int CompareTo(NodeId other)
         {
-            if ((object)other == null)
+            if ((object) other == null)
                 return 1;
 
             BigInteger.Sign s = value.Compare(other.value);
@@ -119,7 +118,7 @@ namespace MonoTorrent.Dht
 
         public static implicit operator NodeId(int value)
         {
-            return new NodeId(new BigInteger((uint)value));
+            return new NodeId(new BigInteger((uint) value));
         }
 
         public static NodeId operator -(NodeId first)
@@ -167,19 +166,19 @@ namespace MonoTorrent.Dht
         public static NodeId operator *(NodeId first, NodeId second)
         {
             CheckArguments(first, second);
-            return new NodeId(first.value * second.value);
+            return new NodeId(first.value*second.value);
         }
 
         public static NodeId operator /(NodeId first, NodeId second)
         {
             CheckArguments(first, second);
-            return new NodeId(first.value / second.value);
+            return new NodeId(first.value/second.value);
         }
 
         public static NodeId operator %(NodeId first, NodeId second)
         {
             CheckArguments(first, second);
-            return new NodeId(first.value % second.value);
+            return new NodeId(first.value%second.value);
         }
 
         private static void CheckArguments(NodeId first)
@@ -198,9 +197,9 @@ namespace MonoTorrent.Dht
 
         public static bool operator ==(NodeId first, NodeId second)
         {
-            if ((object)first == null)
-                return (object)second == null;
-            if ((object)second == null)
+            if ((object) first == null)
+                return (object) second == null;
+            if ((object) second == null)
                 return false;
             return first.value == second.value;
         }
@@ -230,4 +229,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

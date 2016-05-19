@@ -1,4 +1,4 @@
- //
+//
 // ConnectionListener.cs
 //
 // Authors:
@@ -25,7 +25,6 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-
 
 
 using System;
@@ -56,10 +55,10 @@ namespace MonoTorrent.Client
             Socket peerSocket = null;
             try
             {
-                Socket listener = (Socket)result.AsyncState;
+                Socket listener = (Socket) result.AsyncState;
                 peerSocket = listener.EndAccept(result);
 
-                IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
+                IPEndPoint endpoint = (IPEndPoint) peerSocket.RemoteEndPoint;
                 Uri uri = new Uri("tcp://" + endpoint.Address.ToString() + ':' + endpoint.Port);
                 Peer peer = new Peer("", uri, EncryptionTypes.All);
                 IConnection connection = null;
@@ -90,7 +89,6 @@ namespace MonoTorrent.Client
                 }
                 catch (ObjectDisposedException)
                 {
-
                 }
             }
         }

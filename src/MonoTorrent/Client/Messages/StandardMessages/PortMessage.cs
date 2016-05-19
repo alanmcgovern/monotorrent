@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 
@@ -42,9 +41,10 @@ namespace MonoTorrent.Client.Messages.Standard
         internal static readonly byte MessageId = 9;
 
         #region Private Fields
-        private ushort port;
-        #endregion
 
+        private ushort port;
+
+        #endregion
 
         #region Public Properties
 
@@ -60,8 +60,8 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
-
         #region Constructors
+
         public PortMessage()
         {
         }
@@ -70,24 +70,23 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             this.port = port;
         }
-        
-        #endregion
 
+        #endregion
 
         #region Methods
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            this.port = (ushort)ReadShort(buffer, ref offset);
+            this.port = (ushort) ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, port);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, port);
 
             return CheckWritten(written - offset);
         }

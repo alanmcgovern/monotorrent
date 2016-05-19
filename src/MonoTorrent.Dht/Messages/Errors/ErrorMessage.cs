@@ -32,7 +32,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
-
 using MonoTorrent.BEncoding;
 using MonoTorrent.Dht;
 
@@ -46,38 +45,38 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString)""); }
+            get { return new NodeId((BEncodedString) ""); }
         }
+
         private BEncodedList ErrorList
         {
-            get { return (BEncodedList)properties[ErrorListKey]; }
+            get { return (BEncodedList) properties[ErrorListKey]; }
         }
-		
-		private ErrorCode ErrorCode
+
+        private ErrorCode ErrorCode
         {
-            get { return ((ErrorCode)((BEncodedNumber)ErrorList[0]).Number); }
+            get { return ((ErrorCode) ((BEncodedNumber) ErrorList[0]).Number); }
         }
-		
-		private string Message
+
+        private string Message
         {
-            get { return ((BEncodedString)ErrorList[1]).Text; }
+            get { return ((BEncodedString) ErrorList[1]).Text; }
         }
-		
+
         public ErrorMessage(ErrorCode error, string message)
             : base(ErrorType)
         {
-		    BEncodedList l = new BEncodedList();
-		    l.Add(new BEncodedNumber((int)error));
-			l.Add(new BEncodedString(message));
+            BEncodedList l = new BEncodedList();
+            l.Add(new BEncodedNumber((int) error));
+            l.Add(new BEncodedString(message));
             properties.Add(ErrorListKey, l);
         }
 
         public ErrorMessage(BEncodedDictionary d)
             : base(d)
         {
-
         }
-        
+
         public override void Handle(DhtEngine engine, Node node)
         {
             base.Handle(engine, node);
@@ -86,4 +85,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

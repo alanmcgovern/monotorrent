@@ -32,7 +32,6 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using System.Runtime.Serialization.Formatters.Binary;
-
 using MonoTorrent;
 using MonoTorrent.Common;
 using MonoTorrent.Client;
@@ -49,8 +48,8 @@ namespace MonoTorrent.Dht
     {
         GenericError = 201,
         ServerError = 202,
-        ProtocolError = 203,// malformed packet, invalid arguments, or bad token
-        MethodUnknown = 204//Method Unknown
+        ProtocolError = 203, // malformed packet, invalid arguments, or bad token
+        MethodUnknown = 204 //Method Unknown
     }
 
     public class DhtEngine : IDisposable, IDhtEngine
@@ -157,7 +156,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode (nodes));
+            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
             task.Execute();
         }
 
@@ -198,9 +197,7 @@ namespace MonoTorrent.Dht
                 return;
 
             // Ensure we don't break any threads actively running right now
-            DhtEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                disposed = true;
-            });
+            DhtEngine.MainLoop.QueueWait((MainLoopTask) delegate { disposed = true; });
         }
 
         public void GetPeers(InfoHash infoHash)
@@ -221,14 +218,15 @@ namespace MonoTorrent.Dht
         internal void RaisePeersFound(NodeId infoHash, List<Peer> peers)
         {
             if (PeersFound != null)
-                PeersFound(this, new PeersFoundEventArgs(new InfoHash (infoHash.Bytes), peers));
+                PeersFound(this, new PeersFoundEventArgs(new InfoHash(infoHash.Bytes), peers));
         }
 
         public byte[] SaveNodes()
         {
             BEncodedList details = new BEncodedList();
 
-            MainLoop.QueueWait((MainLoopTask)delegate {
+            MainLoop.QueueWait((MainLoopTask) delegate
+            {
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
                     foreach (Node n in b.Nodes)
@@ -291,4 +289,5 @@ namespace MonoTorrent.Dht
         #endregion Methods
     }
 }
+
 #endif

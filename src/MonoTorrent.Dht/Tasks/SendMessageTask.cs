@@ -21,13 +21,12 @@ namespace MonoTorrent.Dht.Tasks
 
         public Node Target
         {
-            get { return node; } 
+            get { return node; }
         }
 
         public SendQueryTask(DhtEngine engine, QueryMessage query, Node node)
             : this(engine, query, node, 3)
         {
-
         }
 
         public SendQueryTask(DhtEngine engine, QueryMessage query, Node node, int retries)
@@ -94,4 +93,5 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+
 #endif

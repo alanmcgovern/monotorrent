@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Text;
 using System.Net;
@@ -41,6 +40,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         public readonly int messageLength = 13;
 
         #region Member Variables
+
         /// <summary>
         /// The offset in bytes of the block of data
         /// </summary>
@@ -48,6 +48,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.startOffset; }
         }
+
         private int startOffset;
 
         /// <summary>
@@ -57,6 +58,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.pieceIndex; }
         }
+
         private int pieceIndex;
 
         /// <summary>
@@ -66,18 +68,20 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.requestLength; }
         }
+
         private int requestLength;
+
         #endregion
 
-
         #region Constructors
+
         public RejectRequestMessage()
         {
         }
 
 
         public RejectRequestMessage(PieceMessage message)
-            :this(message.PieceIndex, message.StartOffset, message.RequestLength)
+            : this(message.PieceIndex, message.StartOffset, message.RequestLength)
         {
         }
 
@@ -92,22 +96,23 @@ namespace MonoTorrent.Client.Messages.FastPeer
             this.startOffset = startOffset;
             this.requestLength = requestLength;
         }
+
         #endregion
 
-        
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
-			written += Write(buffer, written, startOffset);
-			written += Write(buffer, written, requestLength);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, startOffset);
+            written += Write(buffer, written, requestLength);
 
             return CheckWritten(written - offset);
         }
@@ -127,10 +132,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.messageLength + 4; }
         }
+
         #endregion
 
-
         #region Overidden Methods
+
         public override bool Equals(object obj)
         {
             RejectRequestMessage msg = obj as RejectRequestMessage;
@@ -138,8 +144,8 @@ namespace MonoTorrent.Client.Messages.FastPeer
                 return false;
 
             return (this.pieceIndex == msg.pieceIndex
-                && this.startOffset == msg.startOffset
-                && this.requestLength == msg.requestLength);
+                    && this.startOffset == msg.startOffset
+                    && this.requestLength == msg.requestLength);
         }
 
 
@@ -159,10 +165,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
             sb.Append(this.pieceIndex);
             sb.Append(" Offset: ");
             sb.Append(this.startOffset);
-            sb.Append(" Length " );
+            sb.Append(" Length ");
             sb.Append(this.requestLength);
             return sb.ToString();
         }
+
         #endregion
     }
 }

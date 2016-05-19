@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Tracker
     {
         public event EventHandler BeforeAnnounce;
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        public event EventHandler BeforeScrape; 
+        public event EventHandler BeforeScrape;
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         bool canAnnounce;
@@ -58,50 +58,60 @@ namespace MonoTorrent.Client.Tracker
             get { return canAnnounce; }
             protected set { canAnnounce = value; }
         }
+
         public bool CanScrape
         {
             get { return canScrape; }
             set { canScrape = value; }
         }
+
         public int Complete
         {
             get { return complete; }
             protected set { complete = value; }
         }
+
         public int Downloaded
         {
             get { return downloaded; }
             protected set { downloaded = value; }
         }
+
         public string FailureMessage
         {
             get { return failureMessage ?? ""; }
             protected set { failureMessage = value; }
         }
+
         public int Incomplete
         {
             get { return incomplete; }
             protected set { incomplete = value; }
         }
+
         public TimeSpan MinUpdateInterval
         {
             get { return minUpdateInterval; }
             protected set { minUpdateInterval = value; }
         }
+
         public TrackerState Status
         {
             get { return status; }
             protected set { status = value; }
         }
+
         public TimeSpan UpdateInterval
         {
             get { return updateInterval; }
             protected set { updateInterval = value; }
         }
+
         public Uri Uri
         {
             get { return uri; }
         }
+
         public string WarningMessage
         {
             get { return warningMessage ?? ""; }
@@ -125,18 +135,21 @@ namespace MonoTorrent.Client.Tracker
             if (h != null)
                 h(this, EventArgs.Empty);
         }
+
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
             EventHandler<AnnounceResponseEventArgs> h = AnnounceComplete;
             if (h != null)
                 h(this, e);
         }
+
         protected virtual void RaiseBeforeScrape()
         {
             EventHandler h = BeforeScrape;
             if (h != null)
                 h(this, EventArgs.Empty);
         }
+
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
             EventHandler<ScrapeResponseEventArgs> h = ScrapeComplete;

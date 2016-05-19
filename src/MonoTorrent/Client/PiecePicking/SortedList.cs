@@ -41,6 +41,7 @@ namespace MonoTorrent.Client
         {
             list = new List<T>();
         }
+
         public SortList(IEnumerable<T> list)
         {
             this.list = new List<T>(list);

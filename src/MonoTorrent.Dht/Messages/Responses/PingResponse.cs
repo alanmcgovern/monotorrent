@@ -44,9 +44,10 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public PingResponse(BEncodedDictionary d, QueryMessage m)
-            :base(d, m)
+            : base(d, m)
         {
         }
     }
 }
+
 #endif

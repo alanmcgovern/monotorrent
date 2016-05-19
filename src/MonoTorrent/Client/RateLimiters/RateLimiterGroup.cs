@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,9 +39,10 @@ namespace MonoTorrent.Client
 
         public bool Unlimited
         {
-            get {
+            get
+            {
                 for (int i = 0; i < limiters.Count; i++)
-                    if (!limiters [i].Unlimited)
+                    if (!limiters[i].Unlimited)
                         return false;
                 return true;
             }
@@ -77,10 +77,10 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        public void UpdateChunks (int maxRate, int actualRate)
+        public void UpdateChunks(int maxRate, int actualRate)
         {
             for (int i = 0; i < limiters.Count; i++)
-                limiters [i].UpdateChunks (maxRate, actualRate);
+                limiters[i].UpdateChunks(maxRate, actualRate);
         }
     }
 }

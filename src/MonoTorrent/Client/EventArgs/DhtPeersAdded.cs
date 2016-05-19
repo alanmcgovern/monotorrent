@@ -37,7 +37,6 @@ namespace MonoTorrent.Client
         public DhtPeersAdded(TorrentManager manager, int peersAdded, int total)
             : base(manager, peersAdded, total)
         {
-
         }
     }
 }

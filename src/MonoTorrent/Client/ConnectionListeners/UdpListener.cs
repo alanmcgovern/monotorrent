@@ -41,13 +41,11 @@ namespace MonoTorrent
 {
     public abstract class UdpListener : Listener
     {
-
         private UdpClient client;
 
         protected UdpListener(IPEndPoint endpoint)
-            :base(endpoint)
+            : base(endpoint)
         {
-            
         }
 
         private void EndReceive(IAsyncResult result)
@@ -92,18 +90,18 @@ namespace MonoTorrent
             }
         }
 
-		protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
+        protected abstract void OnMessageReceived(byte[] buffer, IPEndPoint endpoint);
 
         public virtual void Send(byte[] buffer, IPEndPoint endpoint)
         {
             try
             {
-               if (endpoint.Address != IPAddress.Any)
+                if (endpoint.Address != IPAddress.Any)
                     client.Send(buffer, buffer.Length, endpoint);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Logger.Log (null, "UdpListener could not send message: {0}", ex);
+                Logger.Log(null, "UdpListener could not send message: {0}", ex);
             }
         }
 
@@ -138,4 +136,5 @@ namespace MonoTorrent
         }
     }
 }
+
 #endif

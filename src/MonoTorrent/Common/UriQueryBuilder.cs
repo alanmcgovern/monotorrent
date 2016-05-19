@@ -29,76 +29,75 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MonoTorrent.Common {
-
-    public class UriQueryBuilder {
-
+namespace MonoTorrent.Common
+{
+    public class UriQueryBuilder
+    {
         UriBuilder builder;
         Dictionary<string, string> queryParams;
 
-        public UriQueryBuilder (string uri)
-            : this (new Uri (uri))
-            
-        {
+        public UriQueryBuilder(string uri)
+            : this(new Uri(uri))
 
+        {
         }
 
-        public string this [string key]
+        public string this[string key]
         {
-            get { return queryParams [key]; }
-            set { queryParams [key] = value; }
+            get { return queryParams[key]; }
+            set { queryParams[key] = value; }
         }
 
-        public UriQueryBuilder (Uri uri)
+        public UriQueryBuilder(Uri uri)
         {
-            builder = new System.UriBuilder (uri);
-            queryParams = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
-            ParseParameters ();
+            builder = new System.UriBuilder(uri);
+            queryParams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            ParseParameters();
         }
 
-        public UriQueryBuilder Add (string key, object value)
+        public UriQueryBuilder Add(string key, object value)
         {
-            Check.Key (key);
-            Check.Value (value);
+            Check.Key(key);
+            Check.Value(value);
 
-            queryParams [key] = value.ToString ();
+            queryParams[key] = value.ToString();
             return this;
         }
 
-        public bool Contains (string key)
+        public bool Contains(string key)
         {
-            return queryParams.ContainsKey (key);
+            return queryParams.ContainsKey(key);
         }
 
-        void ParseParameters ()
+        void ParseParameters()
         {
-            if (builder.Query.Length == 0 || !builder.Query.StartsWith ("?"))
+            if (builder.Query.Length == 0 || !builder.Query.StartsWith("?"))
                 return;
 
-            string [] strs = builder.Query.Remove (0, 1).Split ('&');
-            for (int i = 0; i < strs.Length; i++) {
-                string [] kv = strs [i].Split ('=');
+            string[] strs = builder.Query.Remove(0, 1).Split('&');
+            for (int i = 0; i < strs.Length; i++)
+            {
+                string[] kv = strs[i].Split('=');
                 if (kv.Length == 2)
-                    queryParams.Add (kv [0].Trim (), kv [1].Trim ());
+                    queryParams.Add(kv[0].Trim(), kv[1].Trim());
             }
         }
 
-        public override string ToString ()
+        public override string ToString()
         {
-            return ToUri ().OriginalString;
+            return ToUri().OriginalString;
         }
 
-        public Uri ToUri ()
+        public Uri ToUri()
         {
             string result = "";
             foreach (KeyValuePair<string, string> keypair in queryParams)
                 result += keypair.Key + "=" + keypair.Value + "&";
-            builder.Query = result.Length == 0 ? result : result.Remove (result.Length - 1);
+            builder.Query = result.Length == 0 ? result : result.Remove(result.Length - 1);
             return builder.Uri;
         }
     }

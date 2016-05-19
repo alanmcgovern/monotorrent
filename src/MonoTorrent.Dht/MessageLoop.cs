@@ -52,6 +52,7 @@ namespace MonoTorrent.Dht
                 Message = message;
                 SentAt = DateTime.MinValue;
             }
+
             public IPEndPoint Destination;
             public Message Message;
             public DateTime SentAt;
@@ -67,10 +68,14 @@ namespace MonoTorrent.Dht
         Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
         MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
-        
+
         private bool CanSend
         {
-            get { return activeSends.Count < 5 && sendQueue.Count > 0 && (DateTime.Now - lastSent) > TimeSpan.FromMilliseconds(5); }
+            get
+            {
+                return activeSends.Count < 5 && sendQueue.Count > 0 &&
+                       (DateTime.Now - lastSent) > TimeSpan.FromMilliseconds(5);
+            }
         }
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
@@ -78,7 +83,8 @@ namespace MonoTorrent.Dht
             this.engine = engine;
             this.listener = listener;
             listener.MessageReceived += new MessageReceived(MessageReceived);
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate
+            {
                 if (engine.Disposed)
                     return false;
                 try
@@ -107,7 +113,9 @@ namespace MonoTorrent.Dht
                 try
                 {
                     Message message;
-                    if (MessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
+                    if (
+                        MessageFactory.TryDecodeMessage(
+                            (BEncodedDictionary) BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
                         receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, message));
                 }
                 catch (MessageException ex)
@@ -144,7 +152,6 @@ namespace MonoTorrent.Dht
                 if (details.Message is QueryMessage)
                     waitingResponse.Add(details);
             }
-
         }
 
         internal void Start()
@@ -166,8 +173,8 @@ namespace MonoTorrent.Dht
                 if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.TimeOut)
                 {
                     SendDetails details = waitingResponse.Dequeue();
-                    MessageFactory.UnregisterSend((QueryMessage)details.Message);
-                    RaiseMessageSent(details.Destination, (QueryMessage)details.Message, null);
+                    MessageFactory.UnregisterSend((QueryMessage) details.Message);
+                    RaiseMessageSent(details.Destination, (QueryMessage) details.Message, null);
                 }
             }
         }
@@ -229,14 +236,15 @@ namespace MonoTorrent.Dht
                 {
                     if (message is ResponseMessage)
                         throw new ArgumentException("Message must have a transaction id");
-                    do {
+                    do
+                    {
                         message.TransactionId = TransactionId.NextId();
                     } while (MessageFactory.IsRegistered(message.TransactionId));
                 }
 
                 // We need to be able to cancel a query message if we time out waiting for a response
                 if (message is QueryMessage)
-                    MessageFactory.RegisterSend((QueryMessage)message);
+                    MessageFactory.RegisterSend((QueryMessage) message);
 
                 sendQueue.Enqueue(new SendDetails(endpoint, message));
             }
@@ -248,4 +256,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

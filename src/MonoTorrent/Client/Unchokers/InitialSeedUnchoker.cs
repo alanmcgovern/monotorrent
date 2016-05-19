@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -47,7 +46,7 @@ namespace MonoTorrent.Client
 
         public double ShareRatio
         {
-            get { return (SharedPieces + 1.0) / (TotalPieces + 1.0); }
+            get { return (SharedPieces + 1.0)/(TotalPieces + 1.0); }
         }
 
         public ChokeData(PeerId peer)
@@ -171,7 +170,8 @@ namespace MonoTorrent.Client
 
         public void SentBlock(PeerId peer, int pieceIndex)
         {
-            SeededPiece piece = advertisedPieces.Find(delegate(SeededPiece p) { return p.Peer == peer && p.Index == pieceIndex; });
+            SeededPiece piece =
+                advertisedPieces.Find(delegate(SeededPiece p) { return p.Peer == peer && p.Index == pieceIndex; });
             if (piece == null)
                 return;
 
@@ -226,7 +226,8 @@ namespace MonoTorrent.Client
                 advertised++;
                 data.TotalPieces++;
                 data.CurrentPieces[index] = true;
-                advertisedPieces.Add(new SeededPiece(data.Peer, index, data.Peer.TorrentManager.Torrent.PieceLength / Piece.BlockSize));
+                advertisedPieces.Add(new SeededPiece(data.Peer, index,
+                    data.Peer.TorrentManager.Torrent.PieceLength/Piece.BlockSize));
                 data.Peer.Enqueue(new HaveMessage(index));
                 index++;
             }
@@ -273,7 +274,8 @@ namespace MonoTorrent.Client
 
         public override void UnchokeReview()
         {
-            if (PendingUnchoke) {
+            if (PendingUnchoke)
+            {
                 List<ChokeData> dupePeers = new List<ChokeData>(peers);
                 foreach (ChokeData data in dupePeers)
                     TryChoke(data);

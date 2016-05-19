@@ -9,6 +9,7 @@ namespace MonoTorrent.Client
     {
         private IConnection connection;
         private Peer peer;
+
         public IConnection Connection
         {
             get { return connection; }
@@ -23,7 +24,8 @@ namespace MonoTorrent.Client
             : base(manager)
         {
             if (!connection.IsIncoming && manager == null)
-                throw new InvalidOperationException("An outgoing connection must specify the torrent manager it belongs to");
+                throw new InvalidOperationException(
+                    "An outgoing connection must specify the torrent manager it belongs to");
 
             this.connection = connection;
             this.peer = peer;

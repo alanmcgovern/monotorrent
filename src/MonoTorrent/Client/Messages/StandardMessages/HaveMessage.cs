@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 
@@ -41,8 +40,8 @@ namespace MonoTorrent.Client.Messages.Standard
         internal static readonly byte MessageId = 4;
         private const int messageLength = 5;
 
-
         #region Member Variables
+
         /// <summary>
         /// The index of the piece that you "have"
         /// </summary>
@@ -50,11 +49,13 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.pieceIndex; }
         }
+
         private int pieceIndex;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new HaveMessage
         /// </summary>
@@ -71,17 +72,18 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             this.pieceIndex = pieceIndex;
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -90,7 +92,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             this.pieceIndex = ReadInt(buffer, offset);
         }
-     
+
         /// <summary>
         /// Returns the length of the message in bytes
         /// </summary>
@@ -98,10 +100,11 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return (messageLength + 4); }
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -129,6 +132,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return this.pieceIndex.GetHashCode();
         }
+
         #endregion
     }
 }

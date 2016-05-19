@@ -31,7 +31,6 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Collections.Generic;
-
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
@@ -39,16 +38,17 @@ namespace MonoTorrent.Dht
     internal class NodeFoundEventArgs : EventArgs
     {
         private Node node;
-        
+
         public NodeFoundEventArgs(Node node)
         {
             this.node = node;
         }
-        
+
         public Node Node
         {
             get { return node; }
         }
     }
 }
+
 #endif

@@ -33,7 +33,6 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Web;
-
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using TrackerApp;
@@ -131,13 +130,13 @@ namespace SampleTracker
                     // Generally the solution is: Wait a few hundred milliseconds
                     // then try load the file.
                     System.Threading.Thread.Sleep(500);
-					
+
                     Torrent t = Torrent.Load(e.TorrentPath);
-					
+
                     // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
                     // just stores the infohash and name of the torrent. This is all that the tracker
                     // needs to run. So if you want an ITrackable that "just works", then use InfoHashTrackable.
-					
+
                     // ITrackable trackable = new InfoHashTrackable(t);
                     ITrackable trackable = new CustomITrackable(t);
 
@@ -171,9 +170,9 @@ namespace SampleTracker
             Console.WriteLine("Welcome to the MonoTorrent tracker");
             Console.WriteLine("1. Start the tracker");
             Console.WriteLine("2. Start a benchmark");
-            
+
             Console.Write("Choice: ");
-            
+
             int val = 0;
             while (val != 1 && val != 2)
                 val = GetInt();

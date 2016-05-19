@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -46,7 +45,6 @@ namespace MonoTorrent.BEncoding
 
         #endregion
 
-
         #region Constructors
 
         /// <summary>
@@ -58,7 +56,6 @@ namespace MonoTorrent.BEncoding
         }
 
         #endregion
-
 
         #region Encode/Decode Methods
 
@@ -73,7 +70,7 @@ namespace MonoTorrent.BEncoding
             int written = 0;
 
             //Dictionaries start with 'd'
-            buffer[offset] = (byte)'d';
+            buffer[offset] = (byte) 'd';
             written++;
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this)
@@ -83,7 +80,7 @@ namespace MonoTorrent.BEncoding
             }
 
             // Dictionaries end with 'e'
-            buffer[offset + written] = (byte)'e';
+            buffer[offset + written] = (byte) 'e';
             written++;
             return written;
         }
@@ -109,7 +106,7 @@ namespace MonoTorrent.BEncoding
 
             while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
             {
-                key = (BEncodedString)BEncodedValue.Decode(reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) BEncodedValue.Decode(reader); // keys have to be BEncoded strings
 
                 if (oldkey != null && oldkey.CompareTo(key) > 0)
                     if (strictDecoding)
@@ -118,11 +115,11 @@ namespace MonoTorrent.BEncoding
                             oldkey, key));
 
                 oldkey = key;
-                value = BEncodedValue.Decode(reader);                     // the value is a BEncoded value
+                value = BEncodedValue.Decode(reader); // the value is a BEncoded value
                 dictionary.Add(key, value);
             }
 
-            if (reader.ReadByte() != 'e')                                    // remove the trailing 'e'
+            if (reader.ReadByte() != 'e') // remove the trailing 'e'
                 throw new BEncodingException("Invalid data found. Aborting");
         }
 
@@ -152,30 +149,29 @@ namespace MonoTorrent.BEncoding
 
             while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
             {
-                key = (BEncodedString)BEncodedValue.Decode(reader);         // keys have to be BEncoded strings
+                key = (BEncodedString) BEncodedValue.Decode(reader); // keys have to be BEncoded strings
 
                 if (reader.PeekByte() == 'd')
                 {
                     value = new BEncodedDictionary();
                     if (key.Text.ToLower().Equals("info"))
-                        ((BEncodedDictionary)value).DecodeInternal(reader, true);
+                        ((BEncodedDictionary) value).DecodeInternal(reader, true);
                     else
-                        ((BEncodedDictionary)value).DecodeInternal(reader, false);
+                        ((BEncodedDictionary) value).DecodeInternal(reader, false);
                 }
                 else
-                    value = BEncodedValue.Decode(reader);                     // the value is a BEncoded value
-                    
+                    value = BEncodedValue.Decode(reader); // the value is a BEncoded value
+
                 torrent.dictionary.Add(key, value);
             }
 
-            if (reader.ReadByte() != 'e')                                    // remove the trailing 'e'
+            if (reader.ReadByte() != 'e') // remove the trailing 'e'
                 throw new BEncodingException("Invalid data found. Aborting");
 
             return torrent;
         }
 
         #endregion
-
 
         #region Helper Methods
 
@@ -186,21 +182,21 @@ namespace MonoTorrent.BEncoding
         public override int LengthInBytes()
         {
             int length = 0;
-            length += 1;   // Dictionaries start with 'd'
+            length += 1; // Dictionaries start with 'd'
 
             foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in this.dictionary)
             {
                 length += keypair.Key.LengthInBytes();
                 length += keypair.Value.LengthInBytes();
             }
-            length += 1;   // Dictionaries end with 'e'
+            length += 1; // Dictionaries end with 'e'
             return length;
         }
 
         #endregion
 
-
         #region Overridden Methods
+
         public override bool Equals(object obj)
         {
             BEncodedValue val;
@@ -239,10 +235,11 @@ namespace MonoTorrent.BEncoding
         {
             return System.Text.Encoding.UTF8.GetString(Encode());
         }
+
         #endregion
 
-
         #region IDictionary and IList methods
+
         public void Add(BEncodedString key, BEncodedValue value)
         {
             this.dictionary.Add(key, value);
@@ -252,6 +249,7 @@ namespace MonoTorrent.BEncoding
         {
             this.dictionary.Add(item.Key, item.Value);
         }
+
         public void Clear()
         {
             this.dictionary.Clear();
@@ -346,6 +344,7 @@ namespace MonoTorrent.BEncoding
         {
             return this.dictionary.GetEnumerator();
         }
+
         #endregion
     }
 }

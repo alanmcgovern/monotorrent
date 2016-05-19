@@ -41,8 +41,8 @@ namespace MonoTorrent.Client
     // From this list we will make requests for all the blocks until the piece is complete.
     public class EndGamePicker : PiecePicker
     {
-        static Predicate<Request> TimedOut = delegate (Request r) { return r.Block.RequestTimedOut; };
-        static Predicate<Request> NotRequested = delegate (Request r) { return r.Block.RequestedOff == null; };
+        static Predicate<Request> TimedOut = delegate(Request r) { return r.Block.RequestTimedOut; };
+        static Predicate<Request> NotRequested = delegate(Request r) { return r.Block.RequestedOff == null; };
 
         // Struct to link a request for a block to a peer
         // This way we can have multiple requests for the same block
@@ -53,6 +53,7 @@ namespace MonoTorrent.Client
                 Peer = peer;
                 Block = block;
             }
+
             public Block Block;
             public PeerId Peer;
         }
@@ -123,7 +124,8 @@ namespace MonoTorrent.Client
             return !bitfield.AllFalse;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             // Only request 2 pieces at a time in endgame mode
             // to prevent a *massive* overshoot
@@ -135,7 +137,7 @@ namespace MonoTorrent.Client
             // 1) See if there are any blocks which have not been requested at all. Request the block if the peer has it
             foreach (Piece p in pieces)
             {
-                if(!peerBitfield[p.Index] || p.AllBlocksRequested)
+                if (!peerBitfield[p.Index] || p.AllBlocksRequested)
                     continue;
 
                 for (int i = 0; i < p.BlockCount; i++)
@@ -164,7 +166,8 @@ namespace MonoTorrent.Client
                     int c = requests.Count;
                     for (int j = 0; j < requests.Count - 1 && (c-- > 0); j++)
                     {
-                        if (requests[j].Block.PieceIndex == p.Index && requests[j].Block.StartOffset == p.Blocks[i].StartOffset)
+                        if (requests[j].Block.PieceIndex == p.Index &&
+                            requests[j].Block.StartOffset == p.Blocks[i].StartOffset)
                         {
                             Request r = requests[j];
                             requests.RemoveAt(j);
@@ -192,7 +195,8 @@ namespace MonoTorrent.Client
 
         private bool AlreadyRequested(Block block, PeerId id)
         {
-            bool b = requests.Exists(delegate(Request r) {
+            bool b = requests.Exists(delegate(Request r)
+            {
                 return r.Block.PieceIndex == block.PieceIndex &&
                        r.Block.StartOffset == block.StartOffset &&
                        r.Peer == id;
@@ -208,7 +212,8 @@ namespace MonoTorrent.Client
 
         public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
         {
-            CancelWhere(delegate (Request r) {
+            CancelWhere(delegate(Request r)
+            {
                 return r.Block.PieceIndex == piece &&
                        r.Block.StartOffset == startOffset &&
                        r.Block.RequestLength == length &&
@@ -226,7 +231,8 @@ namespace MonoTorrent.Client
             foreach (Request r in requests)
             {
                 // When we get past this block, it means we've found a valid request for this piece
-                if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset || r.Block.RequestLength != length || r.Peer != peer)
+                if (r.Block.PieceIndex != pieceIndex || r.Block.StartOffset != startOffset ||
+                    r.Block.RequestLength != length || r.Peer != peer)
                     continue;
 
                 // All the other requests for this block need to be cancelled.
@@ -235,7 +241,8 @@ namespace MonoTorrent.Client
                     if (p.Index != pieceIndex)
                         continue;
 
-                    CancelWhere(delegate(Request req) {
+                    CancelWhere(delegate(Request req)
+                    {
                         return req.Block.PieceIndex == pieceIndex &&
                                req.Block.StartOffset == startOffset &&
                                req.Block.RequestLength == length &&
@@ -243,7 +250,7 @@ namespace MonoTorrent.Client
                     }, true);
 
                     // Mark the block as received
-                    p.Blocks[startOffset / Piece.BlockSize].Received = true;
+                    p.Blocks[startOffset/Piece.BlockSize].Received = true;
 
                     // Once a piece is completely received, remove it from our list.
                     // If a piece *fails* the hashcheck, we need to add it back into the list so

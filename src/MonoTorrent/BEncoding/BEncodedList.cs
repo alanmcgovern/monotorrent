@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,8 +45,8 @@ namespace MonoTorrent.BEncoding
 
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Create a new BEncoded List with default capacity
         /// </summary>
@@ -63,14 +62,13 @@ namespace MonoTorrent.BEncoding
         public BEncodedList(int capacity)
             : this(new List<BEncodedValue>(capacity))
         {
-
         }
 
         public BEncodedList(IEnumerable<BEncodedValue> list)
         {
             if (list == null)
                 throw new ArgumentNullException("list");
- 
+
             this.list = new List<BEncodedValue>(list);
         }
 
@@ -81,9 +79,7 @@ namespace MonoTorrent.BEncoding
 
         #endregion
 
-
         #region Encode/Decode Methods
-
 
         /// <summary>
         /// Encodes the list to a byte[]
@@ -94,11 +90,11 @@ namespace MonoTorrent.BEncoding
         public override int Encode(byte[] buffer, int offset)
         {
             int written = 0;
-            buffer[offset] = (byte)'l';
+            buffer[offset] = (byte) 'l';
             written++;
             for (int i = 0; i < this.list.Count; i++)
                 written += this.list[i].Encode(buffer, offset + written);
-            buffer[offset + written] = (byte)'e';
+            buffer[offset + written] = (byte) 'e';
             written++;
             return written;
         }
@@ -109,19 +105,20 @@ namespace MonoTorrent.BEncoding
         /// <param name="reader"></param>
         internal override void DecodeInternal(RawReader reader)
         {
-            if (reader.ReadByte() != 'l')                            // Remove the leading 'l'
+            if (reader.ReadByte() != 'l') // Remove the leading 'l'
                 throw new BEncodingException("Invalid data found. Aborting");
 
             while ((reader.PeekByte() != -1) && (reader.PeekByte() != 'e'))
                 list.Add(BEncodedValue.Decode(reader));
 
-            if (reader.ReadByte() != 'e')                            // Remove the trailing 'e'
+            if (reader.ReadByte() != 'e') // Remove the trailing 'e'
                 throw new BEncodingException("Invalid data found. Aborting");
         }
+
         #endregion
 
-
         #region Helper Methods
+
         /// <summary>
         /// Returns the size of the list in bytes
         /// </summary>
@@ -130,17 +127,18 @@ namespace MonoTorrent.BEncoding
         {
             int length = 0;
 
-            length += 1;   // Lists start with 'l'
-            for (int i=0; i < this.list.Count; i++)
+            length += 1; // Lists start with 'l'
+            for (int i = 0; i < this.list.Count; i++)
                 length += this.list[i].LengthInBytes();
 
-            length += 1;   // Lists end with 'e'
+            length += 1; // Lists end with 'e'
             return length;
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         public override bool Equals(object obj)
         {
             BEncodedList other = obj as BEncodedList;
@@ -170,18 +168,19 @@ namespace MonoTorrent.BEncoding
         {
             return System.Text.Encoding.UTF8.GetString(Encode());
         }
+
         #endregion
 
-
         #region IList methods
+
         public void Add(BEncodedValue item)
         {
             this.list.Add(item);
         }
 
-        public void AddRange (IEnumerable<BEncodedValue> collection)
+        public void AddRange(IEnumerable<BEncodedValue> collection)
         {
-            list.AddRange (collection);
+            list.AddRange(collection);
         }
 
         public void Clear()
@@ -244,6 +243,7 @@ namespace MonoTorrent.BEncoding
         {
             return this.GetEnumerator();
         }
+
         #endregion
     }
 }

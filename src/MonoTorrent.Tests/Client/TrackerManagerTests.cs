@@ -9,9 +9,8 @@ namespace MonoTorrent.Client
     public class DefaultTracker : Tracker.Tracker
     {
         public DefaultTracker()
-            :base(new Uri("http://tracker:5353/announce"))
+            : base(new Uri("http://tracker:5353/announce"))
         {
-
         }
 
         public override void Announce(AnnounceParameters parameters, object state)
@@ -23,7 +22,7 @@ namespace MonoTorrent.Client
         }
     }
 
-    
+
     public class TrackerManagerTests : IDisposable
     {
         //static void Main()
@@ -39,14 +38,17 @@ namespace MonoTorrent.Client
 
         public TrackerManagerTests()
         {
-            string[][] trackers = new string[][] {
-                new string [] {
+            string[][] trackers = new string[][]
+            {
+                new string[]
+                {
                     "custom://tracker1.com/announce",
                     "custom://tracker2.com/announce",
                     "custom://tracker3.com/announce",
                     "custom://tracker4.com/announce"
                 },
-                new string[] {
+                new string[]
+                {
                     "custom://tracker5.com/announce",
                     "custom://tracker6.com/announce",
                     "custom://tracker7.com/announce",
@@ -63,7 +65,7 @@ namespace MonoTorrent.Client
             {
                 List<CustomTracker> list = new List<CustomTracker>();
                 foreach (Tracker.Tracker tracker in t)
-                    list.Add((CustomTracker)tracker);
+                    list.Add((CustomTracker) tracker);
                 this.trackers.Add(list);
             }
         }
@@ -88,7 +90,10 @@ namespace MonoTorrent.Client
         {
             bool scrapeStarted = false;
             trackers[0][0].BeforeScrape += delegate { scrapeStarted = true; };
-            trackers[0][0].ScrapeComplete += delegate { if (!scrapeStarted) throw new Exception("Scrape didn't start"); };
+            trackers[0][0].ScrapeComplete += delegate
+            {
+                if (!scrapeStarted) throw new Exception("Scrape didn't start");
+            };
             Wait(trackerManager.Scrape());
             Assert.True(scrapeStarted);
             Assert.Equal(1, trackers[0][0].ScrapedAt.Count);
@@ -130,9 +135,9 @@ namespace MonoTorrent.Client
         {
             for (int i = 0; i < trackers[0].Count; i++)
                 trackers[0][i].FailAnnounce = true;
-            
+
             Wait(trackerManager.Announce());
-            
+
             for (int i = 0; i < trackers[0].Count; i++)
                 Assert.Equal(1, trackers[0][i].AnnouncedAt.Count);
 

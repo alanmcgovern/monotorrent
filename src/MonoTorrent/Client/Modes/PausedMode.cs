@@ -7,10 +7,10 @@ namespace MonoTorrent.Client
 {
     class PausedMode : Mode
     {
-		public override TorrentState State
-		{
-			get { return TorrentState.Paused; }
-		}
+        public override TorrentState State
+        {
+            get { return TorrentState.Paused; }
+        }
 
         public PausedMode(TorrentManager manager)
             : base(manager)

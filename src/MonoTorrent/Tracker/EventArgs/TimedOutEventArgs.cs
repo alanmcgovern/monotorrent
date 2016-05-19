@@ -9,7 +9,6 @@ namespace MonoTorrent.Tracker
         public TimedOutEventArgs(Peer peer, SimpleTorrentManager manager)
             : base(peer, manager)
         {
-
         }
     }
 }

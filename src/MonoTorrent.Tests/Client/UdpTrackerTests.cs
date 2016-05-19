@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,7 +40,6 @@ using System.Net;
 
 namespace MonoTorrent.Client
 {
-    
     public class UdpTrackerTests : IDisposable
     {
         static void Main(string[] args)
@@ -62,8 +60,9 @@ namespace MonoTorrent.Client
 
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             MonoTorrent.Common.TorrentEvent.Completed,
-            new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
+            new InfoHash(new byte[] {1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5}),
             false, new string('a', 20), null, 1515);
+
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Tracker.Listeners.UdpListener listener;
         List<string> keys;
@@ -75,10 +74,8 @@ namespace MonoTorrent.Client
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
             listener = new MonoTorrent.Tracker.Listeners.UdpListener(6767);
-            listener.AnnounceReceived += delegate(object o, MonoTorrent.Tracker.AnnounceParameters e)
-            {
-                keys.Add(e.Key);
-            };
+            listener.AnnounceReceived +=
+                delegate(object o, MonoTorrent.Tracker.AnnounceParameters e) { keys.Add(e.Key); };
             server.RegisterListener(listener);
 
             listener.Start();
@@ -96,7 +93,8 @@ namespace MonoTorrent.Client
         public void AnnounceMessageTest()
         {
             AnnounceMessage m = new AnnounceMessage(0, 12345, announceparams);
-            AnnounceMessage d = (AnnounceMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
+            AnnounceMessage d =
+                (AnnounceMessage) UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
 
             Assert.Equal(1, m.Action);
@@ -114,7 +112,9 @@ namespace MonoTorrent.Client
             peers.Add(new Peer(new string('3', 20), new Uri("tcp://127.0.0.1:3")));
 
             AnnounceResponseMessage m = new AnnounceResponseMessage(12345, TimeSpan.FromSeconds(10), 43, 65, peers);
-            AnnounceResponseMessage d = (AnnounceResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
+            AnnounceResponseMessage d =
+                (AnnounceResponseMessage)
+                    UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
 
             Assert.Equal(1, m.Action);
@@ -127,9 +127,10 @@ namespace MonoTorrent.Client
         public void ConnectMessageTest()
         {
             ConnectMessage m = new ConnectMessage();
-            ConnectMessage d = (ConnectMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
+            ConnectMessage d =
+                (ConnectMessage) UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
-            
+
             Assert.Equal(0, m.Action);
             Assert.Equal(m.Action, d.Action);
             Assert.Equal(m.ConnectionId, d.ConnectionId);
@@ -141,17 +142,18 @@ namespace MonoTorrent.Client
         public void ConnectResponseTest()
         {
             ConnectResponseMessage m = new ConnectResponseMessage(5371, 12345);
-            ConnectResponseMessage d = (ConnectResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
+            ConnectResponseMessage d =
+                (ConnectResponseMessage)
+                    UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
-            
-            Assert.Equal(0, m.Action); 
+
+            Assert.Equal(0, m.Action);
             Assert.Equal(m.Action, d.Action);
             Assert.Equal(m.ConnectionId, d.ConnectionId);
             Assert.Equal(m.TransactionId, d.TransactionId);
             Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
             Assert.Equal(12345, d.ConnectionId);
             Assert.Equal(5371, d.TransactionId);
-
         }
 
         [Fact]
@@ -170,9 +172,10 @@ namespace MonoTorrent.Client
             hashes.Add(hash3);
 
             ScrapeMessage m = new ScrapeMessage(12345, 123, hashes);
-            ScrapeMessage d = (ScrapeMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
+            ScrapeMessage d =
+                (ScrapeMessage) UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Request);
             Check(m, MessageType.Request);
-            
+
             Assert.Equal(2, m.Action);
             Assert.Equal(m.Action, d.Action);
             Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
@@ -185,11 +188,13 @@ namespace MonoTorrent.Client
             details.Add(new ScrapeDetails(1, 2, 3));
             details.Add(new ScrapeDetails(4, 5, 6));
             details.Add(new ScrapeDetails(7, 8, 9));
-            
+
             ScrapeResponseMessage m = new ScrapeResponseMessage(12345, details);
-            ScrapeResponseMessage d = (ScrapeResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
+            ScrapeResponseMessage d =
+                (ScrapeResponseMessage)
+                    UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);
             Check(m, MessageType.Response);
-            
+
             Assert.Equal(2, m.Action);
             Assert.Equal(m.Action, d.Action);
             Assert.True(Toolbox.ByteMatch(m.Encode(), d.Encode()));
@@ -206,7 +211,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void AnnounceTest()
         {
-            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
+            UdpTracker t = (UdpTracker) TrackerFactory.Create(new Uri(prefix));
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
@@ -292,12 +297,13 @@ namespace MonoTorrent.Client
 
         void OfflineAnnounceTest()
         {
-            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
+            UdpTracker t = (UdpTracker) TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
             t.RetryDelay = TimeSpan.FromMilliseconds(500);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
-            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e) {
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
+            {
                 p = e;
                 id.WaitHandle.Set();
             };
@@ -313,7 +319,7 @@ namespace MonoTorrent.Client
 
         void OfflineScrapeTest()
         {
-            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
+            UdpTracker t = (UdpTracker) TrackerFactory.Create(new Uri("udp://127.0.0.1:57532/announce"));
             t.RetryDelay = TimeSpan.FromMilliseconds(500);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
@@ -336,7 +342,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void ScrapeTest()
         {
-            UdpTracker t = (UdpTracker)TrackerFactory.Create(new Uri(prefix));
+            UdpTracker t = (UdpTracker) TrackerFactory.Create(new Uri(prefix));
             Assert.True(t.CanScrape);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
@@ -373,7 +379,6 @@ namespace MonoTorrent.Client
         public IgnoringListener(int port)
             : base(port)
         {
-
         }
 
         protected override void ReceiveConnect(ConnectMessage connectMessage)

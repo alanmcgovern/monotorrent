@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -46,28 +45,31 @@ namespace MonoTorrent.Common
         /// <summary>
         /// The current version of the client
         /// </summary>
-        public static readonly string ClientVersion = CreateClientVersion ();
+        public static readonly string ClientVersion = CreateClientVersion();
 
         public static readonly string DhtClientVersion = "MO06";
 
-        internal static  Version Version;
-		static string CreateClientVersion ()
-		{
-			AssemblyInformationalVersionAttribute versionAttr;
-			Assembly assembly = Assembly.GetExecutingAssembly ();
-			versionAttr = (AssemblyInformationalVersionAttribute) assembly.GetCustomAttributes (typeof (AssemblyInformationalVersionAttribute), false)[0];
-			Version = new Version(versionAttr.InformationalVersion);
+        internal static Version Version;
 
-			    // 'MO' for MonoTorrent then four digit version number
-            string version = string.Format ("{0}{1}{2}{3}", Math.Max (Version.Major, 0),
-                                                            Math.Max (Version.Minor, 0),
-                                                            Math.Max (Version.Build, 0),
-                                                            Math.Max (Version.Revision, 0));
+        static string CreateClientVersion()
+        {
+            AssemblyInformationalVersionAttribute versionAttr;
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            versionAttr =
+                (AssemblyInformationalVersionAttribute)
+                    assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0];
+            Version = new Version(versionAttr.InformationalVersion);
+
+            // 'MO' for MonoTorrent then four digit version number
+            string version = string.Format("{0}{1}{2}{3}", Math.Max(Version.Major, 0),
+                Math.Max(Version.Minor, 0),
+                Math.Max(Version.Build, 0),
+                Math.Max(Version.Revision, 0));
             if (version.Length > 4)
-                version = version.Substring (0, 4);
+                version = version.Substring(0, 4);
             else
-                version = version.PadRight (4, '0');
-			return string.Format ("-MO{0}-", version);
-		}
+                version = version.PadRight(4, '0');
+            return string.Format("-MO{0}-", version);
+        }
     }
 }

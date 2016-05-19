@@ -27,8 +27,6 @@
 //
 
 
-
-
 using System.Net.Sockets;
 using System;
 using MonoTorrent.Common;
@@ -39,12 +37,13 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Libtorrent;
 using System.Collections.Generic;
 using MonoTorrent.Client.Messages.Standard;
+
 namespace MonoTorrent.Client
 {
     public class PeerId //: IComparable<PeerIdInternal>
     {
         #region Choke/Unchoke
-        
+
         internal DateTime? LastUnchoked
         {
             get { return this.lastUnchoked; }
@@ -63,7 +62,8 @@ namespace MonoTorrent.Client
             set { this.bytesUploadedAtLastReview = value; }
         }
 
-        public IConnection Connection {
+        public IConnection Connection
+        {
             get { return connection; }
             internal set { connection = value; }
         }
@@ -80,26 +80,32 @@ namespace MonoTorrent.Client
             set { this.lastReviewUploadRate = value; }
         }
 
-		internal bool FirstReviewPeriod
-		{
-			get { return this.firstReviewPeriod; }
-			set { this.firstReviewPeriod = value; }
-		}
+        internal bool FirstReviewPeriod
+        {
+            get { return this.firstReviewPeriod; }
+            set { this.firstReviewPeriod = value; }
+        }
 
-		internal DateTime LastBlockReceived
-		{
-			get { return this.lastBlockReceived; }
-			set { this.lastBlockReceived = value; }
-		}
+        internal DateTime LastBlockReceived
+        {
+            get { return this.lastBlockReceived; }
+            set { this.lastBlockReceived = value; }
+        }
 
-        private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
-        private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
+        private DateTime? lastUnchoked = null; //When this peer was last unchoked, or null if we haven't unchoked it yet
+
+        private long bytesDownloadedAtLastReview = 0;
+            //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
+
         //downloaded during a review period
-        private long bytesUploadedAtLastReview = 0;   //Ditto for uploaded bytes
-        private double lastReviewDownloadRate = 0;    //Download rate determined at the end of the last full review period when this peer was unchoked
-        private double lastReviewUploadRate = 0;      //Ditto for upload rate
-        private bool firstReviewPeriod;               //Set true if this is the first review period since this peer was last unchoked
-		private DateTime lastBlockReceived = DateTime.Now;
+        private long bytesUploadedAtLastReview = 0; //Ditto for uploaded bytes
+
+        private double lastReviewDownloadRate = 0;
+            //Download rate determined at the end of the last full review period when this peer was unchoked
+
+        private double lastReviewUploadRate = 0; //Ditto for upload rate
+        private bool firstReviewPeriod; //Set true if this is the first review period since this peer was last unchoked
+        private DateTime lastBlockReceived = DateTime.Now;
 
         #endregion
 
@@ -125,7 +131,7 @@ namespace MonoTorrent.Client
         private int isRequestingPiecesCount;
         private DateTime lastMessageReceived;
         private DateTime lastMessageSent;
-		private DateTime whenConnected;
+        private DateTime whenConnected;
         private ExtensionSupports extensionSupports;
         private int maxPendingRequests;
         private int maxSupportedPendingRequests;
@@ -138,7 +144,7 @@ namespace MonoTorrent.Client
         private int piecesReceived;
         private ushort port;
         private bool processingQueue;
-        private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
+        private MonoTorrentCollection<PeerMessage> sendQueue; // This holds the peermessages waiting to be sent
         private MonoTorrentCollection<int> suggestedPieces;
         private bool supportsFastPeer;
         private bool supportsLTMessages;
@@ -223,7 +229,11 @@ namespace MonoTorrent.Client
 
         public ClientEngine Engine
         {
-            get { return this.engine; ; }
+            get
+            {
+                return this.engine;
+                ;
+            }
         }
 
         internal ExtensionSupports ExtensionSupports
@@ -236,7 +246,7 @@ namespace MonoTorrent.Client
         {
             get { return peer.TotalHashFails; }
         }
-        
+
         internal MonoTorrentCollection<int> IsAllowedFastPieces
         {
             get { return this.isAllowedFastPieces; }
@@ -253,7 +263,7 @@ namespace MonoTorrent.Client
         {
             get { return Connection != null; }
         }
-        
+
         public bool IsInterested
         {
             get { return this.isInterested; }
@@ -264,7 +274,7 @@ namespace MonoTorrent.Client
         {
             get { return bitField.AllTrue || peer.IsSeeder; }
         }
-        
+
         public int IsRequestingPiecesCount
         {
             get { return this.isRequestingPiecesCount; }
@@ -277,17 +287,17 @@ namespace MonoTorrent.Client
             set { this.lastMessageReceived = value; }
         }
 
-		internal DateTime LastMessageSent
-		{
-			get { return this.lastMessageSent; }
-			set { this.lastMessageSent = value; }
-		}
+        internal DateTime LastMessageSent
+        {
+            get { return this.lastMessageSent; }
+            set { this.lastMessageSent = value; }
+        }
 
-		internal DateTime WhenConnected
-		{
-			get { return this.whenConnected; }
-			set { this.whenConnected = value; }
-		}
+        internal DateTime WhenConnected
+        {
+            get { return this.whenConnected; }
+            set { this.whenConnected = value; }
+        }
 
         internal int MaxPendingRequests
         {
@@ -334,7 +344,7 @@ namespace MonoTorrent.Client
         {
             get { return peer.PeerId; }
         }
-        
+
         public int PiecesSent
         {
             get { return this.piecesSent; }
@@ -385,12 +395,12 @@ namespace MonoTorrent.Client
                 if (value != null)
                 {
                     this.engine = value.Engine;
-                    if(value.HasMetadata)
+                    if (value.HasMetadata)
                         BitField = new BitField(value.Torrent.Pieces.Count);
                 }
             }
         }
-        
+
         public Uri Uri
         {
             get { return peer.ConnectionUri; }
@@ -429,7 +439,8 @@ namespace MonoTorrent.Client
 
         public void CloseConnection()
         {
-            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
+            {
                 if (Connection != null)
                     Connection.Dispose();
             });
@@ -468,7 +479,7 @@ namespace MonoTorrent.Client
         {
             return this.peer.ConnectionUri.GetHashCode();
         }
-        
+
         internal int QueueLength
         {
             get { return this.sendQueue.Count; }
@@ -479,7 +490,8 @@ namespace MonoTorrent.Client
             if (message == null)
                 throw new ArgumentNullException("message");
 
-            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
+            {
                 if (Connection == null)
                     return;
 
@@ -496,16 +508,16 @@ namespace MonoTorrent.Client
 
         #region BitTyrantasaurus implementation
 
-        private const int MARKET_RATE = 7000;       // taken from reference BitTyrant implementation
-        private RateLimiter rateLimiter;            // used to limit the upload capacity we give this peer
-        private DateTime lastChokedTime;            // last time we looked that we were still choked
-        private DateTime lastRateReductionTime;     // last time we reduced rate of this peer
-        private int lastMeasuredDownloadRate;       // last download rate measured
+        private const int MARKET_RATE = 7000; // taken from reference BitTyrant implementation
+        private RateLimiter rateLimiter; // used to limit the upload capacity we give this peer
+        private DateTime lastChokedTime; // last time we looked that we were still choked
+        private DateTime lastRateReductionTime; // last time we reduced rate of this peer
+        private int lastMeasuredDownloadRate; // last download rate measured
         private long startTime;
 
         // stats
         private int maxObservedDownloadSpeed;
-        private short roundsChoked, roundsUnchoked;     // for stats measurement
+        private short roundsChoked, roundsUnchoked; // for stats measurement
 
         private void InitializeTyrant()
         {
@@ -558,8 +570,12 @@ namespace MonoTorrent.Client
         {
             get
             {
-                int timeElapsed = (int)new TimeSpan(Stopwatch.GetTimestamp() - this.startTime).TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) this.haveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
+                int timeElapsed = (int) new TimeSpan(Stopwatch.GetTimestamp() - this.startTime).TotalSeconds;
+                return
+                    (int)
+                        (timeElapsed == 0
+                            ? 0
+                            : ((long) this.haveMessagesReceived*this.TorrentManager.Torrent.PieceLength)/timeElapsed);
             }
         }
 
@@ -570,8 +586,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                float downloadRate = (float)GetDownloadRate();
-                return downloadRate / (float)uploadRateForRecip;
+                float downloadRate = (float) GetDownloadRate();
+                return downloadRate/(float) uploadRateForRecip;
             }
         }
 
@@ -624,7 +640,7 @@ namespace MonoTorrent.Client
                 int estimatedDownloadRate = this.EstimatedDownloadRate;
                 int activeSetSize = GetActiveSetSize(estimatedDownloadRate);
 
-                return estimatedDownloadRate / activeSetSize;
+                return estimatedDownloadRate/activeSetSize;
             }
         }
 
@@ -653,23 +669,25 @@ namespace MonoTorrent.Client
                     {
                         this.lastMeasuredDownloadRate = this.Monitor.DownloadSpeed;
 
-                        this.maxObservedDownloadSpeed = Math.Max(this.lastMeasuredDownloadRate, this.maxObservedDownloadSpeed);
+                        this.maxObservedDownloadSpeed = Math.Max(this.lastMeasuredDownloadRate,
+                            this.maxObservedDownloadSpeed);
                     }
                 }
             }
 
             // last rate wasn't sufficient to achieve reciprocation
-            if (!amChoking && isChoking && isInterested) // only increase upload rate if he's interested, otherwise he won't request any pieces
+            if (!amChoking && isChoking && isInterested)
+                // only increase upload rate if he's interested, otherwise he won't request any pieces
             {
-                this.uploadRateForRecip = (this.uploadRateForRecip * 12) / 10;
+                this.uploadRateForRecip = (this.uploadRateForRecip*12)/10;
             }
 
             // we've been unchoked by this guy for a while....
             if (!isChoking && !amChoking
-                    && (DateTime.Now - lastChokedTime).TotalSeconds > 30
-                    && (DateTime.Now - lastRateReductionTime).TotalSeconds > 30)           // only do rate reduction every 30s
+                && (DateTime.Now - lastChokedTime).TotalSeconds > 30
+                && (DateTime.Now - lastRateReductionTime).TotalSeconds > 30) // only do rate reduction every 30s
             {
-                this.uploadRateForRecip = (this.uploadRateForRecip * 9) / 10;
+                this.uploadRateForRecip = (this.uploadRateForRecip*9)/10;
                 lastRateReductionTime = DateTime.Now;
             }
         }
@@ -737,16 +755,18 @@ namespace MonoTorrent.Client
 
             PieceMessage m = null;
             for (int i = 0; m == null && i < PieceReads.Count; i++)
-                if (PieceReads [i].Data == BufferManager.EmptyBuffer)
+                if (PieceReads[i].Data == BufferManager.EmptyBuffer)
                     m = PieceReads[i];
 
             if (m == null)
                 return;
 
-            long offset = (long)m.PieceIndex * torrentManager.Torrent.PieceLength + m.StartOffset;
+            long offset = (long) m.PieceIndex*torrentManager.Torrent.PieceLength + m.StartOffset;
             ClientEngine.BufferManager.GetBuffer(ref m.Data, m.RequestLength);
-            engine.DiskManager.QueueRead(torrentManager, offset, m.Data, m.RequestLength, delegate {
-                ClientEngine.MainLoop.Queue(delegate {
+            engine.DiskManager.QueueRead(torrentManager, offset, m.Data, m.RequestLength, delegate
+            {
+                ClientEngine.MainLoop.Queue(delegate
+                {
                     if (!PieceReads.Contains(m))
                         ClientEngine.BufferManager.FreeBuffer(ref m.Data);
                     else

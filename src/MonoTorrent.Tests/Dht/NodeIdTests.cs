@@ -3,7 +3,6 @@ using Xunit;
 
 namespace MonoTorrent.Dht
 {
-
     public class NodeIdTests
     {
         private NodeId[] nodes;
@@ -15,7 +14,7 @@ namespace MonoTorrent.Dht
             {
                 byte[] id = new byte[20];
                 for (int j = 0; j < id.Length; j++)
-                    id[j] = (byte)(i * 20 + j);
+                    id[j] = (byte) (i*20 + j);
                 nodes[i] = new NodeId(id);
             }
         }
@@ -36,7 +35,8 @@ namespace MonoTorrent.Dht
         {
             NodeId zero = new NodeId(new byte[20]);
 
-            byte[] b = new byte[20]; b[0] = 1;
+            byte[] b = new byte[20];
+            b[0] = 1;
             NodeId one = new NodeId(b);
 
             NodeId r = one.Xor(zero);
@@ -65,7 +65,8 @@ namespace MonoTorrent.Dht
         [Fact]
         public void CompareTest2()
         {
-            byte[] data = new byte[] { 1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199 };
+            byte[] data = new byte[]
+            {1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199};
             BigInteger a = new BigInteger(data);
             BigInteger b = new BigInteger(new byte[0]);
 
@@ -73,4 +74,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

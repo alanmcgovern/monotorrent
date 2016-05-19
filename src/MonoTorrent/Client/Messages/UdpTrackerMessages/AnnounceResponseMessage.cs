@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -45,7 +44,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int ByteLength
         {
-            get { return (4 * 5 + peers.Count * 6); }
+            get { return (4*5 + peers.Count*6); }
         }
 
         public int Leechers
@@ -71,11 +70,10 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public AnnounceResponseMessage()
             : this(0, TimeSpan.Zero, 0, 0, new List<Peer>())
         {
-            
         }
 
         public AnnounceResponseMessage(int transactionId, TimeSpan interval, int leechers, int seeders, List<Peer> peers)
-            :base(1, transactionId)
+            : base(1, transactionId)
         {
             this.interval = interval;
             this.leechers = leechers;
@@ -97,10 +95,10 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         private void LoadPeerDetails(byte[] buffer, int offset)
         {
-            while(offset <= (buffer.Length - 6))
+            while (offset <= (buffer.Length - 6))
             {
                 int ip = IPAddress.NetworkToHostOrder(ReadInt(buffer, ref offset));
-                ushort port = (ushort)ReadShort(buffer, ref offset);
+                ushort port = (ushort) ReadShort(buffer, ref offset);
                 peers.Add(new Peer("", new Uri("tcp://" + new IPEndPoint(new IPAddress(ip), port).ToString())));
             }
         }
@@ -111,12 +109,12 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
             written += Write(buffer, written, Action);
             written += Write(buffer, written, TransactionId);
-            written += Write(buffer, written, (int)interval.TotalSeconds);
+            written += Write(buffer, written, (int) interval.TotalSeconds);
             written += Write(buffer, written, leechers);
             written += Write(buffer, written, seeders);
 
-            for (int i=0; i < peers.Count; i++)
-                Peers[i].CompactPeer(buffer, written + (i * 6));
+            for (int i = 0; i < peers.Count; i++)
+                Peers[i].CompactPeer(buffer, written + (i*6));
 
             return written - offset;
         }

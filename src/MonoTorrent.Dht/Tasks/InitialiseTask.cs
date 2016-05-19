@@ -13,7 +13,7 @@ namespace MonoTorrent.Dht.Tasks
         List<Node> initialNodes;
         SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
         DhtEngine engine;
-            
+
         public InitialiseTask(DhtEngine engine)
         {
             Initialise(engine, null);
@@ -21,7 +21,7 @@ namespace MonoTorrent.Dht.Tasks
 
         public InitialiseTask(DhtEngine engine, byte[] initialNodes)
         {
-            Initialise(engine, initialNodes == null ? null :  Node.FromCompactNode(initialNodes));
+            Initialise(engine, initialNodes == null ? null : Node.FromCompactNode(initialNodes));
         }
 
         public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
@@ -55,8 +55,9 @@ namespace MonoTorrent.Dht.Tasks
             {
                 try
                 {
-                    Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                    SendFindNode(new Node[] { utorrent });
+                    Node utorrent = new Node(NodeId.Create(),
+                        new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                    SendFindNode(new Node[] {utorrent});
                 }
                 catch
                 {
@@ -70,10 +71,10 @@ namespace MonoTorrent.Dht.Tasks
             e.Task.Completed -= FindNodeComplete;
             activeRequests--;
 
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
+            SendQueryEventArgs args = (SendQueryEventArgs) e;
             if (!args.TimedOut)
             {
-                FindNodeResponse response = (FindNodeResponse)args.Response;
+                FindNodeResponse response = (FindNodeResponse) args.Response;
                 SendFindNode(Node.FromCompactNode(response.Nodes));
             }
 
@@ -90,7 +91,7 @@ namespace MonoTorrent.Dht.Tasks
             // initialise again except use the utorrent router.
             if (initialNodes.Count > 0 && engine.RoutingTable.CountNodes() < 10)
             {
-                new InitialiseTask(engine).Execute ();
+                new InitialiseTask(engine).Execute();
             }
             else
             {
@@ -114,4 +115,5 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+
 #endif

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using MonoTorrent.Common;
 
@@ -39,6 +38,7 @@ namespace MonoTorrent.Client.Tracker
     public class TrackerStateChangedEventArgs : TorrentEventArgs
     {
         #region Member Variables
+
         /// <summary>
         /// The current status of the tracker update
         /// </summary>
@@ -46,6 +46,7 @@ namespace MonoTorrent.Client.Tracker
         {
             get { return this.tracker; }
         }
+
         private Tracker tracker;
 
 
@@ -53,6 +54,7 @@ namespace MonoTorrent.Client.Tracker
         {
             get { return this.oldState; }
         }
+
         private TrackerState oldState;
 
 
@@ -60,23 +62,27 @@ namespace MonoTorrent.Client.Tracker
         {
             get { return this.newState; }
         }
+
         private TrackerState newState;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new TrackerUpdateEventArgs
         /// </summary>
         /// <param name="state">The current state of the update</param>
         /// <param name="response">The response of the tracker (if any)</param>
-        public TrackerStateChangedEventArgs(TorrentManager manager, Tracker tracker, TrackerState oldState, TrackerState newState)
+        public TrackerStateChangedEventArgs(TorrentManager manager, Tracker tracker, TrackerState oldState,
+            TrackerState newState)
             : base(manager)
         {
             this.tracker = tracker;
             this.oldState = oldState;
             this.newState = newState;
         }
+
         #endregion
     }
 }

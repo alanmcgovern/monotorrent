@@ -9,7 +9,6 @@ namespace MonoTorrent
     {
         protected override void HashCore(byte[] array, int ibStart, int cbSize)
         {
-            
         }
 
         protected override byte[] HashFinal()
@@ -19,7 +18,6 @@ namespace MonoTorrent
 
         public override void Initialize()
         {
-            
         }
     }
 }

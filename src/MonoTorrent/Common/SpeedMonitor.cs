@@ -58,16 +58,15 @@ namespace MonoTorrent.Common
         public SpeedMonitor()
             : this(DefaultAveragePeriod)
         {
-
         }
 
         public SpeedMonitor(int averagingPeriod)
         {
             if (averagingPeriod < 0)
-                throw new ArgumentOutOfRangeException ("averagingPeriod");
+                throw new ArgumentOutOfRangeException("averagingPeriod");
 
             this.lastUpdated = DateTime.UtcNow;
-            this.speeds = new int [Math.Max (1, averagingPeriod)];
+            this.speeds = new int[Math.Max(1, averagingPeriod)];
             this.speedsIndex = -speeds.Length;
         }
 
@@ -95,11 +94,11 @@ namespace MonoTorrent.Common
 
         private void TimePeriodPassed(int difference)
         {
-            int currSpeed = (int)(tempRecvCount * 1000 / difference);
+            int currSpeed = (int) (tempRecvCount*1000/difference);
             tempRecvCount = 0;
 
             int speedsCount;
-            if( speedsIndex < 0 )
+            if (speedsIndex < 0)
             {
                 //speeds array hasn't been filled yet
 
@@ -115,15 +114,15 @@ namespace MonoTorrent.Common
                 //speeds array is full, keep wrapping around overwriting the oldest value
                 speeds[speedsIndex] = currSpeed;
                 speedsCount = speeds.Length;
-        
-                speedsIndex = (speedsIndex + 1) % speeds.Length;
+
+                speedsIndex = (speedsIndex + 1)%speeds.Length;
             }
-        
+
             int total = speeds[0];
-            for( int i = 1; i < speedsCount; i++ )
+            for (int i = 1; i < speedsCount; i++)
                 total += speeds[i];
 
-            speed = total / speedsCount;
+            speed = total/speedsCount;
         }
 
 
@@ -138,10 +137,10 @@ namespace MonoTorrent.Common
         }
 
         // Used purely for unit testing purposes.
-        internal void Tick (int difference)
+        internal void Tick(int difference)
         {
             lastUpdated = DateTime.UtcNow;
-            TimePeriodPassed (difference);
+            TimePeriodPassed(difference);
         }
     }
 }

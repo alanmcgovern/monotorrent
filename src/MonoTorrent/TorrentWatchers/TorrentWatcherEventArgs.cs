@@ -45,10 +45,10 @@ namespace MonoTorrent.TorrentWatcher
         {
             get { return this.torrentPath; }
         }
+
         private string torrentPath;
 
         #endregion
-
 
         #region Constructors
 

@@ -11,7 +11,6 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    
     public class MessageHandlingTests : IDisposable
     {
         //static void Main(string[] args)
@@ -44,7 +43,8 @@ namespace MonoTorrent.Dht
             engine.Add(node);
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
             ManualResetEvent handle = new ManualResetEvent(false);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e) {
+            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            {
                 if (!e.TimedOut && e.Query is Ping)
                     handle.Set();
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Dht
             Assert.True(handle.WaitOne(1000, false));
             Node nnnn = node;
             node = engine.RoutingTable.FindNode(nnnn.Id);
-            Assert.True (lastSeen < node.LastSeen);
+            Assert.True(lastSeen < node.LastSeen);
             Assert.Equal(NodeState.Good, node.State);
         }
 
@@ -75,9 +75,7 @@ namespace MonoTorrent.Dht
 
             ManualResetEvent handle = new ManualResetEvent(false);
             SendQueryTask task = new SendQueryTask(engine, ping, node);
-            task.Completed += delegate {
-                handle.Set();
-            };
+            task.Completed += delegate { handle.Set(); };
             task.Execute();
 
             // Receive response
@@ -91,7 +89,7 @@ namespace MonoTorrent.Dht
 
             // Time out a ping
             ping = new Ping(node.Id);
-            ping.TransactionId = (BEncodedString)"ab";
+            ping.TransactionId = (BEncodedString) "ab";
 
             task = new SendQueryTask(engine, ping, node, 4);
             task.Completed += delegate { handle.Set(); };
@@ -116,4 +114,5 @@ namespace MonoTorrent.Dht
 //        }
     }
 }
+
 #endif

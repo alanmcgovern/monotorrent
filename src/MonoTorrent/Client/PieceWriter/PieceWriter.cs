@@ -11,7 +11,6 @@ namespace MonoTorrent.Client.PieceWriters
     {
         protected PieceWriter()
         {
-            
         }
 
         public abstract bool Exists(TorrentFile file);
@@ -20,14 +19,13 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal void Close(IList<TorrentFile> files)
         {
-            Check.Files (files);
+            Check.Files(files);
             foreach (TorrentFile file in files)
                 Close(file);
         }
 
         public virtual void Dispose()
         {
-
         }
 
         public abstract void Flush(TorrentFile file);
@@ -43,22 +41,25 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal void Move(string newRoot, IList<TorrentFile> files, bool ignoreExisting)
         {
-            foreach (TorrentFile file in files) {
-                string newPath = Path.Combine (newRoot, file.Path);
+            foreach (TorrentFile file in files)
+            {
+                string newPath = Path.Combine(newRoot, file.Path);
                 Move(file.FullPath, newPath, ignoreExisting);
                 file.FullPath = newPath;
             }
         }
 
-        internal bool ReadBlock(IList<TorrentFile> files, int piece, int blockIndex, byte[] buffer, int bufferOffset, int pieceLength, long torrentSize)
+        internal bool ReadBlock(IList<TorrentFile> files, int piece, int blockIndex, byte[] buffer, int bufferOffset,
+            int pieceLength, long torrentSize)
         {
-            long offset = (long) piece * pieceLength + blockIndex * Piece.BlockSize;
-            int count = (int) Math.Min (Piece.BlockSize, torrentSize - offset);
+            long offset = (long) piece*pieceLength + blockIndex*Piece.BlockSize;
+            int count = (int) Math.Min(Piece.BlockSize, torrentSize - offset);
 
             return Read(files, offset, buffer, bufferOffset, count, pieceLength, torrentSize);
         }
 
-        internal bool Read(IList<TorrentFile> files, long offset, byte[] buffer, int bufferOffset, int count, int pieceLength, long torrentSize)
+        internal bool Read(IList<TorrentFile> files, long offset, byte[] buffer, int bufferOffset, int count,
+            int pieceLength, long torrentSize)
         {
             if (offset < 0 || offset + count > torrentSize)
                 throw new ArgumentOutOfRangeException("offset");
@@ -76,7 +77,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalRead < count)
             {
-                int fileToRead = (int)Math.Min(files[i].Length - offset, count - totalRead);
+                int fileToRead = (int) Math.Min(files[i].Length - offset, count - totalRead);
                 fileToRead = Math.Min(fileToRead, Piece.BlockSize);
 
                 if (fileToRead != Read(files[i], offset, buffer, bufferOffset + totalRead, fileToRead))
@@ -99,7 +100,8 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
 
-        internal void Write(IList<TorrentFile> files, long offset, byte[] buffer, int bufferOffset, int count, int pieceLength, long torrentSize)
+        internal void Write(IList<TorrentFile> files, long offset, byte[] buffer, int bufferOffset, int count,
+            int pieceLength, long torrentSize)
         {
             if (offset < 0 || offset + count > torrentSize)
                 throw new ArgumentOutOfRangeException("offset");
@@ -117,7 +119,7 @@ namespace MonoTorrent.Client.PieceWriters
 
             while (totalWritten < count)
             {
-                int fileToWrite = (int)Math.Min(files[i].Length - offset, count - totalWritten);
+                int fileToWrite = (int) Math.Min(files[i].Length - offset, count - totalWritten);
                 fileToWrite = Math.Min(fileToWrite, Piece.BlockSize);
 
                 Write(files[i], offset, buffer, bufferOffset + totalWritten, fileToWrite);

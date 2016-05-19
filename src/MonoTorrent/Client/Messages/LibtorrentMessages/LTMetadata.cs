@@ -42,9 +42,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         private static readonly BEncodedString MessageTypeKey = "msg_type";
         private static readonly BEncodedString PieceKey = "piece";
         private static readonly BEncodedString TotalSizeKey = "total_size";
-        internal static readonly int BlockSize = 16384;//16Kb
+        internal static readonly int BlockSize = 16384; //16Kb
 
-        internal enum eMessageType {
+        internal enum eMessageType
+        {
             Request = 0,
             Data = 1,
             Reject = 2
@@ -77,19 +78,16 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public LTMetadata()
             : base(Support.MessageId)
         {
-
         }
 
         public LTMetadata(PeerId id, eMessageType type, int piece)
-            : this (id, type, piece, null)
+            : this(id, type, piece, null)
         {
-
         }
 
         public LTMetadata(PeerId id, eMessageType type, int piece, byte[] metadata)
             : this(id.ExtensionSupports.MessageId(Support), type, piece, metadata)
         {
-
         }
 
         public LTMetadata(byte extensionId, eMessageType type, int piece, byte[] metadata)
@@ -101,23 +99,24 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             this.piece = piece;
 
             dict = new BEncodedDictionary();
-            dict.Add(MessageTypeKey, (BEncodedNumber)(int)messageType);
-            dict.Add(PieceKey, (BEncodedNumber)piece);
+            dict.Add(MessageTypeKey, (BEncodedNumber) (int) messageType);
+            dict.Add(PieceKey, (BEncodedNumber) piece);
 
             if (messageType == eMessageType.Data)
             {
                 Check.Metadata(metadata);
-                dict.Add(TotalSizeKey, (BEncodedNumber)metadata.Length);
+                dict.Add(TotalSizeKey, (BEncodedNumber) metadata.Length);
             }
         }
 
         public override int ByteLength
         {
             // 4 byte length, 1 byte BT id, 1 byte LT id, 1 byte payload
-            get {
+            get
+            {
                 int length = 4 + 1 + 1 + dict.LengthInBytes();
                 if (messageType == eMessageType.Data)
-                    length += Math.Min(metadata.Length - piece * BlockSize, BlockSize);
+                    length += Math.Min(metadata.Length - piece*BlockSize, BlockSize);
                 return length;
             }
         }
@@ -131,13 +130,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 int totalSize = 0;
 
                 if (d.TryGetValue(MessageTypeKey, out val))
-                    messageType = (eMessageType)((BEncodedNumber)val).Number;
+                    messageType = (eMessageType) ((BEncodedNumber) val).Number;
                 if (d.TryGetValue(PieceKey, out val))
-                    piece = (int)((BEncodedNumber)val).Number;
+                    piece = (int) ((BEncodedNumber) val).Number;
                 if (d.TryGetValue(TotalSizeKey, out val))
                 {
-                    totalSize = (int)((BEncodedNumber)val).Number;
-                    metadata = new byte[Math.Min(totalSize - piece * BlockSize, BlockSize)];
+                    totalSize = (int) ((BEncodedNumber) val).Number;
+                    metadata = new byte[Math.Min(totalSize - piece*BlockSize, BlockSize)];
                     reader.Read(metadata, 0, metadata.Length);
                 }
             }
@@ -149,13 +148,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 throw new MessageException("Libtorrent extension messages not supported");
 
             int written = offset;
-            
+
             written += Write(buffer, written, ByteLength - 4);
             written += Write(buffer, written, ExtensionMessage.MessageId);
             written += Write(buffer, written, ExtensionId);
             written += dict.Encode(buffer, written);
             if (messageType == eMessageType.Data)
-                written += Write(buffer, written, metadata, piece * BlockSize, Math.Min(metadata.Length - piece * BlockSize, BlockSize));
+                written += Write(buffer, written, metadata, piece*BlockSize,
+                    Math.Min(metadata.Length - piece*BlockSize, BlockSize));
 
             return CheckWritten(written - offset);
         }

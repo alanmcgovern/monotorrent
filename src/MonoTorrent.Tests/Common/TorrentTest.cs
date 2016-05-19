@@ -27,8 +27,6 @@
 //
 
 
-
-
 using MonoTorrent.BEncoding;
 using System;
 using System.IO;
@@ -36,7 +34,6 @@ using Xunit;
 
 namespace MonoTorrent.Common
 {
-
     public class TorrentTest
     {
         //static void Main(string[] args)
@@ -57,13 +54,13 @@ namespace MonoTorrent.Common
             DateTime current = new DateTime(2006, 7, 1, 5, 5, 5);
             DateTime epochStart = new DateTime(1970, 1, 1, 0, 0, 0);
             TimeSpan span = current - epochStart;
-            creationTime = (long)span.TotalSeconds;
+            creationTime = (long) span.TotalSeconds;
             Console.WriteLine(creationTime.ToString() + "Creation seconds");
 
             BEncodedDictionary torrentInfo = new BEncodedDictionary();
             torrentInfo.Add("announce", new BEncodedString("http://myannouceurl/announce"));
             torrentInfo.Add("creation date", new BEncodedNumber(creationTime));
-            torrentInfo.Add("nodes", new BEncodedList());                    //FIXME: What is this?
+            torrentInfo.Add("nodes", new BEncodedList()); //FIXME: What is this?
             torrentInfo.Add("comment.utf-8", new BEncodedString("my big long comment"));
             torrentInfo.Add("comment", new BEncodedString("my big long comment"));
             torrentInfo.Add("azureus_properties", new BEncodedDictionary()); //FIXME: What is this?
@@ -73,12 +70,15 @@ namespace MonoTorrent.Common
             torrentInfo.Add("private", new BEncodedString("1"));
             torrent = Torrent.Load(torrentInfo);
         }
+
         private BEncodedDictionary CreateInfoDict()
         {
             BEncodedDictionary dict = new BEncodedDictionary();
             dict.Add("source", new BEncodedString("http://www.thisiswhohostedit.com"));
-            dict.Add("sha1", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
-            dict.Add("ed2k", new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
+            dict.Add("sha1",
+                new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
+            dict.Add("ed2k",
+                new BEncodedString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
             dict.Add("publisher-url.utf-8", new BEncodedString("http://www.iamthepublisher.com"));
             dict.Add("publisher-url", new BEncodedString("http://www.iamthepublisher.com"));
             dict.Add("publisher.utf-8", new BEncodedString("MonoTorrent Inc."));
@@ -88,9 +88,11 @@ namespace MonoTorrent.Common
             dict.Add("name", new BEncodedString("MyBaseFolder"));
             dict.Add("piece length", new BEncodedNumber(512));
             dict.Add("private", new BEncodedString("1"));
-            dict.Add("pieces", new BEncodedString(new byte[((26000 + 512) / 512) * 20])); // Total size is 26000, piecelength is 512
+            dict.Add("pieces", new BEncodedString(new byte[((26000 + 512)/512)*20]));
+            // Total size is 26000, piecelength is 512
             return dict;
         }
+
         private BEncodedList CreateFiles()
         {
             BEncodedList files = new BEncodedList();
@@ -167,7 +169,7 @@ namespace MonoTorrent.Common
         public void AnnounceUrl()
         {
             Assert.True(torrent.AnnounceUrls.Count == 1);
-			Assert.True(torrent.AnnounceUrls[0].Count == 1);
+            Assert.True(torrent.AnnounceUrls[0].Count == 1);
             Assert.True(torrent.AnnounceUrls[0][0] == "http://myannouceurl/announce");
         }
 
@@ -210,7 +212,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void ED2K()
         {
-            Assert.True(Toolbox.ByteMatch(torrent.ED2K, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
+            Assert.True(Toolbox.ByteMatch(torrent.ED2K,
+                sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("ed2k isn't a sha, but who cares"))));
         }
 
         /// <summary>
@@ -300,15 +303,16 @@ namespace MonoTorrent.Common
         [Fact]
         public void StartEndIndices()
         {
-            int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
-                new TorrentFile ("File0", 0),
-                new TorrentFile ("File1", pieceLength),
-                new TorrentFile ("File2", 0),
-                new TorrentFile ("File3", pieceLength - 1),
-                new TorrentFile ("File4", 1),
-                new TorrentFile ("File5", 236),
-                new TorrentFile ("File6", pieceLength * 7)
+            int pieceLength = 32*32;
+            TorrentFile[] files = new TorrentFile[]
+            {
+                new TorrentFile("File0", 0),
+                new TorrentFile("File1", pieceLength),
+                new TorrentFile("File2", 0),
+                new TorrentFile("File3", pieceLength - 1),
+                new TorrentFile("File4", 1),
+                new TorrentFile("File5", 236),
+                new TorrentFile("File6", pieceLength*7)
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
@@ -337,10 +341,11 @@ namespace MonoTorrent.Common
         [Fact]
         public void StartEndIndices2()
         {
-            int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
-                new TorrentFile ("File0", pieceLength),
-                new TorrentFile ("File1", 0)
+            int pieceLength = 32*32;
+            TorrentFile[] files = new TorrentFile[]
+            {
+                new TorrentFile("File0", pieceLength),
+                new TorrentFile("File1", 0)
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
@@ -354,10 +359,11 @@ namespace MonoTorrent.Common
         [Fact]
         public void StartEndIndices3()
         {
-            int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 10)
+            int pieceLength = 32*32;
+            TorrentFile[] files = new TorrentFile[]
+            {
+                new TorrentFile("File0", pieceLength - 10),
+                new TorrentFile("File1", 10)
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
@@ -371,10 +377,11 @@ namespace MonoTorrent.Common
         [Fact]
         public void StartEndIndices4()
         {
-            int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 11)
+            int pieceLength = 32*32;
+            TorrentFile[] files = new TorrentFile[]
+            {
+                new TorrentFile("File0", pieceLength - 10),
+                new TorrentFile("File1", 11)
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
@@ -388,11 +395,12 @@ namespace MonoTorrent.Common
         [Fact]
         public void StartEndIndices5()
         {
-            int pieceLength = 32 * 32;
-            TorrentFile[] files = new TorrentFile[] {
-                new TorrentFile ("File0", pieceLength- 10),
-                new TorrentFile ("File1", 10),
-                new TorrentFile ("File1", 1)
+            int pieceLength = 32*32;
+            TorrentFile[] files = new TorrentFile[]
+            {
+                new TorrentFile("File0", pieceLength - 10),
+                new TorrentFile("File1", 10),
+                new TorrentFile("File1", 1)
             };
             Torrent t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
@@ -421,7 +429,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void SHA1()
         {
-            Assert.True(Toolbox.ByteMatch(torrent.SHA1, sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
+            Assert.True(Toolbox.ByteMatch(torrent.SHA1,
+                sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
         }
     }
 }

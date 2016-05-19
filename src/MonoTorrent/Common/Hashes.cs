@@ -7,12 +7,13 @@ namespace MonoTorrent.Common
     public class Hashes
     {
         #region Constants
+
         /// <summary>
         /// Hash code length (in bytes)
         /// </summary>
         internal static readonly int HashCodeLength = 20;
-        #endregion
 
+        #endregion
 
         #region Private Fields
 
@@ -20,7 +21,6 @@ namespace MonoTorrent.Common
         private byte[] hashData;
 
         #endregion Private Fields
-
 
         #region Properties
 
@@ -34,7 +34,6 @@ namespace MonoTorrent.Common
 
         #endregion Properties
 
-
         #region Constructors
 
         internal Hashes(byte[] hashData, int count)
@@ -44,7 +43,6 @@ namespace MonoTorrent.Common
         }
 
         #endregion Constructors
-
 
         #region Methods
 
@@ -63,9 +61,10 @@ namespace MonoTorrent.Common
                 throw new ArgumentException(string.Format("Hash must be {0} bytes in length", HashCodeLength), "hash");
 
             if (hashIndex < 0 || hashIndex > count)
-                throw new ArgumentOutOfRangeException("hashIndex", string.Format("hashIndex must be between 0 and {0}", count)); 
+                throw new ArgumentOutOfRangeException("hashIndex",
+                    string.Format("hashIndex must be between 0 and {0}", count));
 
-            int start = hashIndex * HashCodeLength;
+            int start = hashIndex*HashCodeLength;
             for (int i = 0; i < HashCodeLength; i++)
                 if (hash[i] != this.hashData[i + start])
                     return false;
@@ -85,7 +84,7 @@ namespace MonoTorrent.Common
 
             // Read out our specified piece's hash data
             byte[] hash = new byte[HashCodeLength];
-            Buffer.BlockCopy(this.hashData, hashIndex * HashCodeLength, hash, 0, HashCodeLength);
+            Buffer.BlockCopy(this.hashData, hashIndex*HashCodeLength, hash, 0, HashCodeLength);
 
             return hash;
         }

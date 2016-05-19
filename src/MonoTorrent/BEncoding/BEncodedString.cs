@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.IO;
 using System.Collections;
@@ -60,11 +59,13 @@ namespace MonoTorrent.BEncoding
         {
             get { return this.textBytes; }
         }
+
         private byte[] textBytes;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Create a new BEncodedString using UTF8 encoding
         /// </summary>
@@ -106,19 +107,20 @@ namespace MonoTorrent.BEncoding
         {
             return new BEncodedString(value);
         }
+
         public static implicit operator BEncodedString(char[] value)
         {
             return new BEncodedString(value);
         }
+
         public static implicit operator BEncodedString(byte[] value)
         {
             return new BEncodedString(value);
         }
+
         #endregion
 
-
         #region Encode/Decode Methods
-
 
         /// <summary>
         /// Encodes the BEncodedString to a byte[] using the supplied Encoding
@@ -130,7 +132,7 @@ namespace MonoTorrent.BEncoding
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
-            written += Message.WriteAscii(buffer, written, textBytes.Length.ToString ());
+            written += Message.WriteAscii(buffer, written, textBytes.Length.ToString());
             written += Message.WriteAscii(buffer, written, ":");
             written += Message.Write(buffer, written, textBytes);
             return written - offset;
@@ -149,23 +151,25 @@ namespace MonoTorrent.BEncoding
             int letterCount;
             string length = string.Empty;
 
-            while ((reader.PeekByte() != -1) && (reader.PeekByte() != ':'))         // read in how many characters
-                length += (char)reader.ReadByte();                                 // the string is
+            while ((reader.PeekByte() != -1) && (reader.PeekByte() != ':')) // read in how many characters
+                length += (char) reader.ReadByte(); // the string is
 
-            if (reader.ReadByte() != ':')                                           // remove the ':'
+            if (reader.ReadByte() != ':') // remove the ':'
                 throw new BEncodingException("Invalid data found. Aborting");
 
             if (!int.TryParse(length, out letterCount))
-                throw new BEncodingException(string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
+                throw new BEncodingException(
+                    string.Format("Invalid BEncodedString. Length was '{0}' instead of a number", length));
 
             this.textBytes = new byte[letterCount];
             if (reader.Read(textBytes, 0, letterCount) != letterCount)
                 throw new BEncodingException("Couldn't decode string");
         }
+
         #endregion
 
-
         #region Helper Methods
+
         public string Hex
         {
             get { return BitConverter.ToString(TextBytes); }
@@ -197,7 +201,7 @@ namespace MonoTorrent.BEncoding
             if (other == null)
                 return 1;
 
-            int difference=0;
+            int difference = 0;
             int length = this.textBytes.Length > other.textBytes.Length ? other.textBytes.Length : this.textBytes.Length;
 
             for (int i = 0; i < length; i++)
@@ -212,7 +216,6 @@ namespace MonoTorrent.BEncoding
 
         #endregion
 
-
         #region Overridden Methods
 
         public override bool Equals(object obj)
@@ -222,9 +225,9 @@ namespace MonoTorrent.BEncoding
 
             BEncodedString other;
             if (obj is string)
-                other = new BEncodedString((string)obj);
+                other = new BEncodedString((string) obj);
             else if (obj is BEncodedString)
-                other = (BEncodedString)obj;
+                other = (BEncodedString) obj;
             else
                 return false;
 

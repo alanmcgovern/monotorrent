@@ -64,10 +64,10 @@ namespace MonoTorrent.Client.Tracker
 
             if (!trackerTypes.ContainsKey(uri.Scheme))
                 return null;
-			
+
             try
             {
-                return (Tracker)Activator.CreateInstance(trackerTypes[uri.Scheme], uri);
+                return (Tracker) Activator.CreateInstance(trackerTypes[uri.Scheme], uri);
             }
             catch
             {

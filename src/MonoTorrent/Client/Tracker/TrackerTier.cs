@@ -16,7 +16,6 @@ namespace MonoTorrent.Client.Tracker
 
         #endregion Private Fields
 
-
         #region Properties
 
         internal bool SendingStartedEvent
@@ -37,7 +36,6 @@ namespace MonoTorrent.Client.Tracker
         }
 
         #endregion Properties
-
 
         #region Constructors
 
@@ -62,7 +60,7 @@ namespace MonoTorrent.Client.Tracker
                 }
                 else
                 {
-                    Console.Error.WriteLine("Unsupported protocol {0}", result);                // FIXME: Debug spew?
+                    Console.Error.WriteLine("Unsupported protocol {0}", result); // FIXME: Debug spew?
                 }
             }
 
@@ -70,7 +68,6 @@ namespace MonoTorrent.Client.Tracker
         }
 
         #endregion Constructors
-
 
         #region Methods
 

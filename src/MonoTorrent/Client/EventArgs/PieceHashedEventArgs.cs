@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using MonoTorrent.Common;
 
@@ -39,6 +38,7 @@ namespace MonoTorrent.Client
     public class PieceHashedEventArgs : TorrentEventArgs
     {
         #region Member Variables
+
         /// <summary>
         /// The index of the piece that was just hashed
         /// </summary>
@@ -46,6 +46,7 @@ namespace MonoTorrent.Client
         {
             get { return this.pieceIndex; }
         }
+
         private int pieceIndex;
 
 
@@ -56,11 +57,13 @@ namespace MonoTorrent.Client
         {
             get { return this.hashPassed; }
         }
+
         private bool hashPassed;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new PieceHashedEventArgs
         /// </summary>
@@ -72,6 +75,7 @@ namespace MonoTorrent.Client
             this.pieceIndex = pieceIndex;
             this.hashPassed = hashPassed;
         }
+
         #endregion
     }
 }

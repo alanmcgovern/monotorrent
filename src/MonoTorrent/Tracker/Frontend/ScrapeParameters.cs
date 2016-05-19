@@ -39,34 +39,34 @@ namespace MonoTorrent.Tracker
     public class ScrapeParameters : RequestParameters
     {
         private List<InfoHash> hashs;
-        
+
         public int Count
         {
             get { return hashs.Count; }
         }
-        
+
         public List<InfoHash> InfoHashes
         {
             get { return hashs; }
         }
-        
+
         public override bool IsValid
         {
             get { return true; }
         }
-        
+
         public ScrapeParameters(NameValueCollection collection, IPAddress address)
             : base(collection, address)
         {
             hashs = new List<InfoHash>();
             ParseHashes(Parameters["info_hash"]);
         }
-        
+
         private void ParseHashes(string infoHash)
         {
             if (string.IsNullOrEmpty(infoHash))
                 return;
-            
+
             if (infoHash.IndexOf(',') > 0)
             {
                 string[] stringHashs = infoHash.Split(',');

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Text;
 using System.Net;
@@ -41,15 +40,18 @@ namespace MonoTorrent.Client.Messages.FastPeer
         private readonly int messageLength = 5;
 
         #region Member Variables
+
         public int PieceIndex
         {
             get { return this.pieceIndex; }
         }
+
         private int pieceIndex;
+
         #endregion
 
-
         #region Constructors
+
         internal AllowedFastMessage()
         {
         }
@@ -58,20 +60,21 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             this.pieceIndex = pieceIndex;
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message encoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -88,10 +91,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.messageLength + 4; }
         }
+
         #endregion
 
-
         #region Overidden Methods
+
         public override bool Equals(object obj)
         {
             AllowedFastMessage msg = obj as AllowedFastMessage;
@@ -116,6 +120,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             sb.Append(this.pieceIndex);
             return sb.ToString();
         }
+
         #endregion
     }
 }

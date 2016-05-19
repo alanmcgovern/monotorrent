@@ -19,7 +19,6 @@ namespace MonoTorrent.Client
 
         #endregion Member Variables
 
-
         #region Properties
 
         public int Available
@@ -35,9 +34,14 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
-                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
-                });
+                return
+                    (int)
+                        ClientEngine.MainLoop.QueueWait(
+                            (MainLoopJob)
+                                delegate
+                                {
+                                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
+                                });
             }
         }
 
@@ -49,14 +53,18 @@ namespace MonoTorrent.Client
         {
             get
             {
-                return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob)delegate {
-                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
-                });
+                return
+                    (int)
+                        ClientEngine.MainLoop.QueueWait(
+                            (MainLoopJob)
+                                delegate
+                                {
+                                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
+                                });
             }
         }
 
         #endregion
-
 
         #region Constructors
 
@@ -69,7 +77,6 @@ namespace MonoTorrent.Client
         }
 
         #endregion Constructors
-
 
         #region Methods
 

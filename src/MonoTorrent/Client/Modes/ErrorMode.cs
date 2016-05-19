@@ -12,19 +12,23 @@ namespace MonoTorrent.Client
         ReadFailure,
         WriteFailure
     }
+
     public class Error
     {
         Exception exception;
         Reason reason;
+
         public Error(Reason reason, Exception exception)
         {
             this.reason = reason;
             this.exception = exception;
         }
+
         public Exception Exception
         {
             get { return exception; }
         }
+
         public Reason Reason
         {
             get { return reason; }

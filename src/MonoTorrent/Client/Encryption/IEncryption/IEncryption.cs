@@ -40,6 +40,5 @@ namespace MonoTorrent.Client.Encryption
         void Encrypt(byte[] buffer);
         void Encrypt(byte[] buffer, int offset, int count);
         void Encrypt(byte[] src, int srcOffset, byte[] dest, int destOffset, int count);
-
     }
 }

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Text;
 using System.Net;
@@ -77,13 +76,12 @@ namespace MonoTorrent.Client.Connections
 
         #endregion
 
-
         #region Constructors
 
         public IPV4Connection(Uri uri)
-            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), 
-                   new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
-                   false)
+            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+                new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
+                false)
         {
             this.uri = uri;
         }
@@ -91,13 +89,11 @@ namespace MonoTorrent.Client.Connections
         public IPV4Connection(IPEndPoint endPoint)
             : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), endPoint, false)
         {
-
         }
 
         public IPV4Connection(Socket socket, bool isIncoming)
-            : this(socket, (IPEndPoint)socket.RemoteEndPoint, isIncoming)
+            : this(socket, (IPEndPoint) socket.RemoteEndPoint, isIncoming)
         {
-
         }
 
 
@@ -109,7 +105,6 @@ namespace MonoTorrent.Client.Connections
         }
 
         #endregion
-
 
         #region Async Methods
 
@@ -135,7 +130,7 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            ((IDisposable)socket).Dispose();
+            ((IDisposable) socket).Dispose();
         }
 
         public void EndConnect(IAsyncResult result)
@@ -150,7 +145,6 @@ namespace MonoTorrent.Client.Connections
 
         public int EndReceive(IAsyncResult result)
         {
-            
             return this.socket.EndReceive(result);
         }
 

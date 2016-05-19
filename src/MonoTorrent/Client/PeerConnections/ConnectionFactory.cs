@@ -8,7 +8,7 @@ namespace MonoTorrent.Client.Connections
     {
         private static object locker = new object();
         private static Dictionary<string, Type> trackerTypes = new Dictionary<string, Type>();
-       
+
         static ConnectionFactory()
         {
             RegisterTypeForProtocol("tcp", typeof(IPV4Connection));
@@ -39,7 +39,7 @@ namespace MonoTorrent.Client.Connections
 
             try
             {
-                return (IConnection)Activator.CreateInstance(type, connectionUri);
+                return (IConnection) Activator.CreateInstance(type, connectionUri);
             }
             catch
             {

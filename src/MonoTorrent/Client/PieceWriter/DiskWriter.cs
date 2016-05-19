@@ -19,7 +19,6 @@ namespace MonoTorrent.Client.PieceWriters
         public DiskWriter()
             : this(10)
         {
-
         }
 
         public DiskWriter(int maxOpenFiles)

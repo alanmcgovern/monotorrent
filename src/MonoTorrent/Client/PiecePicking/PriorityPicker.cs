@@ -52,7 +52,7 @@ namespace MonoTorrent.Client
 
             public int CompareTo(Files other)
             {
-                return (int)other.File.Priority - (int)File.Priority;
+                return (int) other.File.Priority - (int) File.Priority;
             }
         }
 
@@ -62,10 +62,10 @@ namespace MonoTorrent.Client
         public PriorityPicker(PiecePicker picker)
             : base(picker)
         {
-
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             // Fast Path - the peer has nothing to offer
             if (peerBitfield.AllFalse)

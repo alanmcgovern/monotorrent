@@ -9,7 +9,6 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
-    
     public class NodeTests
     {
         //static void Main(string[] args)
@@ -33,7 +32,8 @@ namespace MonoTorrent.Dht
         [Fact]
         public void FromCompactNode()
         {
-            byte[] buffer = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 1, 21, 131, 3, 1, 255 };
+            byte[] buffer = new byte[]
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 1, 21, 131, 3, 1, 255};
             Node n = Node.FromCompactNode(buffer, 0);
             Assert.True(Toolbox.ByteMatch(buffer, 0, n.Id.Bytes, 0, 20));
             Assert.Equal(IPAddress.Parse("1.21.131.3"), n.EndPoint.Address);
@@ -72,4 +72,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

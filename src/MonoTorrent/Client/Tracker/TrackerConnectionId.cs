@@ -27,7 +27,6 @@
 //
 
 
-
 using MonoTorrent.Common;
 using System.Net;
 using System.Threading;
@@ -63,7 +62,8 @@ namespace MonoTorrent.Client.Tracker
         }
 
 
-        public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, ManualResetEvent waitHandle)
+        public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent,
+            ManualResetEvent waitHandle)
         {
             this.tracker = tracker;
             this.trySubsequent = trySubsequent;

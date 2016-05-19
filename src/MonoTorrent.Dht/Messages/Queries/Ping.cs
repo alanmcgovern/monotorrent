@@ -31,7 +31,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -40,18 +39,18 @@ namespace MonoTorrent.Dht.Messages
     internal class Ping : QueryMessage
     {
         private static readonly BEncodedString QueryName = "ping";
-        private static readonly ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new PingResponse(d, m); };
+
+        private static readonly ResponseCreator responseCreator =
+            delegate(BEncodedDictionary d, QueryMessage m) { return new PingResponse(d, m); };
 
         public Ping(NodeId id)
-            :base(id, QueryName, responseCreator)
+            : base(id, QueryName, responseCreator)
         {
-
         }
 
         public Ping(BEncodedDictionary d)
             : base(d, responseCreator)
         {
-
         }
 
         public override void Handle(DhtEngine engine, Node node)
@@ -63,4 +62,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

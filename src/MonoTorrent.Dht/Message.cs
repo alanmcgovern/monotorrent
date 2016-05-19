@@ -30,7 +30,6 @@
 
 using System;
 using System.Collections.Generic;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 using MonoTorrent.Common;
@@ -56,19 +55,16 @@ namespace MonoTorrent.Dht.Messages
             {
                 BEncodedValue val;
                 if (properties.TryGetValue(VersionKey, out val))
-                    return (BEncodedString)val;
+                    return (BEncodedString) val;
                 return EmptyString;
             }
         }
 
-        internal abstract NodeId Id
-        {
-            get;
-        }
+        internal abstract NodeId Id { get; }
 
         public BEncodedString MessageType
         {
-            get { return (BEncodedString)properties[MessageTypeKey]; }
+            get { return (BEncodedString) properties[MessageTypeKey]; }
         }
 
         public BEncodedValue TransactionId
@@ -112,4 +108,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

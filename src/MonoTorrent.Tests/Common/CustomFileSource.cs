@@ -5,19 +5,19 @@ namespace MonoTorrent.Common
 {
     public class CustomFileSource : ITorrentFileSource
     {
-        public IEnumerable<FileMapping> Files {
-            get; private set;
-        }
+        public IEnumerable<FileMapping> Files { get; private set; }
 
-        public bool IgnoreHidden {
+        public bool IgnoreHidden
+        {
             get { return false; }
         }
 
-        public string TorrentName {
+        public string TorrentName
+        {
             get { return "Name"; }
         }
 
-        public CustomFileSource (List <FileMapping> files)
+        public CustomFileSource(List<FileMapping> files)
         {
             Files = files;
         }

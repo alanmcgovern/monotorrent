@@ -16,7 +16,6 @@ namespace MonoTorrent.Dht
         public TestListener()
             : base(new IPEndPoint(IPAddress.Loopback, 0))
         {
-
         }
 
         public bool Started
@@ -31,10 +30,7 @@ namespace MonoTorrent.Dht
 
         public void RaiseMessageReceived(Message message, IPEndPoint endpoint)
         {
-            DhtEngine.MainLoop.Queue(delegate
-            {
-                OnMessageReceived(message.Encode(), endpoint);
-            });
+            DhtEngine.MainLoop.Queue(delegate { OnMessageReceived(message.Encode(), endpoint); });
         }
 
         public override void Start()
@@ -48,4 +44,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

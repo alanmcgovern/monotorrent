@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,8 +39,8 @@ namespace MonoTorrent.Client
     {
         public NullWriter()
         {
-
         }
+
         public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
             return 0;
@@ -49,21 +48,18 @@ namespace MonoTorrent.Client
 
         public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
-
         }
 
         public override void Close(TorrentFile file)
         {
-
         }
 
         public override void Flush(TorrentFile file)
         {
-
         }
+
         public override void Dispose()
         {
-
         }
 
         public override bool Exists(TorrentFile file)
@@ -73,7 +69,6 @@ namespace MonoTorrent.Client
 
         public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
-
         }
     }
 }

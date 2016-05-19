@@ -24,12 +24,13 @@ namespace MonoTorrent.Client
             lock (listeners)
                 listeners.Add(listener);
         }
-		
-		public static void Flush()
-		{
-			lock (listeners)
-				listeners.ForEach (delegate (TraceListener l) { l.Flush(); } );
-		}
+
+        public static void Flush()
+        {
+            lock (listeners)
+                listeners.ForEach(delegate(TraceListener l) { l.Flush(); });
+        }
+
         /*
         internal static void Log(PeerIdInternal id, string message)
         {
@@ -57,6 +58,7 @@ namespace MonoTorrent.Client
         }
 
         private static StringBuilder sb = new StringBuilder();
+
         [Conditional("DO_NOT_ENABLE")]
         internal static void Log(IConnection connection, string message, params object[] formatting)
         {
@@ -73,7 +75,7 @@ namespace MonoTorrent.Client
                     sb.Append(string.Format(message, formatting));
                 else
                     sb.Append(message);
-				string s = sb.ToString();
+                string s = sb.ToString();
                 listeners.ForEach(delegate(TraceListener l) { l.WriteLine(s); });
             }
         }

@@ -41,7 +41,6 @@ namespace MonoTorrent.TorrentWatcher
 
         #endregion Events
 
-
         #region Member Variables
 
         private FileSystemWatcher watcher;
@@ -49,7 +48,6 @@ namespace MonoTorrent.TorrentWatcher
         private string watchFilter;
 
         #endregion
-
 
         #region Constructors
 
@@ -71,11 +69,9 @@ namespace MonoTorrent.TorrentWatcher
         public TorrentFolderWatcher(DirectoryInfo torrentDirectory)
             : this(torrentDirectory.FullName, "*.torrent")
         {
-            
         }
 
         #endregion
-
 
         #region ITorrentWatcher implementations
 
@@ -104,7 +100,6 @@ namespace MonoTorrent.TorrentWatcher
         }
 
         #endregion
-
 
         #region Event Handlers
 

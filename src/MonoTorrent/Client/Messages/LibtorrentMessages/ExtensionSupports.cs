@@ -42,7 +42,6 @@ namespace MonoTorrent.Client
         public ExtensionSupports(IEnumerable<ExtensionSupport> collection)
             : base(collection)
         {
-
         }
 
         public bool Supports(string name)

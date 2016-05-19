@@ -1,4 +1,4 @@
-#if !DISABLE_DHT
+﻿#if !DISABLE_DHT
 //
 // Node.cs
 //
@@ -32,7 +32,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
 using Mono.Math;
 using MonoTorrent.BEncoding;
 using System.Net;
@@ -118,14 +117,14 @@ namespace MonoTorrent.Dht
         internal void CompactPort(byte[] buffer, int offset)
         {
             Message.Write(buffer, offset, endpoint.Address.GetAddressBytes());
-            Message.Write(buffer, offset + 4, (ushort)endpoint.Port);
+            Message.Write(buffer, offset + 4, (ushort) endpoint.Port);
         }
 
         internal static BEncodedString CompactPort(IList<Node> peers)
         {
-            byte[] buffer = new byte[peers.Count * 6];
+            byte[] buffer = new byte[peers.Count*6];
             for (int i = 0; i < peers.Count; i++)
-                peers[i].CompactPort(buffer, i * 6);
+                peers[i].CompactPort(buffer, i*6);
 
             return new BEncodedString(buffer);
         }
@@ -145,9 +144,9 @@ namespace MonoTorrent.Dht
 
         internal static BEncodedString CompactNode(IList<Node> nodes)
         {
-            byte[] buffer = new byte[nodes.Count * 26];
+            byte[] buffer = new byte[nodes.Count*26];
             for (int i = 0; i < nodes.Count; i++)
-                nodes[i].CompactNode(buffer, i * 26);
+                nodes[i].CompactNode(buffer, i*26);
 
             return new BEncodedString(buffer);
         }
@@ -156,8 +155,8 @@ namespace MonoTorrent.Dht
         {
             byte[] id = new byte[20];
             Buffer.BlockCopy(buffer, offset, id, 0, 20);
-            IPAddress address = new IPAddress((uint)BitConverter.ToInt32(buffer, offset + 20));
-            int port = (int)(ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(buffer, offset + 24));
+            IPAddress address = new IPAddress((uint) BitConverter.ToInt32(buffer, offset + 20));
+            int port = (int) (ushort) IPAddress.NetworkToHostOrder((short) BitConverter.ToUInt16(buffer, offset + 24));
             return new Node(new NodeId(id), new IPEndPoint(address, port));
         }
 
@@ -174,30 +173,30 @@ namespace MonoTorrent.Dht
 
         internal static IEnumerable<Node> FromCompactNode(BEncodedList nodes)
         {
-			foreach(BEncodedValue node in nodes)
-	        {
+            foreach (BEncodedValue node in nodes)
+            {
                 //bad format!
                 if (!(node is BEncodedList))
                     continue;
-                
-	            string host = string.Empty;
-	            long port = 0;
-	            foreach (BEncodedValue val in (BEncodedList)node)
-	            {
-	                if(val is BEncodedString)
-	                	host = ((BEncodedString)val).Text;
-	                else if (val is BEncodedNumber)
-	                    port = ((BEncodedNumber)val).Number;
-	            }
-	            IPAddress address;
-	            IPAddress.TryParse(host, out address);
-                
+
+                string host = string.Empty;
+                long port = 0;
+                foreach (BEncodedValue val in (BEncodedList) node)
+                {
+                    if (val is BEncodedString)
+                        host = ((BEncodedString) val).Text;
+                    else if (val is BEncodedNumber)
+                        port = ((BEncodedNumber) val).Number;
+                }
+                IPAddress address;
+                IPAddress.TryParse(host, out address);
+
                 //REM: bad design from bitcomet we do not have node id so create it...
                 //or use torrent infohash?
                 // Will messages from this node be discarded later on if the NodeId doesn't match?
                 if (address != null)
-	            	yield return new Node(NodeId.Create(), new IPEndPoint(address, (int)port));
-	        }
+                    yield return new Node(NodeId.Create(), new IPEndPoint(address, (int) port));
+            }
         }
 
         //To order by last seen in bucket
@@ -205,7 +204,7 @@ namespace MonoTorrent.Dht
         {
             if (other == null)
                 return 1;
-            
+
             return lastSeen.CompareTo(other.lastSeen);
         }
 
@@ -235,10 +234,11 @@ namespace MonoTorrent.Dht
                 sb.Append(id.Bytes[i]);
                 sb.Append("-");
             }
-           return sb.ToString(0, sb.Length - 1);
+            return sb.ToString(0, sb.Length - 1);
         }
 
-        internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, NodeId> currentNodes, IEnumerable<Node> newNodes, int maxNodes)
+        internal static IEnumerable<Node> CloserNodes(NodeId target, SortedList<NodeId, NodeId> currentNodes,
+            IEnumerable<Node> newNodes, int maxNodes)
         {
             foreach (Node node in newNodes)
             {
@@ -264,4 +264,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

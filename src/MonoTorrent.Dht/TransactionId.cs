@@ -14,7 +14,7 @@ namespace MonoTorrent.Dht
         {
             lock (current)
             {
-                BEncodedString result = new BEncodedString((byte[])current.Clone());
+                BEncodedString result = new BEncodedString((byte[]) current.Clone());
                 if (current[0]++ == 255)
                     current[1]++;
                 return result;
@@ -22,4 +22,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -42,12 +41,12 @@ namespace MonoTorrent.Client
     {
         BitField zero;
         InitialSeedUnchoker unchoker;
-        
-		public override TorrentState State
-		{
-			get { return TorrentState.Seeding; }
-		}
-            
+
+        public override TorrentState State
+        {
+            get { return TorrentState.Seeding; }
+        }
+
         public InitialSeedingMode(TorrentManager manager)
             : base(manager)
         {
@@ -97,8 +96,9 @@ namespace MonoTorrent.Client
         public override void Tick(int counter)
         {
             base.Tick(counter);
-            if (unchoker.Complete) {
-                PeerMessage bitfieldMessage = new BitfieldMessage (Manager.Bitfield);
+            if (unchoker.Complete)
+            {
+                PeerMessage bitfieldMessage = new BitfieldMessage(Manager.Bitfield);
                 PeerMessage haveAllMessage = new HaveAllMessage();
                 foreach (var peer in Manager.Peers.ConnectedPeers)
                 {

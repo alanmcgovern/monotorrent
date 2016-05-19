@@ -31,7 +31,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -43,21 +42,23 @@ namespace MonoTorrent.Dht.Messages
         private static BEncodedString QueryName = "announce_peer";
         private static BEncodedString PortKey = "port";
         private static BEncodedString TokenKey = "token";
-        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new AnnouncePeerResponse(d, m); };
+
+        private static ResponseCreator responseCreator =
+            delegate(BEncodedDictionary d, QueryMessage m) { return new AnnouncePeerResponse(d, m); };
 
         internal NodeId InfoHash
         {
-            get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
+            get { return new NodeId((BEncodedString) Parameters[InfoHashKey]); }
         }
 
         internal BEncodedNumber Port
         {
-            get { return (BEncodedNumber)Parameters[PortKey]; }
+            get { return (BEncodedNumber) Parameters[PortKey]; }
         }
 
         internal BEncodedString Token
         {
-            get { return (BEncodedString)Parameters[TokenKey]; }
+            get { return (BEncodedString) Parameters[TokenKey]; }
         }
 
         public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedString token)
@@ -71,7 +72,6 @@ namespace MonoTorrent.Dht.Messages
         public AnnouncePeer(BEncodedDictionary d)
             : base(d, responseCreator)
         {
-
         }
 
         public override void Handle(DhtEngine engine, Node node)
@@ -83,15 +83,16 @@ namespace MonoTorrent.Dht.Messages
 
             Message response;
             if (engine.TokenManager.VerifyToken(node, Token))
-			{
+            {
                 engine.Torrents[InfoHash].Add(node);
-				response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
-		    }
-			else
-			    response = new ErrorMessage(ErrorCode.ProtocolError, "Invalid or expired token received");
-				
-			engine.MessageLoop.EnqueueSend(response, node.EndPoint);
+                response = new AnnouncePeerResponse(engine.RoutingTable.LocalNode.Id, TransactionId);
+            }
+            else
+                response = new ErrorMessage(ErrorCode.ProtocolError, "Invalid or expired token received");
+
+            engine.MessageLoop.EnqueueSend(response, node.EndPoint);
         }
     }
 }
+
 #endif

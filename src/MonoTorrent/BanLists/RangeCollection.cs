@@ -76,11 +76,12 @@ namespace MonoTorrent.Client
                 if (index > 0)
                     index--;
 
-                while ((index +1) < ranges.Count)
+                while ((index + 1) < ranges.Count)
                 {
                     if (ranges[index].End > ranges[index + 1].Start || ranges[index].End + 1 == ranges[index + 1].Start)
                     {
-                        ranges[index] = new AddressRange(ranges[index].Start, Math.Max(ranges[index].End, ranges[index + 1].End));
+                        ranges[index] = new AddressRange(ranges[index].Start,
+                            Math.Max(ranges[index].End, ranges[index + 1].End));
                         ranges.RemoveAt(index + 1);
                     }
                     else
@@ -157,7 +158,7 @@ namespace MonoTorrent.Client
         internal bool Contains(AddressRange range)
         {
             int index = ranges.BinarySearch(range, new RangeComparer());
-            
+
             // The start of this range is smaller than the start of any range in the list
             if (index == -1)
                 return false;

@@ -10,7 +10,6 @@ namespace MonoTorrent.Client.Tracker
         public ScrapeResponseEventArgs(Tracker tracker, object state, bool successful)
             : base(tracker, state, successful)
         {
-
         }
     }
 }

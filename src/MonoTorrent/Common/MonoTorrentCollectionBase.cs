@@ -10,19 +10,16 @@ namespace MonoTorrent.Common
         public MonoTorrentCollection()
             : base()
         {
-
         }
 
         public MonoTorrentCollection(IEnumerable<T> collection)
             : base(collection)
         {
-
         }
 
         public MonoTorrentCollection(int capacity)
             : base(capacity)
         {
-
         }
 
         object ICloneable.Clone()

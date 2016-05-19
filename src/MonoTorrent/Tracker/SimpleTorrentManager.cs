@@ -31,7 +31,6 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
-
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using System.Net;
@@ -59,7 +58,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Member Variables
 
-
         #region Properties
 
         /// <summary>
@@ -72,10 +70,7 @@ namespace MonoTorrent.Tracker
 
         public long Incomplete
         {
-            get
-            {
-                return incomplete.Number;
-            }
+            get { return incomplete.Number; }
         }
 
         /// <summary>
@@ -105,7 +100,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Properties
 
-
         #region Constructors
 
         public SimpleTorrentManager(ITrackable trackable, IPeerComparer comparer, Tracker tracker)
@@ -121,7 +115,6 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Constructors
-
 
         #region Methods
 
@@ -163,7 +156,7 @@ namespace MonoTorrent.Tracker
             // If we have a compact response, we need to create a single BencodedString
             // Otherwise we need to create a bencoded list of dictionaries
             if (compact)
-                compactResponse = new byte[total * 6];
+                compactResponse = new byte[total*6];
             else
                 nonCompactResponse = new BEncodedList(total);
 
@@ -178,10 +171,10 @@ namespace MonoTorrent.Tracker
 
             while (total > 0)
             {
-                Peer current = p[(start++) % p.Count];
+                Peer current = p[(start++)%p.Count];
                 if (compact)
                 {
-                    Buffer.BlockCopy(current.CompactEntry, 0, compactResponse, (total - 1) * 6, 6);
+                    Buffer.BlockCopy(current.CompactEntry, 0, compactResponse, (total - 1)*6, 6);
                 }
                 else
                 {
@@ -191,7 +184,7 @@ namespace MonoTorrent.Tracker
             }
 
             if (compact)
-                response.Add(Tracker.PeersKey, (BEncodedString)compactResponse);
+                response.Add(Tracker.PeersKey, (BEncodedString) compactResponse);
             else
                 response.Add(Tracker.PeersKey, nonCompactResponse);
         }

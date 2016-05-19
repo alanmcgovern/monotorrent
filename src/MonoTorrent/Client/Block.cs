@@ -27,8 +27,6 @@
 //
 
 
-
-
 using System;
 using MonoTorrent.Client.Messages.Standard;
 
@@ -50,7 +48,6 @@ namespace MonoTorrent.Client
         private bool written;
 
         #endregion Private Fields
-
 
         #region Properties
 
@@ -97,7 +94,8 @@ namespace MonoTorrent.Client
         public bool RequestTimedOut
         {
             get
-            { // 60 seconds timeout for a request to fulfill
+            {
+                // 60 seconds timeout for a request to fulfill
                 return !Received && requestedOff != null &&
                        (DateTime.Now - requestedOff.LastMessageReceived) > TimeSpan.FromMinutes(1);
             }
@@ -131,7 +129,6 @@ namespace MonoTorrent.Client
 
         #endregion Properties
 
-
         #region Constructors
 
         internal Block(Piece piece, int startOffset, int requestLength)
@@ -146,7 +143,6 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
 
         #region Methods
 
@@ -170,8 +166,9 @@ namespace MonoTorrent.Client
             if (!(obj is Block))
                 return false;
 
-            Block other = (Block)obj;
-            return this.PieceIndex == other.PieceIndex && this.startOffset == other.startOffset && this.requestLength == other.requestLength;
+            Block other = (Block) obj;
+            return this.PieceIndex == other.PieceIndex && this.startOffset == other.startOffset &&
+                   this.requestLength == other.requestLength;
         }
 
         public override int GetHashCode()
@@ -181,7 +178,7 @@ namespace MonoTorrent.Client
 
         internal static int IndexOf(Block[] blocks, int startOffset, int blockLength)
         {
-            int index = startOffset / Piece.BlockSize;
+            int index = startOffset/Piece.BlockSize;
             if (blocks[index].startOffset != startOffset || blocks[index].RequestLength != blockLength)
                 return -1;
             return index;

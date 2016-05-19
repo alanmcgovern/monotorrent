@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Text;
 using System.Net;
@@ -54,7 +53,6 @@ namespace MonoTorrent.Client
         private DateTime lastConnectionAttempt;
 
         #endregion Private Fields
-
 
         #region Properties
 
@@ -117,13 +115,11 @@ namespace MonoTorrent.Client
 
         #endregion Properties
 
-
         #region Constructors
 
         public Peer(string peerId, Uri connectionUri)
-            : this (peerId, connectionUri, EncryptionTypes.All)
+            : this(peerId, connectionUri, EncryptionTypes.All)
         {
-
         }
 
         public Peer(string peerId, Uri connectionUri, EncryptionTypes encryption)
@@ -139,7 +135,6 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
 
         public override bool Equals(object obj)
         {
@@ -178,14 +173,15 @@ namespace MonoTorrent.Client
         internal void CompactPeer(byte[] data, int offset)
         {
             Buffer.BlockCopy(IPAddress.Parse(this.connectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(((short)this.connectionUri.Port))), 0, data, offset + 4, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(((short) this.connectionUri.Port))), 0,
+                data, offset + 4, 2);
         }
 
         internal void HashedPiece(bool succeeded)
         {
             if (succeeded && repeatedHashFails > 0)
                 repeatedHashFails--;
-            
+
             if (!succeeded)
             {
                 repeatedHashFails++;
@@ -201,9 +197,9 @@ namespace MonoTorrent.Client
                 try
                 {
                     if (value is BEncodedDictionary)
-                        list.Add(DecodeFromDict((BEncodedDictionary)value));
+                        list.Add(DecodeFromDict((BEncodedDictionary) value));
                     else if (value is BEncodedString)
-                        foreach (Peer p in Decode((BEncodedString)value))
+                        foreach (Peer p in Decode((BEncodedString) value))
                             list.Add(p);
                 }
                 catch
@@ -221,7 +217,7 @@ namespace MonoTorrent.Client
 
             if (dict.ContainsKey("peer id"))
                 peerId = dict["peer id"].ToString();
-            else if (dict.ContainsKey("peer_id"))       // HACK: Some trackers return "peer_id" instead of "peer id"
+            else if (dict.ContainsKey("peer_id")) // HACK: Some trackers return "peer_id" instead of "peer id"
                 peerId = dict["peer_id"].ToString();
             else
                 peerId = string.Empty;
@@ -239,7 +235,7 @@ namespace MonoTorrent.Client
             int i = 0;
             UInt16 port;
             StringBuilder sb = new StringBuilder(27);
-            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length / 6) + 1);
+            MonoTorrentCollection<Peer> list = new MonoTorrentCollection<Peer>((byteOrderedData.Length/6) + 1);
             while ((i + 5) < byteOrderedData.Length)
             {
                 sb.Remove(0, sb.Length);
@@ -253,7 +249,7 @@ namespace MonoTorrent.Client
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);
 
-                port = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
+                port = (UInt16) IPAddress.NetworkToHostOrder(BitConverter.ToInt16(byteOrderedData, i));
                 i += 2;
                 sb.Append(':');
                 sb.Append(port);
@@ -269,7 +265,7 @@ namespace MonoTorrent.Client
         {
             BEncodedList list = new BEncodedList();
             foreach (Peer p in peers)
-                list.Add((BEncodedString)p.CompactPeer());
+                list.Add((BEncodedString) p.CompactPeer());
             return list;
         }
     }

@@ -28,7 +28,6 @@
 
 using System;
 using System.Net;
-
 using MonoTorrent.Client;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
@@ -42,54 +41,35 @@ namespace MonoTorrent.Client
     {
         class AsyncIOState : ICacheable
         {
-            public byte[] Buffer {
-                get; private set;
-            }
+            public byte[] Buffer { get; private set; }
 
-            public AsyncIOCallback Callback {
-                get; private set;
-            }
+            public AsyncIOCallback Callback { get; private set; }
 
-            public IConnection Connection {
-                get; private set;
-            }
+            public IConnection Connection { get; private set; }
 
-            public int Count {
-                get; private set;
-            }
+            public int Count { get; private set; }
 
-            public int Offset {
-                get; set;
-            }
+            public int Offset { get; set; }
 
-            public ConnectionMonitor ManagerMonitor {
-                get; private set;
-            }
+            public ConnectionMonitor ManagerMonitor { get; private set; }
 
-            public ConnectionMonitor PeerMonitor {
-                get; private set;
-            }
+            public ConnectionMonitor PeerMonitor { get; private set; }
 
-            public IRateLimiter RateLimiter {
-                get; private set;
-            }
+            public IRateLimiter RateLimiter { get; private set; }
 
-            public int Remaining {
-                get; set;
-            }
+            public int Remaining { get; set; }
 
-            public object State {
-                get; set;
-            }
+            public object State { get; set; }
 
-            public TransferType TransferType {
+            public TransferType TransferType
+            {
                 get { return Count >= Piece.BlockSize ? TransferType.Data : TransferType.Protocol; }
             }
 
-            public AsyncIOState Initialise (IConnection connection, byte[] buffer, int offset, int count,
-                                    AsyncIOCallback callback,
-                                    object state, IRateLimiter limiter,
-                                    ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+            public AsyncIOState Initialise(IConnection connection, byte[] buffer, int offset, int count,
+                AsyncIOCallback callback,
+                object state, IRateLimiter limiter,
+                ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
             {
                 Connection = connection;
                 Buffer = buffer;
@@ -106,7 +86,7 @@ namespace MonoTorrent.Client
 
             public void Initialise()
             {
-                Initialise (null, null, 0, 0, null, null, null, null, null);
+                Initialise(null, null, 0, 0, null, null, null, null, null);
             }
         }
     }

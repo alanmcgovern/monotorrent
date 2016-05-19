@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using MonoTorrent.Common;
 using System.Net;
@@ -44,8 +43,8 @@ namespace MonoTorrent.Client.Messages.Standard
         private const byte ExtendedMessagingFlag = 0x10;
         private const byte FastPeersFlag = 0x04;
 
-
         #region Member Variables
+
         /// <summary>
         /// The length of the protocol string
         /// </summary>
@@ -53,6 +52,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.protocolStringLength; }
         }
+
         private int protocolStringLength;
 
 
@@ -63,6 +63,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.protocolString; }
         }
+
         private string protocolString;
 
 
@@ -73,6 +74,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.infoHash; }
         }
+
         internal InfoHash infoHash;
 
 
@@ -83,12 +85,14 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.peerId; }
         }
+
         private string peerId;
 
         public bool SupportsExtendedMessaging
         {
             get { return extended; }
         }
+
         private bool extended;
 
         /// <summary>
@@ -98,38 +102,38 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.supportsFastPeer; }
         }
+
         private bool supportsFastPeer;
+
         #endregion
 
-
         #region Constructors
+
         public HandshakeMessage()
             : this(ClientEngine.SupportsFastPeer)
         {
-
         }
+
         /// <summary>
         /// Creates a new HandshakeMessage
         /// </summary>
         public HandshakeMessage(bool enableFastPeer)
-            : this(new InfoHash (new byte[20]), "", VersionInfo.ProtocolStringV100, enableFastPeer)
+            : this(new InfoHash(new byte[20]), "", VersionInfo.ProtocolStringV100, enableFastPeer)
         {
-            
         }
 
         public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString)
             : this(infoHash, peerId, protocolString, ClientEngine.SupportsFastPeer, ClientEngine.SupportsExtended)
         {
-
         }
 
         public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString, bool enableFastPeer)
             : this(infoHash, peerId, protocolString, enableFastPeer, ClientEngine.SupportsExtended)
         {
-
         }
 
-        public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString, bool enableFastPeer, bool enableExtended)
+        public HandshakeMessage(InfoHash infoHash, string peerId, string protocolString, bool enableFastPeer,
+            bool enableExtended)
         {
             if (!ClientEngine.SupportsFastPeer && enableFastPeer)
                 throw new ProtocolException("The engine does not support fast peer, but fast peer was requested");
@@ -144,15 +148,16 @@ namespace MonoTorrent.Client.Messages.Standard
             this.supportsFastPeer = enableFastPeer;
             this.extended = enableExtended;
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
 
-            written += Write(buffer, written, (byte)protocolString.Length);
+            written += Write(buffer, written, (byte) protocolString.Length);
             written += WriteAscii(buffer, written, protocolString);
             written += Write(buffer, written, ZeroedBits);
 
@@ -161,7 +166,7 @@ namespace MonoTorrent.Client.Messages.Standard
             if (SupportsFastPeer)
                 buffer[written - 1] |= FastPeersFlag;
 
-            written += Write(buffer, written, infoHash.Hash); 
+            written += Write(buffer, written, infoHash.Hash);
             written += WriteAscii(buffer, written, peerId);
 
             return CheckWritten(written - offset);
@@ -169,7 +174,7 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            protocolStringLength = ReadByte(buffer, ref offset);                  // First byte is length
+            protocolStringLength = ReadByte(buffer, ref offset); // First byte is length
 
             // #warning Fix this hack - is there a better way of verifying the protocol string? Hack
             if (protocolStringLength != VersionInfo.ProtocolStringV100.Length)
@@ -193,10 +198,11 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return 68; }
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -233,6 +239,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return (this.infoHash.GetHashCode() ^ this.peerId.GetHashCode() ^ this.protocolString.GetHashCode());
         }
+
         #endregion
     }
 }

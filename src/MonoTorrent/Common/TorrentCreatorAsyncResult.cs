@@ -26,7 +26,6 @@ namespace MonoTorrent.Common
         public TorrentCreatorAsyncResult(AsyncCallback callback, object asyncState)
             : base(callback, asyncState)
         {
-
         }
     }
 }

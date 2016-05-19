@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using MonoTorrent.Common;
@@ -43,11 +42,12 @@ namespace MonoTorrent.Client
     /// <summary>
     /// Contains the logic for choosing what piece to download next
     /// </summary>
-    public class PieceManager 
+    public class PieceManager
     {
         #region Old
+
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
-        internal const int BonusRequestPerKb = 10;  
+        internal const int BonusRequestPerKb = 10;
         internal const int NormalRequestAmount = 2;
         internal const int MaxEndGameRequests = 2;
 
@@ -98,49 +98,58 @@ namespace MonoTorrent.Client
             {
                 PeerId id = peer;
                 TorrentManager manager = id.TorrentManager;
-                Block block = piece.Blocks [message.StartOffset / Piece.BlockSize];
-                long offset = (long) message.PieceIndex * id.TorrentManager.Torrent.PieceLength + message.StartOffset;
+                Block block = piece.Blocks[message.StartOffset/Piece.BlockSize];
+                long offset = (long) message.PieceIndex*id.TorrentManager.Torrent.PieceLength + message.StartOffset;
 
                 id.LastBlockReceived = DateTime.Now;
                 id.TorrentManager.PieceManager.RaiseBlockReceived(new BlockEventArgs(manager, block, piece, id));
-				id.TorrentManager.Engine.DiskManager.QueueWrite (manager, offset, message.Data, message.RequestLength , delegate {
-                    piece.Blocks[message.StartOffset/ Piece.BlockSize].Written = true;
-                    ClientEngine.BufferManager.FreeBuffer(ref message.Data);
-					// If we haven't written all the pieces to disk, there's no point in hash checking
-					if (!piece.AllBlocksWritten)
-						return;
+                id.TorrentManager.Engine.DiskManager.QueueWrite(manager, offset, message.Data, message.RequestLength,
+                    delegate
+                    {
+                        piece.Blocks[message.StartOffset/Piece.BlockSize].Written = true;
+                        ClientEngine.BufferManager.FreeBuffer(ref message.Data);
+                        // If we haven't written all the pieces to disk, there's no point in hash checking
+                        if (!piece.AllBlocksWritten)
+                            return;
 
-					// Hashcheck the piece as we now have all the blocks.
-                    id.Engine.DiskManager.BeginGetHash (id.TorrentManager, piece.Index, delegate (object o) {
-					    byte[] hash = (byte[]) o;
-					    bool result = hash == null ? false : id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
-					    id.TorrentManager.Bitfield[message.PieceIndex] = result;
+                        // Hashcheck the piece as we now have all the blocks.
+                        id.Engine.DiskManager.BeginGetHash(id.TorrentManager, piece.Index, delegate(object o)
+                        {
+                            byte[] hash = (byte[]) o;
+                            bool result = hash == null
+                                ? false
+                                : id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
+                            id.TorrentManager.Bitfield[message.PieceIndex] = result;
 
-					    ClientEngine.MainLoop.Queue(delegate
-					    {
-						    id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
+                            ClientEngine.MainLoop.Queue(delegate
+                            {
+                                id.TorrentManager.PieceManager.UnhashedPieces[piece.Index] = false;
 
-						    id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
-						    List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
-						    for (int i = 0; i < piece.Blocks.Length; i++)
-							    if (piece.Blocks[i].RequestedOff != null && !peers.Contains(piece.Blocks[i].RequestedOff))
-								    peers.Add(piece.Blocks[i].RequestedOff);
+                                id.TorrentManager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index,
+                                    result));
+                                List<PeerId> peers = new List<PeerId>(piece.Blocks.Length);
+                                for (int i = 0; i < piece.Blocks.Length; i++)
+                                    if (piece.Blocks[i].RequestedOff != null &&
+                                        !peers.Contains(piece.Blocks[i].RequestedOff))
+                                        peers.Add(piece.Blocks[i].RequestedOff);
 
-						    for (int i = 0; i < peers.Count; i++) {
-							    if (peers[i].Connection != null) {
-								    peers[i].Peer.HashedPiece(result);
-									if (peers [i].Peer.TotalHashFails == 5)
-										peers[i].ConnectionManager.CleanupSocket (id, "Too many hash fails");
-								}
-							}
+                                for (int i = 0; i < peers.Count; i++)
+                                {
+                                    if (peers[i].Connection != null)
+                                    {
+                                        peers[i].Peer.HashedPiece(result);
+                                        if (peers[i].Peer.TotalHashFails == 5)
+                                            peers[i].ConnectionManager.CleanupSocket(id, "Too many hash fails");
+                                    }
+                                }
 
-						    // If the piece was successfully hashed, enqueue a new "have" message to be sent out
-						    if (result)
-							    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
-					    });
-					});
-				});
-                
+                                // If the piece was successfully hashed, enqueue a new "have" message to be sent out
+                                if (result)
+                                    id.TorrentManager.finishedPieces.Enqueue(piece.Index);
+                            });
+                        });
+                    });
+
                 if (piece.AllBlocksReceived)
                     this.unhashedPieces[message.PieceIndex] = true;
             }
@@ -161,12 +170,12 @@ namespace MonoTorrent.Client
             if (id.Connection is HttpConnection)
             {
                 // How many whole pieces fit into 2MB
-                count = (2 * 1024 * 1024) / id.TorrentManager.Torrent.PieceLength;
+                count = (2*1024*1024)/id.TorrentManager.Torrent.PieceLength;
 
                 // Make sure we have at least one whole piece
                 count = Math.Max(count, 1);
-                
-                count *= id.TorrentManager.Torrent.PieceLength / Piece.BlockSize;
+
+                count *= id.TorrentManager.Torrent.PieceLength/Piece.BlockSize;
             }
 
             if (!id.IsChoking || id.SupportsFastPeer)
@@ -178,7 +187,7 @@ namespace MonoTorrent.Client
                         id.Enqueue(msg);
                     else
                         break;
-                } 
+                }
             }
 
             if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0))
@@ -229,7 +238,8 @@ namespace MonoTorrent.Client
 
         internal int CurrentRequestCount()
         {
-            return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob) delegate { return Picker.CurrentRequestCount(); });
+            return
+                (int) ClientEngine.MainLoop.QueueWait((MainLoopJob) delegate { return Picker.CurrentRequestCount(); });
         }
     }
 }

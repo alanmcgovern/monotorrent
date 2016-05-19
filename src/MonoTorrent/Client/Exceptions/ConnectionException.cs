@@ -73,7 +73,8 @@ namespace MonoTorrent.Client
         /// </summary>
         /// <param name="info"></param>
         /// <param name="context"></param>
-        public ConnectionException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        public ConnectionException(System.Runtime.Serialization.SerializationInfo info,
+            System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

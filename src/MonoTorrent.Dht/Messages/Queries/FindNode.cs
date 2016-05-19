@@ -31,7 +31,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -41,21 +40,23 @@ namespace MonoTorrent.Dht.Messages
     {
         private static BEncodedString TargetKey = "target";
         private static BEncodedString QueryName = "find_node";
-        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new FindNodeResponse(d, m); };
+
+        private static ResponseCreator responseCreator =
+            delegate(BEncodedDictionary d, QueryMessage m) { return new FindNodeResponse(d, m); };
 
         public NodeId Target
         {
-            get { return new NodeId((BEncodedString)Parameters[TargetKey]); }
+            get { return new NodeId((BEncodedString) Parameters[TargetKey]); }
         }
-        
+
         public FindNode(NodeId id, NodeId target)
             : base(id, QueryName, responseCreator)
         {
             Parameters.Add(TargetKey, target.BencodedString());
         }
-        
+
         public FindNode(BEncodedDictionary d)
-            :base(d, responseCreator)
+            : base(d, responseCreator)
         {
         }
 
@@ -70,9 +71,10 @@ namespace MonoTorrent.Dht.Messages
                 response.Nodes = targetNode.CompactNode();
             else
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(Target));
-            
+
             engine.MessageLoop.EnqueueSend(response, node.EndPoint);
         }
     }
 }
+
 #endif

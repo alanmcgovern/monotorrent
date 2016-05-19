@@ -38,7 +38,7 @@ namespace MonoTorrent.Dht
         {
             task.Completed -= TaskComplete;
 
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
+            SendQueryEventArgs args = (SendQueryEventArgs) e;
             if (args.TimedOut)
             {
                 bucket.SortBySeen();
@@ -68,4 +68,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

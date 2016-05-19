@@ -9,7 +9,6 @@ namespace MonoTorrent.Tracker
         public AnnounceEventArgs(Peer peer, SimpleTorrentManager manager)
             : base(peer, manager)
         {
-
         }
     }
 }

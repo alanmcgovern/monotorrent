@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net.Sockets;
 using MonoTorrent.Common;
@@ -48,7 +47,6 @@ namespace MonoTorrent.Client
         private SpeedMonitor protocolUp;
 
         #endregion Member Variables
-
 
         #region Public Properties
 
@@ -84,13 +82,11 @@ namespace MonoTorrent.Client
 
         #endregion Public Properties
 
-
         #region Constructors
 
         internal ConnectionMonitor()
             : this(12)
         {
-
         }
 
         internal ConnectionMonitor(int averagingPeriod)
@@ -102,7 +98,6 @@ namespace MonoTorrent.Client
         }
 
         #endregion
-
 
         #region Methods
 

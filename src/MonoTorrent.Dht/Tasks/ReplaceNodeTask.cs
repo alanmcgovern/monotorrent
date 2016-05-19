@@ -22,13 +22,14 @@ namespace MonoTorrent.Dht.Tasks
 
         public override void Execute()
         {
-            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
+            DhtEngine.MainLoop.Queue((MainLoopTask) delegate
+            {
                 if (bucket.Nodes.Count == 0)
                 {
                     RaiseComplete(new TaskCompleteEventArgs(this));
                     return;
                 }
-    
+
                 SendPingToOldest();
             });
         }
@@ -56,14 +57,14 @@ namespace MonoTorrent.Dht.Tasks
             e.Task.Completed -= TaskComplete;
 
             // I should raise the event with some eventargs saying which node was dead
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
-            
+            SendQueryEventArgs args = (SendQueryEventArgs) e;
+
             if (args.TimedOut)
             {
                 // If the node didn't respond and it's no longer in our bucket,
                 // we need to send a ping to the oldest node in the bucket
                 // Otherwise if we have a non-responder and it's still there, replace it!
-                int index = bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target);
+                int index = bucket.Nodes.IndexOf(((SendQueryTask) e.Task).Target);
                 if (index < 0)
                 {
                     SendPingToOldest();
@@ -81,4 +82,5 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+
 #endif

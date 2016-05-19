@@ -10,7 +10,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
     public class AnnounceMessage : UdpTrackerMessage
     {
         private long connectionId;
-        private InfoHash infoHash;  // 20
+        private InfoHash infoHash; // 20
         private string peerId; //20
         private long downloaded;
         private long left;
@@ -94,11 +94,10 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public AnnounceMessage()
             : this(0, 0, null)
         {
-
         }
 
         public AnnounceMessage(int transactionId, long connectionId, AnnounceParameters parameters)
-            :base(1, transactionId)
+            : base(1, transactionId)
         {
             this.connectionId = connectionId;
             if (parameters == null)
@@ -107,11 +106,11 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             this.downloaded = parameters.BytesDownloaded;
             this.infoHash = parameters.InfoHash;
             this.ip = 0;
-            this.key = (uint)DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
+            this.key = (uint) DateTime.Now.GetHashCode(); // FIXME: Don't do this! It should be constant
             this.left = parameters.BytesLeft;
             this.numWanted = 50;
             this.peerId = parameters.PeerId;
-            this.port = (ushort)parameters.Port;
+            this.port = (ushort) parameters.Port;
             this.torrentEvent = parameters.ClientEvent;
             this.uploaded = parameters.BytesUploaded;
         }
@@ -127,11 +126,11 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             downloaded = ReadLong(buffer, ref offset);
             left = ReadLong(buffer, ref offset);
             uploaded = ReadLong(buffer, ref offset);
-            torrentEvent = (TorrentEvent)ReadInt(buffer, ref offset);
-            ip = (uint)ReadInt(buffer, ref offset);
-            key = (uint)ReadInt(buffer, ref offset);
+            torrentEvent = (TorrentEvent) ReadInt(buffer, ref offset);
+            ip = (uint) ReadInt(buffer, ref offset);
+            key = (uint) ReadInt(buffer, ref offset);
             numWanted = ReadInt(buffer, ref offset);
-            port = (ushort)ReadShort(buffer, ref offset);
+            port = (ushort) ReadShort(buffer, ref offset);
         }
 
         public override int Encode(byte[] buffer, int offset)
@@ -146,7 +145,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write(buffer, written, downloaded);
             written += Write(buffer, written, left);
             written += Write(buffer, written, uploaded);
-            written += Write(buffer, written, (int)torrentEvent);
+            written += Write(buffer, written, (int) torrentEvent);
             written += Write(buffer, written, ip);
             written += Write(buffer, written, key);
             written += Write(buffer, written, numWanted);

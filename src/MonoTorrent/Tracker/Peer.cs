@@ -31,7 +31,6 @@ using System.Net;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections.Generic;
-
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 
@@ -174,8 +173,8 @@ namespace MonoTorrent.Tracker
                 elapsedTime = 1;
 
             clientAddress = parameters.ClientAddress;
-            downloadSpeed = (int)((parameters.Downloaded - downloaded) / elapsedTime);
-            uploadSpeed = (int)((parameters.Uploaded - uploaded) / elapsedTime);
+            downloadSpeed = (int) ((parameters.Downloaded - downloaded)/elapsedTime);
+            uploadSpeed = (int) ((parameters.Uploaded - uploaded)/elapsedTime);
             downloaded = parameters.Downloaded;
             uploaded = parameters.Uploaded;
             left = parameters.Left;
@@ -196,9 +195,10 @@ namespace MonoTorrent.Tracker
             dictionary.Add(Tracker.Port, encPort);
             return dictionary;
         }
+
         private byte[] GenerateCompactPeersEntry()
         {
-            byte[] port = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)ClientAddress.Port));
+            byte[] port = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short) ClientAddress.Port));
             byte[] addr = ClientAddress.Address.GetAddressBytes();
             byte[] entry = new byte[addr.Length + port.Length];
 

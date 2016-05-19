@@ -17,7 +17,6 @@ namespace MonoTorrent.Dht.Listeners
         public DhtListener(IPEndPoint endpoint)
             : base(endpoint)
         {
-
         }
 
         protected override void OnMessageReceived(byte[] buffer, IPEndPoint endpoint)
@@ -28,4 +27,5 @@ namespace MonoTorrent.Dht.Listeners
         }
     }
 }
+
 #endif

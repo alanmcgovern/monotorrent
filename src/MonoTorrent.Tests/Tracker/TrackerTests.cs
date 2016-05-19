@@ -9,7 +9,6 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
-    
     public class TrackerTests : IDisposable
     {
         //static void Main(string[] args)
@@ -49,19 +48,21 @@ namespace MonoTorrent.Tracker
             Random r = new Random();
             ManualResetEvent handle = new ManualResetEvent(false);
 
-            for (int i=0; i < 20; i++)
+            for (int i = 0; i < 20; i++)
             {
                 InfoHash infoHash = new InfoHash(new byte[20]);
                 r.NextBytes(infoHash.Hash);
-                TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
-                tier.Trackers[0].AnnounceComplete += delegate {
+                TrackerTier tier = new TrackerTier(new string[] {uri.ToString()});
+                tier.Trackers[0].AnnounceComplete += delegate
+                {
                     if (++announceCount == 20)
                         handle.Set();
                 };
-                TrackerConnectionID id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started, new ManualResetEvent(false));
+                TrackerConnectionID id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started,
+                    new ManualResetEvent(false));
                 MonoTorrent.Client.Tracker.AnnounceParameters parameters;
                 parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string('1', 20), "", 1411);
+                    infoHash, false, new string('1', 20), "", 1411);
                 tier.Trackers[0].Announce(parameters, id);
             }
 

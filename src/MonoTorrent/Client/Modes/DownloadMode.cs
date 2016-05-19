@@ -8,10 +8,11 @@ namespace MonoTorrent.Client
     class DownloadMode : Mode
     {
         TorrentState state;
-		public override TorrentState State
-		{
-			get { return state; }
-		}
+
+        public override TorrentState State
+        {
+            get { return state; }
+        }
 
         public DownloadMode(TorrentManager manager)
             : base(manager)
@@ -37,7 +38,8 @@ namespace MonoTorrent.Client
             if (Manager.Complete && state == TorrentState.Downloading)
             {
                 state = TorrentState.Seeding;
-                Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading, TorrentState.Seeding));
+                Manager.RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(Manager, TorrentState.Downloading,
+                    TorrentState.Seeding));
                 Manager.TrackerManager.Announce(TorrentEvent.Completed);
             }
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)

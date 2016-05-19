@@ -49,12 +49,14 @@ namespace MonoTorrent.Client
         public List<int> PickedPieces = new List<int>();
 
         public bool ReturnNoPiece = true;
+
         public TestPicker()
             : base(null)
         {
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             PickPieceId.Add(id);
             BitField clone = new BitField(peerBitfield.Length);
@@ -80,7 +82,6 @@ namespace MonoTorrent.Client
 
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
-            
         }
 
         public override bool IsInteresting(BitField bitfield)

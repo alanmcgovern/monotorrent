@@ -87,14 +87,16 @@ namespace MonoTorrent.Client
 
         private void OnReceiveCallBack(IAsyncResult ar)
         {
-            UdpClient u = (UdpClient)ar.AsyncState;
+            UdpClient u = (UdpClient) ar.AsyncState;
             IPEndPoint e = new IPEndPoint(IPAddress.Any, 0);
             try
             {
                 byte[] receiveBytes = u.EndReceive(ar, ref e);
                 string receiveString = Encoding.ASCII.GetString(receiveBytes);
 
-                Regex exp = new Regex("BT-SEARCH \\* HTTP/1.1\\r\\nHost: 239.192.152.143:6771\\r\\nPort: (?<port>[^@]+)\\r\\nInfohash: (?<hash>[^@]+)\\r\\n\\r\\n\\r\\n");
+                Regex exp =
+                    new Regex(
+                        "BT-SEARCH \\* HTTP/1.1\\r\\nHost: 239.192.152.143:6771\\r\\nPort: (?<port>[^@]+)\\r\\nInfohash: (?<hash>[^@]+)\\r\\n\\r\\n\\r\\n");
                 Match match = exp.Match(receiveString);
 
                 if (!match.Success)
@@ -107,9 +109,9 @@ namespace MonoTorrent.Client
                 TorrentManager manager = null;
                 InfoHash matchHash = InfoHash.FromHex(match.Groups["hash"].Value);
                 for (int i = 0; manager == null && i < engine.Torrents.Count; i ++)
-                    if (engine.Torrents [i].InfoHash == matchHash)
-                        manager = engine.Torrents [i];
-                
+                    if (engine.Torrents[i].InfoHash == matchHash)
+                        manager = engine.Torrents[i];
+
                 if (manager == null)
                     return;
 
@@ -119,8 +121,9 @@ namespace MonoTorrent.Client
                 // Add new peer to matched Torrent
                 if (!manager.HasMetadata || !manager.Torrent.IsPrivate)
                 {
-                    ClientEngine.MainLoop.Queue(delegate {
-                        int count = manager.AddPeersCore (peer);
+                    ClientEngine.MainLoop.Queue(delegate
+                    {
+                        int count = manager.AddPeersCore(peer);
                         manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
                     });
                 }

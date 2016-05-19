@@ -33,7 +33,6 @@ using System.Web;
 using System.Text;
 using System.Collections.Specialized;
 using System.Diagnostics;
-
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages.UdpTracker;
@@ -44,7 +43,6 @@ namespace MonoTorrent.Tracker.Listeners
 {
     public class UdpListener : ListenerBase
     {
-
         private System.Net.Sockets.UdpClient listener;
         private IPEndPoint endpoint;
         private Dictionary<IPAddress, long> connectionIDs;
@@ -76,7 +74,7 @@ namespace MonoTorrent.Tracker.Listeners
 
             //TODO test if it is better to use socket directly
             //Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            
+
             listener = new System.Net.Sockets.UdpClient(endpoint.Port);
             listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
         }
@@ -88,8 +86,8 @@ namespace MonoTorrent.Tracker.Listeners
         {
             if (!Running)
                 return;
-			System.Net.Sockets.UdpClient listener = this.listener;
-			this.listener = null;
+            System.Net.Sockets.UdpClient listener = this.listener;
+            this.listener = null;
             listener.Close();
         }
 
@@ -97,26 +95,26 @@ namespace MonoTorrent.Tracker.Listeners
         {
             try
             {
-                System.Net.Sockets.UdpClient listener = (System.Net.Sockets.UdpClient)ar.AsyncState;
+                System.Net.Sockets.UdpClient listener = (System.Net.Sockets.UdpClient) ar.AsyncState;
                 byte[] data = listener.EndReceive(ar, ref endpoint);
-                if (data.Length <16)
-                    return;//bad request
+                if (data.Length < 16)
+                    return; //bad request
 
                 UdpTrackerMessage request = UdpTrackerMessage.DecodeMessage(data, 0, data.Length, MessageType.Request);
 
                 switch (request.Action)
                 {
                     case 0:
-                        ReceiveConnect((ConnectMessage)request);
+                        ReceiveConnect((ConnectMessage) request);
                         break;
                     case 1:
-                        ReceiveAnnounce((AnnounceMessage)request);
+                        ReceiveAnnounce((AnnounceMessage) request);
                         break;
                     case 2:
-                        ReceiveScrape((ScrapeMessage)request);
+                        ReceiveScrape((ScrapeMessage) request);
                         break;
                     case 3:
-                        ReceiveError((ErrorMessage)request);
+                        ReceiveError((ErrorMessage) request);
                         break;
                     default:
                         throw new ProtocolException(string.Format("Invalid udp message received: {0}", request.Action));
@@ -132,7 +130,7 @@ namespace MonoTorrent.Tracker.Listeners
                     listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
             }
         }
-        
+
         protected virtual void ReceiveConnect(ConnectMessage connectMessage)
         {
             UdpTrackerMessage m = new ConnectResponseMessage(connectMessage.TransactionId, CreateConnectionID());
@@ -170,11 +168,11 @@ namespace MonoTorrent.Tracker.Listeners
                     switch (keypair.Key.Text)
                     {
                         case ("complete"):
-                            seeders = Convert.ToInt32(keypair.Value.ToString());//same as seeder?
+                            seeders = Convert.ToInt32(keypair.Value.ToString()); //same as seeder?
                             break;
 
                         case ("incomplete"):
-                            leechers = Convert.ToInt32(keypair.Value.ToString());//same as leecher?
+                            leechers = Convert.ToInt32(keypair.Value.ToString()); //same as leecher?
                             break;
 
                         case ("interval"):
@@ -182,10 +180,10 @@ namespace MonoTorrent.Tracker.Listeners
                             break;
 
                         case ("peers"):
-                            if (keypair.Value is BEncodedList)          // Non-compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedList)keypair.Value));
-                            else if (keypair.Value is BEncodedString)   // Compact response
-                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedString)keypair.Value));
+                            if (keypair.Value is BEncodedList) // Non-compact response
+                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedList) keypair.Value));
+                            else if (keypair.Value is BEncodedString) // Compact response
+                                peers.AddRange(MonoTorrent.Client.Peer.Decode((BEncodedString) keypair.Value));
                             break;
 
                         default:
@@ -207,7 +205,7 @@ namespace MonoTorrent.Tracker.Listeners
             res.Add("uploaded", announceMessage.Uploaded.ToString());
             res.Add("downloaded", announceMessage.Downloaded.ToString());
             res.Add("left", announceMessage.Left.ToString());
-            res.Add("compact", "1");//hardcode
+            res.Add("compact", "1"); //hardcode
             res.Add("numwant", announceMessage.NumWanted.ToString());
             res.Add("ip", announceMessage.Ip.ToString());
             res.Add("key", announceMessage.Key.ToString());
@@ -231,7 +229,7 @@ namespace MonoTorrent.Tracker.Listeners
 
                 foreach (KeyValuePair<BEncodedString, BEncodedValue> keypair in val)
                 {
-                    BEncodedDictionary dict = (BEncodedDictionary)keypair.Value;
+                    BEncodedDictionary dict = (BEncodedDictionary) keypair.Value;
                     int seeds = 0;
                     int leeches = 0;
                     int complete = 0;
@@ -239,10 +237,10 @@ namespace MonoTorrent.Tracker.Listeners
                     {
                         switch (keypair2.Key.Text)
                         {
-                            case "complete"://The current number of connected seeds
+                            case "complete": //The current number of connected seeds
                                 seeds = Convert.ToInt32(keypair2.Value.ToString());
                                 break;
-                            case "downloaded"://The total number of completed downloads
+                            case "downloaded": //The total number of completed downloads
                                 complete = Convert.ToInt32(keypair2.Value.ToString());
                                 break;
                             case "incomplete":
@@ -252,7 +250,7 @@ namespace MonoTorrent.Tracker.Listeners
                     }
                     ScrapeDetails sd = new ScrapeDetails(seeds, leeches, complete);
                     scrapes.Add(sd);
-                    if (scrapes.Count == 74)//protocole do not support to send more than 74 scrape at once...
+                    if (scrapes.Count == 74) //protocole do not support to send more than 74 scrape at once...
                     {
                         m = new ScrapeResponseMessage(scrapeMessage.TransactionId, scrapes);
                         data = m.Encode();
@@ -270,7 +268,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             NameValueCollection res = new NameValueCollection();
             if (scrapeMessage.InfoHashes.Count == 0)
-                return res;//no infohash????
+                return res; //no infohash????
             //TODO more than one infohash : paid attention to order in response!!!
             InfoHash hash = new InfoHash(scrapeMessage.InfoHashes[0]);
             res.Add("info_hash", hash.UrlEncode());
@@ -279,7 +277,7 @@ namespace MonoTorrent.Tracker.Listeners
 
         protected virtual void ReceiveError(ErrorMessage errorMessage)
         {
-            throw new ProtocolException(String.Format("ErrorMessage from :{0}",endpoint.Address));
+            throw new ProtocolException(String.Format("ErrorMessage from :{0}", endpoint.Address));
         }
     }
 }

@@ -43,8 +43,9 @@ namespace MonoTorrent.Client.Tracker
             if (tracker == null)
                 throw new ArgumentNullException("tracker");
             if (!(state is TrackerConnectionID))
-                throw new ArgumentException("The state object must be the same object as in the call to Announce", "state");
-            this.id = (TrackerConnectionID)state;
+                throw new ArgumentException("The state object must be the same object as in the call to Announce",
+                    "state");
+            this.id = (TrackerConnectionID) state;
             this.successful = successful;
             this.tracker = tracker;
         }

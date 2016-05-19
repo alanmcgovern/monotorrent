@@ -9,7 +9,6 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    
     public class TestEncryption : IDisposable
     {
         //public static void Main(string[] args)
@@ -26,7 +25,7 @@ namespace MonoTorrent.Client
         //            break;
         //    }
         //}
-        
+
         private TestRig rig;
         private ConnectionPair conn;
 
@@ -60,7 +59,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            Assert.True (false, "Timed out waiting for handle");
+            Assert.True(false, "Timed out waiting for handle");
         }
 
         [Fact]
@@ -68,6 +67,7 @@ namespace MonoTorrent.Client
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, false);
         }
+
         [Fact]
         public void Full_FullTestInitial()
         {
@@ -77,7 +77,8 @@ namespace MonoTorrent.Client
         [Fact]
         public void Full_HeaderTestNoInitial()
         {
-            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
+            Assert.Throws<EncryptionException>(
+                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
         }
 
         [Fact]
@@ -91,6 +92,7 @@ namespace MonoTorrent.Client
         {
             Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, false);
         }
+
         [Fact]
         public void Full_AutoTestInitial()
         {
@@ -100,8 +102,10 @@ namespace MonoTorrent.Client
         [Fact]
         public void Full_NoneTestNoInitial()
         {
-            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
+            Assert.Throws<EncryptionException>(
+                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
         }
+
         [Fact]
         public void Full_NoneTestInitial()
         {
@@ -113,6 +117,7 @@ namespace MonoTorrent.Client
         {
             PeerATest(EncryptionTypes.RC4Full, true);
         }
+
         [Fact]
         public void EncrytorFactoryPeerAFullNoInitial()
         {
@@ -124,6 +129,7 @@ namespace MonoTorrent.Client
         {
             PeerATest(EncryptionTypes.RC4Header, false);
         }
+
         [Fact]
         public void EncrytorFactoryPeerAHeaderInitial()
         {
@@ -137,7 +143,8 @@ namespace MonoTorrent.Client
 
             rig.AddConnection(conn.Incoming);
 
-            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB",
+                VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
 
             conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
@@ -166,7 +173,8 @@ namespace MonoTorrent.Client
             rig.Engine.Settings.AllowedEncryption = encryption;
             rig.Engine.StartAll();
 
-            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB", VersionInfo.ProtocolStringV100);
+            HandshakeMessage message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB",
+                VersionInfo.ProtocolStringV100);
             byte[] buffer = message.Encode();
             PeerAEncryption a = new PeerAEncryption(rig.Manager.InfoHash, encryption);
             if (addInitial)
@@ -183,9 +191,9 @@ namespace MonoTorrent.Client
                 a.Encryptor.Encrypt(buffer);
                 conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
             }
-         
+
             int received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
-            Assert.Equal (68, received);
+            Assert.Equal(68, received);
 
             a.Decryptor.Decrypt(buffer);
             message.Decode(buffer, 0, buffer.Length);
@@ -205,7 +213,7 @@ namespace MonoTorrent.Client
             rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
-            PeerBEncryption a = new PeerBEncryption(new InfoHash[] { rig.Manager.InfoHash }, EncryptionTypes.All);
+            PeerBEncryption a = new PeerBEncryption(new InfoHash[] {rig.Manager.InfoHash}, EncryptionTypes.All);
             IAsyncResult result = a.BeginHandshake(conn.Incoming, null, null);
             if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.True(false, "Handshake timed out");
@@ -233,20 +241,21 @@ namespace MonoTorrent.Client
             bool doneA = false;
             bool doneB = false;
 
-            HandshakeMessage m = new HandshakeMessage(rig.Torrent.InfoHash, "12345123451234512345", VersionInfo.ProtocolStringV100);
+            HandshakeMessage m = new HandshakeMessage(rig.Torrent.InfoHash, "12345123451234512345",
+                VersionInfo.ProtocolStringV100);
             byte[] handshake = m.Encode();
 
             PeerAEncryption a = new PeerAEncryption(rig.Torrent.InfoHash, encryptionA);
-            
+
             if (addInitial)
                 a.AddPayload(handshake);
 
-            PeerBEncryption b = new PeerBEncryption(new InfoHash[] { rig.Torrent.InfoHash }, encryptionB);
+            PeerBEncryption b = new PeerBEncryption(new InfoHash[] {rig.Torrent.InfoHash}, encryptionB);
 
             IAsyncResult resultA = a.BeginHandshake(conn.Outgoing, null, null);
             IAsyncResult resultB = b.BeginHandshake(conn.Incoming, null, null);
 
-            WaitHandle[] handles = new WaitHandle[] { resultA.AsyncWaitHandle, resultB.AsyncWaitHandle };
+            WaitHandle[] handles = new WaitHandle[] {resultA.AsyncWaitHandle, resultB.AsyncWaitHandle};
             int count = 1000;
             while (!WaitHandle.WaitAll(handles, 5, true))
             {

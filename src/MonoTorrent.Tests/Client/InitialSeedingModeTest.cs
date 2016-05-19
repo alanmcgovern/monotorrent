@@ -6,17 +6,19 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class InitialSeedingModeTest : IDisposable
     {
-        InitialSeedingMode Mode { get { return Rig.Manager.Mode as InitialSeedingMode; } }
+        InitialSeedingMode Mode
+        {
+            get { return Rig.Manager.Mode as InitialSeedingMode; }
+        }
 
         TestRig Rig { get; set; }
 
         public InitialSeedingModeTest()
         {
-            Rig = TestRig.CreateSingleFile(Piece.BlockSize * 20, Piece.BlockSize * 2);
-            Rig.Manager.Bitfield.Not ();
+            Rig = TestRig.CreateSingleFile(Piece.BlockSize*20, Piece.BlockSize*2);
+            Rig.Manager.Bitfield.Not();
             Rig.Manager.Mode = new InitialSeedingMode(Rig.Manager);
         }
 

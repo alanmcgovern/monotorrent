@@ -13,13 +13,15 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int ByteLength
         {
-            get { return 4 + usernameLength + 8;  }
+            get { return 4 + usernameLength + 8; }
         }
 
         public override void Decode(byte[] buffer, int offset, int length)
         {
-            usernameLength = buffer[offset]; offset++;
-            username = Encoding.ASCII.GetString(buffer, offset, usernameLength); offset += usernameLength;
+            usernameLength = buffer[offset];
+            offset++;
+            username = Encoding.ASCII.GetString(buffer, offset, usernameLength);
+            offset += usernameLength;
             password = new byte[8];
             Buffer.BlockCopy(buffer, offset, password, 0, password.Length);
         }

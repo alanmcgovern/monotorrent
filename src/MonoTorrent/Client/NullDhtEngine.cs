@@ -51,22 +51,18 @@ namespace MonoTorrent.Client
 
         public void Add(BEncodedList nodes)
         {
-            
         }
 
         public void Announce(InfoHash infohash, int port)
         {
-
         }
 
         public void Dispose()
         {
-
         }
 
         public void GetPeers(InfoHash infohash)
         {
-
         }
 
         public byte[] SaveNodes()
@@ -76,17 +72,14 @@ namespace MonoTorrent.Client
 
         public void Start()
         {
-            
         }
 
         public void Start(byte[] initialNodes)
         {
-            
         }
 
         public void Stop()
         {
-            
         }
     }
 }

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections;
 using System.Text;
@@ -37,31 +36,32 @@ using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Common
 {
-	public delegate long Operation<T>(T target);
+    public delegate long Operation<T>(T target);
 
     public static class Toolbox
     {
         private static Random r = new Random();
-		public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)
-		{
-			int count = 0;
 
-			foreach (T t in enumerable)
-				if (predicate(t))
-					count++;
+        public static int Count<T>(IEnumerable<T> enumerable, Predicate<T> predicate)
+        {
+            int count = 0;
 
-			return count;
-		}
+            foreach (T t in enumerable)
+                if (predicate(t))
+                    count++;
 
-		public static long Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
-		{
+            return count;
+        }
+
+        public static long Accumulate<T>(IEnumerable<T> enumerable, Operation<T> action)
+        {
             long count = 0;
 
-			foreach (T t in enumerable)
-				count += action(t);
-		
-			return count;
-		}
+            foreach (T t in enumerable)
+                count += action(t);
+
+            return count;
+        }
 
         public static void RaiseAsyncEvent<T>(EventHandler<T> e, object o, T args)
             where T : EventArgs
@@ -69,11 +69,13 @@ namespace MonoTorrent.Common
             if (e == null)
                 return;
 
-            ThreadPool.QueueUserWorkItem(delegate {
+            ThreadPool.QueueUserWorkItem(delegate
+            {
                 if (e != null)
                     e(o, args);
             });
         }
+
         /// <summary>
         /// Randomizes the contents of the array
         /// </summary>

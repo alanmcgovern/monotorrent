@@ -1,4 +1,4 @@
-#if !DISABLE_DHT
+﻿#if !DISABLE_DHT
 //
 // NodeState.cs
 //
@@ -32,12 +32,13 @@ using System;
 
 namespace MonoTorrent.Dht
 {
-	internal enum NodeState
-	{
-		Unknown,
-		Good,
-		Questionable,
-		Bad
-	}
+    internal enum NodeState
+    {
+        Unknown,
+        Good,
+        Questionable,
+        Bad
+    }
 }
+
 #endif

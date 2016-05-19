@@ -11,16 +11,16 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private static readonly BEncodedString MessageKey = "msg";
         private BEncodedDictionary messageDict = new BEncodedDictionary();
+
         public string Message
         {
-            set { messageDict[MessageKey] = (BEncodedString)(value ?? ""); }
-            get { return ((BEncodedString)messageDict[MessageKey]).Text; }
+            set { messageDict[MessageKey] = (BEncodedString) (value ?? ""); }
+            get { return ((BEncodedString) messageDict[MessageKey]).Text; }
         }
 
         public LTChat()
             : base(Support.MessageId)
         {
-
         }
 
         internal LTChat(byte messageId, string message)
@@ -58,9 +58,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write(buffer, written, ExtensionMessage.MessageId);
             written += Write(buffer, written, ExtensionId);
             written += messageDict.Encode(buffer, written);
-            
+
             CheckWritten(written - offset);
-            return written - offset; ;
+            return written - offset;
+            ;
         }
     }
 }

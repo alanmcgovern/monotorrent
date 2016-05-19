@@ -33,7 +33,6 @@ using System.Web;
 using System.Text;
 using System.Collections.Specialized;
 using System.Diagnostics;
-
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 
@@ -48,7 +47,6 @@ namespace MonoTorrent.Tracker.Listeners
 
         #endregion Fields
 
-
         #region Properties
 
         /// <summary>
@@ -61,19 +59,16 @@ namespace MonoTorrent.Tracker.Listeners
 
         #endregion Properties
 
-
         #region Constructors
 
         public HttpListener(IPAddress address, int port)
             : this(string.Format("http://{0}:{1}/announce/", address, port))
         {
-
         }
 
         public HttpListener(IPEndPoint endpoint)
             : this(endpoint.Address, endpoint.Port)
         {
-
         }
 
         public HttpListener(string httpPrefix)
@@ -86,7 +81,6 @@ namespace MonoTorrent.Tracker.Listeners
 
         #endregion Constructors
 
-
         #region Methods
 
         /// <summary>
@@ -94,10 +88,10 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Start()
         {
-			if (Running)
-				return;
-			
-			listener = new System.Net.HttpListener();
+            if (Running)
+                return;
+
+            listener = new System.Net.HttpListener();
             listener.Prefixes.Add(prefix);
             listener.Start();
             listener.BeginGetContext(EndGetRequest, listener);
@@ -108,26 +102,26 @@ namespace MonoTorrent.Tracker.Listeners
         /// </summary>
         public override void Stop()
         {
-			if (!Running)
-				return;
-			
-            IDisposable d = (IDisposable)listener;
-			listener = null;
+            if (!Running)
+                return;
+
+            IDisposable d = (IDisposable) listener;
+            listener = null;
             d.Dispose();
         }
 
         private void EndGetRequest(IAsyncResult result)
         {
-			HttpListenerContext context = null;
-			System.Net.HttpListener listener = (System.Net.HttpListener) result.AsyncState;
-            
+            HttpListenerContext context = null;
+            System.Net.HttpListener listener = (System.Net.HttpListener) result.AsyncState;
+
             try
             {
                 context = listener.EndGetContext(result);
                 using (context.Response)
                     HandleRequest(context);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.Write("Exception in listener: {0}{1}", Environment.NewLine, ex);
             }

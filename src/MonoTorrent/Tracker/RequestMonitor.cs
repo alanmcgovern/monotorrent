@@ -15,7 +15,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Member Variables
 
-
         #region Properties
 
         public int AnnounceRate
@@ -30,17 +29,15 @@ namespace MonoTorrent.Tracker
 
         public int TotalAnnounces
         {
-            get { return (int)announces.Total; }
+            get { return (int) announces.Total; }
         }
 
         public int TotalScrapes
         {
-            get { return (int)scrapes.Total; }
+            get { return (int) scrapes.Total; }
         }
 
-
         #endregion Properties
-
 
         #region Constructors
 
@@ -51,7 +48,6 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Constructors
-
 
         #region Methods
 

@@ -6,7 +6,6 @@ namespace MonoTorrent.Client
 {
     public class TorrentLoadException : TorrentException
     {
-
         public TorrentLoadException()
             : base()
         {
@@ -25,7 +24,8 @@ namespace MonoTorrent.Client
         }
 
 
-        public TorrentLoadException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        public TorrentLoadException(System.Runtime.Serialization.SerializationInfo info,
+            System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

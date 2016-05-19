@@ -92,8 +92,8 @@ namespace MonoTorrent.Client.Encryption
 
                 // 3 A->B: HASH('req1', S), HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), ...
                 byte[] buffer = new byte[req1.Length + req2.Length + VerificationConstant.Length + CryptoProvide.Length
-                                        + 2 + padC.Length + 2 + InitialPayload.Length];
-                
+                                         + 2 + padC.Length + 2 + InitialPayload.Length];
+
                 int offset = 0;
                 offset += Message.Write(buffer, offset, req1);
                 offset += Message.Write(buffer, offset, req2);
@@ -105,7 +105,7 @@ namespace MonoTorrent.Client.Encryption
                 // ... PadC, len(IA)), ENCRYPT(IA)
                 offset += Message.Write(buffer, offset, DoEncrypt(Len(InitialPayload)));
                 offset += Message.Write(buffer, offset, DoEncrypt(InitialPayload));
-                
+
                 // Send the entire message in one go
                 SendMessage(buffer);
                 InitialPayload = BufferManager.EmptyBuffer;
@@ -125,14 +125,17 @@ namespace MonoTorrent.Client.Encryption
                 base.doneSynchronize(); // 4 B->A: ENCRYPT(VC, ...
 
                 VerifyBytes = new byte[4 + 2];
-                ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback); // crypto_select, len(padD) ...
+                ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback);
+                    // crypto_select, len(padD) ...
             }
             catch (Exception ex)
             {
                 asyncResult.Complete(ex);
             }
         }
+
         private byte[] b;
+
         private void gotVerification(IAsyncResult result)
         {
             try

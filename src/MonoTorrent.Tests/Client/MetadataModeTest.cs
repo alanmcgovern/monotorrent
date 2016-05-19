@@ -10,7 +10,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class MetadataModeTests : IDisposable
     {
         //static void Main(string[] args)
@@ -28,7 +27,7 @@ namespace MonoTorrent.Client
         public void Setup(bool metadataMode, string metadataPath)
         {
             pair = new ConnectionPair(55432);
-            rig = TestRig.CreateSingleFile(1024 * 1024 * 1024, 32768, metadataMode);
+            rig = TestRig.CreateSingleFile(1024*1024*1024, 32768, metadataMode);
             rig.MetadataPath = metadataPath;
             rig.RecreateManager();
 
@@ -41,7 +40,9 @@ namespace MonoTorrent.Client
             id.Connection = connection;
             byte[] data;
 
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
+            EncryptorFactory.EndCheckEncryption(
+                EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] {id.TorrentManager.InfoHash}),
+                out data);
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
         }
@@ -61,15 +62,18 @@ namespace MonoTorrent.Client
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            SendMessage(new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true), connection);
+            SendMessage(
+                new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100,
+                    true, true), connection);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(rig.TorrentDict.LengthInBytes());
             exHand.Supports.Add(LTMetadata.Support);
             SendMessage(exHand, connection);
 
             // 2) Send all our metadata requests
-            int length = (rig.TorrentDict.LengthInBytes() + 16383) / 16384;
+            int length = (rig.TorrentDict.LengthInBytes() + 16383)/16384;
             for (int i = 0; i < length; i++)
-                SendMessage(new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Request, i, null), connection);
+                SendMessage(new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Request, i, null),
+                    connection);
             // 3) Receive all the metadata chunks
             PeerMessage m;
             var stream = new MemoryStream();
@@ -102,23 +106,25 @@ namespace MonoTorrent.Client
         public void SendMetadata_ToFolder()
         {
             Setup(true, Environment.CurrentDirectory);
-            SendMetadataCore(Path.Combine(Environment.CurrentDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
+            SendMetadataCore(Path.Combine(Environment.CurrentDirectory, rig.Torrent.InfoHash.ToHex() + ".torrent"));
         }
 
-        public void SendMetadataCore (string expectedPath)
+        public void SendMetadataCore(string expectedPath)
         {
             CustomConnection connection = pair.Incoming;
 
             // 1) Send local handshake. We've already received the remote handshake as part
             // of the Connect method.
-            SendMessage(new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, true), connection);
+            SendMessage(
+                new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true,
+                    true), connection);
             ExtendedHandshakeMessage exHand = new ExtendedHandshakeMessage(rig.Torrent.Metadata.Length);
             exHand.Supports.Add(LTMetadata.Support);
             SendMessage(exHand, connection);
 
             // 2) Receive the metadata requests from the other peer and fulfill them
             byte[] buffer = rig.Torrent.Metadata;
-            int length = (buffer.Length + 16383) / 16384;
+            int length = (buffer.Length + 16383)/16384;
             PeerMessage m;
             while (length > 0 && (m = ReceiveMessage(connection)) != null)
             {
@@ -127,7 +133,8 @@ namespace MonoTorrent.Client
                 {
                     if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request)
                     {
-                        metadata = new LTMetadata (LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data, metadata.Piece, buffer);
+                        metadata = new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data,
+                            metadata.Piece, buffer);
                         SendMessage(metadata, connection);
                         length--;
                     }
@@ -159,4 +166,3 @@ namespace MonoTorrent.Client
         }
     }
 }
-

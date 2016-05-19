@@ -16,7 +16,7 @@ namespace MonoTorrent.Client.Tracker
         bool CanAnnounce { get; }
         bool CanScrape { get; }
         int Complete { get; }
-        int Downloaded { get;}
+        int Downloaded { get; }
         string FailureMessage { get; }
         int Incomplete { get; }
         TimeSpan MinUpdateInterval { get; }

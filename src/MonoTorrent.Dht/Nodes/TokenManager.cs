@@ -31,7 +31,6 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
@@ -55,13 +54,14 @@ namespace MonoTorrent.Dht
         public TokenManager()
         {
             sha1 = HashAlgoFactory.Create<SHA1>();
-            random = new RNGCryptoServiceProvider ();
+            random = new RNGCryptoServiceProvider();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];
             previousSecret = new byte[10];
             random.GetNonZeroBytes(secret);
             random.GetNonZeroBytes(previousSecret);
         }
+
         public BEncodedString GenerateToken(Node node)
         {
             return GetToken(node, secret);
@@ -71,7 +71,7 @@ namespace MonoTorrent.Dht
         {
             return (token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret)));
         }
-        
+
         private BEncodedString GetToken(Node node, byte[] s)
         {
             //refresh secret needed
@@ -87,8 +87,9 @@ namespace MonoTorrent.Dht
             sha1.TransformBlock(n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock(s, 0, s.Length);
 
-            return (BEncodedString)sha1.Hash;
+            return (BEncodedString) sha1.Hash;
         }
     }
 }
+
 #endif

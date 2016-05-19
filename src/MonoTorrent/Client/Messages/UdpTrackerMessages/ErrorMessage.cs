@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,12 +39,12 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         string errorMessage;
 
         public ErrorMessage()
-            :this(0, "")
+            : this(0, "")
         {
         }
 
         public ErrorMessage(int transactionId, string error)
-            :base(3, transactionId)
+            : base(3, transactionId)
         {
             this.errorMessage = error;
         }
@@ -76,7 +75,8 @@ namespace MonoTorrent.Client.Messages.UdpTracker
             written += Write(buffer, written, TransactionId);
             written += WriteAscii(buffer, written, errorMessage);
 
-            return written - offset; ;
+            return written - offset;
+            ;
         }
     }
 }

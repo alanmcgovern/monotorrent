@@ -9,8 +9,8 @@ namespace MonoTorrent.Dht.Tasks
 {
     class GetPeersTask : Task
     {
-    	NodeId infoHash;
-    	DhtEngine engine;
+        NodeId infoHash;
+        DhtEngine engine;
         int activeQueries;
         SortedList<NodeId, NodeId> closestNodes;
         SortedList<NodeId, Node> queriedNodes;
@@ -22,16 +22,15 @@ namespace MonoTorrent.Dht.Tasks
 
         public GetPeersTask(DhtEngine engine, InfoHash infohash)
             : this(engine, new NodeId(infohash))
-    	{
-    		
-    	}
+        {
+        }
 
         public GetPeersTask(DhtEngine engine, NodeId infohash)
         {
             this.engine = engine;
             this.infoHash = infohash;
             this.closestNodes = new SortedList<NodeId, NodeId>(Bucket.MaxCapacity);
-            this.queriedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity * 2);
+            this.queriedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity*2);
         }
 
         public override void Execute()
@@ -40,7 +39,8 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = true;
-            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
+            DhtEngine.MainLoop.Queue((MainLoopTask) delegate
+            {
                 IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
                 foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
                     SendGetPeers(n);
@@ -66,10 +66,10 @@ namespace MonoTorrent.Dht.Tasks
                 activeQueries--;
                 e.Task.Completed -= GetPeersCompleted;
 
-                SendQueryEventArgs args = (SendQueryEventArgs)e;
+                SendQueryEventArgs args = (SendQueryEventArgs) e;
 
                 // We want to keep a list of the top (K) closest nodes which have responded
-                Node target = ((SendQueryTask)args.Task).Target;
+                Node target = ((SendQueryTask) args.Task).Target;
                 int index = queriedNodes.Values.IndexOf(target);
                 if (index >= Bucket.MaxCapacity || args.TimedOut)
                     queriedNodes.RemoveAt(index);
@@ -77,7 +77,7 @@ namespace MonoTorrent.Dht.Tasks
                 if (args.TimedOut)
                     return;
 
-                GetPeersResponse response = (GetPeersResponse)args.Response;
+                GetPeersResponse response = (GetPeersResponse) args.Response;
 
                 // Ensure that the local Node object has the token. There may/may not be
                 // an additional copy in the routing table depending on whether or not
@@ -116,4 +116,5 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+
 #endif

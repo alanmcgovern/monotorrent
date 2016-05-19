@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -56,7 +55,6 @@ namespace MonoTorrent.Common
 
         #endregion Private Fields
 
-
         #region Member Variables
 
         /// <summary>
@@ -69,7 +67,7 @@ namespace MonoTorrent.Common
 
         public long BytesDownloaded
         {
-            get { return (long)(BitField.PercentComplete * Length / 100.0); }
+            get { return (long) (BitField.PercentComplete*Length/100.0); }
         }
 
         /// <summary>
@@ -148,33 +146,30 @@ namespace MonoTorrent.Common
 
         #endregion
 
-
         #region Constructors
+
         public TorrentFile(string path, long length)
             : this(path, length, path)
         {
-
         }
 
-        public TorrentFile (string path, long length, string fullPath)
-            : this (path, length, fullPath, 0, 0)
+        public TorrentFile(string path, long length, string fullPath)
+            : this(path, length, fullPath, 0, 0)
         {
-
         }
 
-        public TorrentFile (string path, long length, int startIndex, int endIndex)
-            : this (path, length, path, startIndex, endIndex)
+        public TorrentFile(string path, long length, int startIndex, int endIndex)
+            : this(path, length, path, startIndex, endIndex)
         {
-
         }
 
         public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex)
             : this(path, length, fullPath, startIndex, endIndex, null, null, null)
         {
-
         }
 
-        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, byte[] md5, byte[] ed2k, byte[] sha1)
+        public TorrentFile(string path, long length, string fullPath, int startIndex, int endIndex, byte[] md5,
+            byte[] ed2k, byte[] sha1)
         {
             this.bitfield = new BitField(endIndex - startIndex + 1);
             this.ed2k = ed2k;
@@ -190,7 +185,6 @@ namespace MonoTorrent.Common
 
         #endregion
 
-
         #region Methods
 
         public override bool Equals(object obj)
@@ -200,7 +194,8 @@ namespace MonoTorrent.Common
 
         public bool Equals(TorrentFile other)
         {
-            return other == null ? false : path == other.path && length == other.length; ;
+            return other == null ? false : path == other.path && length == other.length;
+            ;
         }
 
         public override int GetHashCode()

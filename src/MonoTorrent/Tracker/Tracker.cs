@@ -35,7 +35,6 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Collections;
 using System.Collections.Generic;
-
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Tracker.Listeners;
@@ -58,7 +57,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Static BEncodedStrings
 
-
         #region Events
 
         public event EventHandler<AnnounceEventArgs> PeerAnnounced;
@@ -66,7 +64,6 @@ namespace MonoTorrent.Tracker
         public event EventHandler<TimedOutEventArgs> PeerTimedOut;
 
         #endregion Events
-
 
         #region Fields
 
@@ -81,9 +78,7 @@ namespace MonoTorrent.Tracker
         private Dictionary<InfoHash, SimpleTorrentManager> torrents;
         private BEncodedString trackerId;
 
-
         #endregion Fields
-
 
         #region Properties
 
@@ -145,7 +140,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Properties
 
-
         #region Constructors
 
         /// <summary>
@@ -154,7 +148,6 @@ namespace MonoTorrent.Tracker
         public Tracker()
             : this(new BEncodedString("monotorrent-tracker"))
         {
-
         }
 
         public Tracker(BEncodedString trackerId)
@@ -169,14 +162,14 @@ namespace MonoTorrent.Tracker
             minAnnounceInterval = TimeSpan.FromMinutes(10);
             timeoutInterval = TimeSpan.FromMinutes(50);
 
-            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
+            {
                 Requests.Tick();
                 return !disposed;
             });
         }
 
         #endregion Constructors
-
 
         #region Methods
 
@@ -245,7 +238,7 @@ namespace MonoTorrent.Tracker
             CheckDisposed();
             if (listener == null)
                 throw new ArgumentNullException("listener");
-            
+
             return listener.Tracker == this;
         }
 
@@ -253,7 +246,7 @@ namespace MonoTorrent.Tracker
         {
             if (disposed)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "The tracker has been shut down");
                 return;
             }
 
@@ -272,7 +265,8 @@ namespace MonoTorrent.Tracker
                     }
                     else
                     {
-                        e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The requested torrent is not registered with this tracker");
+                        e.Response.Add(RequestParameters.FailureKey,
+                            (BEncodedString) "The requested torrent is not registered with this tracker");
                         return;
                     }
                 }
@@ -282,7 +276,8 @@ namespace MonoTorrent.Tracker
             // bail out
             if (!AllowNonCompact && !e.HasRequestedCompact)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not support non-compact responses");
+                e.Response.Add(RequestParameters.FailureKey,
+                    (BEncodedString) "This tracker does not support non-compact responses");
                 return;
             }
 
@@ -299,8 +294,8 @@ namespace MonoTorrent.Tracker
                 manager.GetPeers(e.Response, e.NumberWanted, e.HasRequestedCompact);
             }
 
-            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int)AnnounceInterval.TotalSeconds));
-            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int)MinAnnounceInterval.TotalSeconds));
+            e.Response.Add(Tracker.IntervalKey, new BEncodedNumber((int) AnnounceInterval.TotalSeconds));
+            e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int) MinAnnounceInterval.TotalSeconds));
             e.Response.Add(Tracker.TrackerIdKey, trackerId); // FIXME: Is this right?
             e.Response.Add(Tracker.CompleteKey, new BEncodedNumber(manager.Complete));
             e.Response.Add(Tracker.Incomplete, new BEncodedNumber(manager.Incomplete));
@@ -314,20 +309,21 @@ namespace MonoTorrent.Tracker
         {
             if (disposed)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"The tracker has been shut down");
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "The tracker has been shut down");
                 return;
             }
 
             monitor.ScrapeReceived();
             if (!AllowScrape)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"This tracker does not allow scraping");
+                e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "This tracker does not allow scraping");
                 return;
             }
 
             if (e.InfoHashes.Count == 0)
             {
-                e.Response.Add(RequestParameters.FailureKey, (BEncodedString)"You must specify at least one infohash when scraping this tracker");
+                e.Response.Add(RequestParameters.FailureKey,
+                    (BEncodedString) "You must specify at least one infohash when scraping this tracker");
                 return;
             }
             List<SimpleTorrentManager> managers = new List<SimpleTorrentManager>();
@@ -339,13 +335,13 @@ namespace MonoTorrent.Tracker
                     continue;
 
                 managers.Add(manager);
-                
+
                 BEncodedDictionary dict = new BEncodedDictionary();
-                dict.Add("complete",new BEncodedNumber( manager.Complete));
+                dict.Add("complete", new BEncodedNumber(manager.Complete));
                 dict.Add("downloaded", new BEncodedNumber(manager.Downloaded));
                 dict.Add("incomplete", new BEncodedNumber(manager.Incomplete));
                 dict.Add("name", new BEncodedString(manager.Trackable.Name));
-                files.Add(e.InfoHashes[i].ToHex (), dict);
+                files.Add(e.InfoHashes[i].ToHex(), dict);
             }
             RaisePeerScraped(new ScrapeEventArgs(managers));
             e.Response.Add("files", files);

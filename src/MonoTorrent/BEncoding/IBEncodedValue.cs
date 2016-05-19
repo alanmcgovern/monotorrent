@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.IO;
 using System.Text;
@@ -63,11 +62,11 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public abstract int Encode(byte[] buffer, int offset);
 
-        public static T Clone <T> (T value)
+        public static T Clone<T>(T value)
             where T : BEncodedValue
         {
-            Check.Value (value);
-            return (T) BEncodedValue.Decode (value.Encode ());
+            Check.Value(value);
+            return (T) BEncodedValue.Decode(value.Encode());
         }
 
         /// <summary>
@@ -144,19 +143,19 @@ namespace MonoTorrent.BEncoding
             BEncodedValue data;
             switch (reader.PeekByte())
             {
-                case ('i'):                         // Integer
+                case ('i'): // Integer
                     data = new BEncodedNumber();
                     break;
 
-                case ('d'):                         // Dictionary
+                case ('d'): // Dictionary
                     data = new BEncodedDictionary();
                     break;
 
-                case ('l'):                         // List
+                case ('l'): // List
                     data = new BEncodedList();
                     break;
 
-                case ('1'):                         // String
+                case ('1'): // String
                 case ('2'):
                 case ('3'):
                 case ('4'):
@@ -185,7 +184,7 @@ namespace MonoTorrent.BEncoding
         /// <returns></returns>
         public static T Decode<T>(byte[] data) where T : BEncodedValue
         {
-            return (T)BEncodedValue.Decode(data);
+            return (T) BEncodedValue.Decode(data);
         }
 
 
@@ -203,7 +202,7 @@ namespace MonoTorrent.BEncoding
 
         public static T Decode<T>(byte[] buffer, int offset, int length, bool strictDecoding) where T : BEncodedValue
         {
-            return (T)BEncodedValue.Decode(buffer, offset, length, strictDecoding);
+            return (T) BEncodedValue.Decode(buffer, offset, length, strictDecoding);
         }
 
 
@@ -214,13 +213,13 @@ namespace MonoTorrent.BEncoding
         /// <returns>BEncodedValue containing the data that was in the stream</returns>
         public static T Decode<T>(Stream stream) where T : BEncodedValue
         {
-            return (T)BEncodedValue.Decode(stream);
+            return (T) BEncodedValue.Decode(stream);
         }
 
 
         public static T Decode<T>(RawReader reader) where T : BEncodedValue
         {
-            return (T)BEncodedValue.Decode(reader);
+            return (T) BEncodedValue.Decode(reader);
         }
 
 

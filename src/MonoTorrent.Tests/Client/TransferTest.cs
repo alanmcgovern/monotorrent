@@ -27,8 +27,6 @@
 //
 
 
-
-
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -41,7 +39,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class TransferTest : IDisposable
     {
         //static void Main(string[] args)
@@ -110,7 +107,7 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             InitiateTransfer(pair.Outgoing);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
+            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] {255 >> 1, 255, 255, 250}, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
                 Assert.True(false, "Connection never closed");
@@ -125,7 +122,7 @@ namespace MonoTorrent.Client
         {
             rig.AddConnection(pair.Incoming);
             InitiateTransfer(pair.Outgoing);
-            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
+            pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] {255, 255, 255, 250}, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
                 Assert.True(false, "Connection never closed");
@@ -141,7 +138,9 @@ namespace MonoTorrent.Client
             id.Connection = connection;
             byte[] data;
 
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
+            EncryptorFactory.EndCheckEncryption(
+                EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] {id.TorrentManager.InfoHash}),
+                out data);
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
             TestHandshake(data, connection);
@@ -150,13 +149,15 @@ namespace MonoTorrent.Client
         public void TestHandshake(byte[] buffer, CustomConnection connection)
         {
             // 1) Send local handshake
-            SendMessage(new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false), connection);
+            SendMessage(
+                new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100,
+                    true, false), connection);
 
             // 2) Receive remote handshake
             if (buffer == null || buffer.Length == 0)
             {
                 buffer = new byte[68];
-                Receive (connection, buffer, 0, 68);
+                Receive(connection, buffer, 0, 68);
                 decryptor.Decrypt(buffer);
             }
 
@@ -172,8 +173,8 @@ namespace MonoTorrent.Client
 
             // 3) Receive remote bitfield - have none
             PeerMessage message = ReceiveMessage(connection);
-			Assert.True (message is HaveNoneMessage || message is BitfieldMessage, "HaveNone");
-			
+            Assert.True(message is HaveNoneMessage || message is BitfieldMessage, "HaveNone");
+
             // 4) Send a few allowed fast
             SendMessage(new AllowedFastMessage(1), connection);
             SendMessage(new AllowedFastMessage(2), connection);
@@ -195,13 +196,14 @@ namespace MonoTorrent.Client
 
         public static void Send(CustomConnection connection, byte[] buffer, int offset, int count)
         {
-            while (count > 0) {
-                var r = connection.BeginSend (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                    throw new Exception ("Could not send required data");
-                int transferred = connection.EndSend (r);
+            while (count > 0)
+            {
+                var r = connection.BeginSend(buffer, offset, count, null, null);
+                if (!r.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(4)))
+                    throw new Exception("Could not send required data");
+                int transferred = connection.EndSend(r);
                 if (transferred == 0)
-                    throw new Exception ("The socket was gracefully killed");
+                    throw new Exception("The socket was gracefully killed");
                 offset += transferred;
                 count -= transferred;
             }
@@ -211,18 +213,19 @@ namespace MonoTorrent.Client
         {
             byte[] b = message.Encode();
             encryptor.Encrypt(b);
-            Send (connection, b, 0, b.Length);
+            Send(connection, b, 0, b.Length);
         }
 
         public static void Receive(CustomConnection connection, byte[] buffer, int offset, int count)
         {
-            while (count > 0) {
-                var r = connection.BeginReceive (buffer, offset, count, null, null);
-                if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
-                    throw new Exception ("Could not receive required data");
-                int transferred = connection.EndReceive (r);
+            while (count > 0)
+            {
+                var r = connection.BeginReceive(buffer, offset, count, null, null);
+                if (!r.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(4)))
+                    throw new Exception("Could not receive required data");
+                int transferred = connection.EndReceive(r);
                 if (transferred == 0)
-                    throw new Exception ("The socket was gracefully killed");
+                    throw new Exception("The socket was gracefully killed");
                 offset += transferred;
                 count -= transferred;
             }
@@ -233,17 +236,18 @@ namespace MonoTorrent.Client
             return ReceiveMessage(connection, decryptor, rig.Manager);
         }
 
-        public static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor, TorrentManager manager)
+        public static PeerMessage ReceiveMessage(CustomConnection connection, IEncryption decryptor,
+            TorrentManager manager)
         {
             byte[] buffer = new byte[4];
-            Receive (connection, buffer, 0, buffer.Length);
+            Receive(connection, buffer, 0, buffer.Length);
             decryptor.Decrypt(buffer);
 
             int count = IPAddress.HostToNetworkOrder(BitConverter.ToInt32(buffer, 0));
             byte[] message = new byte[count + 4];
             Buffer.BlockCopy(buffer, 0, message, 0, 4);
 
-            Receive (connection, message, 4, count);
+            Receive(connection, message, 4, count);
             decryptor.Decrypt(message, 4, count);
 
             return PeerMessage.DecodeMessage(message, 0, message.Length, manager);

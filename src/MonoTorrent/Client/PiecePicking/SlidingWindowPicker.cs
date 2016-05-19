@@ -54,11 +54,11 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        private int ratio = 4;                      // ratio from medium priority to high priority set size
-        private int highPrioritySetSize;            // size of high priority set, in pieces
+        private int ratio = 4; // ratio from medium priority to high priority set size
+        private int highPrioritySetSize; // size of high priority set, in pieces
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
-        private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
+        private int highPrioritySetStart; // gets updated by calling code, or as pieces get downloaded
 
         /// <summary>
         /// Gets or sets first "high priority" piece. The n pieces after this will be requested in-order,
@@ -103,7 +103,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public int MediumPrioritySetSize
         {
-            get { return this.highPrioritySetSize * ratio; }
+            get { return this.highPrioritySetSize*ratio; }
         }
 
         #endregion Member Variables
@@ -158,7 +158,7 @@ namespace MonoTorrent.Client
         public override void Initialise(BitField bitfield, TorrentFile[] files, IEnumerable<Piece> requests)
         {
             base.Initialise(bitfield, files, requests);
-            
+
             // set the high priority set start to the beginning of the first file that we have to download
             foreach (TorrentFile file in files)
             {
@@ -171,10 +171,10 @@ namespace MonoTorrent.Client
 
         #endregion
 
-
         #region Methods
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             MessageBundle bundle;
             int start, end;

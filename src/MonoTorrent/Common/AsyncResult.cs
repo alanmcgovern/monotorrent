@@ -46,7 +46,6 @@ namespace MonoTorrent.Common
 
         #endregion Member Variables
 
-
         #region Properties
 
         public object AsyncState
@@ -89,7 +88,6 @@ namespace MonoTorrent.Common
 
         #endregion Properties
 
-
         #region Constructors
 
         public AsyncResult(AsyncCallback callback, object asyncState)
@@ -107,6 +105,7 @@ namespace MonoTorrent.Common
         {
             Complete(savedException);
         }
+
         protected internal void Complete(Exception ex)
         {
             // Ensure we only complete once - Needed because in encryption there could be

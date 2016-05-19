@@ -17,7 +17,7 @@ namespace SampleClient
     public class CustomTracker : Tracker
     {
         public CustomTracker(Uri uri)
-            :base(uri)
+            : base(uri)
         {
             this.CanScrape = false;
         }
@@ -57,16 +57,16 @@ namespace SampleClient
         {
             return count;
         }
+
         public override void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
         {
         }
 
         public override void Close(TorrentFile file)
         {
-
         }
 
-        public override void Flush (TorrentFile file)
+        public override void Flush(TorrentFile file)
         {
         }
 
@@ -77,7 +77,6 @@ namespace SampleClient
 
         public override void Move(string oldPath, string newPath, bool ignoreExisting)
         {
-            
         }
     }
 
@@ -86,19 +85,22 @@ namespace SampleClient
         private string name;
         private Socket s;
         private bool incoming;
+
         public CustomConnection(Socket s, bool incoming, string name)
         {
             this.name = name;
             this.s = s;
             this.incoming = incoming;
         }
+
         public override string ToString()
         {
             return name;
         }
+
         public byte[] AddressBytes
         {
-            get { return ((IPEndPoint)s.RemoteEndPoint).Address.GetAddressBytes(); }
+            get { return ((IPEndPoint) s.RemoteEndPoint).Address.GetAddressBytes(); }
         }
 
         public bool Connected
@@ -168,25 +170,25 @@ namespace SampleClient
     {
         public override void Start()
         {
-
         }
 
         public override void Stop()
         {
-
         }
 
         public CustomListener()
-            :base(new IPEndPoint(IPAddress.Any, 0))
+            : base(new IPEndPoint(IPAddress.Any, 0))
         {
         }
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.All);
+            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"),
+                EncryptionTypes.All);
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }
+
     public class ConnectionPair : IDisposable
     {
         TcpListener socketListener;
@@ -213,6 +215,7 @@ namespace SampleClient
             socketListener.Stop();
         }
     }
+
     public class EngineTestRig
     {
         private BEncodedDictionary torrentDict;
@@ -248,7 +251,7 @@ namespace SampleClient
 
         public CustomTracker Tracker
         {
-            get { return (CustomTracker)this.manager.TrackerManager.CurrentTracker; }
+            get { return (CustomTracker) this.manager.TrackerManager.CurrentTracker; }
         }
 
 
@@ -258,20 +261,18 @@ namespace SampleClient
         }
 
         public EngineTestRig(string savePath)
-            : this(savePath, 256 * 1024, null)
+            : this(savePath, 256*1024, null)
         {
-
         }
 
         public EngineTestRig(string savePath, PieceWriter writer)
-            : this(savePath, 256 * 1024, writer)
+            : this(savePath, 256*1024, writer)
         {
-
         }
 
         public EngineTestRig(string savePath, int piecelength, PieceWriter writer)
         {
-            if(writer == null)
+            if (writer == null)
                 writer = new MemoryWriter(new NullWriter());
             listener = new CustomListener();
             engine = new ClientEngine(new EngineSettings(), listener, writer);
@@ -291,8 +292,8 @@ namespace SampleClient
         {
             BEncodedDictionary infoDict = new BEncodedDictionary();
             infoDict[new BEncodedString("piece length")] = new BEncodedNumber(pieceLength);
-            infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20 * 15]);
-            infoDict[new BEncodedString("length")] = new BEncodedNumber(15 * 256 * 1024 - 1);
+            infoDict[new BEncodedString("pieces")] = new BEncodedString(new byte[20*15]);
+            infoDict[new BEncodedString("length")] = new BEncodedNumber(15*256*1024 - 1);
             infoDict[new BEncodedString("name")] = new BEncodedString("test.files");
 
             BEncodedDictionary dict = new BEncodedDictionary();
@@ -307,7 +308,6 @@ namespace SampleClient
             dict[new BEncodedString("announce-list")] = announceList;
             return dict;
         }
-
     }
 
     class TestManualConnection

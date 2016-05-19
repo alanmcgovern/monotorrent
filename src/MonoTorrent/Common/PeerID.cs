@@ -28,7 +28,6 @@
 //
 
 
-
 using System;
 using System.Text.RegularExpressions;
 
@@ -98,7 +97,7 @@ namespace MonoTorrent.Common
         uTorrent,
         UPnPNatBitTorrent,
         Vuze,
-		WebSeed,
+        WebSeed,
         XanTorrent,
         XBTClient,
         ZipTorrent
@@ -161,15 +160,16 @@ namespace MonoTorrent.Common
             Match m;
 
             this.peerId = peerId;
-			if (peerId.StartsWith("-WebSeed-"))
-			{
-				this.shortId = "WebSeed";
-				this.client = Client.WebSeed;
-				return;
-			}
+            if (peerId.StartsWith("-WebSeed-"))
+            {
+                this.shortId = "WebSeed";
+                this.client = Client.WebSeed;
+                return;
+            }
 
             #region Standard style peers
-            if ((m = standard.Match(peerId)) !=null)
+
+            if ((m = standard.Match(peerId)) != null)
             {
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
@@ -317,9 +317,11 @@ namespace MonoTorrent.Common
                 }
                 return;
             }
+
             #endregion
 
             #region Shadows Style
+
             if ((m = shadows.Match(peerId)) != null)
             {
                 this.shortId = m.Groups[1].Value;
@@ -356,86 +358,105 @@ namespace MonoTorrent.Common
                 }
                 return;
             }
+
             #endregion
 
             #region Brams Client
+
             if ((m = brahms.Match(peerId)) != null)
             {
                 this.shortId = "M";
                 this.client = Client.BitTorrent;
                 return;
             }
+
             #endregion
 
             #region BitLord
+
             if ((m = bitlord.Match(peerId)) != null)
             {
                 this.client = Client.BitLord;
                 this.shortId = "lord";
                 return;
             }
+
             #endregion
 
             #region BitComet
+
             if ((m = bitcomet.Match(peerId)) != null)
             {
                 this.client = Client.BitComet;
                 this.shortId = "BC";
                 return;
             }
+
             #endregion
 
             #region XBT
+
             if ((m = xbt.Match(peerId)) != null)
             {
                 this.client = Client.XBTClient;
                 this.shortId = "XBT";
                 return;
             }
+
             #endregion
 
             #region Opera
+
             if ((m = opera.Match(peerId)) != null)
             {
                 this.client = Client.Opera;
                 this.shortId = "OP";
             }
+
             #endregion
 
             #region MLDonkey
-            if ((m = mldonkey .Match(peerId)) != null)
+
+            if ((m = mldonkey.Match(peerId)) != null)
             {
                 this.client = Client.MLDonkey;
                 this.shortId = "ML";
                 return;
             }
+
             #endregion
 
             #region Bits on wheels
+
             if ((m = bow.Match(peerId)) != null)
             {
                 this.client = Client.BitsOnWheels;
                 this.shortId = "BOW";
                 return;
             }
+
             #endregion
 
             #region Queen Bee
+
             if ((m = queenbee.Match(peerId)) != null)
             {
                 this.client = Client.QueenBee;
                 this.shortId = "Q";
                 return;
             }
+
             #endregion
 
             #region BitTornado special style
-            if((m = bittornado.Match(peerId)) != null)
+
+            if ((m = bittornado.Match(peerId)) != null)
             {
                 this.shortId = m.Groups[1].Value;
                 this.client = Client.BitTornado;
                 return;
             }
+
             #endregion
 
             this.client = Client.Unknown;

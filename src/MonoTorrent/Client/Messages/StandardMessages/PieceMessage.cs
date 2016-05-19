@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 using MonoTorrent.Common;
@@ -51,19 +50,18 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
-
         #region Properties
 
         internal int BlockIndex
         {
-            get { return this.startOffset / Piece.BlockSize; }
+            get { return this.startOffset/Piece.BlockSize; }
         }
 
         public override int ByteLength
         {
             get { return (messageLength + this.requestLength + 4); }
         }
-        
+
         internal int DataOffset
         {
             get { return this.dataOffset; }
@@ -86,7 +84,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
-
         #region Constructors
 
         public PieceMessage()
@@ -103,7 +100,6 @@ namespace MonoTorrent.Client.Messages.Standard
         }
 
         #endregion
-
 
         #region Methods
 
@@ -137,17 +133,19 @@ namespace MonoTorrent.Client.Messages.Standard
         public override bool Equals(object obj)
         {
             PieceMessage msg = obj as PieceMessage;
-            return (msg == null) ? false : (this.pieceIndex == msg.pieceIndex
-                                            && this.startOffset == msg.startOffset
-                                            && this.requestLength == msg.requestLength);
+            return (msg == null)
+                ? false
+                : (this.pieceIndex == msg.pieceIndex
+                   && this.startOffset == msg.startOffset
+                   && this.requestLength == msg.requestLength);
         }
 
         public override int GetHashCode()
         {
             return (this.requestLength.GetHashCode()
-                ^ this.dataOffset.GetHashCode()
-                ^ this.pieceIndex.GetHashCode()
-                ^ this.startOffset.GetHashCode());
+                    ^ this.dataOffset.GetHashCode()
+                    ^ this.pieceIndex.GetHashCode()
+                    ^ this.startOffset.GetHashCode());
         }
 
         public override string ToString()

@@ -6,7 +6,7 @@ namespace MonoTorrent.Client.Messages
 {
     interface IMessage
     {
-        int ByteLength { get;}
+        int ByteLength { get; }
 
         byte[] Encode();
         int Encode(byte[] buffer, int offset);

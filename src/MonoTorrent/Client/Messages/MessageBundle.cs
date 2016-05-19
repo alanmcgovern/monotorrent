@@ -43,7 +43,7 @@ namespace MonoTorrent.Client.Messages
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
-            
+
             for (int i = 0; i < messages.Count; i++)
                 written += messages[i].Encode(buffer, written);
 

@@ -28,7 +28,6 @@
 
 using System;
 using System.Net;
-
 using MonoTorrent.Client;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
@@ -42,24 +41,18 @@ namespace MonoTorrent.Client
     {
         class AsyncConnectState : ICacheable
         {
-            public IConnection Connection {
-                get; private set;
-            }
+            public IConnection Connection { get; private set; }
 
-            public AsyncIOCallback Callback {
-                get; private set;
-            }
+            public AsyncIOCallback Callback { get; private set; }
 
-            public object State {
-                get; private set;
-            }
+            public object State { get; private set; }
 
-            public void Initialise ()
+            public void Initialise()
             {
-                Initialise (null, null, null);
+                Initialise(null, null, null);
             }
 
-            public AsyncConnectState Initialise (IConnection connection, AsyncIOCallback callback, object state)
+            public AsyncConnectState Initialise(IConnection connection, AsyncIOCallback callback, object state)
             {
                 Connection = connection;
                 Callback = callback;

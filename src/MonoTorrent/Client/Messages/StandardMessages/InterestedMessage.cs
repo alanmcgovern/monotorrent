@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 
@@ -41,24 +40,25 @@ namespace MonoTorrent.Client.Messages.Standard
         internal static readonly byte MessageId = 2;
         private const int messageLength = 1;
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new InterestedMessage
         /// </summary>
         public InterestedMessage()
         {
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
             written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, MessageId);
 
             return CheckWritten(written - offset);
         }
@@ -75,10 +75,11 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return (messageLength + 4); }
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -97,6 +98,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return this.ToString().GetHashCode();
         }
+
         #endregion
     }
 }

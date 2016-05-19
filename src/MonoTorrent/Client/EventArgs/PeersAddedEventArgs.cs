@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using MonoTorrent.Common;
 
@@ -40,23 +39,23 @@ namespace MonoTorrent.Client
     {
         private int count;
         private int total;
-        
+
         #region Member Variables
 
         public int ExistingPeers
         {
             get { return total - NewPeers; }
         }
-        
+
         public int NewPeers
         {
             get { return this.count; }
         }
-        
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new PeersAddedEventArgs
         /// </summary>
@@ -67,6 +66,7 @@ namespace MonoTorrent.Client
             this.count = peersAdded;
             this.total = total;
         }
+
         #endregion
     }
 }

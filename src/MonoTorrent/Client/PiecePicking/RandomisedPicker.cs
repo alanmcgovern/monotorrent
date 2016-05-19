@@ -40,12 +40,12 @@ namespace MonoTorrent.Client
         Random random = new Random();
 
         public RandomisedPicker(PiecePicker picker)
-            :base(picker)
+            : base(picker)
         {
-
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             if (peerBitfield.AllFalse)
                 return null;

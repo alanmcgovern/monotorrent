@@ -44,7 +44,7 @@ namespace MonoTorrent.Common
             get { return destination; }
         }
 
-        public FileMapping (string source, string destination)
+        public FileMapping(string source, string destination)
         {
             this.source = source;
             this.destination = destination;

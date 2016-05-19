@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 using MonoTorrent.Common;
@@ -42,6 +41,7 @@ namespace MonoTorrent.Client.Messages.Standard
         internal static readonly byte MessageId = 5;
 
         #region Member Variables
+
         /// <summary>
         /// The bitfield
         /// </summary>
@@ -49,11 +49,13 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return this.bitField; }
         }
+
         private BitField bitField;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new BitfieldMessage
         /// </summary>
@@ -72,8 +74,8 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             this.bitField = bitfield;
         }
-        #endregion
 
+        #endregion
 
         #region Methods
 
@@ -84,11 +86,11 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, bitField.LengthInBytes + 1);
-			written += Write(buffer, written, MessageId);
-			bitField.ToByteArray(buffer, written);
+            written += Write(buffer, written, bitField.LengthInBytes + 1);
+            written += Write(buffer, written, MessageId);
+            bitField.ToByteArray(buffer, written);
             written += bitField.LengthInBytes;
 
             return CheckWritten(written - offset);
@@ -101,10 +103,11 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return (this.bitField.LengthInBytes + 5); }
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -127,6 +130,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return this.bitField.GetHashCode();
         }
+
         #endregion
     }
 }

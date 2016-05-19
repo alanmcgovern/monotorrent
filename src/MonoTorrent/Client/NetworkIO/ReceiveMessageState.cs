@@ -36,48 +36,32 @@ namespace MonoTorrent.Client
     {
         class ReceiveMessageState : ICacheable
         {
-            public byte [] Buffer {
-                get; set;
-            }
+            public byte[] Buffer { get; set; }
 
-            public AsyncMessageReceivedCallback Callback {
-                get; private set;
-            }
+            public AsyncMessageReceivedCallback Callback { get; private set; }
 
-            public IConnection Connection {
-                get; private set;
-            }
+            public IConnection Connection { get; private set; }
 
-            public IEncryption Decryptor {
-                get; set;
-            }
+            public IEncryption Decryptor { get; set; }
 
-            public IRateLimiter RateLimiter {
-                get; set;
-            }
+            public IRateLimiter RateLimiter { get; set; }
 
-            public TorrentManager Manager {
-                get; private set;
-            }
+            public TorrentManager Manager { get; private set; }
 
-            public ConnectionMonitor ManagerMonitor {
-                get; set;
-            }
+            public ConnectionMonitor ManagerMonitor { get; set; }
 
-            public ConnectionMonitor PeerMonitor {
-                get; set;
-            }
+            public ConnectionMonitor PeerMonitor { get; set; }
 
-            public object State {
-                get; private set;
-            }
+            public object State { get; private set; }
 
-            public void Initialise ()
+            public void Initialise()
             {
-                Initialise (null, null, null, null, null, null, null, null);
+                Initialise(null, null, null, null, null, null, null, null);
             }
 
-            public ReceiveMessageState Initialise (IConnection connection, IEncryption decryptor, IRateLimiter limiter, ConnectionMonitor peerMonitor, TorrentManager manager, byte[] buffer, AsyncMessageReceivedCallback callback, object state)
+            public ReceiveMessageState Initialise(IConnection connection, IEncryption decryptor, IRateLimiter limiter,
+                ConnectionMonitor peerMonitor, TorrentManager manager, byte[] buffer,
+                AsyncMessageReceivedCallback callback, object state)
             {
                 Connection = connection;
                 Decryptor = decryptor;
@@ -93,4 +77,3 @@ namespace MonoTorrent.Client
         }
     }
 }
-

@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -82,10 +81,10 @@ namespace MonoTorrent.Client
         }
     }
 
-    
+
     public class DiskWriterTests : IDisposable
     {
-        byte [] data = new byte [Piece.BlockSize];
+        byte[] data = new byte[Piece.BlockSize];
         DiskManager diskManager;
         ManualResetEvent handle;
         TestRig rig;
@@ -143,7 +142,7 @@ namespace MonoTorrent.Client
             Hookup();
             diskManager.QueueRead(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
-            Assert.True (called, "#delegate called");
+            Assert.True(called, "#delegate called");
         }
 
         [Fact]
@@ -154,12 +153,13 @@ namespace MonoTorrent.Client
             Hookup();
             diskManager.QueueWrite(rig.Manager, 0, data, data.Length, delegate { called = true; });
             CheckFail();
-            Assert.True (called, "#delegate called");
+            Assert.True(called, "#delegate called");
         }
 
         void Hookup()
         {
-            rig.Manager.TorrentStateChanged += delegate {
+            rig.Manager.TorrentStateChanged += delegate
+            {
                 if (rig.Manager.State == TorrentState.Error)
                     handle.Set();
             };

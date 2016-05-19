@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,7 +40,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
 
         public override int ByteLength
         {
-            get { return 8 + (scrapes.Count * 12); }
+            get { return 8 + (scrapes.Count*12); }
         }
 
         public List<ScrapeDetails> Scrapes
@@ -52,11 +51,10 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public ScrapeResponseMessage()
             : this(0, new List<ScrapeDetails>())
         {
-
         }
 
         public ScrapeResponseMessage(int transactionId, List<ScrapeDetails> scrapes)
-            :base(2, transactionId)
+            : base(2, transactionId)
         {
             this.scrapes = scrapes;
         }
@@ -79,15 +77,15 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         {
             int written = offset;
 
-            written+=Write(buffer, written, Action);
-            written+=Write(buffer, written, TransactionId);
-            for(int i=0; i < scrapes.Count; i++)
+            written += Write(buffer, written, Action);
+            written += Write(buffer, written, TransactionId);
+            for (int i = 0; i < scrapes.Count; i++)
             {
                 written += Write(buffer, written, scrapes[i].Seeds);
                 written += Write(buffer, written, scrapes[i].Complete);
                 written += Write(buffer, written, scrapes[i].Leeches);
             }
-            
+
             return written - offset;
         }
     }

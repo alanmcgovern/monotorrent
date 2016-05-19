@@ -81,12 +81,11 @@ namespace MonoTorrent.Client.Tracker
 
         public AnnounceParameters()
         {
-
         }
 
         public AnnounceParameters(long bytesDownloaded, long bytesUploaded, long bytesLeft,
-                                  TorrentEvent clientEvent, InfoHash infohash, bool requireEncryption,
-                                  string peerId, string ipaddress, int port)
+            TorrentEvent clientEvent, InfoHash infohash, bool requireEncryption,
+            string peerId, string ipaddress, int port)
         {
             this.bytesDownloaded = bytesDownloaded;
             this.bytesUploaded = bytesUploaded;

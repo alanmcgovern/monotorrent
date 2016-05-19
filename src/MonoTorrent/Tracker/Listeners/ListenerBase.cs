@@ -18,7 +18,7 @@ namespace MonoTorrent.Tracker.Listeners
         #endregion Events
 
         #region Member Variables
-        
+
         private Tracker tracker;
 
         #endregion Member Variables
@@ -34,7 +34,6 @@ namespace MonoTorrent.Tracker.Listeners
         }
 
         #endregion Properties
-
 
         #region Methods
 
@@ -65,9 +64,9 @@ namespace MonoTorrent.Tracker.Listeners
 
             // Fire the necessary event so the request will be handled and response filled in
             if (isScrape)
-                RaiseScrapeReceived((ScrapeParameters)parameters);
+                RaiseScrapeReceived((ScrapeParameters) parameters);
             else
-                RaiseAnnounceReceived((AnnounceParameters)parameters);
+                RaiseAnnounceReceived((AnnounceParameters) parameters);
 
             // Return the response now that the connection has been handled correctly.
             return parameters.Response;
@@ -81,7 +80,7 @@ namespace MonoTorrent.Tracker.Listeners
                 url = url.Substring(url.IndexOf('?') + 1);
 
             string[] parts = url.Split('&', '=');
-            NameValueCollection c = new NameValueCollection(1 + parts.Length / 2);
+            NameValueCollection c = new NameValueCollection(1 + parts.Length/2);
             for (int i = 0; i < parts.Length; i += 2)
                 if (parts.Length > i + 1)
                     c.Add(parts[i], parts[i + 1]);
@@ -108,6 +107,5 @@ namespace MonoTorrent.Tracker.Listeners
         public abstract void Stop();
 
         #endregion Methods
-
     }
 }

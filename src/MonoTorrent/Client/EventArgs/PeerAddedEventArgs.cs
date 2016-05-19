@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using MonoTorrent.Common;
 
@@ -39,6 +38,7 @@ namespace MonoTorrent.Client
     public class PeerAddedEventArgs : TorrentEventArgs
     {
         #region Member Variables
+
         /// <summary>
         /// The number of peers that were added in the last update
         /// </summary>
@@ -46,11 +46,13 @@ namespace MonoTorrent.Client
         {
             get { return this.peer; }
         }
+
         private Peer peer;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new PeersAddedEventArgs
         /// </summary>
@@ -60,6 +62,7 @@ namespace MonoTorrent.Client
         {
             this.peer = peerAdded;
         }
+
         #endregion
     }
 }

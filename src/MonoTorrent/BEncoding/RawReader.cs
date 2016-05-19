@@ -48,7 +48,6 @@ namespace MonoTorrent.BEncoding
         public RawReader(Stream input)
             : this(input, true)
         {
-
         }
 
         public RawReader(Stream input, bool strictDecoding)

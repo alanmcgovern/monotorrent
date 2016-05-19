@@ -43,11 +43,12 @@ namespace MonoTorrent.Dht.Messages
 
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString)Parameters[IdKey]); }
+            get { return new NodeId((BEncodedString) Parameters[IdKey]); }
         }
+
         public BEncodedDictionary Parameters
         {
-            get { return (BEncodedDictionary)properties[ReturnValuesKey]; }
+            get { return (BEncodedDictionary) properties[ReturnValuesKey]; }
         }
 
         public QueryMessage Query
@@ -70,4 +71,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

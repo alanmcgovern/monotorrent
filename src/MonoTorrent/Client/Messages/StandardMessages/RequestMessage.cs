@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Net;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -43,11 +42,12 @@ namespace MonoTorrent.Client.Messages.Standard
         internal const int MinSize = 4096;
 
         #region Private Fields
+
         private int startOffset;
         private int pieceIndex;
         private int requestLength;
-        #endregion
 
+        #endregion
 
         #region Public Properties
 
@@ -73,7 +73,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
-
         #region Constructors
 
         public RequestMessage()
@@ -89,7 +88,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
         #endregion
 
-
         #region Methods
 
         public override void Decode(byte[] buffer, int offset, int length)
@@ -101,13 +99,13 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
-			
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
-			written += Write(buffer, written, startOffset);
-			written += Write(buffer, written, requestLength);
+            int written = offset;
+
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, startOffset);
+            written += Write(buffer, written, requestLength);
 
             return CheckWritten(written - offset);
         }
@@ -115,9 +113,11 @@ namespace MonoTorrent.Client.Messages.Standard
         public override bool Equals(object obj)
         {
             RequestMessage msg = obj as RequestMessage;
-            return (msg == null) ? false : (this.pieceIndex == msg.pieceIndex
-                                            && this.startOffset == msg.startOffset
-                                            && this.requestLength == msg.requestLength);
+            return (msg == null)
+                ? false
+                : (this.pieceIndex == msg.pieceIndex
+                   && this.startOffset == msg.startOffset
+                   && this.requestLength == msg.requestLength);
         }
 
         public override int GetHashCode()
@@ -127,7 +127,6 @@ namespace MonoTorrent.Client.Messages.Standard
 
         public override string ToString()
         {
-
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             sb.Append("RequestMessage ");
             sb.Append(" Index ");

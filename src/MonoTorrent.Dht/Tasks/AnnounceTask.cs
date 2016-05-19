@@ -16,7 +16,6 @@ namespace MonoTorrent.Dht.Tasks
         public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
             : this(engine, new NodeId(infoHash), port)
         {
-
         }
 
         public AnnounceTask(DhtEngine engine, NodeId infoHash, int port)
@@ -36,7 +35,7 @@ namespace MonoTorrent.Dht.Tasks
         private void GotPeers(object o, TaskCompleteEventArgs e)
         {
             e.Task.Completed -= GotPeers;
-            GetPeersTask getpeers = (GetPeersTask)e.Task;
+            GetPeersTask getpeers = (GetPeersTask) e.Task;
             foreach (Node n in getpeers.ClosestActiveNodes.Values)
             {
                 if (n.Token == null)
@@ -62,4 +61,5 @@ namespace MonoTorrent.Dht.Tasks
         }
     }
 }
+
 #endif

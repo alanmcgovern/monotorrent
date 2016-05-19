@@ -42,6 +42,7 @@ namespace MonoTorrent.Client
         struct BinaryIndexComparer : IComparer<Piece>
         {
             int index;
+
             public BinaryIndexComparer(int index)
             {
                 this.index = index;
@@ -89,9 +90,12 @@ namespace MonoTorrent.Client
         void CancelWhere(Predicate<Block> predicate)
         {
             bool cancelled = false;
-            requests.ForEach(delegate(Piece p) {
-                for (int i = 0; i < p.Blocks.Length; i++) {
-                    if (predicate(p.Blocks[i]) && !p.Blocks[i].Received) {
+            requests.ForEach(delegate(Piece p)
+            {
+                for (int i = 0; i < p.Blocks.Length; i++)
+                {
+                    if (predicate(p.Blocks[i]) && !p.Blocks[i].Received)
+                    {
                         cancelled = true;
                         p.Blocks[i].CancelRequest();
                     }
@@ -104,7 +108,9 @@ namespace MonoTorrent.Client
 
         public override int CurrentRequestCount()
         {
-            return (int)Toolbox.Accumulate<Piece>(requests, delegate(Piece p) { return p.TotalRequested - p.TotalReceived; });
+            return
+                (int)
+                    Toolbox.Accumulate<Piece>(requests, delegate(Piece p) { return p.TotalRequested - p.TotalReceived; });
         }
 
         public override List<Piece> ExportActiveRequests()
@@ -124,7 +130,8 @@ namespace MonoTorrent.Client
             return !bitfield.AllFalse;
         }
 
-        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count, int startIndex, int endIndex)
+        public override MessageBundle PickPiece(PeerId id, BitField peerBitfield, List<PeerId> otherPeers, int count,
+            int startIndex, int endIndex)
         {
             RequestMessage message;
             MessageBundle bundle = null;
@@ -182,20 +189,20 @@ namespace MonoTorrent.Client
             int blockIndex = Block.IndexOf(piece.Blocks, startOffset, length);
             if (blockIndex == -1 || !id.Equals(piece.Blocks[blockIndex].RequestedOff))
             {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "no block");
+                Logger.Log(null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
+                Logger.Log(null, "no block");
                 return false;
             }
             if (piece.Blocks[blockIndex].Received)
             {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "received");
+                Logger.Log(null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
+                Logger.Log(null, "received");
                 return false;
             }
             if (!piece.Blocks[blockIndex].Requested)
             {
-                Logger.Log (null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
-                Logger.Log (null, "not requested");
+                Logger.Log(null, "Validating: {0} - {1}: ", pieceIndex, startOffset);
+                Logger.Log(null, "not requested");
                 return false;
             }
             id.AmRequestingPiecesCount--;
@@ -205,7 +212,6 @@ namespace MonoTorrent.Client
                 requests.RemoveAt(pIndex);
             return true;
         }
-
 
 
         public override RequestMessage ContinueExistingRequest(PeerId id)
@@ -283,10 +289,11 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        protected virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers,
+            int startIndex, int endIndex, int count)
         {
-            int piecesNeeded = (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
-            if ((count * Piece.BlockSize) % id.TorrentManager.Torrent.PieceLength != 0)
+            int piecesNeeded = (count*Piece.BlockSize)/id.TorrentManager.Torrent.PieceLength;
+            if ((count*Piece.BlockSize)%id.TorrentManager.Torrent.PieceLength != 0)
                 piecesNeeded++;
             int checkIndex = CanRequest(current, startIndex, endIndex, ref piecesNeeded);
 
@@ -298,7 +305,8 @@ namespace MonoTorrent.Client
             for (int i = 0; bundle.Messages.Count < count && i < piecesNeeded; i++)
             {
                 // Request the piece
-                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
+                Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent.PieceLength,
+                    id.TorrentManager.Torrent.Size);
                 requests.Add(p);
 
                 for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
@@ -317,8 +325,8 @@ namespace MonoTorrent.Client
 
         private int CanRequest(BitField bitfield, int pieceStartIndex, int pieceEndIndex, ref int pieceCount)
         {
-            int largestStart=0;
-            int largestEnd=0;
+            int largestStart = 0;
+            int largestEnd = 0;
             while ((pieceStartIndex = bitfield.FirstTrue(pieceStartIndex, pieceEndIndex)) != -1)
             {
                 int end = bitfield.FirstFalse(pieceStartIndex, pieceEndIndex);

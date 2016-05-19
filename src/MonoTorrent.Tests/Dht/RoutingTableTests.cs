@@ -5,7 +5,6 @@ using Xunit;
 
 namespace MonoTorrent.Dht
 {
-
     public class RoutingTableTests
     {
         //static void Main(string[] args)
@@ -20,6 +19,7 @@ namespace MonoTorrent.Dht
         RoutingTable table;
         Node n;
         int addedCount;
+
         public RoutingTableTests()
         {
             id = new byte[20];
@@ -27,7 +27,7 @@ namespace MonoTorrent.Dht
             n = new Node(new NodeId(id), new System.Net.IPEndPoint(IPAddress.Any, 0));
             table = new RoutingTable(n);
             table.NodeAdded += delegate { addedCount++; };
-            table.Add(n);//the local node is no more in routing table so add it to show test is still ok
+            table.Add(n); //the local node is no more in routing table so add it to show test is still ok
             addedCount = 0;
         }
 
@@ -37,7 +37,7 @@ namespace MonoTorrent.Dht
             table.Clear();
             for (int i = 0; i < Bucket.MaxCapacity; i++)
             {
-                byte[] id = (byte[])this.id.Clone();
+                byte[] id = (byte[]) this.id.Clone();
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
@@ -51,14 +51,14 @@ namespace MonoTorrent.Dht
         [Fact]
         public void AddSimilar()
         {
-            for (int i = 0; i < Bucket.MaxCapacity * 3; i++)
+            for (int i = 0; i < Bucket.MaxCapacity*3; i++)
             {
-                byte[] id = (byte[])this.id.Clone();
-                id[0] += (byte)i;
+                byte[] id = (byte[]) this.id.Clone();
+                id[0] += (byte) i;
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
-            Assert.Equal(Bucket.MaxCapacity * 3 - 1, addedCount);
+            Assert.Equal(Bucket.MaxCapacity*3 - 1, addedCount);
             Assert.Equal(6, table.Buckets.Count);
             Assert.Equal(8, table.Buckets[0].Nodes.Count);
             Assert.Equal(8, table.Buckets[1].Nodes.Count);
@@ -74,14 +74,14 @@ namespace MonoTorrent.Dht
         {
             List<NodeId> nodes;
             TestHelper.ManyNodes(out table, out nodes);
-            
+
 
             List<Node> closest = table.GetClosest(table.LocalNode.Id);
             Assert.Equal(8, closest.Count);
             for (int i = 0; i < 8; i++)
                 Assert.True(closest.Exists(delegate(Node node) { return nodes[i].Equals(closest[i].Id); }));
         }
-        
+
         private void CheckBuckets()
         {
             foreach (Bucket b in table.Buckets)
@@ -90,4 +90,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

@@ -37,24 +37,26 @@ namespace MonoTorrent.Client.Messages.Standard
     /// </summary>
     public class KeepAliveMessage : PeerMessage
     {
-        private const int messageLength = 0;   // has no payload
+        private const int messageLength = 0; // has no payload
         internal static readonly byte MessageId = 0;
-		private static readonly byte[] payload = new byte[] { 0, 0, 0, 0 };
+        private static readonly byte[] payload = new byte[] {0, 0, 0, 0};
 
         #region Constructors
+
         /// <summary>
         /// Creates a new KeepAliveMessage
         /// </summary>
         public KeepAliveMessage()
         {
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
-			int written = offset;
+            int written = offset;
 
             written += Write(buffer, written, payload);
 
@@ -64,7 +66,7 @@ namespace MonoTorrent.Client.Messages.Standard
         public override void Decode(byte[] buffer, int offset, int length)
         {
             // No decoding needed
-        } 
+        }
 
         /// <summary>
         /// Returns the length of the message in bytes
@@ -73,10 +75,11 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             get { return (4); }
         }
+
         #endregion
 
-
         #region Overridden Methods
+
         /// <summary>
         /// 
         /// </summary>
@@ -96,6 +99,7 @@ namespace MonoTorrent.Client.Messages.Standard
         {
             return this.ToString().GetHashCode();
         }
+
         #endregion
     }
 }

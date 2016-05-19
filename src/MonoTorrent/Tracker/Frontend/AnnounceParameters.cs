@@ -35,10 +35,11 @@ using System.Web;
 using System.Net;
 
 namespace MonoTorrent.Tracker
-{       
+{
     public class AnnounceParameters : RequestParameters
     {
-        private static readonly string[] mandatoryFields = {
+        private static readonly string[] mandatoryFields =
+        {
             "info_hash", "peer_id", "port", "uploaded", "downloaded", "left", "compact"
         };
 
@@ -114,7 +115,7 @@ namespace MonoTorrent.Tracker
 
         public string PeerId
         {
-            get { return Parameters["peer_id"]; } 
+            get { return Parameters["peer_id"]; }
         }
 
         public int Port
@@ -160,13 +161,16 @@ namespace MonoTorrent.Tracker
                 if (keys.Contains(field))
                     continue;
 
-                Response.Add(FailureKey, (BEncodedString)("mandatory announce parameter " + field + " in query missing"));
+                Response.Add(FailureKey,
+                    (BEncodedString) ("mandatory announce parameter " + field + " in query missing"));
                 return;
             }
             byte[] hash = UriHelper.UrlDecode(Parameters["info_hash"]);
             if (hash.Length != 20)
             {
-                Response.Add(FailureKey, (BEncodedString)(string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
+                Response.Add(FailureKey,
+                    (BEncodedString)
+                        (string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length)));
                 return;
             }
             infoHash = new InfoHash(hash);
@@ -181,8 +185,10 @@ namespace MonoTorrent.Tracker
         public override bool Equals(object obj)
         {
             AnnounceParameters other = obj as AnnounceParameters;
-            return other == null ? false : other.clientAddress.Equals(clientAddress)
-                                        && other.Port.Equals(Port);
+            return other == null
+                ? false
+                : other.clientAddress.Equals(clientAddress)
+                  && other.Port.Equals(Port);
         }
 
         private int ParseInt(string str)
@@ -193,5 +199,5 @@ namespace MonoTorrent.Tracker
                 p = 0;
             return p;
         }
-    }   
+    }
 }

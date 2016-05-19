@@ -6,8 +6,8 @@ using System.Net;
 
 namespace MonoTorrent.Dht
 {
-	static class TestHelper
-	{
+    static class TestHelper
+    {
         internal static void ManyNodes(out RoutingTable routingTable, out List<NodeId> nodes)
         {
             // Generate our local id
@@ -23,7 +23,7 @@ namespace MonoTorrent.Dht
                     continue;
 
                 id = new byte[20];
-                id[19] = (byte)i;
+                id[19] = (byte) i;
                 nodes.Add(new NodeId(id));
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
@@ -34,10 +34,11 @@ namespace MonoTorrent.Dht
                 NodeId dRight = right.Xor(table.LocalNode.Id);
                 return dLeft.CompareTo(dRight);
             });
-            
+
             nodes.RemoveAll(delegate(NodeId n) { return table.FindNode(n) == null; });
             routingTable = table;
         }
-	}
+    }
 }
+
 #endif

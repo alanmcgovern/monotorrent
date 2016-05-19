@@ -36,7 +36,7 @@ namespace MonoTorrent.Client
     public class ProtocolException : TorrentException
     {
         public ProtocolException()
-            :base()
+            : base()
         {
         }
 
@@ -53,7 +53,8 @@ namespace MonoTorrent.Client
         }
 
 
-        public ProtocolException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        public ProtocolException(System.Runtime.Serialization.SerializationInfo info,
+            System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

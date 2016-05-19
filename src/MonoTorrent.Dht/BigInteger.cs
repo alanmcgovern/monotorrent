@@ -41,10 +41,8 @@ using System.Security.Cryptography;
 
 namespace MonoTorrent.Dht
 {
-
     internal class BigInteger
     {
-
         #region Data Storage
 
         /// <summary>
@@ -75,7 +73,9 @@ namespace MonoTorrent.Dht
         };
 
         #region Exception Messages
+
         const string WouldReturnNegVal = "Operation would return a negative value";
+
         #endregion
 
         #endregion
@@ -90,13 +90,13 @@ namespace MonoTorrent.Dht
 
         public BigInteger(uint ui)
         {
-            data = new uint[] { ui };
+            data = new uint[] {ui};
         }
 
         public BigInteger(uint[] ui)
         {
             data = ui;
-            length = (uint)data.Length;
+            length = (uint) data.Length;
             Normalize();
         }
 
@@ -108,13 +108,12 @@ namespace MonoTorrent.Dht
 
         public BigInteger(BigInteger bi)
         {
-            this.data = (uint[])bi.data.Clone();
+            this.data = (uint[]) bi.data.Clone();
             this.length = bi.length;
         }
 
         public BigInteger(BigInteger bi, uint len)
         {
-
             this.data = new uint[len];
 
             for (uint i = 0; i < bi.length; i++)
@@ -131,7 +130,7 @@ namespace MonoTorrent.Dht
         {
             if (inData.Length == 0)
                 inData = new byte[1];
-            length = (uint)inData.Length >> 2;
+            length = (uint) inData.Length >> 2;
             int leftOver = inData.Length & 0x3;
 
             // length not multiples of 4
@@ -141,19 +140,25 @@ namespace MonoTorrent.Dht
 
             for (int i = inData.Length - 1, j = 0; i >= 3; i -= 4, j++)
             {
-                data[j] = (uint)(
-                    (inData[i - 3] << (3 * 8)) |
-                    (inData[i - 2] << (2 * 8)) |
-                    (inData[i - 1] << (1 * 8)) |
+                data[j] = (uint) (
+                    (inData[i - 3] << (3*8)) |
+                    (inData[i - 2] << (2*8)) |
+                    (inData[i - 1] << (1*8)) |
                     (inData[i])
                     );
             }
 
             switch (leftOver)
             {
-                case 1: data[length - 1] = (uint)inData[0]; break;
-                case 2: data[length - 1] = (uint)((inData[0] << 8) | inData[1]); break;
-                case 3: data[length - 1] = (uint)((inData[0] << 16) | (inData[1] << 8) | inData[2]); break;
+                case 1:
+                    data[length - 1] = (uint) inData[0];
+                    break;
+                case 2:
+                    data[length - 1] = (uint) ((inData[0] << 8) | inData[1]);
+                    break;
+                case 3:
+                    data[length - 1] = (uint) ((inData[0] << 16) | (inData[1] << 8) | inData[2]);
+                    break;
             }
 
             this.Normalize();
@@ -189,7 +194,6 @@ namespace MonoTorrent.Dht
 
             switch (Kernel.Compare(bi1, bi2))
             {
-
                 case Sign.Zero:
                     return 0;
 
@@ -206,14 +210,14 @@ namespace MonoTorrent.Dht
         public static int operator %(BigInteger bi, int i)
         {
             if (i > 0)
-                return (int)Kernel.DwordMod(bi, (uint)i);
+                return (int) Kernel.DwordMod(bi, (uint) i);
             else
-                return -(int)Kernel.DwordMod(bi, (uint)-i);
+                return -(int) Kernel.DwordMod(bi, (uint) -i);
         }
 
         public static uint operator %(BigInteger bi, uint ui)
         {
-            return Kernel.DwordMod(bi, (uint)ui);
+            return Kernel.DwordMod(bi, (uint) ui);
         }
 
         public static BigInteger operator %(BigInteger bi1, BigInteger bi2)
@@ -224,7 +228,7 @@ namespace MonoTorrent.Dht
         public static BigInteger operator /(BigInteger bi, int i)
         {
             if (i > 0)
-                return Kernel.DwordDiv(bi, (uint)i);
+                return Kernel.DwordDiv(bi, (uint) i);
 
             throw new ArithmeticException(WouldReturnNegVal);
         }
@@ -258,7 +262,7 @@ namespace MonoTorrent.Dht
             if (i == 0) return 0;
             if (i == 1) return new BigInteger(bi);
 
-            return Kernel.MultiplyByDword(bi, (uint)i);
+            return Kernel.MultiplyByDword(bi, (uint) i);
         }
 
         public static BigInteger operator <<(BigInteger bi1, int shiftVal)
@@ -290,7 +294,7 @@ namespace MonoTorrent.Dht
             }
             bits += ((length - 1) << 5);
 
-            return (int)bits;
+            return (int) bits;
         }
 
 
@@ -298,20 +302,20 @@ namespace MonoTorrent.Dht
         {
             if (bitNum < 0) throw new IndexOutOfRangeException("bitNum out of range");
 
-            uint bytePos = (uint)bitNum >> 5;             // divide by 32
-            byte bitPos = (byte)(bitNum & 0x1F);    // get the lowest 5 bits
+            uint bytePos = (uint) bitNum >> 5; // divide by 32
+            byte bitPos = (byte) (bitNum & 0x1F); // get the lowest 5 bits
 
-            uint mask = (uint)1 << bitPos;
+            uint mask = (uint) 1 << bitPos;
             return ((this.data[bytePos] | mask) == this.data[bytePos]);
         }
 
         public void SetBit(uint bitNum, bool value)
         {
-            uint bytePos = bitNum >> 5;             // divide by 32
+            uint bytePos = bitNum >> 5; // divide by 32
 
             if (bytePos < this.length)
             {
-                uint mask = (uint)1 << (int)(bitNum & 0x1F);
+                uint mask = (uint) 1 << (int) (bitNum & 0x1F);
                 if (value)
                     this.data[bytePos] |= mask;
                 else
@@ -334,12 +338,12 @@ namespace MonoTorrent.Dht
             if (numBytesInWord == 0) numBytesInWord = 4;
 
             int pos = 0;
-            for (int i = (int)length - 1; i >= 0; i--)
+            for (int i = (int) length - 1; i >= 0; i--)
             {
                 uint val = data[i];
                 for (int j = numBytesInWord - 1; j >= 0; j--)
                 {
-                    result[pos + j] = (byte)(val & 0xFF);
+                    result[pos + j] = (byte) (val & 0xFF);
                     val >>= 8;
                 }
                 pos += numBytesInWord;
@@ -435,7 +439,7 @@ namespace MonoTorrent.Dht
             while (a != 0)
             {
                 uint rem = Kernel.SingleByteDivideInPlace(a, radix);
-                result = characterSet[(int)rem] + result;
+                result = characterSet[(int) rem] + result;
             }
 
             return result;
@@ -471,7 +475,7 @@ namespace MonoTorrent.Dht
             for (uint i = 0; i < this.length; i++)
                 val ^= this.data[i];
 
-            return (int)val;
+            return (int) val;
         }
 
         public override string ToString()
@@ -482,9 +486,9 @@ namespace MonoTorrent.Dht
         public override bool Equals(object o)
         {
             if (o == null) return false;
-            if (o is int) return (int)o >= 0 && this == (uint)o;
+            if (o is int) return (int) o >= 0 && this == (uint) o;
 
-            return Kernel.Compare(this, (BigInteger)o) == 0;
+            return Kernel.Compare(this, (BigInteger) o) == 0;
         }
 
         #endregion
@@ -499,11 +503,8 @@ namespace MonoTorrent.Dht
 
         #endregion
 
-
-
         public sealed class ModulusRing
         {
-
             BigInteger mod, constant;
 
             public ModulusRing(BigInteger modulus)
@@ -516,7 +517,7 @@ namespace MonoTorrent.Dht
                 constant = new BigInteger(Sign.Positive, i + 1);
                 constant.data[i] = 0x00000001;
 
-                constant = constant / mod;
+                constant = constant/mod;
             }
 
             public void BarrettReduction(BigInteger x)
@@ -556,7 +557,8 @@ namespace MonoTorrent.Dht
                 // partial multiplication of q3 and n
 
                 BigInteger r2 = new BigInteger(Sign.Positive, kPlusOne);
-                Kernel.MultiplyMod2p32pmod(q3.data, (int)kPlusOne, (int)q3.length - (int)kPlusOne, n.data, 0, (int)n.length, r2.data, 0, (int)kPlusOne);
+                Kernel.MultiplyMod2p32pmod(q3.data, (int) kPlusOne, (int) q3.length - (int) kPlusOne, n.data, 0,
+                    (int) n.length, r2.data, 0, (int) kPlusOne);
 
                 r2.Normalize();
 
@@ -587,7 +589,7 @@ namespace MonoTorrent.Dht
                 if (b > mod)
                     b %= mod;
 
-                BigInteger ret = a * b;
+                BigInteger ret = a*b;
                 BarrettReduction(ret);
 
                 return ret;
@@ -603,9 +605,11 @@ namespace MonoTorrent.Dht
                     case Sign.Zero:
                         return 0;
                     case Sign.Positive:
-                        diff = a - b; break;
+                        diff = a - b;
+                        break;
                     case Sign.Negative:
-                        diff = b - a; break;
+                        diff = b - a;
+                        break;
                     default:
                         throw new Exception();
                 }
@@ -647,12 +651,10 @@ namespace MonoTorrent.Dht
             {
                 return Pow(new BigInteger(b), exp);
             }
-
         }
 
         private sealed class Kernel
         {
-
             #region Addition/Subtraction
 
             /// <summary>
@@ -691,8 +693,8 @@ namespace MonoTorrent.Dht
                 // Add common parts of both numbers
                 do
                 {
-                    sum = ((ulong)x[i]) + ((ulong)y[i]) + sum;
-                    r[i] = (uint)sum;
+                    sum = ((ulong) x[i]) + ((ulong) y[i]) + sum;
+                    r[i] = (uint) sum;
                     sum >>= 32;
                 } while (++i < yMax);
 
@@ -701,12 +703,10 @@ namespace MonoTorrent.Dht
 
                 if (carry)
                 {
-
                     if (i < xMax)
                     {
                         do
-                            carry = ((r[i] = x[i] + 1) == 0);
-                        while (++i < xMax && carry);
+                            carry = ((r[i] = x[i] + 1) == 0); while (++i < xMax && carry);
                     }
 
                     if (carry)
@@ -721,8 +721,7 @@ namespace MonoTorrent.Dht
                 if (i < xMax)
                 {
                     do
-                        r[i] = x[i];
-                    while (++i < xMax);
+                        r[i] = x[i]; while (++i < xMax);
                 }
 
                 result.Normalize();
@@ -738,13 +737,11 @@ namespace MonoTorrent.Dht
 
                 do
                 {
-
                     uint x = s[i];
                     if (((x += c) < c) | ((r[i] = b[i] - x) > ~x))
                         c = 1;
                     else
                         c = 0;
-
                 } while (++i < small.length);
 
                 if (i == big.length) goto fixup;
@@ -752,17 +749,15 @@ namespace MonoTorrent.Dht
                 if (c == 1)
                 {
                     do
-                        r[i] = b[i] - 1;
-                    while (b[i++] == 0 && i < big.length);
+                        r[i] = b[i] - 1; while (b[i++] == 0 && i < big.length);
 
                     if (i == big.length) goto fixup;
                 }
 
                 do
-                    r[i] = b[i];
-                while (++i < big.length);
+                    r[i] = b[i]; while (++i < big.length);
 
-            fixup:
+                fixup:
 
                 result.Normalize();
                 return result;
@@ -787,11 +782,10 @@ namespace MonoTorrent.Dht
                 if (c == 1)
                 {
                     do
-                        b[i]--;
-                    while (b[i++] == 0 && i < big.length);
+                        b[i]--; while (b[i++] == 0 && i < big.length);
                 }
 
-            fixup:
+                fixup:
 
                 // Normalize length
                 while (big.length > 0 && big.data[big.length - 1] == 0) big.length--;
@@ -799,7 +793,6 @@ namespace MonoTorrent.Dht
                 // Check for zero
                 if (big.length == 0)
                     big.length++;
-
             }
 
             public static void PlusEq(BigInteger bi1, BigInteger bi2)
@@ -832,8 +825,8 @@ namespace MonoTorrent.Dht
                 // Add common parts of both numbers
                 do
                 {
-                    sum += ((ulong)x[i]) + ((ulong)y[i]);
-                    r[i] = (uint)sum;
+                    sum += ((ulong) x[i]) + ((ulong) y[i]);
+                    r[i] = (uint) sum;
                     sum >>= 32;
                 } while (++i < yMax);
 
@@ -842,12 +835,10 @@ namespace MonoTorrent.Dht
 
                 if (carry)
                 {
-
                     if (i < xMax)
                     {
                         do
-                            carry = ((r[i] = x[i] + 1) == 0);
-                        while (++i < xMax && carry);
+                            carry = ((r[i] = x[i] + 1) == 0); while (++i < xMax && carry);
                     }
 
                     if (carry)
@@ -862,8 +853,7 @@ namespace MonoTorrent.Dht
                 if (flag && i < xMax - 1)
                 {
                     do
-                        r[i] = x[i];
-                    while (++i < xMax);
+                        r[i] = x[i]; while (++i < xMax);
                 }
 
                 bi1.length = xMax + 1;
@@ -934,12 +924,12 @@ namespace MonoTorrent.Dht
                 {
                     r <<= 32;
                     r |= n.data[i];
-                    n.data[i] = (uint)(r / d);
+                    n.data[i] = (uint) (r/d);
                     r %= d;
                 }
                 n.Normalize();
 
-                return (uint)r;
+                return (uint) r;
             }
 
             public static uint DwordMod(BigInteger n, uint d)
@@ -954,7 +944,7 @@ namespace MonoTorrent.Dht
                     r %= d;
                 }
 
-                return (uint)r;
+                return (uint) r;
             }
 
             public static BigInteger DwordDiv(BigInteger n, uint d)
@@ -968,7 +958,7 @@ namespace MonoTorrent.Dht
                 {
                     r <<= 32;
                     r |= n.data[i];
-                    ret.data[i] = (uint)(r / d);
+                    ret.data[i] = (uint) (r/d);
                     r %= d;
                 }
                 ret.Normalize();
@@ -987,14 +977,14 @@ namespace MonoTorrent.Dht
                 {
                     r <<= 32;
                     r |= n.data[i];
-                    ret.data[i] = (uint)(r / d);
+                    ret.data[i] = (uint) (r/d);
                     r %= d;
                 }
                 ret.Normalize();
 
-                BigInteger rem = (uint)r;
+                BigInteger rem = (uint) r;
 
-                return new BigInteger[] { ret, rem };
+                return new BigInteger[] {ret, rem};
             }
 
             #endregion
@@ -1004,24 +994,26 @@ namespace MonoTorrent.Dht
             public static BigInteger[] multiByteDivide(BigInteger bi1, BigInteger bi2)
             {
                 if (Kernel.Compare(bi1, bi2) == Sign.Negative)
-                    return new BigInteger[2] { 0, new BigInteger(bi1) };
+                    return new BigInteger[2] {0, new BigInteger(bi1)};
 
-                bi1.Normalize(); bi2.Normalize();
+                bi1.Normalize();
+                bi2.Normalize();
 
                 if (bi2.length == 1)
                     return DwordDivMod(bi1, bi2.data[0]);
 
                 uint remainderLen = bi1.length + 1;
-                int divisorLen = (int)bi2.length + 1;
+                int divisorLen = (int) bi2.length + 1;
 
                 uint mask = 0x80000000;
                 uint val = bi2.data[bi2.length - 1];
                 int shift = 0;
-                int resultPos = (int)bi1.length - (int)bi2.length;
+                int resultPos = (int) bi1.length - (int) bi2.length;
 
                 while (mask != 0 && (val & mask) == 0)
                 {
-                    shift++; mask >>= 1;
+                    shift++;
+                    mask >>= 1;
                 }
 
                 BigInteger quot = new BigInteger(Sign.Positive, bi1.length - bi2.length + 1);
@@ -1031,27 +1023,26 @@ namespace MonoTorrent.Dht
 
                 bi2 = bi2 << shift;
 
-                int j = (int)(remainderLen - bi2.length);
-                int pos = (int)remainderLen - 1;
+                int j = (int) (remainderLen - bi2.length);
+                int pos = (int) remainderLen - 1;
 
                 uint firstDivisorByte = bi2.data[bi2.length - 1];
                 ulong secondDivisorByte = bi2.data[bi2.length - 2];
 
                 while (j > 0)
                 {
-                    ulong dividend = ((ulong)remainder[pos] << 32) + (ulong)remainder[pos - 1];
+                    ulong dividend = ((ulong) remainder[pos] << 32) + (ulong) remainder[pos - 1];
 
-                    ulong q_hat = dividend / (ulong)firstDivisorByte;
-                    ulong r_hat = dividend % (ulong)firstDivisorByte;
+                    ulong q_hat = dividend/(ulong) firstDivisorByte;
+                    ulong r_hat = dividend%(ulong) firstDivisorByte;
 
                     do
                     {
-
                         if (q_hat == 0x100000000 ||
-                            (q_hat * secondDivisorByte) > ((r_hat << 32) + remainder[pos - 2]))
+                            (q_hat*secondDivisorByte) > ((r_hat << 32) + remainder[pos - 2]))
                         {
                             q_hat--;
-                            r_hat += (ulong)firstDivisorByte;
+                            r_hat += (ulong) firstDivisorByte;
 
                             if (r_hat < 0x100000000)
                                 continue;
@@ -1070,15 +1061,16 @@ namespace MonoTorrent.Dht
                     uint dPos = 0;
                     int nPos = pos - divisorLen + 1;
                     ulong mc = 0;
-                    uint uint_q_hat = (uint)q_hat;
+                    uint uint_q_hat = (uint) q_hat;
                     do
                     {
-                        mc += (ulong)bi2.data[dPos] * (ulong)uint_q_hat;
+                        mc += (ulong) bi2.data[dPos]*(ulong) uint_q_hat;
                         t = remainder[nPos];
-                        remainder[nPos] -= (uint)mc;
+                        remainder[nPos] -= (uint) mc;
                         mc >>= 32;
                         if (remainder[nPos] > t) mc++;
-                        dPos++; nPos++;
+                        dPos++;
+                        nPos++;
                     } while (dPos < divisorLen);
 
                     nPos = pos - divisorLen + 1;
@@ -1092,15 +1084,15 @@ namespace MonoTorrent.Dht
 
                         do
                         {
-                            sum = ((ulong)remainder[nPos]) + ((ulong)bi2.data[dPos]) + sum;
-                            remainder[nPos] = (uint)sum;
+                            sum = ((ulong) remainder[nPos]) + ((ulong) bi2.data[dPos]) + sum;
+                            remainder[nPos] = (uint) sum;
                             sum >>= 32;
-                            dPos++; nPos++;
+                            dPos++;
+                            nPos++;
                         } while (dPos < divisorLen);
-
                     }
 
-                    quot.data[resultPos--] = (uint)uint_q_hat;
+                    quot.data[resultPos--] = (uint) uint_q_hat;
 
                     pos--;
                     j--;
@@ -1108,7 +1100,7 @@ namespace MonoTorrent.Dht
 
                 quot.Normalize();
                 rem.Normalize();
-                BigInteger[] ret = new BigInteger[2] { quot, rem };
+                BigInteger[] ret = new BigInteger[2] {quot, rem};
 
                 if (shift != 0)
                     ret[1] >>= shift;
@@ -1121,6 +1113,7 @@ namespace MonoTorrent.Dht
             #endregion
 
             #region Shift
+
             public static BigInteger LeftShift(BigInteger bi, int n)
             {
                 if (n == 0) return new BigInteger(bi, bi.length + 1);
@@ -1128,7 +1121,7 @@ namespace MonoTorrent.Dht
                 int w = n >> 5;
                 n &= ((1 << 5) - 1);
 
-                BigInteger ret = new BigInteger(Sign.Positive, bi.length + 1 + (uint)w);
+                BigInteger ret = new BigInteger(Sign.Positive, bi.length + 1 + (uint) w);
 
                 uint i = 0, l = bi.length;
                 if (n != 0)
@@ -1163,12 +1156,11 @@ namespace MonoTorrent.Dht
                 int w = n >> 5;
                 int s = n & ((1 << 5) - 1);
 
-                BigInteger ret = new BigInteger(Sign.Positive, bi.length - (uint)w + 1);
-                uint l = (uint)ret.data.Length - 1;
+                BigInteger ret = new BigInteger(Sign.Positive, bi.length - (uint) w + 1);
+                uint l = (uint) ret.data.Length - 1;
 
                 if (s != 0)
                 {
-
                     uint x, carry = 0;
 
                     while (l-- > 0)
@@ -1182,7 +1174,6 @@ namespace MonoTorrent.Dht
                 {
                     while (l-- > 0)
                         ret.data[l] = bi.data[l + w];
-
                 }
                 ret.Normalize();
                 return ret;
@@ -1201,14 +1192,13 @@ namespace MonoTorrent.Dht
 
                 do
                 {
-                    c += (ulong)n.data[i] * (ulong)f;
-                    ret.data[i] = (uint)c;
+                    c += (ulong) n.data[i]*(ulong) f;
+                    ret.data[i] = (uint) c;
                     c >>= 32;
                 } while (++i < n.length);
-                ret.data[i] = (uint)c;
+                ret.data[i] = (uint) c;
                 ret.Normalize();
                 return ret;
-
             }
 
             /// <summary>
@@ -1221,7 +1211,8 @@ namespace MonoTorrent.Dht
             /// sure that it is safe to access x [xOffset:xOffset+xLen],
             /// y [yOffset:yOffset+yLen], and d [dOffset:dOffset+xLen+yLen].
             /// </remarks>
-            public static unsafe void Multiply(uint[] x, uint xOffset, uint xLen, uint[] y, uint yOffset, uint yLen, uint[] d, uint dOffset)
+            public static unsafe void Multiply(uint[] x, uint xOffset, uint xLen, uint[] y, uint yOffset, uint yLen,
+                uint[] d, uint dOffset)
             {
                 fixed (uint* xx = x, yy = y, dd = d)
                 {
@@ -1233,7 +1224,6 @@ namespace MonoTorrent.Dht
 
                     for (; xP < xE; xP++, dB++)
                     {
-
                         if (*xP == 0) continue;
 
                         ulong mcarry = 0;
@@ -1241,14 +1231,14 @@ namespace MonoTorrent.Dht
                         uint* dP = dB;
                         for (uint* yP = yB; yP < yE; yP++, dP++)
                         {
-                            mcarry += ((ulong)*xP * (ulong)*yP) + (ulong)*dP;
+                            mcarry += ((ulong) *xP*(ulong) *yP) + (ulong) *dP;
 
-                            *dP = (uint)mcarry;
+                            *dP = (uint) mcarry;
                             mcarry >>= 32;
                         }
 
                         if (mcarry != 0)
-                            *dP = (uint)mcarry;
+                            *dP = (uint) mcarry;
                     }
                 }
             }
@@ -1263,7 +1253,8 @@ namespace MonoTorrent.Dht
             /// sure that it is safe to access x [xOffset:xOffset+xLen],
             /// y [yOffset:yOffset+yLen], and d [dOffset:dOffset+mod].
             /// </remarks>
-            public static unsafe void MultiplyMod2p32pmod(uint[] x, int xOffset, int xLen, uint[] y, int yOffest, int yLen, uint[] d, int dOffset, int mod)
+            public static unsafe void MultiplyMod2p32pmod(uint[] x, int xOffset, int xLen, uint[] y, int yOffest,
+                int yLen, uint[] d, int dOffset, int mod)
             {
                 fixed (uint* xx = x, yy = y, dd = d)
                 {
@@ -1276,25 +1267,23 @@ namespace MonoTorrent.Dht
 
                     for (; xP < xE; xP++, dB++)
                     {
-
                         if (*xP == 0) continue;
 
                         ulong mcarry = 0;
                         uint* dP = dB;
                         for (uint* yP = yB; yP < yE && dP < dE; yP++, dP++)
                         {
-                            mcarry += ((ulong)*xP * (ulong)*yP) + (ulong)*dP;
+                            mcarry += ((ulong) *xP*(ulong) *yP) + (ulong) *dP;
 
-                            *dP = (uint)mcarry;
+                            *dP = (uint) mcarry;
                             mcarry >>= 32;
                         }
 
                         if (mcarry != 0 && dP < dE)
-                            *dP = (uint)mcarry;
+                            *dP = (uint) mcarry;
                     }
                 }
             }
-
 
             #endregion
 
@@ -1310,9 +1299,8 @@ namespace MonoTorrent.Dht
                 while (x.length > 1)
                 {
                     g = x;
-                    x = y % x;
+                    x = y%x;
                     y = g;
-
                 }
                 if (x == 0) return g;
 
@@ -1324,13 +1312,15 @@ namespace MonoTorrent.Dht
                 //
 
                 uint yy = x.data[0];
-                uint xx = y % yy;
+                uint xx = y%yy;
 
                 int t = 0;
 
                 while (((xx | yy) & 1) == 0)
                 {
-                    xx >>= 1; yy >>= 1; t++;
+                    xx >>= 1;
+                    yy >>= 1;
+                    t++;
                 }
                 while (xx != 0)
                 {
@@ -1350,9 +1340,9 @@ namespace MonoTorrent.Dht
             {
                 if (modulus.length == 1) return modInverse(bi, modulus.data[0]);
 
-                BigInteger[] p = { 0, 1 };
-                BigInteger[] q = new BigInteger[2];    // quotients
-                BigInteger[] r = { 0, 0 };             // remainders
+                BigInteger[] p = {0, 1};
+                BigInteger[] q = new BigInteger[2]; // quotients
+                BigInteger[] r = {0, 0}; // remainders
 
                 int step = 0;
 
@@ -1363,18 +1353,19 @@ namespace MonoTorrent.Dht
 
                 while (b != 0)
                 {
-
                     if (step > 1)
                     {
-
-                        BigInteger pval = mr.Difference(p[0], p[1] * q[0]);
-                        p[0] = p[1]; p[1] = pval;
+                        BigInteger pval = mr.Difference(p[0], p[1]*q[0]);
+                        p[0] = p[1];
+                        p[1] = pval;
                     }
 
                     BigInteger[] divret = multiByteDivide(a, b);
 
-                    q[0] = q[1]; q[1] = divret[0];
-                    r[0] = r[1]; r[1] = divret[1];
+                    q[0] = q[1];
+                    q[1] = divret[0];
+                    r[0] = r[1];
+                    r[1] = divret[1];
                     a = b;
                     b = divret[1];
 
@@ -1384,15 +1375,15 @@ namespace MonoTorrent.Dht
                 if (r[0] != 1)
                     throw (new ArithmeticException("No inverse!"));
 
-                return mr.Difference(p[0], p[1] * q[0]);
-
+                return mr.Difference(p[0], p[1]*q[0]);
             }
+
             #endregion
         }
 
         internal BigInteger Xor(BigInteger other)
         {
-            int len = (int)Math.Min(this.data.Length, other.data.Length);
+            int len = (int) Math.Min(this.data.Length, other.data.Length);
             uint[] result = new uint[len];
 
             for (int i = 0; i < len; i++)
@@ -1400,14 +1391,15 @@ namespace MonoTorrent.Dht
 
             return new BigInteger(result);
         }
-        
+
         internal static BigInteger Pow(BigInteger value, uint p)
         {
             BigInteger b = value;
             for (int i = 0; i < p; i++)
-                value = value * b;
+                value = value*b;
             return value;
         }
     }
 }
+
 #endif

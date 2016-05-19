@@ -11,7 +11,6 @@ using System.Threading;
 
 namespace MonoTorrent.Dht
 {
-    
     public class TaskTests
     {
         //static void Main(string[] args)
@@ -37,6 +36,7 @@ namespace MonoTorrent.Dht
         }
 
         int counter;
+
         [Fact]
         public void SendQueryTaskTimeout()
         {
@@ -44,8 +44,9 @@ namespace MonoTorrent.Dht
 
             Ping ping = new Ping(engine.LocalId);
             ping.TransactionId = transactionId;
-            engine.MessageLoop.QuerySent += delegate (object o, SendQueryEventArgs e) {
-                if(e.TimedOut)
+            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            {
+                if (e.TimedOut)
                     counter++;
             };
 
@@ -86,6 +87,7 @@ namespace MonoTorrent.Dht
         }
 
         int nodeCount = 0;
+
         [Fact]
         public void NodeReplaceTest()
         {
@@ -110,8 +112,8 @@ namespace MonoTorrent.Dht
 
                 b.Nodes.Sort();
                 if ((e.EndPoint.Port == 3 && nodeCount == 0) ||
-                     (e.EndPoint.Port == 1 && nodeCount == 1) ||
-                     (e.EndPoint.Port == 5 && nodeCount == 2))
+                    (e.EndPoint.Port == 1 && nodeCount == 1) ||
+                    (e.EndPoint.Port == 5 && nodeCount == 2))
                 {
                     Node n = b.Nodes.Find(delegate(Node no) { return no.EndPoint.Port == e.EndPoint.Port; });
                     n.Seen();
@@ -124,7 +126,6 @@ namespace MonoTorrent.Dht
                     });
                     nodeCount++;
                 }
-
             };
 
             ReplaceNodeTask task = new ReplaceNodeTask(engine, b, null);
@@ -176,7 +177,8 @@ namespace MonoTorrent.Dht
             foreach (Bucket b in engine.RoutingTable.Buckets)
             {
                 Assert.True(b.LastChanged > DateTime.UtcNow.AddSeconds(-2));
-                Assert.True(b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
+                Assert.True(
+                    b.Nodes.Exists(delegate(Node n) { return n.LastSeen > DateTime.UtcNow.AddMilliseconds(-900); }));
             }
         }
 
@@ -185,7 +187,7 @@ namespace MonoTorrent.Dht
         {
             engine.TimeOut = TimeSpan.FromMilliseconds(25);
             Node replacement = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Loopback, 1337));
-            for(int i=0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, i));
                 node.LastSeen = DateTime.UtcNow.AddMinutes(-i);
@@ -202,4 +204,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

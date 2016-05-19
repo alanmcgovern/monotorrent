@@ -4,7 +4,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class RandomisedPickerTests : IDisposable
     {
         //static void Main()
@@ -40,7 +39,9 @@ namespace MonoTorrent.Client
         public void EnsureRandomlyPicked()
         {
             tester.ReturnNoPiece = false;
-            while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
+            while (picker.PickPiece(id, new List<PeerId>(), 1) != null)
+            {
+            }
             Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count);
             List<int> pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();

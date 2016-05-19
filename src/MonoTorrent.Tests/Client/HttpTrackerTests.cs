@@ -7,7 +7,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class HttpTrackerTests : IDisposable
     {
         //static void Main()
@@ -18,7 +17,7 @@ namespace MonoTorrent.Client
         //}
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Tracker.Listeners.HttpListener listener;
-        string prefix ="http://localhost:47124/announce/";
+        string prefix = "http://localhost:47124/announce/";
         List<string> keys;
 
         public HttpTrackerTests()
@@ -27,11 +26,10 @@ namespace MonoTorrent.Client
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
             listener = new MonoTorrent.Tracker.Listeners.HttpListener(prefix);
-            listener.AnnounceReceived += delegate (object o, MonoTorrent.Tracker.AnnounceParameters e) {
-                keys.Add(e.Key);
-            };
+            listener.AnnounceReceived +=
+                delegate(object o, MonoTorrent.Tracker.AnnounceParameters e) { keys.Add(e.Key); };
             server.RegisterListener(listener);
-            
+
             listener.Start();
 
             keys.Clear();
@@ -58,7 +56,8 @@ namespace MonoTorrent.Client
             Assert.True(t.CanScrape);
             Assert.True(t.CanAnnounce);
 
-            HTTPTracker tracker = (HTTPTracker)TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah/announce"));
+            HTTPTracker tracker =
+                (HTTPTracker) TrackerFactory.Create(new Uri("http://mytracker.com/announce/yeah/announce"));
             Assert.True(tracker.CanScrape);
             Assert.True(tracker.CanAnnounce);
             Assert.Equal("http://mytracker.com/announce/yeah/scrape", tracker.ScrapeUri.ToString());
@@ -67,17 +66,18 @@ namespace MonoTorrent.Client
         [Fact]
         public void AnnounceTest()
         {
-            HTTPTracker t = (HTTPTracker)TrackerFactory.Create(new Uri(prefix));
+            HTTPTracker t = (HTTPTracker) TrackerFactory.Create(new Uri(prefix));
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
-            
+
             AnnounceResponseEventArgs p = null;
-            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e) {
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
+            {
                 p = e;
                 id.WaitHandle.Set();
             };
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
             pars.PeerId = "id";
-            pars.InfoHash = new InfoHash (new byte[20]);
+            pars.InfoHash = new InfoHash(new byte[20]);
 
             t.Announce(pars, id);
             Wait(id.WaitHandle);
@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
         {
             MonoTorrent.Client.Tracker.AnnounceParameters pars = new AnnounceParameters();
             pars.PeerId = "id";
-            pars.InfoHash = new InfoHash (new byte[20]);
+            pars.InfoHash = new InfoHash(new byte[20]);
 
             Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix + "?key=value"));
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
@@ -104,12 +104,13 @@ namespace MonoTorrent.Client
         [Fact]
         public void ScrapeTest()
         {
-            Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length -1)));
+            Tracker.Tracker t = TrackerFactory.Create(new Uri(prefix.Substring(0, prefix.Length - 1)));
             Assert.True(t.CanScrape);
             TrackerConnectionID id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
 
             AnnounceResponseEventArgs p = null;
-            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e) {
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
+            {
                 p = e;
                 id.WaitHandle.Set();
             };

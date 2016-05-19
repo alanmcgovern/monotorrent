@@ -4,7 +4,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class MainLoopTests : IDisposable
     {
         //static void Main(string[] args)
@@ -41,7 +40,7 @@ namespace MonoTorrent.Client
             Assert.Equal(5, loop.QueueWait((MainLoopJob) delegate { return 5; }));
 
             ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueWait((MainLoopTask)delegate { handle.Set(); });
+            loop.QueueWait((MainLoopTask) delegate { handle.Set(); });
             Assert.True(handle.WaitOne(5000, true));
         }
 
@@ -50,7 +49,8 @@ namespace MonoTorrent.Client
         {
             //Console.WriteLine("Starting");
             ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate {
+            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate
+            {
                 this.count++;
                 if (count == 3)
                 {
@@ -68,7 +68,8 @@ namespace MonoTorrent.Client
         public void LongRunningTask()
         {
             ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
+            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate
+            {
                 System.Threading.Thread.Sleep(50);
                 if (++count == 3)
                 {

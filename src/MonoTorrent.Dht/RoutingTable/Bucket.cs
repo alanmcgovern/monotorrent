@@ -1,4 +1,4 @@
-#if !DISABLE_DHT
+﻿#if !DISABLE_DHT
 //
 // Bucket.cs
 //
@@ -32,24 +32,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
 using Mono.Math;
 
 namespace MonoTorrent.Dht
 {
-	/// <summary>
-	/// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
-	/// </summary>
-	internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>
-	{
+    /// <summary>
+    /// This class holds a maximum amount of 8 Nodes and is itself a child of a RoutingTable
+    /// </summary>
+    internal class Bucket : IComparable<Bucket>, IEquatable<Bucket>
+    {
         static NodeId Minimum = new NodeId(new byte[20]);
-        static NodeId Maximum = new NodeId(new byte[] { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 });
-		public const int MaxCapacity = 8;
+
+        static NodeId Maximum =
+            new NodeId(new byte[]
+            {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+
+        public const int MaxCapacity = 8;
 
         DateTime lastChanged = DateTime.UtcNow;
         NodeId max;
         NodeId min;
-		List<Node> nodes = new List<Node>(MaxCapacity);
+        List<Node> nodes = new List<Node>(MaxCapacity);
         Node replacement;
 
         public DateTime LastChanged
@@ -82,15 +85,14 @@ namespace MonoTorrent.Dht
         public Bucket()
             : this(Minimum, Maximum)
         {
-
         }
 
         public Bucket(NodeId min, NodeId max)
-		{
-			this.min = min;
-			this.max = max;
-		}
-		
+        {
+            this.min = min;
+            this.max = max;
+        }
+
         public bool Add(Node node)
         {
             // if the current bucket is not full we directly add the Node
@@ -113,7 +115,7 @@ namespace MonoTorrent.Dht
                 return true;
             }
             return false;
-		}
+        }
 
         public bool CanContain(Node node)
         {
@@ -129,7 +131,7 @@ namespace MonoTorrent.Dht
 
             return Min <= id && Max > id;
         }
-        
+
         public int CompareTo(Bucket other)
         {
             return min.CompareTo(other.min);
@@ -164,4 +166,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif

@@ -5,7 +5,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-
     public class ConnectionListenerTests : IDisposable
     {
         //static void Main(string[] args)

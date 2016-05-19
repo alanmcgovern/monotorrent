@@ -46,11 +46,9 @@ namespace MonoTorrent.TorrentWatcher
         /// <param name="settings"></param>
         public TorrentWatchers()
         {
-
         }
 
         #endregion
-
 
         #region Methods
 

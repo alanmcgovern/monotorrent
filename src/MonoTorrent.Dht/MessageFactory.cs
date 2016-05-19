@@ -31,14 +31,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
     delegate Message Creator(BEncodedDictionary dictionary);
+
     delegate Message ResponseCreator(BEncodedDictionary dictionary, QueryMessage message);
-    
+
     internal static class MessageFactory
     {
         private static readonly string QueryNameKey = "q";
@@ -53,9 +53,9 @@ namespace MonoTorrent.Dht.Messages
         static MessageFactory()
         {
             queryDecoders.Add("announce_peer", delegate(BEncodedDictionary d) { return new AnnouncePeer(d); });
-            queryDecoders.Add("find_node",     delegate(BEncodedDictionary d) { return new FindNode(d); });
-            queryDecoders.Add("get_peers",     delegate(BEncodedDictionary d) { return new GetPeers(d); });
-            queryDecoders.Add("ping",          delegate(BEncodedDictionary d) { return new Ping(d); });
+            queryDecoders.Add("find_node", delegate(BEncodedDictionary d) { return new FindNode(d); });
+            queryDecoders.Add("get_peers", delegate(BEncodedDictionary d) { return new GetPeers(d); });
+            queryDecoders.Add("ping", delegate(BEncodedDictionary d) { return new Ping(d); });
         }
 
         private static Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage>();
@@ -100,7 +100,7 @@ namespace MonoTorrent.Dht.Messages
 
             if (dictionary[MessageTypeKey].Equals(QueryMessage.QueryType))
             {
-                message = queryDecoders[(BEncodedString)dictionary[QueryNameKey]](dictionary);
+                message = queryDecoders[(BEncodedString) dictionary[QueryNameKey]](dictionary);
             }
             else if (dictionary[MessageTypeKey].Equals(ErrorMessage.ErrorType))
             {
@@ -109,7 +109,7 @@ namespace MonoTorrent.Dht.Messages
             else
             {
                 QueryMessage query;
-                BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
+                BEncodedString key = (BEncodedString) dictionary[TransactionIdKey];
                 if (messages.TryGetValue(key, out query))
                 {
                     messages.Remove(key);
@@ -132,4 +132,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

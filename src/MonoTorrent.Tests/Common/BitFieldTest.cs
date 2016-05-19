@@ -27,7 +27,6 @@
 //
 
 
-
 using MonoTorrent.Client;
 using System;
 using System.Collections.Generic;
@@ -35,7 +34,6 @@ using Xunit;
 
 namespace MonoTorrent.Common
 {
-
     public class BitFieldTest
     {
         BitField bf;
@@ -46,9 +44,9 @@ namespace MonoTorrent.Common
         public BitFieldTest()
         {
             // The bool[] must be kept in sync with the byte[] constructor. They represent exactly the same thing.
-            initalValues = new bool[] { true, false, true, false, true, false, true, true, true, false, false, true };
-            secondValues = new bool[] { true, true, false, false, true, false, true, false, true, false, false, true };
-            initialByteValues = new byte[] { 171, 144 };
+            initalValues = new bool[] {true, false, true, false, true, false, true, true, true, false, false, true};
+            secondValues = new bool[] {true, true, false, false, true, false, true, false, true, false, false, true};
+            initialByteValues = new byte[] {171, 144};
             bf = new BitField(initalValues);
         }
 
@@ -81,7 +79,10 @@ namespace MonoTorrent.Common
                     bf = new BitField(initialByteValues, initalValues.Length);
                     Assert.True(false, string.Format("The bitfield was corrupt but decoded correctly: Loop {0}", i));
                 }
-                catch (MessageException) { initialByteValues[1] -= i; }
+                catch (MessageException)
+                {
+                    initialByteValues[1] -= i;
+                }
             }
         }
 
@@ -124,7 +125,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray()
         {
-            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false });
+            BitField first =
+                new BitField(new bool[] {true, false, true, false, true, false, true, true, true, false, false});
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -135,7 +137,8 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray2()
         {
-            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false, true });
+            BitField first =
+                new BitField(new bool[] {true, false, true, false, true, false, true, true, true, false, false, true});
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -146,7 +149,9 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray3()
         {
-            BitField first = new BitField(new bool[] { true, false, true, false, true, false, true, true, true, false, false, true, false });
+            BitField first =
+                new BitField(new bool[]
+                {true, false, true, false, true, false, true, true, true, false, false, true, false});
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -157,10 +162,13 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray4()
         {
-            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false,
-                                                        false, false, true, false, true, false, false, false,
-                                                        true, false, false, false, true, true, true, false,
-                                                        true, false, false, true, false, false, true, false});
+            BitField first = new BitField(new bool[]
+            {
+                true, false, true, false, true, false, true, false,
+                false, false, true, false, true, false, false, false,
+                true, false, false, false, true, true, true, false,
+                true, false, false, true, false, false, true, false
+            });
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -171,10 +179,13 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray5()
         {
-            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false,
-                                                        false, false, true, false, true, false, false, false,
-                                                        true, false, false, false, true, true, true, false,
-                                                        true, false, false, true, false, false, true});
+            BitField first = new BitField(new bool[]
+            {
+                true, false, true, false, true, false, true, false,
+                false, false, true, false, true, false, false, false,
+                true, false, false, false, true, true, true, false,
+                true, false, false, true, false, false, true
+            });
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -185,10 +196,13 @@ namespace MonoTorrent.Common
         [Fact]
         public void ToByteArray6()
         {
-            BitField first = new BitField(new bool[] {  true, false, true, false, true, false, true, false, true,
-                                                        false, false, true, false, true, false, true, false,
-                                                        true, false, false, false, true, true, true, false, true,
-                                                        true, false, false, true, false, false, true});
+            BitField first = new BitField(new bool[]
+            {
+                true, false, true, false, true, false, true, false, true,
+                false, false, true, false, true, false, true, false,
+                true, false, false, false, true, true, true, false, true,
+                true, false, false, true, false, false, true
+            });
             BitField second = new BitField(first.ToByteArray(), first.Length);
             for (int i = 0; i < first.Length; i++)
             {
@@ -248,20 +262,21 @@ namespace MonoTorrent.Common
         }
 
         [Fact]
-        public void And2 ()
+        public void And2()
         {
-            Random r = new Random ();
-            byte [] a = new byte [100];
-            byte [] b = new byte [100];
+            Random r = new Random();
+            byte[] a = new byte[100];
+            byte[] b = new byte[100];
 
-            r.NextBytes (a);
-            r.NextBytes (b);
+            r.NextBytes(a);
+            r.NextBytes(b);
 
-            for (int i = 0; i < a.Length * 8; i++) {
-                BitField first = new BitField (a, i);
-                BitField second = new BitField (b, i);
+            for (int i = 0; i < a.Length*8; i++)
+            {
+                BitField first = new BitField(a, i);
+                BitField second = new BitField(b, i);
 
-                first.And (second);
+                first.And(second);
             }
         }
 

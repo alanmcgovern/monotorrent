@@ -25,8 +25,8 @@ namespace MonoTorrent.Client
 
         private const int MAX_PATH = 260;
         private const uint FILE_SUPPORTS_SPARSE_FILES = 64;
-        private const uint FSCTL_SET_SPARSE = ((uint)0x00000009 << 16) | ((uint)49 << 2);
-        private const uint FSCTL_SET_ZERO_DATA = ((uint)0x00000009 << 16) | ((uint)50 << 2) | ((uint)2 << 14);
+        private const uint FSCTL_SET_SPARSE = ((uint) 0x00000009 << 16) | ((uint) 49 << 2);
+        private const uint FSCTL_SET_ZERO_DATA = ((uint) 0x00000009 << 16) | ((uint) 50 << 2) | ((uint) 2 << 14);
 
         private static bool SupportsSparse = true;
 
@@ -45,31 +45,35 @@ namespace MonoTorrent.Client
                 // Create a file with the sparse flag enabled
 
                 uint bytesReturned = 0;
-                uint access = (uint)0x40000000;         // GenericWrite
-                uint sharing = 0;                       // none
-                uint attributes = (uint)0x00000080;     // Normal
-                uint creation = (uint)1;                // Only create if new
+                uint access = (uint) 0x40000000; // GenericWrite
+                uint sharing = 0; // none
+                uint attributes = (uint) 0x00000080; // Normal
+                uint creation = (uint) 1; // Only create if new
 
-                using (SafeFileHandle handle = CreateFileW(filename, access, sharing, IntPtr.Zero, creation, attributes, IntPtr.Zero))
+                using (
+                    SafeFileHandle handle = CreateFileW(filename, access, sharing, IntPtr.Zero, creation, attributes,
+                        IntPtr.Zero))
                 {
                     // If we couldn't create the file, bail out
                     if (handle.IsInvalid)
                         return;
 
                     // If we can't set the sparse bit, bail out
-                    if (!DeviceIoControl(handle, FSCTL_SET_SPARSE, IntPtr.Zero, 0, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero))
+                    if (
+                        !DeviceIoControl(handle, FSCTL_SET_SPARSE, IntPtr.Zero, 0, IntPtr.Zero, 0, ref bytesReturned,
+                            IntPtr.Zero))
                         return;
 
                     // Tell the filesystem to mark bytes 0 -> length as sparse zeros
                     FILE_ZERO_DATA_INFORMATION data = new FILE_ZERO_DATA_INFORMATION(0, length);
-                    uint structSize = (uint)Marshal.SizeOf(data);
-                    IntPtr ptr = Marshal.AllocHGlobal((int)structSize);
+                    uint structSize = (uint) Marshal.SizeOf(data);
+                    IntPtr ptr = Marshal.AllocHGlobal((int) structSize);
 
                     try
                     {
                         Marshal.StructureToPtr(data, ptr, false);
                         DeviceIoControl(handle, FSCTL_SET_ZERO_DATA, ptr,
-                                        structSize, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero);
+                            structSize, IntPtr.Zero, 0, ref bytesReturned, IntPtr.Zero);
                     }
                     finally
                     {
@@ -90,6 +94,7 @@ namespace MonoTorrent.Client
                 // Ignore for now. Maybe if i keep hitting this i should abort future attemts
             }
         }
+
         private static bool CanCreateSparse(string volume)
         {
             // Ensure full path is supplied
@@ -100,7 +105,8 @@ namespace MonoTorrent.Client
 
             uint fsFlags, serialNumber, maxComponent;
 
-            bool result = GetVolumeInformationW(volume, volumeName, MAX_PATH, out serialNumber, out maxComponent, out fsFlags, systemName, MAX_PATH);
+            bool result = GetVolumeInformationW(volume, volumeName, MAX_PATH, out serialNumber, out maxComponent,
+                out fsFlags, systemName, MAX_PATH);
             return result && (fsFlags & FILE_SUPPORTS_SPARSE_FILES) == FILE_SUPPORTS_SPARSE_FILES;
         }
 
@@ -115,18 +121,18 @@ namespace MonoTorrent.Client
             uint nOutBufferSize,
             ref uint pBytesReturned,
             [In] IntPtr lpOverlapped
-        );
+            );
 
         [DllImportAttribute("kernel32.dll")]
         private static extern SafeFileHandle CreateFileW(
-                [In][MarshalAsAttribute(UnmanagedType.LPWStr)] string lpFileName,
-                uint dwDesiredAccess,
-                uint dwShareMode,
-                [In] IntPtr lpSecurityAttributes,
-                uint dwCreationDisposition,
-                uint dwFlagsAndAttributes,
-                [In] IntPtr hTemplateFile
-        );
+            [In] [MarshalAsAttribute(UnmanagedType.LPWStr)] string lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            [In] IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            [In] IntPtr hTemplateFile
+            );
 
         [DllImportAttribute("kernel32.dll")]
         private static extern bool GetVolumeInformationW(
@@ -138,6 +144,6 @@ namespace MonoTorrent.Client
             out uint lpFileSystemFlags,
             [Out] [MarshalAsAttribute(UnmanagedType.LPWStr)] StringBuilder lpFileSystemNameBuffer,
             uint nFileSystemNameSize
-        );
+            );
     }
 }

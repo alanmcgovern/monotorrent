@@ -30,13 +30,12 @@ namespace MonoTorrent.Client.PieceWriters
 
         public int Used
         {
-            get { return this.cachedBlocks.Count * Piece.BlockSize; }
+            get { return this.cachedBlocks.Count*Piece.BlockSize; }
         }
 
         public MemoryWriter(PieceWriter writer)
-            : this(writer, 2 * 1024 * 1024)
+            : this(writer, 2*1024*1024)
         {
-
         }
 
         public MemoryWriter(PieceWriter writer, int capacity)
@@ -97,7 +96,7 @@ namespace MonoTorrent.Client.PieceWriters
                 cachedBlocks.Add(block);
             }
         }
-        
+
         public override void Close(TorrentFile file)
         {
             Flush(file);
@@ -126,8 +125,8 @@ namespace MonoTorrent.Client.PieceWriters
         public void Flush(int index)
         {
             CachedBlock b = cachedBlocks[index];
-            cachedBlocks.RemoveAt (index);
-            Write (b.File, b.Offset, b.Buffer, 0, b.Count, true);
+            cachedBlocks.RemoveAt(index);
+            Write(b.File, b.Offset, b.Buffer, 0, b.Count, true);
             ClientEngine.BufferManager.FreeBuffer(ref b.Buffer);
         }
 

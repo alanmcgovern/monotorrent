@@ -35,24 +35,18 @@ namespace MonoTorrent.Client
     {
         class SendMessageState : ICacheable
         {
-            public byte[] Buffer {
-                get; private set;
-            }
+            public byte[] Buffer { get; private set; }
 
-            public AsyncIOCallback Callback {
-                get; private set;
-            }
+            public AsyncIOCallback Callback { get; private set; }
 
-            public object State {
-                get; set;
-            }
+            public object State { get; set; }
 
-            public void Initialise ()
+            public void Initialise()
             {
-                Initialise (null, null, null);
+                Initialise(null, null, null);
             }
 
-            public SendMessageState Initialise (byte[] buffer, AsyncIOCallback callback, object state)
+            public SendMessageState Initialise(byte[] buffer, AsyncIOCallback callback, object state)
             {
                 Buffer = buffer;
                 Callback = callback;

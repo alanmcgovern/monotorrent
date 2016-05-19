@@ -36,9 +36,12 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-	public delegate void MainLoopResult (object result);
+    public delegate void MainLoopResult(object result);
+
     public delegate object MainLoopJob();
+
     public delegate void MainLoopTask();
+
     public delegate bool TimeoutTask();
 
     public class MainLoop
@@ -103,7 +106,7 @@ namespace MonoTorrent.Client
             {
                 handle = new ManualResetEvent(false);
             }
-            
+
             public void Execute()
             {
                 try
@@ -161,7 +164,7 @@ namespace MonoTorrent.Client
             while (true)
             {
                 DelegateTask task = null;
-                
+
                 lock (tasks)
                 {
                     if (tasks.Count > 0)
@@ -253,7 +256,8 @@ namespace MonoTorrent.Client
             DelegateTask dTask = cache.Dequeue();
             dTask.Timeout = task;
 
-            return dispatcher.Add(span, delegate {
+            return dispatcher.Add(span, delegate
+            {
                 QueueWait(dTask);
                 return dTask.TimeoutResult;
             });
@@ -261,11 +265,7 @@ namespace MonoTorrent.Client
 
         public AsyncCallback Wrap(AsyncCallback callback)
         {
-            return delegate(IAsyncResult result) {
-                Queue(delegate {
-                    callback(result);
-                });
-            };
+            return delegate(IAsyncResult result) { Queue(delegate { callback(result); }); };
         }
     }
 }

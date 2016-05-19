@@ -5,7 +5,6 @@ using Xunit;
 
 namespace MonoTorrent.Client
 {
-    
     public class RangeCollectionTests
     {
         //static void Main()
@@ -100,7 +99,7 @@ namespace MonoTorrent.Client
         public void RemoveTest()
         {
             RangeCollection c = new RangeCollection();
-            c.Add(new AddressRange(0,100));
+            c.Add(new AddressRange(0, 100));
             c.Remove(new AddressRange(50, 50));
             Assert.Equal(2, c.Ranges.Count);
             Assert.Equal(new AddressRange(0, 49), c.Ranges[0]);
@@ -134,7 +133,7 @@ namespace MonoTorrent.Client
             c.Remove(new AddressRange(70, 80));
             Assert.Equal(3, c.Ranges.Count);
             Assert.Equal(new AddressRange(16, 44), c.Ranges[0]);
-            Assert.Equal(new AddressRange(61,69), c.Ranges[1]);
+            Assert.Equal(new AddressRange(61, 69), c.Ranges[1]);
             Assert.Equal(new AddressRange(81, 100), c.Ranges[2]);
         }
     }

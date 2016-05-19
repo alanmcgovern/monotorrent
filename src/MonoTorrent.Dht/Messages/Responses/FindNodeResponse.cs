@@ -31,7 +31,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -43,7 +42,7 @@ namespace MonoTorrent.Dht.Messages
 
         public BEncodedString Nodes
         {
-            get { return (BEncodedString)Parameters[NodesKey]; }
+            get { return (BEncodedString) Parameters[NodesKey]; }
             set { Parameters[NodesKey] = value; }
         }
 
@@ -65,4 +64,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

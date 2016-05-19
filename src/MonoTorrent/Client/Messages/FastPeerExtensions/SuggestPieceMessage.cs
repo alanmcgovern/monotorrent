@@ -27,7 +27,6 @@
 //
 
 
-
 using System;
 using System.Text;
 using System.Net;
@@ -41,6 +40,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
         private readonly int messageLength = 5;
 
         #region Member Variables
+
         /// <summary>
         /// The index of the suggested piece to request
         /// </summary>
@@ -48,11 +48,13 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.pieceIndex; }
         }
+
         private int pieceIndex;
+
         #endregion
 
-
         #region Constructors
+
         /// <summary>
         /// Creates a new SuggestPiece message
         /// </summary>
@@ -69,20 +71,21 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             this.pieceIndex = pieceIndex;
         }
+
         #endregion
 
-
         #region Methods
+
         public override int Encode(byte[] buffer, int offset)
         {
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-			int written = offset;
+            int written = offset;
 
-			written += Write(buffer, written, messageLength);
-			written += Write(buffer, written, MessageId);
-			written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, messageLength);
+            written += Write(buffer, written, MessageId);
+            written += Write(buffer, written, pieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -99,10 +102,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
         {
             get { return this.messageLength + 4; }
         }
+
         #endregion
 
-
         #region Overidden Methods
+
         public override bool Equals(object obj)
         {
             SuggestPieceMessage msg = obj as SuggestPieceMessage;
@@ -125,6 +129,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             sb.Append(this.pieceIndex);
             return sb.ToString();
         }
+
         #endregion
     }
 }

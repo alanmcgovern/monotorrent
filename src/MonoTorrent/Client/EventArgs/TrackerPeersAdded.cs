@@ -41,8 +41,9 @@ namespace MonoTorrent.Client
             get { return tracker; }
         }
 
-        public TrackerPeersAdded(TorrentManager manager, int peersAdded, int total, MonoTorrent.Client.Tracker.Tracker tracker)
-            :base (manager, peersAdded, total)
+        public TrackerPeersAdded(TorrentManager manager, int peersAdded, int total,
+            MonoTorrent.Client.Tracker.Tracker tracker)
+            : base(manager, peersAdded, total)
         {
             if (tracker == null)
                 throw new ArgumentNullException("tracker");

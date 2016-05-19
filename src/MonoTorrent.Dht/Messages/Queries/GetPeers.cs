@@ -31,7 +31,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using MonoTorrent.BEncoding;
 using System.Net;
 
@@ -41,23 +40,24 @@ namespace MonoTorrent.Dht.Messages
     {
         private static BEncodedString InfoHashKey = "info_hash";
         private static BEncodedString QueryName = "get_peers";
-        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new GetPeersResponse(d, m); };
-        
+
+        private static ResponseCreator responseCreator =
+            delegate(BEncodedDictionary d, QueryMessage m) { return new GetPeersResponse(d, m); };
+
         public NodeId InfoHash
         {
-            get { return new NodeId((BEncodedString)Parameters[InfoHashKey]); }
+            get { return new NodeId((BEncodedString) Parameters[InfoHashKey]); }
         }
-        
+
         public GetPeers(NodeId id, NodeId infohash)
             : base(id, QueryName, responseCreator)
         {
             Parameters.Add(InfoHashKey, infohash.BencodedString());
         }
-        
+
         public GetPeers(BEncodedDictionary d)
             : base(d, responseCreator)
         {
-            
         }
 
         public override void Handle(DhtEngine engine, Node node)
@@ -78,9 +78,10 @@ namespace MonoTorrent.Dht.Messages
                 // Is this right?
                 response.Nodes = Node.CompactNode(engine.RoutingTable.GetClosest(InfoHash));
             }
-            
+
             engine.MessageLoop.EnqueueSend(response, node.EndPoint);
         }
     }
 }
+
 #endif
