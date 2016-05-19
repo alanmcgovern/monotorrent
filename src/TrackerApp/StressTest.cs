@@ -1,35 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Tracker;
 using System.Net;
-using System.Collections.Specialized;
-using System.Web;
-using MonoTorrent.BEncoding;
+using System.Text;
 using System.Threading;
-using MonoTorrent.Tracker.Listeners;
-using MonoTorrent.Common;
 using MonoTorrent;
+using MonoTorrent.Common;
 
 namespace TrackerApp
 {
     public class StressTest
     {
-        private List<string> hashes = new List<string>();
-        private Random random = new Random(1);
-        private SpeedMonitor requests = new SpeedMonitor();
-        private Thread[] threads;
-        private int threadSleepTime = 0;
-
-        public int RequestRate
-        {
-            get { return requests.Rate; }
-        }
-
-        public long TotalTrackerRequests
-        {
-            get { return requests.Total; }
-        }
+        private readonly List<string> hashes = new List<string>();
+        private readonly Random random = new Random(1);
+        private readonly SpeedMonitor requests = new SpeedMonitor();
+        private readonly Thread[] threads;
+        private readonly int threadSleepTime;
 
         public StressTest(int torrents, int peers, int requests)
         {
@@ -42,6 +27,16 @@ namespace TrackerApp
 
             threadSleepTime = Math.Max((int) (20000.0/requests + 0.5), 1);
             threads = new Thread[20];
+        }
+
+        public int RequestRate
+        {
+            get { return requests.Rate; }
+        }
+
+        public long TotalTrackerRequests
+        {
+            get { return requests.Total; }
         }
 
         public void Start(string trackerAddress)

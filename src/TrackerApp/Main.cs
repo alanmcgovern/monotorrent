@@ -1,105 +1,64 @@
-//
-// Main.cs
-//
-// Authors:
-//   Gregor Burger burger.gregor@gmail.com
-//
-// Copyright (C) 2006 Gregor Burger
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.IO;
-using System.Text;
-using System.Threading;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Web;
-using MonoTorrent.Tracker;
-using MonoTorrent.Common;
-using TrackerApp;
-using MonoTorrent.TorrentWatcher;
-using MonoTorrent.Tracker.Listeners;
+using System.IO;
+using System.Net;
+using System.Threading;
 using MonoTorrent;
+using MonoTorrent.Common;
+using MonoTorrent.TorrentWatcher;
+using MonoTorrent.Tracker;
+using MonoTorrent.Tracker.Listeners;
+using TrackerApp;
+using HttpListener = MonoTorrent.Tracker.Listeners.HttpListener;
 
 namespace SampleTracker
 {
     /// <summary>
-    /// This is a sample implementation of how you could create a custom ITrackable
+    ///     This is a sample implementation of how you could create a custom ITrackable
     /// </summary>
     public class CustomITrackable : ITrackable
     {
         // I just want to keep the TorrentFiles in memory when i'm tracking the torrent, so i store
         // a reference to them in the ITrackable. This allows me to display information about the
         // files in a GUI without having to keep the entire (really really large) Torrent instance in memory.
-        private TorrentFile[] files;
 
         // We require the infohash and the name of the torrent so the tracker can work correctly
-        private InfoHash infoHash;
-        private string name;
 
         public CustomITrackable(Torrent t)
         {
             // Note: I'm just storing the files, infohash and name. A typical Torrent instance
             // is ~100kB in memory. A typical CustomITrackable will be ~100 bytes.
-            files = t.Files;
-            infoHash = t.InfoHash;
-            name = t.Name;
+            Files = t.Files;
+            InfoHash = t.InfoHash;
+            Name = t.Name;
         }
 
         /// <summary>
-        /// The files in the torrent
+        ///     The files in the torrent
         /// </summary>
-        public TorrentFile[] Files
-        {
-            get { return files; }
-        }
+        public TorrentFile[] Files { get; }
 
         /// <summary>
-        /// The infohash of the torrent
+        ///     The infohash of the torrent
         /// </summary>
-        public InfoHash InfoHash
-        {
-            get { return infoHash; }
-        }
+        public InfoHash InfoHash { get; }
 
         /// <summary>
-        /// The name of the torrent
+        ///     The name of the torrent
         /// </summary>
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
     }
 
     internal class MySimpleTracker
     {
-        private Tracker tracker;
-        private TorrentFolderWatcher watcher;
         private const string TORRENT_DIR = "Torrents";
+        private readonly Tracker tracker;
+        private TorrentFolderWatcher watcher;
 
-        ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
+        /// <summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
         public MySimpleTracker()
         {
-            var listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
+            var listenpoint = new IPEndPoint(IPAddress.Loopback, 10000);
             Console.WriteLine("Listening at: {0}", listenpoint);
             ListenerBase listener = new HttpListener(listenpoint);
             tracker = new Tracker();
