@@ -1,12 +1,13 @@
 using System;
 using System.Net;
 using System.Threading;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class NetworkIOTests : IDisposable
     {

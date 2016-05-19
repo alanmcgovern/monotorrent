@@ -30,9 +30,10 @@
 using System;
 using System.Net;
 using System.Threading;
+using MonoTorrent.Dht;
 using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     public class TokenTest
     {

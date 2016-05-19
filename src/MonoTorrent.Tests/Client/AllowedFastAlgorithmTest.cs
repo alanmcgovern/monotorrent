@@ -1,4 +1,4 @@
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     //
     //public class AllowedFastAlgorithmTest

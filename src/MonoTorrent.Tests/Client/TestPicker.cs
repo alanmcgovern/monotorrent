@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     internal class TestPicker : PiecePicker
     {

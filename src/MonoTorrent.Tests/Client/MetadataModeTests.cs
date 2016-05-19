@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
@@ -9,7 +10,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class MetadataModeTests : IDisposable
     {

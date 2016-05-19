@@ -1,7 +1,8 @@
 #if !DISABLE_DHT
+using MonoTorrent.Dht;
 using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     public class NodeIdTests
     {

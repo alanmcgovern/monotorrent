@@ -1,8 +1,9 @@
 using System;
 using System.Threading;
+using MonoTorrent.Client;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class MainLoopTests : IDisposable
     {

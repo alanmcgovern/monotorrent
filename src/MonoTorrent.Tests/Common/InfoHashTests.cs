@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class InfoHashTests
     {

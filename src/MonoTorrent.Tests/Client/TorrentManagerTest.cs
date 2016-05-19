@@ -1,12 +1,13 @@
 using System;
 using System.Threading;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class TorrentManagerTest : IDisposable
     {

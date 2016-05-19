@@ -1,6 +1,7 @@
+using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class SpeedMonitorTest
     {

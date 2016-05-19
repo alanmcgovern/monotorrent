@@ -5,7 +5,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Tracker.Listeners;
 using Xunit;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tests.Tracker
 {
     public class TrackerTests : IDisposable
     {
@@ -15,7 +15,7 @@ namespace MonoTorrent.Tracker
         {
             listener = new HttpListener(uri.OriginalString);
             listener.Start();
-            server = new Tracker();
+            server = new MonoTorrent.Tracker.Tracker();
             server.RegisterListener(listener);
             listener.Start();
 
@@ -38,7 +38,7 @@ namespace MonoTorrent.Tracker
         //}
         private readonly Uri uri = new Uri("http://127.0.0.1:23456/");
         private readonly HttpListener listener;
-        private readonly Tracker server;
+        private readonly MonoTorrent.Tracker.Tracker server;
 
         [Fact]
         public void MultipleAnnounce()
@@ -59,8 +59,8 @@ namespace MonoTorrent.Tracker
                 };
                 var id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started,
                     new ManualResetEvent(false));
-                Client.Tracker.AnnounceParameters parameters;
-                parameters = new Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
+                MonoTorrent.Client.Tracker.AnnounceParameters parameters;
+                parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
                     infoHash, false, new string('1', 20), "", 1411);
                 tier.Trackers[0].Announce(parameters, id);
             }

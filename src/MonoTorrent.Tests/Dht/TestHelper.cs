@@ -1,8 +1,9 @@
 #if !DISABLE_DHT
 using System.Collections.Generic;
 using System.Net;
+using MonoTorrent.Dht;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     internal static class TestHelper
     {

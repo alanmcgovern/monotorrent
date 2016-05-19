@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace MonoTorrent
+namespace MonoTorrent.Tests.Common
 {
     internal class SHA1Fake : SHA1
     {

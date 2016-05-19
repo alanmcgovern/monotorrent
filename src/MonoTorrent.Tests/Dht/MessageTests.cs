@@ -2,10 +2,11 @@
 using System;
 using System.Text;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Dht;
 using MonoTorrent.Dht.Messages;
 using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     public class MessageTests : IDisposable
     {

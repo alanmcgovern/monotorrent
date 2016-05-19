@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using MonoTorrent.Common;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class CustomFileSource : ITorrentFileSource
     {

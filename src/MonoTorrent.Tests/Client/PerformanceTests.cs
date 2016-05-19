@@ -1,6 +1,7 @@
 using System;
+using MonoTorrent.Client;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class PerformanceTests
     {

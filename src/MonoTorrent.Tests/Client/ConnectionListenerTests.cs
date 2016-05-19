@@ -2,9 +2,10 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using MonoTorrent.Client;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class ConnectionListenerTests : IDisposable
     {

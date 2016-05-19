@@ -4,25 +4,8 @@ using System.Threading;
 using MonoTorrent.Client.Tracker;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
-    public class DefaultTracker : Tracker.Tracker
-    {
-        public DefaultTracker()
-            : base(new Uri("http://tracker:5353/announce"))
-        {
-        }
-
-        public override void Announce(AnnounceParameters parameters, object state)
-        {
-        }
-
-        public override void Scrape(ScrapeParameters parameters, object state)
-        {
-        }
-    }
-
-
     public class TrackerManagerTests : IDisposable
     {
         public TrackerManagerTests()

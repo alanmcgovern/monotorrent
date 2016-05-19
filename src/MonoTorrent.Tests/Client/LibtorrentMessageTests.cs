@@ -4,7 +4,7 @@ using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class LibtorrentMessageTests : IDisposable
     {

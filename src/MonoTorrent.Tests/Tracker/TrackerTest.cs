@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Net;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
+using MonoTorrent.Tracker;
 using Xunit;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tests.Tracker
 {
     public class TrackerTest : IDisposable
     {

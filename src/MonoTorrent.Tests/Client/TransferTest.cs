@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.FastPeer;
@@ -7,7 +8,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class TransferTest : IDisposable
     {

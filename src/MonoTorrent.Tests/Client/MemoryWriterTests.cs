@@ -1,8 +1,9 @@
+using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class MemoryWriterTests
     {

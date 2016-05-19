@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     /// <summary>
     /// </summary>

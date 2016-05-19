@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
+using MonoTorrent.Common;
+using MonoTorrent.Tests.Client;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class TorrentTest
     {

@@ -4,23 +4,12 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client;
-using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Common;
+using MonoTorrent.Tests.Client;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
-    public class TestTorrentCreator : TorrentCreator
-    {
-        protected override PieceWriter CreateReader()
-        {
-            var writer = new TestWriter();
-            writer.DontWrite = true;
-            return writer;
-        }
-    }
-
-
     public class TorrentCreatorTests : IDisposable
     {
         public TorrentCreatorTests()

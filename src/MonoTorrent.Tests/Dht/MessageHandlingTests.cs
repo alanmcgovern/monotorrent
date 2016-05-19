@@ -3,11 +3,12 @@ using System;
 using System.Net;
 using System.Threading;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Dht;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
 using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     public class MessageHandlingTests : IDisposable
     {

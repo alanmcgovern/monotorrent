@@ -1,85 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Net;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
-using MonoTorrent.Tracker.Listeners;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tests.Tracker
 {
-    public class CustomComparer : IPeerComparer
-    {
-        public object GetKey(AnnounceParameters parameters)
-        {
-            return parameters.Uploaded;
-        }
-
-        public new bool Equals(object left, object right)
-        {
-            return left.Equals(right);
-        }
-
-        public int GetHashCode(object obj)
-        {
-            return obj.GetHashCode();
-        }
-    }
-
-    public class CustomListener : ListenerBase
-    {
-        public override bool Running
-        {
-            get { return true; }
-        }
-
-        public BEncodedValue Handle(PeerDetails d, TorrentEvent e, ITrackable trackable)
-        {
-            var c = new NameValueCollection();
-            c.Add("info_hash", trackable.InfoHash.UrlEncode());
-            c.Add("peer_id", d.peerId);
-            c.Add("port", d.Port.ToString());
-            c.Add("uploaded", d.Uploaded.ToString());
-            c.Add("downloaded", d.Downloaded.ToString());
-            c.Add("left", d.Remaining.ToString());
-            c.Add("compact", "0");
-
-            return base.Handle(c, d.ClientAddress, false);
-        }
-
-        public override void Start()
-        {
-        }
-
-        public override void Stop()
-        {
-        }
-    }
-
-    public class Trackable : ITrackable
-    {
-        public Trackable(InfoHash infoHash, string name)
-        {
-            InfoHash = infoHash;
-            Name = name;
-        }
-
-        public InfoHash InfoHash { get; }
-
-        public string Name { get; }
-    }
-
-    public class PeerDetails
-    {
-        public IPAddress ClientAddress;
-        public long Downloaded;
-        public string peerId;
-        public int Port;
-        public long Remaining;
-        public ITrackable trackable;
-        public long Uploaded;
-    }
-
     public class TrackerTestRig : IDisposable
     {
         private readonly Random r = new Random(1000);
@@ -87,11 +11,11 @@ namespace MonoTorrent.Tracker
 
         public List<PeerDetails> Peers;
         public List<Trackable> Trackables;
-        public Tracker Tracker;
+        public MonoTorrent.Tracker.Tracker Tracker;
 
         public TrackerTestRig()
         {
-            Tracker = new Tracker();
+            Tracker = new MonoTorrent.Tracker.Tracker();
             Listener = new CustomListener();
             Tracker.RegisterListener(Listener);
 

@@ -1,9 +1,10 @@
 #if !DISABLE_DHT
 using System.Net;
+using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     internal class TestListener : DhtListener
     {

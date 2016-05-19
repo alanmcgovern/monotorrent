@@ -5,7 +5,7 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class TestEncryption : IDisposable
     {

@@ -3,9 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using MonoTorrent.Common;
+using MonoTorrent.Dht;
 using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
     public class NodeTests
     {

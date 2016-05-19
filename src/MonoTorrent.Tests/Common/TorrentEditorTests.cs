@@ -2,7 +2,7 @@ using System;
 using MonoTorrent.BEncoding;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class TorrentEditorTests
     {

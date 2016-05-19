@@ -1,9 +1,10 @@
 using System.IO;
 using System.Text;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     /// <summary>
     /// </summary>

@@ -7,7 +7,7 @@ using MonoTorrent.Tracker.Listeners;
 using Xunit;
 using AnnounceParameters = MonoTorrent.Tracker.AnnounceParameters;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
     public class HttpTrackerTests : IDisposable
     {
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client
                 p = e;
                 id.WaitHandle.Set();
             };
-            var pars = new Tracker.AnnounceParameters();
+            var pars = new MonoTorrent.Client.Tracker.AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -97,7 +97,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void KeyTest()
         {
-            var pars = new Tracker.AnnounceParameters();
+            var pars = new MonoTorrent.Client.Tracker.AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -122,7 +122,7 @@ namespace MonoTorrent.Client
                 p = e;
                 id.WaitHandle.Set();
             };
-            var pars = new Tracker.AnnounceParameters();
+            var pars = new MonoTorrent.Client.Tracker.AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
