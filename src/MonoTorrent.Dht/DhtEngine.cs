@@ -48,6 +48,12 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
+        #region Fields
+
+        internal static MainLoop MainLoop = new MainLoop("DhtLoop");
+
+        #endregion Fields
+
         #region Constructors
 
         public DhtEngine(DhtListener listener)
@@ -68,12 +74,6 @@ namespace MonoTorrent.Dht
         public event EventHandler StateChanged;
 
         #endregion Events
-
-        #region Fields
-
-        internal static MainLoop MainLoop = new MainLoop("DhtLoop");
-
-        #endregion Fields
 
         #region Properties
 

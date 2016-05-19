@@ -13,6 +13,12 @@ namespace MonoTorrent.Common
 
         #endregion
 
+        #region Private Fields
+
+        private readonly byte[] hashData;
+
+        #endregion Private Fields
+
         #region Constructors
 
         internal Hashes(byte[] hashData, int count)
@@ -31,12 +37,6 @@ namespace MonoTorrent.Common
         public int Count { get; }
 
         #endregion Properties
-
-        #region Private Fields
-
-        private readonly byte[] hashData;
-
-        #endregion Private Fields
 
         #region Methods
 

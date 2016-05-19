@@ -185,9 +185,9 @@ namespace SampleClient
 
     public class ConnectionPair : IDisposable
     {
+        private readonly TcpListener socketListener;
         public IConnection Incoming;
         public IConnection Outgoing;
-        private readonly TcpListener socketListener;
 
         public ConnectionPair(int port)
         {

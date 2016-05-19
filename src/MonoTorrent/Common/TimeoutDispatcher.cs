@@ -10,10 +10,10 @@ namespace Mono.Ssdp.Internal
     {
         private static uint timeout_ids = 1;
 
-        private bool disposed;
-
         private readonly List<TimeoutItem> timeouts = new List<TimeoutItem>();
         private readonly AutoResetEvent wait = new AutoResetEvent(false);
+
+        private bool disposed;
 
         public TimeoutDispatcher()
         {

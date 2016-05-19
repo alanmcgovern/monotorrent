@@ -7,9 +7,9 @@ namespace MonoTorrent.Client
     {
         private readonly bool autostart;
         private readonly bool filesExist;
+        private readonly MainLoopResult pieceCompleteCallback;
         internal ManualResetEvent hashingWaitHandle;
         private int index = -1;
-        private readonly MainLoopResult pieceCompleteCallback;
 
         public HashingMode(TorrentManager manager, bool autostart)
             : base(manager)

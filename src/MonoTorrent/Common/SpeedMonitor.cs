@@ -5,8 +5,8 @@ namespace MonoTorrent.Common
     public class SpeedMonitor
     {
         private const int DefaultAveragePeriod = 12;
-        private DateTime lastUpdated;
         private readonly int[] speeds;
+        private DateTime lastUpdated;
         private int speedsIndex;
         private long tempRecvCount;
 

@@ -9,13 +9,13 @@ namespace MonoTorrent.Client.Tracker
 {
     public class UdpTracker : Tracker
     {
+        private readonly UdpClient tracker;
         private bool amConnecting;
         private long connectionId;
         private IPEndPoint endpoint;
         private bool hasConnected;
         internal TimeSpan RetryDelay;
         private int timeout;
-        private readonly UdpClient tracker;
 
         public UdpTracker(Uri announceUrl)
             : base(announceUrl)

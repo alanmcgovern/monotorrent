@@ -6,9 +6,9 @@ namespace MonoTorrent.Client
 {
     public class RarestFirstPicker : PiecePicker
     {
-        private int length;
         private readonly Stack<BitField> rarest;
         private readonly Stack<BitField> spares;
+        private int length;
 
         public RarestFirstPicker(PiecePicker picker)
             : base(picker)

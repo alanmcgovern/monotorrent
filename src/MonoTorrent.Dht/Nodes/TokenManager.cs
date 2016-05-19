@@ -37,11 +37,11 @@ namespace MonoTorrent.Dht
 {
     internal class TokenManager
     {
-        private DateTime LastSecretGeneration;
         private readonly byte[] previousSecret;
         private readonly RandomNumberGenerator random;
         private readonly byte[] secret;
         private readonly SHA1 sha1;
+        private DateTime LastSecretGeneration;
 
         public TokenManager()
         {

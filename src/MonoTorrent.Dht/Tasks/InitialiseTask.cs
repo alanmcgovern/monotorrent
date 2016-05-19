@@ -7,10 +7,10 @@ namespace MonoTorrent.Dht.Tasks
 {
     internal class InitialiseTask : Task
     {
+        private readonly SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
         private int activeRequests;
         private DhtEngine engine;
         private List<Node> initialNodes;
-        private readonly SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
 
         public InitialiseTask(DhtEngine engine)
         {

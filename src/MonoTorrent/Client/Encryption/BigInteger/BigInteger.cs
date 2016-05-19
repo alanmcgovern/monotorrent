@@ -208,7 +208,7 @@ namespace Mono.Math
 
                 // bi1 len < bi2 len
                 if (l1 < l2) return Sign.Negative;
-                    // bi1 len > bi2 len
+                // bi1 len > bi2 len
                 if (l1 > l2) return Sign.Positive;
 
                 //

@@ -82,10 +82,10 @@ namespace MonoTorrent.Tracker
 
     public class TrackerTestRig : IDisposable
     {
+        private readonly Random r = new Random(1000);
         public CustomListener Listener;
 
         public List<PeerDetails> Peers;
-        private readonly Random r = new Random(1000);
         public List<Trackable> Trackables;
         public Tracker Tracker;
 

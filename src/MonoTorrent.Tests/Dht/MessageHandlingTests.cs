@@ -101,15 +101,15 @@ namespace MonoTorrent.Dht
             Assert.Equal(NodeState.Good, node.State);
         }
 
-//            listener.RaiseMessageReceived(response, task.Target.EndPoint);
-//            PingResponse response = new PingResponse(task.Target.Id);
-//            SendQueryTask task = (SendQueryTask)e.Task;
-//
-//                return;
-//            if (!e.TimedOut || !(e.Query is Ping))
-//        {
-
 //        void FakePingResponse(object sender, SendQueryEventArgs e)
+//        {
+//            if (!e.TimedOut || !(e.Query is Ping))
+//                return;
+//
+//            SendQueryTask task = (SendQueryTask)e.Task;
+//            PingResponse response = new PingResponse(task.Target.Id);
+
+//            listener.RaiseMessageReceived(response, task.Target.EndPoint);
 //        }
     }
 }

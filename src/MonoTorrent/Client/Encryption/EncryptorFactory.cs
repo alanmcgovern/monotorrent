@@ -186,12 +186,12 @@ namespace MonoTorrent.Client.Encryption
 
         private class EncryptorAsyncResult : AsyncResult
         {
+            public readonly PeerId Id;
             public int Available;
             public byte[] Buffer;
             public IEncryption Decryptor;
             public IEncryption Encryptor;
             public IEncryptor EncSocket;
-            public readonly PeerId Id;
             public byte[] InitialData;
             public InfoHash[] SKeys;
 

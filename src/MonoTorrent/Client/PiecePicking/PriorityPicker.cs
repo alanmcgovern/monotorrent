@@ -7,9 +7,8 @@ namespace MonoTorrent.Client
 {
     public class PriorityPicker : PiecePicker
     {
-        private Predicate<Files> AllSamePriority;
-
         private readonly List<Files> files = new List<Files>();
+        private Predicate<Files> AllSamePriority;
         private BitField temp;
 
         public PriorityPicker(PiecePicker picker)

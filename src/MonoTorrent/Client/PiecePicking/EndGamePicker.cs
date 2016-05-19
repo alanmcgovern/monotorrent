@@ -13,12 +13,12 @@ namespace MonoTorrent.Client
         private static readonly Predicate<Request> TimedOut = delegate(Request r) { return r.Block.RequestTimedOut; };
         private static Predicate<Request> NotRequested = delegate(Request r) { return r.Block.RequestedOff == null; };
 
+        // These are all the requests for the individual blocks
+        private readonly List<Request> requests;
+
         // This list stores all the pieces which have not yet been completed. If a piece is *not* in this list
         // we don't need to download it.
         private List<Piece> pieces;
-
-        // These are all the requests for the individual blocks
-        private readonly List<Request> requests;
 
         public EndGamePicker()
             : base(null)
@@ -229,8 +229,8 @@ namespace MonoTorrent.Client
         // This way we can have multiple requests for the same block
         private class Request
         {
-            public Block Block;
             public readonly PeerId Peer;
+            public Block Block;
 
             public Request(PeerId peer, Block block)
             {

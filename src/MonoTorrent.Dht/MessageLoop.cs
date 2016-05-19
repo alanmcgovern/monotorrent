@@ -43,7 +43,6 @@ namespace MonoTorrent.Dht
     {
         private readonly List<IAsyncResult> activeSends = new List<IAsyncResult>();
         private readonly DhtEngine engine;
-        private DateTime lastSent;
         private readonly DhtListener listener;
         private readonly object locker = new object();
 
@@ -52,6 +51,7 @@ namespace MonoTorrent.Dht
 
         private readonly Queue<SendDetails> sendQueue = new Queue<SendDetails>();
         private readonly MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
+        private DateTime lastSent;
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {

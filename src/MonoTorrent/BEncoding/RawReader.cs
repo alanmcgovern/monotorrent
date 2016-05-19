@@ -5,9 +5,9 @@ namespace MonoTorrent.BEncoding
 {
     public class RawReader : Stream
     {
-        private bool hasPeek;
         private readonly Stream input;
         private readonly byte[] peeked;
+        private bool hasPeek;
 
         public RawReader(Stream input)
             : this(input, true)

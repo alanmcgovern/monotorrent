@@ -11,6 +11,12 @@ namespace MonoTorrent.Tracker
 {
     public class Tracker : IEnumerable<SimpleTorrentManager>, IDisposable
     {
+        #region Fields
+
+        private readonly Dictionary<InfoHash, SimpleTorrentManager> torrents;
+
+        #endregion Fields
+
         public void Dispose()
         {
             if (Disposed)
@@ -40,12 +46,6 @@ namespace MonoTorrent.Tracker
         public event EventHandler<TimedOutEventArgs> PeerTimedOut;
 
         #endregion Events
-
-        #region Fields
-
-        private readonly Dictionary<InfoHash, SimpleTorrentManager> torrents;
-
-        #endregion Fields
 
         #region Properties
 

@@ -112,9 +112,8 @@ namespace MonoTorrent.Client
 
     public class CustomConnection : IConnection
     {
-        public string Name;
-
         private readonly Socket s;
+        public string Name;
 
         public CustomConnection(Socket s, bool incoming)
         {
@@ -281,9 +280,9 @@ namespace MonoTorrent.Client
 
     public class ConnectionPair : IDisposable
     {
+        private readonly TcpListener socketListener;
         public CustomConnection Incoming;
         public CustomConnection Outgoing;
-        private readonly TcpListener socketListener;
 
         public ConnectionPair(int port)
         {

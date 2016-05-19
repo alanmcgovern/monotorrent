@@ -7,10 +7,10 @@ namespace MonoTorrent.Client.Connections
         private class HttpRequestData
         {
             public readonly RequestMessage Request;
+            public readonly int TotalToReceive;
             public bool SentHeader;
             public bool SentLength;
             public int TotalReceived;
-            public readonly int TotalToReceive;
 
             public HttpRequestData(RequestMessage request)
             {

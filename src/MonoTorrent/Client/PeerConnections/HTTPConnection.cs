@@ -380,9 +380,9 @@ namespace MonoTorrent.Client.Connections
         private class HttpResult : AsyncResult
         {
             public readonly byte[] Buffer;
-            public int BytesTransferred;
             public readonly int Count;
             public readonly int Offset;
+            public int BytesTransferred;
 
             public HttpResult(AsyncCallback callback, object state, byte[] buffer, int offset, int count)
                 : base(callback, state)

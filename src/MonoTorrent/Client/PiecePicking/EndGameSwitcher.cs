@@ -9,15 +9,15 @@ namespace MonoTorrent.Client
     public class EndGameSwitcher : PiecePicker
     {
         private const int Threshold = 20;
-
-        private BitField bitfield;
         private readonly int blocksPerPiece;
         private readonly PiecePicker endgame;
+        private readonly PiecePicker standard;
+        private readonly TorrentManager torrentManager;
+
+        private BitField bitfield;
         private BitField endgameSelector;
         private TorrentFile[] files;
         private bool inEndgame;
-        private readonly PiecePicker standard;
-        private readonly TorrentManager torrentManager;
 
         public EndGameSwitcher(StandardPicker standard, EndGamePicker endgame, int blocksPerPiece,
             TorrentManager torrentManager)
