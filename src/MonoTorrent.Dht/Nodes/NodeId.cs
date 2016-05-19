@@ -30,8 +30,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
@@ -41,17 +39,11 @@ namespace MonoTorrent.Dht
         private static readonly Random random = new Random();
 
         private BigInteger value;
-        private byte[] bytes;
-
-        internal byte[] Bytes
-        {
-            get { return bytes; }
-        }
 
         internal NodeId(byte[] value)
             : this(new BigInteger(value))
         {
-            bytes = value;
+            Bytes = value;
         }
 
         internal NodeId(InfoHash infoHash)
@@ -67,31 +59,10 @@ namespace MonoTorrent.Dht
         internal NodeId(BEncodedString value)
             : this(new BigInteger(value.TextBytes))
         {
-            bytes = value.TextBytes;
+            Bytes = value.TextBytes;
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as NodeId);
-        }
-
-        public bool Equals(NodeId other)
-        {
-            if ((object) other == null)
-                return false;
-
-            return value.Equals(other.value);
-        }
-
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return value.ToString();
-        }
+        internal byte[] Bytes { get; }
 
         public int CompareTo(object obj)
         {
@@ -106,9 +77,32 @@ namespace MonoTorrent.Dht
             var s = value.Compare(other.value);
             if (s == BigInteger.Sign.Zero)
                 return 0;
-            else if (s == BigInteger.Sign.Positive)
+            if (s == BigInteger.Sign.Positive)
                 return 1;
-            else return -1;
+            return -1;
+        }
+
+        public bool Equals(NodeId other)
+        {
+            if ((object) other == null)
+                return false;
+
+            return value.Equals(other.value);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as NodeId);
+        }
+
+        public override int GetHashCode()
+        {
+            return value.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return value.ToString();
         }
 
         internal NodeId Xor(NodeId right)

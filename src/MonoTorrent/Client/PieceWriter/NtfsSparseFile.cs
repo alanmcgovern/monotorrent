@@ -1,28 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using Microsoft.Win32.SafeHandles;
-using System.Threading;
 using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
 
 namespace MonoTorrent.Client
 {
     internal static class SparseFile
     {
-        [StructLayout(LayoutKind.Sequential)]
-        private struct FILE_ZERO_DATA_INFORMATION
-        {
-            public FILE_ZERO_DATA_INFORMATION(long offset, long count)
-            {
-                FileOffset = offset;
-                BeyondFinalZero = offset + count;
-            }
-
-            public long FileOffset;
-            public long BeyondFinalZero;
-        }
-
         private const int MAX_PATH = 260;
         private const uint FILE_SUPPORTS_SPARSE_FILES = 64;
         private const uint FSCTL_SET_SPARSE = ((uint) 0x00000009 << 16) | ((uint) 49 << 2);
@@ -123,9 +108,9 @@ namespace MonoTorrent.Client
             [In] IntPtr lpOverlapped
             );
 
-        [DllImportAttribute("kernel32.dll")]
+        [DllImport("kernel32.dll")]
         private static extern SafeFileHandle CreateFileW(
-            [In] [MarshalAsAttribute(UnmanagedType.LPWStr)] string lpFileName,
+            [In] [MarshalAs(UnmanagedType.LPWStr)] string lpFileName,
             uint dwDesiredAccess,
             uint dwShareMode,
             [In] IntPtr lpSecurityAttributes,
@@ -134,16 +119,29 @@ namespace MonoTorrent.Client
             [In] IntPtr hTemplateFile
             );
 
-        [DllImportAttribute("kernel32.dll")]
+        [DllImport("kernel32.dll")]
         private static extern bool GetVolumeInformationW(
-            [In] [MarshalAsAttribute(UnmanagedType.LPWStr)] string lpRootPathName,
-            [Out] [MarshalAsAttribute(UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
+            [In] [MarshalAs(UnmanagedType.LPWStr)] string lpRootPathName,
+            [Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpVolumeNameBuffer,
             uint nVolumeNameSize,
             out uint lpVolumeSerialNumber,
             out uint lpMaximumComponentLength,
             out uint lpFileSystemFlags,
-            [Out] [MarshalAsAttribute(UnmanagedType.LPWStr)] StringBuilder lpFileSystemNameBuffer,
+            [Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpFileSystemNameBuffer,
             uint nFileSystemNameSize
             );
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILE_ZERO_DATA_INFORMATION
+        {
+            public FILE_ZERO_DATA_INFORMATION(long offset, long count)
+            {
+                FileOffset = offset;
+                BeyondFinalZero = offset + count;
+            }
+
+            public readonly long FileOffset;
+            public readonly long BeyondFinalZero;
+        }
     }
 }

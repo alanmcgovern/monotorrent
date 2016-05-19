@@ -1,17 +1,14 @@
 #if !DISABLE_DHT
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht.Tasks
 {
     internal class ReplaceNodeTask : Task
     {
-        private Bucket bucket;
-        private DhtEngine engine;
-        private Node newNode;
+        private readonly Bucket bucket;
+        private readonly DhtEngine engine;
+        private readonly Node newNode;
 
         public ReplaceNodeTask(DhtEngine engine, Bucket bucket, Node newNode)
         {
@@ -22,7 +19,7 @@ namespace MonoTorrent.Dht.Tasks
 
         public override void Execute()
         {
-            DhtEngine.MainLoop.Queue((MainLoopTask) delegate
+            DhtEngine.MainLoop.Queue(delegate
             {
                 if (bucket.Nodes.Count == 0)
                 {

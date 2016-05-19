@@ -1,141 +1,15 @@
-//
-// Peer.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.Text;
+using System.Collections.Generic;
 using System.Net;
-using MonoTorrent.Common;
+using System.Text;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
-using System.Collections.Generic;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public class Peer
     {
-        #region Private Fields
-
-        private int cleanedUpCount;
-        private Uri connectionUri;
-        private EncryptionTypes encryption;
-        private int failedConnectionAttempts;
-        private int localPort;
-        private int totalHashFails;
-        private bool isSeeder;
-        private string peerId;
-        private int repeatedHashFails;
-        private DateTime lastConnectionAttempt;
-
-        #endregion Private Fields
-
-        #region Properties
-
-        public Uri ConnectionUri
-        {
-            get { return connectionUri; }
-        }
-
-        internal int CleanedUpCount
-        {
-            get { return cleanedUpCount; }
-            set { cleanedUpCount = value; }
-        }
-
-        public EncryptionTypes Encryption
-        {
-            get { return encryption; }
-            set { encryption = value; }
-        }
-
-        internal int TotalHashFails
-        {
-            get { return totalHashFails; }
-        }
-
-        internal string PeerId
-        {
-            get { return peerId; }
-            set { peerId = value; }
-        }
-
-        internal bool IsSeeder
-        {
-            get { return isSeeder; }
-            set { isSeeder = value; }
-        }
-
-        internal int FailedConnectionAttempts
-        {
-            get { return failedConnectionAttempts; }
-            set { failedConnectionAttempts = value; }
-        }
-
-        internal int LocalPort
-        {
-            get { return localPort; }
-            set { localPort = value; }
-        }
-
-        internal DateTime LastConnectionAttempt
-        {
-            get { return lastConnectionAttempt; }
-            set { lastConnectionAttempt = value; }
-        }
-
-        internal int RepeatedHashFails
-        {
-            get { return repeatedHashFails; }
-        }
-
-        #endregion Properties
-
-        #region Constructors
-
-        public Peer(string peerId, Uri connectionUri)
-            : this(peerId, connectionUri, EncryptionTypes.All)
-        {
-        }
-
-        public Peer(string peerId, Uri connectionUri, EncryptionTypes encryption)
-        {
-            if (peerId == null)
-                throw new ArgumentNullException("peerId");
-            if (connectionUri == null)
-                throw new ArgumentNullException("connectionUri");
-
-            this.connectionUri = connectionUri;
-            this.encryption = encryption;
-            this.peerId = peerId;
-        }
-
-        #endregion
-
         public override bool Equals(object obj)
         {
             return Equals(obj as Peer);
@@ -147,20 +21,20 @@ namespace MonoTorrent.Client
                 return false;
 
             // FIXME: Don't compare the port, just compare the IP
-            if (string.IsNullOrEmpty(peerId) && string.IsNullOrEmpty(other.peerId))
-                return connectionUri.Host.Equals(other.connectionUri.Host);
+            if (string.IsNullOrEmpty(PeerId) && string.IsNullOrEmpty(other.PeerId))
+                return ConnectionUri.Host.Equals(other.ConnectionUri.Host);
 
-            return peerId == other.peerId;
+            return PeerId == other.PeerId;
         }
 
         public override int GetHashCode()
         {
-            return connectionUri.Host.GetHashCode();
+            return ConnectionUri.Host.GetHashCode();
         }
 
         public override string ToString()
         {
-            return connectionUri.ToString();
+            return ConnectionUri.ToString();
         }
 
         internal byte[] CompactPeer()
@@ -172,20 +46,20 @@ namespace MonoTorrent.Client
 
         internal void CompactPeer(byte[] data, int offset)
         {
-            Buffer.BlockCopy(IPAddress.Parse(connectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short) connectionUri.Port)), 0,
+            Buffer.BlockCopy(IPAddress.Parse(ConnectionUri.Host).GetAddressBytes(), 0, data, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short) ConnectionUri.Port)), 0,
                 data, offset + 4, 2);
         }
 
         internal void HashedPiece(bool succeeded)
         {
-            if (succeeded && repeatedHashFails > 0)
-                repeatedHashFails--;
+            if (succeeded && RepeatedHashFails > 0)
+                RepeatedHashFails--;
 
             if (!succeeded)
             {
-                repeatedHashFails++;
-                totalHashFails++;
+                RepeatedHashFails++;
+                TotalHashFails++;
             }
         }
 
@@ -222,7 +96,7 @@ namespace MonoTorrent.Client
             else
                 peerId = string.Empty;
 
-            var connectionUri = new Uri("tcp://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
+            var connectionUri = new Uri("tcp://" + dict["ip"] + ":" + dict["port"]);
             return new Peer(peerId, connectionUri, EncryptionTypes.All);
         }
 
@@ -268,5 +142,54 @@ namespace MonoTorrent.Client
                 list.Add((BEncodedString) p.CompactPeer());
             return list;
         }
+
+        #region Private Fields
+
+        #endregion Private Fields
+
+        #region Properties
+
+        public Uri ConnectionUri { get; }
+
+        internal int CleanedUpCount { get; set; }
+
+        public EncryptionTypes Encryption { get; set; }
+
+        internal int TotalHashFails { get; private set; }
+
+        internal string PeerId { get; set; }
+
+        internal bool IsSeeder { get; set; }
+
+        internal int FailedConnectionAttempts { get; set; }
+
+        internal int LocalPort { get; set; }
+
+        internal DateTime LastConnectionAttempt { get; set; }
+
+        internal int RepeatedHashFails { get; private set; }
+
+        #endregion Properties
+
+        #region Constructors
+
+        public Peer(string peerId, Uri connectionUri)
+            : this(peerId, connectionUri, EncryptionTypes.All)
+        {
+        }
+
+        public Peer(string peerId, Uri connectionUri, EncryptionTypes encryption)
+        {
+            if (peerId == null)
+                throw new ArgumentNullException("peerId");
+            if (connectionUri == null)
+                throw new ArgumentNullException("connectionUri");
+
+            ConnectionUri = connectionUri;
+            Encryption = encryption;
+            PeerId = peerId;
+        }
+
+        #endregion
     }
 }

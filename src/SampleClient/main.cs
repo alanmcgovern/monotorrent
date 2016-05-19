@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
-using System.IO;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Net;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Text;
 using System.Threading;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
+using MonoTorrent.Common;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 
@@ -26,10 +25,10 @@ namespace MonoTorrent
         private static ClientEngine engine; // The engine used for downloading
 
         private static List<TorrentManager> torrents;
-            // The list where all the torrentManagers will be stored that the engine gives us
+        // The list where all the torrentManagers will be stored that the engine gives us
 
         private static Top10Listener listener;
-            // This is a subclass of TraceListener which remembers the last 20 statements sent to it
+        // This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
         private static void Main(string[] args)
         {
@@ -154,7 +153,7 @@ namespace MonoTorrent
 
                     // Store the torrent manager in our list so we can access it later
                     torrents.Add(manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                    manager.PeersFound += manager_PeersFound;
                 }
             }
 
@@ -184,7 +183,7 @@ namespace MonoTorrent
                 manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e)
                 {
                     lock (listener)
-                        listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
+                        listener.WriteLine("OldState: " + e.OldState + " NewState: " + e.NewState);
                 };
 
                 // Every time the tracker's state changes, this is fired
@@ -195,7 +194,7 @@ namespace MonoTorrent
                         t.AnnounceComplete +=
                             delegate(object sender, AnnounceResponseEventArgs e)
                             {
-                                listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
+                                listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker));
                             };
                     }
                 }

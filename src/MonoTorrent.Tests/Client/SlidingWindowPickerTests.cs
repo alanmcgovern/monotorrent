@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
-using Xunit;
-
-namespace MonoTorrent.Client
+﻿namespace MonoTorrent.Client
 {
     //
     //public class SlidingWindowPickerTests : PiecePickerTests

@@ -1,118 +1,22 @@
-//
-// TrackerManager.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.Text;
-using System.Net;
-using System.IO;
-using MonoTorrent.Common;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
-using System.Web;
-using System.Diagnostics;
-using System.Collections.Generic;
-using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
-using System.Collections;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
     /// <summary>
-    /// Represents the connection to a tracker that an TorrentManager has
+    ///     Represents the connection to a tracker that an TorrentManager has
     /// </summary>
     public class TrackerManager : IEnumerable<TrackerTier>
     {
-        #region Member Variables
-
-        private TorrentManager manager;
-        private IList<TrackerTier> tierList;
-
-
-        /// <summary>
-        /// Returns the tracker that is current in use by the engine
-        /// </summary>
-        public Tracker CurrentTracker
-        {
-            get
-            {
-                if (trackerTiers.Count == 0 || trackerTiers[0].Trackers.Count == 0)
-                    return null;
-
-                return trackerTiers[0].Trackers[0];
-            }
-        }
-
-
-        /// <summary>
-        /// The infohash for the torrent
-        /// </summary>
-        private InfoHash infoHash;
-
-
-        /// <summary>
-        /// True if the last update succeeded
-        /// </summary>
-        public bool UpdateSucceeded
-        {
-            get { return updateSucceeded; }
-        }
-
-        private bool updateSucceeded;
-
-
-        /// <summary>
-        /// The time the last tracker update was sent to any tracker
-        /// </summary>
-        public DateTime LastUpdated
-        {
-            get { return lastUpdated; }
-        }
-
-        private DateTime lastUpdated;
-
-
-        /// <summary>
-        /// The trackers available
-        /// </summary>
-        public IList<TrackerTier> TrackerTiers
-        {
-            get { return tierList; }
-        }
-
-        private List<TrackerTier> trackerTiers;
-
-        #endregion
-
         #region Constructors
 
         /// <summary>
-        /// Creates a new TrackerConnection for the supplied torrent file
+        ///     Creates a new TrackerConnection for the supplied torrent file
         /// </summary>
         /// <param name="manager">The TorrentManager to create the tracker connection for</param>
         public TrackerManager(TorrentManager manager, InfoHash infoHash, IList<RawTrackerTier> announces)
@@ -144,8 +48,65 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            tierList = new ReadOnlyCollection<TrackerTier>(trackerTiers);
+            TrackerTiers = new ReadOnlyCollection<TrackerTier>(trackerTiers);
         }
+
+        #endregion
+
+        public IEnumerator<TrackerTier> GetEnumerator()
+        {
+            return trackerTiers.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        #region Member Variables
+
+        private readonly TorrentManager manager;
+
+
+        /// <summary>
+        ///     Returns the tracker that is current in use by the engine
+        /// </summary>
+        public Tracker CurrentTracker
+        {
+            get
+            {
+                if (trackerTiers.Count == 0 || trackerTiers[0].Trackers.Count == 0)
+                    return null;
+
+                return trackerTiers[0].Trackers[0];
+            }
+        }
+
+
+        /// <summary>
+        ///     The infohash for the torrent
+        /// </summary>
+        private readonly InfoHash infoHash;
+
+
+        /// <summary>
+        ///     True if the last update succeeded
+        /// </summary>
+        public bool UpdateSucceeded { get; private set; }
+
+
+        /// <summary>
+        ///     The time the last tracker update was sent to any tracker
+        /// </summary>
+        public DateTime LastUpdated { get; private set; }
+
+
+        /// <summary>
+        ///     The trackers available
+        /// </summary>
+        public IList<TrackerTier> TrackerTiers { get; }
+
+        private readonly List<TrackerTier> trackerTiers;
 
         #endregion
 
@@ -189,13 +150,13 @@ namespace MonoTorrent.Client.Tracker
                 return waitHandle;
             }
 
-            updateSucceeded = true;
-            lastUpdated = DateTime.Now;
+            UpdateSucceeded = true;
+            LastUpdated = DateTime.Now;
 
             var e = engine.Settings.AllowedEncryption;
             var requireEncryption = !Toolbox.HasEncryption(e, EncryptionTypes.PlainText);
             var supportsEncryption = Toolbox.HasEncryption(e, EncryptionTypes.RC4Full) ||
-                                      Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
+                                     Toolbox.HasEncryption(e, EncryptionTypes.RC4Header);
 
             requireEncryption = requireEncryption && ClientEngine.SupportsEncryption;
             supportsEncryption = supportsEncryption && ClientEngine.SupportsEncryption;
@@ -262,7 +223,7 @@ namespace MonoTorrent.Client.Tracker
 
         private void OnAnnounceComplete(object sender, AnnounceResponseEventArgs e)
         {
-            updateSucceeded = e.Successful;
+            UpdateSucceeded = e.Successful;
             if (manager.Engine == null)
             {
                 e.Id.WaitHandle.Set();
@@ -278,8 +239,8 @@ namespace MonoTorrent.Client.Tracker
                 var tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
                 if (tier != null)
                 {
-                    Toolbox.Switch<Tracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
-                    Toolbox.Switch<TrackerTier>(trackerTiers, 0, trackerTiers.IndexOf(tier));
+                    Toolbox.Switch(tier.Trackers, 0, tier.IndexOf(e.Tracker));
+                    Toolbox.Switch(trackerTiers, 0, trackerTiers.IndexOf(tier));
                 }
                 e.Id.WaitHandle.Set();
             }
@@ -326,15 +287,5 @@ namespace MonoTorrent.Client.Tracker
         }
 
         #endregion
-
-        public IEnumerator<TrackerTier> GetEnumerator()
-        {
-            return trackerTiers.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
     }
 }

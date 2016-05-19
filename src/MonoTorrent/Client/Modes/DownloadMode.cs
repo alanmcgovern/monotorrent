@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -9,15 +6,15 @@ namespace MonoTorrent.Client
     {
         private TorrentState state;
 
-        public override TorrentState State
-        {
-            get { return state; }
-        }
-
         public DownloadMode(TorrentManager manager)
             : base(manager)
         {
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
+        }
+
+        public override TorrentState State
+        {
+            get { return state; }
         }
 
         public override void HandlePeerConnected(PeerId id, Direction direction)

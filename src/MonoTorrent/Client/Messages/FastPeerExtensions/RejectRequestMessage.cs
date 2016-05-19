@@ -1,35 +1,4 @@
-//
-// RejectRequestMessage.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using System;
 using System.Text;
-using System.Net;
 using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages.FastPeer
@@ -42,34 +11,19 @@ namespace MonoTorrent.Client.Messages.FastPeer
         #region Member Variables
 
         /// <summary>
-        /// The offset in bytes of the block of data
+        ///     The offset in bytes of the block of data
         /// </summary>
-        public int StartOffset
-        {
-            get { return startOffset; }
-        }
-
-        private int startOffset;
+        public int StartOffset { get; private set; }
 
         /// <summary>
-        /// The index of the piece
+        ///     The index of the piece
         /// </summary>
-        public int PieceIndex
-        {
-            get { return pieceIndex; }
-        }
-
-        private int pieceIndex;
+        public int PieceIndex { get; private set; }
 
         /// <summary>
-        /// The length of the block of data
+        ///     The length of the block of data
         /// </summary>
-        public int RequestLength
-        {
-            get { return requestLength; }
-        }
-
-        private int requestLength;
+        public int RequestLength { get; private set; }
 
         #endregion
 
@@ -92,9 +46,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
         public RejectRequestMessage(int pieceIndex, int startOffset, int requestLength)
         {
-            this.pieceIndex = pieceIndex;
-            this.startOffset = startOffset;
-            this.requestLength = requestLength;
+            PieceIndex = pieceIndex;
+            StartOffset = startOffset;
+            RequestLength = requestLength;
         }
 
         #endregion
@@ -110,9 +64,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
             written += Write(buffer, written, messageLength);
             written += Write(buffer, written, MessageId);
-            written += Write(buffer, written, pieceIndex);
-            written += Write(buffer, written, startOffset);
-            written += Write(buffer, written, requestLength);
+            written += Write(buffer, written, PieceIndex);
+            written += Write(buffer, written, StartOffset);
+            written += Write(buffer, written, RequestLength);
 
             return CheckWritten(written - offset);
         }
@@ -123,9 +77,9 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            pieceIndex = ReadInt(buffer, ref offset);
-            startOffset = ReadInt(buffer, ref offset);
-            requestLength = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt(buffer, ref offset);
+            StartOffset = ReadInt(buffer, ref offset);
+            RequestLength = ReadInt(buffer, ref offset);
         }
 
         public override int ByteLength
@@ -143,17 +97,17 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (msg == null)
                 return false;
 
-            return pieceIndex == msg.pieceIndex
-                   && startOffset == msg.startOffset
-                   && requestLength == msg.requestLength;
+            return PieceIndex == msg.PieceIndex
+                   && StartOffset == msg.StartOffset
+                   && RequestLength == msg.RequestLength;
         }
 
 
         public override int GetHashCode()
         {
-            return pieceIndex.GetHashCode()
-                   ^ requestLength.GetHashCode()
-                   ^ startOffset.GetHashCode();
+            return PieceIndex.GetHashCode()
+                   ^ RequestLength.GetHashCode()
+                   ^ StartOffset.GetHashCode();
         }
 
 
@@ -162,11 +116,11 @@ namespace MonoTorrent.Client.Messages.FastPeer
             var sb = new StringBuilder(24);
             sb.Append("Reject Request");
             sb.Append(" Index: ");
-            sb.Append(pieceIndex);
+            sb.Append(PieceIndex);
             sb.Append(" Offset: ");
-            sb.Append(startOffset);
+            sb.Append(StartOffset);
             sb.Append(" Length ");
-            sb.Append(requestLength);
+            sb.Append(RequestLength);
             return sb.ToString();
         }
 

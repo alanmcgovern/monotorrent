@@ -1,69 +1,34 @@
-//
-// BitField.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
-    /// This class is for represting the Peer's bitfield
+    ///     This class is for represting the Peer's bitfield
     /// </summary>
     public class BitField : ICloneable, IEnumerable<bool>
     {
         #region Member Variables
 
-        private int[] array;
-        private int length;
-        private int trueCount;
+        private readonly int[] array;
 
         internal bool AllFalse
         {
-            get { return trueCount == 0; }
+            get { return TrueCount == 0; }
         }
 
         internal bool AllTrue
         {
-            get { return trueCount == length; }
+            get { return TrueCount == Length; }
         }
 
-        public int Length
-        {
-            get { return length; }
-        }
+        public int Length { get; }
 
         public double PercentComplete
         {
-            get { return (double) trueCount/length*100.0; }
+            get { return (double) TrueCount/Length*100.0; }
         }
 
         #endregion
@@ -81,13 +46,13 @@ namespace MonoTorrent.Common
             if (length < 0)
                 throw new ArgumentOutOfRangeException("length");
 
-            this.length = length;
+            Length = length;
             array = new int[(length + 31)/32];
         }
 
         public BitField(bool[] array)
         {
-            length = array.Length;
+            Length = array.Length;
             this.array = new int[(array.Length + 31)/32];
             for (var i = 0; i < array.Length; i++)
                 Set(i, array[i]);
@@ -110,9 +75,9 @@ namespace MonoTorrent.Common
 
         public BitField Clone()
         {
-            var b = new BitField(length);
+            var b = new BitField(Length);
             Buffer.BlockCopy(array, 0, b.array, 0, array.Length*4);
-            b.trueCount = trueCount;
+            b.TrueCount = TrueCount;
             return b;
         }
 
@@ -120,7 +85,7 @@ namespace MonoTorrent.Common
         {
             Check(value);
             Buffer.BlockCopy(value.array, 0, array, 0, array.Length*4);
-            trueCount = value.trueCount;
+            TrueCount = value.TrueCount;
             return this;
         }
 
@@ -129,7 +94,7 @@ namespace MonoTorrent.Common
             for (var i = 0; i < array.Length; i++)
                 array[i] = ~array[i];
 
-            trueCount = length - trueCount;
+            TrueCount = Length - TrueCount;
             return this;
         }
 
@@ -193,7 +158,7 @@ namespace MonoTorrent.Common
 
         public int FirstTrue()
         {
-            return FirstTrue(0, length);
+            return FirstTrue(0, Length);
         }
 
         public int FirstTrue(int startIndex, int endIndex)
@@ -212,7 +177,7 @@ namespace MonoTorrent.Common
                 start = i*32;
                 end = start + 32;
                 start = start < startIndex ? startIndex : start;
-                end = end > length ? length : end;
+                end = end > Length ? Length : end;
                 end = end > endIndex ? endIndex : end;
                 if (end == Length && end > 0)
                     end--;
@@ -246,7 +211,7 @@ namespace MonoTorrent.Common
                 start = i*32;
                 end = start + 32;
                 start = start < startIndex ? startIndex : start;
-                end = end > length ? length : end;
+                end = end > Length ? Length : end;
                 end = end > endIndex ? endIndex : end;
                 if (end == Length && end > 0)
                     end--;
@@ -279,7 +244,7 @@ namespace MonoTorrent.Common
 
         private bool Get(int index)
         {
-            if (index < 0 || index >= length)
+            if (index < 0 || index >= Length)
                 throw new ArgumentOutOfRangeException("index");
 
             return (array[index >> 5] & (1 << (31 - (index & 31)))) != 0;
@@ -287,7 +252,7 @@ namespace MonoTorrent.Common
 
         public IEnumerator<bool> GetEnumerator()
         {
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < Length; i++)
                 yield return Get(i);
         }
 
@@ -307,24 +272,24 @@ namespace MonoTorrent.Common
 
         public int LengthInBytes
         {
-            get { return (length + 7)/8; } //8 bits in a byte.
+            get { return (Length + 7)/8; } //8 bits in a byte.
         }
 
         public BitField Set(int index, bool value)
         {
-            if (index < 0 || index >= length)
+            if (index < 0 || index >= Length)
                 throw new ArgumentOutOfRangeException("index");
 
             if (value)
             {
                 if ((array[index >> 5] & (1 << (31 - (index & 31)))) == 0) // If it's not already true
-                    trueCount++; // Increase true count
+                    TrueCount++; // Increase true count
                 array[index >> 5] |= 1 << (31 - index & 31);
             }
             else
             {
                 if ((array[index >> 5] & (1 << (31 - (index & 31)))) != 0) // If it's not already false
-                    trueCount--; // Decrease true count
+                    TrueCount--; // Decrease true count
                 array[index >> 5] &= ~(1 << (31 - (index & 31)));
             }
 
@@ -358,7 +323,7 @@ namespace MonoTorrent.Common
             {
                 for (var i = 0; i < array.Length; i++)
                     array[i] = 0;
-                trueCount = 0;
+                TrueCount = 0;
             }
 
             return this;
@@ -406,10 +371,7 @@ namespace MonoTorrent.Common
             return sb.ToString(0, sb.Length - 1);
         }
 
-        public int TrueCount
-        {
-            get { return trueCount; }
-        }
+        public int TrueCount { get; private set; }
 
         private void Validate()
         {
@@ -424,7 +386,7 @@ namespace MonoTorrent.Common
                 v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
                 count += (v + (v >> 4) & 0xF0F0F0F)*0x1010101 >> 24;
             }
-            trueCount = (int) count;
+            TrueCount = (int) count;
         }
 
         private void ZeroUnusedBits()
@@ -433,7 +395,7 @@ namespace MonoTorrent.Common
                 return;
 
             // Zero the unused bits
-            var shift = 32 - length%32;
+            var shift = 32 - Length%32;
             if (shift != 0)
                 array[array.Length - 1] &= -1 << shift;
         }
@@ -441,7 +403,7 @@ namespace MonoTorrent.Common
         private void Check(BitField value)
         {
             MonoTorrent.Check.Value(value);
-            if (length != value.length)
+            if (Length != value.Length)
                 throw new ArgumentException("BitFields are of different lengths", "value");
         }
 

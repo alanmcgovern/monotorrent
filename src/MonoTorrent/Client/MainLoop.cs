@@ -1,35 +1,5 @@
-//
-// MainLoop.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using Mono.Ssdp.Internal;
 using MonoTorrent.Common;
@@ -46,110 +16,11 @@ namespace MonoTorrent.Client
 
     public class MainLoop
     {
-        private class DelegateTask : ICacheable
-        {
-            private ManualResetEvent handle;
-            private bool isBlocking;
-            private MainLoopJob job;
-            private object jobResult;
-            private Exception storedException;
-            private MainLoopTask task;
-            private TimeoutTask timeout;
-            private bool timeoutResult;
+        private readonly ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
 
-            public bool IsBlocking
-            {
-                get { return isBlocking; }
-                set { isBlocking = value; }
-            }
-
-            public MainLoopJob Job
-            {
-                get { return job; }
-                set { job = value; }
-            }
-
-            public Exception StoredException
-            {
-                get { return storedException; }
-                set { storedException = value; }
-            }
-
-            public MainLoopTask Task
-            {
-                get { return task; }
-                set { task = value; }
-            }
-
-            public TimeoutTask Timeout
-            {
-                get { return timeout; }
-                set { timeout = value; }
-            }
-
-            public object JobResult
-            {
-                get { return jobResult; }
-            }
-
-            public bool TimeoutResult
-            {
-                get { return timeoutResult; }
-            }
-
-            public ManualResetEvent WaitHandle
-            {
-                get { return handle; }
-            }
-
-            public DelegateTask()
-            {
-                handle = new ManualResetEvent(false);
-            }
-
-            public void Execute()
-            {
-                try
-                {
-                    if (job != null)
-                        jobResult = job();
-                    else if (task != null)
-                        task();
-                    else if (timeout != null)
-                        timeoutResult = timeout();
-                }
-                catch (Exception ex)
-                {
-                    storedException = ex;
-
-                    // FIXME: I assume this case can't happen. The only user interaction
-                    // with the mainloop is with blocking tasks. Internally it's a big bug
-                    // if i allow an exception to propagate to the mainloop.
-                    if (!IsBlocking)
-                        throw;
-                }
-                finally
-                {
-                    handle.Set();
-                }
-            }
-
-            public void Initialise()
-            {
-                isBlocking = false;
-                job = null;
-                jobResult = null;
-                storedException = null;
-                task = null;
-                timeout = null;
-                timeoutResult = false;
-            }
-        }
-
-        private TimeoutDispatcher dispatcher = new TimeoutDispatcher();
-        private AutoResetEvent handle = new AutoResetEvent(false);
-        private ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
-        private Queue<DelegateTask> tasks = new Queue<DelegateTask>();
+        private readonly TimeoutDispatcher dispatcher = new TimeoutDispatcher();
+        private readonly AutoResetEvent handle = new AutoResetEvent(false);
+        private readonly Queue<DelegateTask> tasks = new Queue<DelegateTask>();
         internal Thread thread;
 
         public MainLoop(string name)
@@ -266,6 +137,68 @@ namespace MonoTorrent.Client
         public AsyncCallback Wrap(AsyncCallback callback)
         {
             return delegate(IAsyncResult result) { Queue(delegate { callback(result); }); };
+        }
+
+        private class DelegateTask : ICacheable
+        {
+            public DelegateTask()
+            {
+                WaitHandle = new ManualResetEvent(false);
+            }
+
+            public bool IsBlocking { get; set; }
+
+            public MainLoopJob Job { get; set; }
+
+            public Exception StoredException { get; set; }
+
+            public MainLoopTask Task { get; set; }
+
+            public TimeoutTask Timeout { get; set; }
+
+            public object JobResult { get; private set; }
+
+            public bool TimeoutResult { get; private set; }
+
+            public ManualResetEvent WaitHandle { get; }
+
+            public void Initialise()
+            {
+                IsBlocking = false;
+                Job = null;
+                JobResult = null;
+                StoredException = null;
+                Task = null;
+                Timeout = null;
+                TimeoutResult = false;
+            }
+
+            public void Execute()
+            {
+                try
+                {
+                    if (Job != null)
+                        JobResult = Job();
+                    else if (Task != null)
+                        Task();
+                    else if (Timeout != null)
+                        TimeoutResult = Timeout();
+                }
+                catch (Exception ex)
+                {
+                    StoredException = ex;
+
+                    // FIXME: I assume this case can't happen. The only user interaction
+                    // with the mainloop is with blocking tasks. Internally it's a big bug
+                    // if i allow an exception to propagate to the mainloop.
+                    if (!IsBlocking)
+                        throw;
+                }
+                finally
+                {
+                    WaitHandle.Set();
+                }
+            }
         }
     }
 }

@@ -29,22 +29,16 @@
 
 
 using System;
-using System.Net;
 using System.Collections.Generic;
-using System.Runtime.Serialization.Formatters.Binary;
-using MonoTorrent;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
 using MonoTorrent.BEncoding;
-using System.IO;
+using MonoTorrent.Client;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    internal enum ErrorCode : int
+    internal enum ErrorCode
     {
         GenericError = 201,
         ServerError = 202,
@@ -54,6 +48,20 @@ namespace MonoTorrent.Dht
 
     public class DhtEngine : IDisposable, IDhtEngine
     {
+        #region Constructors
+
+        public DhtEngine(DhtListener listener)
+        {
+            if (listener == null)
+                throw new ArgumentNullException("listener");
+
+            MessageLoop = new MessageLoop(this, listener);
+            TimeOut = TimeSpan.FromSeconds(15); // 15 second message timeout by default
+            TokenManager = new TokenManager();
+        }
+
+        #endregion Constructors
+
         #region Events
 
         public event EventHandler<PeersFoundEventArgs> PeersFound;
@@ -65,88 +73,34 @@ namespace MonoTorrent.Dht
 
         internal static MainLoop MainLoop = new MainLoop("DhtLoop");
 
-        private bool bootStrap = true;
-        private TimeSpan bucketRefreshTimeout = TimeSpan.FromMinutes(15);
-        private bool disposed;
-        private MessageLoop messageLoop;
-        private DhtState state = DhtState.NotReady;
-        private RoutingTable table = new RoutingTable();
-        private TimeSpan timeout;
-        private Dictionary<NodeId, List<Node>> torrents = new Dictionary<NodeId, List<Node>>();
-        private TokenManager tokenManager;
-
         #endregion Fields
 
         #region Properties
 
-        internal bool Bootstrap
-        {
-            get { return bootStrap; }
-            set { bootStrap = value; }
-        }
+        internal bool Bootstrap { get; set; } = true;
 
-        internal TimeSpan BucketRefreshTimeout
-        {
-            get { return bucketRefreshTimeout; }
-            set { bucketRefreshTimeout = value; }
-        }
+        internal TimeSpan BucketRefreshTimeout { get; set; } = TimeSpan.FromMinutes(15);
 
-        public bool Disposed
-        {
-            get { return disposed; }
-        }
+        public bool Disposed { get; private set; }
 
         internal NodeId LocalId
         {
             get { return RoutingTable.LocalNode.Id; }
         }
 
-        internal MessageLoop MessageLoop
-        {
-            get { return messageLoop; }
-        }
+        internal MessageLoop MessageLoop { get; }
 
-        internal RoutingTable RoutingTable
-        {
-            get { return table; }
-        }
+        internal RoutingTable RoutingTable { get; } = new RoutingTable();
 
-        public DhtState State
-        {
-            get { return state; }
-        }
+        public DhtState State { get; private set; } = DhtState.NotReady;
 
-        internal TimeSpan TimeOut
-        {
-            get { return timeout; }
-            set { timeout = value; }
-        }
+        internal TimeSpan TimeOut { get; set; }
 
-        internal TokenManager TokenManager
-        {
-            get { return tokenManager; }
-        }
+        internal TokenManager TokenManager { get; }
 
-        internal Dictionary<NodeId, List<Node>> Torrents
-        {
-            get { return torrents; }
-        }
+        internal Dictionary<NodeId, List<Node>> Torrents { get; } = new Dictionary<NodeId, List<Node>>();
 
         #endregion Properties
-
-        #region Constructors
-
-        public DhtEngine(DhtListener listener)
-        {
-            if (listener == null)
-                throw new ArgumentNullException("listener");
-
-            messageLoop = new MessageLoop(this, listener);
-            timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
-            tokenManager = new TokenManager();
-        }
-
-        #endregion Constructors
 
         #region Methods
 
@@ -193,11 +147,11 @@ namespace MonoTorrent.Dht
 
         public void Dispose()
         {
-            if (disposed)
+            if (Disposed)
                 return;
 
             // Ensure we don't break any threads actively running right now
-            MainLoop.QueueWait((MainLoopTask) delegate { disposed = true; });
+            MainLoop.QueueWait(delegate { Disposed = true; });
         }
 
         public void GetPeers(InfoHash infoHash)
@@ -209,7 +163,7 @@ namespace MonoTorrent.Dht
 
         internal void RaiseStateChanged(DhtState newState)
         {
-            state = newState;
+            State = newState;
 
             if (StateChanged != null)
                 StateChanged(this, EventArgs.Empty);
@@ -225,7 +179,7 @@ namespace MonoTorrent.Dht
         {
             var details = new BEncodedList();
 
-            MainLoop.QueueWait((MainLoopTask) delegate
+            MainLoop.QueueWait(delegate
             {
                 foreach (var b in RoutingTable.Buckets)
                 {
@@ -251,12 +205,12 @@ namespace MonoTorrent.Dht
         {
             CheckDisposed();
 
-            messageLoop.Start();
+            MessageLoop.Start();
             if (Bootstrap)
             {
                 new InitialiseTask(this, initialNodes).Execute();
                 RaiseStateChanged(DhtState.Initialising);
-                bootStrap = false;
+                Bootstrap = false;
             }
             else
             {
@@ -283,7 +237,7 @@ namespace MonoTorrent.Dht
 
         public void Stop()
         {
-            messageLoop.Stop();
+            MessageLoop.Stop();
         }
 
         #endregion Methods

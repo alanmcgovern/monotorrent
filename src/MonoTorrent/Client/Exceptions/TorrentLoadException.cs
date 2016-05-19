@@ -1,5 +1,5 @@
 using System;
-using System.Text;
+using System.Runtime.Serialization;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -7,7 +7,6 @@ namespace MonoTorrent.Client
     public class TorrentLoadException : TorrentException
     {
         public TorrentLoadException()
-            : base()
         {
         }
 
@@ -24,8 +23,8 @@ namespace MonoTorrent.Client
         }
 
 
-        public TorrentLoadException(System.Runtime.Serialization.SerializationInfo info,
-            System.Runtime.Serialization.StreamingContext context)
+        public TorrentLoadException(SerializationInfo info,
+            StreamingContext context)
             : base(info, context)
         {
         }

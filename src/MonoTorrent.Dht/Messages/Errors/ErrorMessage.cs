@@ -28,13 +28,7 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht;
-
 
 namespace MonoTorrent.Dht.Messages
 {
@@ -43,9 +37,23 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
 
+        public ErrorMessage(ErrorCode error, string message)
+            : base(ErrorType)
+        {
+            var l = new BEncodedList();
+            l.Add(new BEncodedNumber((int) error));
+            l.Add(new BEncodedString(message));
+            properties.Add(ErrorListKey, l);
+        }
+
+        public ErrorMessage(BEncodedDictionary d)
+            : base(d)
+        {
+        }
+
         internal override NodeId Id
         {
-            get { return new NodeId((BEncodedString) ""); }
+            get { return new NodeId(""); }
         }
 
         private BEncodedList ErrorList
@@ -61,20 +69,6 @@ namespace MonoTorrent.Dht.Messages
         private string Message
         {
             get { return ((BEncodedString) ErrorList[1]).Text; }
-        }
-
-        public ErrorMessage(ErrorCode error, string message)
-            : base(ErrorType)
-        {
-            var l = new BEncodedList();
-            l.Add(new BEncodedNumber((int) error));
-            l.Add(new BEncodedString(message));
-            properties.Add(ErrorListKey, l);
-        }
-
-        public ErrorMessage(BEncodedDictionary d)
-            : base(d)
-        {
         }
 
         public override void Handle(DhtEngine engine, Node node)

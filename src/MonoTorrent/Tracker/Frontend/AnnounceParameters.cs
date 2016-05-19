@@ -1,38 +1,8 @@
-//
-// AnnounceParameters.cs
-//
-// Authors:
-//   Gregor Burger burger.gregor@gmail.com
-//
-// Copyright (C) 2006 Gregor Burger
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-using System;
-using MonoTorrent.Common;
-using System.Collections.Specialized;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
-using System.Web;
+using System.Collections.Specialized;
 using System.Net;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
@@ -46,14 +16,26 @@ namespace MonoTorrent.Tracker
         // FIXME: Expose these as configurable options
         internal static readonly int DefaultWanted = 30;
         internal static readonly bool UseTrackerKey = false;
-        private IPEndPoint clientAddress;
         private bool isValid;
-        private InfoHash infoHash;
 
-        public IPEndPoint ClientAddress
+
+        public AnnounceParameters(NameValueCollection collection, IPAddress address)
+            : base(collection, address)
         {
-            get { return clientAddress; }
+            CheckMandatoryFields();
+            if (!isValid)
+                return;
+
+            /* If the user has supplied an IP address, we use that instead of
+             * the IP address we read from the announce request connection. */
+            IPAddress supplied;
+            if (IPAddress.TryParse(Parameters["ip"] ?? "", out supplied) && !supplied.Equals(IPAddress.Any))
+                ClientAddress = new IPEndPoint(supplied, Port);
+            else
+                ClientAddress = new IPEndPoint(address, Port);
         }
+
+        public IPEndPoint ClientAddress { get; }
 
         public int Downloaded
         {
@@ -89,10 +71,7 @@ namespace MonoTorrent.Tracker
             get { return ParseInt("compact") == 1; }
         }
 
-        public InfoHash InfoHash
-        {
-            get { return infoHash; }
-        }
+        public InfoHash InfoHash { get; private set; }
 
         public string Key
         {
@@ -134,23 +113,6 @@ namespace MonoTorrent.Tracker
         }
 
 
-        public AnnounceParameters(NameValueCollection collection, IPAddress address)
-            : base(collection, address)
-        {
-            CheckMandatoryFields();
-            if (!isValid)
-                return;
-
-            /* If the user has supplied an IP address, we use that instead of
-             * the IP address we read from the announce request connection. */
-            IPAddress supplied;
-            if (IPAddress.TryParse(Parameters["ip"] ?? "", out supplied) && !supplied.Equals(IPAddress.Any))
-                clientAddress = new IPEndPoint(supplied, Port);
-            else
-                clientAddress = new IPEndPoint(address, Port);
-        }
-
-
         private void CheckMandatoryFields()
         {
             isValid = false;
@@ -173,7 +135,7 @@ namespace MonoTorrent.Tracker
                         string.Format("infohash was {0} bytes long, it must be 20 bytes long.", hash.Length));
                 return;
             }
-            infoHash = new InfoHash(hash);
+            InfoHash = new InfoHash(hash);
             isValid = true;
         }
 
@@ -187,7 +149,7 @@ namespace MonoTorrent.Tracker
             var other = obj as AnnounceParameters;
             return other == null
                 ? false
-                : other.clientAddress.Equals(clientAddress)
+                : other.ClientAddress.Equals(ClientAddress)
                   && other.Port.Equals(Port);
         }
 

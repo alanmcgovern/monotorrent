@@ -1,7 +1,5 @@
 #if !DISABLE_DHT
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 
 namespace MonoTorrent.Dht

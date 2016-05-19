@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -15,38 +13,29 @@ namespace MonoTorrent.Client
 
     public class Error
     {
-        private Exception exception;
-        private Reason reason;
-
         public Error(Reason reason, Exception exception)
         {
-            this.reason = reason;
-            this.exception = exception;
+            Reason = reason;
+            Exception = exception;
         }
 
-        public Exception Exception
-        {
-            get { return exception; }
-        }
+        public Exception Exception { get; }
 
-        public Reason Reason
-        {
-            get { return reason; }
-        }
+        public Reason Reason { get; }
     }
 
     internal class ErrorMode : Mode
     {
-        public override TorrentState State
-        {
-            get { return TorrentState.Error; }
-        }
-
         public ErrorMode(TorrentManager manager)
             : base(manager)
         {
             CanAcceptConnections = false;
             CloseConnections();
+        }
+
+        public override TorrentState State
+        {
+            get { return TorrentState.Error; }
         }
 
         public override void Tick(int counter)

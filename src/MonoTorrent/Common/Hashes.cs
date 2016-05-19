@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MonoTorrent.Common
 {
@@ -9,45 +7,41 @@ namespace MonoTorrent.Common
         #region Constants
 
         /// <summary>
-        /// Hash code length (in bytes)
+        ///     Hash code length (in bytes)
         /// </summary>
         internal static readonly int HashCodeLength = 20;
 
         #endregion
-
-        #region Private Fields
-
-        private int count;
-        private byte[] hashData;
-
-        #endregion Private Fields
-
-        #region Properties
-
-        /// <summary>
-        /// Number of Hashes (equivalent to number of Pieces)
-        /// </summary>
-        public int Count
-        {
-            get { return count; }
-        }
-
-        #endregion Properties
 
         #region Constructors
 
         internal Hashes(byte[] hashData, int count)
         {
             this.hashData = hashData;
-            this.count = count;
+            Count = count;
         }
 
         #endregion Constructors
 
+        #region Properties
+
+        /// <summary>
+        ///     Number of Hashes (equivalent to number of Pieces)
+        /// </summary>
+        public int Count { get; }
+
+        #endregion Properties
+
+        #region Private Fields
+
+        private readonly byte[] hashData;
+
+        #endregion Private Fields
+
         #region Methods
 
         /// <summary>
-        /// Determine whether a calculated hash is equal to our stored hash
+        ///     Determine whether a calculated hash is equal to our stored hash
         /// </summary>
         /// <param name="hash">Hash code to check</param>
         /// <param name="hashIndex">Index of hash/piece to verify against</param>
@@ -60,9 +54,9 @@ namespace MonoTorrent.Common
             if (hash.Length != HashCodeLength)
                 throw new ArgumentException(string.Format("Hash must be {0} bytes in length", HashCodeLength), "hash");
 
-            if (hashIndex < 0 || hashIndex > count)
+            if (hashIndex < 0 || hashIndex > Count)
                 throw new ArgumentOutOfRangeException("hashIndex",
-                    string.Format("hashIndex must be between 0 and {0}", count));
+                    string.Format("hashIndex must be between 0 and {0}", Count));
 
             var start = hashIndex*HashCodeLength;
             for (var i = 0; i < HashCodeLength; i++)
@@ -73,13 +67,13 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Returns the hash for a specific piece
+        ///     Returns the hash for a specific piece
         /// </summary>
         /// <param name="hashIndex">Piece/hash index to return</param>
         /// <returns>byte[] (length HashCodeLength) containing hashdata</returns>
         public byte[] ReadHash(int hashIndex)
         {
-            if (hashIndex < 0 || hashIndex >= count)
+            if (hashIndex < 0 || hashIndex >= Count)
                 throw new ArgumentOutOfRangeException("hashIndex");
 
             // Read out our specified piece's hash data

@@ -1,136 +1,24 @@
-//
-// ConnectionManager.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using MonoTorrent.Common;
-using System.Net.Sockets;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Net;
-using MonoTorrent.Client.Messages;
+using System.Threading;
 using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal delegate void MessagingCallback(PeerId id);
 
     /// <summary>
-    /// Main controller class for all incoming and outgoing connections
+    ///     Main controller class for all incoming and outgoing connections
     /// </summary>
     public class ConnectionManager
     {
-        #region Events
-
-        public event EventHandler<AttemptConnectionEventArgs> BanPeer;
-
-        /// <summary>
-        /// Event that's fired every time a message is sent or Received from a Peer
-        /// </summary>
-        public event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
-
-        #endregion
-
-        #region Member Variables
-
-        private ClientEngine engine;
-
-        internal static readonly int ChunkLength = 2096 + 64;
-            // Download in 2kB chunks to allow for better rate limiting
-
-        // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
-        private AsyncMessageReceivedCallback peerHandshakeReceivedCallback;
-        private MessagingCallback handshakeSentCallback;
-        private MessagingCallback messageSentCallback;
-
-        private AsyncCallback endCheckEncryptionCallback;
-        private AsyncIOCallback endCreateConnectionCallback;
-        internal AsyncIOCallback incomingConnectionAcceptedCallback;
-        private AsyncIOCallback endSendMessageCallback;
-        internal AsyncMessageReceivedCallback messageReceivedCallback;
-
-        private List<AsyncConnectState> pendingConnects;
-
-        /// <summary>
-        /// The number of half open connections
-        /// </summary>
-        public int HalfOpenConnections
-        {
-            get { return NetworkIO.HalfOpens; }
-        }
-
-
-        /// <summary>
-        /// The maximum number of half open connections
-        /// </summary>
-        public int MaxHalfOpenConnections
-        {
-            get { return engine.Settings.GlobalMaxHalfOpenConnections; }
-        }
-
-
-        /// <summary>
-        /// The number of open connections
-        /// </summary>
-        public int OpenConnections
-        {
-            get
-            {
-                return (int) ClientEngine.MainLoop.QueueWait(() =>
-                    (int) Toolbox.Accumulate<TorrentManager>(engine.Torrents, (m) =>
-                        m.Peers.ConnectedPeers.Count
-                        )
-                    );
-            }
-        }
-
-
-        /// <summary>
-        /// The maximum number of open connections
-        /// </summary>
-        public int MaxOpenConnections
-        {
-            get { return engine.Settings.GlobalMaxConnections; }
-        }
-
-        private int TryConnectIndex { get; set; }
-
-        #endregion
-
         #region Constructors
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="settings"></param>
         public ConnectionManager(ClientEngine engine)
@@ -152,6 +40,83 @@ namespace MonoTorrent.Client
 
             pendingConnects = new List<AsyncConnectState>();
         }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<AttemptConnectionEventArgs> BanPeer;
+
+        /// <summary>
+        ///     Event that's fired every time a message is sent or Received from a Peer
+        /// </summary>
+        public event EventHandler<PeerMessageEventArgs> PeerMessageTransferred;
+
+        #endregion
+
+        #region Member Variables
+
+        private readonly ClientEngine engine;
+
+        internal static readonly int ChunkLength = 2096 + 64;
+        // Download in 2kB chunks to allow for better rate limiting
+
+        // Create the callbacks and reuse them. Reduces ongoing allocations by a fair few megs
+        private readonly AsyncMessageReceivedCallback peerHandshakeReceivedCallback;
+        private readonly MessagingCallback handshakeSentCallback;
+        private readonly MessagingCallback messageSentCallback;
+
+        private readonly AsyncCallback endCheckEncryptionCallback;
+        private readonly AsyncIOCallback endCreateConnectionCallback;
+        internal AsyncIOCallback incomingConnectionAcceptedCallback;
+        private readonly AsyncIOCallback endSendMessageCallback;
+        internal AsyncMessageReceivedCallback messageReceivedCallback;
+
+        private readonly List<AsyncConnectState> pendingConnects;
+
+        /// <summary>
+        ///     The number of half open connections
+        /// </summary>
+        public int HalfOpenConnections
+        {
+            get { return NetworkIO.HalfOpens; }
+        }
+
+
+        /// <summary>
+        ///     The maximum number of half open connections
+        /// </summary>
+        public int MaxHalfOpenConnections
+        {
+            get { return engine.Settings.GlobalMaxHalfOpenConnections; }
+        }
+
+
+        /// <summary>
+        ///     The number of open connections
+        /// </summary>
+        public int OpenConnections
+        {
+            get
+            {
+                return (int) ClientEngine.MainLoop.QueueWait(() =>
+                    (int) Toolbox.Accumulate(engine.Torrents, m =>
+                        m.Peers.ConnectedPeers.Count
+                        )
+                    );
+            }
+        }
+
+
+        /// <summary>
+        ///     The maximum number of open connections
+        /// </summary>
+        public int MaxOpenConnections
+        {
+            get { return engine.Settings.GlobalMaxConnections; }
+        }
+
+        private int TryConnectIndex { get; set; }
 
         #endregion
 
@@ -349,7 +314,7 @@ namespace MonoTorrent.Client
 
             // Fire the event to let the user know a message was sent
             RaisePeerMessageTransferred(new PeerMessageEventArgs(id.TorrentManager,
-                (PeerMessage) id.CurrentlySendingMessage, Direction.Outgoing, id));
+                id.CurrentlySendingMessage, Direction.Outgoing, id));
 
             id.LastMessageSent = DateTime.Now;
             ProcessQueue(id);
@@ -399,7 +364,7 @@ namespace MonoTorrent.Client
 
                 // We can reuse this peer if the connection says so and it's not marked as inactive
                 var canResuse = id.Connection.CanReconnect &&
-                                 !id.TorrentManager.InactivePeerManager.InactivePeerList.Contains(id.Uri);
+                                !id.TorrentManager.InactivePeerManager.InactivePeerList.Contains(id.Uri);
                 Logger.Log(id.Connection, "Cleanup Reason : " + message);
 
                 Logger.Log(id.Connection, "*******Cleaning up*******");
@@ -443,7 +408,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// This method is called when a connection needs to be closed and the resources for it released.
+        ///     This method is called when a connection needs to be closed and the resources for it released.
         /// </summary>
         /// <param name="id">The peer whose connection needs to be closed</param>
         internal void CleanupSocket(PeerId id, string message)
@@ -453,7 +418,7 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
-        /// This method is called when the ClientEngine recieves a valid incoming connection
+        ///     This method is called when the ClientEngine recieves a valid incoming connection
         /// </summary>
         /// <param name="result"></param>
         private void IncomingConnectionAccepted(bool succeeded, int count, object state)
@@ -470,7 +435,7 @@ namespace MonoTorrent.Client
                 }
 
                 var maxAlreadyOpen = OpenConnections >=
-                                      Math.Min(MaxOpenConnections, id.TorrentManager.Settings.MaxConnections);
+                                     Math.Min(MaxOpenConnections, id.TorrentManager.Settings.MaxConnections);
                 if (!succeeded || id.Peer.PeerId == engine.PeerId || maxAlreadyOpen)
                 {
                     CleanupSocket(id, "Connection was not accepted");
@@ -516,7 +481,7 @@ namespace MonoTorrent.Client
 
             try
             {
-                var e = new PeerMessageEventArgs(id.TorrentManager, (PeerMessage) message,
+                var e = new PeerMessageEventArgs(id.TorrentManager, message,
                     Direction.Incoming, id);
                 id.ConnectionManager.RaisePeerMessageTransferred(e);
 
@@ -616,7 +581,6 @@ namespace MonoTorrent.Client
                     if (TryConnect(engine.Torrents[i]))
                     {
                         TryConnectIndex = (i + 1)%engine.Torrents.Count;
-                        continue;
                     }
                 }
 

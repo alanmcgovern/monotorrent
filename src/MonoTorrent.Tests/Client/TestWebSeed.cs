@@ -1,45 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Client.Connections;
 using System.Net;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client;
-using System.Threading;
-using MonoTorrent.Client.Messages;
 using System.Text.RegularExpressions;
-using MonoTorrent.Common;
+using System.Threading;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class TestWebSeed : IDisposable
     {
-        private Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
-        //static void Main(string[] args)
-        //{
-        //    TestWebSeed s = new TestWebSeed();
-        //    for (int i = 0; i < 50; i++)
-        //    {
-        //        s.Setup();
-        //        s.SingleFileTorrent();
-        //        s.TearDown();
-        //    }
-        //}
-
-        private bool partialData;
-        public readonly int Count = 5;
-        private TestRig rig;
-        private HttpConnection connection;
-        private HttpListener listener;
-        //private RequestMessage m;
-        private string listenerURL = "http://127.0.0.1:120/announce/";
-        private int amountSent;
-
-        private PeerId id;
-        private MessageBundle requests;
-        private int numberOfPieces = 50;
-
         public TestWebSeed()
         {
             requestedUrl.Clear();
@@ -79,78 +51,30 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
-        [Fact]
-        public void TestPartialData()
-        {
-            partialData = true;
-            Assert.Throws<WebException>(() => RecieveFirst());
-        }
+        private readonly Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
+        //static void Main(string[] args)
+        //{
+        //    TestWebSeed s = new TestWebSeed();
+        //    for (int i = 0; i < 50; i++)
+        //    {
+        //        s.Setup();
+        //        s.SingleFileTorrent();
+        //        s.TearDown();
+        //    }
+        //}
 
-        [Fact]
-        public void TestInactiveServer()
-        {
-            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
-            listener.Stop();
-            Assert.Throws<WebException>(() => RecieveFirst());
-        }
+        private bool partialData;
+        public readonly int Count = 5;
+        private TestRig rig;
+        private HttpConnection connection;
+        private readonly HttpListener listener;
+        //private RequestMessage m;
+        private readonly string listenerURL = "http://127.0.0.1:120/announce/";
+        private int amountSent;
 
-        [Fact]
-        public void RecieveFirst()
-        {
-            var buffer = new byte[1024*1024*3];
-            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-            var sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
-            amountSent = requests.ByteLength;
-
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
-        }
-
-        [Fact]
-        public void SendFirst()
-        {
-            var buffer = new byte[1024*1024*3];
-            var sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
-            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-            amountSent = requests.ByteLength;
-
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
-        }
-
-        [Fact]
-        public void ChunkedRequest()
-        {
-            if (requests.Messages.Count != 0)
-                rig.Manager.PieceManager.Picker.CancelRequests(id);
-
-            requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), 256);
-
-            var sendBuffer = requests.Encode();
-            var offset = 0;
-            amountSent = Math.Min(sendBuffer.Length - offset, 2048);
-            var sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
-            while (sendResult.AsyncWaitHandle.WaitOne(10, true))
-            {
-                Assert.Equal(amountSent, connection.EndSend(sendResult));
-                offset += amountSent;
-                amountSent = Math.Min(sendBuffer.Length - offset, 2048);
-                if (amountSent == 0)
-                    Assert.True(false, "This should never happen");
-                sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
-            }
-
-            var buffer = new byte[1024*1024*3];
-            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
-        }
-
-        [Fact]
-        public void MultipleChunkedRequests()
-        {
-            ChunkedRequest();
-            ChunkedRequest();
-            ChunkedRequest();
-        }
+        private PeerId id;
+        private MessageBundle requests;
+        private readonly int numberOfPieces = 50;
 
         private void CompleteSendOrReceiveFirst(byte[] buffer, IAsyncResult receiveResult, IAsyncResult sendResult)
         {
@@ -189,10 +113,7 @@ namespace MonoTorrent.Client
                     Assert.Equal(connection.EndSend(sendResult), amountSent);
                     break;
                 }
-                else
-                {
-                    receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-                }
+                receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
             }
 
             var baseUri = new Uri(listenerURL);
@@ -204,7 +125,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        private List<string> requestedUrl = new List<string>();
+        private readonly List<string> requestedUrl = new List<string>();
 
         private void GotContext(IAsyncResult result)
         {
@@ -270,6 +191,69 @@ namespace MonoTorrent.Client
             }
         }
 
+        private void Wait(WaitHandle handle)
+        {
+            Assert.True(handle.WaitOne(5000, true), "WaitHandle did not trigger");
+        }
+
+        [Fact]
+        public void ChunkedRequest()
+        {
+            if (requests.Messages.Count != 0)
+                rig.Manager.PieceManager.Picker.CancelRequests(id);
+
+            requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), 256);
+
+            var sendBuffer = requests.Encode();
+            var offset = 0;
+            amountSent = Math.Min(sendBuffer.Length - offset, 2048);
+            var sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
+            while (sendResult.AsyncWaitHandle.WaitOne(10, true))
+            {
+                Assert.Equal(amountSent, connection.EndSend(sendResult));
+                offset += amountSent;
+                amountSent = Math.Min(sendBuffer.Length - offset, 2048);
+                if (amountSent == 0)
+                    Assert.True(false, "This should never happen");
+                sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
+            }
+
+            var buffer = new byte[1024*1024*3];
+            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+
+            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+        }
+
+        [Fact]
+        public void MultipleChunkedRequests()
+        {
+            ChunkedRequest();
+            ChunkedRequest();
+            ChunkedRequest();
+        }
+
+        [Fact]
+        public void RecieveFirst()
+        {
+            var buffer = new byte[1024*1024*3];
+            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+            var sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
+            amountSent = requests.ByteLength;
+
+            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+        }
+
+        [Fact]
+        public void SendFirst()
+        {
+            var buffer = new byte[1024*1024*3];
+            var sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
+            var receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
+            amountSent = requests.ByteLength;
+
+            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+        }
+
         [Fact]
         public void SingleFileTorrent()
         {
@@ -291,9 +275,19 @@ namespace MonoTorrent.Client
             Assert.Equal(url, requestedUrl[0]);
         }
 
-        private void Wait(WaitHandle handle)
+        [Fact]
+        public void TestInactiveServer()
         {
-            Assert.True(handle.WaitOne(5000, true), "WaitHandle did not trigger");
+            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
+            listener.Stop();
+            Assert.Throws<WebException>(() => RecieveFirst());
+        }
+
+        [Fact]
+        public void TestPartialData()
+        {
+            partialData = true;
+            Assert.Throws<WebException>(() => RecieveFirst());
         }
     }
 }

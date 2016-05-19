@@ -1,63 +1,14 @@
-//
-// LoggingPicker.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2009 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal class LoggingPicker : PiecePicker
     {
-        private class Request : IComparable<Request>
-        {
-            public int PieceIndex;
-            public int StartOffset;
-            public int RequestLength;
-            public PeerId RequestedOff;
-            public bool Verified;
-
-            public int CompareTo(Request other)
-            {
-                int difference;
-                if ((difference = PieceIndex.CompareTo(other.PieceIndex)) != 0)
-                    return difference;
-                if ((difference = StartOffset.CompareTo(other.StartOffset)) != 0)
-                    return difference;
-                return RequestLength.CompareTo(other.RequestLength);
-            }
-        }
-
-        private SortList<Request> requests = new SortList<Request>();
+        private readonly SortList<Request> requests = new SortList<Request>();
 
         public LoggingPicker(PiecePicker picker)
             : base(picker)
@@ -172,6 +123,25 @@ namespace MonoTorrent.Client
             }
 
             return validatedOk;
+        }
+
+        private class Request : IComparable<Request>
+        {
+            public int PieceIndex;
+            public PeerId RequestedOff;
+            public int RequestLength;
+            public int StartOffset;
+            public bool Verified;
+
+            public int CompareTo(Request other)
+            {
+                int difference;
+                if ((difference = PieceIndex.CompareTo(other.PieceIndex)) != 0)
+                    return difference;
+                if ((difference = StartOffset.CompareTo(other.StartOffset)) != 0)
+                    return difference;
+                return RequestLength.CompareTo(other.RequestLength);
+            }
         }
     }
 }

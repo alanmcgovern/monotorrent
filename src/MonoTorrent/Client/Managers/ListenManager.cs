@@ -1,76 +1,32 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
-using System.Net.Sockets;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Instance methods of this class are threadsafe
+    ///     Instance methods of this class are threadsafe
     /// </summary>
     public class ListenManager : IDisposable
     {
-        #region Member Variables
-
-        private ClientEngine engine;
-        private MonoTorrentCollection<PeerListener> listeners;
-        private AsyncCallback endCheckEncryptionCallback;
-        private AsyncMessageReceivedCallback handshakeReceivedCallback;
-
-        #endregion Member Variables
-
-        #region Properties
-
-        public MonoTorrentCollection<PeerListener> Listeners
-        {
-            get { return listeners; }
-        }
-
-        internal ClientEngine Engine
-        {
-            get { return engine; }
-            private set { engine = value; }
-        }
-
-        #endregion Properties
-
         #region Constructors
 
         internal ListenManager(ClientEngine engine)
         {
             Engine = engine;
-            listeners = new MonoTorrentCollection<PeerListener>();
+            Listeners = new MonoTorrentCollection<PeerListener>();
             endCheckEncryptionCallback = ClientEngine.MainLoop.Wrap(EndCheckEncryption);
             handshakeReceivedCallback = (a, b, c) => ClientEngine.MainLoop.Queue(() => onPeerHandshakeReceived(a, b, c));
         }
 
         #endregion Constructors
 
-        #region Public Methods
-
-        public void Dispose()
-        {
-        }
-
-        public void Register(PeerListener listener)
-        {
-            listener.ConnectionReceived += new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
-        }
-
-        public void Unregister(PeerListener listener)
-        {
-            listener.ConnectionReceived -= new EventHandler<NewConnectionEventArgs>(ConnectionReceived);
-        }
-
-        #endregion Public Methods
-
         private void ConnectionReceived(object sender, NewConnectionEventArgs e)
         {
-            if (engine.ConnectionManager.ShouldBanPeer(e.Peer))
+            if (Engine.ConnectionManager.ShouldBanPeer(e.Peer))
             {
                 e.Connection.Dispose();
                 return;
@@ -84,10 +40,10 @@ namespace MonoTorrent.Client
             {
                 var skeys = new List<InfoHash>();
 
-                ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
+                ClientEngine.MainLoop.QueueWait(delegate
                 {
-                    for (var i = 0; i < engine.Torrents.Count; i++)
-                        skeys.Add(engine.Torrents[i].InfoHash);
+                    for (var i = 0; i < Engine.Torrents.Count; i++)
+                        skeys.Add(Engine.Torrents[i].InfoHash);
                 });
 
                 EncryptorFactory.BeginCheckEncryption(id, HandshakeMessage.HandshakeLength, endCheckEncryptionCallback,
@@ -95,7 +51,7 @@ namespace MonoTorrent.Client
             }
             else
             {
-                ClientEngine.MainLoop.Queue(delegate { engine.ConnectionManager.ProcessFreshConnection(id); });
+                ClientEngine.MainLoop.Queue(delegate { Engine.ConnectionManager.ProcessFreshConnection(id); });
             }
         }
 
@@ -144,11 +100,11 @@ namespace MonoTorrent.Client
                 return;
             }
 
-            ClientEngine.MainLoop.QueueWait((MainLoopTask) delegate
+            ClientEngine.MainLoop.QueueWait(delegate
             {
-                for (var i = 0; i < engine.Torrents.Count; i++)
-                    if (message.infoHash == engine.Torrents[i].InfoHash)
-                        man = engine.Torrents[i];
+                for (var i = 0; i < Engine.Torrents.Count; i++)
+                    if (message.infoHash == Engine.Torrents[i].InfoHash)
+                        man = Engine.Torrents[i];
             });
 
             //FIXME: #warning FIXME: Don't stop the message loop until Dispose() and track all incoming connections
@@ -176,7 +132,7 @@ namespace MonoTorrent.Client
 
             // If the handshake was parsed properly without encryption, then it definitely was not encrypted. If this is not allowed, abort
             if (id.Encryptor is PlainTextEncryption &&
-                !Toolbox.HasEncryption(engine.Settings.AllowedEncryption, EncryptionTypes.PlainText) &&
+                !Toolbox.HasEncryption(Engine.Settings.AllowedEncryption, EncryptionTypes.PlainText) &&
                 ClientEngine.SupportsEncryption)
             {
                 Logger.Log(id.Connection, "ListenManager - Encryption is required but was not active");
@@ -189,14 +145,13 @@ namespace MonoTorrent.Client
 
             id.ClientApp = new Software(message.PeerId);
 
-            message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
-            var callback = engine.ConnectionManager.incomingConnectionAcceptedCallback;
+            message = new HandshakeMessage(id.TorrentManager.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
+            var callback = Engine.ConnectionManager.incomingConnectionAcceptedCallback;
             PeerIO.EnqueueSendMessage(id.Connection, id.Encryptor, message, id.TorrentManager.UploadLimiter,
                 id.Monitor, id.TorrentManager.Monitor, callback, id);
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="result"></param>
         private void onPeerHandshakeReceived(bool succeeded, PeerMessage message, object state)
@@ -216,5 +171,38 @@ namespace MonoTorrent.Client
                 id.Connection.Dispose();
             }
         }
+
+        #region Member Variables
+
+        private readonly AsyncCallback endCheckEncryptionCallback;
+        private readonly AsyncMessageReceivedCallback handshakeReceivedCallback;
+
+        #endregion Member Variables
+
+        #region Properties
+
+        public MonoTorrentCollection<PeerListener> Listeners { get; }
+
+        internal ClientEngine Engine { get; }
+
+        #endregion Properties
+
+        #region Public Methods
+
+        public void Dispose()
+        {
+        }
+
+        public void Register(PeerListener listener)
+        {
+            listener.ConnectionReceived += ConnectionReceived;
+        }
+
+        public void Unregister(PeerListener listener)
+        {
+            listener.ConnectionReceived -= ConnectionReceived;
+        }
+
+        #endregion Public Methods
     }
 }

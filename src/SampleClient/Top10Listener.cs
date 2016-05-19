@@ -1,18 +1,16 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Diagnostics;
 using System.IO;
 
 namespace MonoTorrent
 {
     /// <summary>
-    /// Keeps track of the X most recent number of events recorded by the listener. X is specified in the constructor
+    ///     Keeps track of the X most recent number of events recorded by the listener. X is specified in the constructor
     /// </summary>
     public class Top10Listener : TraceListener
     {
-        private int capacity;
-        private LinkedList<string> traces;
+        private readonly int capacity;
+        private readonly LinkedList<string> traces;
 
         public Top10Listener(int capacity)
         {

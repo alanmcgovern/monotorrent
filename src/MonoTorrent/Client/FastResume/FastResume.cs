@@ -1,32 +1,16 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
 using System.IO;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public class FastResume
     {
-        private static readonly BEncodedString VersionKey = (BEncodedString) "version";
-        private static readonly BEncodedString InfoHashKey = (BEncodedString) "infohash";
-        private static readonly BEncodedString BitfieldKey = (BEncodedString) "bitfield";
-        private static readonly BEncodedString BitfieldLengthKey = (BEncodedString) "bitfield_length";
-
-        private BitField bitfield;
-        private InfoHash infoHash;
-
-        public BitField Bitfield
-        {
-            get { return bitfield; }
-        }
-
-        public InfoHash Infohash
-        {
-            get { return infoHash; }
-        }
+        private static readonly BEncodedString VersionKey = "version";
+        private static readonly BEncodedString InfoHashKey = "infohash";
+        private static readonly BEncodedString BitfieldKey = "bitfield";
+        private static readonly BEncodedString BitfieldLengthKey = "bitfield_length";
 
         public FastResume()
         {
@@ -39,22 +23,26 @@ namespace MonoTorrent.Client
             if (bitfield == null)
                 throw new ArgumentNullException("bitfield");
 
-            this.infoHash = infoHash;
-            this.bitfield = bitfield;
+            Infohash = infoHash;
+            Bitfield = bitfield;
         }
 
         public FastResume(BEncodedDictionary dict)
         {
-            CheckContent(dict, VersionKey, (BEncodedNumber) 1);
+            CheckContent(dict, VersionKey, 1);
             CheckContent(dict, InfoHashKey);
             CheckContent(dict, BitfieldKey);
             CheckContent(dict, BitfieldLengthKey);
 
-            infoHash = new InfoHash(((BEncodedString) dict[InfoHashKey]).TextBytes);
-            bitfield = new BitField((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
+            Infohash = new InfoHash(((BEncodedString) dict[InfoHashKey]).TextBytes);
+            Bitfield = new BitField((int) ((BEncodedNumber) dict[BitfieldLengthKey]).Number);
             var data = ((BEncodedString) dict[BitfieldKey]).TextBytes;
-            bitfield.FromArray(data, 0, data.Length);
+            Bitfield.FromArray(data, 0, data.Length);
         }
+
+        public BitField Bitfield { get; }
+
+        public InfoHash Infohash { get; }
 
         private void CheckContent(BEncodedDictionary dict, BEncodedString key, BEncodedNumber value)
         {
@@ -75,9 +63,9 @@ namespace MonoTorrent.Client
         {
             var dict = new BEncodedDictionary();
             dict.Add(VersionKey, (BEncodedNumber) 1);
-            dict.Add(InfoHashKey, new BEncodedString(infoHash.Hash));
-            dict.Add(BitfieldKey, new BEncodedString(bitfield.ToByteArray()));
-            dict.Add(BitfieldLengthKey, (BEncodedNumber) bitfield.Length);
+            dict.Add(InfoHashKey, new BEncodedString(Infohash.Hash));
+            dict.Add(BitfieldKey, new BEncodedString(Bitfield.ToByteArray()));
+            dict.Add(BitfieldLengthKey, (BEncodedNumber) Bitfield.Length);
             return dict;
         }
 

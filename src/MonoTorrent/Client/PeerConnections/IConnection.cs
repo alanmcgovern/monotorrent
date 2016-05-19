@@ -1,12 +1,4 @@
-﻿// IConnection.cs created with MonoDevelop
-// User: alan at 22:58 22/01/2008
-//
-// To change standard headers go to Edit->Preferences->Coding->Standard Headers
-//
-
-using System;
-using MonoTorrent.Client;
-using System.Net.Sockets;
+﻿using System;
 using System.Net;
 
 namespace MonoTorrent.Client.Connections
@@ -23,6 +15,8 @@ namespace MonoTorrent.Client.Connections
 
         EndPoint EndPoint { get; }
 
+        Uri Uri { get; }
+
         IAsyncResult BeginConnect(AsyncCallback callback, object state);
         void EndConnect(IAsyncResult result);
 
@@ -31,7 +25,5 @@ namespace MonoTorrent.Client.Connections
 
         IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state);
         int EndSend(IAsyncResult result);
-
-        Uri Uri { get; }
     }
 }

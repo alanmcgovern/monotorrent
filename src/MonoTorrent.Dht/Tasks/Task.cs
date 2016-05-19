@@ -1,5 +1,4 @@
 #if !DISABLE_DHT
-using MonoTorrent.Dht.Messages;
 using System;
 
 namespace MonoTorrent.Dht
@@ -8,13 +7,7 @@ namespace MonoTorrent.Dht
     {
         public event EventHandler<TaskCompleteEventArgs> Completed;
 
-        private bool active;
-
-        public bool Active
-        {
-            get { return active; }
-            protected set { active = value; }
-        }
+        public bool Active { get; protected set; }
 
         public abstract void Execute();
 

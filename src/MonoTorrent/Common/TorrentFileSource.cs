@@ -1,20 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace MonoTorrent.Common
 {
     public class TorrentFileSource : ITorrentFileSource
     {
-        public IEnumerable<FileMapping> Files { get; private set; }
-
-        public bool IgnoreHidden { get; private set; }
-
-        public string Path { get; private set; }
-
-        public string TorrentName { get; set; }
-
         public TorrentFileSource(string path)
             : this(path, true)
         {
@@ -26,6 +16,13 @@ namespace MonoTorrent.Common
             Path = path;
             LoadFiles();
         }
+
+        public bool IgnoreHidden { get; }
+
+        public string Path { get; }
+        public IEnumerable<FileMapping> Files { get; private set; }
+
+        public string TorrentName { get; set; }
 
         private void LoadFiles()
         {
@@ -75,7 +72,7 @@ namespace MonoTorrent.Common
             // Turn the full path of each file into a full path + relative path. The relative path is the 'path'
             // which the file will have within the .torrent metadata.
             Files =
-                files.ConvertAll<FileMapping>(
+                files.ConvertAll(
                     delegate(string file) { return new FileMapping(file, file.Substring(fullPath.Length)); });
 
             // Set the torrent name (user can change it later)

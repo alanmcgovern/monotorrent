@@ -1,52 +1,12 @@
-//
-// InitialSeedUnchokerTests.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2009 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using MonoTorrent.Client.Messages.Standard;
 using System;
 using System.Collections.Generic;
+using MonoTorrent.Client.Messages.Standard;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class InitialSeedUnchokerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    InitialSeedUnchokerTests t = new InitialSeedUnchokerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.Choke();
-        //}
-        private PeerId peer;
-        private TestRig rig;
-        private InitialSeedUnchoker unchoker;
-
         public InitialSeedUnchokerTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -62,6 +22,17 @@ namespace MonoTorrent.Client
         {
             rig.Dispose();
         }
+
+        //static void Main()
+        //{
+        //    InitialSeedUnchokerTests t = new InitialSeedUnchokerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.Choke();
+        //}
+        private readonly PeerId peer;
+        private readonly TestRig rig;
+        private readonly InitialSeedUnchoker unchoker;
 
         [Fact]
         public void Advertise()
@@ -107,7 +78,7 @@ namespace MonoTorrent.Client
         public void Advertise5()
         {
             var peers =
-                new List<PeerId>(new PeerId[] {rig.CreatePeer(true), rig.CreatePeer(true), rig.CreatePeer(true)});
+                new List<PeerId>(new[] {rig.CreatePeer(true), rig.CreatePeer(true), rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
             peers.Add(this.peer);
 
@@ -148,7 +119,7 @@ namespace MonoTorrent.Client
             // Check that peers which don't share only get a small number of pieces to share
             rig.Manager.Settings.UploadSlots = 1;
             unchoker.PeerDisconnected(peer);
-            var peers = new List<PeerId>(new PeerId[] {peer, rig.CreatePeer(true)});
+            var peers = new List<PeerId>(new[] {peer, rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
             unchoker.UnchokeReview();
 
@@ -211,7 +182,7 @@ namespace MonoTorrent.Client
             unchoker.PeerDisconnected(this.peer);
             rig.Manager.Settings.UploadSlots = 1;
 
-            var peers = new List<PeerId>(new PeerId[] {this.peer, rig.CreatePeer(true), rig.CreatePeer(true)});
+            var peers = new List<PeerId>(new[] {this.peer, rig.CreatePeer(true), rig.CreatePeer(true)});
             peers.ForEach(unchoker.PeerConnected);
 
             unchoker.UnchokeReview();

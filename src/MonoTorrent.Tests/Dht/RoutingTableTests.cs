@@ -7,19 +7,6 @@ namespace MonoTorrent.Dht
 {
     public class RoutingTableTests
     {
-        //static void Main(string[] args)
-        //{
-        //    RoutingTableTests t = new RoutingTableTests();
-        //    t.Setup();
-        //    t.AddSame();
-        //    t.Setup();
-        //    t.AddSimilar();
-        //}
-        private byte[] id;
-        private RoutingTable table;
-        private Node n;
-        private int addedCount;
-
         public RoutingTableTests()
         {
             id = new byte[20];
@@ -29,6 +16,26 @@ namespace MonoTorrent.Dht
             table.NodeAdded += delegate { addedCount++; };
             table.Add(n); //the local node is no more in routing table so add it to show test is still ok
             addedCount = 0;
+        }
+
+        //static void Main(string[] args)
+        //{
+        //    RoutingTableTests t = new RoutingTableTests();
+        //    t.Setup();
+        //    t.AddSame();
+        //    t.Setup();
+        //    t.AddSimilar();
+        //}
+        private readonly byte[] id;
+        private RoutingTable table;
+        private readonly Node n;
+        private int addedCount;
+
+        private void CheckBuckets()
+        {
+            foreach (var b in table.Buckets)
+                foreach (var n in b.Nodes)
+                    Assert.True(n.Id >= b.Min && n.Id < b.Max);
         }
 
         [Fact]
@@ -79,14 +86,7 @@ namespace MonoTorrent.Dht
             var closest = table.GetClosest(table.LocalNode.Id);
             Assert.Equal(8, closest.Count);
             for (var i = 0; i < 8; i++)
-                Assert.True(closest.Exists(delegate(Node node) { return nodes[i].Equals(closest[i].Id); }));
-        }
-
-        private void CheckBuckets()
-        {
-            foreach (var b in table.Buckets)
-                foreach (var n in b.Nodes)
-                    Assert.True(n.Id >= b.Min && n.Id < b.Max);
+                Assert.True(closest.Exists(delegate { return nodes[i].Equals(closest[i].Id); }));
         }
     }
 }

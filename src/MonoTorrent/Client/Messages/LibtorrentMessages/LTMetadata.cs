@@ -1,38 +1,6 @@
-//
-// LTMetadata.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2009 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
-using System.Security.Cryptography;
-using MonoTorrent.Common;
 using System.IO;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
 {
@@ -44,35 +12,10 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         private static readonly BEncodedString TotalSizeKey = "total_size";
         internal static readonly int BlockSize = 16384; //16Kb
 
-        internal enum eMessageType
-        {
-            Request = 0,
-            Data = 1,
-            Reject = 2
-        }
-
-        private BEncodedDictionary dict;
-        private eMessageType messageType;
-        private int piece;
+        private readonly BEncodedDictionary dict;
 
         //this buffer contain all metadata when we send message 
         //and only a piece of metadata we receive message
-        private byte[] metadata;
-
-        public int Piece
-        {
-            get { return piece; }
-        }
-
-        public byte[] MetadataPiece
-        {
-            get { return metadata; }
-        }
-
-        internal eMessageType MetadataMessageType
-        {
-            get { return messageType; }
-        }
 
         //only for register
         public LTMetadata()
@@ -94,20 +37,26 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             : this()
         {
             ExtensionId = extensionId;
-            messageType = type;
-            this.metadata = metadata;
-            this.piece = piece;
+            MetadataMessageType = type;
+            MetadataPiece = metadata;
+            Piece = piece;
 
             dict = new BEncodedDictionary();
-            dict.Add(MessageTypeKey, (BEncodedNumber) (int) messageType);
+            dict.Add(MessageTypeKey, (BEncodedNumber) (int) MetadataMessageType);
             dict.Add(PieceKey, (BEncodedNumber) piece);
 
-            if (messageType == eMessageType.Data)
+            if (MetadataMessageType == eMessageType.Data)
             {
                 Check.Metadata(metadata);
                 dict.Add(TotalSizeKey, (BEncodedNumber) metadata.Length);
             }
         }
+
+        public int Piece { get; private set; }
+
+        public byte[] MetadataPiece { get; private set; }
+
+        internal eMessageType MetadataMessageType { get; private set; }
 
         public override int ByteLength
         {
@@ -115,8 +64,8 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             get
             {
                 var length = 4 + 1 + 1 + dict.LengthInBytes();
-                if (messageType == eMessageType.Data)
-                    length += Math.Min(metadata.Length - piece*BlockSize, BlockSize);
+                if (MetadataMessageType == eMessageType.Data)
+                    length += Math.Min(MetadataPiece.Length - Piece*BlockSize, BlockSize);
                 return length;
             }
         }
@@ -130,14 +79,14 @@ namespace MonoTorrent.Client.Messages.Libtorrent
                 var totalSize = 0;
 
                 if (d.TryGetValue(MessageTypeKey, out val))
-                    messageType = (eMessageType) ((BEncodedNumber) val).Number;
+                    MetadataMessageType = (eMessageType) ((BEncodedNumber) val).Number;
                 if (d.TryGetValue(PieceKey, out val))
-                    piece = (int) ((BEncodedNumber) val).Number;
+                    Piece = (int) ((BEncodedNumber) val).Number;
                 if (d.TryGetValue(TotalSizeKey, out val))
                 {
                     totalSize = (int) ((BEncodedNumber) val).Number;
-                    metadata = new byte[Math.Min(totalSize - piece*BlockSize, BlockSize)];
-                    reader.Read(metadata, 0, metadata.Length);
+                    MetadataPiece = new byte[Math.Min(totalSize - Piece*BlockSize, BlockSize)];
+                    reader.Read(MetadataPiece, 0, MetadataPiece.Length);
                 }
             }
         }
@@ -153,11 +102,18 @@ namespace MonoTorrent.Client.Messages.Libtorrent
             written += Write(buffer, written, MessageId);
             written += Write(buffer, written, ExtensionId);
             written += dict.Encode(buffer, written);
-            if (messageType == eMessageType.Data)
-                written += Write(buffer, written, metadata, piece*BlockSize,
-                    Math.Min(metadata.Length - piece*BlockSize, BlockSize));
+            if (MetadataMessageType == eMessageType.Data)
+                written += Write(buffer, written, MetadataPiece, Piece*BlockSize,
+                    Math.Min(MetadataPiece.Length - Piece*BlockSize, BlockSize));
 
             return CheckWritten(written - offset);
+        }
+
+        internal enum eMessageType
+        {
+            Request = 0,
+            Data = 1,
+            Reject = 2
         }
     }
 }

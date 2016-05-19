@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using MonoTorrent.Common;
-using System.Web;
 
 namespace MonoTorrent
 {
     public class InfoHash : IEquatable<InfoHash>
     {
-        private static Dictionary<char, byte> base32DecodeTable;
+        private static readonly Dictionary<char, byte> base32DecodeTable;
 
         static InfoHash()
         {
@@ -18,19 +18,19 @@ namespace MonoTorrent
                 base32DecodeTable[table[i]] = (byte) i;
         }
 
-        private byte[] hash;
-
-        internal byte[] Hash
-        {
-            get { return hash; }
-        }
-
         public InfoHash(byte[] infoHash)
         {
             Check.InfoHash(infoHash);
             if (infoHash.Length != 20)
                 throw new ArgumentException("Infohash must be exactly 20 bytes long");
-            hash = (byte[]) infoHash.Clone();
+            Hash = (byte[]) infoHash.Clone();
+        }
+
+        internal byte[] Hash { get; }
+
+        public bool Equals(InfoHash other)
+        {
+            return this == other;
         }
 
         public override bool Equals(object obj)
@@ -43,11 +43,6 @@ namespace MonoTorrent
             return other == null || other.Length != 20 ? false : Toolbox.ByteMatch(Hash, other);
         }
 
-        public bool Equals(InfoHash other)
-        {
-            return this == other;
-        }
-
         public override int GetHashCode()
         {
             // Equality is based generally on checking 20 positions, checking 4 should be enough
@@ -57,15 +52,15 @@ namespace MonoTorrent
 
         public byte[] ToArray()
         {
-            return (byte[]) hash.Clone();
+            return (byte[]) Hash.Clone();
         }
 
         public string ToHex()
         {
             var sb = new StringBuilder(40);
-            for (var i = 0; i < hash.Length; i++)
+            for (var i = 0; i < Hash.Length; i++)
             {
-                var hex = hash[i].ToString("X");
+                var hex = Hash[i].ToString("X");
                 if (hex.Length != 2)
                     sb.Append("0");
                 sb.Append(hex);
@@ -75,7 +70,7 @@ namespace MonoTorrent
 
         public override string ToString()
         {
-            return BitConverter.ToString(hash);
+            return BitConverter.ToString(Hash);
         }
 
         public string UrlEncode()
@@ -132,7 +127,7 @@ namespace MonoTorrent
 
             var hash = new byte[20];
             for (var i = 0; i < hash.Length; i++)
-                hash[i] = byte.Parse(infoHash.Substring(i*2, 2), System.Globalization.NumberStyles.HexNumber);
+                hash[i] = byte.Parse(infoHash.Substring(i*2, 2), NumberStyles.HexNumber);
 
             return new InfoHash(hash);
         }

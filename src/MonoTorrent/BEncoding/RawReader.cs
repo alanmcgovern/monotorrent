@@ -1,34 +1,4 @@
-//
-// RawReader.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 
 namespace MonoTorrent.BEncoding
@@ -36,14 +6,8 @@ namespace MonoTorrent.BEncoding
     public class RawReader : Stream
     {
         private bool hasPeek;
-        private Stream input;
-        private byte[] peeked;
-        private bool strictDecoding;
-
-        public bool StrictDecoding
-        {
-            get { return strictDecoding; }
-        }
+        private readonly Stream input;
+        private readonly byte[] peeked;
 
         public RawReader(Stream input)
             : this(input, true)
@@ -54,8 +18,10 @@ namespace MonoTorrent.BEncoding
         {
             this.input = input;
             peeked = new byte[1];
-            this.strictDecoding = strictDecoding;
+            StrictDecoding = strictDecoding;
         }
+
+        public bool StrictDecoding { get; }
 
         public override bool CanRead
         {
@@ -72,31 +38,9 @@ namespace MonoTorrent.BEncoding
             get { return false; }
         }
 
-        public override void Flush()
-        {
-            throw new NotSupportedException();
-        }
-
         public override long Length
         {
             get { return input.Length; }
-        }
-
-        public int PeekByte()
-        {
-            if (!hasPeek)
-                hasPeek = Read(peeked, 0, 1) == 1;
-            return hasPeek ? peeked[0] : -1;
-        }
-
-        public override int ReadByte()
-        {
-            if (hasPeek)
-            {
-                hasPeek = false;
-                return peeked[0];
-            }
-            return base.ReadByte();
         }
 
         public override long Position
@@ -115,6 +59,28 @@ namespace MonoTorrent.BEncoding
                     input.Position = value;
                 }
             }
+        }
+
+        public override void Flush()
+        {
+            throw new NotSupportedException();
+        }
+
+        public int PeekByte()
+        {
+            if (!hasPeek)
+                hasPeek = Read(peeked, 0, 1) == 1;
+            return hasPeek ? peeked[0] : -1;
+        }
+
+        public override int ReadByte()
+        {
+            if (hasPeek)
+            {
+                hasPeek = false;
+                return peeked[0];
+            }
+            return base.ReadByte();
         }
 
         public override int Read(byte[] buffer, int offset, int count)

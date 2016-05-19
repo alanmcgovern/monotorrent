@@ -1,45 +1,9 @@
-//
-// EncryptedSocket.cs
-//
-// Authors:
-//   Yiduo Wang planetbeing@gmail.com
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2007 Yiduo Wang
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.Text;
 using System.Security.Cryptography;
-using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Common;
+using System.Text;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
-
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -61,88 +25,11 @@ namespace MonoTorrent.Client.Encryption
     }
 
     /// <summary>
-    /// The class that handles.Message Stream Encryption for a connection
+    ///     The class that handles.Message Stream Encryption for a connection
     /// </summary>
     internal class EncryptedSocket : IEncryptor
     {
         protected AsyncResult asyncResult;
-
-        public IEncryption Encryptor
-        {
-            get { return streamEncryptor; }
-        }
-
-        public IEncryption Decryptor
-        {
-            get { return streamDecryptor; }
-        }
-
-        public byte[] InitialData
-        {
-            get { return RemoteInitialPayload; }
-        }
-
-        #region Private members
-
-        private RandomNumberGenerator random;
-        private SHA1 hasher;
-
-        // Cryptors for the handshaking
-        private RC4 encryptor = null;
-        private RC4 decryptor = null;
-
-        // Cryptors for the data transmission
-        private IEncryption streamEncryptor;
-        private IEncryption streamDecryptor;
-
-        private EncryptionTypes allowedEncryption;
-
-        private byte[] X; // A 160 bit random integer
-        private byte[] Y; // 2^X mod P
-        private byte[] OtherY = null;
-
-        private IConnection socket;
-
-        // Data to be passed to initial ReceiveMessage requests
-        private byte[] initialBuffer;
-        private int initialBufferOffset;
-        private int initialBufferCount;
-
-        // State information to be checked against abort conditions
-        private int bytesReceived;
-
-        // Callbacks
-        private AsyncIOCallback doneSendCallback;
-        private AsyncIOCallback doneReceiveCallback;
-        private AsyncCallback doneReceiveYCallback;
-        private AsyncCallback doneSynchronizeCallback;
-        private AsyncIOCallback fillSynchronizeBytesCallback;
-
-        // State information for synchronization
-        private byte[] synchronizeData = null;
-        private byte[] synchronizeWindow = null;
-        private int syncStopPoint;
-
-        #endregion
-
-        #region Protected members
-
-        protected byte[] S = null;
-        protected InfoHash SKEY = null;
-
-        protected byte[] PadC = null;
-        protected byte[] PadD = null;
-
-        protected byte[] VerificationConstant = new byte[8];
-
-        protected byte[] CryptoProvide = new byte[] {0x00, 0x00, 0x00, 0x03};
-
-        protected byte[] InitialPayload;
-        protected byte[] RemoteInitialPayload;
-
-        protected byte[] CryptoSelect;
-
-        #endregion
 
         public EncryptedSocket(EncryptionTypes allowedEncryption)
         {
@@ -166,10 +53,97 @@ namespace MonoTorrent.Client.Encryption
             SetMinCryptoAllowed(allowedEncryption);
         }
 
+        public IEncryption Encryptor { get; private set; }
+
+        public IEncryption Decryptor { get; private set; }
+
+        public byte[] InitialData
+        {
+            get { return RemoteInitialPayload; }
+        }
+
+        public void AddPayload(byte[] buffer)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+
+            AddPayload(buffer, 0, buffer.Length);
+        }
+
+        public void AddPayload(byte[] buffer, int offset, int count)
+        {
+            var newBuffer = new byte[InitialPayload.Length + count];
+
+            Message.Write(newBuffer, 0, InitialPayload);
+            Message.Write(newBuffer, InitialPayload.Length, buffer, offset, count);
+
+            InitialPayload = buffer;
+        }
+
+        #region Private members
+
+        private readonly RandomNumberGenerator random;
+        private readonly SHA1 hasher;
+
+        // Cryptors for the handshaking
+        private RC4 encryptor;
+        private RC4 decryptor;
+
+        // Cryptors for the data transmission
+
+        private EncryptionTypes allowedEncryption;
+
+        private byte[] X; // A 160 bit random integer
+        private byte[] Y; // 2^X mod P
+        private byte[] OtherY;
+
+        private IConnection socket;
+
+        // Data to be passed to initial ReceiveMessage requests
+        private byte[] initialBuffer;
+        private int initialBufferOffset;
+        private int initialBufferCount;
+
+        // State information to be checked against abort conditions
+        private int bytesReceived;
+
+        // Callbacks
+        private readonly AsyncIOCallback doneSendCallback;
+        private readonly AsyncIOCallback doneReceiveCallback;
+        private readonly AsyncCallback doneReceiveYCallback;
+        private readonly AsyncCallback doneSynchronizeCallback;
+        private readonly AsyncIOCallback fillSynchronizeBytesCallback;
+
+        // State information for synchronization
+        private byte[] synchronizeData;
+        private byte[] synchronizeWindow;
+        private int syncStopPoint;
+
+        #endregion
+
+        #region Protected members
+
+        protected byte[] S;
+        protected InfoHash SKEY = null;
+
+        protected byte[] PadC = null;
+        protected byte[] PadD = null;
+
+        protected byte[] VerificationConstant = new byte[8];
+
+        protected byte[] CryptoProvide = {0x00, 0x00, 0x00, 0x03};
+
+        protected byte[] InitialPayload;
+        protected byte[] RemoteInitialPayload;
+
+        protected byte[] CryptoSelect;
+
+        #endregion
+
         #region Interface implementation
 
         /// <summary>
-        /// Begins the message stream encryption handshaking process
+        ///     Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
         public virtual IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state)
@@ -214,8 +188,8 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Begins the message stream encryption handshaking process, beginning with some data
-        /// already received from the socket.
+        ///     Begins the message stream encryption handshaking process, beginning with some data
+        ///     already received from the socket.
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
@@ -232,25 +206,25 @@ namespace MonoTorrent.Client.Encryption
 
 
         /// <summary>
-        /// Encrypts some data (should only be called after onEncryptorReady)
+        ///     Encrypts some data (should only be called after onEncryptorReady)
         /// </summary>
         /// <param name="buffer">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
         /// <param name="count">Number of bytes to encrypt</param>
         public void Encrypt(byte[] data, int offset, int length)
         {
-            streamEncryptor.Encrypt(data, offset, data, offset, length);
+            Encryptor.Encrypt(data, offset, data, offset, length);
         }
 
         /// <summary>
-        /// Decrypts some data (should only be called after onEncryptorReady)
+        ///     Decrypts some data (should only be called after onEncryptorReady)
         /// </summary>
         /// <param name="buffer">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
         /// <param name="count">Number of bytes to decrypt</param>
         public void Decrypt(byte[] data, int offset, int length)
         {
-            streamDecryptor.Decrypt(data, offset, data, offset, length);
+            Decryptor.Decrypt(data, offset, data, offset, length);
         }
 
         private int RandomNumber(int max)
@@ -266,8 +240,8 @@ namespace MonoTorrent.Client.Encryption
         #region Diffie-Hellman Key Exchange Functions
 
         /// <summary>
-        /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
-        /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
+        ///     Send Y to the remote client, with a random padding that is 0 to 512 bytes long
+        ///     (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
         protected void SendY()
         {
@@ -280,8 +254,8 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
-        /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
+        ///     Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
+        ///     (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
         protected void ReceiveY()
         {
@@ -299,12 +273,15 @@ namespace MonoTorrent.Client.Encryption
         #region Synchronization functions
 
         /// <summary>
-        /// Read data from the socket until the byte string in syncData is read, or until syncStopPoint
-        /// is reached (in that case, there is an EncryptionError).
-        /// (Either "3 A->B: HASH('req1', S)" or "4 B->A: ENCRYPT(VC)")
+        ///     Read data from the socket until the byte string in syncData is read, or until syncStopPoint
+        ///     is reached (in that case, there is an EncryptionError).
+        ///     (Either "3 A->B: HASH('req1', S)" or "4 B->A: ENCRYPT(VC)")
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
-        /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
+        /// <param name="syncStopPoint">
+        ///     Maximum number of bytes (measured from the total received from the socket since connection)
+        ///     to read before giving up
+        /// </param>
         protected void Synchronize(byte[] syncData, int syncStopPoint)
         {
             try
@@ -467,7 +444,7 @@ namespace MonoTorrent.Client.Encryption
         #region Cryptography Setup
 
         /// <summary>
-        /// Generate a 160 bit random number for X
+        ///     Generate a 160 bit random number for X
         /// </summary>
         private void GenerateX()
         {
@@ -477,7 +454,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Calculate 2^X mod P
+        ///     Calculate 2^X mod P
         /// </summary>
         private void GenerateY()
         {
@@ -485,9 +462,9 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Instantiate the cryptors with the keys: Hash(encryptionSalt, S, SKEY) for the encryptor and
-        /// Hash(encryptionSalt, S, SKEY) for the decryptor.
-        /// (encryptionSalt should be "keyA" if you're A, "keyB" if you're B, and reverse for decryptionSalt)
+        ///     Instantiate the cryptors with the keys: Hash(encryptionSalt, S, SKEY) for the encryptor and
+        ///     Hash(encryptionSalt, S, SKEY) for the decryptor.
+        ///     (encryptionSalt should be "keyA" if you're A, "keyB" if you're B, and reverse for decryptionSalt)
         /// </summary>
         /// <param name="encryptionSalt">The salt to calculate the encryption key with</param>
         /// <param name="decryptionSalt">The salt to calculate the decryption key with</param>
@@ -498,9 +475,12 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
+        ///     Sets CryptoSelect and initializes the stream encryptor and decryptor based on the selected method.
         /// </summary>
-        /// <param name="remoteCryptoBytes">The cryptographic methods supported/wanted by the remote client in CryptoProvide format. The highest order one available will be selected</param>
+        /// <param name="remoteCryptoBytes">
+        ///     The cryptographic methods supported/wanted by the remote client in CryptoProvide
+        ///     format. The highest order one available will be selected
+        /// </param>
         protected virtual int SelectCrypto(byte[] remoteCryptoBytes, bool replace)
         {
             CryptoSelect = new byte[remoteCryptoBytes.Length];
@@ -511,8 +491,8 @@ namespace MonoTorrent.Client.Encryption
                 CryptoSelect[3] |= 2;
                 if (replace)
                 {
-                    streamEncryptor = encryptor;
-                    streamDecryptor = decryptor;
+                    Encryptor = encryptor;
+                    Decryptor = decryptor;
                 }
                 return 2;
             }
@@ -523,8 +503,8 @@ namespace MonoTorrent.Client.Encryption
                 CryptoSelect[3] |= 1;
                 if (replace)
                 {
-                    streamEncryptor = new RC4Header();
-                    streamDecryptor = new RC4Header();
+                    Encryptor = new RC4Header();
+                    Decryptor = new RC4Header();
                 }
                 return 1;
             }
@@ -537,7 +517,7 @@ namespace MonoTorrent.Client.Encryption
         #region Utility Functions
 
         /// <summary>
-        /// Concatenates several byte buffers
+        ///     Concatenates several byte buffers
         /// </summary>
         /// <param name="data">Buffers to concatenate</param>
         /// <returns>Resulting concatenated buffer</returns>
@@ -559,7 +539,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Hash some data with SHA1
+        ///     Hash some data with SHA1
         /// </summary>
         /// <param name="data">Buffers to hash</param>
         /// <returns>20-byte hash</returns>
@@ -569,17 +549,17 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Converts a 2-byte big endian integer into an int (reverses operation of Len())
+        ///     Converts a 2-byte big endian integer into an int (reverses operation of Len())
         /// </summary>
         /// <param name="data">2 byte buffer</param>
         /// <returns>int</returns>
         protected int DeLen(byte[] data)
         {
-            return (int) (data[0] << 8) + data[1];
+            return (data[0] << 8) + data[1];
         }
 
         /// <summary>
-        /// Returns a 2-byte buffer with the length of data
+        ///     Returns a 2-byte buffer with the length of data
         /// </summary>
         protected byte[] Len(byte[] data)
         {
@@ -590,7 +570,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Returns a 0 to 512 byte 0-filled pad.
+        ///     Returns a 0 to 512 byte 0-filled pad.
         /// </summary>
         protected byte[] GeneratePad()
         {
@@ -609,7 +589,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Encrypts some data with the RC4 encryptor used in handshaking
+        ///     Encrypts some data with the RC4 encryptor used in handshaking
         /// </summary>
         /// <param name="buffer">Buffer with the data to encrypt</param>
         /// <param name="offset">Offset to begin encryption</param>
@@ -620,7 +600,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Decrypts some data with the RC4 encryptor used in handshaking
+        ///     Decrypts some data with the RC4 encryptor used in handshaking
         /// </summary>
         /// <param name="data">Buffers with the data to decrypt</param>
         /// <returns>Buffer with decrypted data</returns>
@@ -632,7 +612,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Decrypts some data with the RC4 decryptor used in handshaking
+        ///     Decrypts some data with the RC4 decryptor used in handshaking
         /// </summary>
         /// <param name="buffer">Buffer with the data to decrypt</param>
         /// <param name="offset">Offset to begin decryption</param>
@@ -643,7 +623,7 @@ namespace MonoTorrent.Client.Encryption
         }
 
         /// <summary>
-        /// Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
+        ///     Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
         /// </summary>
         protected void Ready()
         {
@@ -666,23 +646,5 @@ namespace MonoTorrent.Client.Encryption
         }
 
         #endregion
-
-        public void AddPayload(byte[] buffer)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-
-            AddPayload(buffer, 0, buffer.Length);
-        }
-
-        public void AddPayload(byte[] buffer, int offset, int count)
-        {
-            var newBuffer = new byte[InitialPayload.Length + count];
-
-            Message.Write(newBuffer, 0, InitialPayload);
-            Message.Write(newBuffer, InitialPayload.Length, buffer, offset, count);
-
-            InitialPayload = buffer;
-        }
     }
 }

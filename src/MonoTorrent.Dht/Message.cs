@@ -28,10 +28,7 @@
 //
 
 
-using System;
-using System.Collections.Generic;
 using MonoTorrent.BEncoding;
-using System.Net;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Messages
@@ -40,14 +37,28 @@ namespace MonoTorrent.Dht.Messages
     {
         internal static bool UseVersionKey = true;
 
-        private static BEncodedString EmptyString = "";
+        private static readonly BEncodedString EmptyString = "";
         protected static readonly BEncodedString IdKey = "id";
-        private static BEncodedString TransactionIdKey = "t";
-        private static BEncodedString VersionKey = "v";
-        private static BEncodedString MessageTypeKey = "y";
-        private static BEncodedString DhtVersion = VersionInfo.DhtClientVersion;
+        private static readonly BEncodedString TransactionIdKey = "t";
+        private static readonly BEncodedString VersionKey = "v";
+        private static readonly BEncodedString MessageTypeKey = "y";
+        private static readonly BEncodedString DhtVersion = VersionInfo.DhtClientVersion;
 
         protected BEncodedDictionary properties = new BEncodedDictionary();
+
+
+        protected Message(BEncodedString messageType)
+        {
+            properties.Add(TransactionIdKey, null);
+            properties.Add(MessageTypeKey, messageType);
+            if (UseVersionKey)
+                properties.Add(VersionKey, DhtVersion);
+        }
+
+        protected Message(BEncodedDictionary dictionary)
+        {
+            properties = dictionary;
+        }
 
         public BEncodedString ClientVersion
         {
@@ -71,20 +82,6 @@ namespace MonoTorrent.Dht.Messages
         {
             get { return properties[TransactionIdKey]; }
             set { properties[TransactionIdKey] = value; }
-        }
-
-
-        protected Message(BEncodedString messageType)
-        {
-            properties.Add(TransactionIdKey, null);
-            properties.Add(MessageTypeKey, messageType);
-            if (UseVersionKey)
-                properties.Add(VersionKey, DhtVersion);
-        }
-
-        protected Message(BEncodedDictionary dictionary)
-        {
-            properties = dictionary;
         }
 
         public override int ByteLength

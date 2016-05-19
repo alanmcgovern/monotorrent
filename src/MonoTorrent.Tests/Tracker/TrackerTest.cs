@@ -1,16 +1,14 @@
-using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Tracker
 {
     public class TrackerTest : IDisposable
     {
-        private TrackerTestRig rig;
-
         public TrackerTest()
         {
             rig = new TrackerTestRig();
@@ -19,6 +17,18 @@ namespace MonoTorrent.Tracker
         public void Dispose()
         {
             rig.Dispose();
+        }
+
+        private readonly TrackerTestRig rig;
+
+        private void AddAllTrackables()
+        {
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.True(rig.Tracker.Add(t)); });
+        }
+
+        private InfoHash Clone(InfoHash p)
+        {
+            return new InfoHash((byte[]) p.Hash.Clone());
         }
 
         [Fact]
@@ -40,10 +50,12 @@ namespace MonoTorrent.Tracker
         }
 
         [Fact]
-        public void GetManagerTest()
+        public void AnnounceInvalidTest()
         {
-            AddAllTrackables();
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.NotNull(rig.Tracker.GetManager(t)); });
+            var i = 0;
+            rig.Peers.ForEach(
+                delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent) (i++%4), rig.Trackables[0]); });
+            Assert.Equal(0, rig.Tracker.Count);
         }
 
         [Fact]
@@ -51,10 +63,7 @@ namespace MonoTorrent.Tracker
         {
             AddAllTrackables();
             rig.Peers.ForEach(
-                delegate(PeerDetails d)
-                {
-                    rig.Listener.Handle(d, TorrentEvent.Started, rig.Trackables[0]);
-                });
+                delegate(PeerDetails d) { rig.Listener.Handle(d, TorrentEvent.Started, rig.Trackables[0]); });
 
             var manager = rig.Tracker.GetManager(rig.Trackables[0]);
 
@@ -84,21 +93,12 @@ namespace MonoTorrent.Tracker
         }
 
         [Fact]
-        public void AnnounceInvalidTest()
-        {
-            var i = 0;
-            rig.Peers.ForEach(
-                delegate(PeerDetails d) { rig.Listener.Handle(d, (TorrentEvent) (i++%4), rig.Trackables[0]); });
-            Assert.Equal(0, rig.Tracker.Count);
-        }
-
-        [Fact]
         public void CheckPeersAdded()
         {
             var i = 0;
             AddAllTrackables();
 
-            var lists = new List<PeerDetails>[]
+            var lists = new[]
             {new List<PeerDetails>(), new List<PeerDetails>(), new List<PeerDetails>(), new List<PeerDetails>()};
             rig.Peers.ForEach(delegate(PeerDetails d)
             {
@@ -139,6 +139,13 @@ namespace MonoTorrent.Tracker
         }
 
         [Fact]
+        public void GetManagerTest()
+        {
+            AddAllTrackables();
+            rig.Trackables.ForEach(delegate(Trackable t) { Assert.NotNull(rig.Tracker.GetManager(t)); });
+        }
+
+        [Fact]
         public void TestReturnedPeers()
         {
             rig.Tracker.AllowNonCompact = true;
@@ -169,16 +176,6 @@ namespace MonoTorrent.Tracker
                             return pd.ClientAddress.Equals(up) && pd.Port == port && pd.peerId == peerId;
                         }));
             }
-        }
-
-        private void AddAllTrackables()
-        {
-            rig.Trackables.ForEach(delegate(Trackable t) { Assert.True(rig.Tracker.Add(t)); });
-        }
-
-        private InfoHash Clone(InfoHash p)
-        {
-            return new InfoHash((byte[]) p.Hash.Clone());
         }
     }
 }

@@ -1,12 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal class StoppedMode : Mode
     {
+        public StoppedMode(TorrentManager manager)
+            : base(manager)
+        {
+            CanAcceptConnections = false;
+        }
+
         public override bool CanHashCheck
         {
             get { return true; }
@@ -15,12 +18,6 @@ namespace MonoTorrent.Client
         public override TorrentState State
         {
             get { return TorrentState.Stopped; }
-        }
-
-        public StoppedMode(TorrentManager manager)
-            : base(manager)
-        {
-            CanAcceptConnections = false;
         }
 
         public override void HandlePeerConnected(PeerId id, Direction direction)

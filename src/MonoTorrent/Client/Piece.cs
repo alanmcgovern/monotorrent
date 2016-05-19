@@ -1,34 +1,5 @@
-//
-// Piece.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using MonoTorrent.Common;
+using System.Collections;
 
 namespace MonoTorrent.Client
 {
@@ -38,73 +9,49 @@ namespace MonoTorrent.Client
 
         #region Member Variables
 
-        private Block[] blocks;
-        private int index;
-        private int totalReceived;
-        private int totalRequested;
-        private int totalWritten;
-
         #endregion MemberVariables
 
         #region Fields
 
         public Block this[int index]
         {
-            get { return blocks[index]; }
+            get { return Blocks[index]; }
         }
 
-        internal Block[] Blocks
-        {
-            get { return blocks; }
-        }
+        internal Block[] Blocks { get; private set; }
 
         public bool AllBlocksRequested
         {
-            get { return totalRequested == BlockCount; }
+            get { return TotalRequested == BlockCount; }
         }
 
         public bool AllBlocksReceived
         {
-            get { return totalReceived == BlockCount; }
+            get { return TotalReceived == BlockCount; }
         }
 
         public bool AllBlocksWritten
         {
-            get { return totalWritten == BlockCount; }
+            get { return TotalWritten == BlockCount; }
         }
 
         public int BlockCount
         {
-            get { return blocks.Length; }
+            get { return Blocks.Length; }
         }
 
-        public int Index
-        {
-            get { return index; }
-        }
+        public int Index { get; }
 
         public bool NoBlocksRequested
         {
-            get { return totalRequested == 0; }
+            get { return TotalRequested == 0; }
         }
 
-        public int TotalReceived
-        {
-            get { return totalReceived; }
-            internal set { totalReceived = value; }
-        }
+        public int TotalReceived { get; internal set; }
 
-        public int TotalRequested
-        {
-            get { return totalRequested; }
-            internal set { totalRequested = value; }
-        }
+        public int TotalRequested { get; internal set; }
 
-        public int TotalWritten
-        {
-            get { return totalWritten; }
-            internal set { totalWritten = value; }
-        }
+        public int TotalWritten { get; internal set; }
 
         #endregion Fields
 
@@ -112,7 +59,7 @@ namespace MonoTorrent.Client
 
         internal Piece(int pieceIndex, int pieceLength, long torrentSize)
         {
-            index = pieceIndex;
+            Index = pieceIndex;
 
             // Request last piece. Special logic needed
             if (torrentSize - (long) pieceIndex*pieceLength < pieceLength)
@@ -122,14 +69,14 @@ namespace MonoTorrent.Client
             {
                 var numberOfPieces = (int) Math.Ceiling((double) pieceLength/BlockSize);
 
-                blocks = new Block[numberOfPieces];
+                Blocks = new Block[numberOfPieces];
 
                 for (var i = 0; i < numberOfPieces; i++)
-                    blocks[i] = new Block(this, i*BlockSize, BlockSize);
+                    Blocks[i] = new Block(this, i*BlockSize, BlockSize);
 
                 if (pieceLength%BlockSize != 0) // I don't think this would ever happen. But just in case
-                    blocks[blocks.Length - 1] = new Block(this, blocks[blocks.Length - 1].StartOffset,
-                        pieceLength - blocks[blocks.Length - 1].StartOffset);
+                    Blocks[Blocks.Length - 1] = new Block(this, Blocks[Blocks.Length - 1].StartOffset,
+                        pieceLength - Blocks[Blocks.Length - 1].StartOffset);
             }
         }
 
@@ -140,17 +87,17 @@ namespace MonoTorrent.Client
             if (bytesRemaining%BlockSize != 0)
                 numberOfBlocks++;
 
-            blocks = new Block[numberOfBlocks];
+            Blocks = new Block[numberOfBlocks];
 
             var i = 0;
             while (bytesRemaining - BlockSize > 0)
             {
-                blocks[i] = new Block(this, i*BlockSize, BlockSize);
+                Blocks[i] = new Block(this, i*BlockSize, BlockSize);
                 bytesRemaining -= BlockSize;
                 i++;
             }
 
-            blocks[i] = new Block(this, i*BlockSize, bytesRemaining);
+            Blocks[i] = new Block(this, i*BlockSize, bytesRemaining);
         }
 
         #endregion
@@ -165,17 +112,17 @@ namespace MonoTorrent.Client
         public override bool Equals(object obj)
         {
             var p = obj as Piece;
-            return p == null ? false : index.Equals(p.index);
+            return p == null ? false : Index.Equals(p.Index);
         }
 
-        public System.Collections.IEnumerator GetEnumerator()
+        public IEnumerator GetEnumerator()
         {
-            return blocks.GetEnumerator();
+            return Blocks.GetEnumerator();
         }
 
         public override int GetHashCode()
         {
-            return index;
+            return Index;
         }
 
         #endregion

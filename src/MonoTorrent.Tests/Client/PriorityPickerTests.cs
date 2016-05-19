@@ -1,54 +1,12 @@
-//
-// PriorityPickerTests.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class PriorityPickerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    PriorityPickerTests t = new PriorityPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.PriorityMix();
-        //}
-
-        private PeerId id;
-        private PriorityPicker picker;
-        private TestRig rig;
-        private TestPicker tester;
-
         public PriorityPickerTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -68,12 +26,42 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
+        //static void Main()
+        //{
+        //    PriorityPickerTests t = new PriorityPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.PriorityMix();
+        //}
+
+        private readonly PeerId id;
+        private readonly PriorityPicker picker;
+        private readonly TestRig rig;
+        private readonly TestPicker tester;
+
         [Fact]
         public void AllAllowed()
         {
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
             Assert.Equal(1, tester.PickPieceBitfield.Count);
             Assert.True(tester.PickPieceBitfield[0].AllTrue);
+        }
+
+        [Fact]
+        public void DoNotDownload()
+        {
+            rig.Torrent.Files[0].Priority = Priority.DoNotDownload;
+            rig.Torrent.Files[1].Priority = Priority.DoNotDownload;
+
+            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
+            Assert.Equal(1, tester.PickPieceBitfield.Count);
+            for (var i = 0; i < rig.Pieces; i++)
+            {
+                if (i < rig.Torrent.Files[1].EndPieceIndex)
+                    Assert.False(tester.PickPieceBitfield[0][i]);
+                else
+                    Assert.True(tester.PickPieceBitfield[0][i]);
+            }
         }
 
         [Fact]
@@ -102,20 +90,44 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void DoNotDownload()
+        public void IsInteresting()
         {
-            rig.Torrent.Files[0].Priority = Priority.DoNotDownload;
-            rig.Torrent.Files[1].Priority = Priority.DoNotDownload;
+            foreach (var file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            rig.Torrent.Files[1].Priority = Priority.High;
+            id.BitField.SetAll(false).Set(0, true);
+            Assert.True(picker.IsInteresting(id.BitField));
+        }
+
+        [Fact]
+        public void MultiFileAllNoDownload()
+        {
+            foreach (var file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(1, tester.PickPieceBitfield.Count);
-            for (var i = 0; i < rig.Pieces; i++)
-            {
-                if (i < rig.Torrent.Files[1].EndPieceIndex)
-                    Assert.False(tester.PickPieceBitfield[0][i]);
-                else
-                    Assert.True(tester.PickPieceBitfield[0][i]);
-            }
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
+        }
+
+        [Fact]
+        public void MultiFileNoneAvailable()
+        {
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+            id.BitField.SetAll(false);
+
+            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
+        }
+
+        [Fact]
+        public void MultiFileOneAvailable()
+        {
+            foreach (var file in rig.Torrent.Files)
+                file.Priority = Priority.DoNotDownload;
+            rig.Torrent.Files[0].Priority = Priority.High;
+            id.BitField.SetAll(false);
+            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
+            Assert.Equal(0, tester.PickPieceBitfield.Count);
         }
 
         [Fact]
@@ -167,7 +179,7 @@ namespace MonoTorrent.Client
         [Fact]
         public void SingleFileDoNotDownload()
         {
-            picker.Initialise(rig.Manager.Bitfield, new TorrentFile[] {rig.Torrent.Files[0]}, new List<Piece>());
+            picker.Initialise(rig.Manager.Bitfield, new[] {rig.Torrent.Files[0]}, new List<Piece>());
             rig.Torrent.Files[0].Priority = Priority.DoNotDownload;
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
@@ -177,52 +189,11 @@ namespace MonoTorrent.Client
         [Fact]
         public void SingleFileNoneAvailable()
         {
-            picker.Initialise(rig.Manager.Bitfield, new TorrentFile[] {rig.Torrent.Files[0]}, new List<Piece>());
+            picker.Initialise(rig.Manager.Bitfield, new[] {rig.Torrent.Files[0]}, new List<Piece>());
             id.BitField.SetAll(false);
 
             picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
             Assert.Equal(0, tester.PickPieceBitfield.Count);
-        }
-
-        [Fact]
-        public void MultiFileNoneAvailable()
-        {
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
-            id.BitField.SetAll(false);
-
-            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count);
-        }
-
-        [Fact]
-        public void MultiFileAllNoDownload()
-        {
-            foreach (var file in rig.Torrent.Files)
-                file.Priority = Priority.DoNotDownload;
-
-            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count);
-        }
-
-        [Fact]
-        public void MultiFileOneAvailable()
-        {
-            foreach (var file in rig.Torrent.Files)
-                file.Priority = Priority.DoNotDownload;
-            rig.Torrent.Files[0].Priority = Priority.High;
-            id.BitField.SetAll(false);
-            picker.PickPiece(id, id.BitField, new List<PeerId>(), 1, 0, rig.Pieces);
-            Assert.Equal(0, tester.PickPieceBitfield.Count);
-        }
-
-        [Fact]
-        public void IsInteresting()
-        {
-            foreach (var file in rig.Torrent.Files)
-                file.Priority = Priority.DoNotDownload;
-            rig.Torrent.Files[1].Priority = Priority.High;
-            id.BitField.SetAll(false).Set(0, true);
-            Assert.True(picker.IsInteresting(id.BitField));
         }
     }
 }

@@ -1,7 +1,5 @@
 #if !DISABLE_DHT
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
 
@@ -9,8 +7,8 @@ namespace MonoTorrent.Dht
 {
     internal class RefreshBucketTask : Task
     {
-        private Bucket bucket;
-        private DhtEngine engine;
+        private readonly Bucket bucket;
+        private readonly DhtEngine engine;
         private FindNode message;
         private Node node;
         private SendQueryTask task;

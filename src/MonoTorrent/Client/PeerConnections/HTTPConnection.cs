@@ -1,142 +1,18 @@
-//
-// HTTPConnection.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.Text;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading;
 using System.Collections.Generic;
 using System.IO;
-using MonoTorrent.Client.Encryption;
+using System.Net;
+using System.Reflection;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using System.Text.RegularExpressions;
-using System.Reflection;
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Connections
 {
     public partial class HttpConnection : IConnection
     {
-        private static MethodInfo method = typeof(WebHeaderCollection).GetMethod
+        private static readonly MethodInfo method = typeof(WebHeaderCollection).GetMethod
             ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
-
-        private class HttpResult : AsyncResult
-        {
-            public byte[] Buffer;
-            public int Offset;
-            public int Count;
-            public int BytesTransferred;
-
-            public HttpResult(AsyncCallback callback, object state, byte[] buffer, int offset, int count)
-                : base(callback, state)
-            {
-                Buffer = buffer;
-                Offset = offset;
-                Count = count;
-            }
-
-            public void Complete(int bytes)
-            {
-                BytesTransferred = bytes;
-                base.Complete();
-            }
-        }
-
-        #region Member Variables
-
-        private TimeSpan connectionTimeout;
-        private byte[] sendBuffer = BufferManager.EmptyBuffer;
-        private int sendBufferCount;
-        private HttpRequestData currentRequest;
-        private Stream dataStream;
-        private bool disposed;
-        private AsyncCallback getResponseCallback;
-        private AsyncCallback receivedChunkCallback;
-        private TorrentManager manager;
-        private HttpResult receiveResult;
-        private List<RequestMessage> requestMessages;
-        private HttpResult sendResult;
-        private int totalExpected;
-        private Uri uri;
-        private Queue<KeyValuePair<WebRequest, int>> webRequests;
-
-        public byte[] AddressBytes
-        {
-            get { return new byte[4]; }
-        }
-
-        public bool CanReconnect
-        {
-            get { return false; }
-        }
-
-        public bool Connected
-        {
-            get { return true; }
-        }
-
-        internal TimeSpan ConnectionTimeout
-        {
-            get { return connectionTimeout; }
-            set { connectionTimeout = value; }
-        }
-
-        private HttpRequestData CurrentRequest
-        {
-            get { return currentRequest; }
-        }
-
-        EndPoint IConnection.EndPoint
-        {
-            get { return null; }
-        }
-
-        public bool IsIncoming
-        {
-            get { return false; }
-        }
-
-        public TorrentManager Manager
-        {
-            get { return manager; }
-            set { manager = value; }
-        }
-
-        public Uri Uri
-        {
-            get { return uri; }
-        }
-
-        #endregion
 
         #region Constructors
 
@@ -147,9 +23,9 @@ namespace MonoTorrent.Client.Connections
             if (!string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Scheme is not http");
 
-            this.uri = uri;
+            Uri = uri;
 
-            connectionTimeout = TimeSpan.FromSeconds(10);
+            ConnectionTimeout = TimeSpan.FromSeconds(10);
             getResponseCallback = ClientEngine.MainLoop.Wrap(GotResponse);
             receivedChunkCallback = ClientEngine.MainLoop.Wrap(ReceivedChunk);
             requestMessages = new List<RequestMessage>();
@@ -220,7 +96,7 @@ namespace MonoTorrent.Client.Connections
                 else if (bundle.TrueForAll(delegate(PeerMessage m) { return m is RequestMessage; }))
                 {
                     requestMessages.AddRange(
-                        bundle.ConvertAll<RequestMessage>(delegate(PeerMessage m) { return (RequestMessage) m; }));
+                        bundle.ConvertAll(delegate(PeerMessage m) { return (RequestMessage) m; }));
                     // The RequestMessages are always sequential
                     var start = (RequestMessage) bundle[0];
                     var end = (RequestMessage) bundle[bundle.Count - 1];
@@ -241,6 +117,24 @@ namespace MonoTorrent.Client.Connections
             }
 
             return sendResult;
+        }
+
+        public int EndSend(IAsyncResult result)
+        {
+            var r = CompleteTransfer(result, sendResult);
+            sendResult = null;
+            return r;
+        }
+
+        public void Dispose()
+        {
+            if (disposed)
+                return;
+
+            disposed = true;
+            if (dataStream != null)
+                dataStream.Dispose();
+            dataStream = null;
         }
 
         private List<PeerMessage> DecodeMessages(byte[] buffer, int offset, int count)
@@ -280,13 +174,6 @@ namespace MonoTorrent.Client.Connections
             }
         }
 
-        public int EndSend(IAsyncResult result)
-        {
-            var r = CompleteTransfer(result, sendResult);
-            sendResult = null;
-            return r;
-        }
-
 
         private void ReceivedChunk(IAsyncResult result)
         {
@@ -300,11 +187,11 @@ namespace MonoTorrent.Client.Connections
                     throw new WebException("No futher data is available");
 
                 receiveResult.BytesTransferred += received;
-                currentRequest.TotalReceived += received;
+                CurrentRequest.TotalReceived += received;
 
                 // We've received everything for this piece, so null it out
-                if (currentRequest.Complete)
-                    currentRequest = null;
+                if (CurrentRequest.Complete)
+                    CurrentRequest = null;
 
                 totalExpected -= received;
                 receiveResult.Complete();
@@ -316,7 +203,7 @@ namespace MonoTorrent.Client.Connections
             finally
             {
                 // If there are no more requests pending, complete the Send call
-                if (currentRequest == null && requestMessages.Count == 0)
+                if (CurrentRequest == null && requestMessages.Count == 0)
                     RequestCompleted();
             }
         }
@@ -359,13 +246,13 @@ namespace MonoTorrent.Client.Connections
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            var startOffset = (long) start.PieceIndex*manager.Torrent.PieceLength + start.StartOffset;
-            var endOffset = (long) end.PieceIndex*manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+            var startOffset = (long) start.PieceIndex*Manager.Torrent.PieceLength + start.StartOffset;
+            var endOffset = (long) end.PieceIndex*Manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
 
-            foreach (var file in manager.Torrent.Files)
+            foreach (var file in Manager.Torrent.Files)
             {
                 var u = uri;
-                if (manager.Torrent.Files.Length > 1)
+                if (Manager.Torrent.Files.Length > 1)
                     u = new Uri(u, file.Path);
                 if (endOffset == 0)
                     break;
@@ -402,26 +289,15 @@ namespace MonoTorrent.Client.Connections
                 new object[] {"Range", string.Format("bytes={0}-{1}", startOffset, endOffset)});
         }
 
-        public void Dispose()
-        {
-            if (disposed)
-                return;
-
-            disposed = true;
-            if (dataStream != null)
-                dataStream.Dispose();
-            dataStream = null;
-        }
-
         private void DoReceive()
         {
             var buffer = receiveResult.Buffer;
             var offset = receiveResult.Offset;
             var count = receiveResult.Count;
 
-            if (currentRequest == null && requestMessages.Count > 0)
+            if (CurrentRequest == null && requestMessages.Count > 0)
             {
-                currentRequest = new HttpRequestData(requestMessages[0]);
+                CurrentRequest = new HttpRequestData(requestMessages[0]);
                 requestMessages.RemoveAt(0);
             }
 
@@ -440,19 +316,19 @@ namespace MonoTorrent.Client.Connections
                 return;
             }
 
-            if (!currentRequest.SentLength)
+            if (!CurrentRequest.SentLength)
             {
                 // The message length counts as the first four bytes
-                currentRequest.SentLength = true;
-                currentRequest.TotalReceived += 4;
+                CurrentRequest.SentLength = true;
+                CurrentRequest.TotalReceived += 4;
                 Message.Write(receiveResult.Buffer, receiveResult.Offset,
-                    currentRequest.TotalToReceive - currentRequest.TotalReceived);
+                    CurrentRequest.TotalToReceive - CurrentRequest.TotalReceived);
                 receiveResult.Complete(4);
                 return;
             }
-            else if (!currentRequest.SentHeader)
+            if (!CurrentRequest.SentHeader)
             {
-                currentRequest.SentHeader = true;
+                CurrentRequest.SentHeader = true;
 
                 // We have *only* written the messageLength to the stream
                 // Now we need to write the rest of the PieceMessage header
@@ -463,7 +339,7 @@ namespace MonoTorrent.Client.Connections
                 count -= written;
                 offset += written;
                 receiveResult.BytesTransferred += written;
-                currentRequest.TotalReceived += written;
+                CurrentRequest.TotalReceived += written;
             }
 
             dataStream.BeginRead(buffer, offset, count, receivedChunkCallback, null);
@@ -500,5 +376,76 @@ namespace MonoTorrent.Client.Connections
                     receiveResult.Complete(ex);
             }
         }
+
+        private class HttpResult : AsyncResult
+        {
+            public readonly byte[] Buffer;
+            public int BytesTransferred;
+            public readonly int Count;
+            public readonly int Offset;
+
+            public HttpResult(AsyncCallback callback, object state, byte[] buffer, int offset, int count)
+                : base(callback, state)
+            {
+                Buffer = buffer;
+                Offset = offset;
+                Count = count;
+            }
+
+            public void Complete(int bytes)
+            {
+                BytesTransferred = bytes;
+                base.Complete();
+            }
+        }
+
+        #region Member Variables
+
+        private byte[] sendBuffer = BufferManager.EmptyBuffer;
+        private int sendBufferCount;
+        private Stream dataStream;
+        private bool disposed;
+        private readonly AsyncCallback getResponseCallback;
+        private readonly AsyncCallback receivedChunkCallback;
+        private HttpResult receiveResult;
+        private readonly List<RequestMessage> requestMessages;
+        private HttpResult sendResult;
+        private int totalExpected;
+        private readonly Queue<KeyValuePair<WebRequest, int>> webRequests;
+
+        public byte[] AddressBytes
+        {
+            get { return new byte[4]; }
+        }
+
+        public bool CanReconnect
+        {
+            get { return false; }
+        }
+
+        public bool Connected
+        {
+            get { return true; }
+        }
+
+        internal TimeSpan ConnectionTimeout { get; set; }
+
+        private HttpRequestData CurrentRequest { get; set; }
+
+        EndPoint IConnection.EndPoint
+        {
+            get { return null; }
+        }
+
+        public bool IsIncoming
+        {
+            get { return false; }
+        }
+
+        public TorrentManager Manager { get; set; }
+
+        public Uri Uri { get; }
+
+        #endregion
     }
 }

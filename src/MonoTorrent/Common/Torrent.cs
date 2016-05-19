@@ -1,162 +1,111 @@
-//
-// Torrent.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
-using MonoTorrent.BEncoding;
-using System.Collections;
+using System.IO;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
-    /// The "Torrent" class for both Tracker and Client should inherit from this
-    /// as it contains the fields that are common to both.
+    ///     The "Torrent" class for both Tracker and Client should inherit from this
+    ///     as it contains the fields that are common to both.
     /// </summary>
     public class Torrent : IEquatable<Torrent>
     {
+        #region Constructors
+
+        protected Torrent()
+        {
+            AnnounceUrls = new RawTrackerTiers();
+            Comment = string.Empty;
+            CreatedBy = string.Empty;
+            CreationDate = new DateTime(1970, 1, 1, 0, 0, 0);
+            Encoding = string.Empty;
+            name = string.Empty;
+            Publisher = string.Empty;
+            PublisherUrl = string.Empty;
+            Source = string.Empty;
+            GetRightHttpSeeds = new List<string>();
+        }
+
+        #endregion
+
         #region Private Fields
 
         private BEncodedDictionary originalDictionary;
-        private BEncodedValue azureusProperties;
-        private IList<RawTrackerTier> announceUrls;
-        private string comment;
-        private string createdBy;
-        private DateTime creationDate;
-        private byte[] ed2k;
-        private string encoding;
         internal InfoHash infoHash;
-        private bool isPrivate;
         protected string name;
-        private BEncodedList nodes;
         protected int pieceLength;
         protected Hashes pieces;
-        private string publisher;
-        private string publisherUrl;
-        private byte[] sha1;
         protected long size;
-        private string source;
         protected TorrentFile[] torrentFiles;
         protected string torrentPath;
-        private List<string> getRightHttpSeeds;
-        private byte[] metadata;
 
         #endregion Private Fields
 
         #region Properties
 
-        internal byte[] Metadata
-        {
-            get { return metadata; }
-        }
+        internal byte[] Metadata { get; private set; }
 
         /// <summary>
-        /// The announce URLs contained within the .torrent file
+        ///     The announce URLs contained within the .torrent file
         /// </summary>
-        public IList<RawTrackerTier> AnnounceUrls
-        {
-            get { return announceUrls; }
-        }
+        public IList<RawTrackerTier> AnnounceUrls { get; }
 
 
         /// <summary>
-        /// This dictionary is specific for azureus client 
-        /// It can contain 
-        /// 	dht_backup_enable (number)
-        /// 	Content (dictionnary)
-        ///  		Publisher
-        /// 		Description
-        /// 		Title
-        /// 		Creation Date
-        /// 		Content Hash
-        /// 		Revision Date
-        /// 		Thumbnail (string) = Base64 encoded image
-        /// 		Progressive
-        /// 		Speed Bps (number)
-        /// but not useful for MT
+        ///     This dictionary is specific for azureus client
+        ///     It can contain
+        ///     dht_backup_enable (number)
+        ///     Content (dictionnary)
+        ///     Publisher
+        ///     Description
+        ///     Title
+        ///     Creation Date
+        ///     Content Hash
+        ///     Revision Date
+        ///     Thumbnail (string) = Base64 encoded image
+        ///     Progressive
+        ///     Speed Bps (number)
+        ///     but not useful for MT
         /// </summary>
-        public BEncodedValue AzureusProperties
-        {
-            get { return azureusProperties; }
-        }
+        public BEncodedValue AzureusProperties { get; private set; }
 
 
         /// <summary>
-        /// The comment contained within the .torrent file
+        ///     The comment contained within the .torrent file
         /// </summary>
-        public string Comment
-        {
-            get { return comment; }
-        }
+        public string Comment { get; private set; }
 
 
         /// <summary>
-        /// The optional string showing who/what created the .torrent
+        ///     The optional string showing who/what created the .torrent
         /// </summary>
-        public string CreatedBy
-        {
-            get { return createdBy; }
-        }
+        public string CreatedBy { get; private set; }
 
 
         /// <summary>
-        /// The creation date of the .torrent file
+        ///     The creation date of the .torrent file
         /// </summary>
-        public DateTime CreationDate
-        {
-            get { return creationDate; }
-        }
+        public DateTime CreationDate { get; private set; }
 
 
         /// <summary>
-        /// The optional ED2K hash contained within the .torrent file
+        ///     The optional ED2K hash contained within the .torrent file
         /// </summary>
-        public byte[] ED2K
-        {
-            get { return ed2k; }
-        }
+        public byte[] ED2K { get; private set; }
 
 
         /// <summary>
-        /// The encoding used by the client that created the .torrent file
+        ///     The encoding used by the client that created the .torrent file
         /// </summary>
-        public string Encoding
-        {
-            get { return encoding; }
-        }
+        public string Encoding { get; private set; }
 
 
         /// <summary>
-        /// The list of files contained within the .torrent which are available for download
+        ///     The list of files contained within the .torrent which are available for download
         /// </summary>
         public TorrentFile[] Files
         {
@@ -165,8 +114,8 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// This is the infohash that is generated by putting the "Info" section of a .torrent
-        /// through a ManagedSHA1 hasher.
+        ///     This is the infohash that is generated by putting the "Info" section of a .torrent
+        ///     through a ManagedSHA1 hasher.
         /// </summary>
         public InfoHash InfoHash
         {
@@ -175,18 +124,15 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// Shows whether DHT is allowed or not. If it is a private torrent, no peer
-        /// sharing should be allowed.
+        ///     Shows whether DHT is allowed or not. If it is a private torrent, no peer
+        ///     sharing should be allowed.
         /// </summary>
-        public bool IsPrivate
-        {
-            get { return isPrivate; }
-        }
+        public bool IsPrivate { get; private set; }
 
 
         /// <summary>
-        /// In the case of a single file torrent, this is the name of the file.
-        /// In the case of a multi file torrent, it is the name of the root folder.
+        ///     In the case of a single file torrent, this is the name of the file.
+        ///     In the case of a multi file torrent, it is the name of the root folder.
         /// </summary>
         public string Name
         {
@@ -196,16 +142,13 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// FIXME: No idea what this is.
+        ///     FIXME: No idea what this is.
         /// </summary>
-        public BEncodedList Nodes
-        {
-            get { return nodes; }
-        }
+        public BEncodedList Nodes { get; private set; }
 
 
         /// <summary>
-        /// The length of each piece in bytes.
+        ///     The length of each piece in bytes.
         /// </summary>
         public int PieceLength
         {
@@ -214,7 +157,7 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// This is the array of hashes contained within the torrent.
+        ///     This is the array of hashes contained within the torrent.
         /// </summary>
         public Hashes Pieces
         {
@@ -223,34 +166,25 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// The name of the Publisher
+        ///     The name of the Publisher
         /// </summary>
-        public string Publisher
-        {
-            get { return publisher; }
-        }
+        public string Publisher { get; private set; }
 
 
         /// <summary>
-        /// The Url of the publisher of either the content or the .torrent file
+        ///     The Url of the publisher of either the content or the .torrent file
         /// </summary>
-        public string PublisherUrl
-        {
-            get { return publisherUrl; }
-        }
+        public string PublisherUrl { get; private set; }
 
 
         /// <summary>
-        /// The optional SHA1 hash contained within the .torrent file
+        ///     The optional SHA1 hash contained within the .torrent file
         /// </summary>
-        public byte[] SHA1
-        {
-            get { return sha1; }
-        }
+        public byte[] SHA1 { get; private set; }
 
 
         /// <summary>
-        /// The total size of all the files that have to be downloaded.
+        ///     The total size of all the files that have to be downloaded.
         /// </summary>
         public long Size
         {
@@ -260,16 +194,13 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// The source of the .torrent file
+        ///     The source of the .torrent file
         /// </summary>
-        public string Source
-        {
-            get { return source; }
-        }
+        public string Source { get; private set; }
 
 
         /// <summary>
-        /// This is the path at which the .torrent file is located
+        ///     This is the path at which the .torrent file is located
         /// </summary>
         public string TorrentPath
         {
@@ -278,32 +209,11 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// This is the http-based seeding (getright protocole)
+        ///     This is the http-based seeding (getright protocole)
         /// </summary>
-        public List<string> GetRightHttpSeeds
-        {
-            get { return getRightHttpSeeds; }
-        }
+        public List<string> GetRightHttpSeeds { get; }
 
         #endregion Properties
-
-        #region Constructors
-
-        protected Torrent()
-        {
-            announceUrls = new RawTrackerTiers();
-            comment = string.Empty;
-            createdBy = string.Empty;
-            creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
-            encoding = string.Empty;
-            name = string.Empty;
-            publisher = string.Empty;
-            publisherUrl = string.Empty;
-            source = string.Empty;
-            getRightHttpSeeds = new List<string>();
-        }
-
-        #endregion
 
         #region Public Methods
 
@@ -346,8 +256,8 @@ namespace MonoTorrent.Common
         #region Private Methods
 
         /// <summary>
-        /// This method is called internally to read out the hashes from the info section of the
-        /// .torrent file.
+        ///     This method is called internally to read out the hashes from the info section of the
+        ///     .torrent file.
         /// </summary>
         /// <param name="data">The byte[]containing the hashes from the .torrent file</param>
         private void LoadHashPieces(byte[] data)
@@ -360,8 +270,8 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// This method is called internally to load in all the files found within the "Files" section
-        /// of the .torrents infohash
+        ///     This method is called internally to load in all the files found within the "Files" section
+        ///     of the .torrents infohash
         /// </summary>
         /// <param name="list">The list containing the files available to download</param>
         private void LoadTorrentFiles(BEncodedList list)
@@ -462,13 +372,13 @@ namespace MonoTorrent.Common
 
 
         /// <summary>
-        /// This method is called internally to load the information found within the "Info" section
-        /// of the .torrent file
+        ///     This method is called internally to load the information found within the "Info" section
+        ///     of the .torrent file
         /// </summary>
         /// <param name="dictionary">The dictionary representing the Info section of the .torrent file</param>
         private void ProcessInfo(BEncodedDictionary dictionary)
         {
-            metadata = dictionary.Encode();
+            Metadata = dictionary.Encode();
             pieceLength = int.Parse(dictionary["piece length"].ToString());
             LoadHashPieces(((BEncodedString) dictionary["pieces"]).TextBytes);
 
@@ -477,35 +387,35 @@ namespace MonoTorrent.Common
                 switch (keypair.Key.Text)
                 {
                     case "source":
-                        source = keypair.Value.ToString();
+                        Source = keypair.Value.ToString();
                         break;
 
                     case "sha1":
-                        sha1 = ((BEncodedString) keypair.Value).TextBytes;
+                        SHA1 = ((BEncodedString) keypair.Value).TextBytes;
                         break;
 
                     case "ed2k":
-                        ed2k = ((BEncodedString) keypair.Value).TextBytes;
+                        ED2K = ((BEncodedString) keypair.Value).TextBytes;
                         break;
 
                     case "publisher-url.utf-8":
                         if (keypair.Value.ToString().Length > 0)
-                            publisherUrl = keypair.Value.ToString();
+                            PublisherUrl = keypair.Value.ToString();
                         break;
 
                     case "publisher-url":
-                        if (string.IsNullOrEmpty(publisherUrl) && (keypair.Value.ToString().Length > 0))
-                            publisherUrl = keypair.Value.ToString();
+                        if (string.IsNullOrEmpty(PublisherUrl) && (keypair.Value.ToString().Length > 0))
+                            PublisherUrl = keypair.Value.ToString();
                         break;
 
                     case "publisher.utf-8":
                         if (keypair.Value.ToString().Length > 0)
-                            publisher = keypair.Value.ToString();
+                            Publisher = keypair.Value.ToString();
                         break;
 
                     case "publisher":
-                        if (string.IsNullOrEmpty(publisher) && (keypair.Value.ToString().Length > 0))
-                            publisher = keypair.Value.ToString();
+                        if (string.IsNullOrEmpty(Publisher) && (keypair.Value.ToString().Length > 0))
+                            Publisher = keypair.Value.ToString();
                         break;
 
                     case "files":
@@ -529,7 +439,7 @@ namespace MonoTorrent.Common
                         break; // This is a singlefile torrent
 
                     case "private":
-                        isPrivate = keypair.Value.ToString() == "1" ? true : false;
+                        IsPrivate = keypair.Value.ToString() == "1" ? true : false;
                         break;
 
                     default:
@@ -557,7 +467,7 @@ namespace MonoTorrent.Common
         #region Loading methods
 
         /// <summary>
-        /// This method loads a .torrent file from the specified path.
+        ///     This method loads a .torrent file from the specified path.
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         public static Torrent Load(string path)
@@ -569,7 +479,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a torrent from a byte[] containing the bencoded data
+        ///     Loads a torrent from a byte[] containing the bencoded data
         /// </summary>
         /// <param name="data">The byte[] containing the data</param>
         /// <returns></returns>
@@ -582,7 +492,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent from the supplied stream
+        ///     Loads a .torrent from the supplied stream
         /// </summary>
         /// <param name="stream">The stream containing the data to load</param>
         /// <returns></returns>
@@ -597,7 +507,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent file from the specified URL
+        ///     Loads a .torrent file from the specified URL
         /// </summary>
         /// <param name="url">The URL to download the .torrent from</param>
         /// <param name="location">The path to download the .torrent to before it gets loaded</param>
@@ -621,8 +531,8 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent from the specificed path. A return value indicates
-        /// whether the operation was successful.
+        ///     Loads a .torrent from the specificed path. A return value indicates
+        ///     whether the operation was successful.
         /// </summary>
         /// <param name="path">The path to load the .torrent file from</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
@@ -644,8 +554,8 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent from the specified byte[]. A return value indicates
-        /// whether the operation was successful.
+        ///     Loads a .torrent from the specified byte[]. A return value indicates
+        ///     whether the operation was successful.
         /// </summary>
         /// <param name="data">The byte[] to load the .torrent from</param>
         /// <param name="torrent">If loading was successful, it contains the Torrent</param>
@@ -667,8 +577,8 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent from the supplied stream. A return value indicates
-        /// whether the operation was successful.
+        ///     Loads a .torrent from the supplied stream. A return value indicates
+        ///     whether the operation was successful.
         /// </summary>
         /// <param name="stream">The stream containing the data to load</param>
         /// <param name="torrent">If the loading was succesful it is assigned the Torrent</param>
@@ -690,8 +600,8 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Loads a .torrent file from the specified URL. A return value indicates
-        /// whether the operation was successful.
+        ///     Loads a .torrent file from the specified URL. A return value indicates
+        ///     whether the operation was successful.
         /// </summary>
         /// <param name="url">The URL to download the .torrent from</param>
         /// <param name="location">The path to download the .torrent to before it gets loaded</param>
@@ -715,7 +625,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// Called from either Load(stream) or Load(string).
+        ///     Called from either Load(stream) or Load(string).
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="path"></param>
@@ -768,8 +678,8 @@ namespace MonoTorrent.Common
                             // Ignore this if we have an announce-list
                             if (torrentInformation.ContainsKey("announce-list"))
                                 break;
-                            announceUrls.Add(new RawTrackerTier());
-                            announceUrls[0].Add(keypair.Value.ToString());
+                            AnnounceUrls.Add(new RawTrackerTier());
+                            AnnounceUrls[0].Add(keypair.Value.ToString());
                             break;
 
                         case "creation date":
@@ -777,12 +687,12 @@ namespace MonoTorrent.Common
                             {
                                 try
                                 {
-                                    creationDate = creationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
+                                    CreationDate = CreationDate.AddSeconds(long.Parse(keypair.Value.ToString()));
                                 }
                                 catch (Exception e)
                                 {
                                     if (e is ArgumentOutOfRangeException)
-                                        creationDate = creationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
+                                        CreationDate = CreationDate.AddMilliseconds(long.Parse(keypair.Value.ToString()));
                                     else
                                         throw;
                                 }
@@ -792,47 +702,46 @@ namespace MonoTorrent.Common
                                 if (e is ArgumentOutOfRangeException)
                                     throw new BEncodingException(
                                         "Argument out of range exception when adding seconds to creation date.", e);
-                                else if (e is FormatException)
+                                if (e is FormatException)
                                     throw new BEncodingException(
                                         string.Format("Could not parse {0} into a number", keypair.Value), e);
-                                else
-                                    throw;
+                                throw;
                             }
                             break;
 
                         case "nodes":
-                            nodes = (BEncodedList) keypair.Value;
+                            Nodes = (BEncodedList) keypair.Value;
                             break;
 
                         case "comment.utf-8":
                             if (keypair.Value.ToString().Length != 0)
-                                comment = keypair.Value.ToString(); // Always take the UTF-8 version
+                                Comment = keypair.Value.ToString(); // Always take the UTF-8 version
                             break; // even if there's an existing value
 
                         case "comment":
-                            if (string.IsNullOrEmpty(comment))
-                                comment = keypair.Value.ToString();
+                            if (string.IsNullOrEmpty(Comment))
+                                Comment = keypair.Value.ToString();
                             break;
 
                         case "publisher-url.utf-8": // Always take the UTF-8 version
-                            publisherUrl = keypair.Value.ToString(); // even if there's an existing value
+                            PublisherUrl = keypair.Value.ToString(); // even if there's an existing value
                             break;
 
                         case "publisher-url":
-                            if (string.IsNullOrEmpty(publisherUrl))
-                                publisherUrl = keypair.Value.ToString();
+                            if (string.IsNullOrEmpty(PublisherUrl))
+                                PublisherUrl = keypair.Value.ToString();
                             break;
 
                         case "azureus_properties":
-                            azureusProperties = keypair.Value;
+                            AzureusProperties = keypair.Value;
                             break;
 
                         case "created by":
-                            createdBy = keypair.Value.ToString();
+                            CreatedBy = keypair.Value.ToString();
                             break;
 
                         case "encoding":
-                            encoding = keypair.Value.ToString();
+                            Encoding = keypair.Value.ToString();
                             break;
 
                         case "info":
@@ -859,14 +768,14 @@ namespace MonoTorrent.Common
                                     for (var k = 0; k < bencodedTier.Count; k++)
                                         tier.Add(bencodedTier[k].ToString());
 
-                                    Toolbox.Randomize<string>(tier);
+                                    Toolbox.Randomize(tier);
 
                                     var collection = new RawTrackerTier();
                                     for (var k = 0; k < tier.Count; k++)
                                         collection.Add(tier[k]);
 
                                     if (collection.Count != 0)
-                                        announceUrls.Add(collection);
+                                        AnnounceUrls.Add(collection);
                                 }
                                 else
                                 {
@@ -884,7 +793,7 @@ namespace MonoTorrent.Common
                         case "url-list":
                             if (keypair.Value is BEncodedString)
                             {
-                                getRightHttpSeeds.Add(((BEncodedString) keypair.Value).Text);
+                                GetRightHttpSeeds.Add(((BEncodedString) keypair.Value).Text);
                             }
                             else if (keypair.Value is BEncodedList)
                             {
@@ -902,8 +811,7 @@ namespace MonoTorrent.Common
             {
                 if (e is BEncodingException)
                     throw;
-                else
-                    throw new BEncodingException("", e);
+                throw new BEncodingException("", e);
             }
         }
 

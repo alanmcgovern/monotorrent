@@ -1,33 +1,24 @@
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using MonoTorrent.Client.Tracker;
+using MonoTorrent.Common;
+using MonoTorrent.Tracker.Listeners;
 using Xunit;
+using AnnounceParameters = MonoTorrent.Tracker.AnnounceParameters;
 
 namespace MonoTorrent.Client
 {
     public class HttpTrackerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    HttpTrackerTests t = new HttpTrackerTests();
-        //    t.FixtureSetup();
-        //    t.KeyTest();
-        //}
-        private MonoTorrent.Tracker.Tracker server;
-        private MonoTorrent.Tracker.Listeners.HttpListener listener;
-        private string prefix = "http://localhost:47124/announce/";
-        private List<string> keys;
-
         public HttpTrackerTests()
         {
             keys = new List<string>();
             server = new MonoTorrent.Tracker.Tracker();
             server.AllowUnregisteredTorrents = true;
-            listener = new MonoTorrent.Tracker.Listeners.HttpListener(prefix);
+            listener = new HttpListener(prefix);
             listener.AnnounceReceived +=
-                delegate(object o, MonoTorrent.Tracker.AnnounceParameters e) { keys.Add(e.Key); };
+                delegate(object o, AnnounceParameters e) { keys.Add(e.Key); };
             server.RegisterListener(listener);
 
             listener.Start();
@@ -39,6 +30,46 @@ namespace MonoTorrent.Client
         {
             listener.Stop();
             server.Dispose();
+        }
+
+        //static void Main()
+        //{
+        //    HttpTrackerTests t = new HttpTrackerTests();
+        //    t.FixtureSetup();
+        //    t.KeyTest();
+        //}
+        private readonly MonoTorrent.Tracker.Tracker server;
+        private readonly HttpListener listener;
+        private readonly string prefix = "http://localhost:47124/announce/";
+        private readonly List<string> keys;
+
+
+        private void Wait(WaitHandle handle)
+        {
+            Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
+        }
+
+        [Fact]
+        public void AnnounceTest()
+        {
+            var t = (HTTPTracker) TrackerFactory.Create(new Uri(prefix));
+            var id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
+
+            AnnounceResponseEventArgs p = null;
+            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
+            {
+                p = e;
+                id.WaitHandle.Set();
+            };
+            var pars = new Tracker.AnnounceParameters();
+            pars.PeerId = "id";
+            pars.InfoHash = new InfoHash(new byte[20]);
+
+            t.Announce(pars, id);
+            Wait(id.WaitHandle);
+            Assert.NotNull(p);
+            Assert.True(p.Successful);
+            Assert.Equal(keys[0], t.Key);
         }
 
         [Fact]
@@ -64,32 +95,9 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void AnnounceTest()
-        {
-            var t = (HTTPTracker) TrackerFactory.Create(new Uri(prefix));
-            var id = new TrackerConnectionID(t, false, TorrentEvent.Started, new ManualResetEvent(false));
-
-            AnnounceResponseEventArgs p = null;
-            t.AnnounceComplete += delegate(object o, AnnounceResponseEventArgs e)
-            {
-                p = e;
-                id.WaitHandle.Set();
-            };
-            var pars = new AnnounceParameters();
-            pars.PeerId = "id";
-            pars.InfoHash = new InfoHash(new byte[20]);
-
-            t.Announce(pars, id);
-            Wait(id.WaitHandle);
-            Assert.NotNull(p);
-            Assert.True(p.Successful);
-            Assert.Equal(keys[0], t.Key);
-        }
-
-        [Fact]
         public void KeyTest()
         {
-            var pars = new AnnounceParameters();
+            var pars = new Tracker.AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -114,7 +122,7 @@ namespace MonoTorrent.Client
                 p = e;
                 id.WaitHandle.Set();
             };
-            var pars = new AnnounceParameters();
+            var pars = new Tracker.AnnounceParameters();
             pars.PeerId = "id";
             pars.InfoHash = new InfoHash(new byte[20]);
 
@@ -125,12 +133,6 @@ namespace MonoTorrent.Client
             Assert.Equal(1, t.Complete);
             Assert.Equal(0, t.Incomplete);
             Assert.Equal(0, t.Downloaded);
-        }
-
-
-        private void Wait(WaitHandle handle)
-        {
-            Assert.True(handle.WaitOne(1000000, true), "Wait handle failed to trigger");
         }
     }
 }

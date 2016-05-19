@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
+﻿using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal class StoppingMode : Mode
     {
-        private WaitHandleGroup handle = new WaitHandleGroup();
-
-        public override TorrentState State
-        {
-            get { return TorrentState.Stopping; }
-        }
+        private readonly WaitHandleGroup handle = new WaitHandleGroup();
 
         public StoppingMode(TorrentManager manager)
             : base(manager)
@@ -38,6 +30,11 @@ namespace MonoTorrent.Client
             manager.PieceManager.Reset();
             engine.ConnectionManager.CancelPendingConnects(manager);
             engine.Stop();
+        }
+
+        public override TorrentState State
+        {
+            get { return TorrentState.Stopping; }
         }
 
         public override void HandlePeerConnected(PeerId id, Direction direction)

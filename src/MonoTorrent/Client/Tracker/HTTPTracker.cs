@@ -1,64 +1,19 @@
-//
-// HTTPTracker.cs
-//
-// Authors:
-//   Eric Butler eric@extremeboredom.net
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2007 Eric Butler
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
-using System.Threading;
-using System.Text.RegularExpressions;
-using System.Net;
-using System.Web;
-using MonoTorrent.Common;
 using System.IO;
+using System.Net;
+using System.Text.RegularExpressions;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
     public class HTTPTracker : Tracker
     {
-        private static Random random = new Random();
+        private static readonly Random random = new Random();
         private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
-        private Uri scrapeUrl;
-        private string key;
         private string TrackerId;
-
-        public string Key
-        {
-            get { return key; }
-            private set { key = value; }
-        }
-
-        public Uri ScrapeUri
-        {
-            get { return scrapeUrl; }
-        }
 
         public HTTPTracker(Uri announceUrl)
             : base(announceUrl)
@@ -72,7 +27,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 CanScrape = true;
                 var r = new Regex("announce");
-                scrapeUrl = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
+                ScrapeUri = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
             }
 
             var passwordKey = new byte[8];
@@ -80,6 +35,10 @@ namespace MonoTorrent.Client.Tracker
                 random.NextBytes(passwordKey);
             Key = UriHelper.UrlEncode(passwordKey);
         }
+
+        public string Key { get; }
+
+        public Uri ScrapeUri { get; }
 
         public override void Announce(AnnounceParameters parameters, object state)
         {
@@ -90,7 +49,7 @@ namespace MonoTorrent.Client.Tracker
                 request.UserAgent = VersionInfo.ClientVersion;
                 request.Proxy = new WebProxy(); // If i don't do this, i can't run the webrequest. It's wierd.
                 RaiseBeforeAnnounce();
-                BeginRequest(request, AnnounceReceived, new object[] {request, state});
+                BeginRequest(request, AnnounceReceived, new[] {request, state});
             }
             catch (Exception ex)
             {
@@ -289,7 +248,7 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                var url = scrapeUrl.OriginalString;
+                var url = ScrapeUri.OriginalString;
 
                 // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
                 if (url.IndexOf('?') == -1)
@@ -299,7 +258,7 @@ namespace MonoTorrent.Client.Tracker
 
                 var request = (HttpWebRequest) WebRequest.Create(url);
                 request.UserAgent = VersionInfo.ClientVersion;
-                BeginRequest(request, ScrapeReceived, new object[] {request, state});
+                BeginRequest(request, ScrapeReceived, new[] {request, state});
             }
             catch
             {

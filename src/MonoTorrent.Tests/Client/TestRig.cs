@@ -1,25 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client.PieceWriters;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using System.Net.Sockets;
 using System.Net;
-using MonoTorrent.Client.Encryption;
+using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.PieceWriters;
+using MonoTorrent.Client.Tracker;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class TestWriter : PieceWriter
     {
-        public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
         public List<TorrentFile> DoNotReadFrom = new List<TorrentFile>();
         public bool DontWrite;
+        public List<TorrentFile> FilesThatExist = new List<TorrentFile>();
         public List<string> Paths = new List<string>();
 
         public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
@@ -61,10 +60,10 @@ namespace MonoTorrent.Client
     public class CustomTracker : Tracker.Tracker
     {
         public List<DateTime> AnnouncedAt = new List<DateTime>();
-        public List<DateTime> ScrapedAt = new List<DateTime>();
 
         public bool FailAnnounce;
         public bool FailScrape;
+        public List<DateTime> ScrapedAt = new List<DateTime>();
 
         public CustomTracker(Uri uri)
             : base(uri)
@@ -114,26 +113,20 @@ namespace MonoTorrent.Client
     public class CustomConnection : IConnection
     {
         public string Name;
-        public event EventHandler BeginReceiveStarted;
-        public event EventHandler EndReceiveStarted;
 
-        public event EventHandler BeginSendStarted;
-        public event EventHandler EndSendStarted;
+        private readonly Socket s;
 
-        private Socket s;
-        private bool incoming;
+        public CustomConnection(Socket s, bool incoming)
+        {
+            this.s = s;
+            IsIncoming = incoming;
+        }
 
         public int? ManualBytesReceived { get; set; }
 
         public int? ManualBytesSent { get; set; }
 
         public bool SlowConnection { get; set; }
-
-        public CustomConnection(Socket s, bool incoming)
-        {
-            this.s = s;
-            this.incoming = incoming;
-        }
 
         public byte[] AddressBytes
         {
@@ -150,10 +143,7 @@ namespace MonoTorrent.Client
             get { return false; }
         }
 
-        public bool IsIncoming
-        {
-            get { return incoming; }
-        }
+        public bool IsIncoming { get; }
 
         public EndPoint EndPoint
         {
@@ -232,14 +222,20 @@ namespace MonoTorrent.Client
             s.Close();
         }
 
-        public override string ToString()
-        {
-            return Name;
-        }
-
         public Uri Uri
         {
             get { return new Uri("tcp://127.0.0.1:1234"); }
+        }
+
+        public event EventHandler BeginReceiveStarted;
+        public event EventHandler EndReceiveStarted;
+
+        public event EventHandler BeginSendStarted;
+        public event EventHandler EndSendStarted;
+
+        public override string ToString()
+        {
+            return Name;
         }
 
 
@@ -262,16 +258,16 @@ namespace MonoTorrent.Client
 
     public class CustomListener : PeerListener
     {
+        public CustomListener()
+            : base(new IPEndPoint(IPAddress.Any, 0))
+        {
+        }
+
         public override void Start()
         {
         }
 
         public override void Stop()
-        {
-        }
-
-        public CustomListener()
-            : base(new IPEndPoint(IPAddress.Any, 0))
         {
         }
 
@@ -285,9 +281,9 @@ namespace MonoTorrent.Client
 
     public class ConnectionPair : IDisposable
     {
-        private TcpListener socketListener;
         public CustomConnection Incoming;
         public CustomConnection Outgoing;
+        private readonly TcpListener socketListener;
 
         public ConnectionPair(int port)
         {
@@ -313,22 +309,22 @@ namespace MonoTorrent.Client
 
     public class TestRig : IDisposable
     {
-        private static Random Random = new Random(1000);
+        private static readonly Random Random = new Random(1000);
         private static int port = 10000;
-        private BEncodedDictionary torrentDict;
-        private ClientEngine engine;
-        private CustomListener listener;
-        private TorrentManager manager;
-        private Torrent torrent;
+        private readonly int piecelength;
+
+
+        private readonly string savePath;
+        private readonly string[][] tier;
 
         public int BlocksPerPiece
         {
-            get { return torrent.PieceLength/(16*1024); }
+            get { return Torrent.PieceLength/(16*1024); }
         }
 
         public int Pieces
         {
-            get { return torrent.Pieces.Count; }
+            get { return Torrent.Pieces.Count; }
         }
 
         public int TotalBlocks
@@ -336,7 +332,7 @@ namespace MonoTorrent.Client
             get
             {
                 var count = 0;
-                var size = torrent.Size;
+                var size = Torrent.Size;
                 while (size > 0)
                 {
                     count++;
@@ -348,51 +344,36 @@ namespace MonoTorrent.Client
 
         public TestWriter Writer { get; set; }
 
-        public ClientEngine Engine
-        {
-            get { return engine; }
-        }
+        public ClientEngine Engine { get; }
 
-        public CustomListener Listener
-        {
-            get { return listener; }
-        }
+        public CustomListener Listener { get; }
 
-        public TorrentManager Manager
-        {
-            get { return manager; }
-        }
+        public TorrentManager Manager { get; private set; }
 
-        public bool MetadataMode { get; private set; }
+        public bool MetadataMode { get; }
 
         public string MetadataPath { get; set; }
 
-        public Torrent Torrent
-        {
-            get { return torrent; }
-        }
+        public Torrent Torrent { get; private set; }
 
-        public BEncodedDictionary TorrentDict
-        {
-            get { return torrentDict; }
-        }
+        public BEncodedDictionary TorrentDict { get; private set; }
 
         public CustomTracker Tracker
         {
-            get { return (CustomTracker) manager.TrackerManager.CurrentTracker; }
+            get { return (CustomTracker) Manager.TrackerManager.CurrentTracker; }
         }
 
-
-        private string savePath;
-        private int piecelength;
-        private string[][] tier;
+        public void Dispose()
+        {
+            Engine.Dispose();
+        }
 
         public void AddConnection(IConnection connection)
         {
             if (connection.IsIncoming)
-                listener.Add(null, connection);
+                Listener.Add(null, connection);
             else
-                listener.Add(manager, connection);
+                Listener.Add(Manager, connection);
         }
 
         public PeerId CreatePeer(bool processingQueue)
@@ -404,7 +385,7 @@ namespace MonoTorrent.Client
         {
             var sb = new StringBuilder();
             for (var i = 0; i < 20; i++)
-                sb.Append((char) Random.Next((int) 'a', (int) 'z'));
+                sb.Append((char) Random.Next('a', 'z'));
             var peer = new Peer(sb.ToString(), new Uri("tcp://127.0.0.1:" + port++));
             var id = new PeerId(peer, Manager);
             id.SupportsFastPeer = supportsFastPeer;
@@ -412,32 +393,39 @@ namespace MonoTorrent.Client
             return id;
         }
 
-        public void Dispose()
-        {
-            engine.Dispose();
-        }
-
         public void RecreateManager()
         {
-            if (manager != null)
+            if (Manager != null)
             {
-                manager.Dispose();
-                if (engine.Contains(manager))
-                    engine.Unregister(manager);
+                Manager.Dispose();
+                if (Engine.Contains(Manager))
+                    Engine.Unregister(Manager);
             }
-            torrentDict = CreateTorrent(piecelength, files, tier);
-            torrent = Torrent.Load(torrentDict);
+            TorrentDict = CreateTorrent(piecelength, files, tier);
+            Torrent = Torrent.Load(TorrentDict);
             if (MetadataMode)
-                manager = new TorrentManager(torrent.infoHash, savePath, new TorrentSettings(), MetadataPath,
+                Manager = new TorrentManager(Torrent.infoHash, savePath, new TorrentSettings(), MetadataPath,
                     new RawTrackerTiers());
             else
-                manager = new TorrentManager(torrent, savePath, new TorrentSettings());
-            engine.Register(manager);
+                Manager = new TorrentManager(Torrent, savePath, new TorrentSettings());
+            Engine.Register(Manager);
+        }
+
+        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
+        {
+            return CreateSingleFile(torrentSize, pieceLength, false);
+        }
+
+        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength, bool metadataMode)
+        {
+            var files = StandardSingleFile();
+            files[0] = new TorrentFile(files[0].Path, torrentSize);
+            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
         }
 
         #region Rig Creation
 
-        private TorrentFile[] files;
+        private readonly TorrentFile[] files;
 
         private TestRig(string savePath, int piecelength, TestWriter writer, string[][] trackers, TorrentFile[] files)
             : this(savePath, piecelength, writer, trackers, files, false)
@@ -453,8 +441,8 @@ namespace MonoTorrent.Client
             tier = trackers;
             MetadataMode = metadataMode;
             MetadataPath = "metadataSave.torrent";
-            listener = new CustomListener();
-            engine = new ClientEngine(new EngineSettings(), listener, writer);
+            Listener = new CustomListener();
+            Engine = new ClientEngine(new EngineSettings(), Listener, writer);
             Writer = writer;
 
             RecreateManager();
@@ -558,18 +546,18 @@ namespace MonoTorrent.Client
 
         private static TorrentFile[] StandardMultiFile()
         {
-            return new TorrentFile[]
+            return new[]
             {
                 new TorrentFile("Dir1/File1", (int) (StandardPieceSize()*0.44)),
                 new TorrentFile("Dir1/Dir2/File2", (int) (StandardPieceSize()*13.25)),
                 new TorrentFile("File3", (int) (StandardPieceSize()*23.68)),
-                new TorrentFile("File4", (int) (StandardPieceSize()*2.05)),
+                new TorrentFile("File4", (int) (StandardPieceSize()*2.05))
             };
         }
 
         private static TorrentFile[] StandardSingleFile()
         {
-            return new TorrentFile[]
+            return new[]
             {
                 new TorrentFile("Dir1/File1", (int) (StandardPieceSize()*0.44))
             };
@@ -577,10 +565,10 @@ namespace MonoTorrent.Client
 
         private static string[][] StandardTrackers()
         {
-            return new string[][]
+            return new[]
             {
-                new string[] {"custom://tier1/announce1", "custom://tier1/announce2"},
-                new string[] {"custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3"},
+                new[] {"custom://tier1/announce1", "custom://tier1/announce2"},
+                new[] {"custom://tier2/announce1", "custom://tier2/announce2", "custom://tier2/announce3"}
             };
         }
 
@@ -592,17 +580,5 @@ namespace MonoTorrent.Client
         #endregion Create standard fake data
 
         #endregion Rig Creation
-
-        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength)
-        {
-            return CreateSingleFile(torrentSize, pieceLength, false);
-        }
-
-        internal static TestRig CreateSingleFile(int torrentSize, int pieceLength, bool metadataMode)
-        {
-            var files = StandardSingleFile();
-            files[0] = new TorrentFile(files[0].Path, torrentSize);
-            return new TestRig("", pieceLength, StandardWriter(), StandardTrackers(), files, metadataMode);
-        }
     }
 }

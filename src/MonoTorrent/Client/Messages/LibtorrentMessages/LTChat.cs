@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
@@ -11,12 +8,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
 
         private static readonly BEncodedString MessageKey = "msg";
         private BEncodedDictionary messageDict = new BEncodedDictionary();
-
-        public string Message
-        {
-            set { messageDict[MessageKey] = (BEncodedString) (value ?? ""); }
-            get { return ((BEncodedString) messageDict[MessageKey]).Text; }
-        }
 
         public LTChat()
             : base(Support.MessageId)
@@ -35,6 +26,12 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         {
             ExtensionId = peer.ExtensionSupports.MessageId(Support);
             Message = message;
+        }
+
+        public string Message
+        {
+            set { messageDict[MessageKey] = (BEncodedString) (value ?? ""); }
+            get { return ((BEncodedString) messageDict[MessageKey]).Text; }
         }
 
         public override int ByteLength

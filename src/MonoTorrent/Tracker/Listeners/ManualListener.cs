@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
 using System.Net;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {

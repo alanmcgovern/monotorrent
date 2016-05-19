@@ -6,32 +6,49 @@ namespace MonoTorrent.Client
 {
     public class MemoryWriterTests
     {
-        private byte[] buffer;
-        private MemoryWriter level1;
-        private MemoryWriter level2;
-
-        private TorrentFile singleFile;
-        private TorrentFile[] multiFile;
-
-        private int pieceLength;
-        private long torrentSize;
-
         public MemoryWriterTests()
         {
             pieceLength = Piece.BlockSize*2;
             singleFile = new TorrentFile("path", Piece.BlockSize*5);
-            multiFile = new TorrentFile[]
+            multiFile = new[]
             {
                 new TorrentFile("first", Piece.BlockSize - 550),
                 new TorrentFile("second", 100),
                 new TorrentFile("third", Piece.BlockSize)
             };
             buffer = new byte[Piece.BlockSize];
-            torrentSize = Toolbox.Accumulate<TorrentFile>(multiFile, delegate(TorrentFile f) { return f.Length; });
+            torrentSize = Toolbox.Accumulate(multiFile, delegate(TorrentFile f) { return f.Length; });
 
             Initialise(buffer, 1);
             level2 = new MemoryWriter(new NullWriter(), Piece.BlockSize*3);
             level1 = new MemoryWriter(level2, Piece.BlockSize*3);
+        }
+
+        private readonly byte[] buffer;
+        private readonly MemoryWriter level1;
+        private readonly MemoryWriter level2;
+
+        private readonly TorrentFile singleFile;
+        private readonly TorrentFile[] multiFile;
+
+        private readonly int pieceLength;
+        private readonly long torrentSize;
+
+        private void Initialise(byte[] buffer, byte value)
+        {
+            for (var i = 0; i < buffer.Length; i++)
+                buffer[i] = value;
+        }
+
+        private void Verify(byte[] buffer, byte expected)
+        {
+            Verify(buffer, 0, buffer.Length, expected);
+        }
+
+        private void Verify(byte[] buffer, int startOffset, int count, byte expected)
+        {
+            for (var i = startOffset; i < startOffset + count; i++)
+                Assert.Equal(buffer[i], expected);
         }
 
         [Fact]
@@ -93,23 +110,6 @@ namespace MonoTorrent.Client
             Verify(buffer, 0, file1, 1);
             Verify(buffer, file1, file2, 2);
             Verify(buffer, file1 + file2, file3, 3);
-        }
-
-        private void Initialise(byte[] buffer, byte value)
-        {
-            for (var i = 0; i < buffer.Length; i++)
-                buffer[i] = value;
-        }
-
-        private void Verify(byte[] buffer, byte expected)
-        {
-            Verify(buffer, 0, buffer.Length, expected);
-        }
-
-        private void Verify(byte[] buffer, int startOffset, int count, byte expected)
-        {
-            for (var i = startOffset; i < startOffset + count; i++)
-                Assert.Equal(buffer[i], expected);
         }
     }
 }

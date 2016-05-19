@@ -1,7 +1,4 @@
 #if !DISABLE_DHT
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
@@ -9,9 +6,9 @@ namespace MonoTorrent.Dht.Tasks
     internal class AnnounceTask : Task
     {
         private int activeAnnounces;
-        private NodeId infoHash;
-        private DhtEngine engine;
-        private int port;
+        private readonly DhtEngine engine;
+        private readonly NodeId infoHash;
+        private readonly int port;
 
         public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
             : this(engine, new NodeId(infoHash), port)

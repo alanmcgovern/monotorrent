@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net;
-
 namespace MonoTorrent.Tracker
 {
     public interface IPeerComparer

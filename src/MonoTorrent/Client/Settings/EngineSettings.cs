@@ -1,41 +1,11 @@
-//
-// EngineSettings.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using MonoTorrent.Client.Encryption;
-using System.Reflection;
 using System;
 using System.Net;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Represents the Settings which need to be passed to the engine
+    ///     Represents the Settings which need to be passed to the engine
     /// </summary>
     [Serializable]
     public class EngineSettings : ICloneable
@@ -45,7 +15,7 @@ namespace MonoTorrent.Client
         private bool haveSupressionEnabled; // True if you want to enable have surpression
 
         private EncryptionTypes allowedEncryption;
-            // The minimum encryption level to use. "None" corresponds to no encryption.
+        // The minimum encryption level to use. "None" corresponds to no encryption.
 
         private int listenPort; // The port to listen to incoming connections on
         private int globalMaxConnections; // The maximum number of connections that can be opened
@@ -57,7 +27,7 @@ namespace MonoTorrent.Client
         private int maxWriteRate; // The maximum write rate to the harddisk (for all active torrentmanagers)
 
         private bool preferEncryption;
-            // If encrypted and unencrypted connections are enabled, specifies if encryption should be chosen first
+        // If encrypted and unencrypted connections are enabled, specifies if encryption should be chosen first
 
         private IPEndPoint reportedEndpoint; // The IPEndpoint reported to the tracker
         private string savePath; // The path that torrents will be downloaded to by default

@@ -28,8 +28,6 @@
 //
 
 
-using System;
-
 namespace MonoTorrent.Dht
 {
     internal enum NodeState

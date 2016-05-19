@@ -1,46 +1,29 @@
-//
-// TorrentCreator.cs
-//
-// Authors:
-//   Gregor Burger burger.gregor@gmail.com
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006-2007 Gregor Burger and Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
-using System.Security.Cryptography;
 
 namespace MonoTorrent.Common
 {
     public class TorrentCreator : EditableTorrent
     {
+        private TorrentCreatorAsyncResult asyncResult;
+
+        public TorrentCreator()
+        {
+            GetrightHttpSeeds = new List<string>();
+            CanEditSecureMetadata = true;
+            CreatedBy = string.Format("MonoTorrent {0}", VersionInfo.Version);
+        }
+
+        public List<string> GetrightHttpSeeds { get; }
+
+        public bool StoreMD5 { get; set; }
+
         public static int RecommendedPieceSize(long totalSize)
         {
             // Check all piece sizes that are multiples of 32kB and
@@ -86,29 +69,6 @@ namespace MonoTorrent.Common
         public event EventHandler<TorrentCreatorEventArgs> Hashed;
 
 
-        private TorrentCreatorAsyncResult asyncResult;
-        private List<string> getrightHttpSeeds;
-        private bool storeMD5;
-
-        public List<string> GetrightHttpSeeds
-        {
-            get { return getrightHttpSeeds; }
-        }
-
-        public bool StoreMD5
-        {
-            get { return storeMD5; }
-            set { storeMD5 = value; }
-        }
-
-        public TorrentCreator()
-        {
-            getrightHttpSeeds = new List<string>();
-            CanEditSecureMetadata = true;
-            CreatedBy = string.Format("MonoTorrent {0}", VersionInfo.Version);
-        }
-
-
         public void AbortCreation()
         {
             var r = asyncResult;
@@ -121,11 +81,11 @@ namespace MonoTorrent.Common
             if (Announces.Count > 0 && Announces[0].Count > 0)
                 Announce = Announces[0][0];
 
-            if (getrightHttpSeeds.Count > 0)
+            if (GetrightHttpSeeds.Count > 0)
             {
                 var seedlist = new BEncodedList();
                 seedlist.AddRange(
-                    getrightHttpSeeds.ConvertAll<BEncodedValue>(delegate(string s) { return (BEncodedString) s; }));
+                    GetrightHttpSeeds.ConvertAll<BEncodedValue>(delegate(string s) { return (BEncodedString) s; }));
                 torrent["url-list"] = seedlist;
             }
 
@@ -172,7 +132,7 @@ namespace MonoTorrent.Common
 
             shaHasher = HashAlgoFactory.Create<SHA1>();
             torrentHashes = new List<byte>();
-            overallTotal = Toolbox.Accumulate<TorrentFile>(files, delegate(TorrentFile m) { return m.Length; });
+            overallTotal = Toolbox.Accumulate(files, delegate(TorrentFile m) { return m.Length; });
 
             var pieceLength = PieceLength;
             buffer = new byte[pieceLength];
@@ -290,11 +250,12 @@ namespace MonoTorrent.Common
             return torrent;
         }
 
-        private void CreateMultiFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
+        private void CreateMultiFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings,
+            PieceWriter writer,
             string name)
         {
             var info = (BEncodedDictionary) dictionary["info"];
-            var files = mappings.ConvertAll<BEncodedValue>(ToFileInfoDict);
+            var files = mappings.ConvertAll(ToFileInfoDict);
             info.Add("files", new BEncodedList(files));
         }
 
@@ -303,7 +264,8 @@ namespace MonoTorrent.Common
             return new DiskWriter();
         }
 
-        private void CreateSingleFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings, PieceWriter writer,
+        private void CreateSingleFileTorrent(BEncodedDictionary dictionary, List<TorrentFile> mappings,
+            PieceWriter writer,
             string name)
         {
             var infoDict = (BEncodedDictionary) dictionary["info"];
@@ -354,7 +316,7 @@ namespace MonoTorrent.Common
 
         private void RaiseHashed(TorrentCreatorEventArgs e)
         {
-            Toolbox.RaiseAsyncEvent<TorrentCreatorEventArgs>(Hashed, this, e);
+            Toolbox.RaiseAsyncEvent(Hashed, this, e);
         }
 
         private TorrentFile ToTorrentFile(FileMapping mapping)
@@ -368,7 +330,7 @@ namespace MonoTorrent.Common
             var fileDict = new BEncodedDictionary();
 
             var filePath = new BEncodedList();
-            var splittetPath = file.Path.Split(new char[] {Path.DirectorySeparatorChar},
+            var splittetPath = file.Path.Split(new[] {Path.DirectorySeparatorChar},
                 StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in splittetPath)
                 filePath.Add(new BEncodedString(s));

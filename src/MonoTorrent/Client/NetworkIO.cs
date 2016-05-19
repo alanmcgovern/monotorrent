@@ -1,35 +1,6 @@
-//
-// NetworkIO.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using MonoTorrent.Client;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Common;
@@ -42,16 +13,16 @@ namespace MonoTorrent.Client
 
     internal class AsyncConnectState
     {
+        public IConnection Connection;
+        public TorrentManager Manager;
+        public Peer Peer;
+
         public AsyncConnectState(TorrentManager manager, Peer peer, IConnection connection)
         {
             Manager = manager;
             Peer = peer;
             Connection = connection;
         }
-
-        public IConnection Connection;
-        public TorrentManager Manager;
-        public Peer Peer;
     }
 
     internal partial class NetworkIO
@@ -60,15 +31,19 @@ namespace MonoTorrent.Client
         // so send in chunks of 2kB + a little so we do 8 transfers per piece.
         private const int ChunkLength = 2048 + 32;
 
-        private static Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState>();
-        private static Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState>();
+        private static readonly Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState>();
+        private static readonly Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState>();
 
-        private static ICache<AsyncConnectState> connectCache = new Cache<AsyncConnectState>(true).Synchronize();
-        private static ICache<AsyncIOState> transferCache = new Cache<AsyncIOState>(true).Synchronize();
+        private static readonly ICache<AsyncConnectState> connectCache =
+            new Cache<AsyncConnectState>(true).Synchronize();
 
-        private static AsyncCallback EndConnectCallback = EndConnect;
-        private static AsyncCallback EndReceiveCallback = EndReceive;
-        private static AsyncCallback EndSendCallback = EndSend;
+        private static readonly ICache<AsyncIOState> transferCache = new Cache<AsyncIOState>(true).Synchronize();
+
+        private static readonly AsyncCallback EndConnectCallback = EndConnect;
+        private static readonly AsyncCallback EndReceiveCallback = EndReceive;
+        private static readonly AsyncCallback EndSendCallback = EndSend;
+
+        private static int halfOpens;
 
         static NetworkIO()
         {
@@ -89,8 +64,6 @@ namespace MonoTorrent.Client
                 return true;
             });
         }
-
-        private static int halfOpens;
 
         public static int HalfOpens
         {

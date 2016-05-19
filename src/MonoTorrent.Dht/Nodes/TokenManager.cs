@@ -29,7 +29,6 @@
 
 
 using System;
-using System.IO;
 using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
@@ -38,18 +37,11 @@ namespace MonoTorrent.Dht
 {
     internal class TokenManager
     {
-        private byte[] secret;
-        private byte[] previousSecret;
         private DateTime LastSecretGeneration;
-        private RandomNumberGenerator random;
-        private SHA1 sha1;
-        private TimeSpan timeout = TimeSpan.FromMinutes(5);
-
-        internal TimeSpan Timeout
-        {
-            get { return timeout; }
-            set { timeout = value; }
-        }
+        private readonly byte[] previousSecret;
+        private readonly RandomNumberGenerator random;
+        private readonly byte[] secret;
+        private readonly SHA1 sha1;
 
         public TokenManager()
         {
@@ -61,6 +53,8 @@ namespace MonoTorrent.Dht
             random.GetNonZeroBytes(secret);
             random.GetNonZeroBytes(previousSecret);
         }
+
+        internal TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
 
         public BEncodedString GenerateToken(Node node)
         {
@@ -75,7 +69,7 @@ namespace MonoTorrent.Dht
         private BEncodedString GetToken(Node node, byte[] s)
         {
             //refresh secret needed
-            if (LastSecretGeneration.Add(timeout) < DateTime.UtcNow)
+            if (LastSecretGeneration.Add(Timeout) < DateTime.UtcNow)
             {
                 LastSecretGeneration = DateTime.UtcNow;
                 secret.CopyTo(previousSecret, 0);
@@ -87,7 +81,7 @@ namespace MonoTorrent.Dht
             sha1.TransformBlock(n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock(s, 0, s.Length);
 
-            return (BEncodedString) sha1.Hash;
+            return sha1.Hash;
         }
     }
 }

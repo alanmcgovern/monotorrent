@@ -1,53 +1,18 @@
-//
-// InitialSeedUnchoker.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2009 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal class ChokeData
     {
-        public DateTime LastChoked;
-        public PeerId Peer;
         public BitField CurrentPieces;
-        public int SharedPieces;
+        public DateTime LastChoked;
         public DateTime LastUnchoked;
+        public PeerId Peer;
+        public int SharedPieces;
         public int TotalPieces;
-
-        public double ShareRatio
-        {
-            get { return (SharedPieces + 1.0)/(TotalPieces + 1.0); }
-        }
 
         public ChokeData(PeerId peer)
         {
@@ -55,13 +20,18 @@ namespace MonoTorrent.Client
             Peer = peer;
             CurrentPieces = new BitField(peer.BitField.Length);
         }
+
+        public double ShareRatio
+        {
+            get { return (SharedPieces + 1.0)/(TotalPieces + 1.0); }
+        }
     }
 
     internal class SeededPiece
     {
+        public int BlocksSent;
         public int Index;
         public PeerId Peer;
-        public int BlocksSent;
         public DateTime SeededAt;
         public int TotalBlocks;
 
@@ -76,11 +46,20 @@ namespace MonoTorrent.Client
 
     internal class InitialSeedUnchoker : Unchoker
     {
-        private List<SeededPiece> advertisedPieces;
-        private BitField bitfield;
-        private TorrentManager manager;
-        private List<ChokeData> peers;
-        private BitField temp;
+        private readonly List<SeededPiece> advertisedPieces;
+        private readonly BitField bitfield;
+        private readonly TorrentManager manager;
+        private readonly List<ChokeData> peers;
+        private readonly BitField temp;
+
+        public InitialSeedUnchoker(TorrentManager manager)
+        {
+            advertisedPieces = new List<SeededPiece>();
+            bitfield = new BitField(manager.Bitfield.Length);
+            this.manager = manager;
+            peers = new List<ChokeData>();
+            temp = new BitField(bitfield.Length);
+        }
 
         private bool PendingUnchoke
         {
@@ -100,15 +79,6 @@ namespace MonoTorrent.Client
         internal int PeerCount
         {
             get { return peers.Count; }
-        }
-
-        public InitialSeedUnchoker(TorrentManager manager)
-        {
-            advertisedPieces = new List<SeededPiece>();
-            bitfield = new BitField(manager.Bitfield.Length);
-            this.manager = manager;
-            peers = new List<ChokeData>();
-            temp = new BitField(bitfield.Length);
         }
 
         public override void Choke(PeerId id)

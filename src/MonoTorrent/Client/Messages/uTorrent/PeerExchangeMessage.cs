@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Messages.Libtorrent
@@ -8,11 +5,11 @@ namespace MonoTorrent.Client.Messages.Libtorrent
     public class PeerExchangeMessage : ExtensionMessage
     {
         public static readonly ExtensionSupport Support = CreateSupport("ut_pex");
-
-        private BEncodedDictionary peerDict;
         private static readonly BEncodedString AddedKey = "added";
         private static readonly BEncodedString AddedDotFKey = "added.f";
         private static readonly BEncodedString DroppedKey = "dropped";
+
+        private BEncodedDictionary peerDict;
 
         public PeerExchangeMessage()
             : base(Support.MessageId)
@@ -32,13 +29,6 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         {
             ExtensionId = id.ExtensionSupports.MessageId(Support);
             Initialise(added, addedDotF, dropped);
-        }
-
-        private void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
-        {
-            peerDict[AddedKey] = (BEncodedString) (added ?? BufferManager.EmptyBuffer);
-            peerDict[AddedDotFKey] = (BEncodedString) (addedDotF ?? BufferManager.EmptyBuffer);
-            peerDict[DroppedKey] = (BEncodedString) (dropped ?? BufferManager.EmptyBuffer);
         }
 
         public byte[] Added
@@ -62,6 +52,13 @@ namespace MonoTorrent.Client.Messages.Libtorrent
         public override int ByteLength
         {
             get { return 4 + 1 + 1 + peerDict.LengthInBytes(); }
+        }
+
+        private void Initialise(byte[] added, byte[] addedDotF, byte[] dropped)
+        {
+            peerDict[AddedKey] = (BEncodedString) (added ?? BufferManager.EmptyBuffer);
+            peerDict[AddedDotFKey] = (BEncodedString) (addedDotF ?? BufferManager.EmptyBuffer);
+            peerDict[DroppedKey] = (BEncodedString) (dropped ?? BufferManager.EmptyBuffer);
         }
 
         public override void Decode(byte[] buffer, int offset, int length)

@@ -1,24 +1,16 @@
 #if !DISABLE_DHT
-using MonoTorrent.Dht.Messages;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
-using System;
 using MonoTorrent.Client;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
     internal class GetPeersTask : Task
     {
-        private NodeId infoHash;
-        private DhtEngine engine;
         private int activeQueries;
-        private SortedList<NodeId, NodeId> closestNodes;
-        private SortedList<NodeId, Node> queriedNodes;
-
-        internal SortedList<NodeId, Node> ClosestActiveNodes
-        {
-            get { return queriedNodes; }
-        }
+        private readonly SortedList<NodeId, NodeId> closestNodes;
+        private readonly DhtEngine engine;
+        private readonly NodeId infoHash;
 
         public GetPeersTask(DhtEngine engine, InfoHash infohash)
             : this(engine, new NodeId(infohash))
@@ -30,8 +22,10 @@ namespace MonoTorrent.Dht.Tasks
             this.engine = engine;
             infoHash = infohash;
             closestNodes = new SortedList<NodeId, NodeId>(Bucket.MaxCapacity);
-            queriedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity*2);
+            ClosestActiveNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity*2);
         }
+
+        internal SortedList<NodeId, Node> ClosestActiveNodes { get; }
 
         public override void Execute()
         {
@@ -39,7 +33,7 @@ namespace MonoTorrent.Dht.Tasks
                 return;
 
             Active = true;
-            DhtEngine.MainLoop.Queue((MainLoopTask) delegate
+            DhtEngine.MainLoop.Queue(delegate
             {
                 IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
                 foreach (var n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
@@ -50,7 +44,7 @@ namespace MonoTorrent.Dht.Tasks
         private void SendGetPeers(Node n)
         {
             var distance = n.Id.Xor(infoHash);
-            queriedNodes.Add(distance, n);
+            ClosestActiveNodes.Add(distance, n);
 
             activeQueries++;
             var m = new GetPeers(engine.LocalId, infoHash);
@@ -70,9 +64,9 @@ namespace MonoTorrent.Dht.Tasks
 
                 // We want to keep a list of the top (K) closest nodes which have responded
                 var target = ((SendQueryTask) args.Task).Target;
-                var index = queriedNodes.Values.IndexOf(target);
+                var index = ClosestActiveNodes.Values.IndexOf(target);
                 if (index >= Bucket.MaxCapacity || args.TimedOut)
-                    queriedNodes.RemoveAt(index);
+                    ClosestActiveNodes.RemoveAt(index);
 
                 if (args.TimedOut)
                     return;

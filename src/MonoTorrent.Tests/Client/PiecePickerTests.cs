@@ -1,13 +1,35 @@
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
 using System;
 using System.Collections.Generic;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class PiecePickerTests : IDisposable
     {
+        public PiecePickerTests()
+        {
+            // Yes, this is horrible. Deal with it.
+            rig = TestRig.CreateMultiFile();
+            peers = new List<PeerId>();
+            picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
+            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>());
+            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
+            for (var i = 0; i < 20; i++)
+            {
+                var p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
+                p.SupportsFastPeer = true;
+                peers.Add(p);
+            }
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
+        }
+
         //static void Main(string[] args)
         //{
         //    PiecePickerTests t = new PiecePickerTests();
@@ -43,109 +65,6 @@ namespace MonoTorrent.Client
         protected PiecePicker picker;
         protected TestRig rig;
 
-        public PiecePickerTests()
-        {
-            // Yes, this is horrible. Deal with it.
-            rig = TestRig.CreateMultiFile();
-            peers = new List<PeerId>();
-            picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
-            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>());
-            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
-            for (var i = 0; i < 20; i++)
-            {
-                var p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
-                p.SupportsFastPeer = true;
-                peers.Add(p);
-            }
-        }
-
-        public void Dispose()
-        {
-            rig.Dispose();
-        }
-
-        [Fact]
-        public void RequestFastSeeder()
-        {
-            var allowedFast = new int[] {1, 2, 3, 5, 8, 13, 21};
-            peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange((int[]) allowedFast.Clone());
-
-            peers[0].BitField.SetAll(true); // Lets pretend he has everything
-            for (var i = 0; i < 7; i++)
-            {
-                for (var j = 0; j < 16; j++)
-                {
-                    var msg = picker.PickPiece(peers[0], peers);
-                    Assert.NotNull(msg);
-                    Assert.True(Array.IndexOf<int>(allowedFast, msg.PieceIndex) > -1, "#2." + j);
-                }
-            }
-            Assert.Null(picker.PickPiece(peers[0], peers));
-        }
-
-        [Fact]
-        public void RequestFastNotSeeder()
-        {
-            peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange(new int[] {1, 2, 3, 5, 8, 13, 21});
-
-            peers[0].BitField.SetAll(true);
-            peers[0].BitField[1] = false;
-            peers[0].BitField[3] = false;
-            peers[0].BitField[5] = false;
-
-            for (var i = 0; i < 4; i++)
-                for (var j = 0; j < 16; j++)
-                {
-                    var m = picker.PickPiece(peers[0], peers);
-                    Assert.True(m.PieceIndex == 2 || m.PieceIndex == 8 || m.PieceIndex == 13 || m.PieceIndex == 21);
-                }
-
-            Assert.Null(picker.PickPiece(peers[0], peers));
-        }
-
-        [Fact]
-        public void RequestFastHaveEverything()
-        {
-            peers[0].SupportsFastPeer = true;
-            peers[0].IsAllowedFastPieces.AddRange(new int[] {1, 2, 3, 5, 8, 13, 21});
-
-            peers[0].BitField.SetAll(true);
-            rig.Manager.Bitfield.SetAll(true);
-
-            Assert.Null(picker.PickPiece(peers[0], peers));
-        }
-
-        [Fact]
-        public void RequestChoked()
-        {
-            Assert.Null(picker.PickPiece(peers[0], peers));
-        }
-
-        [Fact]
-        public void RequestWhenSeeder()
-        {
-            rig.Manager.Bitfield.SetAll(true);
-            peers[0].BitField.SetAll(true);
-            peers[0].IsChoking = false;
-
-            Assert.Null(picker.PickPiece(peers[0], peers));
-        }
-
-        [Fact]
-        public void NoInterestingPieces()
-        {
-            peer.IsChoking = false;
-            for (var i = 0; i < rig.Manager.Bitfield.Length; i++)
-                if (i%2 == 0)
-                {
-                    peer.BitField[i] = true;
-                    rig.Manager.Bitfield[i] = true;
-                }
-            Assert.Null(picker.PickPiece(peer, peers));
-        }
-
         [Fact]
         public virtual void CancelRequests()
         {
@@ -171,73 +90,6 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void RejectRequests()
-        {
-            var messages = new List<RequestMessage>();
-            peer.IsChoking = false;
-            peer.BitField.SetAll(true);
-
-            RequestMessage m;
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages.Add(m);
-
-            foreach (var message in messages)
-                picker.CancelRequest(peer, message.PieceIndex, message.StartOffset, message.RequestLength);
-
-            var messages2 = new List<RequestMessage>();
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages2.Add(m);
-
-            Assert.Equal(messages.Count, messages2.Count);
-            for (var i = 0; i < messages.Count; i++)
-                Assert.True(messages2.Contains(messages[i]), "#2." + i);
-        }
-
-        [Fact]
-        public void PeerChoked()
-        {
-            var messages = new List<RequestMessage>();
-            peer.IsChoking = false;
-            peer.BitField.SetAll(true);
-
-            RequestMessage m;
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages.Add(m);
-
-            picker.CancelRequests(peer);
-
-            var messages2 = new List<RequestMessage>();
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages2.Add(m);
-
-            Assert.Equal(messages.Count, messages2.Count);
-            for (var i = 0; i < messages.Count; i++)
-                Assert.True(messages2.Contains(messages[i]), "#2." + i);
-        }
-
-        [Fact]
-        //If a fast peer sends a choke message, CancelRequests will not be called"
-        public void FastPeerChoked()
-        {
-            var messages = new List<RequestMessage>();
-            peer.IsChoking = false;
-            peer.BitField.SetAll(true);
-            peer.SupportsFastPeer = true;
-
-            RequestMessage m;
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages.Add(m);
-
-            picker.CancelRequests(peer);
-
-            var messages2 = new List<RequestMessage>();
-            while ((m = picker.PickPiece(peer, peers)) != null)
-                messages2.Add(m);
-
-            Assert.Equal(0, messages2.Count);
-        }
-
-        [Fact]
         public void ChokeThenClose()
         {
             var messages = new List<RequestMessage>();
@@ -258,37 +110,6 @@ namespace MonoTorrent.Client
             Assert.Equal(messages.Count, messages2.Count);
             for (var i = 0; i < messages.Count; i++)
                 Assert.True(messages2.Contains(messages[i]), "#2." + i);
-        }
-
-        [Fact]
-        public void RequestBlock()
-        {
-            peer.IsChoking = false;
-            peer.BitField.SetAll(true);
-            for (var i = 0; i < 1000; i++)
-            {
-                var b = picker.PickPiece(peer, peers, i);
-                Assert.Equal(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
-                picker.CancelRequests(peer);
-            }
-        }
-
-        [Fact]
-        public void InvalidFastPiece()
-        {
-            peer.IsChoking = true;
-            peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange(new int[] {1, 2, 5, 55, 62, 235, 42624});
-            peer.BitField.SetAll(true);
-            for (var i = 0; i < rig.BlocksPerPiece*3; i++)
-            {
-                var m = picker.PickPiece(peer, peers);
-                Assert.NotNull(m);
-                Assert.True(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5);
-            }
-
-            for (var i = 0; i < 10; i++)
-                Assert.Null(picker.PickPiece(peer, peers));
         }
 
         [Fact]
@@ -319,11 +140,11 @@ namespace MonoTorrent.Client
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.IsAllowedFastPieces.AddRange(new int[] {1, 2, 3, 4});
+            peer.IsAllowedFastPieces.AddRange(new[] {1, 2, 3, 4});
             peer.BitField.SetAll(true);
             picker = new StandardPicker();
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
-            var bundle = picker.PickPiece(peer, new Common.BitField(peer.BitField.Length), peers,
+            var bundle = picker.PickPiece(peer, new BitField(peer.BitField.Length), peers,
                 1, 0, peer.BitField.Length);
             Assert.Null(bundle);
         }
@@ -334,13 +155,68 @@ namespace MonoTorrent.Client
         {
             peer.IsChoking = false;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange(new int[] {1, 2, 3, 4});
+            peer.SuggestedPieces.AddRange(new[] {1, 2, 3, 4});
             peer.BitField.SetAll(true);
             picker = new StandardPicker();
             picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
-            var bundle = picker.PickPiece(peer, new Common.BitField(peer.BitField.Length), peers,
+            var bundle = picker.PickPiece(peer, new BitField(peer.BitField.Length), peers,
                 1, 0, peer.BitField.Length);
             Assert.Null(bundle);
+        }
+
+        [Fact]
+        //If a fast peer sends a choke message, CancelRequests will not be called"
+        public void FastPeerChoked()
+        {
+            var messages = new List<RequestMessage>();
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            peer.SupportsFastPeer = true;
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.CancelRequests(peer);
+
+            var messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.Equal(0, messages2.Count);
+        }
+
+        [Fact]
+        public void FastPieceTest()
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                peers[i].BitField.SetAll(true);
+                peers[i].SupportsFastPeer = true;
+                peers[i].IsAllowedFastPieces.Add(5);
+                peers[i].IsAllowedFastPieces.Add(6);
+            }
+            var m1 = picker.PickPiece(peers[0], new List<PeerId>());
+            var m2 = picker.PickPiece(peers[1], new List<PeerId>());
+            Assert.NotEqual(m1.PieceIndex, m2.PieceIndex);
+        }
+
+        [Fact]
+        public void InvalidFastPiece()
+        {
+            peer.IsChoking = true;
+            peer.SupportsFastPeer = true;
+            peer.IsAllowedFastPieces.AddRange(new[] {1, 2, 5, 55, 62, 235, 42624});
+            peer.BitField.SetAll(true);
+            for (var i = 0; i < rig.BlocksPerPiece*3; i++)
+            {
+                var m = picker.PickPiece(peer, peers);
+                Assert.NotNull(m);
+                Assert.True(m.PieceIndex == 1 || m.PieceIndex == 2 || m.PieceIndex == 5);
+            }
+
+            for (var i = 0; i < 10; i++)
+                Assert.Null(picker.PickPiece(peer, peers));
         }
 
         [Fact]
@@ -348,9 +224,44 @@ namespace MonoTorrent.Client
         {
             peer.IsChoking = true;
             peer.SupportsFastPeer = true;
-            peer.SuggestedPieces.AddRange(new int[] {1, 2, 5, 55, 62, 235, 42624});
+            peer.SuggestedPieces.AddRange(new[] {1, 2, 5, 55, 62, 235, 42624});
             peer.BitField.SetAll(true);
             picker.PickPiece(peer, peers);
+        }
+
+        [Fact]
+        public void NoInterestingPieces()
+        {
+            peer.IsChoking = false;
+            for (var i = 0; i < rig.Manager.Bitfield.Length; i++)
+                if (i%2 == 0)
+                {
+                    peer.BitField[i] = true;
+                    rig.Manager.Bitfield[i] = true;
+                }
+            Assert.Null(picker.PickPiece(peer, peers));
+        }
+
+        [Fact]
+        public void PeerChoked()
+        {
+            var messages = new List<RequestMessage>();
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            picker.CancelRequests(peer);
+
+            var messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.Equal(messages.Count, messages2.Count);
+            for (var i = 0; i < messages.Count; i++)
+                Assert.True(messages2.Contains(messages[i]), "#2." + i);
         }
 
         [Fact]
@@ -478,18 +389,108 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void FastPieceTest()
+        public void RejectRequests()
         {
-            for (var i = 0; i < 2; i++)
+            var messages = new List<RequestMessage>();
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+
+            RequestMessage m;
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages.Add(m);
+
+            foreach (var message in messages)
+                picker.CancelRequest(peer, message.PieceIndex, message.StartOffset, message.RequestLength);
+
+            var messages2 = new List<RequestMessage>();
+            while ((m = picker.PickPiece(peer, peers)) != null)
+                messages2.Add(m);
+
+            Assert.Equal(messages.Count, messages2.Count);
+            for (var i = 0; i < messages.Count; i++)
+                Assert.True(messages2.Contains(messages[i]), "#2." + i);
+        }
+
+        [Fact]
+        public void RequestBlock()
+        {
+            peer.IsChoking = false;
+            peer.BitField.SetAll(true);
+            for (var i = 0; i < 1000; i++)
             {
-                peers[i].BitField.SetAll(true);
-                peers[i].SupportsFastPeer = true;
-                peers[i].IsAllowedFastPieces.Add(5);
-                peers[i].IsAllowedFastPieces.Add(6);
+                var b = picker.PickPiece(peer, peers, i);
+                Assert.Equal(Math.Min(i, rig.TotalBlocks), b.Messages.Count);
+                picker.CancelRequests(peer);
             }
-            var m1 = picker.PickPiece(peers[0], new List<PeerId>());
-            var m2 = picker.PickPiece(peers[1], new List<PeerId>());
-            Assert.NotEqual(m1.PieceIndex, m2.PieceIndex);
+        }
+
+        [Fact]
+        public void RequestChoked()
+        {
+            Assert.Null(picker.PickPiece(peers[0], peers));
+        }
+
+        [Fact]
+        public void RequestFastHaveEverything()
+        {
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange(new[] {1, 2, 3, 5, 8, 13, 21});
+
+            peers[0].BitField.SetAll(true);
+            rig.Manager.Bitfield.SetAll(true);
+
+            Assert.Null(picker.PickPiece(peers[0], peers));
+        }
+
+        [Fact]
+        public void RequestFastNotSeeder()
+        {
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange(new[] {1, 2, 3, 5, 8, 13, 21});
+
+            peers[0].BitField.SetAll(true);
+            peers[0].BitField[1] = false;
+            peers[0].BitField[3] = false;
+            peers[0].BitField[5] = false;
+
+            for (var i = 0; i < 4; i++)
+                for (var j = 0; j < 16; j++)
+                {
+                    var m = picker.PickPiece(peers[0], peers);
+                    Assert.True(m.PieceIndex == 2 || m.PieceIndex == 8 || m.PieceIndex == 13 || m.PieceIndex == 21);
+                }
+
+            Assert.Null(picker.PickPiece(peers[0], peers));
+        }
+
+        [Fact]
+        public void RequestFastSeeder()
+        {
+            var allowedFast = new[] {1, 2, 3, 5, 8, 13, 21};
+            peers[0].SupportsFastPeer = true;
+            peers[0].IsAllowedFastPieces.AddRange((int[]) allowedFast.Clone());
+
+            peers[0].BitField.SetAll(true); // Lets pretend he has everything
+            for (var i = 0; i < 7; i++)
+            {
+                for (var j = 0; j < 16; j++)
+                {
+                    var msg = picker.PickPiece(peers[0], peers);
+                    Assert.NotNull(msg);
+                    Assert.True(Array.IndexOf(allowedFast, msg.PieceIndex) > -1, "#2." + j);
+                }
+            }
+            Assert.Null(picker.PickPiece(peers[0], peers));
+        }
+
+        [Fact]
+        public void RequestWhenSeeder()
+        {
+            rig.Manager.Bitfield.SetAll(true);
+            peers[0].BitField.SetAll(true);
+            peers[0].IsChoking = false;
+
+            Assert.Null(picker.PickPiece(peers[0], peers));
         }
     }
 }

@@ -1,17 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
     public class RequestMonitor
     {
+        #region Constructors
+
+        public RequestMonitor()
+        {
+            announces = new SpeedMonitor();
+            scrapes = new SpeedMonitor();
+        }
+
+        #endregion Constructors
+
+        internal void Tick()
+        {
+            lock (announces)
+                announces.Tick();
+            lock (scrapes)
+                scrapes.Tick();
+        }
+
         #region Member Variables
 
-        private SpeedMonitor announces;
-        private SpeedMonitor scrapes;
+        private readonly SpeedMonitor announces;
+        private readonly SpeedMonitor scrapes;
 
         #endregion Member Variables
 
@@ -39,16 +53,6 @@ namespace MonoTorrent.Tracker
 
         #endregion Properties
 
-        #region Constructors
-
-        public RequestMonitor()
-        {
-            announces = new SpeedMonitor();
-            scrapes = new SpeedMonitor();
-        }
-
-        #endregion Constructors
-
         #region Methods
 
         internal void AnnounceReceived()
@@ -64,13 +68,5 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Methods
-
-        internal void Tick()
-        {
-            lock (announces)
-                announces.Tick();
-            lock (scrapes)
-                scrapes.Tick();
-        }
     }
 }

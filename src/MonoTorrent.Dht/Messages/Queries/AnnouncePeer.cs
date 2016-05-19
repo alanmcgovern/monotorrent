@@ -28,23 +28,33 @@
 //
 
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     internal class AnnouncePeer : QueryMessage
     {
-        private static BEncodedString InfoHashKey = "info_hash";
-        private static BEncodedString QueryName = "announce_peer";
-        private static BEncodedString PortKey = "port";
-        private static BEncodedString TokenKey = "token";
+        private static readonly BEncodedString InfoHashKey = "info_hash";
+        private static readonly BEncodedString QueryName = "announce_peer";
+        private static readonly BEncodedString PortKey = "port";
+        private static readonly BEncodedString TokenKey = "token";
 
-        private static ResponseCreator responseCreator =
+        private static readonly ResponseCreator responseCreator =
             delegate(BEncodedDictionary d, QueryMessage m) { return new AnnouncePeerResponse(d, m); };
+
+        public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedString token)
+            : base(id, QueryName, responseCreator)
+        {
+            Parameters.Add(InfoHashKey, infoHash.BencodedString());
+            Parameters.Add(PortKey, port);
+            Parameters.Add(TokenKey, token);
+        }
+
+        public AnnouncePeer(BEncodedDictionary d)
+            : base(d, responseCreator)
+        {
+        }
 
         internal NodeId InfoHash
         {
@@ -59,19 +69,6 @@ namespace MonoTorrent.Dht.Messages
         internal BEncodedString Token
         {
             get { return (BEncodedString) Parameters[TokenKey]; }
-        }
-
-        public AnnouncePeer(NodeId id, NodeId infoHash, BEncodedNumber port, BEncodedString token)
-            : base(id, QueryName, responseCreator)
-        {
-            Parameters.Add(InfoHashKey, infoHash.BencodedString());
-            Parameters.Add(PortKey, port);
-            Parameters.Add(TokenKey, token);
-        }
-
-        public AnnouncePeer(BEncodedDictionary d)
-            : base(d, responseCreator)
-        {
         }
 
         public override void Handle(DhtEngine engine, Node node)

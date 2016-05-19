@@ -1,59 +1,23 @@
-//
-// RateLimiter.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace MonoTorrent.Client
 {
     internal class RateLimiter : IRateLimiter
     {
-        private bool unlimited;
-        private int savedError;
         private int chunks;
-
-        public bool Unlimited
-        {
-            get { return unlimited; }
-        }
+        private int savedError;
 
         public RateLimiter()
         {
             UpdateChunks(0, 0);
         }
 
+        public bool Unlimited { get; private set; }
+
         public void UpdateChunks(int maxRate, int actualRate)
         {
-            unlimited = maxRate == 0;
-            if (unlimited)
+            Unlimited = maxRate == 0;
+            if (Unlimited)
                 return;
 
             // From experimentation, i found that increasing by 5% gives more accuate rate limiting
@@ -64,7 +28,7 @@ namespace MonoTorrent.Client
             savedError = errorRateDown;
 
 
-            var increaseAmount = (int) ((maxRate + delta)/ConnectionManager.ChunkLength);
+            var increaseAmount = (maxRate + delta)/ConnectionManager.ChunkLength;
             Interlocked.Add(ref chunks, increaseAmount);
             if (chunks > maxRate*1.2/ConnectionManager.ChunkLength)
                 Interlocked.Exchange(ref chunks, (int) (maxRate*1.2/ConnectionManager.ChunkLength));

@@ -1,59 +1,29 @@
-//
-// PeerBEncryption.cs
-//
-// Authors:
-//   Yiduo Wang planetbeing@gmail.com
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2007 Yiduo Wang
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
 using System.Text;
-using System.Net.Sockets;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Encryption
 {
     /// <summary>
-    /// Class to handle message stream encryption for receiving connections
+    ///     Class to handle message stream encryption for receiving connections
     /// </summary>
     internal class PeerBEncryption : EncryptedSocket
     {
-        private InfoHash[] possibleSKEYs = null;
-        private byte[] VerifyBytes;
+        private byte[] b;
+        private readonly AsyncCallback gotPadCCallback;
 
-        private AsyncCallback gotVerificationCallback;
-        private AsyncCallback gotPadCCallback;
+        private readonly AsyncCallback gotVerificationCallback;
+        private readonly InfoHash[] possibleSKEYs;
+        private byte[] VerifyBytes;
 
         public PeerBEncryption(InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
         {
             this.possibleSKEYs = possibleSKEYs;
 
-            gotVerificationCallback = new AsyncCallback(gotVerification);
-            gotPadCCallback = new AsyncCallback(gotPadC);
+            gotVerificationCallback = gotVerification;
+            gotPadCCallback = gotPadC;
         }
 
         protected override void doneReceiveY()
@@ -79,7 +49,7 @@ namespace MonoTorrent.Client.Encryption
                 base.doneSynchronize();
 
                 VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2];
-                    // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
+                // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
                 ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback);
             }
@@ -88,8 +58,6 @@ namespace MonoTorrent.Client.Encryption
                 asyncResult.Complete(ex);
             }
         }
-
-        private byte[] b;
 
         private void gotVerification(IAsyncResult result)
         {
@@ -102,7 +70,7 @@ namespace MonoTorrent.Client.Encryption
                 var lenPadC = new byte[2];
 
                 Array.Copy(VerifyBytes, 0, torrentHash, 0, torrentHash.Length);
-                    // HASH('req2', SKEY) xor HASH('req3', S)
+                // HASH('req2', SKEY) xor HASH('req3', S)
 
                 if (!MatchSKEY(torrentHash))
                 {
@@ -198,8 +166,9 @@ namespace MonoTorrent.Client.Encryption
 
 
         /// <summary>
-        /// Matches a torrent based on whether the HASH('req2', SKEY) xor HASH('req3', S) matches, where SKEY is the InfoHash of the torrent
-        /// and sets the SKEY to the InfoHash of the matched torrent.
+        ///     Matches a torrent based on whether the HASH('req2', SKEY) xor HASH('req3', S) matches, where SKEY is the InfoHash
+        ///     of the torrent
+        ///     and sets the SKEY to the InfoHash of the matched torrent.
         /// </summary>
         /// <returns>true if a match has been found</returns>
         private bool MatchSKEY(byte[] torrentHash)

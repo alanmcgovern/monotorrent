@@ -18,6 +18,23 @@ namespace MonoTorrent
         private static readonly BEncodedString PublisherKey = "publisher";
         private static readonly BEncodedString PublisherUrlKey = "publisher-url";
 
+        public EditableTorrent()
+            : this(new BEncodedDictionary())
+        {
+        }
+
+        public EditableTorrent(Torrent torrent)
+        {
+            Check.Torrent(torrent);
+            Initialise(torrent.ToDictionary());
+        }
+
+        public EditableTorrent(BEncodedDictionary metadata)
+        {
+            Check.Metadata(metadata);
+            Initialise(BEncodedValue.Clone(metadata));
+        }
+
         public string Announce
         {
             get { return GetString(Metadata, AnnounceKey); }
@@ -76,23 +93,6 @@ namespace MonoTorrent
         {
             get { return GetString(InfoDict, PublisherUrlKey); }
             set { SetString(InfoDict, PublisherUrlKey, value); }
-        }
-
-        public EditableTorrent()
-            : this(new BEncodedDictionary())
-        {
-        }
-
-        public EditableTorrent(Torrent torrent)
-        {
-            Check.Torrent(torrent);
-            Initialise(torrent.ToDictionary());
-        }
-
-        public EditableTorrent(BEncodedDictionary metadata)
-        {
-            Check.Metadata(metadata);
-            Initialise(BEncodedValue.Clone(metadata));
         }
 
         private void Initialise(BEncodedDictionary metadata)

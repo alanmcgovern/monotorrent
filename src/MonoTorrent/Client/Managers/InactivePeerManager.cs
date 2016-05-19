@@ -1,38 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace MonoTorrent.Client
 {
     internal class InactivePeerManager
     {
-        #region Private Fields
-
-        private TorrentManager owningTorrent; //The torrent to which this manager belongs
-        private List<Uri> inactivePeerList = new List<Uri>();
-
-        /// <summary>
-        /// Provides access to the list of URIs we've marked as inactive
-        /// </summary>
-        internal List<Uri> InactivePeerList
-        {
-            get { return inactivePeerList; }
-        }
-
-        /// <summary>
-        /// The number of peers we have marked as inactive
-        /// </summary>
-        internal int InactivePeers
-        {
-            get { return inactivePeerList.Count; }
-        }
-
-        #endregion
-
         #region Constructor
 
         /// <summary>
-        /// Creates a new inactive peer manager for a torrent manager
+        ///     Creates a new inactive peer manager for a torrent manager
         /// </summary>
         /// <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
         /// <param name="TimeToWaitBeforeIdle">Number of seconds to protect a peer from being marked as inactive</param>
@@ -46,7 +22,7 @@ namespace MonoTorrent.Client
         #region Internal methods
 
         /// <summary>
-        /// Executed each tick of the client engine
+        ///     Executed each tick of the client engine
         /// </summary>
         internal void TimePassed()
         {
@@ -149,9 +125,28 @@ namespace MonoTorrent.Client
 
             // We've found a peer to disconnect
             // Add it to the inactive list for this torrent and disconnect it
-            inactivePeerList.Add(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri);
+            InactivePeerList.Add(owningTorrent.Peers.ConnectedPeers[peerToDisconnect].Uri);
             owningTorrent.Peers.ConnectedPeers[peerToDisconnect].ConnectionManager.CleanupSocket(
                 owningTorrent.Peers.ConnectedPeers[peerToDisconnect], "Marked as inactive");
+        }
+
+        #endregion
+
+        #region Private Fields
+
+        private readonly TorrentManager owningTorrent; //The torrent to which this manager belongs
+
+        /// <summary>
+        ///     Provides access to the list of URIs we've marked as inactive
+        /// </summary>
+        internal List<Uri> InactivePeerList { get; } = new List<Uri>();
+
+        /// <summary>
+        ///     The number of peers we have marked as inactive
+        /// </summary>
+        internal int InactivePeers
+        {
+            get { return InactivePeerList.Count; }
         }
 
         #endregion

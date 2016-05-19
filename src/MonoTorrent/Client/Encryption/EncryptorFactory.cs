@@ -1,65 +1,11 @@
-//
-// EncryptorFactory.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using MonoTorrent.Common;
-using System.Threading;
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Encryption
 {
     internal static class EncryptorFactory
     {
-        private class EncryptorAsyncResult : AsyncResult
-        {
-            public InfoHash[] SKeys;
-            public int Available;
-            public byte[] Buffer;
-            public byte[] InitialData;
-            public IEncryptor EncSocket;
-            public PeerId Id;
-            public IEncryption Decryptor;
-            public IEncryption Encryptor;
-
-
-            public EncryptorAsyncResult(PeerId id, AsyncCallback callback, object state)
-                : base(callback, state)
-            {
-                Id = id;
-                Decryptor = new PlainTextEncryption();
-                Encryptor = new PlainTextEncryption();
-            }
-        }
-
         private static readonly AsyncCallback CompletedEncryptedHandshakeCallback = CompletedEncryptedHandshake;
         private static readonly AsyncIOCallback HandshakeReceivedCallback = HandshakeReceived;
 
@@ -114,7 +60,7 @@ namespace MonoTorrent.Client.Encryption
                     var usable = CheckRC4(id);
                     var hasPlainText = Toolbox.HasEncryption(usable, EncryptionTypes.PlainText);
                     var hasRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full) ||
-                                  Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header);
+                                 Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header);
                     if (id.Engine.Settings.PreferEncryption)
                     {
                         if (hasRC4)
@@ -185,7 +131,7 @@ namespace MonoTorrent.Client.Encryption
                 var usable = CheckRC4(result.Id);
 
                 var canUseRC4 = Toolbox.HasEncryption(usable, EncryptionTypes.RC4Header) ||
-                                 Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full);
+                                Toolbox.HasEncryption(usable, EncryptionTypes.RC4Full);
                 // If encryption is disabled and we received an invalid handshake - abort!
                 if (valid)
                 {
@@ -213,7 +159,6 @@ namespace MonoTorrent.Client.Encryption
             catch (Exception ex)
             {
                 result.Complete(ex);
-                return;
             }
         }
 
@@ -237,6 +182,27 @@ namespace MonoTorrent.Client.Encryption
 
             result.AsyncWaitHandle.Close();
             //r.AsyncWaitHandle.Close();
+        }
+
+        private class EncryptorAsyncResult : AsyncResult
+        {
+            public int Available;
+            public byte[] Buffer;
+            public IEncryption Decryptor;
+            public IEncryption Encryptor;
+            public IEncryptor EncSocket;
+            public readonly PeerId Id;
+            public byte[] InitialData;
+            public InfoHash[] SKeys;
+
+
+            public EncryptorAsyncResult(PeerId id, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                Id = id;
+                Decryptor = new PlainTextEncryption();
+                Encryptor = new PlainTextEncryption();
+            }
         }
     }
 }

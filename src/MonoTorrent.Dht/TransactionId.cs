@@ -1,14 +1,11 @@
 #if !DISABLE_DHT
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
     internal static class TransactionId
     {
-        private static byte[] current = new byte[2];
+        private static readonly byte[] current = new byte[2];
 
         public static BEncodedString NextId()
         {

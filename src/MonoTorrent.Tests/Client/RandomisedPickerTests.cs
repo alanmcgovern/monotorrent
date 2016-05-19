@@ -6,19 +6,6 @@ namespace MonoTorrent.Client
 {
     public class RandomisedPickerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    RandomisedPickerTests t = new RandomisedPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.Pick();
-        //}
-
-        private PeerId id;
-        private RandomisedPicker picker;
-        private TestRig rig;
-        private TestPicker tester;
-
         public RandomisedPickerTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -34,6 +21,19 @@ namespace MonoTorrent.Client
         {
             rig.Dispose();
         }
+
+        //static void Main()
+        //{
+        //    RandomisedPickerTests t = new RandomisedPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.Pick();
+        //}
+
+        private readonly PeerId id;
+        private readonly RandomisedPicker picker;
+        private readonly TestRig rig;
+        private readonly TestPicker tester;
 
         [Fact]
         public void EnsureRandomlyPicked()

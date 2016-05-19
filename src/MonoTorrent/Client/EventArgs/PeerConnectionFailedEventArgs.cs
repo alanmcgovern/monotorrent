@@ -1,43 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public class PeerConnectionFailedEventArgs : TorrentEventArgs
     {
-        private Peer peer;
-        private Direction connectionDirection;
-        private string message;
-
         /// <summary>
-        /// Peer from which this event happened
-        /// </summary>
-        public Peer Peer
-        {
-            get { return peer; }
-        }
-
-        /// <summary>
-        /// Direction of event (if our connection failed to them or their connection failed to us)
-        /// </summary>
-        public Direction ConnectionDirection
-        {
-            get { return connectionDirection; }
-        }
-
-        /// <summary>
-        /// Any message that might be associated with this event
-        /// </summary>
-        public string Message
-        {
-            get { return message; }
-        }
-
-
-        /// <summary>
-        /// Create new instance of PeerConnectionFailedEventArgs for peer from given torrent.
+        ///     Create new instance of PeerConnectionFailedEventArgs for peer from given torrent.
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="peer"></param>
@@ -46,9 +14,24 @@ namespace MonoTorrent.Client
         public PeerConnectionFailedEventArgs(TorrentManager manager, Peer peer, Direction direction, string message)
             : base(manager)
         {
-            this.peer = peer;
-            connectionDirection = direction;
-            this.message = message;
+            Peer = peer;
+            ConnectionDirection = direction;
+            Message = message;
         }
+
+        /// <summary>
+        ///     Peer from which this event happened
+        /// </summary>
+        public Peer Peer { get; }
+
+        /// <summary>
+        ///     Direction of event (if our connection failed to them or their connection failed to us)
+        /// </summary>
+        public Direction ConnectionDirection { get; }
+
+        /// <summary>
+        ///     Any message that might be associated with this event
+        /// </summary>
+        public string Message { get; }
     }
 }

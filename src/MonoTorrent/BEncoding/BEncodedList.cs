@@ -1,54 +1,45 @@
-//
-// BEncodedList.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using System.IO;
 
 namespace MonoTorrent.BEncoding
 {
     /// <summary>
-    /// Class representing a BEncoded list
+    ///     Class representing a BEncoded list
     /// </summary>
     public class BEncodedList : BEncodedValue, IList<BEncodedValue>
     {
         #region Member Variables
 
-        private List<BEncodedValue> list;
+        private readonly List<BEncodedValue> list;
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        ///     Returns the size of the list in bytes
+        /// </summary>
+        /// <returns></returns>
+        public override int LengthInBytes()
+        {
+            var length = 0;
+
+            length += 1; // Lists start with 'l'
+            for (var i = 0; i < list.Count; i++)
+                length += list[i].LengthInBytes();
+
+            length += 1; // Lists end with 'e'
+            return length;
+        }
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Create a new BEncoded List with default capacity
+        ///     Create a new BEncoded List with default capacity
         /// </summary>
         public BEncodedList()
             : this(new List<BEncodedValue>())
@@ -56,7 +47,7 @@ namespace MonoTorrent.BEncoding
         }
 
         /// <summary>
-        /// Create a new BEncoded List with the supplied capacity
+        ///     Create a new BEncoded List with the supplied capacity
         /// </summary>
         /// <param name="capacity">The initial capacity</param>
         public BEncodedList(int capacity)
@@ -82,7 +73,7 @@ namespace MonoTorrent.BEncoding
         #region Encode/Decode Methods
 
         /// <summary>
-        /// Encodes the list to a byte[]
+        ///     Encodes the list to a byte[]
         /// </summary>
         /// <param name="buffer">The buffer to encode the list to</param>
         /// <param name="offset">The offset to start writing the data at</param>
@@ -100,7 +91,7 @@ namespace MonoTorrent.BEncoding
         }
 
         /// <summary>
-        /// Decodes a BEncodedList from the given StreamReader
+        ///     Decodes a BEncodedList from the given StreamReader
         /// </summary>
         /// <param name="reader"></param>
         internal override void DecodeInternal(RawReader reader)
@@ -113,26 +104,6 @@ namespace MonoTorrent.BEncoding
 
             if (reader.ReadByte() != 'e') // Remove the trailing 'e'
                 throw new BEncodingException("Invalid data found. Aborting");
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Returns the size of the list in bytes
-        /// </summary>
-        /// <returns></returns>
-        public override int LengthInBytes()
-        {
-            var length = 0;
-
-            length += 1; // Lists start with 'l'
-            for (var i = 0; i < list.Count; i++)
-                length += list[i].LengthInBytes();
-
-            length += 1; // Lists end with 'e'
-            return length;
         }
 
         #endregion
@@ -239,7 +210,7 @@ namespace MonoTorrent.BEncoding
             return list.GetEnumerator();
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }

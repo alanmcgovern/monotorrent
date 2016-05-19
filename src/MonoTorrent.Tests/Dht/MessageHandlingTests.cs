@@ -1,29 +1,16 @@
 #if !DISABLE_DHT
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Dht.Messages;
-using MonoTorrent.BEncoding;
 using System.Net;
 using System.Threading;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
+using Xunit;
 
 namespace MonoTorrent.Dht
 {
     public class MessageHandlingTests : IDisposable
     {
-        //static void Main(string[] args)
-        //{
-        //    TaskTests t = new TaskTests();
-        //    t.Setup();
-        //    t.BucketRefreshTest();
-        //}
-        private BEncodedString transactionId = "cc";
-        private DhtEngine engine;
-        private Node node;
-        private TestListener listener;
-
         public MessageHandlingTests()
         {
             listener = new TestListener();
@@ -37,33 +24,16 @@ namespace MonoTorrent.Dht
             engine.Dispose();
         }
 
-        [Fact]
-        public void SendPing()
-        {
-            engine.Add(node);
-            engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            var handle = new ManualResetEvent(false);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
-            {
-                if (!e.TimedOut && e.Query is Ping)
-                    handle.Set();
-
-                if (!e.TimedOut || !(e.Query is Ping))
-                    return;
-
-                var response = new PingResponse(node.Id, e.Query.TransactionId);
-                listener.RaiseMessageReceived(response, e.EndPoint);
-            };
-
-            Assert.Equal(NodeState.Unknown, node.State);
-
-            var lastSeen = node.LastSeen;
-            Assert.True(handle.WaitOne(1000, false));
-            var nnnn = node;
-            node = engine.RoutingTable.FindNode(nnnn.Id);
-            Assert.True(lastSeen < node.LastSeen);
-            Assert.Equal(NodeState.Good, node.State);
-        }
+        //static void Main(string[] args)
+        //{
+        //    TaskTests t = new TaskTests();
+        //    t.Setup();
+        //    t.BucketRefreshTest();
+        //}
+        private readonly BEncodedString transactionId = "cc";
+        private readonly DhtEngine engine;
+        private Node node;
+        private readonly TestListener listener;
 
         [Fact]
         public void PingTimeout()
@@ -103,14 +73,43 @@ namespace MonoTorrent.Dht
             Assert.Equal(lastSeen, node.LastSeen);
         }
 
-//        void FakePingResponse(object sender, SendQueryEventArgs e)
-//        {
-//            if (!e.TimedOut || !(e.Query is Ping))
-//                return;
-//
-//            SendQueryTask task = (SendQueryTask)e.Task;
-//            PingResponse response = new PingResponse(task.Target.Id);
+        [Fact]
+        public void SendPing()
+        {
+            engine.Add(node);
+            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            var handle = new ManualResetEvent(false);
+            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            {
+                if (!e.TimedOut && e.Query is Ping)
+                    handle.Set();
+
+                if (!e.TimedOut || !(e.Query is Ping))
+                    return;
+
+                var response = new PingResponse(node.Id, e.Query.TransactionId);
+                listener.RaiseMessageReceived(response, e.EndPoint);
+            };
+
+            Assert.Equal(NodeState.Unknown, node.State);
+
+            var lastSeen = node.LastSeen;
+            Assert.True(handle.WaitOne(1000, false));
+            var nnnn = node;
+            node = engine.RoutingTable.FindNode(nnnn.Id);
+            Assert.True(lastSeen < node.LastSeen);
+            Assert.Equal(NodeState.Good, node.State);
+        }
+
 //            listener.RaiseMessageReceived(response, task.Target.EndPoint);
+//            PingResponse response = new PingResponse(task.Target.Id);
+//            SendQueryTask task = (SendQueryTask)e.Task;
+//
+//                return;
+//            if (!e.TimedOut || !(e.Query is Ping))
+//        {
+
+//        void FakePingResponse(object sender, SendQueryEventArgs e)
 //        }
     }
 }

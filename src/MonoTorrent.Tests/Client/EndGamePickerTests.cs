@@ -1,27 +1,13 @@
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class EndGamePickerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    EndGamePickerTests t = new EndGamePickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.CancelTest();
-        //}
-        private BitField bitfield;
-        private PeerId id;
-        private PeerId other;
-        private EndGamePicker picker;
-        private List<Piece> pieces;
-        private TestRig rig;
-
         public EndGamePickerTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -32,7 +18,7 @@ namespace MonoTorrent.Client
                 .Set(24, false)
                 .Set(36, false);
             picker = new EndGamePicker();
-            pieces = new List<Piece>(new Piece[]
+            pieces = new List<Piece>(new[]
             {
                 new Piece(4, rig.Torrent.PieceLength, rig.Torrent.Size),
                 new Piece(6, rig.Torrent.PieceLength, rig.Torrent.Size),
@@ -54,6 +40,20 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
+        //static void Main()
+        //{
+        //    EndGamePickerTests t = new EndGamePickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.CancelTest();
+        //}
+        private readonly BitField bitfield;
+        private readonly PeerId id;
+        private readonly PeerId other;
+        private readonly EndGamePicker picker;
+        private readonly List<Piece> pieces;
+        private readonly TestRig rig;
+
         [Fact]
         public void CancelTest()
         {
@@ -73,6 +73,26 @@ namespace MonoTorrent.Client
             picker.CancelRequests(other);
 
             id.BitField[4] = true;
+            Assert.NotNull(picker.PickPiece(id, new List<PeerId>()));
+        }
+
+        [Fact]
+        public void HashFail()
+        {
+            Piece piece;
+            RequestMessage m;
+            var requests = new List<RequestMessage>();
+
+            id.BitField[0] = true;
+            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
+
+            while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
+                requests.Add(m);
+
+            foreach (var message in requests)
+                Assert.True(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength,
+                    out piece));
+
             Assert.NotNull(picker.PickPiece(id, new List<PeerId>()));
         }
 
@@ -112,26 +132,6 @@ namespace MonoTorrent.Client
             Assert.True(pieces[0][0].Received);
             Assert.Equal(16, pieces[0].TotalRequested);
             Assert.Equal(15, pieces[0].TotalReceived);
-        }
-
-        [Fact]
-        public void HashFail()
-        {
-            Piece piece;
-            RequestMessage m;
-            var requests = new List<RequestMessage>();
-
-            id.BitField[0] = true;
-            picker.Initialise(rig.Manager.Bitfield, rig.Torrent.Files, new List<Piece>());
-
-            while ((m = picker.PickPiece(id, new List<PeerId>())) != null)
-                requests.Add(m);
-
-            foreach (var message in requests)
-                Assert.True(picker.ValidatePiece(id, message.PieceIndex, message.StartOffset, message.RequestLength,
-                    out piece));
-
-            Assert.NotNull(picker.PickPiece(id, new List<PeerId>()));
         }
     }
 }

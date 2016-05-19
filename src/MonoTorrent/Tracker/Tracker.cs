@@ -1,48 +1,24 @@
-//
-// Tracker.cs
-//
-// Authors:
-//   Gregor Burger burger.gregor@gmail.com
-//
-// Copyright (C) 2006 Gregor Burger
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.IO;
-using System.Net;
-using System.Web;
-using System.Text;
-using System.Diagnostics;
-using System.Net.Sockets;
 using System.Collections;
 using System.Collections.Generic;
-using MonoTorrent.Common;
+using System.Diagnostics;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
+using MonoTorrent.Common;
 using MonoTorrent.Tracker.Listeners;
 
 namespace MonoTorrent.Tracker
 {
     public class Tracker : IEnumerable<SimpleTorrentManager>, IDisposable
     {
+        public void Dispose()
+        {
+            if (Disposed)
+                return;
+
+            Disposed = true;
+        }
+
         #region Static BEncodedStrings
 
         internal static readonly BEncodedString PeersKey = "peers";
@@ -67,83 +43,41 @@ namespace MonoTorrent.Tracker
 
         #region Fields
 
-        private bool allowScrape;
-        private bool allowNonCompact;
-        private bool allowUnregisteredTorrents;
-        private TimeSpan announceInterval;
-        private bool disposed;
-        private TimeSpan minAnnounceInterval;
-        private RequestMonitor monitor;
-        private TimeSpan timeoutInterval;
-        private Dictionary<InfoHash, SimpleTorrentManager> torrents;
-        private BEncodedString trackerId;
+        private readonly Dictionary<InfoHash, SimpleTorrentManager> torrents;
 
         #endregion Fields
 
         #region Properties
 
-        public bool AllowNonCompact
-        {
-            get { return allowNonCompact; }
-            set { allowNonCompact = value; }
-        }
+        public bool AllowNonCompact { get; set; }
 
-        public bool AllowScrape
-        {
-            get { return allowScrape; }
-            set { allowScrape = value; }
-        }
+        public bool AllowScrape { get; set; }
 
-        public bool AllowUnregisteredTorrents
-        {
-            get { return allowUnregisteredTorrents; }
-            set { allowUnregisteredTorrents = value; }
-        }
+        public bool AllowUnregisteredTorrents { get; set; }
 
-        public TimeSpan AnnounceInterval
-        {
-            get { return announceInterval; }
-            set { announceInterval = value; }
-        }
+        public TimeSpan AnnounceInterval { get; set; }
 
         public int Count
         {
             get { return torrents.Count; }
         }
 
-        public bool Disposed
-        {
-            get { return disposed; }
-        }
+        public bool Disposed { get; private set; }
 
-        public TimeSpan MinAnnounceInterval
-        {
-            get { return minAnnounceInterval; }
-            set { minAnnounceInterval = value; }
-        }
+        public TimeSpan MinAnnounceInterval { get; set; }
 
-        public RequestMonitor Requests
-        {
-            get { return monitor; }
-        }
+        public RequestMonitor Requests { get; }
 
-        public TimeSpan TimeoutInterval
-        {
-            get { return timeoutInterval; }
-            set { timeoutInterval = value; }
-        }
+        public TimeSpan TimeoutInterval { get; set; }
 
-        public BEncodedString TrackerId
-        {
-            get { return trackerId; }
-        }
+        public BEncodedString TrackerId { get; }
 
         #endregion Properties
 
         #region Constructors
 
         /// <summary>
-        /// Creates a new tracker
+        ///     Creates a new tracker
         /// </summary>
         public Tracker()
             : this(new BEncodedString("monotorrent-tracker"))
@@ -152,20 +86,20 @@ namespace MonoTorrent.Tracker
 
         public Tracker(BEncodedString trackerId)
         {
-            allowNonCompact = true;
-            allowScrape = true;
-            monitor = new RequestMonitor();
+            AllowNonCompact = true;
+            AllowScrape = true;
+            Requests = new RequestMonitor();
             torrents = new Dictionary<InfoHash, SimpleTorrentManager>();
-            this.trackerId = trackerId;
+            TrackerId = trackerId;
 
-            announceInterval = TimeSpan.FromMinutes(45);
-            minAnnounceInterval = TimeSpan.FromMinutes(10);
-            timeoutInterval = TimeSpan.FromMinutes(50);
+            AnnounceInterval = TimeSpan.FromMinutes(45);
+            MinAnnounceInterval = TimeSpan.FromMinutes(10);
+            TimeoutInterval = TimeSpan.FromMinutes(50);
 
-            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate
             {
                 Requests.Tick();
-                return !disposed;
+                return !Disposed;
             });
         }
 
@@ -198,7 +132,7 @@ namespace MonoTorrent.Tracker
 
         private void CheckDisposed()
         {
-            if (disposed)
+            if (Disposed)
                 throw new ObjectDisposedException(GetType().Name);
         }
 
@@ -244,13 +178,13 @@ namespace MonoTorrent.Tracker
 
         private void ListenerReceivedAnnounce(object sender, AnnounceParameters e)
         {
-            if (disposed)
+            if (Disposed)
             {
                 e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "The tracker has been shut down");
                 return;
             }
 
-            monitor.AnnounceReceived();
+            Requests.AnnounceReceived();
             SimpleTorrentManager manager;
 
             // Check to see if we're monitoring the requested torrent
@@ -296,7 +230,7 @@ namespace MonoTorrent.Tracker
 
             e.Response.Add(IntervalKey, new BEncodedNumber((int) AnnounceInterval.TotalSeconds));
             e.Response.Add(MinIntervalKey, new BEncodedNumber((int) MinAnnounceInterval.TotalSeconds));
-            e.Response.Add(TrackerIdKey, trackerId); // FIXME: Is this right?
+            e.Response.Add(TrackerIdKey, TrackerId); // FIXME: Is this right?
             e.Response.Add(CompleteKey, new BEncodedNumber(manager.Complete));
             e.Response.Add(Incomplete, new BEncodedNumber(manager.Incomplete));
 
@@ -307,13 +241,13 @@ namespace MonoTorrent.Tracker
 
         private void ListenerReceivedScrape(object sender, ScrapeParameters e)
         {
-            if (disposed)
+            if (Disposed)
             {
                 e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "The tracker has been shut down");
                 return;
             }
 
-            monitor.ScrapeReceived();
+            Requests.ScrapeReceived();
             if (!AllowScrape)
             {
                 e.Response.Add(RequestParameters.FailureKey, (BEncodedString) "This tracker does not allow scraping");
@@ -378,8 +312,8 @@ namespace MonoTorrent.Tracker
                 throw new TorrentException("The listener is registered to a different Tracker");
 
             listener.Tracker = this;
-            listener.AnnounceReceived += new EventHandler<AnnounceParameters>(ListenerReceivedAnnounce);
-            listener.ScrapeReceived += new EventHandler<ScrapeParameters>(ListenerReceivedScrape);
+            listener.AnnounceReceived += ListenerReceivedAnnounce;
+            listener.ScrapeReceived += ListenerReceivedScrape;
         }
 
         public void Remove(ITrackable trackable)
@@ -402,8 +336,8 @@ namespace MonoTorrent.Tracker
                 throw new TorrentException("The listener is not registered with this tracker");
 
             listener.Tracker = null;
-            listener.AnnounceReceived -= new EventHandler<AnnounceParameters>(ListenerReceivedAnnounce);
-            listener.ScrapeReceived -= new EventHandler<ScrapeParameters>(ListenerReceivedScrape);
+            listener.AnnounceReceived -= ListenerReceivedAnnounce;
+            listener.ScrapeReceived -= ListenerReceivedScrape;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -412,13 +346,5 @@ namespace MonoTorrent.Tracker
         }
 
         #endregion Methods
-
-        public void Dispose()
-        {
-            if (disposed)
-                return;
-
-            disposed = true;
-        }
     }
 }

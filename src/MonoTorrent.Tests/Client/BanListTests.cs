@@ -5,14 +5,14 @@ namespace MonoTorrent.Client
 {
     public class BanListTests
     {
-        private BanList list;
-
         public BanListTests()
         {
             list = new BanList();
             list.Add(new AddressRange(IPAddress.Parse("0.0.0.1"), IPAddress.Parse("0.0.0.10")));
             list.Add(new AddressRange(IPAddress.Parse("255.255.255.0"), IPAddress.Parse("255.255.255.255")));
         }
+
+        private readonly BanList list;
 
         [Fact]
         public void BannedTest()

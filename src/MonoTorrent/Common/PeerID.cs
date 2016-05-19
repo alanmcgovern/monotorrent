@@ -1,43 +1,13 @@
-//
-// PeerID.cs
-//
-// Authors:
-//   Gregor Burger burger.gregor@gmail.com
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Gregor Burger
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using System;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
-    /// BitTorrrent 
+    ///     BitTorrrent
     /// </summary>
     /// <remarks>
-    /// Good place for information about BT peer ID conventions:
+    ///     Good place for information about BT peer ID conventions:
     ///     http://wiki.theory.org/BitTorrentSpecification
     ///     http://transmission.m0k.org/trac/browser/trunk/libtransmission/clients.c (hello Transmission authors!) :)
     ///     http://rufus.cvs.sourceforge.net/rufus/Rufus/g3peerid.py?view=log (for older clients)
@@ -104,7 +74,7 @@ namespace MonoTorrent.Common
     }
 
     /// <summary>
-    /// Class representing the various and sundry BitTorrent Clients lurking about on the web
+    ///     Class representing the various and sundry BitTorrent Clients lurking about on the web
     /// </summary>
     public struct Software
     {
@@ -119,51 +89,39 @@ namespace MonoTorrent.Common
         private static readonly Regex standard = new Regex(@"-(([A-Za-z\~]{2})\d{4})-*");
         private static readonly Regex shadows = new Regex(@"(([A-Za-z]{1})\d{3})----*");
         private static readonly Regex xbt = new Regex("XBT/d/{3}");
-        private Client client;
-        private string peerId;
-        private string shortId;
 
         /// <summary>
-        /// The name of the torrent software being used
+        ///     The name of the torrent software being used
         /// </summary>
         /// <value>The client.</value>
-        public Client Client
-        {
-            get { return client; }
-        }
+        public Client Client { get; }
 
         /// <summary>
-        /// The peer's ID
+        ///     The peer's ID
         /// </summary>
         /// <value>The peer id.</value>
-        internal string PeerId
-        {
-            get { return peerId; }
-        }
+        internal string PeerId { get; }
 
         /// <summary>
-        /// A shortened version of the peers ID
+        ///     A shortened version of the peers ID
         /// </summary>
         /// <value>The short id.</value>
-        public string ShortId
-        {
-            get { return shortId; }
-        }
+        public string ShortId { get; }
 
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Software"/> class.
+        ///     Initializes a new instance of the <see cref="Software" /> class.
         /// </summary>
         /// <param name="peerId">The peer id.</param>
         internal Software(string peerId)
         {
             Match m;
 
-            this.peerId = peerId;
+            PeerId = peerId;
             if (peerId.StartsWith("-WebSeed-"))
             {
-                shortId = "WebSeed";
-                client = Client.WebSeed;
+                ShortId = "WebSeed";
+                Client = Client.WebSeed;
                 return;
             }
 
@@ -171,148 +129,148 @@ namespace MonoTorrent.Common
 
             if ((m = standard.Match(peerId)) != null)
             {
-                shortId = m.Groups[1].Value;
+                ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
                     case "AG":
                     case "A~":
-                        client = Client.Ares;
+                        Client = Client.Ares;
                         break;
                     case "AR":
-                        client = Client.Artic;
+                        Client = Client.Artic;
                         break;
                     case "AT":
-                        client = Client.Artemis;
+                        Client = Client.Artemis;
                         break;
                     case "AX":
-                        client = Client.BitPump;
+                        Client = Client.BitPump;
                         break;
                     case "AV":
-                        client = Client.Avicora;
+                        Client = Client.Avicora;
                         break;
                     case "AZ":
-                        client = Client.Azureus;
+                        Client = Client.Azureus;
                         break;
                     case "BB":
-                        client = Client.BitBuddy;
+                        Client = Client.BitBuddy;
                         break;
 
                     case "BC":
-                        client = Client.BitComet;
+                        Client = Client.BitComet;
                         break;
 
                     case "BF":
-                        client = Client.Bitflu;
+                        Client = Client.Bitflu;
                         break;
 
                     case "BS":
-                        client = Client.BTSlave;
+                        Client = Client.BTSlave;
                         break;
 
                     case "BX":
-                        client = Client.BitTorrentX;
+                        Client = Client.BitTorrentX;
                         break;
 
                     case "CD":
-                        client = Client.EnhancedCTorrent;
+                        Client = Client.EnhancedCTorrent;
                         break;
 
                     case "CT":
-                        client = Client.CTorrent;
+                        Client = Client.CTorrent;
                         break;
 
                     case "DE":
-                        client = Client.DelugeTorrent;
+                        Client = Client.DelugeTorrent;
                         break;
 
                     case "EB":
-                        client = Client.EBit;
+                        Client = Client.EBit;
                         break;
 
                     case "ES":
-                        client = Client.ElectricSheep;
+                        Client = Client.ElectricSheep;
                         break;
 
                     case "KT":
-                        client = Client.KTorrent;
+                        Client = Client.KTorrent;
                         break;
 
                     case "LP":
-                        client = Client.Lphant;
+                        Client = Client.Lphant;
                         break;
 
                     case "lt":
                     case "LT":
-                        client = Client.LibTorrent;
+                        Client = Client.LibTorrent;
                         break;
 
                     case "MP":
-                        client = Client.MooPolice;
+                        Client = Client.MooPolice;
                         break;
 
                     case "MO":
-                        client = Client.MonoTorrent;
+                        Client = Client.MonoTorrent;
                         break;
 
                     case "MT":
-                        client = Client.MoonlightTorrent;
+                        Client = Client.MoonlightTorrent;
                         break;
 
                     case "qB":
-                        client = Client.qBittorrent;
+                        Client = Client.qBittorrent;
                         break;
 
                     case "QT":
-                        client = Client.Qt4Torrent;
+                        Client = Client.Qt4Torrent;
                         break;
 
                     case "RT":
-                        client = Client.Retriever;
+                        Client = Client.Retriever;
                         break;
 
                     case "SB":
-                        client = Client.Swiftbit;
+                        Client = Client.Swiftbit;
                         break;
 
                     case "SS":
-                        client = Client.SwarmScope;
+                        Client = Client.SwarmScope;
                         break;
 
                     case "SZ":
-                        client = Client.Shareaza;
+                        Client = Client.Shareaza;
                         break;
 
                     case "TN":
-                        client = Client.TorrentDotNET;
+                        Client = Client.TorrentDotNET;
                         break;
 
                     case "TR":
-                        client = Client.Transmission;
+                        Client = Client.Transmission;
                         break;
 
                     case "TS":
-                        client = Client.Torrentstorm;
+                        Client = Client.Torrentstorm;
                         break;
 
                     case "UL":
-                        client = Client.uLeecher;
+                        Client = Client.uLeecher;
                         break;
 
                     case "UT":
-                        client = Client.uTorrent;
+                        Client = Client.uTorrent;
                         break;
 
                     case "XT":
-                        client = Client.XanTorrent;
+                        Client = Client.XanTorrent;
                         break;
 
                     case "ZT":
-                        client = Client.ZipTorrent;
+                        Client = Client.ZipTorrent;
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine("Unsupported standard style: " + m.Groups[2].Value);
-                        client = Client.Unknown;
+                        Trace.WriteLine("Unsupported standard style: " + m.Groups[2].Value);
+                        Client = Client.Unknown;
                         break;
                 }
                 return;
@@ -324,36 +282,36 @@ namespace MonoTorrent.Common
 
             if ((m = shadows.Match(peerId)) != null)
             {
-                shortId = m.Groups[1].Value;
+                ShortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
                 {
                     case "A":
-                        client = Client.ABC;
+                        Client = Client.ABC;
                         break;
 
                     case "O":
-                        client = Client.OspreyPermaseed;
+                        Client = Client.OspreyPermaseed;
                         break;
 
                     case "R":
-                        client = Client.Tribler;
+                        Client = Client.Tribler;
                         break;
 
                     case "S":
-                        client = Client.ShadowsClient;
+                        Client = Client.ShadowsClient;
                         break;
 
                     case "T":
-                        client = Client.BitTornado;
+                        Client = Client.BitTornado;
                         break;
 
                     case "U":
-                        client = Client.UPnPNatBitTorrent;
+                        Client = Client.UPnPNatBitTorrent;
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine("Unsupported shadows style: " + m.Groups[2].Value);
-                        client = Client.Unknown;
+                        Trace.WriteLine("Unsupported shadows style: " + m.Groups[2].Value);
+                        Client = Client.Unknown;
                         break;
                 }
                 return;
@@ -365,8 +323,8 @@ namespace MonoTorrent.Common
 
             if ((m = brahms.Match(peerId)) != null)
             {
-                shortId = "M";
-                client = Client.BitTorrent;
+                ShortId = "M";
+                Client = Client.BitTorrent;
                 return;
             }
 
@@ -376,8 +334,8 @@ namespace MonoTorrent.Common
 
             if ((m = bitlord.Match(peerId)) != null)
             {
-                client = Client.BitLord;
-                shortId = "lord";
+                Client = Client.BitLord;
+                ShortId = "lord";
                 return;
             }
 
@@ -387,8 +345,8 @@ namespace MonoTorrent.Common
 
             if ((m = bitcomet.Match(peerId)) != null)
             {
-                client = Client.BitComet;
-                shortId = "BC";
+                Client = Client.BitComet;
+                ShortId = "BC";
                 return;
             }
 
@@ -398,8 +356,8 @@ namespace MonoTorrent.Common
 
             if ((m = xbt.Match(peerId)) != null)
             {
-                client = Client.XBTClient;
-                shortId = "XBT";
+                Client = Client.XBTClient;
+                ShortId = "XBT";
                 return;
             }
 
@@ -409,8 +367,8 @@ namespace MonoTorrent.Common
 
             if ((m = opera.Match(peerId)) != null)
             {
-                client = Client.Opera;
-                shortId = "OP";
+                Client = Client.Opera;
+                ShortId = "OP";
             }
 
             #endregion
@@ -419,8 +377,8 @@ namespace MonoTorrent.Common
 
             if ((m = mldonkey.Match(peerId)) != null)
             {
-                client = Client.MLDonkey;
-                shortId = "ML";
+                Client = Client.MLDonkey;
+                ShortId = "ML";
                 return;
             }
 
@@ -430,8 +388,8 @@ namespace MonoTorrent.Common
 
             if ((m = bow.Match(peerId)) != null)
             {
-                client = Client.BitsOnWheels;
-                shortId = "BOW";
+                Client = Client.BitsOnWheels;
+                ShortId = "BOW";
                 return;
             }
 
@@ -441,8 +399,8 @@ namespace MonoTorrent.Common
 
             if ((m = queenbee.Match(peerId)) != null)
             {
-                client = Client.QueenBee;
-                shortId = "Q";
+                Client = Client.QueenBee;
+                ShortId = "Q";
                 return;
             }
 
@@ -452,22 +410,22 @@ namespace MonoTorrent.Common
 
             if ((m = bittornado.Match(peerId)) != null)
             {
-                shortId = m.Groups[1].Value;
-                client = Client.BitTornado;
+                ShortId = m.Groups[1].Value;
+                Client = Client.BitTornado;
                 return;
             }
 
             #endregion
 
-            client = Client.Unknown;
-            shortId = peerId;
-            System.Diagnostics.Trace.WriteLine("Unrecognisable clientid style: " + peerId);
+            Client = Client.Unknown;
+            ShortId = peerId;
+            Trace.WriteLine("Unrecognisable clientid style: " + peerId);
         }
 
 
         public override string ToString()
         {
-            return shortId;
+            return ShortId;
         }
     }
 }

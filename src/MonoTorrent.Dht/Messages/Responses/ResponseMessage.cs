@@ -28,9 +28,6 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
@@ -40,6 +37,20 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString ReturnValuesKey = "r";
         internal static readonly BEncodedString ResponseType = "r";
         protected QueryMessage queryMessage;
+
+        protected ResponseMessage(NodeId id, BEncodedValue transactionId)
+            : base(ResponseType)
+        {
+            properties.Add(ReturnValuesKey, new BEncodedDictionary());
+            Parameters.Add(IdKey, id.BencodedString());
+            TransactionId = transactionId;
+        }
+
+        protected ResponseMessage(BEncodedDictionary d, QueryMessage m)
+            : base(d)
+        {
+            queryMessage = m;
+        }
 
         internal override NodeId Id
         {
@@ -54,20 +65,6 @@ namespace MonoTorrent.Dht.Messages
         public QueryMessage Query
         {
             get { return queryMessage; }
-        }
-
-        protected ResponseMessage(NodeId id, BEncodedValue transactionId)
-            : base(ResponseType)
-        {
-            properties.Add(ReturnValuesKey, new BEncodedDictionary());
-            Parameters.Add(IdKey, id.BencodedString());
-            TransactionId = transactionId;
-        }
-
-        protected ResponseMessage(BEncodedDictionary d, QueryMessage m)
-            : base(d)
-        {
-            queryMessage = m;
         }
     }
 }

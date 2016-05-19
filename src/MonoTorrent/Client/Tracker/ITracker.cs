@@ -1,18 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
     internal interface ITracker
     {
-        event EventHandler BeforeAnnounce;
-        event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        event EventHandler BeforeScrape;
-        event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
-
         bool CanAnnounce { get; }
         bool CanScrape { get; }
         int Complete { get; }
@@ -24,6 +16,10 @@ namespace MonoTorrent.Client.Tracker
         TimeSpan UpdateInterval { get; }
         Uri Uri { get; }
         string WarningMessage { get; }
+        event EventHandler BeforeAnnounce;
+        event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
+        event EventHandler BeforeScrape;
+        event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         void Announce(AnnounceParameters parameters, object state);
         void Scrape(ScrapeParameters parameters, object state);

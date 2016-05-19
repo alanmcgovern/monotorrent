@@ -29,33 +29,13 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using Mono.Math;
 using System.Net;
-using MonoTorrent.BEncoding;
-
 
 namespace MonoTorrent.Dht
 {
     internal class RoutingTable
     {
-        public event EventHandler<NodeAddedEventArgs> NodeAdded;
-
-        private readonly Node localNode;
-        private List<Bucket> buckets = new List<Bucket>();
-
-
-        internal List<Bucket> Buckets
-        {
-            get { return buckets; }
-        }
-
-        public Node LocalNode
-        {
-            get { return localNode; }
-        }
-
         public RoutingTable()
             : this(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0)))
         {
@@ -66,10 +46,17 @@ namespace MonoTorrent.Dht
             if (localNode == null)
                 throw new ArgumentNullException("localNode");
 
-            this.localNode = localNode;
+            LocalNode = localNode;
             localNode.Seen();
             Add(new Bucket());
         }
+
+
+        internal List<Bucket> Buckets { get; } = new List<Bucket>();
+
+        public Node LocalNode { get; }
+
+        public event EventHandler<NodeAddedEventArgs> NodeAdded;
 
         public bool Add(Node node)
         {
@@ -81,7 +68,7 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            var bucket = buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
+            var bucket = Buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
             if (bucket.Nodes.Contains(node))
                 return false;
 
@@ -107,13 +94,13 @@ namespace MonoTorrent.Dht
 
         private void Add(Bucket bucket)
         {
-            buckets.Add(bucket);
-            buckets.Sort();
+            Buckets.Add(bucket);
+            Buckets.Sort();
         }
 
         internal Node FindNode(NodeId id)
         {
-            foreach (var b in buckets)
+            foreach (var b in Buckets)
                 foreach (var n in b.Nodes)
                     if (n.Id.Equals(id))
                         return n;
@@ -123,7 +110,7 @@ namespace MonoTorrent.Dht
 
         private void Remove(Bucket bucket)
         {
-            buckets.Remove(bucket);
+            Buckets.Remove(bucket);
         }
 
         private bool Split(Bucket bucket)
@@ -151,7 +138,7 @@ namespace MonoTorrent.Dht
         public int CountNodes()
         {
             var r = 0;
-            foreach (var b in buckets)
+            foreach (var b in Buckets)
                 r += b.Nodes.Count;
             return r;
         }
@@ -161,7 +148,7 @@ namespace MonoTorrent.Dht
         {
             var sortedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity);
 
-            foreach (var b in buckets)
+            foreach (var b in Buckets)
             {
                 foreach (var n in b.Nodes)
                 {
@@ -181,7 +168,7 @@ namespace MonoTorrent.Dht
 
         internal void Clear()
         {
-            buckets.Clear();
+            Buckets.Clear();
             Add(new Bucket());
         }
     }

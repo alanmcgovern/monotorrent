@@ -1,27 +1,18 @@
 #if !DISABLE_DHT
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+using System.Net;
 using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Dht.Messages;
-using System.Net;
 
 namespace MonoTorrent.Dht
 {
     internal class TestListener : DhtListener
     {
-        private bool started;
-
         public TestListener()
             : base(new IPEndPoint(IPAddress.Loopback, 0))
         {
         }
 
-        public bool Started
-        {
-            get { return started; }
-        }
+        public bool Started { get; private set; }
 
         public override void Send(byte[] buffer, IPEndPoint endpoint)
         {
@@ -35,12 +26,12 @@ namespace MonoTorrent.Dht
 
         public override void Start()
         {
-            started = true;
+            Started = true;
         }
 
         public override void Stop()
         {
-            started = false;
+            Started = false;
         }
     }
 }

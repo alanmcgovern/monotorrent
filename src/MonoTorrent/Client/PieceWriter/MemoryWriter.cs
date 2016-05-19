@@ -1,37 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
 using MonoTorrent.Common;
-using System.Threading;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public class MemoryWriter : PieceWriter
     {
-        private struct CachedBlock
-        {
-            public TorrentFile File;
-            public long Offset;
-            public byte[] Buffer;
-            public int Count;
-        }
+        private readonly List<CachedBlock> cachedBlocks;
 
-        private int capacity;
-        private List<CachedBlock> cachedBlocks;
-        private PieceWriter writer;
-
-
-        public int Capacity
-        {
-            get { return capacity; }
-            set { capacity = value; }
-        }
-
-        public int Used
-        {
-            get { return cachedBlocks.Count*Piece.BlockSize; }
-        }
+        private readonly PieceWriter writer;
 
         public MemoryWriter(PieceWriter writer)
             : this(writer, 2*1024*1024)
@@ -46,8 +23,16 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException("capacity");
 
             cachedBlocks = new List<CachedBlock>();
-            this.capacity = capacity;
+            Capacity = capacity;
             this.writer = writer;
+        }
+
+
+        public int Capacity { get; set; }
+
+        public int Used
+        {
+            get { return cachedBlocks.Count*Piece.BlockSize; }
         }
 
         public override int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count)
@@ -145,6 +130,14 @@ namespace MonoTorrent.Client.PieceWriters
             writer.Dispose();
 
             base.Dispose();
+        }
+
+        private struct CachedBlock
+        {
+            public TorrentFile File;
+            public long Offset;
+            public byte[] Buffer;
+            public int Count;
         }
     }
 }

@@ -1,15 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.BEncoding;
 using System.Collections.Specialized;
 using System.Net;
-using System.Threading;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker.Listeners
 {
     public abstract class ListenerBase
     {
+        #region Member Variables
+
+        #endregion Member Variables
+
         #region Events
 
         public event EventHandler<ScrapeParameters> ScrapeReceived;
@@ -17,21 +18,11 @@ namespace MonoTorrent.Tracker.Listeners
 
         #endregion Events
 
-        #region Member Variables
-
-        private Tracker tracker;
-
-        #endregion Member Variables
-
         #region Properties
 
         public abstract bool Running { get; }
 
-        internal Tracker Tracker
-        {
-            get { return tracker; }
-            set { tracker = value; }
-        }
+        internal Tracker Tracker { get; set; }
 
         #endregion Properties
 

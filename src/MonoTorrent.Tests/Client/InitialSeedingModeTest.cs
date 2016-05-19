@@ -1,20 +1,13 @@
+using System;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using System;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class InitialSeedingModeTest : IDisposable
     {
-        private InitialSeedingMode Mode
-        {
-            get { return Rig.Manager.Mode as InitialSeedingMode; }
-        }
-
-        private TestRig Rig { get; set; }
-
         public InitialSeedingModeTest()
         {
             Rig = TestRig.CreateSingleFile(Piece.BlockSize*20, Piece.BlockSize*2);
@@ -26,6 +19,13 @@ namespace MonoTorrent.Client
         {
             Rig.Dispose();
         }
+
+        private InitialSeedingMode Mode
+        {
+            get { return Rig.Manager.Mode as InitialSeedingMode; }
+        }
+
+        private TestRig Rig { get; }
 
         [Fact]
         public void SwitchingModesSendsHaves()

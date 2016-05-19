@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.Libtorrent;
+using MonoTorrent.Client.Messages.Standard;
 
 namespace MonoTorrent.Client.Messages
 {
@@ -12,7 +11,7 @@ namespace MonoTorrent.Client.Messages
 
     public abstract class PeerMessage : Message
     {
-        private static Dictionary<byte, CreateMessage> messageDict;
+        private static readonly Dictionary<byte, CreateMessage> messageDict;
 
         static PeerMessage()
         {
@@ -20,33 +19,30 @@ namespace MonoTorrent.Client.Messages
 
             // Note - KeepAlive messages aren't registered as they have no payload or ID and are never 'decoded'
             //      - Handshake messages aren't registered as they are always the first message sent/received
-            Register(AllowedFastMessage.MessageId, delegate(TorrentManager manager) { return new AllowedFastMessage(); });
+            Register(AllowedFastMessage.MessageId, delegate { return new AllowedFastMessage(); });
             Register(BitfieldMessage.MessageId,
                 delegate(TorrentManager manager) { return new BitfieldMessage(manager.Bitfield.Length); });
-            Register(CancelMessage.MessageId, delegate(TorrentManager manager) { return new CancelMessage(); });
-            Register(ChokeMessage.MessageId, delegate(TorrentManager manager) { return new ChokeMessage(); });
-            Register(HaveAllMessage.MessageId, delegate(TorrentManager manager) { return new HaveAllMessage(); });
-            Register(HaveMessage.MessageId, delegate(TorrentManager manager) { return new HaveMessage(); });
-            Register(HaveNoneMessage.MessageId, delegate(TorrentManager manager) { return new HaveNoneMessage(); });
-            Register(InterestedMessage.MessageId, delegate(TorrentManager manager) { return new InterestedMessage(); });
+            Register(CancelMessage.MessageId, delegate { return new CancelMessage(); });
+            Register(ChokeMessage.MessageId, delegate { return new ChokeMessage(); });
+            Register(HaveAllMessage.MessageId, delegate { return new HaveAllMessage(); });
+            Register(HaveMessage.MessageId, delegate { return new HaveMessage(); });
+            Register(HaveNoneMessage.MessageId, delegate { return new HaveNoneMessage(); });
+            Register(InterestedMessage.MessageId, delegate { return new InterestedMessage(); });
             Register(NotInterestedMessage.MessageId,
-                delegate(TorrentManager manager) { return new NotInterestedMessage(); });
-            Register(PieceMessage.MessageId, delegate(TorrentManager manager) { return new PieceMessage(); });
-            Register(PortMessage.MessageId, delegate(TorrentManager manager) { return new PortMessage(); });
+                delegate { return new NotInterestedMessage(); });
+            Register(PieceMessage.MessageId, delegate { return new PieceMessage(); });
+            Register(PortMessage.MessageId, delegate { return new PortMessage(); });
             Register(RejectRequestMessage.MessageId,
-                delegate(TorrentManager manager) { return new RejectRequestMessage(); });
-            Register(RequestMessage.MessageId, delegate(TorrentManager manager) { return new RequestMessage(); });
+                delegate { return new RejectRequestMessage(); });
+            Register(RequestMessage.MessageId, delegate { return new RequestMessage(); });
             Register(SuggestPieceMessage.MessageId,
-                delegate(TorrentManager manager) { return new SuggestPieceMessage(); });
-            Register(UnchokeMessage.MessageId, delegate(TorrentManager manager) { return new UnchokeMessage(); });
+                delegate { return new SuggestPieceMessage(); });
+            Register(UnchokeMessage.MessageId, delegate { return new UnchokeMessage(); });
 
             // We register this solely so that the user cannot register their own message with this ID.
             // Actual decoding is handled with manual detection
             Register(ExtensionMessage.MessageId,
-                delegate(TorrentManager manager)
-                {
-                    throw new MessageException("Shouldn't decode extension message this way");
-                });
+                delegate { throw new MessageException("Shouldn't decode extension message this way"); });
         }
 
         private static void Register(byte identifier, CreateMessage creator)

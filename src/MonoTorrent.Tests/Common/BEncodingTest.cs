@@ -1,150 +1,143 @@
-//
-// BEncodingTest.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using System;
 using System.IO;
-using MonoTorrent.Common;
-using Xunit;
 using System.Text;
 using MonoTorrent.BEncoding;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
-    /// 
     /// </summary>
     public class BEncodeTest
     {
-        #region Text encoding tests
-
         [Fact]
-        public void UTF8Test()
+        public void benDictionaryDecoding()
         {
-            var s = "ã";
-            BEncodedString str = s;
-            Assert.Equal(s, str.Text);
-        }
-
-        //[Fact]
-        //public void EncodingUTF32()
-        //{
-        //    UTF8Encoding enc8 = new UTF8Encoding();
-        //    UTF32Encoding enc32 = new UTF32Encoding();
-        //    BEncodedDictionary val = new BEncodedDictionary();
-
-        //    val.Add("Test", (BEncodedNumber)1532);
-        //    val.Add("yeah", (BEncodedString)"whoop");
-        //    val.Add("mylist", new BEncodedList());
-        //    val.Add("mydict", new BEncodedDictionary());
-
-        //    byte[] utf8Result = val.Encode();
-        //    byte[] utf32Result = val.Encode(enc32);
-
-        //    Assert.Equal(enc8.GetString(utf8Result), enc32.GetString(utf32Result));
-        //}
-
-        #endregion
-
-        #region BEncodedString Tests
-
-        [Fact]
-        public void benStringDecoding()
-        {
-            var data = Encoding.UTF8.GetBytes("21:this is a test string");
-            using (var stream = new MemoryStream(data))
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            using (Stream stream = new MemoryStream(data))
             {
                 var result = BEncodedValue.Decode(stream);
-                Assert.Equal("this is a test string", result.ToString());
-                Assert.Equal(result is BEncodedString, true);
-                Assert.Equal(((BEncodedString) result).Text, "this is a test string");
+                Assert.Equal(result.ToString(), "d4:spaml1:a1:bee");
+                Assert.Equal(result is BEncodedDictionary, true);
+
+                var dict = (BEncodedDictionary) result;
+                Assert.Equal(dict.Count, 1);
+                Assert.True(dict["spam"] is BEncodedList);
+
+                var list = (BEncodedList) dict["spam"];
+                Assert.Equal(((BEncodedString) list[0]).Text, "a");
+                Assert.Equal(((BEncodedString) list[1]).Text, "b");
             }
         }
 
         [Fact]
-        public void benStringEncoding()
+        public void benDictionaryEncoding()
         {
-            var data = Encoding.UTF8.GetBytes("22:this is my test string");
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
 
-            var benString = new BEncodedString("this is my test string");
-            Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
+            var dict = new BEncodedDictionary();
+            var list = new BEncodedList();
+            list.Add(new BEncodedString("a"));
+            list.Add(new BEncodedString("b"));
+            dict.Add("spam", list);
+            Assert.Equal(Encoding.UTF8.GetString(data), Encoding.UTF8.GetString(dict.Encode()));
+            Assert.True(Toolbox.ByteMatch(data, dict.Encode()));
         }
 
         [Fact]
-        public void benStringEncoding2()
+        public void benDictionaryEncodingBuffered()
         {
-            var data = Encoding.UTF8.GetBytes("0:");
-
-            var benString = new BEncodedString("");
-            Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
-        }
-
-        [Fact]
-        public void benStringEncodingBuffered()
-        {
-            var data = Encoding.UTF8.GetBytes("22:this is my test string");
-
-            var benString = new BEncodedString("this is my test string");
-            var result = new byte[benString.LengthInBytes()];
-            benString.Encode(result, 0);
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var dict = new BEncodedDictionary();
+            var list = new BEncodedList();
+            list.Add(new BEncodedString("a"));
+            list.Add(new BEncodedString("b"));
+            dict.Add("spam", list);
+            var result = new byte[dict.LengthInBytes()];
+            dict.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
 
         [Fact]
-        public void benStringLengthInBytes()
+        public void benDictionaryLengthInBytes()
         {
-            var text = "thisisateststring";
+            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
+            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
 
-            BEncodedString str = text;
-            var length = text.Length;
-            length += text.Length.ToString().Length;
-            length++;
-
-            Assert.Equal(length, str.LengthInBytes());
+            Assert.Equal(data.Length, dict.LengthInBytes());
         }
 
         [Fact]
-        public void corruptBenStringDecode()
+        public void benDictionaryStackedTest()
         {
-            var testString = "50:i'm too short";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
+            var benString = "d4:testd5:testsli12345ei12345ee2:tod3:tomi12345eeee";
+            var data = Encoding.UTF8.GetBytes(benString);
+            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
+            var decoded = Encoding.UTF8.GetString(dict.Encode());
+            Assert.Equal(benString, decoded);
         }
 
         [Fact]
-        public void corruptBenStringDecode2()
+        public void benListDecoding()
         {
-            var s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.ASCII.GetBytes(s)));
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            using (Stream stream = new MemoryStream(data))
+            {
+                var result = BEncodedValue.Decode(stream);
+                Assert.Equal(result.ToString(), "l4:test5:tests6:testede");
+                Assert.Equal(result is BEncodedList, true);
+                var list = (BEncodedList) result;
+
+                Assert.Equal(list.Count, 3);
+                Assert.Equal(list[0] is BEncodedString, true);
+                Assert.Equal(((BEncodedString) list[0]).Text, "test");
+                Assert.Equal(((BEncodedString) list[1]).Text, "tests");
+                Assert.Equal(((BEncodedString) list[2]).Text, "tested");
+            }
         }
 
-        #endregion
+        [Fact]
+        public void benListEncoding()
+        {
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = new BEncodedList();
+            list.Add(new BEncodedString("test"));
+            list.Add(new BEncodedString("tests"));
+            list.Add(new BEncodedString("tested"));
 
-        #region BEncodedNumber Tests
+            Assert.True(Toolbox.ByteMatch(data, list.Encode()));
+        }
+
+        [Fact]
+        public void benListEncodingBuffered()
+        {
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = new BEncodedList();
+            list.Add(new BEncodedString("test"));
+            list.Add(new BEncodedString("tests"));
+            list.Add(new BEncodedString("tested"));
+            var result = new byte[list.LengthInBytes()];
+            list.Encode(result, 0);
+            Assert.True(Toolbox.ByteMatch(data, result));
+        }
+
+        [Fact]
+        public void benListLengthInBytes()
+        {
+            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
+            var list = (BEncodedList) BEncodedValue.Decode(data);
+
+            Assert.Equal(data.Length, list.LengthInBytes());
+        }
+
+        [Fact]
+        public void benListStackedTest()
+        {
+            var benString = "l6:stringl7:stringsl8:stringedei23456eei12345ee";
+            var data = Encoding.UTF8.GetBytes(benString);
+            var list = (BEncodedList) BEncodedValue.Decode(data);
+            var decoded = Encoding.UTF8.GetString(list.Encode());
+            Assert.Equal(benString, decoded);
+        }
 
         [Fact]
         public void benNumberDecoding()
@@ -230,155 +223,65 @@ namespace MonoTorrent.Common
         }
 
         [Fact]
-        public void corruptBenNumberDecode()
+        public void benStringDecoding()
         {
-            var testString = "i35212";
-            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
-        }
-
-        #endregion
-
-        #region BEncodedList Tests
-
-        [Fact]
-        public void benListDecoding()
-        {
-            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            using (Stream stream = new MemoryStream(data))
+            var data = Encoding.UTF8.GetBytes("21:this is a test string");
+            using (var stream = new MemoryStream(data))
             {
                 var result = BEncodedValue.Decode(stream);
-                Assert.Equal(result.ToString(), "l4:test5:tests6:testede");
-                Assert.Equal(result is BEncodedList, true);
-                var list = (BEncodedList) result;
-
-                Assert.Equal(list.Count, 3);
-                Assert.Equal(list[0] is BEncodedString, true);
-                Assert.Equal(((BEncodedString) list[0]).Text, "test");
-                Assert.Equal(((BEncodedString) list[1]).Text, "tests");
-                Assert.Equal(((BEncodedString) list[2]).Text, "tested");
+                Assert.Equal("this is a test string", result.ToString());
+                Assert.Equal(result is BEncodedString, true);
+                Assert.Equal(((BEncodedString) result).Text, "this is a test string");
             }
         }
 
         [Fact]
-        public void benListEncoding()
+        public void benStringEncoding()
         {
-            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            var list = new BEncodedList();
-            list.Add(new BEncodedString("test"));
-            list.Add(new BEncodedString("tests"));
-            list.Add(new BEncodedString("tested"));
+            var data = Encoding.UTF8.GetBytes("22:this is my test string");
 
-            Assert.True(Toolbox.ByteMatch(data, list.Encode()));
+            var benString = new BEncodedString("this is my test string");
+            Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
         }
 
         [Fact]
-        public void benListEncodingBuffered()
+        public void benStringEncoding2()
         {
-            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            var list = new BEncodedList();
-            list.Add(new BEncodedString("test"));
-            list.Add(new BEncodedString("tests"));
-            list.Add(new BEncodedString("tested"));
-            var result = new byte[list.LengthInBytes()];
-            list.Encode(result, 0);
+            var data = Encoding.UTF8.GetBytes("0:");
+
+            var benString = new BEncodedString("");
+            Assert.True(Toolbox.ByteMatch(data, benString.Encode()));
+        }
+
+        [Fact]
+        public void benStringEncodingBuffered()
+        {
+            var data = Encoding.UTF8.GetBytes("22:this is my test string");
+
+            var benString = new BEncodedString("this is my test string");
+            var result = new byte[benString.LengthInBytes()];
+            benString.Encode(result, 0);
             Assert.True(Toolbox.ByteMatch(data, result));
         }
 
         [Fact]
-        public void benListStackedTest()
+        public void benStringLengthInBytes()
         {
-            var benString = "l6:stringl7:stringsl8:stringedei23456eei12345ee";
-            var data = Encoding.UTF8.GetBytes(benString);
-            var list = (BEncodedList) BEncodedValue.Decode(data);
-            var decoded = Encoding.UTF8.GetString(list.Encode());
-            Assert.Equal(benString, decoded);
+            var text = "thisisateststring";
+
+            BEncodedString str = text;
+            var length = text.Length;
+            length += text.Length.ToString().Length;
+            length++;
+
+            Assert.Equal(length, str.LengthInBytes());
         }
 
         [Fact]
-        public void benListLengthInBytes()
+        public void corruptBenDataDecode()
         {
-            var data = Encoding.UTF8.GetBytes("l4:test5:tests6:testede");
-            var list = (BEncodedList) BEncodedValue.Decode(data);
-
-            Assert.Equal(data.Length, list.LengthInBytes());
-        }
-
-        [Fact]
-        public void corruptBenListDecode()
-        {
-            var testString = "l3:3521:a3:ae";
+            var testString = "corruption!";
             Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
-        }
-
-        #endregion
-
-        #region BEncodedDictionary Tests
-
-        [Fact]
-        public void benDictionaryDecoding()
-        {
-            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-            using (Stream stream = new MemoryStream(data))
-            {
-                var result = BEncodedValue.Decode(stream);
-                Assert.Equal(result.ToString(), "d4:spaml1:a1:bee");
-                Assert.Equal(result is BEncodedDictionary, true);
-
-                var dict = (BEncodedDictionary) result;
-                Assert.Equal(dict.Count, 1);
-                Assert.True(dict["spam"] is BEncodedList);
-
-                var list = (BEncodedList) dict["spam"];
-                Assert.Equal(((BEncodedString) list[0]).Text, "a");
-                Assert.Equal(((BEncodedString) list[1]).Text, "b");
-            }
-        }
-
-        [Fact]
-        public void benDictionaryEncoding()
-        {
-            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-
-            var dict = new BEncodedDictionary();
-            var list = new BEncodedList();
-            list.Add(new BEncodedString("a"));
-            list.Add(new BEncodedString("b"));
-            dict.Add("spam", list);
-            Assert.Equal(Encoding.UTF8.GetString(data), Encoding.UTF8.GetString(dict.Encode()));
-            Assert.True(Toolbox.ByteMatch(data, dict.Encode()));
-        }
-
-        [Fact]
-        public void benDictionaryEncodingBuffered()
-        {
-            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-            var dict = new BEncodedDictionary();
-            var list = new BEncodedList();
-            list.Add(new BEncodedString("a"));
-            list.Add(new BEncodedString("b"));
-            dict.Add("spam", list);
-            var result = new byte[dict.LengthInBytes()];
-            dict.Encode(result, 0);
-            Assert.True(Toolbox.ByteMatch(data, result));
-        }
-
-        [Fact]
-        public void benDictionaryStackedTest()
-        {
-            var benString = "d4:testd5:testsli12345ei12345ee2:tod3:tomi12345eeee";
-            var data = Encoding.UTF8.GetBytes(benString);
-            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
-            var decoded = Encoding.UTF8.GetString(dict.Encode());
-            Assert.Equal(benString, decoded);
-        }
-
-        [Fact]
-        public void benDictionaryLengthInBytes()
-        {
-            var data = Encoding.UTF8.GetBytes("d4:spaml1:a1:bee");
-            var dict = (BEncodedDictionary) BEncodedValue.Decode(data);
-
-            Assert.Equal(data.Length, dict.LengthInBytes());
         }
 
 
@@ -389,17 +292,58 @@ namespace MonoTorrent.Common
             Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
-        #endregion
-
-        #region General Tests
-
         [Fact]
-        public void corruptBenDataDecode()
+        public void corruptBenListDecode()
         {
-            var testString = "corruption!";
+            var testString = "l3:3521:a3:ae";
             Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
         }
 
-        #endregion
+        [Fact]
+        public void corruptBenNumberDecode()
+        {
+            var testString = "i35212";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
+        }
+
+        [Fact]
+        public void corruptBenStringDecode()
+        {
+            var testString = "50:i'm too short";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.UTF8.GetBytes(testString)));
+        }
+
+        [Fact]
+        public void corruptBenStringDecode2()
+        {
+            var s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
+            Assert.Throws<BEncodingException>(() => BEncodedValue.Decode(Encoding.ASCII.GetBytes(s)));
+        }
+
+        [Fact]
+        public void UTF8Test()
+        {
+            var s = "ã";
+            BEncodedString str = s;
+            Assert.Equal(s, str.Text);
+        }
+
+        //[Fact]
+        //public void EncodingUTF32()
+        //{
+        //    UTF8Encoding enc8 = new UTF8Encoding();
+        //    UTF32Encoding enc32 = new UTF32Encoding();
+        //    BEncodedDictionary val = new BEncodedDictionary();
+
+        //    val.Add("Test", (BEncodedNumber)1532);
+        //    val.Add("yeah", (BEncodedString)"whoop");
+        //    val.Add("mylist", new BEncodedList());
+        //    val.Add("mydict", new BEncodedDictionary());
+
+        //    byte[] utf8Result = val.Encode();
+        //    byte[] utf32Result = val.Encode(enc32);
+
+        //    Assert.Equal(enc8.GetString(utf8Result), enc32.GetString(utf32Result));
+        //}
     }
 }

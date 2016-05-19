@@ -1,57 +1,20 @@
-﻿//
-// UdpListener.cs
-//
-// Authors:
-//   olivier Dufour olivier(dot)duff(at)gmail.com
-//
-// Copyright (C) 2006 olivier Dufour
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-using System;
-using System.IO;
-using System.Net;
-using System.Web;
-using System.Text;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using MonoTorrent.Common;
-using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Messages.UdpTracker;
-using MonoTorrent.Client;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Net;
+using System.Net.Sockets;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
+using MonoTorrent.Client.Messages.UdpTracker;
 
 namespace MonoTorrent.Tracker.Listeners
 {
     public class UdpListener : ListenerBase
     {
-        private System.Net.Sockets.UdpClient listener;
-        private IPEndPoint endpoint;
-        private Dictionary<IPAddress, long> connectionIDs;
+        private readonly Dictionary<IPAddress, long> connectionIDs;
         private long curConnectionID;
-        //TODO system to clear old connectionID...
-        public override bool Running
-        {
-            get { return listener != null; }
-        }
+        private IPEndPoint endpoint;
+        private UdpClient listener;
 
         public UdpListener(int port)
             : this(new IPEndPoint(IPAddress.Any, port))
@@ -64,8 +27,14 @@ namespace MonoTorrent.Tracker.Listeners
             connectionIDs = new Dictionary<IPAddress, long>();
         }
 
+        //TODO system to clear old connectionID...
+        public override bool Running
+        {
+            get { return listener != null; }
+        }
+
         /// <summary>
-        /// Starts listening for incoming connections
+        ///     Starts listening for incoming connections
         /// </summary>
         public override void Start()
         {
@@ -75,12 +44,12 @@ namespace MonoTorrent.Tracker.Listeners
             //TODO test if it is better to use socket directly
             //Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            listener = new System.Net.Sockets.UdpClient(endpoint.Port);
-            listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
+            listener = new UdpClient(endpoint.Port);
+            listener.BeginReceive(ReceiveData, listener);
         }
 
         /// <summary>
-        /// Stops listening for incoming connections
+        ///     Stops listening for incoming connections
         /// </summary>
         public override void Stop()
         {
@@ -95,7 +64,7 @@ namespace MonoTorrent.Tracker.Listeners
         {
             try
             {
-                var listener = (System.Net.Sockets.UdpClient) ar.AsyncState;
+                var listener = (UdpClient) ar.AsyncState;
                 var data = listener.EndReceive(ar, ref endpoint);
                 if (data.Length < 16)
                     return; //bad request
@@ -127,7 +96,7 @@ namespace MonoTorrent.Tracker.Listeners
             finally
             {
                 if (Running)
-                    listener.BeginReceive(new AsyncCallback(ReceiveData), listener);
+                    listener.BeginReceive(ReceiveData, listener);
             }
         }
 

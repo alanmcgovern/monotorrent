@@ -30,59 +30,34 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Dht.Messages;
-using System.Threading;
-using System.Net.Sockets;
+using System.Diagnostics;
 using System.Net;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Common;
-using System.Diagnostics;
+using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
     internal class MessageLoop
     {
-        private struct SendDetails
-        {
-            public SendDetails(IPEndPoint destination, Message message)
-            {
-                Destination = destination;
-                Message = message;
-                SentAt = DateTime.MinValue;
-            }
-
-            public IPEndPoint Destination;
-            public Message Message;
-            public DateTime SentAt;
-        }
-
-        internal event EventHandler<SendQueryEventArgs> QuerySent;
-
-        private List<IAsyncResult> activeSends = new List<IAsyncResult>();
-        private DhtEngine engine;
+        private readonly List<IAsyncResult> activeSends = new List<IAsyncResult>();
+        private readonly DhtEngine engine;
         private DateTime lastSent;
-        private DhtListener listener;
-        private object locker = new object();
-        private Queue<SendDetails> sendQueue = new Queue<SendDetails>();
-        private Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
-        private MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
+        private readonly DhtListener listener;
+        private readonly object locker = new object();
 
-        private bool CanSend
-        {
-            get
-            {
-                return activeSends.Count < 5 && sendQueue.Count > 0 &&
-                       DateTime.Now - lastSent > TimeSpan.FromMilliseconds(5);
-            }
-        }
+        private readonly Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue =
+            new Queue<KeyValuePair<IPEndPoint, Message>>();
+
+        private readonly Queue<SendDetails> sendQueue = new Queue<SendDetails>();
+        private readonly MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {
             this.engine = engine;
             this.listener = listener;
-            listener.MessageReceived += new MessageReceived(MessageReceived);
+            listener.MessageReceived += MessageReceived;
             DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate
             {
                 if (engine.Disposed)
@@ -102,6 +77,17 @@ namespace MonoTorrent.Dht
                 return !engine.Disposed;
             });
         }
+
+        private bool CanSend
+        {
+            get
+            {
+                return activeSends.Count < 5 && sendQueue.Count > 0 &&
+                       DateTime.Now - lastSent > TimeSpan.FromMilliseconds(5);
+            }
+        }
+
+        internal event EventHandler<SendQueryEventArgs> QuerySent;
 
         private void MessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
@@ -253,6 +239,20 @@ namespace MonoTorrent.Dht
         internal void EnqueueSend(Message message, Node node)
         {
             EnqueueSend(message, node.EndPoint);
+        }
+
+        private struct SendDetails
+        {
+            public SendDetails(IPEndPoint destination, Message message)
+            {
+                Destination = destination;
+                Message = message;
+                SentAt = DateTime.MinValue;
+            }
+
+            public readonly IPEndPoint Destination;
+            public readonly Message Message;
+            public DateTime SentAt;
         }
     }
 }

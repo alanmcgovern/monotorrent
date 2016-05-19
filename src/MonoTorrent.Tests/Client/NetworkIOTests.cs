@@ -1,57 +1,15 @@
-//
-// NetworkIOTests.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2010 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
 using System;
 using System.Net;
 using System.Threading;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class NetworkIOTests : IDisposable
     {
-        private byte[] buffer;
-        private byte[] data;
-        private ConnectionPair pair;
-
-        private CustomConnection Incoming
-        {
-            get { return pair.Incoming; }
-        }
-
-        private CustomConnection Outgoing
-        {
-            get { return pair.Outgoing; }
-        }
-
         public NetworkIOTests()
         {
             if (data == null)
@@ -67,28 +25,18 @@ namespace MonoTorrent.Client
             pair.Dispose();
         }
 
-        [Fact]
-        public void ReceiveData_SlowIncoming_SlowOutgoing()
+        private byte[] buffer;
+        private readonly byte[] data;
+        private readonly ConnectionPair pair;
+
+        private CustomConnection Incoming
         {
-            DoReceive(true, true);
+            get { return pair.Incoming; }
         }
 
-        [Fact]
-        public void ReceiveData_SlowIncoming()
+        private CustomConnection Outgoing
         {
-            DoReceive(false, true);
-        }
-
-        [Fact]
-        public void ReceiveData_SlowOutgoing()
-        {
-            DoReceive(true, false);
-        }
-
-        [Fact]
-        public void ReceiveData()
-        {
-            DoReceive(false, false);
+            get { return pair.Outgoing; }
         }
 
         private void DoReceive(bool slowOutgoing, bool slowIncoming)
@@ -120,30 +68,6 @@ namespace MonoTorrent.Client
                 if (data[i] != buffer[i])
                     Assert.True(false, "Buffers differ at position " + i);
             }
-        }
-
-        [Fact]
-        public void SendData_SlowIncoming_SlowOutgoing()
-        {
-            DoSend(true, true);
-        }
-
-        [Fact]
-        public void SendData_SlowOutgoing()
-        {
-            DoSend(true, false);
-        }
-
-        [Fact]
-        public void SendData_SlowIncoming()
-        {
-            DoSend(false, true);
-        }
-
-        [Fact]
-        public void SendData()
-        {
-            DoSend(false, false);
         }
 
         public void DoSend(bool slowOutgoing, bool slowIncoming)
@@ -188,6 +112,30 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
+        public void ReceiveData()
+        {
+            DoReceive(false, false);
+        }
+
+        [Fact]
+        public void ReceiveData_SlowIncoming()
+        {
+            DoReceive(false, true);
+        }
+
+        [Fact]
+        public void ReceiveData_SlowIncoming_SlowOutgoing()
+        {
+            DoReceive(true, true);
+        }
+
+        [Fact]
+        public void ReceiveData_SlowOutgoing()
+        {
+            DoReceive(true, false);
+        }
+
+        [Fact]
         public void ReceiveTwoKeepAlives()
         {
             var message = new KeepAliveMessage();
@@ -209,6 +157,30 @@ namespace MonoTorrent.Client
 
             PeerIO.EnqueueReceiveMessage(Incoming, new PlainTextEncryption(), null, null, null, callback, null);
             Assert.True(handle.WaitOne(TimeSpan.FromSeconds(2)), "#Should receive second message");
+        }
+
+        [Fact]
+        public void SendData()
+        {
+            DoSend(false, false);
+        }
+
+        [Fact]
+        public void SendData_SlowIncoming()
+        {
+            DoSend(false, true);
+        }
+
+        [Fact]
+        public void SendData_SlowIncoming_SlowOutgoing()
+        {
+            DoSend(true, true);
+        }
+
+        [Fact]
+        public void SendData_SlowOutgoing()
+        {
+            DoSend(true, false);
         }
 
         [Fact]

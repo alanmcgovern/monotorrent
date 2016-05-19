@@ -1,35 +1,4 @@
-//
-// SuggestPieceMessage.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using System;
 using System.Text;
-using System.Net;
 
 namespace MonoTorrent.Client.Messages.FastPeer
 {
@@ -42,21 +11,16 @@ namespace MonoTorrent.Client.Messages.FastPeer
         #region Member Variables
 
         /// <summary>
-        /// The index of the suggested piece to request
+        ///     The index of the suggested piece to request
         /// </summary>
-        public int PieceIndex
-        {
-            get { return pieceIndex; }
-        }
-
-        private int pieceIndex;
+        public int PieceIndex { get; private set; }
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Creates a new SuggestPiece message
+        ///     Creates a new SuggestPiece message
         /// </summary>
         public SuggestPieceMessage()
         {
@@ -64,12 +28,12 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
 
         /// <summary>
-        /// Creates a new SuggestPiece message
+        ///     Creates a new SuggestPiece message
         /// </summary>
         /// <param name="pieceIndex">The suggested piece to download</param>
         public SuggestPieceMessage(int pieceIndex)
         {
-            this.pieceIndex = pieceIndex;
+            PieceIndex = pieceIndex;
         }
 
         #endregion
@@ -85,7 +49,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
 
             written += Write(buffer, written, messageLength);
             written += Write(buffer, written, MessageId);
-            written += Write(buffer, written, pieceIndex);
+            written += Write(buffer, written, PieceIndex);
 
             return CheckWritten(written - offset);
         }
@@ -95,7 +59,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (!ClientEngine.SupportsFastPeer)
                 throw new ProtocolException("Message decoding not supported");
 
-            pieceIndex = ReadInt(buffer, ref offset);
+            PieceIndex = ReadInt(buffer, ref offset);
         }
 
         public override int ByteLength
@@ -113,12 +77,12 @@ namespace MonoTorrent.Client.Messages.FastPeer
             if (msg == null)
                 return false;
 
-            return pieceIndex == msg.pieceIndex;
+            return PieceIndex == msg.PieceIndex;
         }
 
         public override int GetHashCode()
         {
-            return pieceIndex.GetHashCode();
+            return PieceIndex.GetHashCode();
         }
 
         public override string ToString()
@@ -126,7 +90,7 @@ namespace MonoTorrent.Client.Messages.FastPeer
             var sb = new StringBuilder(24);
             sb.Append("Suggest Piece");
             sb.Append(" Index: ");
-            sb.Append(pieceIndex);
+            sb.Append(PieceIndex);
             return sb.ToString();
         }
 

@@ -1,32 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client;
 using System.Threading;
+using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
+using MonoTorrent.Tracker.Listeners;
+using Xunit;
 
 namespace MonoTorrent.Tracker
 {
     public class TrackerTests : IDisposable
     {
-        //static void Main(string[] args)
-        //{
-        //    TrackerTests t = new TrackerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.MultipleAnnounce();
-        //    t.FixtureTeardown();
-        //}
-        private Uri uri = new Uri("http://127.0.0.1:23456/");
-        private Listeners.HttpListener listener;
-        private Tracker server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
 
         public TrackerTests()
         {
-            listener = new Listeners.HttpListener(uri.OriginalString);
+            listener = new HttpListener(uri.OriginalString);
             listener.Start();
             server = new Tracker();
             server.RegisterListener(listener);
@@ -41,6 +28,18 @@ namespace MonoTorrent.Tracker
             server.Dispose();
         }
 
+        //static void Main(string[] args)
+        //{
+        //    TrackerTests t = new TrackerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.MultipleAnnounce();
+        //    t.FixtureTeardown();
+        //}
+        private readonly Uri uri = new Uri("http://127.0.0.1:23456/");
+        private readonly HttpListener listener;
+        private readonly Tracker server;
+
         [Fact]
         public void MultipleAnnounce()
         {
@@ -52,7 +51,7 @@ namespace MonoTorrent.Tracker
             {
                 var infoHash = new InfoHash(new byte[20]);
                 r.NextBytes(infoHash.Hash);
-                var tier = new TrackerTier(new string[] {uri.ToString()});
+                var tier = new TrackerTier(new[] {uri.ToString()});
                 tier.Trackers[0].AnnounceComplete += delegate
                 {
                     if (++announceCount == 20)

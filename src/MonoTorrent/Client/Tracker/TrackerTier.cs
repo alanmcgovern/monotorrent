@@ -1,42 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
-using MonoTorrent.Common;
+using System.Collections.Generic;
 
 namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier : IEnumerable<Tracker>
     {
-        #region Private Fields
-
-        private bool sendingStartedEvent;
-        private bool sentStartedEvent;
-        private List<Tracker> trackers;
-
-        #endregion Private Fields
-
-        #region Properties
-
-        internal bool SendingStartedEvent
-        {
-            get { return sendingStartedEvent; }
-            set { sendingStartedEvent = value; }
-        }
-
-        internal bool SentStartedEvent
-        {
-            get { return sentStartedEvent; }
-            set { sentStartedEvent = value; }
-        }
-
-        internal List<Tracker> Trackers
-        {
-            get { return trackers; }
-        }
-
-        #endregion Properties
-
         #region Constructors
 
         internal TrackerTier(IEnumerable<string> trackerUrls)
@@ -64,21 +33,35 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            trackers = trackerList;
+            Trackers = trackerList;
         }
 
         #endregion Constructors
+
+        #region Private Fields
+
+        #endregion Private Fields
+
+        #region Properties
+
+        internal bool SendingStartedEvent { get; set; }
+
+        internal bool SentStartedEvent { get; set; }
+
+        internal List<Tracker> Trackers { get; }
+
+        #endregion Properties
 
         #region Methods
 
         internal int IndexOf(Tracker tracker)
         {
-            return trackers.IndexOf(tracker);
+            return Trackers.IndexOf(tracker);
         }
 
         public IEnumerator<Tracker> GetEnumerator()
         {
-            return trackers.GetEnumerator();
+            return Trackers.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -88,7 +71,7 @@ namespace MonoTorrent.Client.Tracker
 
         public List<Tracker> GetTrackers()
         {
-            return new List<Tracker>(trackers);
+            return new List<Tracker>(Trackers);
         }
 
         #endregion Methods

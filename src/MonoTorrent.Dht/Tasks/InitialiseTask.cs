@@ -1,18 +1,16 @@
 #if !DISABLE_DHT
-using MonoTorrent.Dht.Messages;
-using System;
-using System.Net;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
+using System.Net;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
     internal class InitialiseTask : Task
     {
-        private int activeRequests = 0;
-        private List<Node> initialNodes;
-        private SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
+        private int activeRequests;
         private DhtEngine engine;
+        private List<Node> initialNodes;
+        private readonly SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
 
         public InitialiseTask(DhtEngine engine)
         {
@@ -57,7 +55,7 @@ namespace MonoTorrent.Dht.Tasks
                 {
                     var utorrent = new Node(NodeId.Create(),
                         new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                    SendFindNode(new Node[] {utorrent});
+                    SendFindNode(new[] {utorrent});
                 }
                 catch
                 {

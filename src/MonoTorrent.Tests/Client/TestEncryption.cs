@@ -1,34 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
 using System.Threading;
+using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using MonoTorrent.Client.Encryption;
+using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class TestEncryption : IDisposable
     {
-        //public static void Main(string[] args)
-        //{
-        //    int i = 0;
-        //    while (true)
-        //    {
-        //        TestEncryption d = new TestEncryption();
-        //        d.Setup();
-        //        try { d.EncryptorFactoryPeerAPlain(); }
-        //        catch { Console.WriteLine("******** FAILURE ********"); }
-        //        d.Teardown();
-        //        if (i++ == 100)
-        //            break;
-        //    }
-        //}
-
-        private TestRig rig;
-        private ConnectionPair conn;
-
         public TestEncryption()
         {
             rig = TestRig.CreateMultiFile();
@@ -62,111 +42,23 @@ namespace MonoTorrent.Client
             Assert.True(false, "Timed out waiting for handle");
         }
 
-        [Fact]
-        public void Full_FullTestNoInitial()
-        {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, false);
-        }
+        //public static void Main(string[] args)
+        //{
+        //    int i = 0;
+        //    while (true)
+        //    {
+        //        TestEncryption d = new TestEncryption();
+        //        d.Setup();
+        //        try { d.EncryptorFactoryPeerAPlain(); }
+        //        catch { Console.WriteLine("******** FAILURE ********"); }
+        //        d.Teardown();
+        //        if (i++ == 100)
+        //            break;
+        //    }
+        //}
 
-        [Fact]
-        public void Full_FullTestInitial()
-        {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, true);
-        }
-
-        [Fact]
-        public void Full_HeaderTestNoInitial()
-        {
-            Assert.Throws<EncryptionException>(
-                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
-        }
-
-        [Fact]
-        public void Full_HeaderTestInitial()
-        {
-            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true));
-        }
-
-        [Fact]
-        public void Full_AutoTestNoInitial()
-        {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, false);
-        }
-
-        [Fact]
-        public void Full_AutoTestInitial()
-        {
-            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, true);
-        }
-
-        [Fact]
-        public void Full_NoneTestNoInitial()
-        {
-            Assert.Throws<EncryptionException>(
-                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
-        }
-
-        [Fact]
-        public void Full_NoneTestInitial()
-        {
-            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true));
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerAFullInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Full, true);
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerAFullNoInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Full, false);
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerAHeaderNoInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Header, false);
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerAHeaderInitial()
-        {
-            PeerATest(EncryptionTypes.RC4Header, true);
-        }
-
-        [Fact]
-        public void EncryptorFactoryPeerAPlain()
-        {
-            rig.Engine.StartAll();
-
-            rig.AddConnection(conn.Incoming);
-
-            var message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB",
-                VersionInfo.ProtocolStringV100);
-            var buffer = message.Encode();
-
-            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
-            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
-
-            message.Decode(buffer, 0, buffer.Length);
-            Assert.Equal(VersionInfo.ProtocolStringV100, message.ProtocolString);
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerBFull()
-        {
-            rig.Engine.Settings.PreferEncryption = true;
-            PeerBTest(EncryptionTypes.RC4Full);
-        }
-
-        [Fact]
-        public void EncrytorFactoryPeerBHeader()
-        {
-            rig.Engine.Settings.PreferEncryption = false;
-            PeerBTest(EncryptionTypes.RC4Header);
-        }
+        private readonly TestRig rig;
+        private readonly ConnectionPair conn;
 
         private void PeerATest(EncryptionTypes encryption, bool addInitial)
         {
@@ -213,7 +105,7 @@ namespace MonoTorrent.Client
             rig.Engine.StartAll();
             rig.AddConnection(conn.Outgoing);
 
-            var a = new PeerBEncryption(new InfoHash[] {rig.Manager.InfoHash}, EncryptionTypes.All);
+            var a = new PeerBEncryption(new[] {rig.Manager.InfoHash}, EncryptionTypes.All);
             var result = a.BeginHandshake(conn.Incoming, null, null);
             if (!result.AsyncWaitHandle.WaitOne(4000, true))
                 Assert.True(false, "Handshake timed out");
@@ -250,12 +142,12 @@ namespace MonoTorrent.Client
             if (addInitial)
                 a.AddPayload(handshake);
 
-            var b = new PeerBEncryption(new InfoHash[] {rig.Torrent.InfoHash}, encryptionB);
+            var b = new PeerBEncryption(new[] {rig.Torrent.InfoHash}, encryptionB);
 
             var resultA = a.BeginHandshake(conn.Outgoing, null, null);
             var resultB = b.BeginHandshake(conn.Incoming, null, null);
 
-            var handles = new WaitHandle[] {resultA.AsyncWaitHandle, resultB.AsyncWaitHandle};
+            var handles = new[] {resultA.AsyncWaitHandle, resultB.AsyncWaitHandle};
             var count = 1000;
             while (!WaitHandle.WaitAll(handles, 5, true))
             {
@@ -301,6 +193,112 @@ namespace MonoTorrent.Client
                 Assert.True(a.Encryptor is PlainTextEncryption);
                 Assert.True(b.Encryptor is PlainTextEncryption);
             }
+        }
+
+        [Fact]
+        public void EncryptorFactoryPeerAPlain()
+        {
+            rig.Engine.StartAll();
+
+            rig.AddConnection(conn.Incoming);
+
+            var message = new HandshakeMessage(rig.Manager.InfoHash, "ABC123ABC123ABC123AB",
+                VersionInfo.ProtocolStringV100);
+            var buffer = message.Encode();
+
+            conn.Outgoing.EndSend(conn.Outgoing.BeginSend(buffer, 0, buffer.Length, null, null));
+            conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(buffer, 0, buffer.Length, null, null));
+
+            message.Decode(buffer, 0, buffer.Length);
+            Assert.Equal(VersionInfo.ProtocolStringV100, message.ProtocolString);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerAFullInitial()
+        {
+            PeerATest(EncryptionTypes.RC4Full, true);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerAFullNoInitial()
+        {
+            PeerATest(EncryptionTypes.RC4Full, false);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerAHeaderInitial()
+        {
+            PeerATest(EncryptionTypes.RC4Header, true);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerAHeaderNoInitial()
+        {
+            PeerATest(EncryptionTypes.RC4Header, false);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerBFull()
+        {
+            rig.Engine.Settings.PreferEncryption = true;
+            PeerBTest(EncryptionTypes.RC4Full);
+        }
+
+        [Fact]
+        public void EncrytorFactoryPeerBHeader()
+        {
+            rig.Engine.Settings.PreferEncryption = false;
+            PeerBTest(EncryptionTypes.RC4Header);
+        }
+
+        [Fact]
+        public void Full_AutoTestInitial()
+        {
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, true);
+        }
+
+        [Fact]
+        public void Full_AutoTestNoInitial()
+        {
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.All, false);
+        }
+
+        [Fact]
+        public void Full_FullTestInitial()
+        {
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, true);
+        }
+
+        [Fact]
+        public void Full_FullTestNoInitial()
+        {
+            Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Full, false);
+        }
+
+        [Fact]
+        public void Full_HeaderTestInitial()
+        {
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, true));
+        }
+
+        [Fact]
+        public void Full_HeaderTestNoInitial()
+        {
+            Assert.Throws<EncryptionException>(
+                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.RC4Header, false));
+        }
+
+        [Fact]
+        public void Full_NoneTestInitial()
+        {
+            Assert.Throws<EncryptionException>(() => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, true));
+        }
+
+        [Fact]
+        public void Full_NoneTestNoInitial()
+        {
+            Assert.Throws<EncryptionException>(
+                () => Handshake(EncryptionTypes.RC4Full, EncryptionTypes.PlainText, false));
         }
     }
 }

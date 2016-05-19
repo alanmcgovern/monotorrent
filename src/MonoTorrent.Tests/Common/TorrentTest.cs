@@ -1,53 +1,15 @@
-//
-// TorrentTest.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
-using MonoTorrent.BEncoding;
 using System;
 using System.IO;
+using System.Security.Cryptography;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client;
 using Xunit;
 
 namespace MonoTorrent.Common
 {
     public class TorrentTest
     {
-        //static void Main(string[] args)
-        //{
-        //    TorrentTest t = new TorrentTest();
-        //    t.StartUp();
-
-        //}
-        private Torrent torrent;
-        private long creationTime;
-        private System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();
-
         /// <summary>
-        /// 
         /// </summary>
         public TorrentTest()
         {
@@ -55,7 +17,7 @@ namespace MonoTorrent.Common
             var epochStart = new DateTime(1970, 1, 1, 0, 0, 0);
             var span = current - epochStart;
             creationTime = (long) span.TotalSeconds;
-            Console.WriteLine(creationTime.ToString() + "Creation seconds");
+            Console.WriteLine(creationTime + "Creation seconds");
 
             var torrentInfo = new BEncodedDictionary();
             torrentInfo.Add("announce", new BEncodedString("http://myannouceurl/announce"));
@@ -70,6 +32,16 @@ namespace MonoTorrent.Common
             torrentInfo.Add("private", new BEncodedString("1"));
             torrent = Torrent.Load(torrentInfo);
         }
+
+        //static void Main(string[] args)
+        //{
+        //    TorrentTest t = new TorrentTest();
+        //    t.StartUp();
+
+        //}
+        private readonly Torrent torrent;
+        private readonly long creationTime;
+        private readonly SHA1 sha = System.Security.Cryptography.SHA1.Create();
 
         private BEncodedDictionary CreateInfoDict()
         {
@@ -163,7 +135,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void AnnounceUrl()
@@ -174,7 +145,22 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        /// </summary>
+        [Fact]
+        public void Comment()
+        {
+            Assert.Equal(torrent.Comment, "my big long comment");
+        }
+
+        /// <summary>
+        /// </summary>
+        [Fact]
+        public void CreatedBy()
+        {
+            Assert.Equal(torrent.CreatedBy, "MonoTorrent/" + VersionInfo.ClientVersion);
+        }
+
+        /// <summary>
         /// </summary>
         [Fact]
         public void CreationDate()
@@ -189,25 +175,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void Comment()
-        {
-            Assert.Equal(torrent.Comment, "my big long comment");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void CreatedBy()
-        {
-            Assert.Equal(torrent.CreatedBy, "MonoTorrent/" + VersionInfo.ClientVersion);
-        }
-
-        /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void ED2K()
@@ -217,7 +184,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void Encoding()
@@ -226,7 +192,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void Files()
@@ -247,7 +212,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void Name()
@@ -256,25 +220,6 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void Private()
-        {
-            Assert.Equal(true, torrent.IsPrivate);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void PublisherUrl()
-        {
-            Assert.Equal("http://www.iamthepublisher.com", torrent.PublisherUrl);
-        }
-
-        /// <summary>
-        /// 
         /// </summary>
         [Fact]
         public void PieceLength()
@@ -283,7 +228,14 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        /// </summary>
+        [Fact]
+        public void Private()
+        {
+            Assert.Equal(true, torrent.IsPrivate);
+        }
+
+        /// <summary>
         /// </summary>
         [Fact]
         public void Publisher()
@@ -292,7 +244,23 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// 
+        /// </summary>
+        [Fact]
+        public void PublisherUrl()
+        {
+            Assert.Equal("http://www.iamthepublisher.com", torrent.PublisherUrl);
+        }
+
+        /// <summary>
+        /// </summary>
+        [Fact]
+        public void SHA1()
+        {
+            Assert.True(Toolbox.ByteMatch(torrent.SHA1,
+                sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
+        }
+
+        /// <summary>
         /// </summary>
         [Fact]
         public void Size()
@@ -300,11 +268,19 @@ namespace MonoTorrent.Common
             Assert.Equal(50000 + 60000 + 70000 + 80000, torrent.Size);
         }
 
+        /// <summary>
+        /// </summary>
+        [Fact]
+        public void Source()
+        {
+            Assert.True(torrent.Source == "http://www.thisiswhohostedit.com");
+        }
+
         [Fact]
         public void StartEndIndices()
         {
             var pieceLength = 32*32;
-            var files = new TorrentFile[]
+            var files = new[]
             {
                 new TorrentFile("File0", 0),
                 new TorrentFile("File1", pieceLength),
@@ -314,7 +290,7 @@ namespace MonoTorrent.Common
                 new TorrentFile("File5", 236),
                 new TorrentFile("File6", pieceLength*7)
             };
-            var t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            var t = TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
             Assert.Equal(0, t.Files[0].StartPieceIndex);
             Assert.Equal(0, t.Files[0].EndPieceIndex);
@@ -342,12 +318,12 @@ namespace MonoTorrent.Common
         public void StartEndIndices2()
         {
             var pieceLength = 32*32;
-            var files = new TorrentFile[]
+            var files = new[]
             {
                 new TorrentFile("File0", pieceLength),
                 new TorrentFile("File1", 0)
             };
-            var t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            var t = TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
             Assert.Equal(0, t.Files[0].StartPieceIndex);
             Assert.Equal(0, t.Files[0].EndPieceIndex);
@@ -360,12 +336,12 @@ namespace MonoTorrent.Common
         public void StartEndIndices3()
         {
             var pieceLength = 32*32;
-            var files = new TorrentFile[]
+            var files = new[]
             {
                 new TorrentFile("File0", pieceLength - 10),
                 new TorrentFile("File1", 10)
             };
-            var t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            var t = TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
             Assert.Equal(0, t.Files[0].StartPieceIndex);
             Assert.Equal(0, t.Files[0].EndPieceIndex);
@@ -378,12 +354,12 @@ namespace MonoTorrent.Common
         public void StartEndIndices4()
         {
             var pieceLength = 32*32;
-            var files = new TorrentFile[]
+            var files = new[]
             {
                 new TorrentFile("File0", pieceLength - 10),
                 new TorrentFile("File1", 11)
             };
-            var t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            var t = TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
             Assert.Equal(0, t.Files[0].StartPieceIndex);
             Assert.Equal(0, t.Files[0].EndPieceIndex);
@@ -396,13 +372,13 @@ namespace MonoTorrent.Common
         public void StartEndIndices5()
         {
             var pieceLength = 32*32;
-            var files = new TorrentFile[]
+            var files = new[]
             {
                 new TorrentFile("File0", pieceLength - 10),
                 new TorrentFile("File1", 10),
                 new TorrentFile("File1", 1)
             };
-            var t = MonoTorrent.Client.TestRig.CreateMultiFile(files, pieceLength).Torrent;
+            var t = TestRig.CreateMultiFile(files, pieceLength).Torrent;
 
             Assert.Equal(0, t.Files[0].StartPieceIndex);
             Assert.Equal(0, t.Files[0].EndPieceIndex);
@@ -412,25 +388,6 @@ namespace MonoTorrent.Common
 
             Assert.Equal(1, t.Files[2].StartPieceIndex);
             Assert.Equal(1, t.Files[2].EndPieceIndex);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void Source()
-        {
-            Assert.True(torrent.Source == "http://www.thisiswhohostedit.com");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Fact]
-        public void SHA1()
-        {
-            Assert.True(Toolbox.ByteMatch(torrent.SHA1,
-                sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("this is a sha1 hash string"))));
         }
     }
 }

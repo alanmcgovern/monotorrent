@@ -1,16 +1,14 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client;
-using System.Net.Sockets;
 using System.Net;
-using MonoTorrent.Common;
+using System.Net.Sockets;
+using System.Threading;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;
-using System.Threading;
+using MonoTorrent.Common;
 
 namespace SampleClient
 {
@@ -82,20 +80,14 @@ namespace SampleClient
 
     public class CustomConnection : IConnection
     {
-        private string name;
-        private Socket s;
-        private bool incoming;
+        private readonly string name;
+        private readonly Socket s;
 
         public CustomConnection(Socket s, bool incoming, string name)
         {
             this.name = name;
             this.s = s;
-            this.incoming = incoming;
-        }
-
-        public override string ToString()
-        {
-            return name;
+            IsIncoming = incoming;
         }
 
         public byte[] AddressBytes
@@ -113,10 +105,7 @@ namespace SampleClient
             get { return false; }
         }
 
-        public bool IsIncoming
-        {
-            get { return incoming; }
-        }
+        public bool IsIncoming { get; }
 
         public EndPoint EndPoint
         {
@@ -164,20 +153,25 @@ namespace SampleClient
         {
             get { return null; }
         }
+
+        public override string ToString()
+        {
+            return name;
+        }
     }
 
     public class CustomListener : PeerListener
     {
+        public CustomListener()
+            : base(new IPEndPoint(IPAddress.Any, 0))
+        {
+        }
+
         public override void Start()
         {
         }
 
         public override void Stop()
-        {
-        }
-
-        public CustomListener()
-            : base(new IPEndPoint(IPAddress.Any, 0))
         {
         }
 
@@ -191,9 +185,9 @@ namespace SampleClient
 
     public class ConnectionPair : IDisposable
     {
-        private TcpListener socketListener;
         public IConnection Incoming;
         public IConnection Outgoing;
+        private readonly TcpListener socketListener;
 
         public ConnectionPair(int port)
         {
@@ -218,43 +212,6 @@ namespace SampleClient
 
     public class EngineTestRig
     {
-        private BEncodedDictionary torrentDict;
-        private ClientEngine engine;
-        private CustomListener listener;
-        private TorrentManager manager;
-        private Torrent torrent;
-
-        public ClientEngine Engine
-        {
-            get { return engine; }
-        }
-
-        public CustomListener Listener
-        {
-            get { return listener; }
-        }
-
-        public TorrentManager Manager
-        {
-            get { return manager; }
-        }
-
-        public Torrent Torrent
-        {
-            get { return torrent; }
-        }
-
-        public BEncodedDictionary TorrentDict
-        {
-            get { return torrentDict; }
-        }
-
-        public CustomTracker Tracker
-        {
-            get { return (CustomTracker) manager.TrackerManager.CurrentTracker; }
-        }
-
-
         static EngineTestRig()
         {
             TrackerFactory.Register("custom", typeof(CustomTracker));
@@ -274,18 +231,33 @@ namespace SampleClient
         {
             if (writer == null)
                 writer = new MemoryWriter(new NullWriter());
-            listener = new CustomListener();
-            engine = new ClientEngine(new EngineSettings(), listener, writer);
-            torrentDict = CreateTorrent(piecelength);
-            torrent = Torrent.Load(torrentDict);
-            manager = new TorrentManager(torrent, savePath, new TorrentSettings());
-            engine.Register(manager);
+            Listener = new CustomListener();
+            Engine = new ClientEngine(new EngineSettings(), Listener, writer);
+            TorrentDict = CreateTorrent(piecelength);
+            Torrent = Torrent.Load(TorrentDict);
+            Manager = new TorrentManager(Torrent, savePath, new TorrentSettings());
+            Engine.Register(Manager);
             //manager.Start();
+        }
+
+        public ClientEngine Engine { get; }
+
+        public CustomListener Listener { get; }
+
+        public TorrentManager Manager { get; }
+
+        public Torrent Torrent { get; }
+
+        public BEncodedDictionary TorrentDict { get; }
+
+        public CustomTracker Tracker
+        {
+            get { return (CustomTracker) Manager.TrackerManager.CurrentTracker; }
         }
 
         public void AddConnection(IConnection connection)
         {
-            listener.Add(manager, connection);
+            Listener.Add(Manager, connection);
         }
 
         private static BEncodedDictionary CreateTorrent(int pieceLength)
@@ -312,8 +284,8 @@ namespace SampleClient
 
     internal class TestManualConnection
     {
-        private EngineTestRig rig1;
-        private EngineTestRig rig2;
+        private readonly EngineTestRig rig1;
+        private readonly EngineTestRig rig2;
 
         public TestManualConnection()
         {

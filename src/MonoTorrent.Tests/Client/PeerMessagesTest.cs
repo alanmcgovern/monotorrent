@@ -1,49 +1,16 @@
-//
-// PeerMessagesTest.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
+using System;
+using System.Text;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using System;
-using System.Text;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class PeerMessagesTest : IDisposable
     {
-        private TestRig testRig;
-        private byte[] buffer;
-        private int offset = 2362;
-
         public PeerMessagesTest()
         {
             buffer = new byte[100000];
@@ -58,22 +25,28 @@ namespace MonoTorrent.Client
             testRig.Dispose();
         }
 
-        [Fact]
-        public void BitFieldEncoding()
+        private readonly TestRig testRig;
+        private readonly byte[] buffer;
+        private readonly int offset = 2362;
+
+        //Deliberately broken to work around bugs in azureus
+        public void BitfieldCorrupt()
         {
-            var data = new bool[]
-            {
-                true, false, false, true, false, true, false, true, false, true,
-                false, true, false, false, false, true, true, true, false, false,
-                false, true, false, true, false, false, true, false, true, false,
-                true, true, false, false, true, false, false, true, true, false
-            };
+            var data = new[]
+            {true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true};
             var encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            var m = (BitfieldMessage) PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
-            Assert.Equal(data.Length, m.BitField.Length);
-            for (var i = 0; i < data.Length; i++)
-                Assert.Equal(data[i], m.BitField[i]);
+            Assert.Throws<MessageException>(() => PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager));
+        }
+
+        private void EncodeDecode(Message orig)
+        {
+            orig.Encode(buffer, offset);
+            Message dec = PeerMessage.DecodeMessage(buffer, offset, orig.ByteLength, testRig.Manager);
+            Assert.True(orig.Equals(dec), string.Format("orig: {0}, new: {1}", orig, dec));
+
+            Assert.True(Toolbox.ByteMatch(orig.Encode(),
+                PeerMessage.DecodeMessage(orig.Encode(), 0, orig.ByteLength, testRig.Manager).Encode()));
         }
 
         [Fact]
@@ -95,14 +68,28 @@ namespace MonoTorrent.Client
             EncodeDecode(msg);
         }
 
-        //Deliberately broken to work around bugs in azureus
-        public void BitfieldCorrupt()
+        [Fact]
+        public void BitFieldEncoding()
         {
-            var data = new bool[]
-            {true, false, false, true, false, true, false, true, false, true, false, true, false, false, false, true};
+            var data = new[]
+            {
+                true, false, false, true, false, true, false, true, false, true,
+                false, true, false, false, false, true, true, true, false, false,
+                false, true, false, true, false, false, true, false, true, false,
+                true, true, false, false, true, false, false, true, true, false
+            };
             var encoded = new BitfieldMessage(new BitField(data)).Encode();
 
-            Assert.Throws<MessageException>(() => PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager));
+            var m = (BitfieldMessage) PeerMessage.DecodeMessage(encoded, 0, encoded.Length, testRig.Manager);
+            Assert.Equal(data.Length, m.BitField.Length);
+            for (var i = 0; i < data.Length; i++)
+                Assert.Equal(data[i], m.BitField[i]);
+        }
+
+        [Fact]
+        public void CancelDecoding()
+        {
+            EncodeDecode(new CancelMessage(563, 4737, 88888));
         }
 
 
@@ -115,9 +102,9 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void CancelDecoding()
+        public void ChokeDecoding()
         {
-            EncodeDecode(new CancelMessage(563, 4737, 88888));
+            EncodeDecode(new ChokeMessage());
         }
 
 
@@ -129,9 +116,16 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void ChokeDecoding()
+        public void HandshakeDecoding()
         {
-            EncodeDecode(new ChokeMessage());
+            var infohash = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52};
+            var orig = new HandshakeMessage(new InfoHash(infohash), "12312312345645645678",
+                VersionInfo.ProtocolStringV100);
+            orig.Encode(buffer, offset);
+            var dec = new HandshakeMessage();
+            dec.Decode(buffer, offset, 68);
+            Assert.True(orig.Equals(dec));
+            Assert.Equal(orig.Encode(), dec.Encode());
         }
 
 
@@ -161,16 +155,9 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void HandshakeDecoding()
+        public void HaveDecoding()
         {
-            var infohash = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 12, 15, 12, 52};
-            var orig = new HandshakeMessage(new InfoHash(infohash), "12312312345645645678",
-                VersionInfo.ProtocolStringV100);
-            orig.Encode(buffer, offset);
-            var dec = new HandshakeMessage();
-            dec.Decode(buffer, offset, 68);
-            Assert.True(orig.Equals(dec));
-            Assert.Equal(orig.Encode(), dec.Encode());
+            EncodeDecode(new HaveMessage(34622));
         }
 
 
@@ -182,9 +169,9 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void HaveDecoding()
+        public void InterestedDecoding()
         {
-            EncodeDecode(new HaveMessage(34622));
+            EncodeDecode(new InterestedMessage());
         }
 
 
@@ -196,9 +183,8 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void InterestedDecoding()
+        public void KeepAliveDecoding()
         {
-            EncodeDecode(new InterestedMessage());
         }
 
 
@@ -213,8 +199,9 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void KeepAliveDecoding()
+        public void NotInterestedDecoding()
         {
+            EncodeDecode(new NotInterestedMessage());
         }
 
 
@@ -223,72 +210,6 @@ namespace MonoTorrent.Client
         {
             var length = new NotInterestedMessage().Encode(buffer, offset);
             Assert.Equal("00-00-00-01-03", BitConverter.ToString(buffer, offset, length));
-        }
-
-        [Fact]
-        public void NotInterestedDecoding()
-        {
-            EncodeDecode(new NotInterestedMessage());
-        }
-
-
-        [Fact]
-        public void PieceEncoding()
-        {
-            var message = new PieceMessage(15, 10, Piece.BlockSize);
-            message.Data = new byte[Piece.BlockSize];
-            message.Encode(buffer, offset);
-        }
-
-        [Fact]
-        public void PieceDecoding()
-        {
-            var message = new PieceMessage(15, 10, Piece.BlockSize);
-            message.Data = new byte[Piece.BlockSize];
-            EncodeDecode(message);
-        }
-
-
-        [Fact]
-        public void PortEncoding()
-        {
-            var length = new PortMessage(2500).Encode(buffer, offset);
-            Assert.Equal("00-00-00-03-09-09-C4", BitConverter.ToString(buffer, offset, length));
-        }
-
-        [Fact]
-        public void PortDecoding()
-        {
-            EncodeDecode(new PortMessage(5452));
-        }
-
-
-        [Fact]
-        public void RequestEncoding()
-        {
-            var length = new RequestMessage(5, 1024, 16384).Encode(buffer, offset);
-            Assert.Equal("00-00-00-0D-06-00-00-00-05-00-00-04-00-00-00-40-00",
-                BitConverter.ToString(buffer, offset, length));
-        }
-
-        [Fact]
-        public void RequestDecoding()
-        {
-            EncodeDecode(new RequestMessage(123, 789, 4235));
-        }
-
-
-        [Fact]
-        public void UnchokeEncoding()
-        {
-            var length = new UnchokeMessage().Encode(buffer, offset);
-            Assert.Equal("00-00-00-01-01", BitConverter.ToString(buffer, offset, length));
-        }
-
-        [Fact]
-        public void UnchokeDecoding()
-        {
-            EncodeDecode(new UnchokeMessage());
         }
 
         [Fact]
@@ -302,14 +223,64 @@ namespace MonoTorrent.Client
             Assert.NotNull(message.Dropped);
         }
 
-        private void EncodeDecode(Message orig)
+        [Fact]
+        public void PieceDecoding()
         {
-            orig.Encode(buffer, offset);
-            Message dec = PeerMessage.DecodeMessage(buffer, offset, orig.ByteLength, testRig.Manager);
-            Assert.True(orig.Equals(dec), string.Format("orig: {0}, new: {1}", orig, dec));
+            var message = new PieceMessage(15, 10, Piece.BlockSize);
+            message.Data = new byte[Piece.BlockSize];
+            EncodeDecode(message);
+        }
 
-            Assert.True(Toolbox.ByteMatch(orig.Encode(),
-                PeerMessage.DecodeMessage(orig.Encode(), 0, orig.ByteLength, testRig.Manager).Encode()));
+
+        [Fact]
+        public void PieceEncoding()
+        {
+            var message = new PieceMessage(15, 10, Piece.BlockSize);
+            message.Data = new byte[Piece.BlockSize];
+            message.Encode(buffer, offset);
+        }
+
+        [Fact]
+        public void PortDecoding()
+        {
+            EncodeDecode(new PortMessage(5452));
+        }
+
+
+        [Fact]
+        public void PortEncoding()
+        {
+            var length = new PortMessage(2500).Encode(buffer, offset);
+            Assert.Equal("00-00-00-03-09-09-C4", BitConverter.ToString(buffer, offset, length));
+        }
+
+        [Fact]
+        public void RequestDecoding()
+        {
+            EncodeDecode(new RequestMessage(123, 789, 4235));
+        }
+
+
+        [Fact]
+        public void RequestEncoding()
+        {
+            var length = new RequestMessage(5, 1024, 16384).Encode(buffer, offset);
+            Assert.Equal("00-00-00-0D-06-00-00-00-05-00-00-04-00-00-00-40-00",
+                BitConverter.ToString(buffer, offset, length));
+        }
+
+        [Fact]
+        public void UnchokeDecoding()
+        {
+            EncodeDecode(new UnchokeMessage());
+        }
+
+
+        [Fact]
+        public void UnchokeEncoding()
+        {
+            var length = new UnchokeMessage().Encode(buffer, offset);
+            Assert.Equal("00-00-00-01-01", BitConverter.ToString(buffer, offset, length));
         }
     }
 }

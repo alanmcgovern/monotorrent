@@ -1,20 +1,16 @@
 using System;
-using System.Collections.Generic;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
     public class InfoHashTrackable : ITrackable
     {
-        private InfoHash infoHash;
-        private string name;
-
         public InfoHashTrackable(Torrent torrent)
         {
             Check.Torrent(torrent);
 
-            name = torrent.Name;
-            infoHash = torrent.InfoHash;
+            Name = torrent.Name;
+            InfoHash = torrent.InfoHash;
         }
 
         public InfoHashTrackable(string name, InfoHash infoHash)
@@ -24,18 +20,12 @@ namespace MonoTorrent.Tracker
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException("name cannot be null or empty", "name");
 
-            this.infoHash = infoHash;
-            this.name = name;
+            InfoHash = infoHash;
+            Name = name;
         }
 
-        public InfoHash InfoHash
-        {
-            get { return infoHash; }
-        }
+        public InfoHash InfoHash { get; }
 
-        public string Name
-        {
-            get { return name; }
-        }
+        public string Name { get; }
     }
 }

@@ -1,58 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using System.IO;
 using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     internal class ChokeUnchokeManager : IUnchoker
     {
-        #region Private Fields
-
-        private int minimumTimeBetweenReviews = 30;
-            //seconds.  Minimum time that needs to pass before we execute a review
-
-        private int percentOfMaxRateToSkipReview = 90;
-            //If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the review
-
-        private DateTime timeOfLastReview; //When we last reviewed the choke/unchoke position
-        private bool firstCall = true; //Indicates the first call to the TimePassed method
-        private bool isDownloading = true; //Allows us to identify change in state from downloading to seeding
-        private TorrentManager owningTorrent; //The torrent to which this manager belongs
-        private PeerId optimisticUnchokePeer = null; //This is the peer we have optimistically unchoked, or null
-
-        //Lists of peers held by the choke/unchoke manager
-        private PeerList nascentPeers = new PeerList(PeerListType.NascentPeers);
-            //Peers that have yet to be unchoked and downloading for a full review period
-
-        private PeerList candidatePeers = new PeerList(PeerListType.CandidatePeers);
-            //Peers that are candidates for unchoking based on past performance
-
-        private PeerList optimisticUnchokeCandidates = new PeerList(PeerListType.OptimisticUnchokeCandidatePeers);
-            //Peers that are candidates for unchoking in case they perform well
-
-        private int reviewsExecuted;
-
-        /// <summary>
-        /// Number of peer reviews that have been conducted
-        /// </summary>
-        internal int ReviewsExecuted
-        {
-            get { return reviewsExecuted; }
-        }
-
-        #endregion Private Fields
-
         #region Constructors
 
         /// <summary>
-        /// Creates a new choke/unchoke manager for a torrent manager
-        /// </summeary>
-        /// <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
+        ///     Creates a new choke/unchoke manager for a torrent manager
+        ///     </summeary>
+        ///     <param name="TorrentManager">The torrent manager this choke/unchoke manager belongs to</param>
         public ChokeUnchokeManager(TorrentManager TorrentManager, int MinimumTimeBetweenReviews,
             int PercentOfMaxRateToSkipReview)
         {
@@ -63,10 +25,19 @@ namespace MonoTorrent.Client
 
         #endregion
 
+        #region IUnchoker Members
+
+        public void UnchokeReview()
+        {
+            TimePassed();
+        }
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>
-        /// Executed each tick of the client engine
+        ///     Executed each tick of the client engine
         /// </summary>
         public void TimePassed()
         {
@@ -79,11 +50,11 @@ namespace MonoTorrent.Client
             var unchokedCount = 0;
 
             var skipDownload = isDownloading &&
-                                (owningTorrent.Monitor.DownloadSpeed <
-                                 owningTorrent.Settings.MaxDownloadSpeed*percentOfMaxRateToSkipReview/100.0);
+                               (owningTorrent.Monitor.DownloadSpeed <
+                                owningTorrent.Settings.MaxDownloadSpeed*percentOfMaxRateToSkipReview/100.0);
             var skipUpload = !isDownloading &&
-                              (owningTorrent.Monitor.UploadSpeed <
-                               owningTorrent.Settings.MaxUploadSpeed*percentOfMaxRateToSkipReview/100.0);
+                             (owningTorrent.Monitor.UploadSpeed <
+                              owningTorrent.Settings.MaxUploadSpeed*percentOfMaxRateToSkipReview/100.0);
 
             skipDownload = skipDownload && owningTorrent.Settings.MaxDownloadSpeed > 0;
             skipUpload = skipUpload && owningTorrent.Settings.MaxUploadSpeed > 0;
@@ -119,7 +90,7 @@ namespace MonoTorrent.Client
                             unchokedCount++;
                         else
                             chokedInterestedPeers.Add(connectedPeer);
-                                //This peer is interested and choked, remember it and count it
+                        //This peer is interested and choked, remember it and count it
                     }
                 }
             }
@@ -159,6 +130,39 @@ namespace MonoTorrent.Client
         }
 
         #endregion
+
+        #region Private Fields
+
+        private readonly int minimumTimeBetweenReviews = 30;
+        //seconds.  Minimum time that needs to pass before we execute a review
+
+        private readonly int percentOfMaxRateToSkipReview = 90;
+        //If the latest download/upload rate is >= to this percentage of the maximum rate we should skip the review
+
+        private DateTime timeOfLastReview; //When we last reviewed the choke/unchoke position
+        private bool firstCall = true; //Indicates the first call to the TimePassed method
+        private bool isDownloading = true; //Allows us to identify change in state from downloading to seeding
+        private readonly TorrentManager owningTorrent; //The torrent to which this manager belongs
+        private PeerId optimisticUnchokePeer; //This is the peer we have optimistically unchoked, or null
+
+        //Lists of peers held by the choke/unchoke manager
+        private readonly PeerList nascentPeers = new PeerList(PeerListType.NascentPeers);
+        //Peers that have yet to be unchoked and downloading for a full review period
+
+        private readonly PeerList candidatePeers = new PeerList(PeerListType.CandidatePeers);
+        //Peers that are candidates for unchoking based on past performance
+
+        private readonly PeerList optimisticUnchokeCandidates =
+            new PeerList(PeerListType.OptimisticUnchokeCandidatePeers);
+
+        //Peers that are candidates for unchoking in case they perform well
+
+        /// <summary>
+        ///     Number of peer reviews that have been conducted
+        /// </summary>
+        internal int ReviewsExecuted { get; private set; }
+
+        #endregion Private Fields
 
         #region Private Methods
 
@@ -424,12 +428,12 @@ namespace MonoTorrent.Client
             }
 
             timeOfLastReview = DateTime.Now;
-            reviewsExecuted++;
+            ReviewsExecuted++;
         }
 
 
         /// <summary>
-        /// Review method for BitTyrant Choking/Unchoking Algorithm
+        ///     Review method for BitTyrant Choking/Unchoking Algorithm
         /// </summary>
         private void ExecuteTyrantReview()
         {
@@ -477,14 +481,15 @@ namespace MonoTorrent.Client
             }
 
             timeOfLastReview = DateTime.Now;
-            reviewsExecuted++;
+            ReviewsExecuted++;
         }
 
 
         /// <summary>
-        /// Reallocates the specified number of upload slots
+        ///     Reallocates the specified number of upload slots
         /// </summary>
-        /// <param name="NumberOfSlots"></param>The number of slots we should reallocate
+        /// <param name="NumberOfSlots"></param>
+        /// The number of slots we should reallocate
         private void ReallocateSlots(int NumberOfSlots, int NumberOfUnchokedPeers)
         {
             //First determine the maximum number of peers we can unchoke in this review = maximum of:
@@ -509,11 +514,14 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Reallocates the next slot with the specified peer if we can
+        ///     Reallocates the next slot with the specified peer if we can
         /// </summary>
-        /// <param name="NumberOfSlots"></param>The number of slots left to reallocate
-        /// <param name="MaximumUnchokes"></param>The number of peers we can unchoke
-        /// <param name="Peer"></param>The peer to consider for reallocation
+        /// <param name="NumberOfSlots"></param>
+        /// The number of slots left to reallocate
+        /// <param name="MaximumUnchokes"></param>
+        /// The number of peers we can unchoke
+        /// <param name="Peer"></param>
+        /// The peer to consider for reallocation
         private void ReallocateSlot(ref int NumberOfSlots, ref int MaximumUnchokes, PeerId peer)
         {
             if (!peer.AmChoking)
@@ -532,8 +540,8 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Checks the send queue of the peer to see if there are any outstanding pieces which they requested
-        /// and rejects them as necessary
+        ///     Checks the send queue of the peer to see if there are any outstanding pieces which they requested
+        ///     and rejects them as necessary
         /// </summary>
         /// <param name="Peer"></param>
         private void RejectPendingRequests(PeerId Peer)
@@ -632,15 +640,6 @@ namespace MonoTorrent.Client
         //    else
         //        return "N,";
         //}
-
-        #endregion
-
-        #region IUnchoker Members
-
-        public void UnchokeReview()
-        {
-            TimePassed();
-        }
 
         #endregion
     }

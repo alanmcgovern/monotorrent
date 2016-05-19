@@ -1,4 +1,3 @@
-using MonoTorrent.Common;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -7,18 +6,6 @@ namespace MonoTorrent.Client
 {
     public class RarestFirstPickerTests : IDisposable
     {
-        //static void Main()
-        //{
-        //    RarestFirstPickerTests t = new RarestFirstPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.RarestPieceTest();
-        //}
-        private TestRig rig;
-        private List<PeerId> peers;
-        private RarestFirstPicker rarest;
-        private TestPicker tester;
-
         public RarestFirstPickerTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -43,23 +30,35 @@ namespace MonoTorrent.Client
             rig.Dispose();
         }
 
+        //static void Main()
+        //{
+        //    RarestFirstPickerTests t = new RarestFirstPickerTests();
+        //    t.FixtureSetup();
+        //    t.Setup();
+        //    t.RarestPieceTest();
+        //}
+        private readonly TestRig rig;
+        private readonly List<PeerId> peers;
+        private readonly RarestFirstPicker rarest;
+        private readonly TestPicker tester;
+
         [Fact]
         public void RarestPieceTest()
         {
             rarest.PickPiece(peers[0], peers);
             Assert.Equal(5, tester.PickPieceBitfield.Count);
             var bf = tester.PickPieceBitfield[0];
-            var trueIndices = new int[] {1, 7, 11, 13, 17, 19, 23, 29, 31, 37};
+            var trueIndices = new[] {1, 7, 11, 13, 17, 19, 23, 29, 31, 37};
             for (var i = 0; i < bf.Length; i++)
-                if (Array.IndexOf<int>(trueIndices, i) > -1)
+                if (Array.IndexOf(trueIndices, i) > -1)
                     Assert.True(bf[i]);
                 else
                     Assert.False(bf[i]);
 
             bf = tester.PickPieceBitfield[1];
-            trueIndices = new int[] {1, 5, 7, 11, 13, 17, 19, 23, 25, 29, 31, 35, 37};
+            trueIndices = new[] {1, 5, 7, 11, 13, 17, 19, 23, 25, 29, 31, 35, 37};
             for (var i = 0; i < bf.Length; i++)
-                if (Array.IndexOf<int>(trueIndices, i) > -1)
+                if (Array.IndexOf(trueIndices, i) > -1)
                     Assert.True(bf[i]);
                 else
                     Assert.False(bf[i]);

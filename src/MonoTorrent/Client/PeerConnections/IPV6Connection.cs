@@ -1,17 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
 {
     public class IPV6Connection : IConnection
     {
-        private bool isIncoming;
-        private Socket socket;
-        private EndPoint endpoint;
-        private Uri uri;
+        private readonly Socket socket;
 
         public IPV6Connection(Uri uri)
         {
@@ -22,8 +17,8 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentException("Uri is not an IPV6 uri", "uri");
 
             socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-            endpoint = new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port);
-            this.uri = uri;
+            EndPoint = new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port);
+            Uri = uri;
         }
 
         public IPV6Connection(Socket socket, bool isIncoming)
@@ -35,8 +30,8 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentException("Not an IPV6 socket", "socket");
 
             this.socket = socket;
-            endpoint = socket.RemoteEndPoint;
-            this.isIncoming = isIncoming;
+            EndPoint = socket.RemoteEndPoint;
+            IsIncoming = isIncoming;
         }
 
         public byte[] AddressBytes
@@ -53,22 +48,16 @@ namespace MonoTorrent.Client.Connections
 
         public virtual bool CanReconnect
         {
-            get { return !isIncoming; }
+            get { return !IsIncoming; }
         }
 
-        public bool IsIncoming
-        {
-            get { return isIncoming; }
-        }
+        public bool IsIncoming { get; }
 
-        public EndPoint EndPoint
-        {
-            get { return endpoint; }
-        }
+        public EndPoint EndPoint { get; }
 
         public IAsyncResult BeginConnect(AsyncCallback callback, object state)
         {
-            return socket.BeginConnect(endpoint, callback, state);
+            return socket.BeginConnect(EndPoint, callback, state);
         }
 
         public void EndConnect(IAsyncResult result)
@@ -101,9 +90,6 @@ namespace MonoTorrent.Client.Connections
             ((IDisposable) socket).Dispose();
         }
 
-        public Uri Uri
-        {
-            get { return uri; }
-        }
+        public Uri Uri { get; }
     }
 }

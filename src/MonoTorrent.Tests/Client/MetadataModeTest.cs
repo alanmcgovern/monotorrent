@@ -1,17 +1,25 @@
-﻿using MonoTorrent.Client.Encryption;
+﻿using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Threading;
+using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using System;
-using System.IO;
-using System.Security.Cryptography;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class MetadataModeTests : IDisposable
     {
+        public void Dispose()
+        {
+            rig.Manager.Stop();
+            pair.Dispose();
+            rig.Dispose();
+        }
+
         //static void Main(string[] args)
         //{
         //    MetadataModeTests t = new MetadataModeTests();
@@ -41,17 +49,66 @@ namespace MonoTorrent.Client
             byte[] data;
 
             EncryptorFactory.EndCheckEncryption(
-                EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] {id.TorrentManager.InfoHash}),
+                EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new[] {id.TorrentManager.InfoHash}),
                 out data);
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
         }
 
-        public void Dispose()
+        public void SendMetadataCore(string expectedPath)
         {
-            rig.Manager.Stop();
-            pair.Dispose();
-            rig.Dispose();
+            var connection = pair.Incoming;
+
+            // 1) Send local handshake. We've already received the remote handshake as part
+            // of the Connect method.
+            SendMessage(
+                new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true,
+                    true), connection);
+            var exHand = new ExtendedHandshakeMessage(rig.Torrent.Metadata.Length);
+            exHand.Supports.Add(LTMetadata.Support);
+            SendMessage(exHand, connection);
+
+            // 2) Receive the metadata requests from the other peer and fulfill them
+            var buffer = rig.Torrent.Metadata;
+            var length = (buffer.Length + 16383)/16384;
+            PeerMessage m;
+            while (length > 0 && (m = ReceiveMessage(connection)) != null)
+            {
+                var metadata = m as LTMetadata;
+                if (metadata != null)
+                {
+                    if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request)
+                    {
+                        metadata = new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data,
+                            metadata.Piece, buffer);
+                        SendMessage(metadata, connection);
+                        length--;
+                    }
+                }
+            }
+
+            // We've sent all the pieces. Now we just wait for the torrentmanager to process them all.
+            while (rig.Manager.Mode is MetadataMode)
+                Thread.Sleep(10);
+
+            Assert.True(File.Exists(expectedPath));
+            var torrent = Torrent.Load(expectedPath);
+            Assert.Equal(rig.Manager.InfoHash, torrent.InfoHash);
+        }
+
+        private void SendMessage(PeerMessage message, CustomConnection connection)
+        {
+            var b = message.Encode();
+            encryptor.Encrypt(b);
+            var result = connection.BeginSend(b, 0, b.Length, null, null);
+            if (!result.AsyncWaitHandle.WaitOne(5000, true))
+                throw new Exception("Message didn't send correctly");
+            connection.EndSend(result);
+        }
+
+        private PeerMessage ReceiveMessage(CustomConnection connection)
+        {
+            return TransferTest.ReceiveMessage(connection, decryptor, rig.Manager);
         }
 
         [Fact]
@@ -107,62 +164,6 @@ namespace MonoTorrent.Client
         {
             Setup(true, Environment.CurrentDirectory);
             SendMetadataCore(Path.Combine(Environment.CurrentDirectory, rig.Torrent.InfoHash.ToHex() + ".torrent"));
-        }
-
-        public void SendMetadataCore(string expectedPath)
-        {
-            var connection = pair.Incoming;
-
-            // 1) Send local handshake. We've already received the remote handshake as part
-            // of the Connect method.
-            SendMessage(
-                new HandshakeMessage(rig.Manager.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true,
-                    true), connection);
-            var exHand = new ExtendedHandshakeMessage(rig.Torrent.Metadata.Length);
-            exHand.Supports.Add(LTMetadata.Support);
-            SendMessage(exHand, connection);
-
-            // 2) Receive the metadata requests from the other peer and fulfill them
-            var buffer = rig.Torrent.Metadata;
-            var length = (buffer.Length + 16383)/16384;
-            PeerMessage m;
-            while (length > 0 && (m = ReceiveMessage(connection)) != null)
-            {
-                var metadata = m as LTMetadata;
-                if (metadata != null)
-                {
-                    if (metadata.MetadataMessageType == LTMetadata.eMessageType.Request)
-                    {
-                        metadata = new LTMetadata(LTMetadata.Support.MessageId, LTMetadata.eMessageType.Data,
-                            metadata.Piece, buffer);
-                        SendMessage(metadata, connection);
-                        length--;
-                    }
-                }
-            }
-
-            // We've sent all the pieces. Now we just wait for the torrentmanager to process them all.
-            while (rig.Manager.Mode is MetadataMode)
-                System.Threading.Thread.Sleep(10);
-
-            Assert.True(File.Exists(expectedPath));
-            var torrent = Torrent.Load(expectedPath);
-            Assert.Equal(rig.Manager.InfoHash, torrent.InfoHash);
-        }
-
-        private void SendMessage(PeerMessage message, CustomConnection connection)
-        {
-            var b = message.Encode();
-            encryptor.Encrypt(b);
-            var result = connection.BeginSend(b, 0, b.Length, null, null);
-            if (!result.AsyncWaitHandle.WaitOne(5000, true))
-                throw new Exception("Message didn't send correctly");
-            connection.EndSend(result);
-        }
-
-        private PeerMessage ReceiveMessage(CustomConnection connection)
-        {
-            return TransferTest.ReceiveMessage(connection, decryptor, rig.Manager);
         }
     }
 }

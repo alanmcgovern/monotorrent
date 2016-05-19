@@ -1,52 +1,18 @@
-//
-// TCPConnection.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Connections
 {
     public class IPV4Connection : IConnection
     {
-        private bool isIncoming;
-        private IPEndPoint endPoint;
-        private Socket socket;
-        private Uri uri;
+        private readonly Socket socket;
 
         #region Member Variables
 
         public bool CanReconnect
         {
-            get { return !isIncoming; }
+            get { return !IsIncoming; }
         }
 
         public bool Connected
@@ -56,23 +22,14 @@ namespace MonoTorrent.Client.Connections
 
         EndPoint IConnection.EndPoint
         {
-            get { return endPoint; }
+            get { return EndPoint; }
         }
 
-        public IPEndPoint EndPoint
-        {
-            get { return endPoint; }
-        }
+        public IPEndPoint EndPoint { get; }
 
-        public bool IsIncoming
-        {
-            get { return isIncoming; }
-        }
+        public bool IsIncoming { get; }
 
-        public Uri Uri
-        {
-            get { return uri; }
-        }
+        public Uri Uri { get; }
 
         #endregion
 
@@ -83,7 +40,7 @@ namespace MonoTorrent.Client.Connections
                 new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
                 false)
         {
-            this.uri = uri;
+            Uri = uri;
         }
 
         public IPV4Connection(IPEndPoint endPoint)
@@ -100,8 +57,8 @@ namespace MonoTorrent.Client.Connections
         private IPV4Connection(Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
             this.socket = socket;
-            endPoint = endpoint;
-            this.isIncoming = isIncoming;
+            EndPoint = endpoint;
+            IsIncoming = isIncoming;
         }
 
         #endregion
@@ -110,12 +67,12 @@ namespace MonoTorrent.Client.Connections
 
         public byte[] AddressBytes
         {
-            get { return endPoint.Address.GetAddressBytes(); }
+            get { return EndPoint.Address.GetAddressBytes(); }
         }
 
         public IAsyncResult BeginConnect(AsyncCallback peerEndCreateConnection, object state)
         {
-            return socket.BeginConnect(endPoint, peerEndCreateConnection, state);
+            return socket.BeginConnect(EndPoint, peerEndCreateConnection, state);
         }
 
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)

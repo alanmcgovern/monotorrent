@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
@@ -7,14 +6,6 @@ namespace MonoTorrent
 {
     public class RawTrackerTier : IList<string>
     {
-        public string this[int index]
-        {
-            get { return ((BEncodedString) Tier[index]).Text; }
-            set { Tier[index] = new BEncodedString(value); }
-        }
-
-        internal BEncodedList Tier { get; set; }
-
         public RawTrackerTier()
             : this(new BEncodedList())
         {
@@ -30,6 +21,14 @@ namespace MonoTorrent
         {
             foreach (var v in announces)
                 Add(v);
+        }
+
+        internal BEncodedList Tier { get; set; }
+
+        public string this[int index]
+        {
+            get { return ((BEncodedString) Tier[index]).Text; }
+            set { Tier[index] = new BEncodedString(value); }
         }
 
         public int IndexOf(string item)

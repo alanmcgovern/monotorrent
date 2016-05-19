@@ -1,12 +1,22 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     public class PeerManager
     {
+        #region Constructors
+
+        public PeerManager()
+        {
+            ActivePeers = new List<Peer>();
+            AvailablePeers = new List<Peer>();
+            BannedPeers = new List<Peer>();
+            BusyPeers = new List<Peer>();
+        }
+
+        #endregion Constructors
+
         #region Member Variables
 
         internal List<PeerId> ConnectedPeers = new List<PeerId>();
@@ -27,7 +37,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Returns the number of Leechs we are currently connected to
+        ///     Returns the number of Leechs we are currently connected to
         /// </summary>
         /// <returns></returns>
         public int Leechs
@@ -37,16 +47,12 @@ namespace MonoTorrent.Client
                 return
                     (int)
                         ClientEngine.MainLoop.QueueWait(
-                            (MainLoopJob)
-                                delegate
-                                {
-                                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return !p.IsSeeder; });
-                                });
+                            delegate { return Toolbox.Count(ActivePeers, delegate(Peer p) { return !p.IsSeeder; }); });
             }
         }
 
         /// <summary>
-        /// Returns the number of Seeds we are currently connected to
+        ///     Returns the number of Seeds we are currently connected to
         /// </summary>
         /// <returns></returns>
         public int Seeds
@@ -56,27 +62,11 @@ namespace MonoTorrent.Client
                 return
                     (int)
                         ClientEngine.MainLoop.QueueWait(
-                            (MainLoopJob)
-                                delegate
-                                {
-                                    return Toolbox.Count<Peer>(ActivePeers, delegate(Peer p) { return p.IsSeeder; });
-                                });
+                            delegate { return Toolbox.Count(ActivePeers, delegate(Peer p) { return p.IsSeeder; }); });
             }
         }
 
         #endregion
-
-        #region Constructors
-
-        public PeerManager()
-        {
-            ActivePeers = new List<Peer>();
-            AvailablePeers = new List<Peer>();
-            BannedPeers = new List<Peer>();
-            BusyPeers = new List<Peer>();
-        }
-
-        #endregion Constructors
 
         #region Methods
 

@@ -1,32 +1,3 @@
-//
-// TorrentSettings.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 
 namespace MonoTorrent.Client
@@ -90,10 +61,13 @@ namespace MonoTorrent.Client
         private int uploadSlots;
 
         /// <summary>
-        /// The choke/unchoke manager reviews how each torrent is making use of its upload slots.  If appropriate, it releases one of the available slots and uses it to try a different peer
-        /// in case it gives us more data.  This value determines how long (in seconds) needs to expire between reviews.  If set too short, peers will have insufficient time to start
-        /// downloading data and the choke/unchoke manager will choke them too early.  If set too long, we will spend more time than is necessary waiting for a peer to give us data.
-        /// The default is 30 seconds.  A value of 0 disables the choke/unchoke manager altogether.
+        ///     The choke/unchoke manager reviews how each torrent is making use of its upload slots.  If appropriate, it releases
+        ///     one of the available slots and uses it to try a different peer
+        ///     in case it gives us more data.  This value determines how long (in seconds) needs to expire between reviews.  If
+        ///     set too short, peers will have insufficient time to start
+        ///     downloading data and the choke/unchoke manager will choke them too early.  If set too long, we will spend more time
+        ///     than is necessary waiting for a peer to give us data.
+        ///     The default is 30 seconds.  A value of 0 disables the choke/unchoke manager altogether.
         /// </summary>
         public int MinimumTimeBetweenReviews
         {
@@ -104,10 +78,12 @@ namespace MonoTorrent.Client
         private int minimumTimeBetweenReviews = 30;
 
         /// <summary>
-        /// A percentage between 0 and 100; default 90.
-        /// When downloading, the choke/unchoke manager doesn't make any adjustments if the download speed is greater than this percentage of the maximum download rate.
-        /// That way it will not try to improve download speed when the only likley effect will be to reduce download speeds.
-        /// When uploading, the choke/unchoke manager doesn't make any adjustments if the upload speed is greater than this percentage of the maximum upload rate.
+        ///     A percentage between 0 and 100; default 90.
+        ///     When downloading, the choke/unchoke manager doesn't make any adjustments if the download speed is greater than this
+        ///     percentage of the maximum download rate.
+        ///     That way it will not try to improve download speed when the only likley effect will be to reduce download speeds.
+        ///     When uploading, the choke/unchoke manager doesn't make any adjustments if the upload speed is greater than this
+        ///     percentage of the maximum upload rate.
         /// </summary>
         public int PercentOfMaxRateToSkipReview
         {
@@ -123,8 +99,9 @@ namespace MonoTorrent.Client
         private int percentOfMaxRateToSkipReview = 90;
 
         /// <summary>
-        /// The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.  Peers are disconnected only if they have not provided
-        /// any data.  Default is 600.  A value of 0 disables the inactivity manager.
+        ///     The time, in seconds, the inactivity manager should wait until it can consider a peer eligible for disconnection.
+        ///     Peers are disconnected only if they have not provided
+        ///     any data.  Default is 600.  A value of 0 disables the inactivity manager.
         /// </summary>
         public TimeSpan TimeToWaitUntilIdle
         {
@@ -140,8 +117,10 @@ namespace MonoTorrent.Client
         private TimeSpan timeToWaitUntilIdle = TimeSpan.FromMinutes(10);
 
         /// <summary>
-        /// When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number of bytes we've been sent / ConnectionRetentionFactor) seconds
-        /// before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager from disconnecting peers that have sent data.
+        ///     When considering peers that have given us data, the inactivity manager will wait TimeToWaiTUntilIdle plus (Number
+        ///     of bytes we've been sent / ConnectionRetentionFactor) seconds
+        ///     before they are eligible for disconnection.  Default value is 2000.  A value of 0 prevents the inactivity manager
+        ///     from disconnecting peers that have sent data.
         /// </summary>
         public long ConnectionRetentionFactor
         {

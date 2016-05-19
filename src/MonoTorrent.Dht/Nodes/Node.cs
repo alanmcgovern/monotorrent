@@ -30,14 +30,11 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using Mono.Math;
-using MonoTorrent.BEncoding;
 using System.Net;
-using MonoTorrent.Dht.Messages;
 using System.Text;
-using Message = MonoTorrent.Client.Messages.Message;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Dht
 {
@@ -45,33 +42,19 @@ namespace MonoTorrent.Dht
     {
         public static readonly int MaxFailures = 4;
 
-        private IPEndPoint endpoint;
-        private NodeId id;
-        private int failedCount;
-        private DateTime lastSeen;
-        private BEncodedString token;
-
-        public IPEndPoint EndPoint
+        public Node(NodeId id, IPEndPoint endpoint)
         {
-            get { return endpoint; }
+            EndPoint = endpoint;
+            Id = id;
         }
 
-        public int FailedCount
-        {
-            get { return failedCount; }
-            internal set { failedCount = value; }
-        }
+        public IPEndPoint EndPoint { get; }
 
-        public NodeId Id
-        {
-            get { return id; }
-        }
+        public int FailedCount { get; internal set; }
 
-        public DateTime LastSeen
-        {
-            get { return lastSeen; }
-            internal set { lastSeen = value; }
-        }
+        public NodeId Id { get; }
+
+        public DateTime LastSeen { get; internal set; }
 
         // FIXME: State should be set properly as per specification.
         // i.e. it needs to take into account the 'LastSeen' property.
@@ -80,32 +63,39 @@ namespace MonoTorrent.Dht
         {
             get
             {
-                if (failedCount >= MaxFailures)
+                if (FailedCount >= MaxFailures)
                     return NodeState.Bad;
 
-                else if (lastSeen == DateTime.MinValue)
+                if (LastSeen == DateTime.MinValue)
                     return NodeState.Unknown;
 
-                return (DateTime.UtcNow - lastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
+                return (DateTime.UtcNow - LastSeen).TotalMinutes < 15 ? NodeState.Good : NodeState.Questionable;
             }
         }
 
-        public BEncodedString Token
+        public BEncodedString Token { get; set; }
+
+        //To order by last seen in bucket
+        public int CompareTo(Node other)
         {
-            get { return token; }
-            set { token = value; }
+            if (other == null)
+                return 1;
+
+            return LastSeen.CompareTo(other.LastSeen);
         }
 
-        public Node(NodeId id, IPEndPoint endpoint)
+        public bool Equals(Node other)
         {
-            this.endpoint = endpoint;
-            this.id = id;
+            if (other == null)
+                return false;
+
+            return Id.Equals(other.Id);
         }
 
         internal void Seen()
         {
-            failedCount = 0;
-            lastSeen = DateTime.UtcNow;
+            FailedCount = 0;
+            LastSeen = DateTime.UtcNow;
         }
 
         internal BEncodedString CompactPort()
@@ -117,8 +107,8 @@ namespace MonoTorrent.Dht
 
         internal void CompactPort(byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, endpoint.Address.GetAddressBytes());
-            Message.Write(buffer, offset + 4, (ushort) endpoint.Port);
+            Message.Write(buffer, offset, EndPoint.Address.GetAddressBytes());
+            Message.Write(buffer, offset + 4, (ushort) EndPoint.Port);
         }
 
         internal static BEncodedString CompactPort(IList<Node> peers)
@@ -139,7 +129,7 @@ namespace MonoTorrent.Dht
 
         private void CompactNode(byte[] buffer, int offset)
         {
-            Message.Write(buffer, offset, id.Bytes);
+            Message.Write(buffer, offset, Id.Bytes);
             CompactPort(buffer, offset + 20);
         }
 
@@ -200,39 +190,22 @@ namespace MonoTorrent.Dht
             }
         }
 
-        //To order by last seen in bucket
-        public int CompareTo(Node other)
-        {
-            if (other == null)
-                return 1;
-
-            return lastSeen.CompareTo(other.lastSeen);
-        }
-
         public override bool Equals(object obj)
         {
             return Equals(obj as Node);
         }
 
-        public bool Equals(Node other)
-        {
-            if (other == null)
-                return false;
-
-            return id.Equals(other.id);
-        }
-
         public override int GetHashCode()
         {
-            return id.GetHashCode();
+            return Id.GetHashCode();
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder(48);
-            for (var i = 0; i < id.Bytes.Length; i++)
+            for (var i = 0; i < Id.Bytes.Length; i++)
             {
-                sb.Append(id.Bytes[i]);
+                sb.Append(Id.Bytes[i]);
                 sb.Append("-");
             }
             return sb.ToString(0, sb.Length - 1);

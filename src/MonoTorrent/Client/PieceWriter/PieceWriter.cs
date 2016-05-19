@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Common;
-using System.Threading;
 using System.IO;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.PieceWriters
 {
     public abstract class PieceWriter : IPieceWriter, IDisposable
     {
-        protected PieceWriter()
+        public virtual void Dispose()
         {
         }
 
@@ -17,18 +15,18 @@ namespace MonoTorrent.Client.PieceWriters
 
         public abstract void Close(TorrentFile file);
 
+        public abstract void Flush(TorrentFile file);
+
+        public abstract int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+
+        public abstract void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
+
         internal void Close(IList<TorrentFile> files)
         {
             Check.Files(files);
             foreach (var file in files)
                 Close(file);
         }
-
-        public virtual void Dispose()
-        {
-        }
-
-        public abstract void Flush(TorrentFile file);
 
         internal void Flush(IList<TorrentFile> files)
         {
@@ -95,10 +93,6 @@ namespace MonoTorrent.Client.PieceWriters
             //monitor.BytesSent(totalRead, TransferType.Data);
             return true;
         }
-
-        public abstract int Read(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
-
-        public abstract void Write(TorrentFile file, long offset, byte[] buffer, int bufferOffset, int count);
 
         internal void Write(IList<TorrentFile> files, long offset, byte[] buffer, int bufferOffset, int count,
             int pieceLength, long torrentSize)

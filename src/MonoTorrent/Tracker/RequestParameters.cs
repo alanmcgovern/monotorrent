@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections.Specialized;
-using MonoTorrent.BEncoding;
 using System.Net;
+using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Tracker
 {
@@ -12,33 +10,19 @@ namespace MonoTorrent.Tracker
         protected internal static readonly string FailureKey = "failure reason";
         protected internal static readonly string WarningKey = "warning message";
 
-        private IPAddress remoteAddress;
-        private NameValueCollection parameters;
-        private BEncodedDictionary response;
+        protected RequestParameters(NameValueCollection parameters, IPAddress address)
+        {
+            Parameters = parameters;
+            RemoteAddress = address;
+            Response = new BEncodedDictionary();
+        }
 
         public abstract bool IsValid { get; }
 
-        public NameValueCollection Parameters
-        {
-            get { return parameters; }
-        }
+        public NameValueCollection Parameters { get; }
 
-        public BEncodedDictionary Response
-        {
-            get { return response; }
-        }
+        public BEncodedDictionary Response { get; }
 
-        public IPAddress RemoteAddress
-        {
-            get { return remoteAddress; }
-            protected set { remoteAddress = value; }
-        }
-
-        protected RequestParameters(NameValueCollection parameters, IPAddress address)
-        {
-            this.parameters = parameters;
-            remoteAddress = address;
-            response = new BEncodedDictionary();
-        }
+        public IPAddress RemoteAddress { get; protected set; }
     }
 }

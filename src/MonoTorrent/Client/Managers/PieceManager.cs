@@ -1,100 +1,31 @@
-//
-// PieceManager.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using System.Threading;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Client.Messages.FastPeer;
-using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Standard;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// Contains the logic for choosing what piece to download next
+    ///     Contains the logic for choosing what piece to download next
     /// </summary>
     public class PieceManager
     {
-        #region Old
-
-        // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
-        internal const int BonusRequestPerKb = 10;
-        internal const int NormalRequestAmount = 2;
-        internal const int MaxEndGameRequests = 2;
-
-        public event EventHandler<BlockEventArgs> BlockReceived;
-        public event EventHandler<BlockEventArgs> BlockRequested;
-        public event EventHandler<BlockEventArgs> BlockRequestCancelled;
-
-        internal void RaiseBlockReceived(BlockEventArgs args)
-        {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockReceived, args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequested(BlockEventArgs args)
-        {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequested, args.TorrentManager, args);
-        }
-
-        internal void RaiseBlockRequestCancelled(BlockEventArgs args)
-        {
-            Toolbox.RaiseAsyncEvent<BlockEventArgs>(BlockRequestCancelled, args.TorrentManager, args);
-        }
-
-        #endregion Old
-
-        private PiecePicker picker;
-        private BitField unhashedPieces;
-
-        internal PiecePicker Picker
-        {
-            get { return picker; }
-        }
-
-        internal BitField UnhashedPieces
-        {
-            get { return unhashedPieces; }
-        }
-
         internal PieceManager()
         {
-            picker = new NullPicker();
-            unhashedPieces = new BitField(0);
+            Picker = new NullPicker();
+            UnhashedPieces = new BitField(0);
         }
+
+        internal PiecePicker Picker { get; private set; }
+
+        internal BitField UnhashedPieces { get; private set; }
 
         public void PieceDataReceived(PeerId peer, PieceMessage message)
         {
             Piece piece;
-            if (picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece))
+            if (Picker.ValidatePiece(peer, message.PieceIndex, message.StartOffset, message.RequestLength, out piece))
             {
                 var id = peer;
                 var manager = id.TorrentManager;
@@ -151,10 +82,7 @@ namespace MonoTorrent.Client
                     });
 
                 if (piece.AllBlocksReceived)
-                    unhashedPieces[message.PieceIndex] = true;
-            }
-            else
-            {
+                    UnhashedPieces[message.PieceIndex] = true;
             }
         }
 
@@ -219,27 +147,55 @@ namespace MonoTorrent.Client
 
         internal void ChangePicker(PiecePicker picker, BitField bitfield, TorrentFile[] files)
         {
-            if (unhashedPieces.Length != bitfield.Length)
-                unhashedPieces = new BitField(bitfield.Length);
+            if (UnhashedPieces.Length != bitfield.Length)
+                UnhashedPieces = new BitField(bitfield.Length);
 
             picker = new IgnoringPicker(bitfield, picker);
-            picker = new IgnoringPicker(unhashedPieces, picker);
+            picker = new IgnoringPicker(UnhashedPieces, picker);
             IEnumerable<Piece> pieces = Picker == null ? new List<Piece>() : Picker.ExportActiveRequests();
             picker.Initialise(bitfield, files, pieces);
-            this.picker = picker;
+            Picker = picker;
         }
 
         internal void Reset()
         {
-            unhashedPieces.SetAll(false);
-            if (picker != null)
-                picker.Reset();
+            UnhashedPieces.SetAll(false);
+            if (Picker != null)
+                Picker.Reset();
         }
 
         internal int CurrentRequestCount()
         {
             return
-                (int) ClientEngine.MainLoop.QueueWait((MainLoopJob) delegate { return Picker.CurrentRequestCount(); });
+                (int) ClientEngine.MainLoop.QueueWait(delegate { return Picker.CurrentRequestCount(); });
         }
+
+        #region Old
+
+        // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
+        internal const int BonusRequestPerKb = 10;
+        internal const int NormalRequestAmount = 2;
+        internal const int MaxEndGameRequests = 2;
+
+        public event EventHandler<BlockEventArgs> BlockReceived;
+        public event EventHandler<BlockEventArgs> BlockRequested;
+        public event EventHandler<BlockEventArgs> BlockRequestCancelled;
+
+        internal void RaiseBlockReceived(BlockEventArgs args)
+        {
+            Toolbox.RaiseAsyncEvent(BlockReceived, args.TorrentManager, args);
+        }
+
+        internal void RaiseBlockRequested(BlockEventArgs args)
+        {
+            Toolbox.RaiseAsyncEvent(BlockRequested, args.TorrentManager, args);
+        }
+
+        internal void RaiseBlockRequestCancelled(BlockEventArgs args)
+        {
+            Toolbox.RaiseAsyncEvent(BlockRequestCancelled, args.TorrentManager, args);
+        }
+
+        #endregion Old
     }
 }

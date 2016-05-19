@@ -1,16 +1,13 @@
+using System;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Common;
-using System;
 using Xunit;
 
 namespace MonoTorrent.Client
 {
     public class LibtorrentMessageTests : IDisposable
     {
-        private TestRig rig;
-        private byte[] buffer;
-
         public LibtorrentMessageTests()
         {
             rig = TestRig.CreateMultiFile();
@@ -23,6 +20,27 @@ namespace MonoTorrent.Client
         public void Dispose()
         {
             rig.Dispose();
+        }
+
+        private readonly TestRig rig;
+        private readonly byte[] buffer;
+
+        [Fact]
+        public void HandshakeDecodeTest()
+        {
+            var m = new ExtendedHandshakeMessage();
+            var data = m.Encode();
+            var decoded =
+                (ExtendedHandshakeMessage) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
+
+            Assert.Equal(m.ByteLength, data.Length);
+            Assert.Equal(m.ByteLength, decoded.ByteLength);
+            Assert.Equal(m.LocalPort, decoded.LocalPort);
+            Assert.Equal(m.MaxRequests, decoded.MaxRequests);
+            Assert.Equal(m.Version, decoded.Version);
+            Assert.Equal(m.Supports.Count, decoded.Supports.Count);
+            m.Supports.ForEach(
+                delegate(ExtensionSupport s) { Assert.True(decoded.Supports.Contains(s), "#6:" + s); });
         }
 
         [Fact]
@@ -41,24 +59,6 @@ namespace MonoTorrent.Client
         }
 
         [Fact]
-        public void HandshakeDecodeTest()
-        {
-            var m = new ExtendedHandshakeMessage();
-            var data = m.Encode();
-            var decoded =
-                (ExtendedHandshakeMessage) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
-
-            Assert.Equal(m.ByteLength, data.Length);
-            Assert.Equal(m.ByteLength, decoded.ByteLength);
-            Assert.Equal(m.LocalPort, decoded.LocalPort);
-            Assert.Equal(m.MaxRequests, decoded.MaxRequests);
-            Assert.Equal(m.Version, decoded.Version);
-            Assert.Equal(m.Supports.Count, decoded.Supports.Count);
-            m.Supports.ForEach(
-                delegate(ExtensionSupport s) { Assert.True(decoded.Supports.Contains(s), "#6:" + s.ToString()); });
-        }
-
-        [Fact]
         public void LTChatDecodeTest()
         {
             var m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
@@ -74,7 +74,7 @@ namespace MonoTorrent.Client
         {
             // Decodes as: 192.168.0.1:100
             var peer = new byte[] {192, 168, 0, 1, 100, 0};
-            var supports = new byte[] {(byte) (1 | 2)}; // 1 == encryption, 2 == seeder
+            var supports = new[] {(byte) (1 | 2)}; // 1 == encryption, 2 == seeder
 
             var id = PeerExchangeMessage.Support.MessageId;
             var message = new PeerExchangeMessage(id, peer, supports, null);

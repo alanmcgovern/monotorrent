@@ -1,10 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Messages.Standard;
-using MonoTorrent.Common;
-using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client
 {

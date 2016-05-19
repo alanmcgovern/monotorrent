@@ -1,15 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Client.Messages;
 
 namespace MonoTorrent.Client.Messages.UdpTracker
 {
     internal class AuthenticationMessage : Message
     {
-        private byte usernameLength;
-        private string username;
         private byte[] password;
+        private string username;
+        private byte usernameLength;
 
         public override int ByteLength
         {

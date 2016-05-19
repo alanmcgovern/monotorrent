@@ -1,24 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Threading;
 using MonoTorrent.Common;
-using System.Threading;
 
 namespace MonoTorrent.Client
 {
     internal class HashingMode : Mode
     {
+        private readonly bool autostart;
+        private readonly bool filesExist;
         internal ManualResetEvent hashingWaitHandle;
-
-        private bool autostart;
-        private bool filesExist;
         private int index = -1;
-        private MainLoopResult pieceCompleteCallback;
-
-        public override TorrentState State
-        {
-            get { return TorrentState.Hashing; }
-        }
+        private readonly MainLoopResult pieceCompleteCallback;
 
         public HashingMode(TorrentManager manager, bool autostart)
             : base(manager)
@@ -28,6 +19,11 @@ namespace MonoTorrent.Client
             this.autostart = autostart;
             filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
             pieceCompleteCallback = PieceComplete;
+        }
+
+        public override TorrentState State
+        {
+            get { return TorrentState.Hashing; }
         }
 
         private void QueueNextHash()

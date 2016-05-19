@@ -1,36 +1,5 @@
-//
-// BufferManager.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2006 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Diagnostics;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -49,17 +18,17 @@ namespace MonoTorrent.Client
         internal static readonly int MediumMessageBufferSize = 1 << 11; // 2048 bytes
 
         internal static readonly int LargeMessageBufferSize = Piece.BlockSize + 32;
-            // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
+        // 16384 bytes + 32. Enough for a complete piece aswell as the overhead
 
         public static readonly byte[] EmptyBuffer = new byte[0];
 
-        private Queue<byte[]> largeMessageBuffers;
-        private Queue<byte[]> mediumMessageBuffers;
-        private Queue<byte[]> smallMessageBuffers;
-        private Queue<byte[]> massiveBuffers;
+        private readonly Queue<byte[]> largeMessageBuffers;
+        private readonly Queue<byte[]> massiveBuffers;
+        private readonly Queue<byte[]> mediumMessageBuffers;
+        private readonly Queue<byte[]> smallMessageBuffers;
 
         /// <summary>
-        /// The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
+        ///     The class that controls the allocating and deallocating of all byte[] buffers used in the engine.
         /// </summary>
         public BufferManager()
         {
@@ -75,7 +44,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Allocates an existing buffer from the pool
+        ///     Allocates an existing buffer from the pool
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>
@@ -127,7 +96,7 @@ namespace MonoTorrent.Client
         }
 
         /// <summary>
-        /// Allocates an existing buffer from the pool
+        ///     Allocates an existing buffer from the pool
         /// </summary>
         /// <param name="buffer">The byte[]you want the buffer to be assigned to</param>
         /// <param name="type">The type of buffer that is needed</param>

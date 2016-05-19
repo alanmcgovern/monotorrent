@@ -1,32 +1,3 @@
-//
-// TorrentWatcher.cs
-//
-// Authors:
-//   Stephane Zanoni   stephane@ethernal.net
-//
-// Copyright (C) 2006 Stephane Zanoni
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.IO;
 
@@ -44,8 +15,8 @@ namespace MonoTorrent.TorrentWatcher
         #region Member Variables
 
         private FileSystemWatcher watcher;
-        private string torrentDirectory;
-        private string watchFilter;
+        private readonly string torrentDirectory;
+        private readonly string watchFilter;
 
         #endregion
 
@@ -88,8 +59,8 @@ namespace MonoTorrent.TorrentWatcher
                 watcher = new FileSystemWatcher(torrentDirectory);
                 watcher.Filter = watchFilter;
                 //this.watcher.NotifyFilter = NotifyFilters.LastWrite;
-                watcher.Created += new FileSystemEventHandler(OnCreated);
-                watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+                watcher.Created += OnCreated;
+                watcher.Deleted += OnDeleted;
             }
             watcher.EnableRaisingEvents = true;
         }
@@ -103,13 +74,13 @@ namespace MonoTorrent.TorrentWatcher
 
         #region Event Handlers
 
-        ///<summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
+        /// <summary>Gets called when a File with .torrent extension was added to the torrentDirectory</summary>
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
             RaiseTorrentFound(e.FullPath);
         }
 
-        ///<summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
+        /// <summary>Gets called when a File with .torrent extension was deleted from the torrentDirectory</summary>
         private void OnDeleted(object sender, FileSystemEventArgs e)
         {
             RaiseTorrentLost(e.FullPath);

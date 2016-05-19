@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -11,21 +8,8 @@ namespace MonoTorrent.Client
         public class BufferedIO : ICacheable
         {
             internal byte[] buffer;
-            private int actualCount;
-            private DiskIOCallback callback;
-            private int count;
-            private long offset;
-            private int pieceLength;
-            private PeerId peerId;
-            private IList<TorrentFile> files;
-            private TorrentManager manager;
-            private bool complete;
 
-            public int ActualCount
-            {
-                get { return actualCount; }
-                set { actualCount = value; }
-            }
+            public int ActualCount { get; set; }
 
             public int BlockIndex
             {
@@ -37,68 +21,35 @@ namespace MonoTorrent.Client
                 get { return buffer; }
             }
 
-            internal DiskIOCallback Callback
-            {
-                get { return callback; }
-                set { callback = value; }
-            }
+            internal DiskIOCallback Callback { get; set; }
 
-            public int Count
-            {
-                get { return count; }
-                set { count = value; }
-            }
+            public int Count { get; set; }
 
-            internal PeerId Id
-            {
-                get { return peerId; }
-                set { peerId = value; }
-            }
+            internal PeerId Id { get; set; }
 
             public int PieceIndex
             {
-                get { return (int) (offset/pieceLength); }
+                get { return (int) (Offset/PieceLength); }
             }
 
-            public int PieceLength
-            {
-                get { return pieceLength; }
-            }
+            public int PieceLength { get; private set; }
 
             public int PieceOffset
             {
                 get
                 {
-                    return (int) (offset%pieceLength);
+                    return (int) (Offset%PieceLength);
                     ;
                 }
             }
 
-            public long Offset
-            {
-                get { return offset; }
-                set { offset = value; }
-            }
+            public long Offset { get; set; }
 
-            public IList<TorrentFile> Files
-            {
-                get { return files; }
-            }
+            public IList<TorrentFile> Files { get; private set; }
 
-            internal TorrentManager Manager
-            {
-                get { return manager; }
-            }
+            internal TorrentManager Manager { get; private set; }
 
-            public bool Complete
-            {
-                get { return complete; }
-                set { complete = value; }
-            }
-
-            public BufferedIO()
-            {
-            }
+            public bool Complete { get; set; }
 
             public void Initialise()
             {
@@ -108,21 +59,21 @@ namespace MonoTorrent.Client
             public void Initialise(TorrentManager manager, byte[] buffer, long offset, int count, int pieceLength,
                 IList<TorrentFile> files)
             {
-                actualCount = 0;
+                ActualCount = 0;
                 this.buffer = buffer;
-                callback = null;
-                complete = false;
-                this.count = count;
-                this.files = files;
-                this.manager = manager;
-                this.offset = offset;
-                peerId = null;
-                this.pieceLength = pieceLength;
+                Callback = null;
+                Complete = false;
+                Count = count;
+                Files = files;
+                Manager = manager;
+                Offset = offset;
+                Id = null;
+                PieceLength = pieceLength;
             }
 
             public override string ToString()
             {
-                return string.Format("Piece: {0} Block: {1} Count: {2}", PieceIndex, BlockIndex, count);
+                return string.Format("Piece: {0} Block: {1} Count: {2}", PieceIndex, BlockIndex, Count);
             }
         }
     }

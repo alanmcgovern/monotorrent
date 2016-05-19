@@ -28,12 +28,9 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
 using System.Net;
-using MonoTorrent.Dht;
-using MonoTorrent.BEncoding;
+using System.Threading;
+using Xunit;
 
 namespace MonoTorrent.Dht
 {
@@ -59,10 +56,10 @@ namespace MonoTorrent.Dht
             Assert.True(m.VerifyToken(n, s), "#2");
             Assert.False(m.VerifyToken(n2, s), "#3");
 
-            System.Threading.Thread.Sleep(100);
+            Thread.Sleep(100);
             Assert.True(m.VerifyToken(n, s));
 
-            System.Threading.Thread.Sleep(100);
+            Thread.Sleep(100);
             Assert.False(m.VerifyToken(n, s));
         }
     }

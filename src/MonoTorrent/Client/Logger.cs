@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 using System.Diagnostics;
+using System.Text;
 using MonoTorrent.Client.Connections;
 
 namespace MonoTorrent.Client
 {
     public static class Logger
     {
-        private static List<TraceListener> listeners;
+        private static readonly List<TraceListener> listeners;
+
+        private static readonly StringBuilder sb = new StringBuilder();
 
         static Logger()
         {
@@ -57,8 +58,6 @@ namespace MonoTorrent.Client
             Log(connection, message, null);
         }
 
-        private static StringBuilder sb = new StringBuilder();
-
         [Conditional("DO_NOT_ENABLE")]
         internal static void Log(IConnection connection, string message, params object[] formatting)
         {
@@ -69,7 +68,7 @@ namespace MonoTorrent.Client
                 sb.Append(": ");
 
                 if (connection != null)
-                    sb.Append(connection.EndPoint.ToString());
+                    sb.Append(connection.EndPoint);
 
                 if (formatting != null)
                     sb.Append(string.Format(message, formatting));

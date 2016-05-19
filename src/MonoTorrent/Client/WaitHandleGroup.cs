@@ -7,8 +7,8 @@ namespace MonoTorrent.Client
 {
     internal class WaitHandleGroup : WaitHandle
     {
-        private List<WaitHandle> handles;
-        private List<string> names;
+        private readonly List<WaitHandle> handles;
+        private readonly List<string> names;
 
         public WaitHandleGroup()
         {

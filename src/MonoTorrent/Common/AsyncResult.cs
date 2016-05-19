@@ -1,109 +1,51 @@
-//
-// AsyncResult.cs
-//
-// Authors:
-//   Alan McGovern alan.mcgovern@gmail.com
-//
-// Copyright (C) 2008 Alan McGovern
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace MonoTorrent.Common
 {
     public class AsyncResult : IAsyncResult
     {
-        #region Member Variables
+        #region Constructors
 
-        private object asyncState;
-        private AsyncCallback callback;
-        private bool completedSyncronously;
-        private bool isCompleted;
-        private Exception savedException;
-        private ManualResetEvent waitHandle;
+        public AsyncResult(AsyncCallback callback, object asyncState)
+        {
+            AsyncState = asyncState;
+            Callback = callback;
+            AsyncWaitHandle = new ManualResetEvent(false);
+        }
+
+        #endregion Constructors
+
+        #region Member Variables
 
         #endregion Member Variables
 
         #region Properties
 
-        public object AsyncState
-        {
-            get { return asyncState; }
-        }
+        public object AsyncState { get; }
 
         WaitHandle IAsyncResult.AsyncWaitHandle
         {
-            get { return waitHandle; }
+            get { return AsyncWaitHandle; }
         }
 
-        protected internal ManualResetEvent AsyncWaitHandle
-        {
-            get { return waitHandle; }
-        }
+        protected internal ManualResetEvent AsyncWaitHandle { get; }
 
-        internal AsyncCallback Callback
-        {
-            get { return callback; }
-        }
+        internal AsyncCallback Callback { get; }
 
-        public bool CompletedSynchronously
-        {
-            get { return completedSyncronously; }
-            protected internal set { completedSyncronously = value; }
-        }
+        public bool CompletedSynchronously { get; protected internal set; }
 
-        public bool IsCompleted
-        {
-            get { return isCompleted; }
-            protected internal set { isCompleted = value; }
-        }
+        public bool IsCompleted { get; protected internal set; }
 
-        protected internal Exception SavedException
-        {
-            get { return savedException; }
-            set { savedException = value; }
-        }
+        protected internal Exception SavedException { get; set; }
 
         #endregion Properties
-
-        #region Constructors
-
-        public AsyncResult(AsyncCallback callback, object asyncState)
-        {
-            this.asyncState = asyncState;
-            this.callback = callback;
-            waitHandle = new ManualResetEvent(false);
-        }
-
-        #endregion Constructors
 
         #region Methods
 
         protected internal void Complete()
         {
-            Complete(savedException);
+            Complete(SavedException);
         }
 
         protected internal void Complete(Exception ex)
@@ -111,16 +53,16 @@ namespace MonoTorrent.Common
             // Ensure we only complete once - Needed because in encryption there could be
             // both a pending send and pending receive so if there is an error, both will
             // attempt to complete the encryption handshake meaning this is called twice.
-            if (isCompleted)
+            if (IsCompleted)
                 return;
 
-            savedException = ex;
-            completedSyncronously = false;
-            isCompleted = true;
-            waitHandle.Set();
+            SavedException = ex;
+            CompletedSynchronously = false;
+            IsCompleted = true;
+            AsyncWaitHandle.Set();
 
-            if (callback != null)
-                callback(this);
+            if (Callback != null)
+                Callback(this);
         }
 
         #endregion Methods

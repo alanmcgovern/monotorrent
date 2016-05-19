@@ -1,18 +1,16 @@
 using System;
-using Xunit;
 using MonoTorrent.BEncoding;
+using Xunit;
 
 namespace MonoTorrent.Common
 {
     public class TorrentEditorTests
     {
-        [Fact]
-        public void EditingCreatesCopy()
+        private BEncodedDictionary Create(string key, string value)
         {
-            var d = Create("comment", "a");
-            var editor = new TorrentEditor(d);
-            editor.Comment = "b";
-            Assert.Equal("a", d["comment"].ToString());
+            var d = new BEncodedDictionary();
+            d.Add(key, (BEncodedString) value);
+            return d;
         }
 
         [Fact]
@@ -26,10 +24,12 @@ namespace MonoTorrent.Common
         }
 
         [Fact]
-        public void ReplaceInfoDict()
+        public void EditingCreatesCopy()
         {
-            var editor = new TorrentEditor(new BEncodedDictionary()) {CanEditSecureMetadata = false};
-            Assert.Throws<InvalidOperationException>(() => editor.SetCustom("info", new BEncodedDictionary()));
+            var d = Create("comment", "a");
+            var editor = new TorrentEditor(d);
+            editor.Comment = "b";
+            Assert.Equal("a", d["comment"].ToString());
         }
 
         [Fact]
@@ -39,11 +39,11 @@ namespace MonoTorrent.Common
             Assert.Throws<InvalidOperationException>(() => editor.PieceLength = 16);
         }
 
-        private BEncodedDictionary Create(string key, string value)
+        [Fact]
+        public void ReplaceInfoDict()
         {
-            var d = new BEncodedDictionary();
-            d.Add(key, (BEncodedString) value);
-            return d;
+            var editor = new TorrentEditor(new BEncodedDictionary()) {CanEditSecureMetadata = false};
+            Assert.Throws<InvalidOperationException>(() => editor.SetCustom("info", new BEncodedDictionary()));
         }
     }
 }

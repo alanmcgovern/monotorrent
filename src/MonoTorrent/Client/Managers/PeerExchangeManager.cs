@@ -1,51 +1,21 @@
-//
-// PeerExchangeManager.cs
-//
-// Authors:
-//   Olivier Dufour olivier.duff@gmail.com
-//
-// Copyright (C) 2006 Olivier Dufour
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-
 using System;
 using System.Collections.Generic;
-using MonoTorrent.Client.Messages.Libtorrent;
-using MonoTorrent.Common;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages.Libtorrent;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
-    /// This class is used to send each minute a peer excahnge message to peer who have enable this protocol
+    ///     This class is used to send each minute a peer excahnge message to peer who have enable this protocol
     /// </summary>
     public class PeerExchangeManager : IDisposable
     {
         #region Member Variables
 
-        private PeerId id;
-        private List<Peer> addedPeers;
-        private List<Peer> droppedPeers;
-        private bool disposed = false;
+        private readonly PeerId id;
+        private readonly List<Peer> addedPeers;
+        private readonly List<Peer> droppedPeers;
+        private bool disposed;
         private const int MAX_PEERS = 50;
 
         #endregion Member Variables
@@ -58,7 +28,7 @@ namespace MonoTorrent.Client
 
             addedPeers = new List<Peer>();
             droppedPeers = new List<Peer>();
-            id.TorrentManager.OnPeerFound += new EventHandler<PeerAddedEventArgs>(OnAdd);
+            id.TorrentManager.OnPeerFound += OnAdd;
             Start();
         }
 
@@ -124,7 +94,7 @@ namespace MonoTorrent.Client
                 return;
 
             disposed = true;
-            id.TorrentManager.OnPeerFound -= new EventHandler<PeerAddedEventArgs>(OnAdd);
+            id.TorrentManager.OnPeerFound -= OnAdd;
         }
 
         #endregion

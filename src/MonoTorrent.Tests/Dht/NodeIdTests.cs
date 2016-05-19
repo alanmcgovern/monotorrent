@@ -5,8 +5,6 @@ namespace MonoTorrent.Dht
 {
     public class NodeIdTests
     {
-        private NodeId[] nodes;
-
         public NodeIdTests()
         {
             nodes = new NodeId[20];
@@ -17,6 +15,33 @@ namespace MonoTorrent.Dht
                     id[j] = (byte) (i*20 + j);
                 nodes[i] = new NodeId(id);
             }
+        }
+
+        private readonly NodeId[] nodes;
+
+        [Fact]
+        public void CompareTest()
+        {
+            var i = new byte[20];
+            var j = new byte[20];
+            i[19] = 1;
+            j[19] = 2;
+            var one = new NodeId(i);
+            var two = new NodeId(j);
+            Assert.True(one.CompareTo(two) < 0);
+            Assert.True(two.CompareTo(one) > 0);
+            Assert.True(one.CompareTo(one) == 0);
+        }
+
+        [Fact]
+        public void CompareTest2()
+        {
+            var data = new byte[]
+            {1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199};
+            var a = new BigInteger(data);
+            var b = new BigInteger(new byte[0]);
+
+            Assert.NotEqual(a, b);
         }
 
         [Fact]
@@ -46,31 +71,6 @@ namespace MonoTorrent.Dht
 
             var z = one.Xor(r);
             Assert.Equal(zero, z);
-        }
-
-        [Fact]
-        public void CompareTest()
-        {
-            var i = new byte[20];
-            var j = new byte[20];
-            i[19] = 1;
-            j[19] = 2;
-            var one = new NodeId(i);
-            var two = new NodeId(j);
-            Assert.True(one.CompareTo(two) < 0);
-            Assert.True(two.CompareTo(one) > 0);
-            Assert.True(one.CompareTo(one) == 0);
-        }
-
-        [Fact]
-        public void CompareTest2()
-        {
-            var data = new byte[]
-            {1, 179, 114, 132, 233, 117, 195, 250, 164, 35, 157, 48, 170, 96, 87, 111, 42, 137, 195, 199};
-            var a = new BigInteger(data);
-            var b = new BigInteger(new byte[0]);
-
-            Assert.NotEqual(a, b);
         }
     }
 }

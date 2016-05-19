@@ -29,10 +29,7 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
@@ -41,6 +38,17 @@ namespace MonoTorrent.Dht.Messages
         internal static readonly BEncodedString NodesKey = "nodes";
         private static readonly BEncodedString TokenKey = "token";
         internal static readonly BEncodedString ValuesKey = "values";
+
+        public GetPeersResponse(NodeId id, BEncodedValue transactionId, BEncodedString token)
+            : base(id, transactionId)
+        {
+            Parameters.Add(TokenKey, token);
+        }
+
+        public GetPeersResponse(BEncodedDictionary d, QueryMessage m)
+            : base(d, m)
+        {
+        }
 
         public BEncodedString Token
         {
@@ -83,17 +91,6 @@ namespace MonoTorrent.Dht.Messages
                 else
                     Parameters[ValuesKey] = value;
             }
-        }
-
-        public GetPeersResponse(NodeId id, BEncodedValue transactionId, BEncodedString token)
-            : base(id, transactionId)
-        {
-            Parameters.Add(TokenKey, token);
-        }
-
-        public GetPeersResponse(BEncodedDictionary d, QueryMessage m)
-            : base(d, m)
-        {
         }
 
         public override void Handle(DhtEngine engine, Node node)

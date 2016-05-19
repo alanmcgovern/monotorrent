@@ -1,44 +1,10 @@
-//
-// LocalPeerListener.cs
-//
-// Authors:
-//   Jared Hendry hendry.jared@gmail.com
-//
-// Copyright (C) 2008 Jared Hendry
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-// 
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Timers;
-using System.Threading;
-using MonoTorrent;
-using MonoTorrent.Common;
-using MonoTorrent.Client;
-using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
@@ -47,7 +13,7 @@ namespace MonoTorrent.Client
         private const int MulticastPort = 6771;
         private static readonly IPAddress multicastIpAddress = IPAddress.Parse("239.192.152.143");
 
-        private ClientEngine engine;
+        private readonly ClientEngine engine;
         private UdpClient udpClient;
 
         public LocalPeerListener(ClientEngine engine)
@@ -115,7 +81,7 @@ namespace MonoTorrent.Client
                 if (manager == null)
                     return;
 
-                var uri = new Uri("tcp://" + e.Address.ToString() + ':' + match.Groups["port"].Value);
+                var uri = new Uri("tcp://" + e.Address + ':' + match.Groups["port"].Value);
                 var peer = new Peer("", uri, EncryptionTypes.All);
 
                 // Add new peer to matched Torrent
