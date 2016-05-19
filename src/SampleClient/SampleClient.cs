@@ -13,9 +13,9 @@ using MonoTorrent.Common;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 
-namespace MonoTorrent
+namespace SampleClient
 {
-    internal class main
+    internal class SampleClient
     {
         private static string dhtNodeFile;
         private static string basePath;

@@ -89,7 +89,13 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="main.cs" />
+    <Compile Include="ConnectionPair.cs" />
+    <Compile Include="CustomConnection.cs" />
+    <Compile Include="CustomListener.cs" />
+    <Compile Include="CustomTracker.cs" />
+    <Compile Include="EngineTestRig.cs" />
+    <Compile Include="SampleClient.cs" />
+    <Compile Include="NullWriter.cs" />
     <Compile Include="TestManualConnection.cs" />
     <Compile Include="Top10Listener.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
