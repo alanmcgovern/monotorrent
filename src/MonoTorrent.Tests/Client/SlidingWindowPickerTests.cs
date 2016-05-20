@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using MonoTorrent.Client;
-using MonoTorrent.Client.Messages.Standard;
-
-using NUnit.Framework;
-
-namespace MonoTorrent.Client
+﻿namespace MonoTorrent.Tests.Client
 {
-    //[TestFixture]
+    //
     //public class SlidingWindowPickerTests : PiecePickerTests
     //{
     //    private SlidingWindowPicker swp;
@@ -18,28 +9,28 @@ namespace MonoTorrent.Client
     //    public override void Setup()
     //    {
     //        base.Setup();
-            
+
     //        picker = new SlidingWindowPicker(10);
     //        swp = picker as SlidingWindowPicker;
     //        picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>(), new MonoTorrent.Common.BitField(rig.Manager.Bitfield.Length));
     //    }
 
 
-    //    [Test]
+    //    [Fact]
     //    public void SetSizes()
     //    {
     //        for (int high = 1 ; high < 10 ; high++)
     //        {
     //            swp.HighPrioritySetSize = high;
-    //            Assert.AreEqual(high, swp.HighPrioritySetSize);
+    //            Assert.Equal(high, swp.HighPrioritySetSize);
 
     //            for (int ratio = 1 ; ratio < 10 ; ratio++)
     //            {
     //                swp.MediumToHighRatio = ratio;
 
-    //                Assert.AreEqual(ratio, swp.MediumToHighRatio);
-    //                Assert.AreEqual(high, swp.HighPrioritySetSize);
-    //                Assert.AreEqual(high * ratio, swp.MediumPrioritySetSize);
+    //                Assert.Equal(ratio, swp.MediumToHighRatio);
+    //                Assert.Equal(high, swp.HighPrioritySetSize);
+    //                Assert.Equal(high * ratio, swp.MediumPrioritySetSize);
     //            }
     //        }
     //    }
@@ -48,13 +39,13 @@ namespace MonoTorrent.Client
     //    /// <summary>
     //    /// Slide the high priority set start along the torrent and make sure pieces are downloaded in order
     //    /// </summary>
-    //    [Test]
+    //    [Fact]
     //    public void HighPriorityOnly()
     //    {
     //        swp.HighPrioritySetSize = 4;
     //        swp.MediumToHighRatio = 4;
 
-    //        Assert.IsTrue(swp.HighPrioritySetSize * swp.MediumToHighRatio < this.rig.Torrent.Pieces.Count);
+    //        Assert.True(swp.HighPrioritySetSize * swp.MediumToHighRatio < this.rig.Torrent.Pieces.Count);
     //        Console.WriteLine(rig.Torrent.Pieces.Count);
 
     //        peer.BitField.SetAll(true);
@@ -71,12 +62,12 @@ namespace MonoTorrent.Client
     //        {
     //            RequestMessage msg = swp.PickPiece(peer, peers);
 
-    //            Assert.IsNotNull(msg);
-    //            Assert.IsTrue(msg.PieceIndex == curPiece,
+    //            Assert.NotNull(msg);
+    //            Assert.True(msg.PieceIndex == curPiece,
     //                String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
 
     //            Piece req = GetPieceRequest(msg.PieceIndex);
-    //            Assert.IsNotNull(req);
+    //            Assert.NotNull(req);
 
     //            if (++blocksRequested == req.BlockCount)     // all blocks requested
     //            {
@@ -92,13 +83,13 @@ namespace MonoTorrent.Client
     //    /// <summary>
     //    /// Make sure high priority is requested first, then medium priority, then low
     //    /// </summary>
-    //    [Test]
+    //    [Fact]
     //    public void PriorityOrder()
     //    {
     //        swp.HighPrioritySetSize = 4;
     //        swp.MediumToHighRatio = 4;
 
-    //        Assert.IsTrue(swp.HighPrioritySetSize * swp.MediumToHighRatio < this.rig.Torrent.Pieces.Count);
+    //        Assert.True(swp.HighPrioritySetSize * swp.MediumToHighRatio < this.rig.Torrent.Pieces.Count);
     //        Console.WriteLine(rig.Torrent.Pieces.Count);
 
     //        peer.BitField.SetAll(true);
@@ -115,12 +106,12 @@ namespace MonoTorrent.Client
     //        {
     //            RequestMessage msg = swp.PickPiece(peer, peers);
 
-    //            Assert.IsNotNull(msg);
-    //            Assert.IsTrue(msg.PieceIndex == curPiece,
+    //            Assert.NotNull(msg);
+    //            Assert.True(msg.PieceIndex == curPiece,
     //                String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
 
     //            Piece req = GetPieceRequest(msg.PieceIndex);
-    //            Assert.IsNotNull(req);
+    //            Assert.NotNull(req);
 
     //            if (++blocksRequested == req.BlockCount)     // all blocks requested
     //            {
@@ -135,8 +126,8 @@ namespace MonoTorrent.Client
     //        {
     //            RequestMessage msg = swp.PickPiece(peer, peers);
 
-    //            Assert.IsNotNull(msg);
-    //            Assert.IsTrue(msg.PieceIndex == curPiece || curPiece == -1,
+    //            Assert.NotNull(msg);
+    //            Assert.True(msg.PieceIndex == curPiece || curPiece == -1,
     //                String.Format("Next index: {0}, Piece Index: {1}", curPiece, msg.PieceIndex));
 
     //            if (msg.PieceIndex > swp.HighPrioritySetStart + swp.HighPrioritySetSize + swp.MediumPrioritySetSize)
@@ -144,7 +135,7 @@ namespace MonoTorrent.Client
     //                for (int i = 0 ; i < swp.MediumPrioritySetSize ; i++)
     //                {
     //                    int index = swp.HighPrioritySetStart + swp.HighPrioritySetSize + i;
-    //                    Assert.IsTrue(index >= rig.Manager.Bitfield.Length || rig.Manager.Bitfield[i]);
+    //                    Assert.True(index >= rig.Manager.Bitfield.Length || rig.Manager.Bitfield[i]);
     //                }
     //            }
 
@@ -152,7 +143,7 @@ namespace MonoTorrent.Client
     //                curPiece = msg.PieceIndex;
 
     //            Piece req = GetPieceRequest(msg.PieceIndex);
-    //            Assert.IsNotNull(req);
+    //            Assert.NotNull(req);
 
     //            if (++blocksRequested == req.BlockCount)     // all blocks requested
     //            {
@@ -168,7 +159,7 @@ namespace MonoTorrent.Client
     //    /// <summary>
     //    /// Put every piece on a different peer and make sure PriorityOrder still works
     //    /// </summary>
-    //    [Test]
+    //    [Fact]
     //    public void EfficientRequest()
     //    {
     //        peer.BitField.SetAll(false);
@@ -200,7 +191,7 @@ namespace MonoTorrent.Client
     //                if (msg != null)
     //                    break;
     //            }
-    //            Assert.IsNotNull(msg);
+    //            Assert.NotNull(msg);
 
     //            if (!blocksRequested.ContainsKey(msg.PieceIndex))
     //                blocksRequested.Add(msg.PieceIndex, 1);
@@ -208,7 +199,7 @@ namespace MonoTorrent.Client
     //                blocksRequested[msg.PieceIndex]++;
 
     //            Piece req = GetPieceRequest(msg.PieceIndex);
-    //            Assert.IsNotNull(req);
+    //            Assert.NotNull(req);
 
     //            if (blocksRequested[req.Index] == req.BlockCount)     // all blocks requested
     //            {

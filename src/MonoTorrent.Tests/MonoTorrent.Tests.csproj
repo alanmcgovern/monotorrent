@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
+  <Import Project="..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -15,7 +16,7 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -31,6 +32,9 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,6 +44,7 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -48,6 +53,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Stats|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,27 +64,47 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework, Version=2.2.0.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>nunit.framework.dll</HintPath>
+    <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.assert, Version=2.1.0.3179, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.assert.2.1.0\lib\dotnet\xunit.assert.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.core, Version=2.1.0.3179, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.extensibility.core.2.1.0\lib\dotnet\xunit.core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.desktop, Version=2.1.0.3179, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c, processorArchitecture=MSIL">
+      <HintPath>..\packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\AllowedFastAlgorithmTest.cs" />
     <Compile Include="Client\BanListTests.cs" />
     <Compile Include="Client\ConnectionListenerTests.cs" />
+    <Compile Include="Client\ConnectionPair.cs" />
+    <Compile Include="Client\CustomConnection.cs" />
+    <Compile Include="Client\CustomListener.cs" />
+    <Compile Include="Client\CustomTracker.cs" />
+    <Compile Include="Client\DefaultTracker.cs" />
     <Compile Include="Client\DiskWriterTests.cs" />
     <Compile Include="Client\EndGamePickerTests.cs" />
-    <Compile Include="Client\FileManager.cs" />
+    <Compile Include="Client\ExceptionWriter.cs" />
+    <Compile Include="Client\FileManagerTest.cs" />
     <Compile Include="Client\HttpTrackerTests.cs" />
+    <Compile Include="Client\IgnoringListener.cs" />
     <Compile Include="Client\InitialSeedUnchokerTests.cs" />
     <Compile Include="Client\LibtorrentMessageTests.cs" />
     <Compile Include="Client\MainLoopTests.cs" />
     <Compile Include="Client\MemoryWriterTests.cs" />
-    <Compile Include="Client\MetadataModeTest.cs" />
+    <Compile Include="Client\MetadataModeTests.cs" />
     <Compile Include="Client\NullWriter.cs" />
     <Compile Include="Client\PeerMessagesTest.cs" />
     <Compile Include="Client\PeerTest.cs" />
@@ -94,17 +120,19 @@
     <Compile Include="Client\TestPicker.cs" />
     <Compile Include="Client\TestRig.cs" />
     <Compile Include="Client\TestWebSeed.cs" />
+    <Compile Include="Client\TestWriter.cs" />
     <Compile Include="Client\TorrentManagerTest.cs" />
     <Compile Include="Client\TrackerManagerTests.cs" />
     <Compile Include="Client\TransferTest.cs" />
     <Compile Include="Client\UdpTrackerTests.cs" />
-    <Compile Include="Common\BEncodingTest.cs" />
+    <Compile Include="Common\BEncodeTest.cs" />
     <Compile Include="Common\BitFieldTest.cs" />
     <Compile Include="Common\InfoHashTests.cs" />
     <Compile Include="Common\SHA1Fake.cs" />
+    <Compile Include="Common\TestTorrentCreator.cs" />
     <Compile Include="Common\TorrentCreatorTests.cs" />
     <Compile Include="Common\TorrentTest.cs" />
-    <Compile Include="Common\UriQueryBuilderTests.cs" />
+    <Compile Include="Common\UriQueryBuilderTest.cs" />
     <Compile Include="Dht\AssemblyInfo.cs" />
     <Compile Include="Dht\MessageHandlingTests.cs" />
     <Compile Include="Dht\MessageTests.cs" />
@@ -115,6 +143,10 @@
     <Compile Include="Dht\TestHelper.cs" />
     <Compile Include="Dht\TestListener.cs" />
     <Compile Include="Dht\TokenTest.cs" />
+    <Compile Include="Tracker\CustomComparer.cs" />
+    <Compile Include="Tracker\CustomListener.cs" />
+    <Compile Include="Tracker\PeerDetails.cs" />
+    <Compile Include="Tracker\Trackable.cs" />
     <Compile Include="Tracker\TrackerTest.cs" />
     <Compile Include="Tracker\TrackerTestRig.cs" />
     <Compile Include="Tracker\TrackerTests.cs" />
@@ -152,6 +184,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -163,4 +201,10 @@
   <ProjectExtensions>
     <VisualStudio />
   </ProjectExtensions>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\xunit.runner.visualstudio.2.1.0\build\net20\xunit.runner.visualstudio.props'))" />
+  </Target>
 </Project>

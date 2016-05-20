@@ -1,17 +1,33 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client.Tracker;
-using MonoTorrent.Client;
 using System.Threading;
+using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
+using MonoTorrent.Tracker.Listeners;
+using Xunit;
 
-namespace MonoTorrent.Tracker
+namespace MonoTorrent.Tests.Tracker
 {
-    [TestFixture]
-    public class TrackerTests
+    public class TrackerTests : IDisposable
     {
+        //MonoTorrent.Client.Tracker.HTTPTracker tracker;
+
+        public TrackerTests()
+        {
+            listener = new HttpListener(uri.OriginalString);
+            listener.Start();
+            server = new MonoTorrent.Tracker.Tracker();
+            server.RegisterListener(listener);
+            listener.Start();
+
+            //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
+        }
+
+        public void Dispose()
+        {
+            listener.Stop();
+            server.Dispose();
+        }
+
         //static void Main(string[] args)
         //{
         //    TrackerTests t = new TrackerTests();
@@ -20,57 +36,36 @@ namespace MonoTorrent.Tracker
         //    t.MultipleAnnounce();
         //    t.FixtureTeardown();
         //}
-        Uri uri = new Uri("http://127.0.0.1:23456/");
-        MonoTorrent.Tracker.Listeners.HttpListener listener;
-        MonoTorrent.Tracker.Tracker server;
-        //MonoTorrent.Client.Tracker.HTTPTracker tracker;
-        [TestFixtureSetUp]
-        public void FixtureSetup()
-        {
-            listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
-            listener.Start();
-            server = new MonoTorrent.Tracker.Tracker();
-            server.RegisterListener(listener);
-            listener.Start();
-        }
+        private readonly Uri uri = new Uri("http://127.0.0.1:23456/");
+        private readonly HttpListener listener;
+        private readonly MonoTorrent.Tracker.Tracker server;
 
-        [TestFixtureTearDown]
-        public void FixtureTeardown()
-        {
-            listener.Stop();
-            server.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            //tracker = new MonoTorrent.Client.Tracker.HTTPTracker(uri);
-        }
-
-        [Test]
+        [Fact]
         public void MultipleAnnounce()
         {
-            int announceCount = 0;
-            Random r = new Random();
-            ManualResetEvent handle = new ManualResetEvent(false);
+            var announceCount = 0;
+            var r = new Random();
+            var handle = new ManualResetEvent(false);
 
-            for (int i=0; i < 20; i++)
+            for (var i = 0; i < 20; i++)
             {
-                InfoHash infoHash = new InfoHash(new byte[20]);
+                var infoHash = new InfoHash(new byte[20]);
                 r.NextBytes(infoHash.Hash);
-                TrackerTier tier = new TrackerTier(new string[] { uri.ToString() });
-                tier.Trackers[0].AnnounceComplete += delegate {
+                var tier = new TrackerTier(new[] {uri.ToString()});
+                tier.Trackers[0].AnnounceComplete += delegate
+                {
                     if (++announceCount == 20)
                         handle.Set();
                 };
-                TrackerConnectionID id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started, new ManualResetEvent(false));
+                var id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started,
+                    new ManualResetEvent(false));
                 MonoTorrent.Client.Tracker.AnnounceParameters parameters;
                 parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
-                                                                       infoHash, false, new string('1', 20), "", 1411);
+                    infoHash, false, new string('1', 20), "", 1411);
                 tier.Trackers[0].Announce(parameters, id);
             }
 
-            Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");
+            Assert.True(handle.WaitOne(5000, true), "Some of the responses weren't received");
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent", "MonoTorrent\MonoTorrent.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent.Dht", "MonoTorrent.Dht\MonoTorrent.Dht.csproj", "{7A2A7E73-FD43-4171-AA34-DA413D35459E}"

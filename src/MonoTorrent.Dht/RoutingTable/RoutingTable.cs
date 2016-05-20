@@ -29,38 +29,16 @@
 
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-
-using Mono.Math;
 using System.Net;
-using MonoTorrent.BEncoding;
-
 
 namespace MonoTorrent.Dht
 {
     internal class RoutingTable
     {
-        public event EventHandler<NodeAddedEventArgs> NodeAdded;
-
-        private readonly Node localNode;
-        private List<Bucket> buckets = new List<Bucket>();
-
-
-        internal List<Bucket> Buckets
-        {
-            get { return buckets; }
-        }
-
-        public Node LocalNode
-        {
-            get { return localNode; }
-        }
-
         public RoutingTable()
-            : this(new Node(NodeId.Create(), new System.Net.IPEndPoint(IPAddress.Any, 0)))
+            : this(new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0)))
         {
-
         }
 
         public RoutingTable(Node localNode)
@@ -68,10 +46,17 @@ namespace MonoTorrent.Dht
             if (localNode == null)
                 throw new ArgumentNullException("localNode");
 
-            this.localNode = localNode;
+            LocalNode = localNode;
             localNode.Seen();
             Add(new Bucket());
         }
+
+
+        internal List<Bucket> Buckets { get; } = new List<Bucket>();
+
+        public Node LocalNode { get; }
+
+        public event EventHandler<NodeAddedEventArgs> NodeAdded;
 
         public bool Add(Node node)
         {
@@ -83,11 +68,11 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            Bucket bucket = buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
+            var bucket = Buckets.Find(delegate(Bucket b) { return b.CanContain(node); });
             if (bucket.Nodes.Contains(node))
                 return false;
 
-            bool added = bucket.Add(node);
+            var added = bucket.Add(node);
             if (added && raiseNodeAdded)
             {
                 RaiseNodeAdded(node);
@@ -102,21 +87,21 @@ namespace MonoTorrent.Dht
 
         private void RaiseNodeAdded(Node node)
         {
-            EventHandler<NodeAddedEventArgs> h = NodeAdded;
+            var h = NodeAdded;
             if (h != null)
                 h(this, new NodeAddedEventArgs(node));
         }
 
         private void Add(Bucket bucket)
         {
-            buckets.Add(bucket);
-            buckets.Sort();
+            Buckets.Add(bucket);
+            Buckets.Sort();
         }
 
         internal Node FindNode(NodeId id)
         {
-            foreach (Bucket b in this.buckets)
-                foreach (Node n in b.Nodes)
+            foreach (var b in Buckets)
+                foreach (var n in b.Nodes)
                     if (n.Id.Equals(id))
                         return n;
 
@@ -125,23 +110,23 @@ namespace MonoTorrent.Dht
 
         private void Remove(Bucket bucket)
         {
-            buckets.Remove(bucket);
+            Buckets.Remove(bucket);
         }
 
         private bool Split(Bucket bucket)
         {
             if (bucket.Max - bucket.Min < Bucket.MaxCapacity)
-                return false;//to avoid infinit loop when add same node
-            
-            NodeId median = (bucket.Min + bucket.Max) / 2;
-            Bucket left = new Bucket(bucket.Min, median);
-            Bucket right = new Bucket(median, bucket.Max);
+                return false; //to avoid infinit loop when add same node
+
+            var median = (bucket.Min + bucket.Max)/2;
+            var left = new Bucket(bucket.Min, median);
+            var right = new Bucket(median, bucket.Max);
 
             Remove(bucket);
             Add(left);
             Add(right);
 
-            foreach (Node n in bucket.Nodes)
+            foreach (var n in bucket.Nodes)
                 Add(n, false);
 
             if (bucket.Replacement != null)
@@ -152,28 +137,28 @@ namespace MonoTorrent.Dht
 
         public int CountNodes()
         {
-            int r = 0;
-            foreach (Bucket b in buckets)
+            var r = 0;
+            foreach (var b in Buckets)
                 r += b.Nodes.Count;
-            return r;            
+            return r;
         }
 
-        
+
         public List<Node> GetClosest(NodeId target)
         {
-            SortedList<NodeId,Node> sortedNodes = new SortedList<NodeId,Node>(Bucket.MaxCapacity);
-						
-            foreach (Bucket b in this.buckets)
+            var sortedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity);
+
+            foreach (var b in Buckets)
             {
-                foreach (Node n in b.Nodes)
+                foreach (var n in b.Nodes)
                 {
-                    NodeId distance = n.Id.Xor(target);
+                    var distance = n.Id.Xor(target);
                     if (sortedNodes.Count == Bucket.MaxCapacity)
                     {
-                        if (distance > sortedNodes.Keys[sortedNodes.Count-1])//maxdistance
+                        if (distance > sortedNodes.Keys[sortedNodes.Count - 1]) //maxdistance
                             continue;
                         //remove last (with the maximum distance)
-                        sortedNodes.RemoveAt(sortedNodes.Count-1);						
+                        sortedNodes.RemoveAt(sortedNodes.Count - 1);
                     }
                     sortedNodes.Add(distance, n);
                 }
@@ -183,9 +168,10 @@ namespace MonoTorrent.Dht
 
         internal void Clear()
         {
-            buckets.Clear();
+            Buckets.Clear();
             Add(new Bucket());
         }
     }
 }
+
 #endif

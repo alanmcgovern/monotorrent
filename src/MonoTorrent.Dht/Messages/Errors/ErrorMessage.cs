@@ -28,14 +28,7 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Net;
-
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht;
-
 
 namespace MonoTorrent.Dht.Messages
 {
@@ -44,40 +37,40 @@ namespace MonoTorrent.Dht.Messages
         private static readonly BEncodedString ErrorListKey = "e";
         internal static readonly BEncodedString ErrorType = "e";
 
-        internal override NodeId Id
-        {
-            get { return new NodeId((BEncodedString)""); }
-        }
-        private BEncodedList ErrorList
-        {
-            get { return (BEncodedList)properties[ErrorListKey]; }
-        }
-		
-		private ErrorCode ErrorCode
-        {
-            get { return ((ErrorCode)((BEncodedNumber)ErrorList[0]).Number); }
-        }
-		
-		private string Message
-        {
-            get { return ((BEncodedString)ErrorList[1]).Text; }
-        }
-		
         public ErrorMessage(ErrorCode error, string message)
             : base(ErrorType)
         {
-		    BEncodedList l = new BEncodedList();
-		    l.Add(new BEncodedNumber((int)error));
-			l.Add(new BEncodedString(message));
+            var l = new BEncodedList();
+            l.Add(new BEncodedNumber((int) error));
+            l.Add(new BEncodedString(message));
             properties.Add(ErrorListKey, l);
         }
 
         public ErrorMessage(BEncodedDictionary d)
             : base(d)
         {
-
         }
-        
+
+        internal override NodeId Id
+        {
+            get { return new NodeId(""); }
+        }
+
+        private BEncodedList ErrorList
+        {
+            get { return (BEncodedList) properties[ErrorListKey]; }
+        }
+
+        private ErrorCode ErrorCode
+        {
+            get { return (ErrorCode) ((BEncodedNumber) ErrorList[0]).Number; }
+        }
+
+        private string Message
+        {
+            get { return ((BEncodedString) ErrorList[1]).Text; }
+        }
+
         public override void Handle(DhtEngine engine, Node node)
         {
             base.Handle(engine, node);
@@ -86,4 +79,5 @@ namespace MonoTorrent.Dht.Messages
         }
     }
 }
+
 #endif

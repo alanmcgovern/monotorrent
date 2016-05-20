@@ -1,0 +1,164 @@
+using System;
+using System.Net;
+using System.Text;
+
+namespace MonoTorrent.Client.Messages
+{
+    public abstract class Message : IMessage
+    {
+        public abstract int ByteLength { get; }
+
+        public abstract void Decode(byte[] buffer, int offset, int length);
+
+        public byte[] Encode()
+        {
+            var buffer = new byte[ByteLength];
+            Encode(buffer, 0);
+            return buffer;
+        }
+
+        public abstract int Encode(byte[] buffer, int offset);
+
+        protected int CheckWritten(int written)
+        {
+            if (written != ByteLength)
+                throw new MessageException("Message encoded incorrectly. Incorrect number of bytes written");
+            return written;
+        }
+
+        public static byte ReadByte(byte[] buffer, int offset)
+        {
+            return buffer[offset];
+        }
+
+        public static byte ReadByte(byte[] buffer, ref int offset)
+        {
+            var b = buffer[offset];
+            offset++;
+            return b;
+        }
+
+        public static byte[] ReadBytes(byte[] buffer, int offset, int count)
+        {
+            return ReadBytes(buffer, ref offset, count);
+        }
+
+        public static byte[] ReadBytes(byte[] buffer, ref int offset, int count)
+        {
+            var result = new byte[count];
+            Buffer.BlockCopy(buffer, offset, result, 0, count);
+            offset += count;
+            return result;
+        }
+
+        public static short ReadShort(byte[] buffer, int offset)
+        {
+            return ReadShort(buffer, ref offset);
+        }
+
+        public static short ReadShort(byte[] buffer, ref int offset)
+        {
+            var ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, offset));
+            offset += 2;
+            return ret;
+        }
+
+        public static string ReadString(byte[] buffer, int offset, int count)
+        {
+            return ReadString(buffer, ref offset, count);
+        }
+
+        public static string ReadString(byte[] buffer, ref int offset, int count)
+        {
+            var s = Encoding.ASCII.GetString(buffer, offset, count);
+            offset += count;
+            return s;
+        }
+
+        public static int ReadInt(byte[] buffer, int offset)
+        {
+            return ReadInt(buffer, ref offset);
+        }
+
+        public static int ReadInt(byte[] buffer, ref int offset)
+        {
+            var ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer, offset));
+            offset += 4;
+            return ret;
+        }
+
+        public static long ReadLong(byte[] buffer, int offset)
+        {
+            return ReadLong(buffer, ref offset);
+        }
+
+        public static long ReadLong(byte[] buffer, ref int offset)
+        {
+            var ret = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, offset));
+            offset += 8;
+            return ret;
+        }
+
+        public static int Write(byte[] buffer, int offset, byte value)
+        {
+            buffer[offset] = value;
+            return 1;
+        }
+
+        public static int Write(byte[] dest, int destOffset, byte[] src, int srcOffset, int count)
+        {
+            Buffer.BlockCopy(src, srcOffset, dest, destOffset, count);
+            return count;
+        }
+
+        public static int Write(byte[] buffer, int offset, ushort value)
+        {
+            return Write(buffer, offset, (short) value);
+        }
+
+        public static int Write(byte[] buffer, int offset, short value)
+        {
+            offset += Write(buffer, offset, (byte) (value >> 8));
+            offset += Write(buffer, offset, (byte) value);
+            return 2;
+        }
+
+        public static int Write(byte[] buffer, int offset, int value)
+        {
+            offset += Write(buffer, offset, (byte) (value >> 24));
+            offset += Write(buffer, offset, (byte) (value >> 16));
+            offset += Write(buffer, offset, (byte) (value >> 8));
+            offset += Write(buffer, offset, (byte) value);
+            return 4;
+        }
+
+        public static int Write(byte[] buffer, int offset, uint value)
+        {
+            return Write(buffer, offset, (int) value);
+        }
+
+        public static int Write(byte[] buffer, int offset, long value)
+        {
+            offset += Write(buffer, offset, (int) (value >> 32));
+            offset += Write(buffer, offset, (int) value);
+            return 8;
+        }
+
+        public static int Write(byte[] buffer, int offset, ulong value)
+        {
+            return Write(buffer, offset, (long) value);
+        }
+
+        public static int Write(byte[] buffer, int offset, byte[] value)
+        {
+            return Write(buffer, offset, value, 0, value.Length);
+        }
+
+        public static int WriteAscii(byte[] buffer, int offset, string text)
+        {
+            for (var i = 0; i < text.Length; i++)
+                Write(buffer, offset + i, (byte) text[i]);
+            return text.Length;
+        }
+    }
+}

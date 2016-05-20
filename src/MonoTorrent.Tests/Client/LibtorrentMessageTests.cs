@@ -1,92 +1,89 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Common;
+using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
-    [TestFixture]
-    public class LibtorrentMessageTests
+    public class LibtorrentMessageTests : IDisposable
     {
-        TestRig rig;
-        byte[] buffer;
-
-        [TestFixtureSetUp]
-        public void GlobalSetup()
+        public LibtorrentMessageTests()
         {
             rig = TestRig.CreateMultiFile();
+
+            buffer = new byte[100000];
+            for (var i = 0; i < buffer.Length; i++)
+                buffer[i] = 0xff;
         }
 
-        [TestFixtureTearDown]
-        public void GlobalTeardown()
+        public void Dispose()
         {
             rig.Dispose();
         }
 
-        [SetUp]
-        public void Setup()
-        {
-            buffer = new byte[100000];
-            for (int i = 0; i < buffer.Length; i++)
-                buffer[i] = 0xff;
-        }
+        private readonly TestRig rig;
+        private readonly byte[] buffer;
 
-        [Test]
-        public void HandshakeSupportsTest()
-        {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
-            byte[] encoded = m.Encode();
-
-            Assert.AreEqual(m.ByteLength, encoded.Length, "#1");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(PeerExchangeMessage.Support.Name); }), "#2");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTChat.Support.Name); }), "#3");
-            Assert.IsTrue(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTMetadata.Support.Name); }), "#4");
-        }
-
-        [Test]
+        [Fact]
         public void HandshakeDecodeTest()
         {
-            ExtendedHandshakeMessage m = new ExtendedHandshakeMessage();
-            byte[] data = m.Encode();
-            ExtendedHandshakeMessage decoded = (ExtendedHandshakeMessage)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
+            var m = new ExtendedHandshakeMessage();
+            var data = m.Encode();
+            var decoded =
+                (ExtendedHandshakeMessage) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
 
-            Assert.AreEqual(m.ByteLength, data.Length);
-            Assert.AreEqual(m.ByteLength, decoded.ByteLength, "#1");
-            Assert.AreEqual(m.LocalPort, decoded.LocalPort, "#2");
-            Assert.AreEqual(m.MaxRequests, decoded.MaxRequests, "#3");
-            Assert.AreEqual(m.Version, decoded.Version, "#4");
-            Assert.AreEqual(m.Supports.Count, decoded.Supports.Count, "#5");
-            m.Supports.ForEach(delegate(ExtensionSupport s) { Assert.IsTrue(decoded.Supports.Contains(s), "#6:" + s.ToString()); });
+            Assert.Equal(m.ByteLength, data.Length);
+            Assert.Equal(m.ByteLength, decoded.ByteLength);
+            Assert.Equal(m.LocalPort, decoded.LocalPort);
+            Assert.Equal(m.MaxRequests, decoded.MaxRequests);
+            Assert.Equal(m.Version, decoded.Version);
+            Assert.Equal(m.Supports.Count, decoded.Supports.Count);
+            m.Supports.ForEach(
+                delegate(ExtensionSupport s) { Assert.True(decoded.Supports.Contains(s), "#6:" + s); });
         }
 
-        [Test]
+        [Fact]
+        public void HandshakeSupportsTest()
+        {
+            var m = new ExtendedHandshakeMessage();
+            var encoded = m.Encode();
+
+            Assert.Equal(m.ByteLength, encoded.Length);
+            Assert.True(
+                m.Supports.Exists(
+                    delegate(ExtensionSupport s) { return s.Name.Equals(PeerExchangeMessage.Support.Name); }));
+            Assert.True(m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTChat.Support.Name); }));
+            Assert.True(
+                m.Supports.Exists(delegate(ExtensionSupport s) { return s.Name.Equals(LTMetadata.Support.Name); }));
+        }
+
+        [Fact]
         public void LTChatDecodeTest()
         {
-            LTChat m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
+            var m = new LTChat(LTChat.Support.MessageId, "This Is My Message");
 
-            byte[] data = m.Encode();
-            LTChat decoded = (LTChat)PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
-        
-            Assert.AreEqual(m.Message, decoded.Message, "#1");
+            var data = m.Encode();
+            var decoded = (LTChat) PeerMessage.DecodeMessage(data, 0, data.Length, rig.Manager);
+
+            Assert.Equal(m.Message, decoded.Message);
         }
 
-        [Test]
+        [Fact]
         public void PeerExchangeMessageTest()
         {
             // Decodes as: 192.168.0.1:100
-            byte[] peer = new byte[] { 192, 168, 0, 1, 100, 0 };
-            byte[] supports = new byte[] { (byte)(1 | 2) }; // 1 == encryption, 2 == seeder
+            var peer = new byte[] {192, 168, 0, 1, 100, 0};
+            var supports = new[] {(byte) (1 | 2)}; // 1 == encryption, 2 == seeder
 
-            byte id = MonoTorrent.Client.Messages.Libtorrent.PeerExchangeMessage.Support.MessageId;
-            PeerExchangeMessage message = new PeerExchangeMessage(id, peer, supports, null);
+            var id = PeerExchangeMessage.Support.MessageId;
+            var message = new PeerExchangeMessage(id, peer, supports, null);
 
-            byte[] buffer = message.Encode();
-            PeerExchangeMessage m = (PeerExchangeMessage)PeerMessage.DecodeMessage(buffer, 0, buffer.Length, this.rig.Manager);
-            Assert.IsTrue(Toolbox.ByteMatch(peer, m.Added), "#1");
-            Assert.IsTrue(Toolbox.ByteMatch(supports, m.AddedDotF), "#1");
+            var buffer = message.Encode();
+            var m =
+                (PeerExchangeMessage) PeerMessage.DecodeMessage(buffer, 0, buffer.Length, rig.Manager);
+            Assert.True(Toolbox.ByteMatch(peer, m.Added));
+            Assert.True(Toolbox.ByteMatch(supports, m.AddedDotF));
         }
 
         /*public static void Main(string[] args)

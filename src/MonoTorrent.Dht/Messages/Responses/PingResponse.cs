@@ -28,15 +28,11 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class PingResponse : ResponseMessage
+    internal class PingResponse : ResponseMessage
     {
         public PingResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)
@@ -44,9 +40,10 @@ namespace MonoTorrent.Dht.Messages
         }
 
         public PingResponse(BEncodedDictionary d, QueryMessage m)
-            :base(d, m)
+            : base(d, m)
         {
         }
     }
 }
+
 #endif

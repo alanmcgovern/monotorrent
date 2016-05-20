@@ -1,16 +1,27 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using MonoTorrent.Client;
+using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
-    [TestFixture]
-    public class ConnectionListenerTests
+    public class ConnectionListenerTests : IDisposable
     {
+        public ConnectionListenerTests()
+        {
+            endpoint = new IPEndPoint(IPAddress.Loopback, 55652);
+            listener = new SocketListener(endpoint);
+            listener.Start();
+            Thread.Sleep(100);
+        }
+
+        public void Dispose()
+        {
+            listener.Stop();
+        }
+
         //static void Main(string[] args)
         //{
         //    ConnectionListenerTests t = new ConnectionListenerTests();
@@ -18,35 +29,21 @@ namespace MonoTorrent.Client
         //    t.AcceptThree();
         //    t.Teardown();
         //}
-        private SocketListener listener;
-        private IPEndPoint endpoint;
-        [SetUp]
-        public void Setup()
-        {
-            endpoint = new IPEndPoint(IPAddress.Loopback, 55652);
-            listener = new SocketListener(endpoint);
-            listener.Start();
-            System.Threading.Thread.Sleep(100);
-        }
+        private readonly SocketListener listener;
+        private readonly IPEndPoint endpoint;
 
-        [TearDown]
-        public void Teardown()
-        {
-            listener.Stop();
-        }
-
-        [Test]
+        [Fact]
         public void AcceptThree()
         {
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
+            using (var c = new TcpClient(AddressFamily.InterNetwork))
                 c.Connect(endpoint);
         }
 
-        [Test]
+        [Fact]
         public void ChangePortThree()
         {
             endpoint.Port++;

@@ -29,9 +29,7 @@
 
 
 using System;
-using System.IO;
 using System.Security.Cryptography;
-
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
@@ -39,29 +37,25 @@ namespace MonoTorrent.Dht
 {
     internal class TokenManager
     {
-        private byte[] secret;
-        private byte[] previousSecret;
+        private readonly byte[] previousSecret;
+        private readonly RandomNumberGenerator random;
+        private readonly byte[] secret;
+        private readonly SHA1 sha1;
         private DateTime LastSecretGeneration;
-        private RandomNumberGenerator random;
-        private SHA1 sha1;
-        private TimeSpan timeout = TimeSpan.FromMinutes(5);
-
-        internal TimeSpan Timeout
-        {
-            get { return timeout; }
-            set { timeout = value; }
-        }
 
         public TokenManager()
         {
             sha1 = HashAlgoFactory.Create<SHA1>();
-            random = new RNGCryptoServiceProvider ();
+            random = new RNGCryptoServiceProvider();
             LastSecretGeneration = DateTime.MinValue; //in order to force the update
             secret = new byte[10];
             previousSecret = new byte[10];
             random.GetNonZeroBytes(secret);
             random.GetNonZeroBytes(previousSecret);
         }
+
+        internal TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
+
         public BEncodedString GenerateToken(Node node)
         {
             return GetToken(node, secret);
@@ -69,26 +63,27 @@ namespace MonoTorrent.Dht
 
         public bool VerifyToken(Node node, BEncodedString token)
         {
-            return (token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret)));
+            return token.Equals(GetToken(node, secret)) || token.Equals(GetToken(node, previousSecret));
         }
-        
+
         private BEncodedString GetToken(Node node, byte[] s)
         {
             //refresh secret needed
-            if (LastSecretGeneration.Add(timeout) < DateTime.UtcNow)
+            if (LastSecretGeneration.Add(Timeout) < DateTime.UtcNow)
             {
                 LastSecretGeneration = DateTime.UtcNow;
                 secret.CopyTo(previousSecret, 0);
                 random.GetNonZeroBytes(secret);
             }
 
-            byte[] n = node.CompactPort().TextBytes;
+            var n = node.CompactPort().TextBytes;
             sha1.Initialize();
             sha1.TransformBlock(n, 0, n.Length, n, 0);
             sha1.TransformFinalBlock(s, 0, s.Length);
 
-            return (BEncodedString)sha1.Hash;
+            return sha1.Hash;
         }
     }
 }
+
 #endif

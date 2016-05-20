@@ -30,55 +30,36 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using MonoTorrent.Dht.Messages;
-using System.Threading;
-using System.Net.Sockets;
+using System.Diagnostics;
 using System.Net;
 using MonoTorrent.BEncoding;
-using MonoTorrent.Dht.Listeners;
 using MonoTorrent.Common;
-using System.Diagnostics;
+using MonoTorrent.Dht.Listeners;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht
 {
     internal class MessageLoop
     {
-        private struct SendDetails
-        {
-            public SendDetails(IPEndPoint destination, Message message)
-            {
-                Destination = destination;
-                Message = message;
-                SentAt = DateTime.MinValue;
-            }
-            public IPEndPoint Destination;
-            public Message Message;
-            public DateTime SentAt;
-        }
+        private readonly List<IAsyncResult> activeSends = new List<IAsyncResult>();
+        private readonly DhtEngine engine;
+        private readonly DhtListener listener;
+        private readonly object locker = new object();
 
-        internal event EventHandler<SendQueryEventArgs> QuerySent;
+        private readonly Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue =
+            new Queue<KeyValuePair<IPEndPoint, Message>>();
 
-        List<IAsyncResult> activeSends = new List<IAsyncResult>();
-        DhtEngine engine;
-        DateTime lastSent;
-        DhtListener listener;
-        private object locker = new object();
-        Queue<SendDetails> sendQueue = new Queue<SendDetails>();
-        Queue<KeyValuePair<IPEndPoint, Message>> receiveQueue = new Queue<KeyValuePair<IPEndPoint, Message>>();
-        MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
-        
-        private bool CanSend
-        {
-            get { return activeSends.Count < 5 && sendQueue.Count > 0 && (DateTime.Now - lastSent) > TimeSpan.FromMilliseconds(5); }
-        }
+        private readonly Queue<SendDetails> sendQueue = new Queue<SendDetails>();
+        private readonly MonoTorrentCollection<SendDetails> waitingResponse = new MonoTorrentCollection<SendDetails>();
+        private DateTime lastSent;
 
         public MessageLoop(DhtEngine engine, DhtListener listener)
         {
             this.engine = engine;
             this.listener = listener;
-            listener.MessageReceived += new MessageReceived(MessageReceived);
-            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate {
+            listener.MessageReceived += MessageReceived;
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(5), delegate
+            {
                 if (engine.Disposed)
                     return false;
                 try
@@ -97,7 +78,18 @@ namespace MonoTorrent.Dht
             });
         }
 
-        void MessageReceived(byte[] buffer, IPEndPoint endpoint)
+        private bool CanSend
+        {
+            get
+            {
+                return activeSends.Count < 5 && sendQueue.Count > 0 &&
+                       DateTime.Now - lastSent > TimeSpan.FromMilliseconds(5);
+            }
+        }
+
+        internal event EventHandler<SendQueryEventArgs> QuerySent;
+
+        private void MessageReceived(byte[] buffer, IPEndPoint endpoint)
         {
             lock (locker)
             {
@@ -107,7 +99,9 @@ namespace MonoTorrent.Dht
                 try
                 {
                     Message message;
-                    if (MessageFactory.TryDecodeMessage((BEncodedDictionary)BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
+                    if (
+                        MessageFactory.TryDecodeMessage(
+                            (BEncodedDictionary) BEncodedValue.Decode(buffer, 0, buffer.Length, false), out message))
                         receiveQueue.Enqueue(new KeyValuePair<IPEndPoint, Message>(endpoint, message));
                 }
                 catch (MessageException ex)
@@ -125,7 +119,7 @@ namespace MonoTorrent.Dht
 
         private void RaiseMessageSent(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
         {
-            EventHandler<SendQueryEventArgs> h = QuerySent;
+            var h = QuerySent;
             if (h != null)
                 h(this, new SendQueryEventArgs(endpoint, query, response));
         }
@@ -139,12 +133,11 @@ namespace MonoTorrent.Dht
             if (send != null)
             {
                 SendMessage(send.Value.Message, send.Value.Destination);
-                SendDetails details = send.Value;
+                var details = send.Value;
                 details.SentAt = DateTime.UtcNow;
                 if (details.Message is QueryMessage)
                     waitingResponse.Add(details);
             }
-
         }
 
         internal void Start()
@@ -163,11 +156,11 @@ namespace MonoTorrent.Dht
         {
             if (waitingResponse.Count > 0)
             {
-                if ((DateTime.UtcNow - waitingResponse[0].SentAt) > engine.TimeOut)
+                if (DateTime.UtcNow - waitingResponse[0].SentAt > engine.TimeOut)
                 {
-                    SendDetails details = waitingResponse.Dequeue();
-                    MessageFactory.UnregisterSend((QueryMessage)details.Message);
-                    RaiseMessageSent(details.Destination, (QueryMessage)details.Message, null);
+                    var details = waitingResponse.Dequeue();
+                    MessageFactory.UnregisterSend((QueryMessage) details.Message);
+                    RaiseMessageSent(details.Destination, (QueryMessage) details.Message, null);
                 }
             }
         }
@@ -177,16 +170,16 @@ namespace MonoTorrent.Dht
             if (receiveQueue.Count == 0)
                 return;
 
-            KeyValuePair<IPEndPoint, Message> receive = receiveQueue.Dequeue();
-            Message m = receive.Value;
-            IPEndPoint source = receive.Key;
-            for (int i = 0; i < waitingResponse.Count; i++)
+            var receive = receiveQueue.Dequeue();
+            var m = receive.Value;
+            var source = receive.Key;
+            for (var i = 0; i < waitingResponse.Count; i++)
                 if (waitingResponse[i].Message.TransactionId.Equals(m.TransactionId))
                     waitingResponse.RemoveAt(i--);
 
             try
             {
-                Node node = engine.RoutingTable.FindNode(m.Id);
+                var node = engine.RoutingTable.FindNode(m.Id);
 
                 // What do i do with a null node?
                 if (node == null)
@@ -196,7 +189,7 @@ namespace MonoTorrent.Dht
                 }
                 node.Seen();
                 m.Handle(engine, node);
-                ResponseMessage response = m as ResponseMessage;
+                var response = m as ResponseMessage;
                 if (response != null)
                 {
                     RaiseMessageSent(node.EndPoint, response.Query, response);
@@ -210,14 +203,14 @@ namespace MonoTorrent.Dht
             catch (Exception ex)
             {
                 Console.WriteLine("Handle Error for message: {0}", ex);
-                this.EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
+                EnqueueSend(new ErrorMessage(ErrorCode.GenericError, "Misshandle received message!"), source);
             }
         }
 
         private void SendMessage(Message message, IPEndPoint endpoint)
         {
             lastSent = DateTime.Now;
-            byte[] buffer = message.Encode();
+            var buffer = message.Encode();
             listener.Send(buffer, endpoint);
         }
 
@@ -229,14 +222,15 @@ namespace MonoTorrent.Dht
                 {
                     if (message is ResponseMessage)
                         throw new ArgumentException("Message must have a transaction id");
-                    do {
+                    do
+                    {
                         message.TransactionId = TransactionId.NextId();
                     } while (MessageFactory.IsRegistered(message.TransactionId));
                 }
 
                 // We need to be able to cancel a query message if we time out waiting for a response
                 if (message is QueryMessage)
-                    MessageFactory.RegisterSend((QueryMessage)message);
+                    MessageFactory.RegisterSend((QueryMessage) message);
 
                 sendQueue.Enqueue(new SendDetails(endpoint, message));
             }
@@ -246,6 +240,21 @@ namespace MonoTorrent.Dht
         {
             EnqueueSend(message, node.EndPoint);
         }
+
+        private struct SendDetails
+        {
+            public SendDetails(IPEndPoint destination, Message message)
+            {
+                Destination = destination;
+                Message = message;
+                SentAt = DateTime.MinValue;
+            }
+
+            public readonly IPEndPoint Destination;
+            public readonly Message Message;
+            public DateTime SentAt;
+        }
     }
 }
+
 #endif

@@ -28,28 +28,22 @@
 //
 
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
-    class AnnouncePeerResponse : ResponseMessage
+    internal class AnnouncePeerResponse : ResponseMessage
     {
         public AnnouncePeerResponse(NodeId id, BEncodedValue transactionId)
             : base(id, transactionId)
         {
-
         }
 
         public AnnouncePeerResponse(BEncodedDictionary d, QueryMessage m)
             : base(d, m)
         {
-
         }
     }
 }
+
 #endif

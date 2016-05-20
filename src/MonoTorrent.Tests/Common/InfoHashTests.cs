@@ -1,42 +1,38 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using Xunit;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
-    [TestFixture]
     public class InfoHashTests
     {
-        InfoHash Create()
+        private InfoHash Create()
         {
-            return new InfoHash(new byte[] {
+            return new InfoHash(new byte[]
+            {
                 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
             });
         }
 
-        [Test]
+        [Fact]
         public void HexTest()
         {
-            InfoHash hash = Create();
-            string hex = hash.ToHex();
-            Assert.AreEqual(40, hex.Length, "#1");
-            InfoHash other = InfoHash.FromHex(hex);
-            Assert.AreEqual(hash, other, "#2");
+            var hash = Create();
+            var hex = hash.ToHex();
+            Assert.Equal(40, hex.Length);
+            var other = InfoHash.FromHex(hex);
+            Assert.Equal(hash, other);
         }
 
-        [Test]
-        [ExpectedException (typeof(ArgumentException))]
+        [Fact]
         public void InvalidHex()
         {
-            InfoHash.FromHex("123123123123123123123");
+            Assert.Throws<ArgumentException>(() => InfoHash.FromHex("123123123123123123123"));
         }
 
-        [Test]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void NullHex()
         {
-            InfoHash.FromHex(null);
+            Assert.Throws<ArgumentException>(() => InfoHash.FromHex(null));
         }
     }
 }

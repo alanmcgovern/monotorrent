@@ -1,13 +1,28 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using MonoTorrent.Client;
+using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
-    [TestFixture]
-    public class RandomisedPickerTests
+    public class RandomisedPickerTests : IDisposable
     {
+        public RandomisedPickerTests()
+        {
+            rig = TestRig.CreateMultiFile();
+            id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
+            for (var i = 0; i < id.BitField.Length; i += 2)
+                id.BitField[i] = true;
+
+            tester = new TestPicker();
+            picker = new RandomisedPicker(tester);
+        }
+
+        public void Dispose()
+        {
+            rig.Dispose();
+        }
+
         //static void Main()
         //{
         //    RandomisedPickerTests t = new RandomisedPickerTests();
@@ -16,45 +31,25 @@ namespace MonoTorrent.Client
         //    t.Pick();
         //}
 
-        PeerId id;
-        RandomisedPicker picker;
-        TestRig rig;
-        TestPicker tester;
+        private readonly PeerId id;
+        private readonly RandomisedPicker picker;
+        private readonly TestRig rig;
+        private readonly TestPicker tester;
 
-        [TestFixtureSetUp]
-        public void FixtureSetup()
-        {
-            rig = TestRig.CreateMultiFile();
-            id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
-            for (int i = 0; i < id.BitField.Length; i += 2)
-                id.BitField[i] = true;
-        }
-
-        [TestFixtureTearDown]
-        public void FixtureTeardown()
-        {
-            rig.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            tester = new TestPicker();
-            picker = new RandomisedPicker(tester);
-        }
-
-        [Test]
+        [Fact]
         public void EnsureRandomlyPicked()
         {
             tester.ReturnNoPiece = false;
-            while (picker.PickPiece(id, new List<PeerId>(), 1) != null) { }
-            Assert.AreEqual(rig.Torrent.Pieces.Count, tester.PickedPieces.Count, "#1");
-            List<int> pieces = new List<int>(tester.PickedPieces);
+            while (picker.PickPiece(id, new List<PeerId>(), 1) != null)
+            {
+            }
+            Assert.Equal(rig.Torrent.Pieces.Count, tester.PickedPieces.Count);
+            var pieces = new List<int>(tester.PickedPieces);
             pieces.Sort();
-            for (int i = 0; i < pieces.Count; i++)
+            for (var i = 0; i < pieces.Count; i++)
                 if (pieces[i] != tester.PickedPieces[i])
                     return;
-            Assert.Fail("The piece were picked in order");
+            Assert.True(false, "The piece were picked in order");
         }
     }
 }

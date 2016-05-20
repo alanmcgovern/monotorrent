@@ -1,25 +1,25 @@
-using System;
 using System.Collections.Generic;
+using MonoTorrent.Common;
 
-namespace MonoTorrent.Common
+namespace MonoTorrent.Tests.Common
 {
     public class CustomFileSource : ITorrentFileSource
     {
-        public IEnumerable<FileMapping> Files {
-            get; private set;
+        public CustomFileSource(List<FileMapping> files)
+        {
+            Files = files;
         }
 
-        public bool IgnoreHidden {
+        public bool IgnoreHidden
+        {
             get { return false; }
         }
 
-        public string TorrentName {
-            get { return "Name"; }
-        }
+        public IEnumerable<FileMapping> Files { get; }
 
-        public CustomFileSource (List <FileMapping> files)
+        public string TorrentName
         {
-            Files = files;
+            get { return "Name"; }
         }
     }
 }

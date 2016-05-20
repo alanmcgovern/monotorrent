@@ -1,15 +1,23 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Client;
 using System.Threading;
+using MonoTorrent.Client;
+using Xunit;
 
-namespace MonoTorrent.Client
+namespace MonoTorrent.Tests.Client
 {
-    [TestFixture]
-    public class MainLoopTests
+    public class MainLoopTests : IDisposable
     {
+        public MainLoopTests()
+        {
+            loop = new MainLoop("Test Loop");
+            count = 0;
+        }
+
+        public void Dispose()
+        {
+            //loop.Dispose();
+        }
+
         //static void Main(string[] args)
         //{
         //    MainLoopTests t = new MainLoopTests();
@@ -25,61 +33,15 @@ namespace MonoTorrent.Client
         //    t.LongRunningTask();
         //}
         private int count;
-        MainLoop loop;
+        private readonly MainLoop loop;
 
-        [TestFixtureSetUp]
-        public void FixtureSetup()
-        {
-            loop = new MainLoop("Test Loop");
-        }
-
-        [TestFixtureTearDown]
-        public void FixtureTeardown()
-        {
-            //loop.Dispose();
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            count = 0;
-        }
-
-        [Test]
-        public void TaskTest()
-        {
-            Assert.AreEqual(5, loop.QueueWait((MainLoopJob) delegate { return 5; }), "#1");
-
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueWait((MainLoopTask)delegate { handle.Set(); });
-            Assert.IsTrue(handle.WaitOne(5000, true), "#2");
-        }
-
-        [Test]
-        public void RepeatedTask()
-        {
-            //Console.WriteLine("Starting");
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate {
-                this.count++;
-                if (count == 3)
-                {
-                    handle.Set();
-                    return false;
-                }
-
-                return true;
-            });
-            Assert.IsTrue(handle.WaitOne(5000, true), "#1: Executed {0} times", count);
-            Assert.AreEqual(3, count, "#2");
-        }
-
-        [Test]
+        [Fact]
         public void LongRunningTask()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate {
-                System.Threading.Thread.Sleep(50);
+            var handle = new ManualResetEvent(false);
+            loop.QueueTimeout(TimeSpan.FromMilliseconds(10), delegate
+            {
+                Thread.Sleep(50);
                 if (++count == 3)
                 {
                     handle.Set();
@@ -88,8 +50,38 @@ namespace MonoTorrent.Client
 
                 return true;
             });
-            Assert.IsTrue(handle.WaitOne(5000, false), "#1: Executed {0} times", count);
-            Assert.AreEqual(3, count, "#2");
+            Assert.True(handle.WaitOne(5000, false));
+            Assert.Equal(3, count);
+        }
+
+        [Fact]
+        public void RepeatedTask()
+        {
+            //Console.WriteLine("Starting");
+            var handle = new ManualResetEvent(false);
+            loop.QueueTimeout(TimeSpan.FromMilliseconds(0), delegate
+            {
+                count++;
+                if (count == 3)
+                {
+                    handle.Set();
+                    return false;
+                }
+
+                return true;
+            });
+            Assert.True(handle.WaitOne(5000, true));
+            Assert.Equal(3, count);
+        }
+
+        [Fact]
+        public void TaskTest()
+        {
+            Assert.Equal(5, loop.QueueWait(delegate { return 5; }));
+
+            var handle = new ManualResetEvent(false);
+            loop.QueueWait(delegate { handle.Set(); });
+            Assert.True(handle.WaitOne(5000, true));
         }
     }
 }

@@ -1,32 +1,18 @@
 #if !DISABLE_DHT
 using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using MonoTorrent.Dht.Messages;
-using MonoTorrent.BEncoding;
 using System.Net;
 using System.Threading;
+using MonoTorrent.BEncoding;
+using MonoTorrent.Dht;
+using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
+using Xunit;
 
-namespace MonoTorrent.Dht
+namespace MonoTorrent.Tests.Dht
 {
-    [TestFixture]
-    public class MessageHandlingTests
+    public class MessageHandlingTests : IDisposable
     {
-        //static void Main(string[] args)
-        //{
-        //    TaskTests t = new TaskTests();
-        //    t.Setup();
-        //    t.BucketRefreshTest();
-        //}
-        BEncodedString transactionId = "cc";
-        DhtEngine engine;
-        Node node;
-        TestListener listener;
-
-        [SetUp]
-        public void Setup()
+        public MessageHandlingTests()
         {
             listener = new TestListener();
             node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Any, 0));
@@ -34,66 +20,47 @@ namespace MonoTorrent.Dht
             //engine.Add(node);
         }
 
-        [TearDown]
-        public void Teardown()
+        public void Dispose()
         {
             engine.Dispose();
         }
 
-        [Test]
-        public void SendPing()
-        {
-            engine.Add(node);
-            engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            ManualResetEvent handle = new ManualResetEvent(false);
-            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e) {
-                if (!e.TimedOut && e.Query is Ping)
-                    handle.Set();
+        //static void Main(string[] args)
+        //{
+        //    TaskTests t = new TaskTests();
+        //    t.Setup();
+        //    t.BucketRefreshTest();
+        //}
+        private readonly BEncodedString transactionId = "cc";
+        private readonly DhtEngine engine;
+        private Node node;
+        private readonly TestListener listener;
 
-                if (!e.TimedOut || !(e.Query is Ping))
-                    return;
-
-                PingResponse response = new PingResponse(node.Id, e.Query.TransactionId);
-                listener.RaiseMessageReceived(response, e.EndPoint);
-            };
-
-            Assert.AreEqual(NodeState.Unknown, node.State, "#1");
-
-            DateTime lastSeen = node.LastSeen;
-            Assert.IsTrue(handle.WaitOne(1000, false), "#1a");
-            Node nnnn = node;
-            node = engine.RoutingTable.FindNode(nnnn.Id);
-            Assert.IsTrue (lastSeen < node.LastSeen, "#2");
-            Assert.AreEqual(NodeState.Good, node.State, "#3");
-        }
-
-        [Test]
+        [Fact]
         public void PingTimeout()
         {
             engine.TimeOut = TimeSpan.FromHours(1);
             // Send ping
-            Ping ping = new Ping(node.Id);
+            var ping = new Ping(node.Id);
             ping.TransactionId = transactionId;
 
-            ManualResetEvent handle = new ManualResetEvent(false);
-            SendQueryTask task = new SendQueryTask(engine, ping, node);
-            task.Completed += delegate {
-                handle.Set();
-            };
+            var handle = new ManualResetEvent(false);
+            var task = new SendQueryTask(engine, ping, node);
+            task.Completed += delegate { handle.Set(); };
             task.Execute();
 
             // Receive response
-            PingResponse response = new PingResponse(node.Id, transactionId);
+            var response = new PingResponse(node.Id, transactionId);
             listener.RaiseMessageReceived(response, node.EndPoint);
 
-            Assert.IsTrue(handle.WaitOne(1000, true), "#0");
+            Assert.True(handle.WaitOne(1000, true));
 
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
-            DateTime lastSeen = node.LastSeen;
+            var lastSeen = node.LastSeen;
 
             // Time out a ping
             ping = new Ping(node.Id);
-            ping.TransactionId = (BEncodedString)"ab";
+            ping.TransactionId = (BEncodedString) "ab";
 
             task = new SendQueryTask(engine, ping, node, 4);
             task.Completed += delegate { handle.Set(); };
@@ -102,9 +69,37 @@ namespace MonoTorrent.Dht
             task.Execute();
             handle.WaitOne();
 
-            Assert.AreEqual(4, node.FailedCount, "#1");
-            Assert.AreEqual(NodeState.Bad, node.State, "#2");
-            Assert.AreEqual(lastSeen, node.LastSeen, "#3");
+            Assert.Equal(4, node.FailedCount);
+            Assert.Equal(NodeState.Bad, node.State);
+            Assert.Equal(lastSeen, node.LastSeen);
+        }
+
+        [Fact]
+        public void SendPing()
+        {
+            engine.Add(node);
+            engine.TimeOut = TimeSpan.FromMilliseconds(75);
+            var handle = new ManualResetEvent(false);
+            engine.MessageLoop.QuerySent += delegate(object o, SendQueryEventArgs e)
+            {
+                if (!e.TimedOut && e.Query is Ping)
+                    handle.Set();
+
+                if (!e.TimedOut || !(e.Query is Ping))
+                    return;
+
+                var response = new PingResponse(node.Id, e.Query.TransactionId);
+                listener.RaiseMessageReceived(response, e.EndPoint);
+            };
+
+            Assert.Equal(NodeState.Unknown, node.State);
+
+            var lastSeen = node.LastSeen;
+            Assert.True(handle.WaitOne(1000, false));
+            var nnnn = node;
+            node = engine.RoutingTable.FindNode(nnnn.Id);
+            Assert.True(lastSeen < node.LastSeen);
+            Assert.Equal(NodeState.Good, node.State);
         }
 
 //        void FakePingResponse(object sender, SendQueryEventArgs e)
@@ -114,8 +109,10 @@ namespace MonoTorrent.Dht
 //
 //            SendQueryTask task = (SendQueryTask)e.Task;
 //            PingResponse response = new PingResponse(task.Target.Id);
+
 //            listener.RaiseMessageReceived(response, task.Target.EndPoint);
 //        }
     }
 }
+
 #endif

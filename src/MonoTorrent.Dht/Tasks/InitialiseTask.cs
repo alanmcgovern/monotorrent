@@ -1,19 +1,17 @@
 #if !DISABLE_DHT
-using MonoTorrent.Dht.Messages;
-using System;
-using System.Net;
 using System.Collections.Generic;
-using MonoTorrent.BEncoding;
+using System.Net;
+using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class InitialiseTask : Task
+    internal class InitialiseTask : Task
     {
-        int activeRequests = 0;
-        List<Node> initialNodes;
-        SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
-        DhtEngine engine;
-            
+        private readonly SortedList<NodeId, NodeId> nodes = new SortedList<NodeId, NodeId>();
+        private int activeRequests;
+        private DhtEngine engine;
+        private List<Node> initialNodes;
+
         public InitialiseTask(DhtEngine engine)
         {
             Initialise(engine, null);
@@ -21,7 +19,7 @@ namespace MonoTorrent.Dht.Tasks
 
         public InitialiseTask(DhtEngine engine, byte[] initialNodes)
         {
-            Initialise(engine, initialNodes == null ? null :  Node.FromCompactNode(initialNodes));
+            Initialise(engine, initialNodes == null ? null : Node.FromCompactNode(initialNodes));
         }
 
         public InitialiseTask(DhtEngine engine, IEnumerable<Node> nodes)
@@ -29,10 +27,10 @@ namespace MonoTorrent.Dht.Tasks
             Initialise(engine, nodes);
         }
 
-        void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
+        private void Initialise(DhtEngine engine, IEnumerable<Node> nodes)
         {
             this.engine = engine;
-            this.initialNodes = new List<Node>();
+            initialNodes = new List<Node>();
             if (nodes != null)
                 initialNodes.AddRange(nodes);
         }
@@ -47,7 +45,7 @@ namespace MonoTorrent.Dht.Tasks
             // If we were given a list of nodes to load at the start, use them
             if (initialNodes.Count > 0)
             {
-                foreach (Node node in initialNodes)
+                foreach (var node in initialNodes)
                     engine.Add(node);
                 SendFindNode(initialNodes);
             }
@@ -55,8 +53,9 @@ namespace MonoTorrent.Dht.Tasks
             {
                 try
                 {
-                    Node utorrent = new Node(NodeId.Create(), new System.Net.IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
-                    SendFindNode(new Node[] { utorrent });
+                    var utorrent = new Node(NodeId.Create(),
+                        new IPEndPoint(Dns.GetHostEntry("router.bittorrent.com").AddressList[0], 6881));
+                    SendFindNode(new[] {utorrent});
                 }
                 catch
                 {
@@ -70,10 +69,10 @@ namespace MonoTorrent.Dht.Tasks
             e.Task.Completed -= FindNodeComplete;
             activeRequests--;
 
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
+            var args = (SendQueryEventArgs) e;
             if (!args.TimedOut)
             {
-                FindNodeResponse response = (FindNodeResponse)args.Response;
+                var response = (FindNodeResponse) args.Response;
                 SendFindNode(Node.FromCompactNode(response.Nodes));
             }
 
@@ -90,7 +89,7 @@ namespace MonoTorrent.Dht.Tasks
             // initialise again except use the utorrent router.
             if (initialNodes.Count > 0 && engine.RoutingTable.CountNodes() < 10)
             {
-                new InitialiseTask(engine).Execute ();
+                new InitialiseTask(engine).Execute();
             }
             else
             {
@@ -103,15 +102,16 @@ namespace MonoTorrent.Dht.Tasks
 
         private void SendFindNode(IEnumerable<Node> newNodes)
         {
-            foreach (Node node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
+            foreach (var node in Node.CloserNodes(engine.LocalId, nodes, newNodes, Bucket.MaxCapacity))
             {
                 activeRequests++;
-                FindNode request = new FindNode(engine.LocalId, engine.LocalId);
-                SendQueryTask task = new SendQueryTask(engine, request, node);
+                var request = new FindNode(engine.LocalId, engine.LocalId);
+                var task = new SendQueryTask(engine, request, node);
                 task.Completed += FindNodeComplete;
                 task.Execute();
             }
         }
     }
 }
+
 #endif

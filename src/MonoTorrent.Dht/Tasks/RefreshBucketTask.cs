@@ -1,16 +1,14 @@
 #if !DISABLE_DHT
 using System;
-using System.Collections.Generic;
-using System.Text;
 using MonoTorrent.Dht.Messages;
 using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    class RefreshBucketTask : Task
+    internal class RefreshBucketTask : Task
     {
-        private Bucket bucket;
-        private DhtEngine engine;
+        private readonly Bucket bucket;
+        private readonly DhtEngine engine;
         private FindNode message;
         private Node node;
         private SendQueryTask task;
@@ -38,11 +36,11 @@ namespace MonoTorrent.Dht
         {
             task.Completed -= TaskComplete;
 
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
+            var args = (SendQueryEventArgs) e;
             if (args.TimedOut)
             {
                 bucket.SortBySeen();
-                int index = bucket.Nodes.IndexOf(node);
+                var index = bucket.Nodes.IndexOf(node);
                 if (index == -1 || (++index < bucket.Nodes.Count))
                 {
                     QueryNode(bucket.Nodes[0]);
@@ -68,4 +66,5 @@ namespace MonoTorrent.Dht
         }
     }
 }
+
 #endif
