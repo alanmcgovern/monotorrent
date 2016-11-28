@@ -152,7 +152,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // FIXME: Don't compare the port, just compare the IP
-            if (string.IsNullOrEmpty(peerId) && string.IsNullOrEmpty(other.peerId))
+            if (string.IsNullOrEmpty(peerId) || string.IsNullOrEmpty(other.peerId))
                 return this.connectionUri.Host.Equals(other.connectionUri.Host);
 
             return peerId == other.peerId;
