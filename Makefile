@@ -1,17 +1,17 @@
 CONFIG=config.make
 
 XBUILD=xbuild
-XBUILD_ARGS=/verbosity:quiet /nologo /property:Configuration=$(MONOTORRENT_PROFILE)
+XBUILD_ARGS=/verbosity:quiet /nologo /property:Configuration=$(MONOTORRENT_PROFILE) /property:TargetFrameworkVersion="v4.5"
 MAIN_SLN=src/MonoTorrent.sln
 DIST_FILE=monotorrent-$(MONOTORRENT_VERSION).tar.gz
 
 all:
 	@echo Building $(MAIN_SLN)
-	@$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN)
+	$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN)
 
 clean:
 	@echo Cleaning $(MAIN_SLN)
-	@$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN) /t:Clean
+	$(XBUILD) $(XBUILD_ARGS) $(MAIN_SLN) /t:Clean
 
 dist:
 	git archive --format=tar HEAD | gzip > $(DIST_FILE)

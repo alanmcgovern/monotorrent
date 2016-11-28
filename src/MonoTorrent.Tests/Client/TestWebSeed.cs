@@ -221,7 +221,7 @@ namespace MonoTorrent.Client
                 Match match = null;
                 string range = c.Request.Headers["range"];
 
-                if (!(range != null && (match = rangeMatcher.Match(range)) != null))
+                if (!(range != null && (match = rangeMatcher.Match(range)).Success))
                     Assert.Fail("No valid range specified");
 
                 int start = int.Parse(match.Groups[1].Captures[0].Value);

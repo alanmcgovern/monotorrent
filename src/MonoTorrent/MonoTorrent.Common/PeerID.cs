@@ -169,7 +169,7 @@ namespace MonoTorrent.Common
 			}
 
             #region Standard style peers
-            if ((m = standard.Match(peerId)) !=null)
+            if ((m = standard.Match(peerId)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
@@ -320,7 +320,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Shadows Style
-            if ((m = shadows.Match(peerId)) != null)
+            if ((m = shadows.Match(peerId)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 switch (m.Groups[2].Value)
@@ -359,7 +359,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Brams Client
-            if ((m = brahms.Match(peerId)) != null)
+            if ((m = brahms.Match(peerId)).Success)
             {
                 this.shortId = "M";
                 this.client = Client.BitTorrent;
@@ -368,7 +368,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitLord
-            if ((m = bitlord.Match(peerId)) != null)
+            if ((m = bitlord.Match(peerId)).Success)
             {
                 this.client = Client.BitLord;
                 this.shortId = "lord";
@@ -377,7 +377,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitComet
-            if ((m = bitcomet.Match(peerId)) != null)
+            if ((m = bitcomet.Match(peerId)).Success)
             {
                 this.client = Client.BitComet;
                 this.shortId = "BC";
@@ -386,7 +386,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region XBT
-            if ((m = xbt.Match(peerId)) != null)
+            if ((m = xbt.Match(peerId)).Success)
             {
                 this.client = Client.XBTClient;
                 this.shortId = "XBT";
@@ -395,7 +395,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Opera
-            if ((m = opera.Match(peerId)) != null)
+            if ((m = opera.Match(peerId)).Success)
             {
                 this.client = Client.Opera;
                 this.shortId = "OP";
@@ -403,7 +403,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region MLDonkey
-            if ((m = mldonkey .Match(peerId)) != null)
+            if ((m = mldonkey .Match(peerId)).Success)
             {
                 this.client = Client.MLDonkey;
                 this.shortId = "ML";
@@ -412,7 +412,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Bits on wheels
-            if ((m = bow.Match(peerId)) != null)
+            if ((m = bow.Match(peerId)).Success)
             {
                 this.client = Client.BitsOnWheels;
                 this.shortId = "BOW";
@@ -421,7 +421,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region Queen Bee
-            if ((m = queenbee.Match(peerId)) != null)
+            if ((m = queenbee.Match(peerId)).Success)
             {
                 this.client = Client.QueenBee;
                 this.shortId = "Q";
@@ -430,7 +430,7 @@ namespace MonoTorrent.Common
             #endregion
 
             #region BitTornado special style
-            if((m = bittornado.Match(peerId)) != null)
+            if((m = bittornado.Match(peerId)).Success)
             {
                 this.shortId = m.Groups[1].Value;
                 this.client = Client.BitTornado;
