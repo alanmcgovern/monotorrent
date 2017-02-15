@@ -329,7 +329,7 @@ namespace MonoTorrent.Common
             return infoHash.GetHashCode();
         }
 
-        internal byte [] ToBytes ()
+        public byte [] ToBytes ()
         {
             return originalDictionary.Encode ();
         }

@@ -193,8 +193,14 @@ namespace MonoTorrent
         {
             BEncodedValue value;
             if (dictionary.TryGetValue (key, out value))
+            {
+                if (!(value is BEncodedNumber))
+                {
+                    throw new ArgumentException (string.Format ("The value for key {0} was not a BEncodedNumber", key));
+                }
                 return ((BEncodedNumber) value).Number;
-            throw new ArgumentException (string.Format ("The value for key {0} was not a BEncodedNumber", key));
+            }
+            return 0;
         }
 
         protected string GetString (BEncodedDictionary dictionary, BEncodedString key)
