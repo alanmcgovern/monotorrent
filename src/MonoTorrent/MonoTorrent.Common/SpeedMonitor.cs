@@ -130,11 +130,14 @@ namespace MonoTorrent.Common
         public void Tick()
         {
             DateTime old = lastUpdated;
-            lastUpdated = DateTime.UtcNow;
-            int difference = (int) (lastUpdated - old).TotalMilliseconds;
+            DateTime now = DateTime.UtcNow;
+            int difference = (int) (now - old).TotalMilliseconds;
 
             if (difference > 800)
+            {
+                lastUpdated = now;
                 TimePeriodPassed(difference);
+            }
         }
 
         // Used purely for unit testing purposes.
