@@ -122,8 +122,8 @@ namespace MonoTorrent.Client
                     // FIXME: I assume this case can't happen. The only user interaction
                     // with the mainloop is with blocking tasks. Internally it's a big bug
                     // if i allow an exception to propagate to the mainloop.
-                    if (!IsBlocking)
-                        throw;
+                    //if (!IsBlocking)
+                    //    throw;
                 }
                 finally
                 {
@@ -244,8 +244,8 @@ namespace MonoTorrent.Client
 
             t.WaitHandle.WaitOne();
 
-            if (t.StoredException != null)
-                throw new TorrentException("Exception in mainloop", t.StoredException);
+            //if (t.StoredException != null)
+               // throw new TorrentException("Exception in mainloop", t.StoredException);
         }
 
         public uint QueueTimeout(TimeSpan span, TimeoutTask task)

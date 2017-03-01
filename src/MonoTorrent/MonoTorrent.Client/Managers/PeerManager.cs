@@ -88,7 +88,7 @@ namespace MonoTorrent.Client
                 yield return BusyPeers[i];
         }
 
-        internal void ClearAll()
+        public void ClearAll()
         {
             this.ActivePeers.Clear();
             this.AvailablePeers.Clear();

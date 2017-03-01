@@ -161,7 +161,7 @@ namespace MonoTorrent.Dht
             task.Execute();
         }
 
-        internal void Add(IEnumerable<Node> nodes)
+        public void Add(IEnumerable<Node> nodes)
         {
             if (nodes == null)
                 throw new ArgumentNullException("nodes");
@@ -177,6 +177,11 @@ namespace MonoTorrent.Dht
 
             SendQueryTask task = new SendQueryTask(this, new Ping(RoutingTable.LocalNode.Id), node);
             task.Execute();
+        }
+
+        public void ClearNodes()
+        {
+            RoutingTable.Clear();
         }
 
         public void Announce(InfoHash infoHash, int port)
