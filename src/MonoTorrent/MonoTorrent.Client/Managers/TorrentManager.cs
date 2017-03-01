@@ -285,7 +285,7 @@ namespace MonoTorrent.Client
         public Torrent Torrent
         {
             get { return this.torrent; }
-            internal set { torrent = value; }
+            set { torrent = value; }
         }
 
 

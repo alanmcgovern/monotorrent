@@ -372,6 +372,19 @@ namespace MonoTorrent.Client
 
             dhtEngine.StateChanged += DhtEngineStateChanged;
         }
+        public void UnregisterDht()
+        {
+            MainLoop.QueueWait(delegate
+            {
+                if (dhtEngine != null)
+                {
+                    dhtEngine.StateChanged -= DhtEngineStateChanged;
+                    dhtEngine.Stop();
+                    dhtEngine.Dispose();
+                }
+                dhtEngine = new NullDhtEngine();
+            });
+        }
 
         void DhtEngineStateChanged (object o, EventArgs e)
         {

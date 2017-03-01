@@ -36,7 +36,7 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht
 {
-    internal class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
+    public class NodeId : IEquatable<NodeId>, IComparable<NodeId>, IComparable
     {
         static readonly Random random = new Random();
 
