@@ -146,8 +146,8 @@ namespace MonoTorrent.Client.Connections
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
-            if (!string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Scheme is not http");
+            if (!string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Scheme is not http or https");
 
             this.uri = uri;
             
