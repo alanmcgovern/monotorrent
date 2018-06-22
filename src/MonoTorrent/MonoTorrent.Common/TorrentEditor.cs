@@ -30,8 +30,8 @@ using System;
 
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent.Common {
-
+namespace MonoTorrent.Common
+{
     public class TorrentEditor : EditableTorrent {
 
         public new bool CanEditSecureMetadata {
