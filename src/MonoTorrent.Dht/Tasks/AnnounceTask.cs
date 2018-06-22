@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Dht.Messages;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Tasks
 {
