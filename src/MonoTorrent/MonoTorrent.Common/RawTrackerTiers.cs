@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     public class RawTrackerTiers : IList<RawTrackerTier>
     {
