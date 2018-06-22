@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
-using MonoTorrent.Common;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     public abstract class EditableTorrent
     {
