@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
