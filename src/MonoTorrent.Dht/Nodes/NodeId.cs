@@ -3,10 +3,10 @@
 // NodeId.cs
 //
 // Authors:
-//   Jérémie Laval <jeremie.laval@gmail.com>
+//   JÃ©rÃ©mie Laval <jeremie.laval@gmail.com>
 //   Alan McGovern <alan.mcgovern@gmail.com>
 //
-// Copyright (C) 2008 Jérémie Laval, Alan McGovern
+// Copyright (C) 2008 JÃ©rÃ©mie Laval, Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -33,6 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht
 {
