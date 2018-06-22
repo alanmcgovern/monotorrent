@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     public class MagnetLink
     {
