@@ -38,7 +38,7 @@ using System.Text;
 using System.IO;
 using System.Collections.Generic;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     static class UriHelper
     {
