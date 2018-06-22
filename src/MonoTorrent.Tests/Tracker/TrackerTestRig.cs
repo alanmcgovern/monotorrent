@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Net;
 using System.Web;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Tracker
 {
