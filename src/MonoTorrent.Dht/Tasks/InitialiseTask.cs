@@ -4,6 +4,7 @@ using System;
 using System.Net;
 using System.Collections.Generic;
 using MonoTorrent.BEncoding;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Dht.Tasks
 {
