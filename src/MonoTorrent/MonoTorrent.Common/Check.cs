@@ -1,6 +1,6 @@
 using System;
 
-namespace MonoTorrent
+namespace MonoTorrent.Common
 {
     public static class Check
     {
