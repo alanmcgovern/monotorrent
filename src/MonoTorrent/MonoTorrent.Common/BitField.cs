@@ -441,7 +441,7 @@ namespace MonoTorrent.Common
 
         void Check(BitField value)
         {
-            MonoTorrent.Check.Value(value);
+            MonoTorrent.Common.Check.Value(value);
             if (length != value.length)
                 throw new ArgumentException("BitFields are of different lengths", "value");
         }
