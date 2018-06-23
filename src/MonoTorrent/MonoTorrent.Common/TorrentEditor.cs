@@ -34,7 +34,8 @@ namespace MonoTorrent.Common
 {
     public class TorrentEditor : EditableTorrent
     {
-        public new bool CanEditSecureMetadata {
+        public new bool CanEditSecureMetadata
+        {
             get { return base.CanEditSecureMetadata; }
             set { base.CanEditSecureMetadata = value; }
         }
