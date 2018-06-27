@@ -546,7 +546,7 @@ namespace MonoTorrent.Client
             // FIXME: Hardcoded 15kB/sec - is this ok?
             if ((DateTime.Now - manager.StartTime) > TimeSpan.FromMinutes(1) && manager.Monitor.DownloadSpeed < 15 * 1024)
             {
-                foreach (string s in manager.Torrent.GetRightHttpSeeds)
+                foreach (string s in manager.Webseeds)
                 {
                     string peerId = "-WebSeed-";
                     peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
@@ -569,9 +569,7 @@ namespace MonoTorrent.Client
                     PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, Manager.DownloadLimiter, id.Monitor, id.TorrentManager, id.ConnectionManager.messageReceivedCallback, id);
                 }
 
-                // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
-                // Add a boolean or something so that we don't add them twice.
-                manager.Torrent.GetRightHttpSeeds.Clear();
+                manager.Webseeds.Clear();
             }
 
             // Remove inactive peers we haven't heard from if we're downloading
