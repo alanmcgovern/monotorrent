@@ -72,7 +72,8 @@ namespace MonoTorrent
                         var bytes = UriHelper.UrlDecode(keyval[1]);
                         AnnounceUrls.Add(Encoding.UTF8.GetString(bytes));
                     break;
-                    case "as"://Acceptable Source
+                    case "ws"://webseed
+                    case "as"://acceptable source
                         Webseeds.Add (keyval[1]);
                     break;
                     case "dn"://display name
