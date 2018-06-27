@@ -89,6 +89,7 @@ namespace MonoTorrent.Client
         private Torrent torrent;                // All the information from the physical torrent that was loaded
         private string torrentSave;             // The path where the .torrent data will be saved when in metadata mode
         private TrackerManager trackerManager;  // The class used to control all access to the tracker
+        private IList<String> webseeds;         // This is the http-based seeding
         private int uploadingTo;                // The number of peers which we're currently uploading to
         internal IUnchoker chokeUnchoker; // Used to choke and unchoke peers
 		private InactivePeerManager inactivePeerManager; // Used to identify inactive peers we don't want to connect to
@@ -280,6 +281,15 @@ namespace MonoTorrent.Client
 
 
         /// <summary>
+        /// This is the http-based seeding
+        /// </summary>
+        public IList<String> Webseeds
+        {
+            get { return this.webseeds; }
+        }
+
+
+        /// <summary>
         /// The Torrent contained within this TorrentManager
         /// </summary>
         public Torrent Torrent
@@ -362,13 +372,17 @@ namespace MonoTorrent.Client
             this.torrent = torrent;
             this.infohash = torrent.infoHash;
             this.settings = settings;
+            this.webseeds = new List<String>();
+            if (torrent.GetRightHttpSeeds != null)
+                foreach (string webseed in torrent.GetRightHttpSeeds)
+                    this.webseeds.Add(webseed);
 
             Initialise(savePath, baseDirectory, torrent.AnnounceUrls);
             ChangePicker(CreateStandardPicker());
         }
 
 
-        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces)
+        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces, IList<String> webseeds = null)
         {
             Check.InfoHash(infoHash);
             Check.SavePath(savePath);
@@ -379,6 +393,10 @@ namespace MonoTorrent.Client
             this.infohash = infoHash;
             this.settings = settings;
             this.torrentSave = torrentSave;
+            this.webseeds = new List<String>();
+            if (webseeds != null)
+                foreach (string webseed in webseeds)
+                    this.webseeds.Add(webseed);
 
             Initialise(savePath, "", announces);
         }
@@ -397,6 +415,11 @@ namespace MonoTorrent.Client
             IList<RawTrackerTier> announces = new RawTrackerTiers ();
             if (magnetLink.AnnounceUrls != null)
                 announces.Add (magnetLink.AnnounceUrls);
+            this.webseeds = new List<String>();
+            if (magnetLink.Webseeds != null)
+                foreach (string webseed in magnetLink.Webseeds)
+                    this.webseeds.Add(webseed);
+
             Initialise(savePath, "", announces);
         }
 
