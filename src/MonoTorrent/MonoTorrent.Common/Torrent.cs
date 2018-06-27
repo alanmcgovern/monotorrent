@@ -280,7 +280,7 @@ namespace MonoTorrent.Common
         }
 
         /// <summary>
-        /// This is the http-based seeding (getright protocole)
+        /// This is the http-based seeding (getright protocol)
         /// </summary>
         public List<string> GetRightHttpSeeds
         {
