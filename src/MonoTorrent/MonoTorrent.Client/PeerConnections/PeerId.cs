@@ -717,7 +717,9 @@ namespace MonoTorrent.Client
             foreach (PeerMessage message in PieceReads)
                 Enqueue(message);
             PieceReads.Clear();
-            return;
+
+            // The below change to make disk reads async when sending data to a remote peer causes a regression. 
+            /*
             // We only allow 2 simultaenous PieceMessages in a peers send queue.
             // This way if the peer requests 100 pieces, we don't bloat our memory
             // usage unnecessarily. Once the first message is sent, we read data
@@ -757,6 +759,7 @@ namespace MonoTorrent.Client
                     TryProcessAsyncReads();
                 });
             });
+            */
         }
     }
 }
