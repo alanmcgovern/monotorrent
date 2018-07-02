@@ -62,6 +62,9 @@ namespace MonoTorrent.Common
             get { return this.length; }
         }
 
+        /// <summary>
+        /// Returns value in range [0; 100]
+        /// </summary>
         public double PercentComplete
         {
             get { return (double)this.trueCount / this.length * 100.0; }
