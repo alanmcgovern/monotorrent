@@ -89,6 +89,7 @@ namespace MonoTorrent.Common
         Swiftbit,
         SwarmScope,
         Shareaza,
+        Thunder,
         TorrentDotNET,
         Transmission,
         Tribler,
@@ -272,6 +273,10 @@ namespace MonoTorrent.Common
 
                     case ("SB"):
                         this.client = Common.Client.Swiftbit;
+                        break;
+
+                    case ("SD"):
+                        this.client = Common.Client.Thunder;
                         break;
 
                     case ("SS"):
