@@ -95,7 +95,7 @@ namespace MonoTorrent.Client.Encryption
                     id.CloseConnection();
                 return false;
             });
-            
+
             try
             {
                 // If the connection is incoming, receive the handshake before
@@ -172,7 +172,7 @@ namespace MonoTorrent.Client.Encryption
             {
                 if (!succeeded)
                     throw new EncryptionException("Couldn't receive the handshake");
-                
+
                 result.Available += count;
                 HandshakeMessage message = new HandshakeMessage();
                 message.Decode(result.Buffer, 0, result.Buffer.Length);
