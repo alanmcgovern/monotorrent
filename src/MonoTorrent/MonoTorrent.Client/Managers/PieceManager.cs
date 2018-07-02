@@ -178,7 +178,7 @@ namespace MonoTorrent.Client
                         id.Enqueue(msg);
                     else
                         break;
-                } 
+                }
             }
 
             if (!id.IsChoking || (id.SupportsFastPeer && id.IsAllowedFastPieces.Count > 0))
