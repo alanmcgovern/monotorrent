@@ -254,11 +254,11 @@ namespace MonoTorrent.Common
                     end--;
 
                 for (int j = start; j <= end; j++)
-                    if (!Get(j))     // This piece is true
+                    if (!Get(j))     // This piece is false
                         return j;
             }
 
-            return -1;              // Nothing is true
+            return -1;              // Nothing is false
         }
         internal void FromArray(byte[] buffer, int offset, int length)
         {
