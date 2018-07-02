@@ -458,7 +458,7 @@ namespace MonoTorrent.Client
         {
             PeerId id;
 
-            //Execute iniitial logic for individual peers
+            //Execute initial logic for individual peers
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
                 manager.Monitor.Tick();
                 manager.UpdateLimiters ();
