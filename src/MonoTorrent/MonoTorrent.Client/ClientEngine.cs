@@ -418,7 +418,7 @@ namespace MonoTorrent.Client
 
             MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    torrents[i].Stop();
+                    torrents[i].BeginStop();
             });
         }
 

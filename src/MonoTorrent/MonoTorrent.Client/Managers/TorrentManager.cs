@@ -684,9 +684,22 @@ namespace MonoTorrent.Client
 #endif
 
         /// <summary>
-        /// Stops the TorrentManager
+        /// Stops the TorrentManager and waits until it will be stopped
         /// </summary>
         public void Stop()
+        {
+            BeginStop();
+
+            while (State != TorrentState.Stopped && State != TorrentState.Error)
+            {
+                Thread.Sleep(10);
+            }
+        }
+
+        /// <summary>
+        /// Stops the TorrentManager
+        /// </summary>
+        public void BeginStop()
         {
             if (State == TorrentState.Error)
             {
