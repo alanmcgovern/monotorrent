@@ -97,9 +97,8 @@ namespace MonoTorrent.Client
         public bool RequestTimedOut
         {
             get
-            { // 60 seconds timeout for a request to fulfill
-                return !Received && requestedOff != null &&
-                       (DateTime.Now - requestedOff.LastMessageReceived) > TimeSpan.FromMinutes(1);
+            {   // 4 seconds timeout for a request to fulfill
+                return !Received && requestedOff != null && (DateTime.Now - requestedOff.LastMessageReceived) > TimeSpan.FromSeconds(4);
             }
         }
 
