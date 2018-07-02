@@ -64,7 +64,7 @@ namespace MonoTorrent.Client
             Buffer.BlockCopy(BitConverter.GetBytes(ip2), 0, hashBuffer, 0, 4);
 
             // 5) Copy the infohash into the hashbuffer
-            Buffer.BlockCopy(infohash.Hash, 0, hashBuffer, 4, 20);
+            Buffer.BlockCopy(infohash.Hash, 0, hashBuffer, 4, InfoHash.HASH_SIZE);
 
             // 6) Keep hashing and cycling until we have AllowedFastPieceCount number of results
             // Then return that result
@@ -73,7 +73,7 @@ namespace MonoTorrent.Client
                 lock (hasher)
                     hashBuffer = hasher.ComputeHash(hashBuffer);
 
-                for (int i = 0; i < 20; i += 4)
+                for (int i = 0; i < InfoHash.HASH_SIZE; i += 4)
                 {
                     UInt32 result = (UInt32)IPAddress.HostToNetworkOrder(BitConverter.ToInt32(hashBuffer, i));
 
