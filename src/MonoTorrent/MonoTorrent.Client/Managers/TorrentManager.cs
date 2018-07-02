@@ -101,6 +101,9 @@ namespace MonoTorrent.Client
 
         #region Properties
 
+        /// <summary>
+        /// Downloaded and verified pieces
+        /// </summary>
         public BitField Bitfield
         {
             get { return this.bitfield; }
