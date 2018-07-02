@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
             if (unlimited)
                 return;
 
-            // From experimentation, i found that increasing by 5% gives more accuate rate limiting
+            // From experimentation, i found that increasing by 5% gives more accurate rate limiting
             // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
             maxRate = (int)(maxRate * 1.05);
             int errorRateDown = maxRate - actualRate;
