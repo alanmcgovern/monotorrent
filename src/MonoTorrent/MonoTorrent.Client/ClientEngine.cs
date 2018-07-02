@@ -87,8 +87,9 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
-        
+#if !DISABLE_DHT
         private IDhtEngine dhtEngine;
+#endif
         private DiskManager diskManager;
         private bool disposed;
         private bool isRunning;
@@ -120,6 +121,7 @@ namespace MonoTorrent.Client
             get { return dhtEngine; }
         }
 #endif
+
         public DiskManager DiskManager
         {
             get { return diskManager; }
@@ -201,7 +203,9 @@ namespace MonoTorrent.Client
             this.settings = settings;
 
             this.connectionManager = new ConnectionManager(this);
+#if !DISABLE_DHT
             RegisterDht (new NullDhtEngine());
+#endif
             this.diskManager = new DiskManager(this, writer);
             this.listenManager = new ListenManager(this);
             MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(TickLength), delegate {
@@ -295,7 +299,9 @@ namespace MonoTorrent.Client
 
             disposed = true;
             MainLoop.QueueWait((MainLoopTask)delegate {
+#if !DISABLE_DHT
                 this.dhtEngine.Dispose();
+#endif                
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
                 this.localPeerListener.Stop();
@@ -340,6 +346,7 @@ namespace MonoTorrent.Client
                 manager.Engine = this;
                 manager.DownloadLimiter.Add(downloadLimiter);
                 manager.UploadLimiter.Add(uploadLimiter);
+#if !DISABLE_DHT
                 if (dhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && dhtEngine.State != DhtState.Ready)
                 {
                     try
@@ -351,12 +358,14 @@ namespace MonoTorrent.Client
                         // FIXME: Should log this somewhere, though it's not critical
                     }
                 }
+#endif
             });
 
             if (TorrentRegistered != null)
                 TorrentRegistered(this, new TorrentEventArgs(manager));
         }
 
+#if !DISABLE_DHT
         public void RegisterDht(IDhtEngine engine)
         {
             MainLoop.QueueWait(delegate
@@ -388,6 +397,7 @@ namespace MonoTorrent.Client
                 }
             });
         }
+#endif
 
         public void StartAll()
         {
