@@ -23,19 +23,19 @@ namespace MonoTorrent
         static string downloadsPath;
         static string fastResumeFile;
         static string torrentsPath;
-        static ClientEngine engine;				// The engine used for downloading
-        static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
-        static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
+        static ClientEngine engine;              // The engine used for downloading
+        static List<TorrentManager> torrents;    // The list where all the torrentManagers will be stored that the engine gives us
+        static Top10Listener listener;           // This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
         static void Main(string[] args)
         {
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
-            basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
-            torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
-            downloadsPath = Path.Combine(basePath, "Downloads");			// This is the directory we will save downloads to
+            basePath = Environment.CurrentDirectory;                        // This is the directory we are currently in
+            torrentsPath = Path.Combine(basePath, "Torrents");              // This is the directory we will save .torrents to
+            downloadsPath = Path.Combine(basePath, "Downloads");            // This is the directory we will save downloads to
             fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
             dhtNodeFile = Path.Combine(basePath, "DhtNodes");
-            torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
+            torrents = new List<TorrentManager>();                          // This is where we will store the torrentmanagers
             listener = new Top10Listener(10);
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
@@ -95,7 +95,7 @@ namespace MonoTorrent
             engine.RegisterDht(dht);
             dhtListner.Start();
             engine.DhtEngine.Start(nodes);
-            
+
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
@@ -204,7 +204,7 @@ namespace MonoTorrent
                     AppendFormat(sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead / 1024.0);
                     AppendFormat(sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
                     AppendFormat(sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
-                    
+
                     foreach (TorrentManager manager in torrents)
                     {
                         AppendSeperator(sb);
@@ -221,13 +221,13 @@ namespace MonoTorrent
                         AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
                         if (manager.PieceManager != null)
                             AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-                        
+
                         foreach (PeerId p in manager.GetPeers())
                             AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
                                                                                       p.Monitor.UploadSpeed/ 1024.0);
-                       
+
                         AppendFormat(sb, "", null);
                         if (manager.Torrent != null)
                             foreach (TorrentFile file in manager.Torrent.Files)
@@ -254,17 +254,17 @@ namespace MonoTorrent
             AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat(sb, "", null);
         }
-		private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
-		{
+        private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
+        {
             if (formatting != null)
                 sb.AppendFormat(str, formatting);
             else
                 sb.Append(str);
-			sb.AppendLine();
-		}
+            sb.AppendLine();
+        }
 
-		private static void shutdown()
-		{
+        private static void shutdown()
+        {
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
@@ -284,13 +284,13 @@ namespace MonoTorrent
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 
-			foreach (TraceListener lst in Debug.Listeners)
-			{
-				lst.Flush();
-				lst.Close();
-			}
+            foreach (TraceListener lst in Debug.Listeners)
+            {
+                lst.Flush();
+                lst.Close();
+            }
 
             System.Threading.Thread.Sleep(2000);
-		}
-	}
+        }
+    }
 }
