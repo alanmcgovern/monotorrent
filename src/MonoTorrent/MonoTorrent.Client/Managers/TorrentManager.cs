@@ -331,6 +331,18 @@ namespace MonoTorrent.Client
 
         #endregion
 
+        /// <summary>
+        /// Occurs when torrent manager receives metadata from the DHT
+        /// This event is not fired if torren is loaded from other source
+        /// </summary>
+        public event EventHandler MetadataReceived;
+
+        internal virtual void OnMetadataReceived()
+        {
+            var handler = MetadataReceived;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+
         #region Constructors
 
         /// <summary>
