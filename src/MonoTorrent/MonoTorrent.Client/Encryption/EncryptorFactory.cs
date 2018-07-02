@@ -147,11 +147,13 @@ namespace MonoTorrent.Client.Encryption
         {
             EncryptorAsyncResult r = (EncryptorAsyncResult)result;
 
+            if (r == null)
+                throw new ArgumentException("Invalid async result");
+
             if (!r.IsCompleted)
                 r.AsyncWaitHandle.WaitOne();
 
-            if (r == null)
-                throw new ArgumentException("Invalid async result");
+            r.AsyncWaitHandle.Close();
 
             if (r.SavedException != null)
                 throw r.SavedException;
@@ -159,8 +161,6 @@ namespace MonoTorrent.Client.Encryption
             r.Id.Encryptor = r.Encryptor;
             r.Id.Decryptor = r.Decryptor;
             initialData = r.InitialData;
-
-            r.AsyncWaitHandle.Close();
         }
 
         private static void HandshakeReceived(bool succeeded, int count, object state)
