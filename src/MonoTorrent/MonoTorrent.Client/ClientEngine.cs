@@ -104,6 +104,8 @@ namespace MonoTorrent.Client
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private RateLimiterGroup uploadLimiter;
         private RateLimiterGroup downloadLimiter;
+        private GlobalRateLimiter globalUploadLimiter; // wrapper around upload limiter to pass to torrent managers
+        private GlobalRateLimiter globalDownloadLimiter; // wrapper around download limiter to pass to torrent managers
 
         #endregion
 
@@ -233,11 +235,13 @@ namespace MonoTorrent.Client
             downloadLimiter = new RateLimiterGroup();
             downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
             downloadLimiter.Add(downloader);
+            globalDownloadLimiter = new GlobalRateLimiter(downloadLimiter);
 
             RateLimiter uploader = new RateLimiter();
             uploadLimiter = new RateLimiterGroup();
             downloadLimiter.Add(new DiskWriterLimiter(DiskManager));
             uploadLimiter.Add(uploader);
+            globalUploadLimiter = new GlobalRateLimiter(uploadLimiter);
 
             ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 downloader.UpdateChunks(Settings.GlobalMaxDownloadSpeed, TotalDownloadSpeed);
@@ -344,8 +348,8 @@ namespace MonoTorrent.Client
                 this.torrents.Add(manager);
                 manager.PieceHashed += PieceHashed;
                 manager.Engine = this;
-                manager.DownloadLimiter.Add(downloadLimiter);
-                manager.UploadLimiter.Add(uploadLimiter);
+                manager.DownloadLimiter.Add(globalDownloadLimiter);
+                manager.UploadLimiter.Add(globalUploadLimiter);
 #if !DISABLE_DHT
                 if (dhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && dhtEngine.State != DhtState.Ready)
                 {
