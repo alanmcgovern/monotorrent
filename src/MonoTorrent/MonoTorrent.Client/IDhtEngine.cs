@@ -27,6 +27,7 @@
 //
 
 
+#if !DISABLE_DHT
 using System;
 using MonoTorrent.BEncoding;
 
@@ -47,3 +48,4 @@ namespace MonoTorrent
         void Stop();
     }
 }
+#endif
