@@ -68,7 +68,7 @@ namespace MonoTorrent.Client
         public static readonly bool SupportsDht = false;
 #endif
         internal const int TickLength = 500;    // A logic tick will be performed every TickLength miliseconds
-       
+
         #endregion
 
 
@@ -87,7 +87,7 @@ namespace MonoTorrent.Client
 
         internal static readonly BufferManager BufferManager = new BufferManager();
         private ConnectionManager connectionManager;
-        
+
         private IDhtEngine dhtEngine;
         private DiskManager diskManager;
         private bool disposed;
@@ -284,7 +284,7 @@ namespace MonoTorrent.Client
             CheckDisposed();
             if (manager == null)
                 return false;
-            
+
             return Contains(manager.Torrent);
         }
 
