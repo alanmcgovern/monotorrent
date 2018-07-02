@@ -69,7 +69,7 @@ namespace MonoTorrent.Client.Connections
                 this.BytesTransferred = bytes;
                 base.Complete();
             }
-		}
+        }
 
         #region Member Variables
 
@@ -150,7 +150,7 @@ namespace MonoTorrent.Client.Connections
                 throw new ArgumentException("Scheme is not http");
 
             this.uri = uri;
-            
+
             connectionTimeout = TimeSpan.FromSeconds(10);
             getResponseCallback = ClientEngine.MainLoop.Wrap(GotResponse);
             receivedChunkCallback = ClientEngine.MainLoop.Wrap(ReceivedChunk);
