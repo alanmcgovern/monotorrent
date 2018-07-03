@@ -49,7 +49,7 @@ namespace MonoTorrent.Client
         PiecePicker standard;
 		TorrentManager torrentManager;
 
-        PiecePicker ActivePicker
+        public PiecePicker ActivePicker
         {
             get { return inEndgame ? endgame : standard; }
         }

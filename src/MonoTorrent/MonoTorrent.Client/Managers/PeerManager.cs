@@ -9,7 +9,7 @@ namespace MonoTorrent.Client
     {
         #region Member Variables
 
-        internal List<PeerId> ConnectedPeers = new List<PeerId>();
+        public readonly List<PeerId> ConnectedPeers = new List<PeerId>();
         internal List<Peer> ConnectingToPeers = new List<Peer>();
 
         internal List<Peer> ActivePeers;

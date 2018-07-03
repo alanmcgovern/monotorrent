@@ -318,7 +318,7 @@ namespace MonoTorrent.Client
             get { return this.monitor; }
         }
 
-        internal Peer Peer
+        public Peer Peer
         {
             get { return this.peer; }
             set { this.peer = value; }

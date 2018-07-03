@@ -75,7 +75,7 @@ namespace MonoTorrent.Client
         PiecePicker picker;
         BitField unhashedPieces;
 
-        internal PiecePicker Picker
+        public PiecePicker Picker
         {
             get { return picker; }
         }
