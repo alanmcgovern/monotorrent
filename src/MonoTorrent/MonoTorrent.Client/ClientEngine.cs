@@ -309,6 +309,7 @@ namespace MonoTorrent.Client
 #if !DISABLE_DHT
                 this.dhtEngine.Dispose();
 #endif                
+                this.listener.Stop();
                 this.diskManager.Dispose();
                 this.listenManager.Dispose();
                 this.localPeerListener.Stop();
@@ -458,6 +459,9 @@ namespace MonoTorrent.Client
             Check.Manager(manager);
 
             MainLoop.QueueWait((MainLoopTask)delegate {
+                if(manager.Engine == null)
+                    return;
+
                 if (manager.Engine != this)
                     throw new TorrentException("The manager has not been registered with this engine");
 
