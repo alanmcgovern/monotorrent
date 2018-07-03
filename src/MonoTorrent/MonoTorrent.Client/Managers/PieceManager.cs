@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         #region Old
         // For every 10 kB/sec upload a peer has, we request one extra piece above the standard amount him
         internal const int BonusRequestPerKb = 10;  
-        internal const int NormalRequestAmount = 2;
+        internal const int NormalRequestAmount = 6;
         internal const int MaxEndGameRequests = 2;
 
         public event EventHandler<BlockEventArgs> BlockReceived;
