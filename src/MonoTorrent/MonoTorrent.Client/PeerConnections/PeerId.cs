@@ -150,7 +150,12 @@ namespace MonoTorrent.Client
 
         internal byte[] AddressBytes
         {
-            get { return Connection.AddressBytes; }
+            get 
+            { 
+                if(Connection == null)
+                    return null;
+                return Connection.AddressBytes; 
+            }
         }
 
         /// <summary>
