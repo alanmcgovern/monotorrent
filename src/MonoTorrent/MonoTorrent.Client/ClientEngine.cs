@@ -35,6 +35,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using System.Threading;
+using System.Linq;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Tracker;
@@ -100,6 +101,7 @@ namespace MonoTorrent.Client
         private readonly string peerId;
         private EngineSettings settings;
         private int tickCount;
+        private HashSet<InfoHash> skeys;
         private List<TorrentManager> torrents;
         private ReadOnlyCollection<TorrentManager> torrentsReadonly;
         private RateLimiterGroup uploadLimiter;
@@ -216,6 +218,7 @@ namespace MonoTorrent.Client
                 return !disposed;
             });
             this.torrents = new List<TorrentManager>();
+            this.skeys = new HashSet<InfoHash>();
             this.torrentsReadonly = new ReadOnlyCollection<TorrentManager> (torrents);
             CreateRateLimiters();
             this.peerId = GeneratePeerId();
@@ -350,6 +353,8 @@ namespace MonoTorrent.Client
                 manager.Engine = this;
                 manager.DownloadLimiter.Add(globalDownloadLimiter);
                 manager.UploadLimiter.Add(globalUploadLimiter);
+                lock (skeys)
+                    skeys.Add(manager.InfoHash);
 #if !DISABLE_DHT
                 if (dhtEngine != null && manager.Torrent != null && manager.Torrent.Nodes != null && dhtEngine.State != DhtState.Ready)
                 {
@@ -422,6 +427,15 @@ namespace MonoTorrent.Client
             });
         }
 
+        public InfoHash[] SKeys
+        {
+            get
+            {
+                lock (skeys)
+                    return skeys.ToArray();
+            }
+        }
+
         public int TotalDownloadSpeed
         {
             get
@@ -456,6 +470,8 @@ namespace MonoTorrent.Client
                 manager.Engine = null;
                 manager.DownloadLimiter.Remove(downloadLimiter);
                 manager.UploadLimiter.Remove(uploadLimiter);
+                lock (skeys)
+                    skeys.Remove(manager.InfoHash);
             });
 
             if (TorrentUnregistered != null)
