@@ -201,7 +201,7 @@ namespace MonoTorrent.Client
                 return false;
 
             // If the peer is a seeder, then he is definately interesting
-            if ((id.Peer.IsSeeder = id.BitField.AllTrue))
+            if (id.Peer.IsSeeder == id.BitField.AllTrue)
                 return true;
 
             // Otherwise we need to do a full check
