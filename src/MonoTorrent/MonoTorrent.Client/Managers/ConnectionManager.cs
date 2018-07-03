@@ -618,7 +618,7 @@ namespace MonoTorrent.Client
         {
             int i;
             Peer peer;
-            if (!manager.Mode.CanAcceptConnections)
+            if (manager.Mode.State == TorrentState.Seeding)
                 return false;
             
             // If we have reached the max peers allowed for this torrent, don't connect to a new peer for this torrent
