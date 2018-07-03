@@ -114,7 +114,23 @@ namespace MonoTorrent.Client
 
         public bool Complete
         {
-            get { return this.bitfield.AllTrue; }
+            get
+            {
+                if (bitfield.AllTrue)
+                    return true;
+                
+                if (torrent?.Files != null)
+                    foreach (var file in torrent.Files)
+                    {
+                        if (file.Priority == Priority.DoNotDownload)
+                            continue;
+
+                        if (bitfield.FirstFalse(file.StartPieceIndex, file.EndPieceIndex) != -1)
+                            return false;
+                    }
+
+                return true;
+            }
         }
 
         internal RateLimiterGroup DownloadLimiter

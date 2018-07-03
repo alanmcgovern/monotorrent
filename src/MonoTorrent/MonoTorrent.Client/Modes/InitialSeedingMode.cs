@@ -102,7 +102,7 @@ namespace MonoTorrent.Client
                 PeerMessage haveAllMessage = new HaveAllMessage();
                 foreach (var peer in Manager.Peers.ConnectedPeers)
                 {
-                    PeerMessage message = peer.SupportsFastPeer && Manager.Complete ? haveAllMessage : bitfieldMessage;
+                    PeerMessage message = peer.SupportsFastPeer && Manager.Bitfield.AllTrue ? haveAllMessage : bitfieldMessage;
                     peer.Enqueue(message);
                 }
                 Manager.Mode = new DownloadMode(Manager);
