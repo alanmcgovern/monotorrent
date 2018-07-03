@@ -81,7 +81,7 @@ namespace MonoTorrent
 
         public string UrlEncode()
         {
-            return UriHelper.UrlEncode(Hash);
+            return UriHelper.UrlEncode(Hash).Replace("+", "%20");
         }
 
         public static bool operator ==(InfoHash left, InfoHash right)
