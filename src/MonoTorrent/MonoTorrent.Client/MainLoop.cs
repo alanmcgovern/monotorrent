@@ -143,7 +143,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        TimeoutDispatcher dispatcher = new TimeoutDispatcher();
+        TimeoutDispatcher dispatcher;
         AutoResetEvent handle = new AutoResetEvent(false);
         ICache<DelegateTask> cache = new Cache<DelegateTask>(true).Synchronize();
         Queue<DelegateTask> tasks = new Queue<DelegateTask>();
@@ -151,8 +151,10 @@ namespace MonoTorrent.Client
 
         public MainLoop(string name)
         {
+            dispatcher = new TimeoutDispatcher(name + " : dispatcher");
             thread = new Thread(Loop);
             thread.IsBackground = true;
+            thread.Name = name;
             thread.Start();
         }
 

@@ -62,10 +62,11 @@ namespace Mono.Ssdp.Internal
 
         private List<TimeoutItem> timeouts = new List<TimeoutItem> ();
 
-        public TimeoutDispatcher()
+        public TimeoutDispatcher(string name)
         {
             Thread t = new Thread(TimerThread);
             t.IsBackground = true;
+            t.Name = name;
             t.Start();
         }
 
