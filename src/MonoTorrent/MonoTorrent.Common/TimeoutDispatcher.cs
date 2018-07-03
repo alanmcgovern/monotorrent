@@ -162,7 +162,7 @@ namespace Mono.Ssdp.Internal
                     lock (timeouts) {
                         Remove(item.Id);
                         if (requeue) {
-                            item.Trigger += item.Timeout;
+                            item.Trigger = DateTime.UtcNow + item.Timeout;
                             Add(ref item);
                         }
                     }
