@@ -462,6 +462,15 @@ namespace MonoTorrent.Client
             if (counter % (1000 / ClientEngine.TickLength) == 0) {   // Call it every second... ish
                 manager.Monitor.Tick();
                 manager.UpdateLimiters ();
+
+                for (int i = 0; i < manager.Peers.ConnectedPeers.Count; i++)
+                {
+                    id = manager.Peers.ConnectedPeers[i];
+                    if (id.Connection == null)
+                        continue;
+
+                    id.Monitor.Tick();
+                }
             }
 
             if (manager.finishedPieces.Count > 0)
@@ -478,8 +487,6 @@ namespace MonoTorrent.Client
                 maxRequests = Math.Min(id.MaxSupportedPendingRequests, maxRequests);
                 maxRequests = Math.Max(2, maxRequests);
                 id.MaxPendingRequests = maxRequests;
-
-                id.Monitor.Tick();
             }
         }
 
