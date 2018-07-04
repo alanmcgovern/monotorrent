@@ -101,7 +101,7 @@ namespace MonoTorrent.Client.Messages
 
         static public string ReadString(byte[] buffer, ref int offset, int count)
         {
-            string s = System.Text.Encoding.ASCII.GetString(buffer, offset, count);
+            string s = System.Text.Encoding.UTF8.GetString(buffer, offset, count);
             offset += count;
             return s;
         }
