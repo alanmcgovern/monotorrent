@@ -63,17 +63,6 @@ namespace MonoTorrent.Client
 
         internal event EventHandler<PeerAddedEventArgs> OnPeerFound;
 
-        /// <summary>
-        /// Fired when the announce of the stop state is complete, the event tells that you can properly dispose the manager
-        /// </summary>
-        public event EventHandler StopAnnounced;
-
-        internal virtual void OnStopAnnounced()
-        {
-            var handler = StopAnnounced;
-            if (handler != null) handler(this, EventArgs.Empty);
-        }
-
         #endregion
 
 

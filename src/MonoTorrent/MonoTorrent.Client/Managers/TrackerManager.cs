@@ -67,7 +67,6 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        private bool _disposing = false;
 
         /// <summary>
         /// The infohash for the torrent
@@ -145,13 +144,6 @@ namespace MonoTorrent.Client.Tracker
 
 
         #region Methods
-
-        /// <summary>
-        /// indicates if we should stop announce as fast as possible
-        /// </summary>
-        internal void Dispose() { 
-            _disposing = true; 
-        }
 
         public WaitHandle Announce()
         {
