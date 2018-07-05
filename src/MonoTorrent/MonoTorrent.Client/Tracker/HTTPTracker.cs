@@ -235,15 +235,15 @@ namespace MonoTorrent.Client.Tracker
                 switch (keypair.Key.Text)
                 {
                     case ("complete"):
-                        Complete = Convert.ToInt32(keypair.Value.ToString());
+                        Complete = Convert.ToInt64(keypair.Value.ToString());
                         break;
 
                     case ("incomplete"):
-                        Incomplete = Convert.ToInt32(keypair.Value.ToString());
+                        Incomplete = Convert.ToInt64(keypair.Value.ToString());
                         break;
 
                     case ("downloaded"):
-                        Downloaded = Convert.ToInt32(keypair.Value.ToString());
+                        Downloaded = Convert.ToInt64(keypair.Value.ToString());
                         break;
 
                     case ("tracker id"):

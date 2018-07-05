@@ -43,10 +43,10 @@ namespace MonoTorrent.Client.Tracker
 
         bool canAnnounce;
         bool canScrape;
-        int complete;
-        int downloaded;
+        long complete;
+        long downloaded;
         string failureMessage;
-        int incomplete;
+        long incomplete;
         TimeSpan minUpdateInterval;
         TrackerState status;
         TimeSpan updateInterval;
@@ -63,12 +63,12 @@ namespace MonoTorrent.Client.Tracker
             get { return canScrape; }
             set { canScrape = value; }
         }
-        public int Complete
+        public long Complete
         {
             get { return complete; }
             protected set { complete = value; }
         }
-        public int Downloaded
+        public long Downloaded
         {
             get { return downloaded; }
             protected set { downloaded = value; }
@@ -78,7 +78,7 @@ namespace MonoTorrent.Client.Tracker
             get { return failureMessage ?? ""; }
             protected set { failureMessage = value; }
         }
-        public int Incomplete
+        public long Incomplete
         {
             get { return incomplete; }
             protected set { incomplete = value; }
