@@ -163,11 +163,10 @@ namespace MonoTorrent.Client
                 throw new TorrentException("Invalid infohash. Not tracking this torrent");
             }
 
-            // If the peer id's don't match, dump the connection. This is due to peers faking usually
             if (id.Peer.PeerId != message.PeerId)
             {
+                id.Peer.PeerId = message.PeerId;
                 Logger.Log(id.Connection, "HandShake.Handle - Invalid peerid");
-                throw new TorrentException("Supplied PeerID didn't match the one the tracker gave us");
             }
 
             // Attempt to parse the application that the peer is using
