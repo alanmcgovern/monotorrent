@@ -48,7 +48,7 @@ namespace MonoTorrent.Client.Messages.UdpTracker
         public ConnectMessage()
             : base(0, DateTime.Now.GetHashCode())
         {
-            connectionId = IPAddress.NetworkToHostOrder(0x41727101980); // Init connectionId as per spec
+            connectionId = 0x41727101980; // Init connectionId as per spec
         }
 
         public override int ByteLength

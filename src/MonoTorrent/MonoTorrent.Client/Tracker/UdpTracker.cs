@@ -19,14 +19,16 @@ namespace MonoTorrent.Client.Tracker
        bool amConnecting;
        internal TimeSpan RetryDelay;
        int timeout;
+        IAsyncResult ReceiveAsyncResult;
 
        public UdpTracker(Uri announceUrl)
            : base(announceUrl)
        {
            CanScrape = true;
            CanAnnounce = true;
-           RetryDelay = TimeSpan.FromSeconds(15);
-           tracker = new UdpClient(announceUrl.Host, announceUrl.Port);
+            RetryDelay = TimeSpan.FromSeconds(10);
+            tracker = new UdpClient();
+            tracker.Connect(announceUrl.Host, announceUrl.Port);
            endpoint = (IPEndPoint)tracker.Client.RemoteEndPoint;
        }
 
@@ -36,7 +38,12 @@ namespace MonoTorrent.Client.Tracker
        {
            //LastUpdated = DateTime.Now;
            if (!hasConnected && amConnecting)
-               return;
+            {
+                IAsyncResult ar = ReceiveAsyncResult;
+                if (ar != null)
+                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2)))
+                        return;
+            }
 
            if (!hasConnected)
            {
@@ -300,11 +307,12 @@ namespace MonoTorrent.Client.Tracker
        {
            timeout = 1;
            SendRequest(messageState);
-           tracker.BeginReceive(EndReceiveMessage, messageState);
+            ReceiveAsyncResult = tracker.BeginReceive(EndReceiveMessage, messageState);
        }
 
        private void EndReceiveMessage(IAsyncResult result)
        {
+            ReceiveAsyncResult = null;
            UdpTrackerAsyncState trackerState = (UdpTrackerAsyncState)result.AsyncState;
            try
            {
@@ -322,15 +330,15 @@ namespace MonoTorrent.Client.Tracker
        {
            //TODO BeginSend
            byte[] buffer = requestState.Message.Encode();
-           tracker.Send(buffer, buffer.Length);
+            var sent = tracker.Send(buffer, buffer.Length);
 
-           //response timeout: we try 4 times every 15 sec
+            //response timeout: we try 2 times every 10 sec
            ClientEngine.MainLoop.QueueTimeout(RetryDelay, delegate
            {
                if (timeout == 0)//we receive data
                    return false;
 
-               if (timeout <= 4)
+                if (timeout <= 2)
                {
                    timeout++;
 				   try
