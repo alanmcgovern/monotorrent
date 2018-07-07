@@ -30,6 +30,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Net;
 using MonoTorrent.Common;
@@ -921,13 +922,24 @@ namespace MonoTorrent.Client
             if (State != TorrentState.Stopped)
                 throw new InvalidOperationException("Can only load FastResume when the torrent is stopped");
             if (InfoHash != data.Infohash || torrent.Pieces.Count != data.Bitfield.Length)
-                throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
+                throw new ArgumentException("The fast resume data does not match this torrent", "data");
 
             bitfield.From(data.Bitfield);
             for (int i = 0; i < torrent.Pieces.Count; i++)
                 RaisePieceHashed (new PieceHashedEventArgs (this, i, bitfield[i]));
 
             this.hashChecked = true;
+
+            if (data.Priorities != null)
+            {
+                if (data.Priorities.Length != torrent.Files.Length)
+                    throw new ArgumentException("The fast resume data does not match this torrent", "data");
+
+                for (var i = 0; i < data.Priorities.Length; i++)
+                {
+                    torrent.Files[i].Priority = data.Priorities[i];
+                }
+            }
         }
 
         public FastResume SaveFastResume()
@@ -935,7 +947,7 @@ namespace MonoTorrent.Client
             CheckMetadata();
             if (!HashChecked)
                 throw new InvalidOperationException ("Fast resume data cannot be created when the TorrentManager has not been hash checked");
-            return new FastResume(InfoHash, this.bitfield);
+            return new FastResume(InfoHash, this.bitfield, torrent.Files.Select(f => f.Priority));
         }
 
         void VerifyHashState ()
