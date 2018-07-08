@@ -872,6 +872,10 @@ namespace MonoTorrent.Common
                                     if (collection.Count != 0)
                                         announceUrls.Add(collection);
                                 }
+								else if (announces[j] is BEncodedString tier)
+								{
+									announceUrls.Add(new RawTrackerTier { tier.Text });
+								}
                                 else
                                 {
                                     throw new BEncodingException(String.Format("Non-BEncodedList found in announce-list (found {0})",
