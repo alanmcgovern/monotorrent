@@ -55,7 +55,7 @@ namespace MonoTorrent.Client
         #region Member Variables
 
         private int ratio = 4;                      // ratio from medium priority to high priority set size
-        private int highPrioritySetSize;            // size of high priority set, in pieces
+        private int highPrioritySetSize = 3;        // size of high priority set, in pieces
         // this represents the last byte played in a video player, as the high priority
         // set designates pieces that are needed VERY SOON
         private int highPrioritySetStart;           // gets updated by calling code, or as pieces get downloaded
@@ -69,8 +69,7 @@ namespace MonoTorrent.Client
             get { return this.highPrioritySetStart; }
             set
             {
-                if (this.highPrioritySetStart < value)
-                    this.highPrioritySetStart = value;
+                this.highPrioritySetStart = value;
             }
         }
 
@@ -179,18 +178,33 @@ namespace MonoTorrent.Client
             MessageBundle bundle;
             int start, end;
 
-            if (HighPrioritySetStart >= startIndex && HighPrioritySetStart <= endIndex)
+            // give high and medium segments only to fast peers
+            if (id.Monitor.DownloadSpeed > 200 * 1024)
             {
-                start = HighPrioritySetStart;
-                end = Math.Min(endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
-                if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
-                    return bundle;
+                if (HighPrioritySetStart >= startIndex && HighPrioritySetStart <= endIndex)
+                {
+                    start = HighPrioritySetStart;
+                    end = Math.Min(endIndex, HighPrioritySetStart + HighPrioritySetSize - 1);
+                    if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                        return bundle;
+                }
+
+                if (MediumPrioritySetStart >= startIndex && MediumPrioritySetStart <= endIndex)
+                {
+                    start = MediumPrioritySetStart;
+                    end = Math.Min(endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
+                    if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
+                        return bundle;
+                }
             }
 
-            if (MediumPrioritySetStart >= startIndex && MediumPrioritySetStart <= endIndex)
+            var lowPrioritySetStart = MediumPrioritySetStart + MediumPrioritySetSize;
+            var lowPrioritySetSize = MediumPrioritySetSize;
+            
+            if (lowPrioritySetStart >= startIndex && lowPrioritySetStart <= endIndex)
             {
-                start = MediumPrioritySetStart;
-                end = Math.Min(endIndex, MediumPrioritySetStart + MediumPrioritySetSize - 1);
+                start = lowPrioritySetStart;
+                end = Math.Min(endIndex, lowPrioritySetStart + lowPrioritySetSize - 1);
                 if ((bundle = base.PickPiece(id, peerBitfield, otherPeers, count, start, end)) != null)
                     return bundle;
             }
