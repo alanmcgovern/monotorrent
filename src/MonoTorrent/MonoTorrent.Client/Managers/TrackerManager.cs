@@ -262,37 +262,41 @@ namespace MonoTorrent.Client.Tracker
 
         private void OnAnnounceComplete(object sender, AnnounceResponseEventArgs e)
         {
-            this.updateSucceeded = e.Successful;
-            if (manager.Engine == null)
+            try
             {
-                e.Id.WaitHandle.Set();
-                return;
-            }
-
-            if (e.Successful)
-            {
-		manager.Peers.BusyPeers.Clear ();
-                int count = manager.AddPeersCore(e.Peers);
-                manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Peers.Count, e.Tracker));
-
-                TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
-                if (tier != null)
+                this.updateSucceeded = e.Successful;
+                if (manager.Engine == null)
                 {
-                    Toolbox.Switch<Tracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
-                    Toolbox.Switch<TrackerTier>(trackerTiers, 0, trackerTiers.IndexOf(tier));
-                }
-                e.Id.WaitHandle.Set();
-            }
-            else
-            {
-                TrackerTier tier;
-                Tracker tracker;
-
-                if (!e.Id.TrySubsequent || !GetNextTracker(e.Tracker, out tier, out tracker))
                     e.Id.WaitHandle.Set();
+                    return;
+                }
+
+                if (e.Successful)
+                {
+                    manager.Peers.BusyPeers.Clear();
+                    int count = manager.AddPeersCore(e.Peers);
+                    manager.RaisePeersFound(new TrackerPeersAdded(manager, count, e.Peers.Count, e.Tracker));
+
+                    TrackerTier tier = trackerTiers.Find(delegate (TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
+                    if (tier != null)
+                    {
+                        Toolbox.Switch<Tracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
+                        Toolbox.Switch<TrackerTier>(trackerTiers, 0, trackerTiers.IndexOf(tier));
+                    }
+                    e.Id.WaitHandle.Set();
+                }
                 else
-                    Announce(tracker, e.Id.TorrentEvent, true, e.Id.WaitHandle);
+                {
+                    TrackerTier tier;
+                    Tracker tracker;
+
+                    if (!e.Id.TrySubsequent || !GetNextTracker(e.Tracker, out tier, out tracker))
+                        e.Id.WaitHandle.Set();
+                    else
+                        Announce(tracker, e.Id.TorrentEvent, true, e.Id.WaitHandle);
+                }
             }
+            catch (ObjectDisposedException) { }
         }
 
         public WaitHandle Scrape()
