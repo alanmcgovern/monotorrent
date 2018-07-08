@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
@@ -55,7 +56,7 @@ namespace MonoTorrent.Client
             }
         }
 
-        static Predicate<Block> TimedOut = delegate(Block b) { return b.RequestTimedOut; };
+        static Predicate<Block> TimedOut = b => b.RequestTimedOut;
 
         protected SortList<Piece> requests;
 
@@ -63,6 +64,13 @@ namespace MonoTorrent.Client
             : base(null)
         {
             requests = new SortList<Piece>();
+        }
+
+        public IEnumerable<Piece> RequestedPieces()
+        {
+            var list = new List<Piece>();
+            ClientEngine.MainLoop.QueueWait(() => list = requests.ToList());
+            return list;
         }
 
         public override void CancelRequest(PeerId peer, int piece, int startOffset, int length)
@@ -99,7 +107,7 @@ namespace MonoTorrent.Client
             });
 
             if (cancelled)
-                requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
+                requests.RemoveAll(p => p.NoBlocksRequested);
         }
 
         public override int CurrentRequestCount()
