@@ -460,7 +460,7 @@ namespace MonoTorrent.Client
 
             if (HasMetadata) {
                 foreach (TorrentFile file in torrent.Files)
-                    file.FullPath = Path.Combine (SavePath, file.Path);
+                    file.FullPath = Path.Combine(SavePath, file.Path != null && file.Path.Length > 0 && file.Path[0] == '\\' ? file.Path.Substring(1) : file.Path);
             }
         }
 
