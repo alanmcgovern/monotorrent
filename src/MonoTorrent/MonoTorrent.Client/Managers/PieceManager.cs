@@ -110,6 +110,8 @@ namespace MonoTorrent.Client
 					if (!piece.AllBlocksWritten)
 						return;
 
+                    Logger.Log(null, "Piece downloaded: {0}", piece.Index);
+
 					// Hashcheck the piece as we now have all the blocks.
                     id.Engine.DiskManager.BeginGetHash (id.TorrentManager, piece.Index, delegate (object o) {
 					    byte[] hash = (byte[]) o;
