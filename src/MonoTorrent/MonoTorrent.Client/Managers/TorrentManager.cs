@@ -131,7 +131,7 @@ namespace MonoTorrent.Client
                 if (bitfield.AllTrue)
                     return true;
                 
-                if (torrent?.Files != null)
+                if (torrent != null && torrent.Files != null)
                     foreach (var file in torrent.Files)
                     {
                         if (file.Priority == Priority.DoNotDownload)
