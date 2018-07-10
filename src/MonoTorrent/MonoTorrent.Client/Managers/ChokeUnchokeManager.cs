@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MonoTorrent.Common;
 using System.IO;
+using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
