@@ -628,7 +628,8 @@ namespace MonoTorrent.Client
         {
             for (int i = 0; i < manager.Peers.ConnectedPeers.Count; i++)
             {
-                if (manager.Peers.ConnectedPeers[i].Connection == null)
+                var connectedPeer = manager.Peers.ConnectedPeers[i]; 
+                if (connectedPeer.Connection == null)
                     continue;
 
                 MessageBundle bundle = new MessageBundle();
@@ -636,11 +637,11 @@ namespace MonoTorrent.Client
                 foreach (int pieceIndex in manager.finishedPieces)
                 {
                     // If the peer has the piece already, we need to recalculate his "interesting" status.
-                    bool hasPiece = manager.Peers.ConnectedPeers[i].BitField[pieceIndex];
+                    bool hasPiece = connectedPeer.BitField[pieceIndex];
                     if (hasPiece)
                     {
                         bool isInteresting = manager.PieceManager.IsInteresting(manager.Peers.ConnectedPeers[i]);
-                        SetAmInterestedStatus(manager.Peers.ConnectedPeers[i], isInteresting);
+                        SetAmInterestedStatus(connectedPeer, isInteresting);
                     }
 
                     // Check to see if have supression is enabled and send the have message accordingly
@@ -648,7 +649,7 @@ namespace MonoTorrent.Client
                         bundle.Messages.Add(new HaveMessage(pieceIndex));
                 }
 
-                manager.Peers.ConnectedPeers[i].Enqueue(bundle);
+                connectedPeer.Enqueue(bundle);
             }
             manager.finishedPieces.Clear();
         }
