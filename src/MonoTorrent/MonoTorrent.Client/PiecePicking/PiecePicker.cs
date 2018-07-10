@@ -43,6 +43,8 @@ namespace MonoTorrent.Client
 
         PiecePicker picker;
 
+        public PiecePicker BasePicker { get { return picker; } }
+
         protected PiecePicker(PiecePicker picker)
         {
             this.picker = picker;

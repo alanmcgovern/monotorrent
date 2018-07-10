@@ -231,5 +231,47 @@ namespace MonoTorrent.Client
         {
             return (int)ClientEngine.MainLoop.QueueWait((MainLoopJob) delegate { return Picker.CurrentRequestCount(); });
         }
+
+        public T GetPicker<T>() where T: PiecePicker
+        {
+            T result;
+
+            if (CheckType(picker, out result))
+                return result;
+
+            var p = picker;
+            
+            while ((p = p.BasePicker) != null)
+            {
+                if (CheckType(p, out result))
+                    return result;
+            }
+
+            return null;
+        }
+
+        private bool CheckType<T>(PiecePicker picker, out T obj) where T : PiecePicker
+        {
+            obj = null;
+
+            if (picker is T)
+            {
+                obj = (T)picker;
+                return true;
+            }
+            
+            if (picker is EndGameSwitcher)
+            {
+                var switcher = (EndGameSwitcher)picker;
+
+                if (switcher.ActivePicker is T)
+                {
+                    obj = (T)switcher.ActivePicker;
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
