@@ -29,7 +29,7 @@ namespace MonoTorrent.Dht
                 return;
             }
 
-            Console.WriteLine("Choosing first from: {0}", bucket.Nodes.Count);
+            System.Diagnostics.Trace.WriteLine("Choosing first from: " + bucket.Nodes.Count);
             bucket.SortBySeen();
             QueryNode(bucket.Nodes[0]);
         }
