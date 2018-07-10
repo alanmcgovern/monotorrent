@@ -41,7 +41,6 @@ using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
 using System.Text.RegularExpressions;
 using System.Reflection;
-using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Client.Connections
 {
