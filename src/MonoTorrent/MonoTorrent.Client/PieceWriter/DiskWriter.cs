@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using MonoTorrent.Common;
 using System.IO;
@@ -9,6 +10,8 @@ namespace MonoTorrent.Client.PieceWriters
 {
     public class DiskWriter : PieceWriter
     {
+        private Stopwatch _stopwatch = new Stopwatch();
+
         private FileStreamBuffer streamsBuffer;
 
         public int OpenFiles
@@ -75,8 +78,16 @@ namespace MonoTorrent.Client.PieceWriters
                 throw new ArgumentOutOfRangeException("offset");
 
             TorrentFileStream stream = GetStream(file, FileAccess.ReadWrite);
+            
+            _stopwatch.Reset();
+            _stopwatch.Start();
+
             stream.Seek(offset, SeekOrigin.Begin);
             stream.Write(buffer, bufferOffset, count);
+
+            if (_stopwatch.ElapsedMilliseconds > 1000)
+                Logger.Log(null, "Slow write time: {0}ms pos: {1} len: {2}", _stopwatch.ElapsedMilliseconds, offset, count);
+            
         }
 
         public override bool Exists(TorrentFile file)
