@@ -243,7 +243,7 @@ namespace MonoTorrent.Client
         protected virtual void HandleUnchokeMessage(PeerId id, UnchokeMessage message)
         {
             id.IsChoking = false;
-
+            Logger.Log(null, "Peer {0} unchokes us, requesting data", id);
             // Add requests to the peers message queue
             manager.PieceManager.AddPieceRequests(id);
         }
@@ -553,27 +553,32 @@ namespace MonoTorrent.Client
             if ((DateTime.Now - manager.StartTime) > TimeSpan.FromMinutes(1) && manager.Monitor.DownloadSpeed < 15 * 1024)
             {
                 foreach (string s in manager.Torrent.GetRightHttpSeeds)
-                {
-                    string peerId = "-WebSeed-";
-                    peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
+                    try
+                    {
+                        string peerId = "-WebSeed-";
+                        peerId = peerId + (webseedCount++).ToString().PadLeft(20 - peerId.Length, '0');
 
-                    Uri uri = new Uri(s);
-                    Peer peer = new Peer(peerId, uri);
-                    PeerId id = new PeerId(peer, manager);
-                    HttpConnection connection = new HttpConnection(new Uri(s));
-                    connection.Manager = this.manager;
-                    peer.IsSeeder = true;
-                    id.BitField.SetAll(true);
-                    id.Encryptor = new PlainTextEncryption();
-                    id.Decryptor = new PlainTextEncryption();
-                    id.IsChoking = false;
-					id.AmInterested = !manager.Complete;
-                    id.Connection = connection;
-					id.ClientApp = new Software(id.PeerID);
-                    manager.Peers.ConnectedPeers.Add(id);
-					manager.RaisePeerConnected(new PeerConnectionEventArgs(manager, id, Direction.Outgoing));
-                    PeerIO.EnqueueReceiveMessage (id.Connection, id.Decryptor, Manager.DownloadLimiter, id.Monitor, id.TorrentManager, id.ConnectionManager.messageReceivedCallback, id);
-                }
+                        Uri uri = new Uri(s);
+                        Peer peer = new Peer(peerId, uri);
+                        PeerId id = new PeerId(peer, manager);
+                        HttpConnection connection = new HttpConnection(new Uri(s));
+                        connection.Manager = this.manager;
+                        peer.IsSeeder = true;
+                        id.BitField.SetAll(true);
+                        id.Encryptor = new PlainTextEncryption();
+                        id.Decryptor = new PlainTextEncryption();
+                        id.IsChoking = false;
+                        id.AmInterested = !manager.Complete;
+                        id.Connection = connection;
+                        id.ClientApp = new Software(id.PeerID);
+                        manager.Peers.ConnectedPeers.Add(id);
+                        manager.RaisePeerConnected(new PeerConnectionEventArgs(manager, id, Direction.Outgoing));
+                        PeerIO.EnqueueReceiveMessage(id.Connection, id.Decryptor, Manager.DownloadLimiter, id.Monitor, id.TorrentManager, id.ConnectionManager.messageReceivedCallback, id);
+                    }
+                    catch (UriFormatException)
+                    {
+                        Logger.Log(null, "Invalid web seed uri '{0}'", s);
+                    }
 
                 // FIXME: In future, don't clear out this list. It may be useful to keep the list of HTTP seeds
                 // Add a boolean or something so that we don't add them twice.
