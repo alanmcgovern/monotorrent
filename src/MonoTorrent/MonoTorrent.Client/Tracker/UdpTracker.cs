@@ -328,6 +328,8 @@ namespace MonoTorrent.Client.Tracker
 
        private void SendRequest(UdpTrackerAsyncState requestState)
        {
+            Logger.Log(null, "Sending request to udp tracker {0}", Uri);
+
            //TODO BeginSend
            byte[] buffer = requestState.Message.Encode();
             var sent = tracker.Send(buffer, buffer.Length);
@@ -343,6 +345,7 @@ namespace MonoTorrent.Client.Tracker
                    timeout++;
 				   try
 				   {
+                        Logger.Log(null, "Repeating udp tracker request {0}", Uri);
 					   tracker.Send(buffer, buffer.Length);
 				   }
 				   catch (Exception ex)
@@ -355,6 +358,7 @@ namespace MonoTorrent.Client.Tracker
                else
                {
                    timeout = 0;
+                    Logger.Log(null, "Tracker did not respond to the connect requests {0}", Uri);
                    requestState.Complete(new Exception("Tracker did not respond to the connect requests"));
                    return false;
                }
