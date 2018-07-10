@@ -400,7 +400,7 @@ namespace MonoTorrent.Client
             Check.BaseDirectory(baseDirectory);
 
             this.torrent = torrent;
-            this.infohash = torrent.infoHash;
+            this.infohash = torrent.InfoHash;
             this.settings = settings;
 
             Initialise(savePath, baseDirectory, torrent.AnnounceUrls);
