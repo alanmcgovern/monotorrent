@@ -472,7 +472,8 @@ namespace MonoTorrent.Client.Connections
         void BeginGetResponse(WebRequest request, AsyncCallback callback, object state)
         {
             IAsyncResult result = request.BeginGetResponse(callback, state);
-            ClientEngine.MainLoop.QueueTimeout(ConnectionTimeout, delegate {
+            ClientEngine.MainLoop.QueueTimeout(ConnectionTimeout, delegate
+            {
                 if (!result.IsCompleted)
                     request.Abort();
                 return false;
