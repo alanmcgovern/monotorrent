@@ -47,7 +47,7 @@ namespace MonoTorrent.Dht.Messages
 
         public static int RegisteredMessages
         {
-            get { return messages.Count; }
+            get { lock (messages) return messages.Count; }
         }
 
         static MessageFactory()
@@ -63,17 +63,20 @@ namespace MonoTorrent.Dht.Messages
 
         internal static bool IsRegistered(BEncodedValue transactionId)
         {
-            return messages.ContainsKey(transactionId);
+            lock (messages)
+                return messages.ContainsKey(transactionId);
         }
 
         public static void RegisterSend(QueryMessage message)
         {
-            messages.Add(message.TransactionId, message);
+            lock (messages)
+                messages.Add(message.TransactionId, message);
         }
 
         public static bool UnregisterSend(QueryMessage message)
         {
-            return messages.Remove(message.TransactionId);
+            lock (messages)
+                return messages.Remove(message.TransactionId);
         }
 
         public static Message DecodeMessage(BEncodedDictionary dictionary)
@@ -110,9 +113,15 @@ namespace MonoTorrent.Dht.Messages
             {
                 QueryMessage query;
                 BEncodedString key = (BEncodedString)dictionary[TransactionIdKey];
-                if (messages.TryGetValue(key, out query))
+                bool found = false;
+                lock (messages)
+                    if (messages.TryGetValue(key, out query))
+                    {
+                        messages.Remove(key);
+                        found = true;
+                    }
+                if (found)
                 {
-                    messages.Remove(key);
                     try
                     {
                         message = query.ResponseCreator(dictionary, query);
