@@ -32,7 +32,7 @@ namespace MonoTorrent.Client
             }
 		}
 
-		public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+        public override void HandlePeerConnected(PeerId id, Direction direction)
 		{
 			id.CloseConnection();
 		}
