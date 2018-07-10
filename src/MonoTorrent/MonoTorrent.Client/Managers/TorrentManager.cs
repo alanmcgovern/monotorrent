@@ -171,6 +171,7 @@ namespace MonoTorrent.Client
                 if (oldMode != null)
                     RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(this, oldMode.State, mode.State));
                 mode.Tick(0);
+                Logger.Log(null, "Torrent {0} is in {1}", HasMetadata ? Torrent.Name : InfoHash.ToString(), mode.GetType().Name);
 			}
         }
 
