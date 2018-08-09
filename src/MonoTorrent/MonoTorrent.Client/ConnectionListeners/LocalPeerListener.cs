@@ -50,6 +50,11 @@ namespace MonoTorrent.Client
         private ClientEngine engine;
         private UdpClient udpClient;
 
+        public override ProtocolType Protocol
+        {
+            get { return ProtocolType.Udp; }
+        }
+
         public LocalPeerListener(ClientEngine engine)
             : base(new IPEndPoint(IPAddress.Any, 6771))
         {

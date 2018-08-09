@@ -39,12 +39,18 @@ namespace MonoTorrent.Client
     {
         public event EventHandler<EventArgs> StatusChanged;
 
+        private INatManager natManager = new MonoTorrent.Nat.NatManager();
         private IPEndPoint endpoint;
         private ListenerStatus status;
 
         public IPEndPoint Endpoint
         {
             get { return endpoint; }
+        }
+
+        public virtual ProtocolType Protocol
+        {
+            get { return ProtocolType.Unspecified; }
         }
 
         public ListenerStatus Status
@@ -55,6 +61,9 @@ namespace MonoTorrent.Client
 
         protected Listener(IPEndPoint endpoint)
         {
+#if !DISABLE_NAT
+            this.natManager = new MonoTorrent.Nat.NatManager();
+#endif
             this.status = ListenerStatus.NotListening;
             this.endpoint = endpoint;
         }
@@ -71,6 +80,14 @@ namespace MonoTorrent.Client
 
         protected virtual void RaiseStatusChanged(ListenerStatus status)
         {
+            if(this.natManager != null)
+            {
+                if(status == ListenerStatus.Listening)
+                    this.natManager.Open(this.Protocol, this.Endpoint.Port);
+                else
+                    this.natManager.Close();
+            }
+
             this.status = status;
             if (StatusChanged != null)
                 Toolbox.RaiseAsyncEvent<EventArgs>(StatusChanged, this, EventArgs.Empty);

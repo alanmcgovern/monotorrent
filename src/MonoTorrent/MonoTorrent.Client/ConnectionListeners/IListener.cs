@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Net.Sockets;
 using System.Net;
 using MonoTorrent.Common;
 
@@ -39,6 +40,7 @@ namespace MonoTorrent.Client
         event EventHandler<EventArgs> StatusChanged;
 
         IPEndPoint Endpoint { get; }
+        ProtocolType Protocol { get; }
         ListenerStatus Status { get; }
 
         void ChangeEndpoint(IPEndPoint port);

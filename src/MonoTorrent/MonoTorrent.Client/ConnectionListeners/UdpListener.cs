@@ -44,6 +44,11 @@ namespace MonoTorrent
 
         private UdpClient client;
 
+        public override ProtocolType Protocol
+        {
+            get { return ProtocolType.Udp; }
+        }
+
         protected UdpListener(IPEndPoint endpoint)
             :base(endpoint)
         {

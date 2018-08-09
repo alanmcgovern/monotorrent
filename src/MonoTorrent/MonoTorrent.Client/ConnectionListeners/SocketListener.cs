@@ -45,6 +45,11 @@ namespace MonoTorrent.Client
         private AsyncCallback endAcceptCallback;
         private Socket listener;
 
+        public override ProtocolType Protocol
+        {
+            get { return ProtocolType.Tcp; }
+        }
+
         public SocketListener(IPEndPoint endpoint)
             : base(endpoint)
         {
