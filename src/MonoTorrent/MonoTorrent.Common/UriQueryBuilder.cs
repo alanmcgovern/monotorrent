@@ -34,10 +34,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MonoTorrent.Common {
-
-    public class UriQueryBuilder {
-
+namespace MonoTorrent.Common
+{
+    public class UriQueryBuilder
+    {
         UriBuilder builder;
         Dictionary<string, string> queryParams;
 
