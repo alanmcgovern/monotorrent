@@ -31,11 +31,12 @@ using System;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Common;
 
-namespace MonoTorrent {
-
-    public class TorrentEditor : EditableTorrent {
-
-        public new bool CanEditSecureMetadata {
+namespace MonoTorrent
+{
+    public class TorrentEditor : EditableTorrent
+    {
+        public new bool CanEditSecureMetadata
+        {
             get { return base.CanEditSecureMetadata; }
             set { base.CanEditSecureMetadata = value; }
         }
