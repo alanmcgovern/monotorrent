@@ -244,11 +244,6 @@ namespace MonoTorrent.Dht
             return details.Encode();
         }
 
-        public int CountNodes()
-        {
-            return this.table.CountNodes();
-        }
-
         public void Start()
         {
             Start(null);

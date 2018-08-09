@@ -37,7 +37,6 @@ namespace MonoTorrent
         bool Disposed { get; }
         event EventHandler<PeersFoundEventArgs> PeersFound;
         byte[] SaveNodes();
-        int CountNodes();
         void Add(BEncodedList nodes);
         void Announce(InfoHash infohash, int port);
         void GetPeers(InfoHash infohash);
