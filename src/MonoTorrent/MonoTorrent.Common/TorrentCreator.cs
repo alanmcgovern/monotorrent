@@ -39,10 +39,10 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.PieceWriters;
 using System.Security.Cryptography;
 
-namespace MonoTorrent.Common {
-
-    public class TorrentCreator : EditableTorrent {
-
+namespace MonoTorrent.Common
+{
+    public class TorrentCreator : EditableTorrent
+    {
         public static int RecommendedPieceSize (long totalSize)
         {
             // Check all piece sizes that are multiples of 32kB and
