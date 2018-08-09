@@ -169,7 +169,7 @@ namespace MonoTorrent.Tracker
             minAnnounceInterval = TimeSpan.FromMinutes(10);
             timeoutInterval = TimeSpan.FromMinutes(50);
 
-            Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+            MonoTorrent.Client.ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
                 Requests.Tick();
                 return !disposed;
             });
