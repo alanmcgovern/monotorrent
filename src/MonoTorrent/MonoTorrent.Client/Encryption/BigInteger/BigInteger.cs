@@ -1209,39 +1209,36 @@ namespace Mono.Math
             /// d [dOffset:dOffset+xLen+yLen].
             /// </summary>
             /// <remarks>
-            /// This code is unsafe! It is the caller's responsibility to make
+            /// It is the caller's responsibility to make
             /// sure that it is safe to access x [xOffset:xOffset+xLen],
             /// y [yOffset:yOffset+yLen], and d [dOffset:dOffset+xLen+yLen].
             /// </remarks>
-            public static unsafe void Multiply(uint[] x, uint xOffset, uint xLen, uint[] y, uint yOffset, uint yLen, uint[] d, uint dOffset)
+            public static void Multiply(uint[] x, uint xOffset, uint xLen, uint[] y, uint yOffset, uint yLen, uint[] d, uint dOffset)
             {
-                fixed (uint* xx = x, yy = y, dd = d)
+                uint xP = xOffset,
+                    xE = xP + xLen,
+                    yB = yOffset,
+                    yE = yB + yLen,
+                    dB = dOffset;
+
+                for (; xP < xE; xP++, dB++)
                 {
-                    uint* xP = xx + xOffset,
-                        xE = xP + xLen,
-                        yB = yy + yOffset,
-                        yE = yB + yLen,
-                        dB = dd + dOffset;
 
-                    for (; xP < xE; xP++, dB++)
+                    if (x[xP] == 0) continue;
+
+                    ulong mcarry = 0;
+
+                    uint dP = dB;
+                    for (uint yP = yB; yP < yE; yP++, dP++)
                     {
+                        mcarry += ((ulong)x[xP] * (ulong)y[yP]) + (ulong)d[dP];
 
-                        if (*xP == 0) continue;
-
-                        ulong mcarry = 0;
-
-                        uint* dP = dB;
-                        for (uint* yP = yB; yP < yE; yP++, dP++)
-                        {
-                            mcarry += ((ulong)*xP * (ulong)*yP) + (ulong)*dP;
-
-                            *dP = (uint)mcarry;
-                            mcarry >>= 32;
-                        }
-
-                        if (mcarry != 0)
-                            *dP = (uint)mcarry;
+                        d[dP] = (uint)mcarry;
+                        mcarry >>= 32;
                     }
+
+                    if (mcarry != 0)
+                        d[dP] = (uint)mcarry;
                 }
             }
 
@@ -1251,39 +1248,36 @@ namespace Mono.Math
             /// d [dOffset:dOffset+mod].
             /// </summary>
             /// <remarks>
-            /// This code is unsafe! It is the caller's responsibility to make
+            /// It is the caller's responsibility to make
             /// sure that it is safe to access x [xOffset:xOffset+xLen],
             /// y [yOffset:yOffset+yLen], and d [dOffset:dOffset+mod].
             /// </remarks>
-            public static unsafe void MultiplyMod2p32pmod(uint[] x, int xOffset, int xLen, uint[] y, int yOffest, int yLen, uint[] d, int dOffset, int mod)
+            public static void MultiplyMod2p32pmod(uint[] x, int xOffset, int xLen, uint[] y, int yOffest, int yLen, uint[] d, int dOffset, int mod)
             {
-                fixed (uint* xx = x, yy = y, dd = d)
+                int xP = xOffset,
+                    xE = xP + xLen,
+                    yB = yOffest,
+                    yE = yB + yLen,
+                    dB = dOffset,
+                    dE = dB + mod;
+
+                for (; xP < xE; xP++, dB++)
                 {
-                    uint* xP = xx + xOffset,
-                        xE = xP + xLen,
-                        yB = yy + yOffest,
-                        yE = yB + yLen,
-                        dB = dd + dOffset,
-                        dE = dB + mod;
 
-                    for (; xP < xE; xP++, dB++)
+                    if (x[xP] == 0) continue;
+
+                    ulong mcarry = 0;
+                    int dP = dB;
+                    for (int yP = yB; yP < yE && dP < dE; yP++, dP++)
                     {
+                        mcarry += ((ulong)x[xP] * (ulong)y[yP]) + (ulong)d[dP];
 
-                        if (*xP == 0) continue;
-
-                        ulong mcarry = 0;
-                        uint* dP = dB;
-                        for (uint* yP = yB; yP < yE && dP < dE; yP++, dP++)
-                        {
-                            mcarry += ((ulong)*xP * (ulong)*yP) + (ulong)*dP;
-
-                            *dP = (uint)mcarry;
-                            mcarry >>= 32;
-                        }
-
-                        if (mcarry != 0 && dP < dE)
-                            *dP = (uint)mcarry;
+                        d[dP] = (uint)mcarry;
+                        mcarry >>= 32;
                     }
+
+                    if (mcarry != 0 && dP < dE)
+                        d[dP] = (uint)mcarry;
                 }
             }
 
