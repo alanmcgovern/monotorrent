@@ -43,11 +43,32 @@ namespace MonoTorrent.Client.PieceWriters
 
         internal void Move(string newRoot, IList<TorrentFile> files, bool ignoreExisting)
         {
+            if (files.Count == 0) return;
+
+            var oldRoot = Path.GetDirectoryName(files[0].FullPath);
+
+            if (Directory.Exists(newRoot) == false)
+            {
+                Directory.CreateDirectory(newRoot);
+            }
+
             foreach (TorrentFile file in files) {
                 string newPath = Path.Combine (newRoot, file.Path);
+                if (File.Exists(file.FullPath) == false)
+                {
+                    file.FullPath = newPath;
+                    continue;
+                }
+
+                if (Directory.Exists(Path.GetDirectoryName(newPath)) == false)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(newPath));
+                }
                 Move(file.FullPath, newPath, ignoreExisting);
                 file.FullPath = newPath;
             }
+
+            Directory.Delete(oldRoot, true);
         }
 
         internal bool ReadBlock(IList<TorrentFile> files, int piece, int blockIndex, byte[] buffer, int bufferOffset, int pieceLength, long torrentSize)
