@@ -36,8 +36,10 @@ namespace MonoTorrent.Client
 {
     class NullDhtEngine : IDhtEngine
     {
+        #pragma warning disable 0067
         public event EventHandler<PeersFoundEventArgs> PeersFound;
         public event EventHandler StateChanged;
+        #pragma warning restore 0067
 
         public bool Disposed
         {

@@ -295,7 +295,7 @@ namespace MonoTorrent.Client
                         message.Handle(id);
                     }
                 }
-            } catch (Exception ex) {
+            } catch {
                 CleanupSocket (id, "Could not receive a message");
             }
         }
