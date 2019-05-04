@@ -3,25 +3,23 @@
 PRE-REQUISITES
 ------------------------------------------------------------------------------------------------------------
 
-To run: MS.NET 2.0 or Mono 1.1.16.1+
-To build: MonoDevelop, Visual Studio, SharpDevelop or the standard *nix toolchain
-
+To run: A version of the .NET framework which supports the .NET 4.7.2 profile
+To build: Any IDE which can compile C# code.
 
 
 BUILDING MONOTORRENT:
 ------------------------------------------------------------------------------------------------------------
 
-MakeFiles:
-To build using the makefiles, execute the following commands:
-$ ./autogen.sh
+MSBuild:
+To build using MSBuild, execute the following command:
+$ msbuild /restore
+
+Makefiles:
+To build using the Makefile, execute the following command:
 $ make
-$ make install
 
-This will only build MonoTorrent.dll. The other sub-projects are not built via this method.
-
-Project Files:
-You can open the MonoTorrent.sln file in MonoDevelop, SharpDevelop or Visual Studio. This is the preferred way
-to build MonoTorrent and all the sub-projects.
+Using an IDE:
+You can open src\MonoTorrent.sln in any IDE.
 
 
 
