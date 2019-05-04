@@ -212,7 +212,7 @@ namespace MonoTorrent.Dht
 
         internal BEncodedString BencodedString()
         {
-            return new BEncodedString(value.GetBytes());
+            return new BEncodedString((byte[])bytes.Clone ());
         }
 
         internal NodeId Pow(uint p)

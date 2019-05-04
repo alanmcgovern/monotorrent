@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using MonoTorrent.BEncoding;
 using NUnit.Framework;
 
 namespace MonoTorrent.Dht
@@ -74,6 +75,19 @@ namespace MonoTorrent.Dht
             BigInteger b = new BigInteger(new byte[0]);
 
             Assert.AreNotEqual(a, b, "#1");
+        }
+
+        [Test]
+        public void GetBytesTest ()
+        {
+            var str = new NodeId (new BEncodedString (new byte [20])).BencodedString ();
+            Assert.AreEqual (20, str.TextBytes.Length);
+
+            str = new NodeId (new byte [20]).BencodedString ();
+            Assert.AreEqual (20, str.TextBytes.Length);
+
+            str = new NodeId (new InfoHash (new byte [20])).BencodedString ();
+            Assert.AreEqual (20, str.TextBytes.Length);
         }
     }
 }
