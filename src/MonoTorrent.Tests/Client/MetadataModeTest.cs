@@ -15,14 +15,8 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class MetadataModeTests
     {
-        //static void Main(string[] args)
-        //{
-        //    MetadataModeTests t = new MetadataModeTests();
-        //   t.SendMetadata_ToFolder();
-        //}
-
-        IEncryption decryptor = new PlainTextEncryption();
-        IEncryption encryptor = new PlainTextEncryption();
+        IEncryption decryptor = PlainTextEncryption.Instance;
+        IEncryption encryptor = PlainTextEncryption.Instance;
 
         private ConnectionPair pair;
         private TestRig rig;
@@ -32,7 +26,7 @@ namespace MonoTorrent.Client
             pair = new ConnectionPair(55432);
             rig = TestRig.CreateSingleFile(1024 * 1024 * 1024, 32768, metadataMode);
             rig.MetadataPath = metadataPath;
-            rig.RecreateManager();
+            rig.RecreateManager().Wait();
 
             rig.Manager.HashChecked = true;
             rig.Manager.Start();
@@ -41,9 +35,9 @@ namespace MonoTorrent.Client
             var connection = pair.Incoming;
             PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
             id.Connection = connection;
-            byte[] data;
 
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
+
+            byte[] data = EncryptorFactory.CheckEncryptionAsync(id, 68, new InfoHash[] { id.TorrentManager.InfoHash }).Result;
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
         }
@@ -97,15 +91,16 @@ namespace MonoTorrent.Client
         [Test]
         public void SendMetadata_ToFile()
         {
-            Setup(true, "file.torrent");
-            SendMetadataCore("file.torrent");
+            var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
+            Setup(true, torrent);
+            SendMetadataCore(torrent);
         }
 
         [Test]
         public void SendMetadata_ToFolder()
         {
-            Setup(true, Environment.CurrentDirectory);
-            SendMetadataCore(Path.Combine(Environment.CurrentDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
+            Setup(true, AppDomain.CurrentDomain.BaseDirectory);
+            SendMetadataCore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
         }
 
         public void SendMetadataCore (string expectedPath)

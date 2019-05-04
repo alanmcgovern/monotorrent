@@ -11,18 +11,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class HttpTrackerTests
     {
-        //static void Main()
-        //{
-        //    HttpTrackerTests t = new HttpTrackerTests();
-        //    t.FixtureSetup();
-        //    t.KeyTest();
-        //}
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         string prefix ="http://localhost:47124/announce/";
         List<string> keys;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             keys = new List<string>();
@@ -43,7 +37,7 @@ namespace MonoTorrent.Client
             keys.Clear();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();
@@ -90,7 +84,7 @@ namespace MonoTorrent.Client
             Wait(id.WaitHandle);
             Assert.IsNotNull(p, "#1");
             Assert.IsTrue(p.Successful);
-            Assert.AreEqual(keys[0], t.Key, "#2");
+            Assert.IsTrue(StringComparer.OrdinalIgnoreCase.Equals (keys[0], t.Key), "#2");
         }
 
         [Test]

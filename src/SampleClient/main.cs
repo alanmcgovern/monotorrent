@@ -56,8 +56,6 @@ namespace MonoTorrent
             Console.Write(Environment.NewLine + "Choose a listen port: ");
             while (!Int32.TryParse(Console.ReadLine(), out port)) { }
 
-
-
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
@@ -95,7 +93,14 @@ namespace MonoTorrent
             engine.RegisterDht(dht);
             dhtListner.Start();
             engine.DhtEngine.Start(nodes);
-            
+
+            while (false) {
+                dht.PeersFound += (o, e) => Console.WriteLine(e.Peers.Count);
+                Console.ReadLine ();
+                var torrent111 = Torrent.Load(@"C:\Users\Alan\Desktop\monotorrent\build\Samples\Debug\Torrents\a.torrent");
+                dht.GetPeers (torrent111.InfoHash);
+            }
+
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
@@ -283,12 +288,6 @@ namespace MonoTorrent
 #endif
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
-
-			foreach (TraceListener lst in Debug.Listeners)
-			{
-				lst.Flush();
-				lst.Close();
-			}
 
             System.Threading.Thread.Sleep(2000);
 		}

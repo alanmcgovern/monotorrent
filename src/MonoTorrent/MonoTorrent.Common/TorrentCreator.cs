@@ -33,6 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -84,7 +85,6 @@ namespace MonoTorrent.Common
         public event EventHandler<TorrentCreatorEventArgs> Hashed;
 
 
-        TorrentCreatorAsyncResult asyncResult;
         List<string> getrightHttpSeeds;
         bool storeMD5;
 
@@ -106,12 +106,10 @@ namespace MonoTorrent.Common
             CreatedBy = string.Format ("MonoTorrent {0}", VersionInfo.Version);
         }
 
-
+        CancellationTokenSource cts;
         public void AbortCreation ()
         {
-            TorrentCreatorAsyncResult r = asyncResult;
-            if (r != null)
-                r.Aborted = true;
+            cts?.Cancel ();
         }
 
         void AddCommonStuff (BEncodedDictionary torrent)
@@ -129,26 +127,10 @@ namespace MonoTorrent.Common
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
-        public IAsyncResult BeginCreate (ITorrentFileSource fileSource, AsyncCallback callback, object asyncState)
+        async Task<BEncodedDictionary> CreateAsync (ITorrentFileSource fileSource)
         {
-            return BeginCreate(delegate { return Create(fileSource); }, callback, asyncState);
-        }
-
-        IAsyncResult BeginCreate (MainLoopJob task, AsyncCallback callback, object asyncState)
-        {
-            if (asyncResult != null)
-                throw new InvalidOperationException ("Two asynchronous operations cannot be executed simultaenously");
-
-            asyncResult = new TorrentCreatorAsyncResult (callback, asyncState);
-            ThreadPool.QueueUserWorkItem (delegate {
-                try {
-                    asyncResult.Dictionary = (BEncodedDictionary) task ();
-                } catch (Exception ex) {
-                    asyncResult.SavedException = ex;
-                }
-                asyncResult.Complete ();
-            });
-            return asyncResult;
+            cts = new CancellationTokenSource ();
+            return await Task.Run (() => Create (fileSource) );
         }
 
         byte [] CalcPiecesHash (List<TorrentFile> files, PieceWriter writer)
@@ -183,6 +165,7 @@ namespace MonoTorrent.Common
 
                         int toRead = (int) Math.Min (buffer.Length - bufferRead, file.Length - fileRead);
                         int read = writer.Read(file, fileRead, buffer, bufferRead, toRead);
+                        cts?.Cancel ();
 
                         if (md5Hasher != null)
                             md5Hasher.TransformBlock (buffer, bufferRead, read, buffer, bufferRead);
@@ -292,42 +275,6 @@ namespace MonoTorrent.Common
             infoDict.Add ("length", new BEncodedNumber (mappings [0].Length));
             if (mappings [0].MD5 != null)
                 infoDict ["md5sum"] = (BEncodedString) mappings [0].MD5;
-        }
-
-        public BEncodedDictionary EndCreate (IAsyncResult result)
-        {
-            Check.Result (result);
-
-            if (result != this.asyncResult)
-                throw new ArgumentException ("The supplied async result does not correspond to currently active async result");
-
-            try {
-                if (!result.IsCompleted)
-                    result.AsyncWaitHandle.WaitOne ();
-
-                if (this.asyncResult.SavedException != null)
-                    throw this.asyncResult.SavedException;
-
-                return this.asyncResult.Aborted ? null : this.asyncResult.Dictionary;
-            } finally {
-                this.asyncResult = null;
-            }
-        }
-
-        public void EndCreate (IAsyncResult result, string path)
-        {
-            Check.PathNotEmpty(path);
-
-            var dict = EndCreate(result);
-            File.WriteAllBytes(path, dict.Encode());
-        }
-
-        public void EndCreate(IAsyncResult result, Stream stream)
-        {
-            Check.Stream(stream);
-
-            var buffer = EndCreate (result).Encode ();
-            stream.Write (buffer, 0, buffer.Length);
         }
 
         void RaiseHashed (TorrentCreatorEventArgs e)

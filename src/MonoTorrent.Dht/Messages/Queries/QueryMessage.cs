@@ -29,29 +29,24 @@
 
 
 using System;
-using System.Collections.Generic;
 
 using MonoTorrent.BEncoding;
-using System.Net;
 
 namespace MonoTorrent.Dht.Messages
 {
     internal abstract class QueryMessage : Message
     {
-        private static readonly BEncodedString QueryArgumentsKey = "a";
-        private static readonly BEncodedString QueryNameKey = "q";
+        static readonly BEncodedString QueryArgumentsKey = "a";
+        static readonly BEncodedString QueryNameKey = "q";
         internal static readonly BEncodedString QueryType = "q";
-        private ResponseCreator responseCreator;
 
         internal override NodeId Id
         {
             get { return new NodeId((BEncodedString)Parameters[IdKey]); }
         }
 
-        internal ResponseCreator ResponseCreator
-        {
-            get { return responseCreator; }
-            private set { responseCreator = value; }
+        internal Func<BEncodedDictionary, QueryMessage, ResponseMessage> ResponseCreator {
+            get; private set;
         }
 
         protected BEncodedDictionary Parameters
@@ -59,13 +54,13 @@ namespace MonoTorrent.Dht.Messages
             get { return (BEncodedDictionary)properties[QueryArgumentsKey]; }
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, ResponseCreator responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
             : this(id, queryName, new BEncodedDictionary(), responseCreator)
         {
 
         }
 
-        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, ResponseCreator responseCreator)
+        protected QueryMessage(NodeId id, BEncodedString queryName, BEncodedDictionary queryArguments, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
             : base(QueryType)
         {
             properties.Add(QueryNameKey, queryName);
@@ -75,7 +70,7 @@ namespace MonoTorrent.Dht.Messages
             ResponseCreator = responseCreator;
         }
 
-        protected QueryMessage(BEncodedDictionary d, ResponseCreator responseCreator)
+        protected QueryMessage(BEncodedDictionary d, Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator)
             : base(d)
         {
             ResponseCreator = responseCreator;

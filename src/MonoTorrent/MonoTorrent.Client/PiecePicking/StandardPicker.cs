@@ -72,13 +72,13 @@ namespace MonoTorrent.Client
                 return b.StartOffset == startOffset &&
                        b.RequestLength == length &&
                        b.PieceIndex == piece &&
-                       peer.Equals(b.RequestedOff);
+                       peer == b.RequestedOff;
             });
         }
 
         public override void CancelRequests(PeerId peer)
         {
-            CancelWhere(delegate(Block b) { return peer.Equals(b.RequestedOff); });
+            CancelWhere(delegate(Block b) { return peer == b.RequestedOff; });
         }
 
         public override void CancelTimedOutRequests()
@@ -89,14 +89,15 @@ namespace MonoTorrent.Client
         void CancelWhere(Predicate<Block> predicate)
         {
             bool cancelled = false;
-            requests.ForEach(delegate(Piece p) {
-                for (int i = 0; i < p.Blocks.Length; i++) {
-                    if (predicate(p.Blocks[i]) && !p.Blocks[i].Received) {
+            for (int p = 0; p  < requests.Count; p++) {
+                var blocks = requests [p].Blocks;
+                for (int i = 0; i < blocks.Length; i++) {
+                    if (predicate(blocks[i]) && !blocks[i].Received) {
                         cancelled = true;
-                        p.Blocks[i].CancelRequest();
+                        blocks[i].CancelRequest();
                     }
                 }
-            });
+            }
 
             if (cancelled)
                 requests.RemoveAll(delegate(Piece p) { return p.NoBlocksRequested; });
@@ -223,7 +224,6 @@ namespace MonoTorrent.Client
                     if (p.Blocks[i].Requested || p.Blocks[i].Received)
                         continue;
 
-                    p.Blocks[i].Requested = true;
                     return p.Blocks[i].CreateRequest(id);
                 }
             }
@@ -251,10 +251,7 @@ namespace MonoTorrent.Client
 
                 for (int i = 0; i < p.Blocks.Length; i++)
                     if (!p.Blocks[i].Requested && !p.Blocks[i].Received)
-                    {
-                        p.Blocks[i].Requested = true;
                         return p.Blocks[i].CreateRequest(id);
-                    }
             }
 
             return null;
@@ -275,7 +272,6 @@ namespace MonoTorrent.Client
                 pieces.RemoveAt(i);
                 Piece p = new Piece(index, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
                 this.requests.Add(p);
-                p.Blocks[0].Requested = true;
                 return p.Blocks[0].CreateRequest(id);
             }
 
@@ -283,7 +279,7 @@ namespace MonoTorrent.Client
             return null;
         }
 
-        protected virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
+        public virtual MessageBundle GetStandardRequest(PeerId id, BitField current, List<PeerId> otherPeers, int startIndex, int endIndex, int count)
         {
             int piecesNeeded = (count * Piece.BlockSize) / id.TorrentManager.Torrent.PieceLength;
             if ((count * Piece.BlockSize) % id.TorrentManager.Torrent.PieceLength != 0)
@@ -300,12 +296,8 @@ namespace MonoTorrent.Client
                 // Request the piece
                 Piece p = new Piece(checkIndex + i, id.TorrentManager.Torrent.PieceLength, id.TorrentManager.Torrent.Size);
                 requests.Add(p);
-
                 for (int j = 0; j < p.Blocks.Length && bundle.Messages.Count < count; j++)
-                {
-                    p.Blocks[j].Requested = true;
                     bundle.Messages.Add(p.Blocks[j].CreateRequest(id));
-                }
             }
             return bundle;
         }

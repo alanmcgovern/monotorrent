@@ -98,8 +98,8 @@ namespace MonoTorrent.Client
             set { this.globalMaxUploadSpeed = value; }
         }
         
-        [Obsolete("Use the constructor overload for ClientEngine which takes a port argument." +
-                  "Alternatively just use the ChangeEndpoint method at a later stage")]
+        //[Obsolete("Use the constructor overload for ClientEngine which takes a port argument." +
+        //          "Alternatively just use the ChangeEndpoint method at a later stage")]
         public int ListenPort
         {
             get { return this.listenPort; }

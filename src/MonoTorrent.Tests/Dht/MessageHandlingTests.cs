@@ -14,12 +14,6 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageHandlingTests
     {
-        //static void Main(string[] args)
-        //{
-        //    TaskTests t = new TaskTests();
-        //    t.Setup();
-        //    t.BucketRefreshTest();
-        //}
         BEncodedString transactionId = "cc";
         DhtEngine engine;
         Node node;
@@ -76,17 +70,13 @@ namespace MonoTorrent.Dht
             ping.TransactionId = transactionId;
 
             ManualResetEvent handle = new ManualResetEvent(false);
-            SendQueryTask task = new SendQueryTask(engine, ping, node);
-            task.Completed += delegate {
-                handle.Set();
-            };
-            task.Execute();
+            var sendTask = engine.SendQueryAsync (ping, node);
 
             // Receive response
             PingResponse response = new PingResponse(node.Id, transactionId);
             listener.RaiseMessageReceived(response, node.EndPoint);
 
-            Assert.IsTrue(handle.WaitOne(1000, true), "#0");
+            Assert.IsTrue(sendTask.Wait (1000), "#0");
 
             engine.TimeOut = TimeSpan.FromMilliseconds(75);
             DateTime lastSeen = node.LastSeen;
@@ -95,12 +85,9 @@ namespace MonoTorrent.Dht
             ping = new Ping(node.Id);
             ping.TransactionId = (BEncodedString)"ab";
 
-            task = new SendQueryTask(engine, ping, node, 4);
-            task.Completed += delegate { handle.Set(); };
+            sendTask = engine.SendQueryAsync (ping, node);
 
-            handle.Reset();
-            task.Execute();
-            handle.WaitOne();
+            sendTask.Wait (1000);
 
             Assert.AreEqual(4, node.FailedCount, "#1");
             Assert.AreEqual(NodeState.Bad, node.State, "#2");

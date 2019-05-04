@@ -48,12 +48,12 @@ namespace MonoTorrent.Client
             this.manager = manager;
         }
 
-        public bool TryProcess(int amount)
+        public bool TryProcess(long amount)
         {
             return Unlimited;
         }
 
-        public void UpdateChunks (int maxRate, int actualRate)
+        public void UpdateChunks (long maxRate, long actualRate)
         {
             // This is a simple on/off limiter
         }

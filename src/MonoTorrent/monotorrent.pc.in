@@ -1,7 +1,0 @@
-Name: MonoTorrent
-Description: MonoTorrent
-Version: @monotorrent_version@
-
-Requires: 
-Libraries=@monotorrent_install_dir@/MonoTorrent.dll
-Libs: -r:MonoTorrent.dll

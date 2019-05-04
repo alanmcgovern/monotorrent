@@ -41,8 +41,6 @@ namespace MonoTorrent.Dht
 {
     internal class RoutingTable
     {
-        public event EventHandler<NodeAddedEventArgs> NodeAdded;
-
         private readonly Node localNode;
         private List<Bucket> buckets = new List<Bucket>();
 
@@ -88,23 +86,11 @@ namespace MonoTorrent.Dht
                 return false;
 
             bool added = bucket.Add(node);
-            if (added && raiseNodeAdded)
-            {
-                RaiseNodeAdded(node);
-            }
-
             if (!added && bucket.CanContain(LocalNode))
                 if (Split(bucket))
                     return Add(node, raiseNodeAdded);
 
             return added;
-        }
-
-        private void RaiseNodeAdded(Node node)
-        {
-            EventHandler<NodeAddedEventArgs> h = NodeAdded;
-            if (h != null)
-                h(this, new NodeAddedEventArgs(node));
         }
 
         private void Add(Bucket bucket)

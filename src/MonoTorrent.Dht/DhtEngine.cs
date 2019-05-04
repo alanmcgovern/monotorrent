@@ -157,7 +157,7 @@ namespace MonoTorrent.Dht
             // I don't think it's *bad* that we can run several initialise tasks simultaenously
             // but it might be better to run them sequentially instead. We should also
             // run GetPeers and Announce tasks sequentially.
-            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode (nodes));
+            InitialiseTask task = new InitialiseTask(this, Node.FromCompactNode(nodes));
             task.Execute();
         }
 
@@ -175,8 +175,7 @@ namespace MonoTorrent.Dht
             if (node == null)
                 throw new ArgumentNullException("node");
 
-            SendQueryTask task = new SendQueryTask(this, new Ping(RoutingTable.LocalNode.Id), node);
-            task.Execute();
+            SendQueryAsync(new Ping(RoutingTable.LocalNode.Id), node);
         }
 
         public void Announce(InfoHash infoHash, int port)
@@ -198,7 +197,7 @@ namespace MonoTorrent.Dht
                 return;
 
             // Ensure we don't break any threads actively running right now
-            DhtEngine.MainLoop.QueueWait((MainLoopTask)delegate {
+            DhtEngine.MainLoop.QueueWait((Action)delegate {
                 disposed = true;
             });
         }
@@ -228,7 +227,7 @@ namespace MonoTorrent.Dht
         {
             BEncodedList details = new BEncodedList();
 
-            MainLoop.QueueWait((MainLoopTask)delegate {
+            MainLoop.QueueWait((Action)delegate {
                 foreach (Bucket b in RoutingTable.Buckets)
                 {
                     foreach (Node n in b.Nodes)
@@ -242,6 +241,26 @@ namespace MonoTorrent.Dht
             });
 
             return details.Encode();
+        }
+
+        internal async System.Threading.Tasks.Task<SendQueryEventArgs> SendQueryAsync (QueryMessage query, Node node)
+        {
+            SendQueryEventArgs e = default (SendQueryEventArgs);
+            for (int i = 0; i < 4; i++) {
+                e = await MessageLoop.SendAsync (query, node);
+
+                // If the message timed out and we we haven't already hit the maximum retries
+                // send again. Otherwise we propagate the eventargs through the Complete event.
+                if (e.TimedOut) {
+                    node.FailedCount++;
+                    continue;
+                } else {
+                    node.LastSeen = DateTime.UtcNow;
+                    return e;
+                }
+            }
+
+            return e;
         }
 
         public void Start()

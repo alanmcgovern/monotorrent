@@ -17,24 +17,14 @@ namespace MonoTorrent.Client
     public class TestWebSeed
     {
         Regex rangeMatcher = new Regex(@"(\d{1,10})-(\d{1,10})");
-        //static void Main(string[] args)
-        //{
-        //    TestWebSeed s = new TestWebSeed();
-        //    for (int i = 0; i < 50; i++)
-        //    {
-        //        s.Setup();
-        //        s.SingleFileTorrent();
-        //        s.TearDown();
-        //    }
-        //}
-
+       
         bool partialData;
         public readonly int Count = 5;
         TestRig rig;
         HttpConnection connection;
         HttpListener listener;
         //private RequestMessage m;
-        private string listenerURL = "http://127.0.0.1:120/announce/";
+        public const string ListenerURL = "http://127.0.0.1:51423/announce/";
         int amountSent;
 
         PeerId id;
@@ -46,24 +36,14 @@ namespace MonoTorrent.Client
         {
             requestedUrl.Clear();
             partialData = false;
-            int i;
-            for (i = 0; i < 1000; i++)
-            {
-                try
-                {
-                    listener = new HttpListener();
-                    listener.Prefixes.Add(string.Format(listenerURL, i));
-                    listener.Start();
-                    break;
-                }
-                catch
-                {
 
-                }
-            }
+            listener = new HttpListener();
+            listener.Prefixes.Add(ListenerURL);
+            listener.Start();
+
             listener.BeginGetContext(GotContext, null);
             rig = TestRig.CreateMultiFile();
-            connection = new HttpConnection(new Uri(string.Format(listenerURL, i)));
+            connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
 
             id = new PeerId(new Peer("this is my id", connection.Uri), rig.Manager);
@@ -84,20 +64,24 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        [ExpectedException(typeof(WebException))]
         public void TestPartialData()
         {
-            partialData = true;
-            RecieveFirst();
+            Assert.Throws<WebException> (() =>
+            {
+                partialData = true;
+                RecieveFirst();
+            });
         }
 
         [Test]
-        [ExpectedException(typeof(WebException))]
         public void TestInactiveServer()
         {
-            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
-            listener.Stop();
-            RecieveFirst();
+            Assert.Throws<WebException> (() =>
+            {
+                connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
+                listener.Stop();
+                RecieveFirst();
+            });
         }
 
         [Test]
@@ -201,7 +185,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            Uri baseUri = new Uri(this.listenerURL);
+            Uri baseUri = new Uri(ListenerURL);
             baseUri = new Uri(baseUri, rig.Manager.Torrent.Name + "/");
             if (rig.Manager.Torrent.Files.Length > 1)
             {

@@ -33,6 +33,7 @@ using System.Net.Sockets;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -44,153 +45,97 @@ namespace MonoTorrent.Client.Encryption
         private InfoHash[] possibleSKEYs = null;
         private byte[] VerifyBytes;
 
-        private AsyncCallback gotVerificationCallback;
-        private AsyncCallback gotPadCCallback;
-
         public PeerBEncryption(InfoHash[] possibleSKEYs, EncryptionTypes allowedEncryption)
             : base(allowedEncryption)
         {
             this.possibleSKEYs = possibleSKEYs;
-
-            gotVerificationCallback = new AsyncCallback(gotVerification);
-            gotPadCCallback = new AsyncCallback(gotPadC);
         }
 
-        protected override void doneReceiveY()
+        protected override async Task doneReceiveY()
         {
-            try
-            {
-                base.doneReceiveY(); // 1 A->B: Diffie Hellman Ya, PadA
-
-                byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
-                Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            byte[] req1 = Hash(Encoding.ASCII.GetBytes("req1"), S);
+            await Synchronize(req1, 628); // 3 A->B: HASH('req1', S)
         }
 
 
-        protected override void doneSynchronize()
+        protected override async Task doneSynchronize()
         {
-            try
-            {
-                base.doneSynchronize();
+            await base.doneSynchronize();
 
-                VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
+            VerifyBytes = new byte[20 + VerificationConstant.Length + 4 + 2]; // ... HASH('req2', SKEY) xor HASH('req3', S), ENCRYPT(VC, crypto_provide, len(PadC), PadC, len(IA))
 
-                ReceiveMessage(VerifyBytes, VerifyBytes.Length, gotVerificationCallback);
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            await ReceiveMessage(VerifyBytes, VerifyBytes.Length);
+            await gotVerification();
         }
 
         byte[] b;
-        private void gotVerification(IAsyncResult result)
+        private async Task gotVerification()
         {
-            try
-            {
-                byte[] torrentHash = new byte[20];
+            byte[] torrentHash = new byte[20];
 
-                byte[] myVC = new byte[8];
-                byte[] myCP = new byte[4];
-                byte[] lenPadC = new byte[2];
+            byte[] myVC = new byte[8];
+            byte[] myCP = new byte[4];
+            byte[] lenPadC = new byte[2];
 
-                Array.Copy(VerifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
+            Array.Copy(VerifyBytes, 0, torrentHash, 0, torrentHash.Length); // HASH('req2', SKEY) xor HASH('req3', S)
 
-                if (!MatchSKEY(torrentHash))
-                {
-                    asyncResult.Complete(new EncryptionException("No valid SKey found"));
-                    return;
-                }
+            if (!MatchSKEY(torrentHash))
+                throw new EncryptionException("No valid SKey found");
 
-                CreateCryptors("keyB", "keyA");
+            CreateCryptors("keyB", "keyA");
 
-                DoDecrypt(VerifyBytes, 20, 14); // ENCRYPT(VC, ...
+            DoDecrypt(VerifyBytes, 20, 14); // ENCRYPT(VC, ...
 
-                Array.Copy(VerifyBytes, 20, myVC, 0, myVC.Length);
-                if (!Toolbox.ByteMatch(myVC, VerificationConstant))
-                {
-                    asyncResult.Complete(new EncryptionException("Verification constant was invalid"));
-                    return;
-                }
+            Array.Copy(VerifyBytes, 20, myVC, 0, myVC.Length);
+            if (!Toolbox.ByteMatch(myVC, VerificationConstant))
+                throw new EncryptionException("Verification constant was invalid");
 
-                Array.Copy(VerifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
+            Array.Copy(VerifyBytes, 28, myCP, 0, myCP.Length); // ...crypto_provide ...
                 
-                // We need to select the crypto *after* we send our response, otherwise the wrong
-                // encryption will be used on the response
-                b = myCP;
-                Array.Copy(VerifyBytes, 32, lenPadC, 0, lenPadC.Length); // ... len(padC) ...
-                PadC = new byte[DeLen(lenPadC) + 2];
-                ReceiveMessage(PadC, PadC.Length, gotPadCCallback); // padC            
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            // We need to select the crypto *after* we send our response, otherwise the wrong
+            // encryption will be used on the response
+            b = myCP;
+            Array.Copy(VerifyBytes, 32, lenPadC, 0, lenPadC.Length); // ... len(padC) ...
+            PadC = new byte[DeLen(lenPadC) + 2];
+            await ReceiveMessage(PadC, PadC.Length); // padC            
+            await gotPadC();
         }
 
-        private void gotPadC(IAsyncResult result)
+        private async Task gotPadC()
         {
-            try
-            {
-                DoDecrypt(PadC, 0, PadC.Length);
+            DoDecrypt(PadC, 0, PadC.Length);
 
-                byte[] lenInitialPayload = new byte[2]; // ... len(IA))
-                Array.Copy(PadC, PadC.Length - 2, lenInitialPayload, 0, 2);
+            byte[] lenInitialPayload = new byte[2]; // ... len(IA))
+            Array.Copy(PadC, PadC.Length - 2, lenInitialPayload, 0, 2);
 
-                RemoteInitialPayload = new byte[DeLen(lenInitialPayload)]; // ... ENCRYPT(IA)
-                ReceiveMessage(RemoteInitialPayload, RemoteInitialPayload.Length, gotInitialPayload);
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            RemoteInitialPayload = new byte[DeLen(lenInitialPayload)]; // ... ENCRYPT(IA)
+            await ReceiveMessage(RemoteInitialPayload, RemoteInitialPayload.Length);
+            await gotInitialPayload();
         }
 
-        private void gotInitialPayload(IAsyncResult result)
+        private async Task gotInitialPayload()
         {
-            try
-            {
-                DoDecrypt(RemoteInitialPayload, 0, RemoteInitialPayload.Length); // ... ENCRYPT(IA)
-                StepFour();
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            DoDecrypt(RemoteInitialPayload, 0, RemoteInitialPayload.Length); // ... ENCRYPT(IA)
+            await StepFour();
         }
 
-        private void StepFour()
+        private async Task StepFour()
         {
-            try
-            {
-                byte[] padD = GeneratePad();
-                SelectCrypto(b, false);
-                // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
-                byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
+            byte[] padD = GeneratePad();
+            SelectCrypto(b, false);
+            // 4 B->A: ENCRYPT(VC, crypto_select, len(padD), padD)
+            byte[] buffer = new byte[VerificationConstant.Length + CryptoSelect.Length + 2 + padD.Length];
                 
-                int offset = 0;
-                offset += Message.Write(buffer, offset, VerificationConstant);
-                offset += Message.Write(buffer, offset, CryptoSelect);
-                offset += Message.Write(buffer, offset, Len(padD));
-                offset += Message.Write(buffer, offset, padD);
+            int offset = 0;
+            offset += Message.Write(buffer, offset, VerificationConstant);
+            offset += Message.Write(buffer, offset, CryptoSelect);
+            offset += Message.Write(buffer, offset, Len(padD));
+            offset += Message.Write(buffer, offset, padD);
 
-                DoEncrypt(buffer, 0, buffer.Length);
-                SendMessage(buffer);
+            DoEncrypt(buffer, 0, buffer.Length);
+            await NetworkIO.SendAsync(socket, buffer, 0, buffer.Length, null, null, null).ConfigureAwait (false);
 
-                SelectCrypto(b, true);
-
-                Ready();
-            }
-
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            SelectCrypto(b, true);
         }
 
 
@@ -201,28 +146,22 @@ namespace MonoTorrent.Client.Encryption
         /// <returns>true if a match has been found</returns>
         private bool MatchSKEY(byte[] torrentHash)
         {
-            try
+            for (int i = 0; i < possibleSKEYs.Length; i++)
             {
-                for (int i = 0; i < possibleSKEYs.Length; i++)
-                {
-                    byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
-                    byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
+                byte[] req2 = Hash(Encoding.ASCII.GetBytes("req2"), possibleSKEYs[i].Hash);
+                byte[] req3 = Hash(Encoding.ASCII.GetBytes("req3"), S);
                     
-                    bool match = true;
-                    for (int j = 0; j < req2.Length && match; j++)
-                        match = torrentHash[j] == (req2[j] ^ req3[j]);
+                bool match = true;
+                for (int j = 0; j < req2.Length && match; j++)
+                    match = torrentHash[j] == (req2[j] ^ req3[j]);
 
-                    if (match)
-                    {
-                        SKEY = possibleSKEYs[i];
-                        return true;
-                    }
+                if (match)
+                {
+                    SKEY = possibleSKEYs[i];
+                    return true;
                 }
             }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+
             return false;
         }
     }

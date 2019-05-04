@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Common;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
 	class HashingMode : Mode
 	{
-		internal ManualResetEvent hashingWaitHandle;
+		CancellationTokenSource cts;
 
 		bool autostart;
-		bool filesExist;
 		int index = -1;
-        MainLoopResult pieceCompleteCallback;
 
 		public override TorrentState State
 		{
@@ -24,36 +23,29 @@ namespace MonoTorrent.Client
 			: base(manager)
 		{
 			CanAcceptConnections = false;
-			this.hashingWaitHandle = new ManualResetEvent(false);
+			cts = new CancellationTokenSource();
 			this.autostart = autostart;
-			this.filesExist = Manager.HasMetadata && manager.Engine.DiskManager.CheckAnyFilesExist(Manager);
-            this.pieceCompleteCallback = PieceComplete;
 		}
 
-		private void QueueNextHash()
+		private async void BeginHashing()
 		{
-			if (Manager.Mode != this || index == Manager.Torrent.Pieces.Count)
-				HashingComplete();
-			else
-				Manager.Engine.DiskManager.BeginGetHash(Manager, index, pieceCompleteCallback);
-		}
+			try
+			{
+				for (index = 0; index < Manager.Torrent.Pieces.Count && Manager.Mode == this; index++)
+				{
+					var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager, index);
+					cts.Token.ThrowIfCancellationRequested();
+					Manager.Bitfield[index] = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
+					Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, index, Manager.Bitfield[index]));
+				}
 
-		private void PieceComplete(object hash)
-		{
-			if (Manager.Mode != this)
-			{
-				HashingComplete();
-			}
-			else
-			{
-				Manager.Bitfield[index] = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
-				Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, index, Manager.Bitfield[index]));
-				index++;
-				QueueNextHash();
+				await HashingComplete();
+			} catch (OperationCanceledException) {
+
 			}
 		}
 
-		private void HashingComplete()
+		private async Task HashingComplete()
 		{
 			Manager.HashChecked = index == Manager.Torrent.Pieces.Count;
 
@@ -64,10 +56,10 @@ namespace MonoTorrent.Client
 					Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
 			}
 
-			if (Manager.Engine != null && filesExist)
-				Manager.Engine.DiskManager.CloseFileStreams(Manager);
+			if (Manager.Engine != null && Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
+				await Manager.Engine.DiskManager.CloseFilesAsync (Manager);
 
-			hashingWaitHandle.Set();
+			cts.Token.ThrowIfCancellationRequested();
 
 			if (!Manager.HashChecked)
 				return;
@@ -82,27 +74,43 @@ namespace MonoTorrent.Client
 			}
 		}
 
-		public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+		public override void HandlePeerConnected(PeerId id, Direction direction)
 		{
-			id.CloseConnection();
+			Manager.Engine.ConnectionManager.CleanupSocket (id);
 		}
 
-		public override void Tick(int counter)
+		public override async void Tick(int counter)
 		{
-            if (!filesExist)
-            {
-                Manager.Bitfield.SetAll(false);
-                for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-                    Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
-                index = Manager.Torrent.Pieces.Count;
-                HashingComplete();
-            }
-            else if (index == -1)
+			try
 			{
-				index++;
-				QueueNextHash();
+				if (index == -1)
+				{
+					index++;
+
+					if (Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
+					{
+						BeginHashing();
+					}
+					else
+					{
+						Manager.Bitfield.SetAll(false);
+						for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
+							Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
+						index = Manager.Torrent.Pieces.Count;
+						await HashingComplete();
+					}
+				}
+			} catch (OperationCanceledException)
+			{
+
 			}
-			// Do nothing in hashing mode
+
+			// Do nothing else while in hashing mode.
+		}
+
+		public override void Dispose ()
+		{
+			cts.Cancel ();
 		}
 	}
 }

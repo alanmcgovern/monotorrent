@@ -1,10 +1,10 @@
-//
-// AsyncConnectState.cs
+﻿//
+// UnlimitedRateLimiter.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
 //
-// Copyright (C) 2010 Alan McGovern
+// Copyright (C) 2019 Alan McGovern
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -27,45 +27,23 @@
 //
 
 using System;
-using System.Net;
-
-using MonoTorrent.Client;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Common;
-using System.Threading;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
-    static partial class NetworkIO
+    class UnlimitedRateLimiter : IRateLimiter
     {
-        class AsyncConnectState : ICacheable
+        public static readonly IRateLimiter Instance = new UnlimitedRateLimiter ();
+
+        UnlimitedRateLimiter ()
         {
-            public IConnection Connection {
-                get; private set;
-            }
+        }
 
-            public AsyncIOCallback Callback {
-                get; private set;
-            }
+        public bool Unlimited => true;
 
-            public object State {
-                get; private set;
-            }
+        public bool TryProcess (long amount) => true;
 
-            public void Initialise ()
-            {
-                Initialise (null, null, null);
-            }
-
-            public AsyncConnectState Initialise (IConnection connection, AsyncIOCallback callback, object state)
-            {
-                Connection = connection;
-                Callback = callback;
-                State = state;
-                return this;
-            }
+        public void UpdateChunks (long maxRate, long actualRate)
+        {
         }
     }
 }

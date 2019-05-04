@@ -350,7 +350,6 @@ namespace MonoTorrent.Common
                         break;
 
                     default:
-                        System.Diagnostics.Trace.WriteLine("Unsupported shadows style: " + m.Groups[2].Value);
                         this.client = Client.Unknown;
                         break;
                 }
@@ -440,7 +439,6 @@ namespace MonoTorrent.Common
 
             this.client = Client.Unknown;
             this.shortId = peerId;
-            System.Diagnostics.Trace.WriteLine("Unrecognisable clientid style: " + peerId);
         }
 
 

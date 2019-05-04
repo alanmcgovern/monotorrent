@@ -6,46 +6,20 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
+using System.Linq;
+using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class PiecePickerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    PiecePickerTests t = new PiecePickerTests();
-        //    t.Setup();
-        //    t.RequestBlock();
-        //    t.Setup();
-        //    t.InvalidFastPiece();
-        //    t.Setup();
-        //    t.CancelRequests();
-        //    t.Setup();
-        //    t.RequestFastSeeder();
-        //    t.Setup();
-        //    t.RequestFastNotSeeder();
-        //    t.Setup();
-        //    t.RequestFastHaveEverything();
-        //    t.Setup();
-        //    t.RequestWhenSeeder();
-        //    t.Setup();
-        //    t.NoInterestingPieces();
-        //    t.Setup();
-        //    t.CancelRequests();
-        //    t.Setup();
-        //    t.RejectRequests();
-        //    t.Setup();
-        //    t.PeerChoked();
-        //    t.Setup();
-        //    t.FastPeerChoked();
-        //    t.Setup();
-        //    t.ChokeThenClose();
-        //}
-        protected PeerId peer;
-        protected List<PeerId> peers;
-        protected PiecePicker picker;
-        protected TestRig rig;
+        PeerId peer;
+        List<PeerId> peers;
+        PieceManager manager;
+        PiecePicker picker;
+        StandardPicker standardPicker;
+        TestRig rig;
 
 
         [SetUp]
@@ -54,8 +28,11 @@ namespace MonoTorrent.Client
             // Yes, this is horrible. Deal with it.
             rig = TestRig.CreateMultiFile();
             peers = new List<PeerId>();
-            picker = new IgnoringPicker(rig.Manager.Bitfield, new StandardPicker());
-            picker.Initialise(rig.Manager.Bitfield, rig.Manager.Torrent.Files, new List<Piece>());
+
+            manager = new PieceManager ();
+            manager.ChangePicker ((standardPicker = new StandardPicker()), rig.Manager.Bitfield, rig.Manager.Torrent.Files);
+            this.picker = manager.Picker;
+
             peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
             {
@@ -111,6 +88,27 @@ namespace MonoTorrent.Client
             Assert.IsNull(picker.PickPiece(peers[0], peers));
         }
         [Test]
+        public void ReceiveAllPieces_PieceUnhashed()
+        {
+            peers[0].BitField.SetAll(true);
+            peers[0].IsChoking = false;
+            rig.Manager.Bitfield.SetAll (true).SetFalse (1);
+
+            RequestMessage p;
+            List<RequestMessage> requests = new List<RequestMessage> ();
+            Piece piece = null;
+            while ((p = picker.PickPiece(peers[0], peers)) != null) {
+                piece = manager.PieceDataReceived (peers[0], new PieceMessage (p.PieceIndex, p.StartOffset, p.RequestLength)) ?? piece;
+                if (requests.Any (t => t.PieceIndex == p.PieceIndex && t.RequestLength == p.RequestLength && t.StartOffset == p.StartOffset))
+                    Assert.Fail ("We should not pick the same piece twice");
+                requests.Add (p);
+            }
+            Assert.IsNull (picker.PickPiece(peers[0], peers), "#1");
+            Assert.IsTrue (manager.UnhashedPieces[1], "#2");
+            Assert.IsTrue (piece.AllBlocksReceived, "#3");
+        }
+
+        [Test]
         public void RequestFastHaveEverything()
         {
             peers[0].SupportsFastPeer = true;
@@ -136,6 +134,23 @@ namespace MonoTorrent.Client
             peers[0].IsChoking = false;
 
             Assert.IsNull(picker.PickPiece(peers[0], peers));
+        }
+
+        [Test]
+        public void StandardPicker_PickStandardPiece ()
+        {
+            peers [0].IsChoking = false;
+            peers [0].BitField.SetAll (true);
+
+            rig.Manager.Bitfield [1] = true;
+            var message = standardPicker.PickPiece (peers [0], rig.Manager.Bitfield.Clone ().Not (), peers, 1, 0, 10);
+            Assert.AreEqual (0, (((MessageBundle)message).Messages [0] as RequestMessage).PieceIndex);
+
+            peers [1].IsChoking = false;
+            peers [1].BitField.SetAll (true);
+            peers [1].Peer.HashedPiece (false);
+            message = standardPicker.PickPiece (peers [1], rig.Manager.Bitfield.Clone ().Not (), peers, 1, 0, 10);
+            Assert.AreEqual (2, (((MessageBundle)message).Messages [0] as RequestMessage).PieceIndex);
         }
 
         [Test]

@@ -130,19 +130,23 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenStringDecode()
         {
-            string testString = "50:i'm too short";
-            BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string testString = "50:i'm too short";
+                BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            });
         }
 
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenStringDecode2()
         {
-            string s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
-            BEncodedValue.Decode(Encoding.ASCII.GetBytes(s));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string s = "d8:completei2671e10:incompletei669e8:intervali1836e12min intervali918e5:peers0:e";
+                BEncodedValue.Decode(Encoding.ASCII.GetBytes(s));
+            });
         }
 
         #endregion
@@ -234,11 +238,13 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenNumberDecode()
         {
-            string testString = "i35212";
-            BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string testString = "i35212";
+                BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            });
         }
         #endregion
 
@@ -308,11 +314,13 @@ namespace MonoTorrent.Common
         }
 
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenListDecode()
         {
-            string testString = "l3:3521:a3:ae";
-            BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string testString = "l3:3521:a3:ae";
+                BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            });
         }
         #endregion
 
@@ -387,22 +395,26 @@ namespace MonoTorrent.Common
 
 
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenDictionaryDecode()
         {
-            string testString = "d3:3521:a3:aedddd";
-            BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string testString = "d3:3521:a3:aedddd";
+                BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            });
         }
         #endregion
 
 
         #region General Tests
         [Test]
-        [ExpectedException(typeof(BEncodingException))]
         public void corruptBenDataDecode()
         {
-            string testString = "corruption!";
-            BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            Assert.Throws<BEncodingException> (() =>
+            {
+                string testString = "corruption!";
+                BEncodedValue.Decode(System.Text.Encoding.UTF8.GetBytes(testString));
+            });
         }
         #endregion
     }

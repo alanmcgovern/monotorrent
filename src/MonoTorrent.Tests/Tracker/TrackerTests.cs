@@ -12,19 +12,11 @@ namespace MonoTorrent.Tracker
     [TestFixture]
     public class TrackerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    TrackerTests t = new TrackerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.MultipleAnnounce();
-        //    t.FixtureTeardown();
-        //}
         Uri uri = new Uri("http://127.0.0.1:23456/");
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         MonoTorrent.Tracker.Tracker server;
         //MonoTorrent.Client.Tracker.HTTPTracker tracker;
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             listener = new MonoTorrent.Tracker.Listeners.HttpListener(uri.OriginalString);
@@ -34,7 +26,7 @@ namespace MonoTorrent.Tracker
             listener.Start();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();

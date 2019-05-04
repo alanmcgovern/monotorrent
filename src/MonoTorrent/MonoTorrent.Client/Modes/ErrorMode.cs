@@ -53,8 +53,13 @@ namespace MonoTorrent.Client
 
         void CloseConnections()
         {
-            foreach (PeerId peer in Manager.Peers.ConnectedPeers)
-                peer.CloseConnection();
+            foreach (PeerId id in Manager.Peers.ConnectedPeers)
+                Manager.Engine.ConnectionManager.CleanupSocket (id);
+        }
+
+        public override void HandlePeerConnected (PeerId id, Direction direction)
+        {
+            Manager.Engine.ConnectionManager.CleanupSocket (id);
         }
     }
 }

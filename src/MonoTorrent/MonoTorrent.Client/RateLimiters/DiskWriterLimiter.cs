@@ -36,11 +36,13 @@ namespace MonoTorrent.Client
 {
     class DiskWriterLimiter : IRateLimiter
     {
+        // 4MB / average write size.
+        const int MaxPendingWriteBytes = 4 * 1024 * 1024;
         DiskManager manager;
 
         public bool Unlimited
         {
-            get { return manager.QueuedWrites < 20; }
+            get { return manager.BufferedWriteBytes < MaxPendingWriteBytes; }
         }
 
         public DiskWriterLimiter(DiskManager manager)
@@ -48,12 +50,12 @@ namespace MonoTorrent.Client
             this.manager = manager;
         }
 
-        public bool TryProcess(int amount)
+        public bool TryProcess(long amount)
         {
             return Unlimited;
         }
 
-        public void UpdateChunks (int maxRate, int actualRate)
+        public void UpdateChunks (long maxRate, long actualRate)
         {
             // This is a simple on/off limiter which prevents
             // additional downloading if the diskwriter is backlogged

@@ -42,12 +42,6 @@ namespace MonoTorrent.Common
     [TestFixture]
     public class TorrentTest
     {
-        //static void Main(string[] args)
-        //{
-        //    TorrentTest t = new TorrentTest();
-        //    t.StartUp();
-
-        //}
         private Torrent torrent;
         private long creationTime;
         private System.Security.Cryptography.SHA1 sha = System.Security.Cryptography.SHA1.Create();

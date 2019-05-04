@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {
@@ -74,6 +75,20 @@ namespace MonoTorrent.Client.Connections
         public void EndConnect(IAsyncResult result)
         {
             socket.EndConnect(result);
+        }
+
+        public Task ConnectAsync()
+        {
+            return Task.Factory.FromAsync(BeginConnect(null, null), EndConnect);
+        }
+        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
+        }
+
+        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
         }
 
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)

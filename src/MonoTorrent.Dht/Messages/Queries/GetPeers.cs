@@ -41,7 +41,7 @@ namespace MonoTorrent.Dht.Messages
     {
         private static BEncodedString InfoHashKey = "info_hash";
         private static BEncodedString QueryName = "get_peers";
-        private static ResponseCreator responseCreator = delegate(BEncodedDictionary d, QueryMessage m) { return new GetPeersResponse(d, m); };
+        private static Func<BEncodedDictionary, QueryMessage, ResponseMessage> responseCreator = (d, m) => new GetPeersResponse(d, m);
         
         public NodeId InfoHash
         {

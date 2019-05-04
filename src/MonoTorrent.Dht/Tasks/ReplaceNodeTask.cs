@@ -7,7 +7,7 @@ using MonoTorrent.Client;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class ReplaceNodeTask : Task
+    class ReplaceNodeTask
     {
         private Bucket bucket;
         private DhtEngine engine;
@@ -20,65 +20,40 @@ namespace MonoTorrent.Dht.Tasks
             this.newNode = newNode;
         }
 
-        public override void Execute()
+        public async System.Threading.Tasks.Task Execute ()
         {
-            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
-                if (bucket.Nodes.Count == 0)
-                {
-                    RaiseComplete(new TaskCompleteEventArgs(this));
-                    return;
-                }
-    
-                SendPingToOldest();
-            });
-        }
+            if (bucket.Nodes.Count == 0)
+                return;
 
-        private void SendPingToOldest()
-        {
             bucket.LastChanged = DateTime.UtcNow;
             bucket.SortBySeen();
 
             if ((DateTime.UtcNow - bucket.Nodes[0].LastSeen) < TimeSpan.FromMinutes(3))
             {
-                RaiseComplete(new TaskCompleteEventArgs(this));
+                return;
             }
             else
             {
                 Node oldest = bucket.Nodes[0];
-                SendQueryTask task = new SendQueryTask(engine, new Ping(engine.LocalId), oldest);
-                task.Completed += TaskComplete;
-                task.Execute();
-            }
-        }
+                var args = await engine.SendQueryAsync (new Ping(engine.LocalId), oldest);
 
-        void TaskComplete(object sender, TaskCompleteEventArgs e)
-        {
-            e.Task.Completed -= TaskComplete;
-
-            // I should raise the event with some eventargs saying which node was dead
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
-            
-            if (args.TimedOut)
-            {
-                // If the node didn't respond and it's no longer in our bucket,
-                // we need to send a ping to the oldest node in the bucket
-                // Otherwise if we have a non-responder and it's still there, replace it!
-                int index = bucket.Nodes.IndexOf(((SendQueryTask)e.Task).Target);
-                if (index < 0)
-                {
-                    SendPingToOldest();
-                }
-                else
-                {
-                    bucket.Nodes[index] = newNode;
-                    RaiseComplete(new TaskCompleteEventArgs(this));
+                if (args.TimedOut) {
+                    // If the node didn't respond and it's no longer in our bucket,
+                    // we need to send a ping to the oldest node in the bucket
+                    // Otherwise if we have a non-responder and it's still there, replace it!
+                    int index = bucket.Nodes.IndexOf (oldest);
+                    if (index < 0) {
+                        await Execute ();
+                    } else {
+                        bucket.Nodes [index] = newNode;
+                        return;
+                    }
+                } else {
+                    await Execute ();
                 }
             }
-            else
-            {
-                SendPingToOldest();
-            }
         }
+        
     }
 }
 #endif

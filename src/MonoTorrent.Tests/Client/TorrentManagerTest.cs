@@ -8,6 +8,7 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages;
 using System.Threading;
 using MonoTorrent.BEncoding;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -45,32 +46,32 @@ namespace MonoTorrent.Client
             rig.Listener.Add(rig.Manager, conn.Incoming);
             conn.Outgoing.EndSend(conn.Outgoing.BeginSend(data, 0, data.Length, null, null));
 
-            try { conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null)); }
-            catch {
+            try {
+                var received = conn.Outgoing.EndReceive(conn.Outgoing.BeginReceive(data, 0, data.Length, null, null));
+                Assert.AreEqual (received, 0);
+            } catch {
                 Assert.IsFalse(conn.Incoming.Connected, "#1");
-//                Assert.IsFalse(conn.Outgoing.Connected, "#2");
-                return;
             }
-
-            Assert.Fail ("The outgoing connection should've thrown an exception");
         }
 
         [Test]
-        [ExpectedException (typeof (InvalidOperationException))]
         public void AddPeers_PrivateTorrent ()
         {
-            // You can't manually add peers to private torrents
-            var dict = (BEncodedDictionary) rig.TorrentDict["info"];
-            dict ["private"] = (BEncodedString) "1";
-            Torrent t = Torrent.Load (rig.TorrentDict);
-            TorrentManager manager = new TorrentManager (t, "path", new TorrentSettings ());
-            manager.AddPeers (new Peer ("id", new Uri ("tcp:://whatever.com")));
+            Assert.Throws< InvalidOperationException> (() =>
+            {
+                // You can't manually add peers to private torrents
+                var dict = (BEncodedDictionary)rig.TorrentDict["info"];
+                dict["private"] = (BEncodedString)"1";
+                Torrent t = Torrent.Load(rig.TorrentDict);
+                TorrentManager manager = new TorrentManager(t, "path", new TorrentSettings());
+                manager.AddPeers(new Peer("id", new Uri("tcp:://whatever.com")));
+            });
         }
 
         [Test]
-        public void UnregisteredAnnounce()
+        public async Task UnregisteredAnnounce()
         {
-            rig.Engine.Unregister(rig.Manager);
+            await rig.Engine.Unregister(rig.Manager);
             rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
             Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
             rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
@@ -78,7 +79,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void ReregisterManager()
+        public async Task ReregisterManager()
         {
             ManualResetEvent handle = new ManualResetEvent(false);
             rig.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
@@ -91,10 +92,10 @@ namespace MonoTorrent.Client
             handle.WaitOne();
             handle.Reset();
 
-            rig.Engine.Unregister(rig.Manager);
+            await rig.Engine.Unregister(rig.Manager);
             TestRig rig2 = TestRig.CreateMultiFile (new TestWriter());
-            rig2.Engine.Unregister(rig2.Manager);
-            rig.Engine.Register(rig2.Manager);
+            await rig2.Engine.Unregister(rig2.Manager);
+            await rig.Engine.Register(rig2.Manager);
             rig2.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
             {
                 if (e.OldState == TorrentState.Hashing)
@@ -129,14 +130,14 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void NoAnnouncesTest()
+        public async Task NoAnnouncesTest()
         {
             rig.TorrentDict.Remove("announce-list");
             rig.TorrentDict.Remove("announce");
             Torrent t = Torrent.Load(rig.TorrentDict);
-            rig.Engine.Unregister(rig.Manager);
+            await rig.Engine.Unregister(rig.Manager);
             TorrentManager manager = new TorrentManager(t, "", new TorrentSettings());
-            rig.Engine.Register(manager);
+            await rig.Engine.Register(manager);
 
             AutoResetEvent handle = new AutoResetEvent(false);
             manager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {

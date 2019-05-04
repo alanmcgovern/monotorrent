@@ -1,0 +1,13 @@
+.DS_Store
+/build/
+/src/.vs
+/src/MonoTorrent.Dht/bin/
+/src/MonoTorrent.Dht/obj/
+/src/MonoTorrent.Tests/bin/
+/src/MonoTorrent.Tests/obj/
+/src/MonoTorrent/bin/
+/src/MonoTorrent/obj/
+/src/SampleClient/bin/
+/src/SampleClient/obj/
+/src/TrackerApp/bin/
+/src/TrackerApp/obj/

@@ -12,11 +12,6 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class MessageTests
     {
-        //static void Main(string[] args)
-        //{
-        //    MessageTests t = new MessageTests();
-        //    t.GetPeersResponseEncode();
-        //}
         private NodeId id = new NodeId(Encoding.UTF8.GetBytes("abcdefghij0123456789"));
         private NodeId infohash = new NodeId(Encoding.UTF8.GetBytes("mnopqrstuvwxyz123456"));
         private BEncodedString token = "aoeusnth";

@@ -92,16 +92,16 @@ namespace MonoTorrent.Client
 			return null;
 		}
 
-        public PeerId GetOUPeer()
+		public PeerId GetOUPeer()
 		{
 			//Look for an untried peer that we haven't unchoked, or else return the choked peer with the longest unchoke interval
-            PeerId longestIntervalPeer = null;
+			PeerId longestIntervalPeer = null;
 			double longestIntervalPeerTime = 0;
-            foreach (PeerId peer in peers)
+			foreach (PeerId peer in peers)
 				if (peer.Connection != null)
 					if (peer.AmChoking)
 					{
-                        if (!peer.LastUnchoked.HasValue)
+						if (!peer.LastUnchoked.IsRunning)
 							//This is an untried peer that we haven't unchoked, return it
 							return peer;
 						else
@@ -112,9 +112,9 @@ namespace MonoTorrent.Client
 								longestIntervalPeer = peer;
 							else
 							{
-								//Compare dates to determine whether the new one has a longer interval (but halve the interval
-								//  if the peer has never sent us any data)
-                                double newInterval = SecondsBetween(peer.LastUnchoked.Value, DateTime.Now);
+								// Compare dates to determine whether the new one has a longer interval (but halve the interval
+								// if the peer has never sent us any data)
+								double newInterval = peer.LastUnchoked.Elapsed.TotalSeconds;
 								if (peer.Monitor.DataBytesDownloaded == 0)
 									newInterval = newInterval / 2;
 								if (newInterval > longestIntervalPeerTime)
@@ -195,9 +195,9 @@ namespace MonoTorrent.Client
 		{
 			//Comparer for nascent peers
 			//Sort most recent first
-            if (P1.LastUnchoked > P2.LastUnchoked)
+            if (P1.LastUnchoked.Elapsed > P2.LastUnchoked.Elapsed)
 				return -1;
-            else if (P1.LastUnchoked < P2.LastUnchoked)
+            else if (P1.LastUnchoked.Elapsed < P2.LastUnchoked.Elapsed)
 				return 1;
 			else
 				return 0;
@@ -214,19 +214,19 @@ namespace MonoTorrent.Client
 				return 1;
 
 			//Amount of data sent is equal (and probably 0), sort untried before tried
-            if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
+            if (!P1.LastUnchoked.IsRunning && P2.LastUnchoked.IsRunning)
 				return -1;
-            else if (P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
+            else if (P1.LastUnchoked.IsRunning && !P2.LastUnchoked.IsRunning)
 				return 1;
-            else if (!P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
+            else if (!P1.LastUnchoked.IsRunning && !P2.LastUnchoked.IsRunning)
 				//Both untried, nothing to choose between them
 				return 0;
 
 			//Both peers have been unchoked
 			//Sort into descending order (most recent first)
-            if (P1.LastUnchoked > P2.LastUnchoked)
+            if (P1.LastUnchoked.Elapsed > P2.LastUnchoked.Elapsed)
 				return -1;
-            else if (P1.LastUnchoked < P2.LastUnchoked)
+            else if (P1.LastUnchoked.Elapsed < P2.LastUnchoked.Elapsed)
 				return 1;
 			else
 				return 0;
@@ -243,28 +243,22 @@ namespace MonoTorrent.Client
 				return 1;
 
 			//Amount of data sent is equal (and probably 0), sort untried before tried
-            if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
+            if (!P1.LastUnchoked.IsRunning && P2.LastUnchoked.IsRunning)
 				return -1;
-            else if (P1.LastUnchoked.HasValue && !P2.LastUnchoked.HasValue)
+            else if (P1.LastUnchoked.IsRunning && !P2.LastUnchoked.IsRunning)
 				return 1;
-            else if (!P1.LastUnchoked.HasValue && P2.LastUnchoked.HasValue)
+            else if (!P1.LastUnchoked.IsRunning && P2.LastUnchoked.IsRunning)
 				//Both untried, nothing to choose between them
 				return 0;
 
 			//Both peers have been unchoked
 			//Sort into descending order (most recent first)
-            if (P1.LastUnchoked > P2.LastUnchoked)
+            if (P1.LastUnchoked.Elapsed > P2.LastUnchoked.Elapsed)
 				return -1;
-            else if (P1.LastUnchoked < P2.LastUnchoked)
+            else if (P1.LastUnchoked.Elapsed < P2.LastUnchoked.Elapsed)
 				return 1;
 			else
 				return 0;
-		}
-
-		private static double SecondsBetween(DateTime FirstTime, DateTime SecondTime)
-		{
-			//Calculate the number of seconds and fractions of a second that have elapsed between the first time and the second
-			return SecondTime.Subtract(FirstTime).TotalMilliseconds / 1000;
 		}
 
 		#endregion

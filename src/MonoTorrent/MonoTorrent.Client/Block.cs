@@ -47,7 +47,6 @@ namespace MonoTorrent.Client
         private int requestLength;
         private bool requested;
         private bool received;
-        private bool written;
 
         #endregion Private Fields
 
@@ -77,7 +76,7 @@ namespace MonoTorrent.Client
         public bool Requested
         {
             get { return this.requested; }
-            internal set
+            private set
             {
                 if (value && !requested)
                     piece.TotalRequested++;
@@ -98,35 +97,19 @@ namespace MonoTorrent.Client
         {
             get
             { // 60 seconds timeout for a request to fulfill
-                return !Received && requestedOff != null &&
-                       (DateTime.Now - requestedOff.LastMessageReceived) > TimeSpan.FromMinutes(1);
+                return !Received && requestedOff != null && requestedOff.LastMessageReceived.Elapsed > TimeSpan.FromMinutes(1);
             }
         }
 
         internal PeerId RequestedOff
         {
             get { return this.requestedOff; }
-            set { this.requestedOff = value; }
+            private set { this.requestedOff = value; }
         }
 
         public int StartOffset
         {
             get { return this.startOffset; }
-        }
-
-        public bool Written
-        {
-            get { return this.written; }
-            internal set
-            {
-                if (value && !written)
-                    piece.TotalWritten++;
-
-                else if (!value && written)
-                    piece.TotalWritten--;
-
-                this.written = value;
-            }
         }
 
         #endregion Properties
@@ -142,7 +125,6 @@ namespace MonoTorrent.Client
             this.requested = false;
             this.requestLength = requestLength;
             this.startOffset = startOffset;
-            this.written = false;
         }
 
         #endregion

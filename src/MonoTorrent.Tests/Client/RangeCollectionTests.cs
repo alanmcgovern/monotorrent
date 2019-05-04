@@ -8,13 +8,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class RangeCollectionTests
     {
-        //static void Main()
-        //{
-        //    RangeCollectionTests t = new RangeCollectionTests();
-        //    t.AddTest();
-        //    t.AddTest2();
-        //    t.AddTest3();
-        //}
         [Test]
         public void AddTest()
         {

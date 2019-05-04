@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
@@ -8,6 +9,7 @@ namespace MonoTorrent.Client
 	class StoppingMode : Mode
 	{
 		WaitHandleGroup handle = new WaitHandleGroup();
+        Task stopDiskManagerTask;
 
 		public override TorrentState State
 		{
@@ -19,8 +21,6 @@ namespace MonoTorrent.Client
 		{
 			CanAcceptConnections = false;
 			ClientEngine engine = manager.Engine;
-			if (manager.Mode is HashingMode)
-				handle.AddHandle(((HashingMode)manager.Mode).hashingWaitHandle, "Hashing");
 
 			if (manager.TrackerManager.CurrentTracker != null && manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
 				handle.AddHandle(manager.TrackerManager.Announce(TorrentEvent.Stopped), "Announcing");
@@ -31,22 +31,22 @@ namespace MonoTorrent.Client
 
 			manager.Peers.ClearAll();
 
-			handle.AddHandle(engine.DiskManager.CloseFileStreams(manager), "DiskManager");
+            stopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
 
 			manager.Monitor.Reset();
 			manager.PieceManager.Reset();
-			engine.ConnectionManager.CancelPendingConnects(manager);
+			engine.ConnectionManager.CancelPendingConnects (manager);
 			engine.Stop();
 		}
 
-		public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+		public override void HandlePeerConnected(PeerId id, Direction direction)
 		{
-			id.CloseConnection();
+			Manager.Engine.ConnectionManager.CleanupSocket (id);
 		}
 
 		public override void Tick(int counter)
 		{
-			if (handle.WaitOne(0, true))
+			if (handle.WaitOne(0, true) && stopDiskManagerTask.IsCompleted)
 			{
 				handle.Close();
 				Manager.Mode = new StoppedMode(Manager);

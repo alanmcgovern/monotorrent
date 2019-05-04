@@ -10,20 +10,13 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class RarestFirstPickerTests
     {
-        //static void Main()
-        //{
-        //    RarestFirstPickerTests t = new RarestFirstPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.RarestPieceTest();
-        //}
         TestRig rig;
         List<PeerId> peers;
         RarestFirstPicker rarest;
         TestPicker tester;
 
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile ();
@@ -47,7 +40,7 @@ namespace MonoTorrent.Client
             peers[0].BitField.SetAll(true);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

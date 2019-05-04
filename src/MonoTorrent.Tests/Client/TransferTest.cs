@@ -40,23 +40,15 @@ using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Encryption;
-
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class TransferTest
     {
-        //static void Main(string[] args)
-        //{
-        //    TransferTest t = new TransferTest();
-        //    t.Setup();
-        //    t.TestHandshake();
-        //    t.Teardown();
-        //}
-
-        IEncryption decryptor = new PlainTextEncryption();
-        IEncryption encryptor = new PlainTextEncryption();
+        IEncryption decryptor = PlainTextEncryption.Instance;
+        IEncryption encryptor = PlainTextEncryption.Instance;
 
         private ConnectionPair pair;
         private TestRig rig;
@@ -79,42 +71,154 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void IncomingEncrypted()
+        public void IncomingRC4Full_SupportsPlain()
         {
-            rig.Engine.Settings.PreferEncryption = true;
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
             rig.AddConnection(pair.Outgoing);
-            InitiateTransfer(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Full));
         }
 
         [Test]
-        public void IncomingUnencrypted()
+        public void IncomingRC4Full_SupportsRC4Header()
         {
-            rig.Engine.Settings.PreferEncryption = false;
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
             rig.AddConnection(pair.Outgoing);
-            InitiateTransfer(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Full));
         }
 
         [Test]
-        public void OutgoingEncrypted()
+        public async Task IncomingRC4Full_SupportsRC4Full ()
         {
-            rig.Engine.Settings.PreferEncryption = true;
-            rig.AddConnection(pair.Incoming);
-            InitiateTransfer(pair.Outgoing);
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Outgoing);
+            await InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Full);
         }
 
         [Test]
-        public void OutgoingUnencrypted()
+        public void IncomingRC4Header_SupportsPlainText()
         {
-            rig.Engine.Settings.PreferEncryption = false;
-            rig.AddConnection(pair.Incoming);
-            InitiateTransfer(pair.Outgoing);
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
+            rig.AddConnection(pair.Outgoing);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Header));
         }
 
         [Test]
-        public void MassiveMessage()
+        public async Task IncomingRC4Header_SupportsRC4Header()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
+            rig.AddConnection(pair.Outgoing);
+            await InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Header);
+        }
+
+        [Test]
+        public void IncomingRC4Header_SupportsRC4Full()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Outgoing);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.RC4Header));
+        }
+
+        [Test]
+        public async Task IncomingPlainText_SupportsPlainText()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
+            rig.AddConnection(pair.Outgoing);
+            await InitiateTransfer(pair.Incoming, EncryptionTypes.PlainText);
+        }
+
+        [Test]
+        public void IncomingPlainText_SupportsRC4Header()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
+            rig.AddConnection(pair.Outgoing);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.PlainText));
+        }
+
+        [Test]
+        public void IncomingPlainText_SupportsRC4Full()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Outgoing);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Incoming, EncryptionTypes.PlainText));
+        }
+
+        [Test]
+        public void OutgoingRC4Full_SupportsPlain()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Full));
+        }
+
+        [Test]
+        public void OutgoingRC4Full_SupportsRC4Header()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Full));
+        }
+
+        [Test]
+        public async Task OutgoingRC4Full_SupportsRC4Full ()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Incoming);
+            await InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Full);
+        }
+
+        [Test]
+        public void OutgoingRC4Header_SupportsPlainText()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Header));
+        }
+
+        [Test]
+        public async Task OutgoingRC4Header_SupportsRC4Header()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
+            rig.AddConnection(pair.Incoming);
+            await InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Header);
+        }
+
+        [Test]
+        public void OutgoingRC4Header_SupportsRC4Full()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.RC4Header));
+        }
+
+        [Test]
+        public async Task OutgoingPlainText_SupportsPlainText()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.PlainText;
+            rig.AddConnection(pair.Incoming);
+            await InitiateTransfer(pair.Outgoing, EncryptionTypes.PlainText);
+        }
+
+        [Test]
+        public void OutgoingPlainText_SupportsRC4Header()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Header;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.PlainText));
+        }
+
+        [Test]
+        public void OutgoingPlainText_SupportsRC4Full()
+        {
+            rig.Engine.Settings.AllowedEncryption = EncryptionTypes.RC4Full;
+            rig.AddConnection(pair.Incoming);
+            Assert.ThrowsAsync<EncryptionException> (() => InitiateTransfer(pair.Outgoing, EncryptionTypes.PlainText));
+        }
+
+        [Test]
+        public async Task MassiveMessage()
         {
             rig.AddConnection(pair.Incoming);
-            InitiateTransfer(pair.Outgoing);
+            await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
             pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255 >> 1, 255, 255, 250 }, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
@@ -126,10 +230,10 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void NegativeData()
+        public async Task NegativeData()
         {
             rig.AddConnection(pair.Incoming);
-            InitiateTransfer(pair.Outgoing);
+            await InitiateTransfer(pair.Outgoing, EncryptionTypes.All);
             pair.Outgoing.EndSend(pair.Outgoing.BeginSend(new byte[] { 255, 255, 255, 250 }, 0, 4, null, null));
             IAsyncResult result = pair.Outgoing.BeginReceive(new byte[1000], 0, 1000, null, null);
             if (!result.AsyncWaitHandle.WaitOne(1000, true))
@@ -140,13 +244,13 @@ namespace MonoTorrent.Client
                 Assert.Fail("Connection should've been closed");
         }
 
-        public void InitiateTransfer(CustomConnection connection)
+        public async Task InitiateTransfer(CustomConnection connection, EncryptionTypes allowedEncryption)
         {
             PeerId id = new PeerId(new Peer("", connection.Uri), rig.Manager);
+            id.Peer.Encryption = allowedEncryption;
             id.Connection = connection;
-            byte[] data;
 
-            EncryptorFactory.EndCheckEncryption(EncryptorFactory.BeginCheckEncryption(id, 68, null, null, new InfoHash[] { id.TorrentManager.InfoHash }), out data);
+            var data = await EncryptorFactory.CheckEncryptionAsync(id, 68, new InfoHash[] { id.TorrentManager.InfoHash });
             decryptor = id.Decryptor;
             encryptor = id.Encryptor;
             TestHandshake(data, connection);

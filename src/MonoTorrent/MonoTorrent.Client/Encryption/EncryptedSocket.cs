@@ -39,7 +39,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
-
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -66,9 +66,8 @@ namespace MonoTorrent.Client.Encryption
     /// <summary>
     /// The class that handles.Message Stream Encryption for a connection
     /// </summary>
-    class EncryptedSocket : IEncryptor
+    abstract class EncryptedSocket : IEncryptor
     {
-        protected AsyncResult asyncResult;
         public IEncryption Encryptor
         {
             get { return streamEncryptor; }
@@ -101,7 +100,7 @@ namespace MonoTorrent.Client.Encryption
         private byte[] Y; // 2^X mod P
         private byte[] OtherY = null;
         
-        private IConnection socket;
+        protected IConnection socket;
 
         // Data to be passed to initial ReceiveMessage requests
         private byte[] initialBuffer;
@@ -111,17 +110,6 @@ namespace MonoTorrent.Client.Encryption
         // State information to be checked against abort conditions
         private int bytesReceived;
 
-        // Callbacks
-        private AsyncIOCallback doneSendCallback;
-        private AsyncIOCallback doneReceiveCallback;
-        private AsyncCallback doneReceiveYCallback;
-        private AsyncCallback doneSynchronizeCallback;
-        private AsyncIOCallback fillSynchronizeBytesCallback;
-
-        // State information for synchronization
-        private byte[] synchronizeData = null;
-        private byte[] synchronizeWindow = null;
-        private int syncStopPoint;
         #endregion
 
         #region Protected members
@@ -153,12 +141,6 @@ namespace MonoTorrent.Client.Encryption
             InitialPayload = BufferManager.EmptyBuffer;
             RemoteInitialPayload = BufferManager.EmptyBuffer;
 
-            doneSendCallback = doneSend;
-            doneReceiveCallback = doneReceive;
-            doneReceiveYCallback = delegate { doneReceiveY(); };
-            doneSynchronizeCallback = delegate { doneSynchronize(); };
-            fillSynchronizeBytesCallback = fillSynchronizeBytes;
-
             bytesReceived = 0;
 
             SetMinCryptoAllowed(allowedEncryption);
@@ -170,45 +152,26 @@ namespace MonoTorrent.Client.Encryption
         /// Begins the message stream encryption handshaking process
         /// </summary>
         /// <param name="socket">The socket to perform handshaking with</param>
-        public virtual IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state)
+        public virtual async Task HandshakeAsync(IConnection socket)
         {
             if (socket == null)
                 throw new ArgumentNullException("socket");
 
-            if (asyncResult != null)
-                throw new ArgumentException("BeginHandshake has already been called");
+            this.socket = socket;
 
-            asyncResult = new AsyncResult(callback, state);
-
+            // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
+            // These two steps will be done simultaneously to save time due to latency
+            var first = SendY();
+            var second = ReceiveY();
             try
             {
-                this.socket = socket;
-
-                // Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB"
-                // These two steps will be done simultaneously to save time due to latency
-                SendY();
-                ReceiveY();
-            }
-            catch (Exception ex)
+                await first;
+                await second;
+            } catch
             {
-                asyncResult.Complete(ex);
+                socket.Dispose();
+                throw;
             }
-            return asyncResult;
-        }
-
-        public void EndHandshake(IAsyncResult result)
-        {
-            if (result == null)
-                throw new ArgumentNullException("result");
-
-            if (result != this.asyncResult)
-                throw new ArgumentException("Wrong IAsyncResult supplied");
-
-            if (!result.IsCompleted)
-                result.AsyncWaitHandle.WaitOne();
-
-            if (asyncResult.SavedException != null)
-                throw asyncResult.SavedException;
         }
 
         /// <summary>
@@ -219,12 +182,12 @@ namespace MonoTorrent.Client.Encryption
         /// <param name="initialBuffer">Buffer containing soome data already received from the socket</param>
         /// <param name="offset">Offset to begin reading in initialBuffer</param>
         /// <param name="count">Number of bytes to read from initialBuffer</param>
-        public virtual IAsyncResult BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state)
+        public virtual async Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count)
         {
             this.initialBuffer = initialBuffer;
             this.initialBufferOffset = offset;
             this.initialBufferCount = count;
-            return BeginHandshake(socket, callback, state);
+            await HandshakeAsync(socket);
         }
 
 
@@ -265,30 +228,28 @@ namespace MonoTorrent.Client.Encryption
         /// Send Y to the remote client, with a random padding that is 0 to 512 bytes long
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected void SendY()
+        protected async Task SendY()
         {
             byte[] toSend = new byte[96 + RandomNumber(512)];
             random.GetBytes(toSend);
-
             Buffer.BlockCopy(Y, 0, toSend, 0, 96);
 
-            SendMessage(toSend);
+            await NetworkIO.SendAsync(socket, toSend, 0, toSend.Length, null, null, null).ConfigureAwait (false);
         }
 
         /// <summary>
         /// Receive the first 768 bits of the transmission from the remote client, which is Y in the protocol
         /// (Either "1 A->B: Diffie Hellman Ya, PadA" or "2 B->A: Diffie Hellman Yb, PadB")
         /// </summary>
-        protected void ReceiveY()
+        protected async Task ReceiveY()
         {
             OtherY = new byte[96];
-            ReceiveMessage(OtherY, 96, doneReceiveYCallback);
+            await ReceiveMessage(OtherY, 96);
+            S = ModuloCalculator.Calculate (OtherY, X);
+            await doneReceiveY ();
         }
 
-        protected virtual void doneReceiveY()
-        {
-            S = ModuloCalculator.Calculate(OtherY, X);
-        }
+        protected abstract Task doneReceiveY ();
 
         #endregion
 
@@ -300,155 +261,90 @@ namespace MonoTorrent.Client.Encryption
         /// </summary>
         /// <param name="syncData">Buffer with the data to synchronize to</param>
         /// <param name="syncStopPoint">Maximum number of bytes (measured from the total received from the socket since connection) to read before giving up</param>
-        protected void Synchronize(byte[] syncData, int syncStopPoint)
+        protected async Task Synchronize(byte[] syncData, int syncStopPoint)
         {
-            try
-            {
-                // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
-                synchronizeData = syncData;
-                synchronizeWindow = new byte[syncData.Length];
-                this.syncStopPoint = syncStopPoint;
+            // The strategy here is to create a window the size of the data to synchronize and just refill that until its contents match syncData
+            int filled = 0;
+            var synchronizeWindow = new byte[syncData.Length];
 
-                if (bytesReceived > syncStopPoint)
-                    asyncResult.Complete(new EncryptionException("Couldn't synchronise 1"));
-                else
-                    NetworkIO.EnqueueReceive(socket, synchronizeWindow, 0, synchronizeWindow.Length, null, null, null, fillSynchronizeBytesCallback, 0);
-            }
-            catch (Exception ex)
+            while (bytesReceived < syncStopPoint)
             {
-                asyncResult.Complete(ex);
-            }
-        }
+                int received = synchronizeWindow.Length - filled;
+                await NetworkIO.ReceiveAsync(socket, synchronizeWindow, filled, received, null, null, null).ConfigureAwait (false);
 
-        protected void fillSynchronizeBytes(bool succeeded, int count, object state)
-        {
-            try
-            {
-                if (!succeeded)
-                    throw new MessageException("Could not fill sync. bytes");
-
-                bytesReceived += count;
-                int filled = (int)state + count; // count of the bytes currently in synchronizeWindow
+                bytesReceived += received;
                 bool matched = true;
-                for (int i = 0; i < filled && matched; i++)
-                    matched &= synchronizeData[i] == synchronizeWindow[i];
+                for (int i = 0; i < synchronizeWindow.Length && matched; i++)
+                    matched &= syncData[i] == synchronizeWindow[i];
 
                 if (matched) // the match started in the beginning of the window, so it must be a full match
                 {
-                    doneSynchronizeCallback(null);
+                    await doneSynchronize ().ConfigureAwait (false);
+                    return;
                 }
                 else
                 {
-                    if (bytesReceived > syncStopPoint)
-                        throw new EncryptionException("Could not resyncronise the stream");
-
                     // See if the current window contains the first byte of the expected synchronize data
                     // No need to check synchronizeWindow[0] as otherwise we could loop forever receiving 0 bytes
                     int shift = -1;
                     for (int i = 1; i < synchronizeWindow.Length && shift == -1; i++)
-                        if (synchronizeWindow[i] == synchronizeData[0])
+                        if (synchronizeWindow[i] == syncData[0])
                             shift = i;
 
                     // The current data is all useless, so read an entire new window of data
-                    if (shift == -1 )
+                    if (shift > 0)
                     {
-                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, 0, synchronizeWindow.Length, null, null, null, fillSynchronizeBytesCallback, 0);
-                    }
-                    else
-                    {
+                        filled = synchronizeWindow.Length - shift;
                         // Shuffle everything left by 'shift' (the first good byte) and fill the rest of the window
                         Buffer.BlockCopy(synchronizeWindow, shift, synchronizeWindow, 0, synchronizeWindow.Length - shift);
-                        NetworkIO.EnqueueReceive(socket, synchronizeWindow, synchronizeWindow.Length - shift,
-                                                 shift, null, null, null, fillSynchronizeBytesCallback, synchronizeWindow.Length - shift);
+                    } else
+                    {
+                        // The start point we thought we had is actually garbage, so throw away all the data we have
+                        filled = 0;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
+            throw new EncryptionException("Couldn't synchronise 1");
         }
 
-        protected virtual void doneSynchronize()
+        protected virtual Task doneSynchronize()
         {
-            // do nothing for now
+            return Task.CompletedTask;
         }
         #endregion
 
         #region I/O Functions
-        protected void ReceiveMessage(byte[] buffer, int length, AsyncCallback callback)
+        protected async Task ReceiveMessage(byte[] buffer, int length)
         {
-            try
+            if (length == 0)
             {
-                if (length == 0)
-                {
-                    callback(null);
-                    return;
-                }
-                if (initialBuffer != null)
-                {
-                    int toCopy = Math.Min(initialBufferCount, length);
-                    Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
-                    initialBufferOffset += toCopy;
-                    initialBufferCount -= toCopy;
+                return;
+            }
+            if (initialBuffer != null)
+            {
+                int toCopy = Math.Min(initialBufferCount, length);
+                Array.Copy(initialBuffer, initialBufferOffset, buffer, 0, toCopy);
+                initialBufferOffset += toCopy;
+                initialBufferCount -= toCopy;
 
-                    if (toCopy == initialBufferCount)
-                    {
-                        initialBufferCount = 0;
-                        initialBufferOffset = 0;
-                        initialBuffer = BufferManager.EmptyBuffer;
-                    }
-
-                    if (toCopy == length)
-                        callback(null);
-                    else
-                        NetworkIO.EnqueueReceive(socket, buffer, toCopy, length - toCopy, null, null, null, doneReceiveCallback, callback);
-                }
-                else
+                if (toCopy == initialBufferCount)
                 {
-                    NetworkIO.EnqueueReceive(socket, buffer, 0, length, null, null, null, doneReceiveCallback, callback);
+                    initialBufferCount = 0;
+                    initialBufferOffset = 0;
+                    initialBuffer = BufferManager.EmptyBuffer;
+                }
+
+                if (toCopy != length)
+                {
+                    await NetworkIO.ReceiveAsync(socket, buffer, toCopy, length - toCopy, null, null, null).ConfigureAwait (false);
+                    bytesReceived += length - toCopy;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                asyncResult.Complete(ex);
+                await NetworkIO.ReceiveAsync(socket, buffer, 0, length, null, null, null).ConfigureAwait (false);
+                bytesReceived += length;
             }
-        }
-
-        private void doneReceive(bool succeeded, int count, object state)
-        {
-            try
-            {
-                AsyncCallback callback = (AsyncCallback) state;
-                if (!succeeded)
-                    throw new MessageException("Could not receive");
-
-                bytesReceived += count;
-                callback(null);
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
-        }
-
-        protected void SendMessage(byte[] toSend)
-        {
-            try
-            {
-                if (toSend.Length > 0)
-                    NetworkIO.EnqueueSend(socket, toSend, 0, toSend.Length, null, null, null, doneSendCallback, null);
-            }
-            catch (Exception ex)
-            {
-                asyncResult.Complete(ex);
-            }
-        }
-
-        private void doneSend(bool succeeded, int count, object state)
-        {
-            if (!succeeded)
-                asyncResult.Complete(new MessageException("Could not send required data"));
         }
 
         #endregion
@@ -626,14 +522,6 @@ namespace MonoTorrent.Client.Encryption
         protected void DoDecrypt(byte[] data, int offset, int length)
         {
             decryptor.Decrypt(data, offset, data, offset, length);
-        }
-
-        /// <summary>
-        /// Signal that the cryptor is now in a state ready to encrypt and decrypt payload data
-        /// </summary>
-        protected void Ready()
-        {
-            asyncResult.Complete();
         }
 
         protected void SetMinCryptoAllowed(EncryptionTypes allowedEncryption)

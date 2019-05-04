@@ -30,6 +30,7 @@
 
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using MonoTorrent.Client.Encryption;
@@ -38,6 +39,9 @@ namespace MonoTorrent.Client.Connections
 {
     public class IPV4Connection : IConnection
     {
+        SocketAsyncEventArgs receiveArgs;
+        SocketAsyncEventArgs sendArgs;
+
         private bool isIncoming;
         private IPEndPoint endPoint;
         private Socket socket;
@@ -101,11 +105,28 @@ namespace MonoTorrent.Client.Connections
         }
 
 
-        private IPV4Connection(Socket socket, IPEndPoint endpoint, bool isIncoming)
+        private IPV4Connection (Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
+            this.receiveArgs = new SocketAsyncEventArgs {
+                RemoteEndPoint = endpoint
+            };
+            this.sendArgs = new SocketAsyncEventArgs {
+                RemoteEndPoint = endpoint
+            };
+            receiveArgs.Completed += HandleOperationCompleted;
+            sendArgs.Completed += HandleOperationCompleted;
             this.socket = socket;
             this.endPoint = endpoint;
             this.isIncoming = isIncoming;
+        }
+
+        static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
+        {
+            if (e.SocketError != SocketError.Success)
+                ((TaskCompletionSource<int>)e.UserToken).SetException(new SocketException((int)e.SocketError));
+            else
+                ((TaskCompletionSource<int>)e.UserToken).SetResult(e.BytesTransferred);
+
         }
 
         #endregion
@@ -118,41 +139,41 @@ namespace MonoTorrent.Client.Connections
             get { return this.endPoint.Address.GetAddressBytes(); }
         }
 
-        public IAsyncResult BeginConnect(AsyncCallback peerEndCreateConnection, object state)
+        public Task ConnectAsync ()
         {
-            return this.socket.BeginConnect(this.endPoint, peerEndCreateConnection, state);
+            var tcs = new TaskCompletionSource<int>();
+            receiveArgs.UserToken = tcs;
+
+            socket.ConnectAsync (receiveArgs);
+            return tcs.Task;
         }
 
-        public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)
+        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
-            return this.socket.BeginReceive(buffer, offset, count, SocketFlags.None, asyncCallback, state);
+            var tcs = new TaskCompletionSource<int>();
+            receiveArgs.SetBuffer(buffer, offset, count);
+            receiveArgs.UserToken = tcs;
+
+            socket.ReceiveAsync(receiveArgs);
+            return tcs.Task;
         }
 
-        public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback asyncCallback, object state)
+        public Task<int> SendAsync(byte[] buffer, int offset, int count)
         {
-            return this.socket.BeginSend(buffer, offset, count, SocketFlags.None, asyncCallback, state);
+            var tcs = new TaskCompletionSource<int>();
+            sendArgs.SetBuffer(buffer, offset, count);
+            sendArgs.UserToken = tcs;
+
+            socket.SendAsync(sendArgs);
+            return tcs.Task;
         }
+
 
         public void Dispose()
         {
             ((IDisposable)socket).Dispose();
         }
 
-        public void EndConnect(IAsyncResult result)
-        {
-            this.socket.EndConnect(result);
-        }
-
-        public int EndSend(IAsyncResult result)
-        {
-            return this.socket.EndSend(result);
-        }
-
-        public int EndReceive(IAsyncResult result)
-        {
-            
-            return this.socket.EndReceive(result);
-        }
 
         #endregion
     }

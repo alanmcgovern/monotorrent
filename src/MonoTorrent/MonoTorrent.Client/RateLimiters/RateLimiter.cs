@@ -34,11 +34,11 @@ using System.Threading;
 
 namespace MonoTorrent.Client
 {
-    class RateLimiter : IRateLimiter
+    sealed class RateLimiter : IRateLimiter
     {
         bool unlimited;
-        int savedError;
-        int chunks;
+        long savedError;
+        long chunks;
 
         public bool Unlimited
         {
@@ -50,7 +50,7 @@ namespace MonoTorrent.Client
             UpdateChunks(0, 0);
         }
 
-        public void UpdateChunks(int maxRate, int actualRate)
+        public void UpdateChunks(long maxRate, long actualRate)
         {
             unlimited = maxRate == 0;
             if (unlimited)
@@ -58,30 +58,29 @@ namespace MonoTorrent.Client
 
             // From experimentation, i found that increasing by 5% gives more accuate rate limiting
             // for peer communications. For disk access and whatnot, a 5% overshoot is fine.
-            maxRate = (int)(maxRate * 1.05);
-            int errorRateDown = maxRate - actualRate;
-            int delta = (int)(0.4 * errorRateDown + 0.6 * this.savedError);
+            maxRate = (long)(maxRate * 1.05);
+            long errorRateDown = maxRate - actualRate;
+            long delta = (long)(0.4 * errorRateDown + 0.6 * this.savedError);
             this.savedError = errorRateDown;
 
-
-            int increaseAmount = (int)((maxRate + delta) / ConnectionManager.ChunkLength);
+            long increaseAmount = maxRate + delta;
             Interlocked.Add(ref this.chunks, increaseAmount);
-            if (this.chunks > (maxRate * 1.2 / ConnectionManager.ChunkLength))
-                Interlocked.Exchange(ref this.chunks, (int)(maxRate * 1.2 / ConnectionManager.ChunkLength));
+            if (this.chunks > (maxRate * 1.2))
+                Interlocked.Exchange(ref this.chunks, (int)(maxRate * 1.2));
 
-            if (this.chunks < (maxRate / ConnectionManager.ChunkLength / 2))
-                Interlocked.Exchange(ref this.chunks, (maxRate / ConnectionManager.ChunkLength / 2));
+            if (this.chunks < (maxRate / 2))
+                Interlocked.Exchange(ref this.chunks, (maxRate / 2));
 
             if (maxRate == 0)
                 chunks = 0;
         }
 
-        public bool TryProcess(int amount)
+        public bool TryProcess(long amount)
         {
             if (Unlimited)
                 return true;
 
-            int c;
+            long c;
             do
             {
                 c = chunks;
