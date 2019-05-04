@@ -185,7 +185,7 @@ namespace MonoTorrent.Common
         {
             Assert.AreEqual(Comment, torrent.Comment, "#1");
             Assert.AreEqual(CreatedBy, torrent.CreatedBy, "#2");
-            Assert.IsTrue((DateTime.Now - torrent.CreationDate) < TimeSpan.FromSeconds(5), "#3");
+            Assert.IsTrue((DateTime.UtcNow - torrent.CreationDate) < TimeSpan.FromSeconds(5), "#3");
             Assert.AreEqual(PieceLength, torrent.PieceLength, "#4");
             Assert.AreEqual(Publisher, torrent.Publisher, "#5");
             Assert.AreEqual(PublisherUrl, torrent.PublisherUrl, "#6");

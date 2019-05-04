@@ -297,7 +297,7 @@ namespace MonoTorrent.Common
             this.announceUrls = new RawTrackerTiers ();
             this.comment = string.Empty;
             this.createdBy = string.Empty;
-            this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0);
+            this.creationDate = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             this.encoding = string.Empty;
             this.name = string.Empty;
             this.publisher = string.Empty;

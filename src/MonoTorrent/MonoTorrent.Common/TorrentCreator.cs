@@ -123,7 +123,7 @@ namespace MonoTorrent.Common
                 torrent ["url-list"] = seedlist;
             }
 
-            TimeSpan span = DateTime.Now - new DateTime (1970, 1, 1);
+            TimeSpan span = DateTime.UtcNow - new DateTime (1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             torrent ["creation date"] = new BEncodedNumber ((long) span.TotalSeconds);
         }
 
