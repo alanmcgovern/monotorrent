@@ -48,8 +48,7 @@ namespace MonoTorrent.Client
 
         protected virtual void RaiseConnectionReceived(Peer peer, IConnection connection, TorrentManager manager)
         {
-            if (ConnectionReceived != null)
-                Toolbox.RaiseAsyncEvent<NewConnectionEventArgs>(ConnectionReceived, this, new NewConnectionEventArgs(peer, connection, manager));
+            ConnectionReceived?.Invoke (this, new NewConnectionEventArgs(peer, connection, manager));
         }
     }
 }

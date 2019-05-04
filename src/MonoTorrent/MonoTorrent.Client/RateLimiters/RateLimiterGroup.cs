@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -65,7 +66,7 @@ namespace MonoTorrent.Client
             limiters.Remove(limiter);
         }
 
-        public bool TryProcess(int amount)
+        public bool TryProcess(long amount)
         {
             for (int i = 0; i < limiters.Count; i++)
             {
@@ -77,7 +78,7 @@ namespace MonoTorrent.Client
             return true;
         }
 
-        public void UpdateChunks (int maxRate, int actualRate)
+        public void UpdateChunks (long maxRate, long actualRate)
         {
             for (int i = 0; i < limiters.Count; i++)
                 limiters [i].UpdateChunks (maxRate, actualRate);

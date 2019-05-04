@@ -12,6 +12,7 @@ using System.Net;
 using MonoTorrent.Client.Encryption;
 using System.Threading;
 using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -184,7 +185,7 @@ namespace MonoTorrent.Client
             if (BeginReceiveStarted != null)
                 BeginReceiveStarted (this, EventArgs.Empty);
             if (SlowConnection)
-                count = 1;
+                count = Math.Min(88, count);
             return s.BeginReceive(buffer, offset, count, SocketFlags.None, callback, state);
         }
 
@@ -196,14 +197,7 @@ namespace MonoTorrent.Client
             if (ManualBytesReceived.HasValue)
                 return ManualBytesReceived.Value;
 
-            try
-            {
-                return s.EndReceive(result);
-            }
-            catch (ObjectDisposedException)
-            {
-                return 0;
-            }
+            return s.EndReceive(result);
         }
 
         public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -212,7 +206,7 @@ namespace MonoTorrent.Client
                 BeginSendStarted(null, EventArgs.Empty);
 
             if (SlowConnection)
-                count = 1;
+                count = Math.Min(88, count);
             return s.BeginSend(buffer, offset, count, SocketFlags.None, callback, state);
         }
 
@@ -265,6 +259,21 @@ namespace MonoTorrent.Client
             if (!r.AsyncWaitHandle.WaitOne (TimeSpan.FromSeconds (4)))
                 throw new Exception ("Could not receive required data");
             return EndSend (r);
+        }
+
+        public Task ConnectAsync()
+        {
+            return Task.Factory.FromAsync(BeginConnect(null, null), EndConnect);
+        }
+
+        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
+        }
+
+        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
         }
     }
 
@@ -429,13 +438,13 @@ namespace MonoTorrent.Client
             engine.Dispose();
         }
 
-        public void RecreateManager()
+        public async Task RecreateManager()
         {
             if (manager != null)
             {
                 manager.Dispose();
                 if (engine.Contains(manager))
-                    engine.Unregister(manager);
+                    await engine.Unregister(manager);
             }
             torrentDict = CreateTorrent(piecelength, files, tier);
             torrent = Torrent.Load(torrentDict);
@@ -443,7 +452,7 @@ namespace MonoTorrent.Client
                 manager = new TorrentManager(torrent.infoHash, savePath, new TorrentSettings(), MetadataPath, new RawTrackerTiers ());
             else
                 manager = new TorrentManager(torrent, savePath, new TorrentSettings());
-            engine.Register(manager);
+            await engine.Register(manager);
         }
 
         #region Rig Creation
@@ -467,7 +476,7 @@ namespace MonoTorrent.Client
             engine = new ClientEngine(new EngineSettings(), listener, writer);
             Writer = writer;
 
-            RecreateManager();
+            RecreateManager().Wait();
         }
 
         static TestRig()
@@ -497,9 +506,9 @@ namespace MonoTorrent.Client
             AddAnnounces(dict, tier);
             AddFiles(infoDict, files);
             if (files.Length == 1)
-                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce/File1.exe";
+                dict["url-list"] = (BEncodedString)(TestWebSeed.ListenerURL + "File1.exe");
             else
-                dict["url-list"] = (BEncodedString)"http://127.0.0.1:120/announce";
+                dict["url-list"] = (BEncodedString)TestWebSeed.ListenerURL;
             dict["creation date"] = (BEncodedNumber)(int)(DateTime.Now - new DateTime(1970, 1, 1)).TotalSeconds;
             dict["encoding"] = (BEncodedString)"UTF-8";
             dict["info"] = infoDict;

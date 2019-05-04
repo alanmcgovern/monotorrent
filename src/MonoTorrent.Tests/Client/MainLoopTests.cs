@@ -10,30 +10,16 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class MainLoopTests
     {
-        //static void Main(string[] args)
-        //{
-        //    MainLoopTests t = new MainLoopTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.TaskTest();
-        //    for (int i = 0; i < 1000; i++)
-        //    {
-        //        t.Setup();
-        //        t.RepeatedTask();
-        //    }
-        //    t.Setup();
-        //    t.LongRunningTask();
-        //}
         private int count;
         MainLoop loop;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             loop = new MainLoop("Test Loop");
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             //loop.Dispose();
@@ -48,10 +34,10 @@ namespace MonoTorrent.Client
         [Test]
         public void TaskTest()
         {
-            Assert.AreEqual(5, loop.QueueWait((MainLoopJob) delegate { return 5; }), "#1");
+            Assert.AreEqual(5, loop.QueueWait(delegate { return 5; }), "#1");
 
             ManualResetEvent handle = new ManualResetEvent(false);
-            loop.QueueWait((MainLoopTask)delegate { handle.Set(); });
+            loop.QueueWait((Action)delegate { handle.Set(); });
             Assert.IsTrue(handle.WaitOne(5000, true), "#2");
         }
 

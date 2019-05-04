@@ -33,8 +33,8 @@ namespace MonoTorrent.Client
 {
     interface IRateLimiter
     {
-        bool TryProcess(int amount);
+        bool TryProcess(long amount);
         bool Unlimited { get; }
-        void UpdateChunks (int maxRate, int actualRate);
+        void UpdateChunks (long maxRate, long actualRate);
     }
 }

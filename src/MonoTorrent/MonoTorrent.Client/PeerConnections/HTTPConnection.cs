@@ -42,11 +42,99 @@ using MonoTorrent.Common;
 using System.Text.RegularExpressions;
 using System.Reflection;
 using MonoTorrent.BEncoding;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {
     public partial class HttpConnection : IConnection
     {
+        public class AsyncResult : IAsyncResult
+        {
+            #region Member Variables
+
+            private object asyncState;
+            private AsyncCallback callback;
+            private bool completedSyncronously;
+            private bool isCompleted;
+            private Exception savedException;
+            private ManualResetEvent waitHandle;
+
+            #endregion Member Variables
+
+
+            #region Properties
+
+            public object AsyncState {
+                get { return asyncState; }
+            }
+
+            WaitHandle IAsyncResult.AsyncWaitHandle {
+                get { return waitHandle; }
+            }
+
+            protected internal ManualResetEvent AsyncWaitHandle {
+                get { return waitHandle; }
+            }
+
+            internal AsyncCallback Callback {
+                get { return callback; }
+            }
+
+            public bool CompletedSynchronously {
+                get { return completedSyncronously; }
+                protected internal set { completedSyncronously = value; }
+            }
+
+            public bool IsCompleted {
+                get { return isCompleted; }
+                protected internal set { isCompleted = value; }
+            }
+
+            protected internal Exception SavedException {
+                get { return this.savedException; }
+                set { this.savedException = value; }
+            }
+
+            #endregion Properties
+
+
+            #region Constructors
+
+            public AsyncResult (AsyncCallback callback, object asyncState)
+            {
+                this.asyncState = asyncState;
+                this.callback = callback;
+                this.waitHandle = new ManualResetEvent (false);
+            }
+
+            #endregion Constructors
+
+            #region Methods
+
+            protected internal void Complete ()
+            {
+                Complete (savedException);
+            }
+            protected internal void Complete (Exception ex)
+            {
+                // Ensure we only complete once - Needed because in encryption there could be
+                // both a pending send and pending receive so if there is an error, both will
+                // attempt to complete the encryption handshake meaning this is called twice.
+                if (isCompleted)
+                    return;
+
+                savedException = ex;
+                completedSyncronously = false;
+                isCompleted = true;
+                waitHandle.Set ();
+
+                if (callback != null)
+                    callback (this);
+            }
+
+            #endregion Methods
+        }
+
         static MethodInfo method = typeof(WebHeaderCollection).GetMethod
                                 ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
         private class HttpResult : AsyncResult
@@ -161,16 +249,19 @@ namespace MonoTorrent.Client.Connections
         #endregion Constructors
 
 
-        public IAsyncResult BeginConnect(AsyncCallback callback, object state)
+        public Task ConnectAsync()
         {
-            AsyncResult result = new AsyncResult(callback, state);
-            result.Complete();
-            return result;
+            return Task.CompletedTask;
         }
 
-        public void EndConnect(IAsyncResult result)
+        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
-            // Do nothing
+            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
+        }
+
+        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
         }
 
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)

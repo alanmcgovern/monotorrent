@@ -279,7 +279,7 @@ namespace MonoTorrent.Client
                         double timeUnchoked = 0;
                         if (!connectedPeer.AmChoking)
                         {
-                            timeUnchoked = SecondsBetween(connectedPeer.LastUnchoked.Value, DateTime.Now);
+                            timeUnchoked = connectedPeer.LastUnchoked.Elapsed.TotalSeconds;
                             unchokedPeers++;
                         }
                         long bytesTransferred = 0;
@@ -567,7 +567,7 @@ namespace MonoTorrent.Client
             PeerToUnchoke.AmChoking = false;
             owningTorrent.UploadingTo++;
             PeerToUnchoke.EnqueueAt(new UnchokeMessage(), 0);
-            PeerToUnchoke.LastUnchoked = DateTime.Now;
+            PeerToUnchoke.LastUnchoked.Restart ();
             PeerToUnchoke.FirstReviewPeriod = true;
             Logger.Log(PeerToUnchoke.Connection, "Unchoking");
             //			Send2Log("Unchoking: " + PeerToUnchoke.Location);

@@ -8,20 +8,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class RandomisedPickerTests
     {
-        //static void Main()
-        //{
-        //    RandomisedPickerTests t = new RandomisedPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.Pick();
-        //}
-
         PeerId id;
         RandomisedPicker picker;
         TestRig rig;
         TestPicker tester;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -30,7 +22,7 @@ namespace MonoTorrent.Client
                 id.BitField[i] = true;
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

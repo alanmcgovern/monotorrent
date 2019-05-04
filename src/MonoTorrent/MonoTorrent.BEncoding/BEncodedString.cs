@@ -130,9 +130,29 @@ namespace MonoTorrent.BEncoding
         public override int Encode(byte[] buffer, int offset)
         {
             int written = offset;
-            written += Message.WriteAscii(buffer, written, textBytes.Length.ToString ());
+            written += WriteLengthAsAscii(buffer, written, textBytes.Length);
             written += Message.WriteAscii(buffer, written, ":");
             written += Message.Write(buffer, written, textBytes);
+            return written - offset;
+        }
+
+        int WriteLengthAsAscii (byte[] buffer, int offset, int asciiLength)
+        {
+            if (asciiLength > 100000)
+                return Message.WriteAscii(buffer, offset, textBytes.Length.ToString());
+
+            bool hasWritten = false;
+            int written = offset;
+            for (int remainder = 100000; remainder > 1; remainder /= 10)
+            {
+                if (asciiLength < remainder && !hasWritten)
+                    continue;
+                byte resultChar = (byte)('0' + asciiLength / remainder);
+                written += Message.Write(buffer, written, resultChar);
+                asciiLength %= remainder;
+                hasWritten = true;
+            }
+            written += Message.Write (buffer, written, (byte)('0' + asciiLength));
             return written - offset;
         }
 

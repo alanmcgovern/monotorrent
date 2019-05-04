@@ -1,7 +1,0 @@
-Name: MonoTorrent.Dht
-Description: MonoTorrent.Dht
-Version: @monotorrent_version@
-
-Requires: 
-Libraries=@monotorrent_install_dir@/MonoTorrent.Dht.dll
-Libs: -r:MonoTorrent.Dht.dll

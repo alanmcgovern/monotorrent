@@ -2,16 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.Dht.Messages;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class AnnounceTask : Task
+    class AnnounceTask
     {
-        private int activeAnnounces;
-        private NodeId infoHash;
-        private DhtEngine engine;
-        private int port;
+        readonly NodeId infoHash;
+        readonly DhtEngine engine;
+        readonly int port;
 
         public AnnounceTask(DhtEngine engine, InfoHash infoHash, int port)
             : this(engine, new NodeId(infoHash), port)
@@ -26,39 +26,18 @@ namespace MonoTorrent.Dht.Tasks
             this.port = port;
         }
 
-        public override void Execute()
+        public async Task Execute()
         {
-            GetPeersTask task = new GetPeersTask(engine, infoHash);
-            task.Completed += GotPeers;
-            task.Execute();
-        }
+            GetPeersTask getpeers = new GetPeersTask(engine, infoHash);
+            var nodes = await getpeers.Execute();
 
-        private void GotPeers(object o, TaskCompleteEventArgs e)
-        {
-            e.Task.Completed -= GotPeers;
-            GetPeersTask getpeers = (GetPeersTask)e.Task;
-            foreach (Node n in getpeers.ClosestActiveNodes.Values)
+            foreach (Node n in nodes)
             {
                 if (n.Token == null)
                     continue;
                 AnnouncePeer query = new AnnouncePeer(engine.LocalId, infoHash, port, n.Token);
-                SendQueryTask task = new SendQueryTask(engine, query, n);
-                task.Completed += SentAnnounce;
-                task.Execute();
-                activeAnnounces++;
+                await engine.SendQueryAsync (query, n);
             }
-
-            if (activeAnnounces == 0)
-                RaiseComplete(new TaskCompleteEventArgs(this));
-        }
-
-        private void SentAnnounce(object o, TaskCompleteEventArgs e)
-        {
-            e.Task.Completed -= SentAnnounce;
-            activeAnnounces--;
-
-            if (activeAnnounces == 0)
-                RaiseComplete(new TaskCompleteEventArgs(this));
         }
     }
 }

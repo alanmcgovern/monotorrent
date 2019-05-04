@@ -11,19 +11,10 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class RoutingTableTests
     {
-        //static void Main(string[] args)
-        //{
-        //    RoutingTableTests t = new RoutingTableTests();
-        //    t.Setup();
-        //    t.AddSame();
-        //    t.Setup();
-        //    t.AddSimilar();
-        //}
         byte[] id;
         RoutingTable table;
         Node n;
-        int addedCount;
-        
+
         [SetUp]
         public void Setup()
         {
@@ -31,9 +22,7 @@ namespace MonoTorrent.Dht
             id[1] = 128;
             n = new Node(new NodeId(id), new System.Net.IPEndPoint(IPAddress.Any, 0));
             table = new RoutingTable(n);
-            table.NodeAdded += delegate { addedCount++; };
-            table.Add(n);//the local node is no more in routing table so add it to show test is still ok
-            addedCount = 0;
+            table.Add(n);
         }
 
         [Test]
@@ -46,7 +35,7 @@ namespace MonoTorrent.Dht
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
-            Assert.AreEqual(1, addedCount, "#a");
+            Assert.AreEqual(1, table.CountNodes (), "#a");
             Assert.AreEqual(1, table.Buckets.Count, "#1");
             Assert.AreEqual(1, table.Buckets[0].Nodes.Count, "#2");
 
@@ -63,7 +52,7 @@ namespace MonoTorrent.Dht
                 table.Add(new Node(new NodeId(id), new IPEndPoint(IPAddress.Any, 0)));
             }
 
-            Assert.AreEqual(Bucket.MaxCapacity * 3 - 1, addedCount, "#1");
+            Assert.AreEqual(Bucket.MaxCapacity * 3, table.CountNodes (), "#1");
             Assert.AreEqual(6, table.Buckets.Count, "#2");
             Assert.AreEqual(8, table.Buckets[0].Nodes.Count, "#3");
             Assert.AreEqual(8, table.Buckets[1].Nodes.Count, "#4");

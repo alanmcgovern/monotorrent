@@ -14,13 +14,6 @@ namespace MonoTorrent.Dht
     [TestFixture]
     public class TaskTests
     {
-        //static void Main(string[] args)
-        //{
-        //    TaskTests t = new TaskTests();
-        //    t.Setup();
-        //    t.ReplaceNodeTest();
-        //}
-
         DhtEngine engine;
         TestListener listener;
         Node node;
@@ -50,11 +43,7 @@ namespace MonoTorrent.Dht
                     counter++;
             };
 
-            SendQueryTask task = new SendQueryTask(engine, ping, node);
-            task.Completed += delegate { handle.Set(); };
-            task.Execute();
-            Assert.IsTrue(handle.WaitOne(3000, false), "#1");
-            Assert.AreEqual(task.Retries, counter);
+            Assert.IsTrue(engine.SendQueryAsync (ping, node).Wait (3000), "#1");
         }
 
         [Test]
@@ -74,11 +63,8 @@ namespace MonoTorrent.Dht
                 }
             };
 
-            SendQueryTask task = new SendQueryTask(engine, ping, node);
-            task.Completed += delegate { handle.Set(); };
-            task.Execute();
-
-            Assert.IsTrue(handle.WaitOne(3000, false), "#1");
+            ;
+            Assert.IsTrue(engine.SendQueryAsync (ping, node).Wait (3000), "#1");
             System.Threading.Thread.Sleep(200);
             Assert.AreEqual(1, counter, "#2");
             Node n = engine.RoutingTable.FindNode(this.node.Id);
@@ -129,11 +115,7 @@ namespace MonoTorrent.Dht
             };
 
             ReplaceNodeTask task = new ReplaceNodeTask(engine, b, null);
-            // FIXME: Need to assert that node 0.0.0.0:0 is the one which failed - i.e. it should be replaced
-            task.Completed += delegate(object o, TaskCompleteEventArgs e) { handle.Set(); };
-            task.Execute();
-
-            Assert.IsTrue(handle.WaitOne(4000, false), "#10");
+            Assert.IsTrue(task.Execute ().Wait (4000), "#10");
         }
 
         [Test]
@@ -195,9 +177,7 @@ namespace MonoTorrent.Dht
             Node nodeToReplace = engine.RoutingTable.Buckets[0].Nodes[3];
 
             ReplaceNodeTask task = new ReplaceNodeTask(engine, engine.RoutingTable.Buckets[0], replacement);
-            task.Completed += delegate { handle.Set(); };
-            task.Execute();
-            Assert.IsTrue(handle.WaitOne(1000, true), "#a");
+            Assert.IsTrue(task.Execute ().Wait (1000), "#a");
             Assert.IsFalse(engine.RoutingTable.Buckets[0].Nodes.Contains(nodeToReplace), "#1");
             Assert.IsTrue(engine.RoutingTable.Buckets[0].Nodes.Contains(replacement), "#2");
         }

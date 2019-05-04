@@ -5,6 +5,7 @@ using NUnit.Framework;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -28,18 +29,11 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class TrackerManagerTests
     {
-        //static void Main()
-        //{
-        //    TrackerManagerTests t = new TrackerManagerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.ScrapeTest();
-        //}
         TestRig rig;
         List<List<CustomTracker>> trackers;
         TrackerManager trackerManager;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             string[][] trackers = new string[][] {
@@ -60,16 +54,16 @@ namespace MonoTorrent.Client
             rig = TestRig.CreateTrackers(trackers);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();
         }
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
-            rig.RecreateManager();
+            await rig.RecreateManager();
             trackerManager = rig.Manager.TrackerManager;
             this.trackers = new List<List<CustomTracker>>();
             foreach (TrackerTier t in trackerManager)

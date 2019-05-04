@@ -9,12 +9,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PeerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    PeerTests t = new PeerTests();
-        //    t.Setup();
-        //    t.CorruptList();
-        //}
         private List<Peer> peers;
 
         [SetUp]

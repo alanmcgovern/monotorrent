@@ -91,7 +91,7 @@ namespace MonoTorrent.Client
         TestRig rig;
         ExceptionWriter writer;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
             handle.Close();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();
@@ -124,7 +124,7 @@ namespace MonoTorrent.Client
         {
             writer.close = true;
             Hookup();
-            diskManager.CloseFileStreams(rig.Manager);
+            diskManager.CloseFilesAsync (rig.Manager).Wait();
             CheckFail();
         }
 
@@ -133,7 +133,7 @@ namespace MonoTorrent.Client
         {
             writer.flush = true;
             Hookup();
-            diskManager.QueueFlush(rig.Manager, 0);
+            diskManager.FlushAsync(rig.Manager, 0).Wait();
             CheckFail();
         }
 
@@ -142,30 +142,26 @@ namespace MonoTorrent.Client
         {
             writer.move = true;
             Hookup();
-            diskManager.MoveFiles(rig.Manager, "root", true);
+            diskManager.MoveFilesAsync(rig.Manager, "root", true).Wait();
             CheckFail();
         }
 
         [Test]
         public void ReadFail()
         {
-            bool called = false;
             writer.read = true;
             Hookup();
-            diskManager.QueueRead(rig.Manager, 0, data, data.Length, delegate { called = true; });
+            diskManager.ReadAsync (rig.Manager, 0, data, data.Length).Wait ();
             CheckFail();
-            Assert.IsTrue (called, "#delegate called");
         }
 
         [Test]
         public void WriteFail()
         {
-            bool called = false;
             writer.write = true;
             Hookup();
-            diskManager.QueueWrite(rig.Manager, 0, data, data.Length, delegate { called = true; });
+            diskManager.WriteAsync(rig.Manager, 0, data, data.Length).Wait ();
             CheckFail();
-            Assert.IsTrue (called, "#delegate called");
         }
 
         void Hookup()

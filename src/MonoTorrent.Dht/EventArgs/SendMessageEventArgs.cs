@@ -7,38 +7,18 @@ using System.Net;
 
 namespace MonoTorrent.Dht
 {
-    class SendQueryEventArgs : TaskCompleteEventArgs
+    struct SendQueryEventArgs
     {
-        private IPEndPoint endpoint;
-        private QueryMessage query;
-        private ResponseMessage response;
+        public IPEndPoint EndPoint { get; }
+        public QueryMessage Query { get; }
+        public ResponseMessage Response { get; }
+        public bool TimedOut => Response == null;
 
-        public IPEndPoint EndPoint
+        public SendQueryEventArgs (IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
         {
-            get { return endpoint; }
-        }
-
-        public QueryMessage Query
-        {
-            get { return query; }
-        }
-
-        public ResponseMessage Response
-        {
-            get { return response; }
-        }
-
-        public bool TimedOut
-        {
-            get { return response == null; }
-        }
-
-        public SendQueryEventArgs(IPEndPoint endpoint, QueryMessage query, ResponseMessage response)
-            : base(null)
-        {
-            this.endpoint = endpoint;
-            this.query = query;
-            this.response = response;
+            EndPoint = endpoint;
+            Query = query;
+            Response = response;
         }
     }
 }

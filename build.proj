@@ -1,0 +1,45 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
+
+  <PropertyGroup>
+    <CI Condition="'$(CI)' == '' and '$(TF_BUILD)' == 'true'">true</CI>
+    <CI Condition="'$(CI)' == '' ">false</CI>
+
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SolutionFile Include="src/MonoTorrent.sln">
+      <Configuration>$(Configuration)</Configuration>
+    </SolutionFile>
+  </ItemGroup>
+
+  <Target Name="Build" DependsOnTargets="$(BuildDependsOn)">
+    <Error Text="You have not restored the solution. Run &quot;msbuild /restore&quot; to restore and compile, or run &quot;msbuild /t:Restore&quot; if you just want to restore."
+      Condition="! Exists ('src\MonoTorrent\obj\project.assets.json')" />
+
+    <MSBuild
+      Projects="@(SolutionFile)"
+      Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+      Targets="Build"
+    />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild
+        Projects="@(SolutionFile)"
+        Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+        Targets="Clean"
+    />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+
+  <Target Name="Restore">
+    <MSBuild
+      Projects="@(SolutionFile)"
+      Properties="$(MSBuildCommonProperties);Configuration=%(SolutionFile.Configuration)"
+      Targets="Restore"
+    />
+  </Target>
+
+</Project>

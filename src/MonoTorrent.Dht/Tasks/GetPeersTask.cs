@@ -4,21 +4,20 @@ using System.Collections.Generic;
 using MonoTorrent.BEncoding;
 using System;
 using MonoTorrent.Client;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Dht.Tasks
 {
-    class GetPeersTask : Task
+    class GetPeersTask
     {
+        int activeQueries;
     	NodeId infoHash;
     	DhtEngine engine;
-        int activeQueries;
-        SortedList<NodeId, NodeId> closestNodes;
-        SortedList<NodeId, Node> queriedNodes;
+        System.Threading.Tasks.TaskCompletionSource<Node[]> tcs = new System.Threading.Tasks.TaskCompletionSource<Node[]> ();
 
-        internal SortedList<NodeId, Node> ClosestActiveNodes
-        {
-            get { return queriedNodes; }
-        }
+        SortedList<NodeId, NodeId> ClosestNodes { get; }
+        internal SortedList<NodeId, Node> ClosestActiveNodes { get; }
 
         public GetPeersTask(DhtEngine engine, InfoHash infohash)
             : this(engine, new NodeId(infohash))
@@ -30,89 +29,58 @@ namespace MonoTorrent.Dht.Tasks
         {
             this.engine = engine;
             this.infoHash = infohash;
-            this.closestNodes = new SortedList<NodeId, NodeId>(Bucket.MaxCapacity);
-            this.queriedNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity * 2);
+            this.ClosestNodes = new SortedList<NodeId, NodeId>(Bucket.MaxCapacity);
+            this.ClosestActiveNodes = new SortedList<NodeId, Node>(Bucket.MaxCapacity * 2);
         }
 
-        public override void Execute()
+        public async Task<Node[]> Execute ()
         {
-            if (Active)
-                return;
+            var newNodes = engine.RoutingTable.GetClosest (infoHash);
+            foreach (Node n in Node.CloserNodes(infoHash, ClosestNodes, newNodes, Bucket.MaxCapacity))
+                await SendGetPeers(n);
 
-            Active = true;
-            DhtEngine.MainLoop.Queue ((MainLoopTask) delegate {
-                IEnumerable<Node> newNodes = engine.RoutingTable.GetClosest(infoHash);
-                foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
-                    SendGetPeers(n);
-            });
+            return ClosestActiveNodes.Values.ToArray ();
         }
 
-        private void SendGetPeers(Node n)
+        private async Task SendGetPeers (Node target)
         {
-            NodeId distance = n.Id.Xor(infoHash);
-            queriedNodes.Add(distance, n);
+            NodeId distance = target.Id.Xor(infoHash);
+            ClosestActiveNodes.Add(distance, target);
 
-            activeQueries++;
             GetPeers m = new GetPeers(engine.LocalId, infoHash);
-            SendQueryTask task = new SendQueryTask(engine, m, n);
-            task.Completed += GetPeersCompleted;
-            task.Execute();
-        }
+            activeQueries++;
+            var args = await engine.SendQueryAsync (m, target);
+            activeQueries--;
 
-        private void GetPeersCompleted(object o, TaskCompleteEventArgs e)
-        {
-            try
-            {
-                activeQueries--;
-                e.Task.Completed -= GetPeersCompleted;
+            // We want to keep a list of the top (K) closest nodes which have responded
+            int index = ClosestActiveNodes.Values.IndexOf (target);
+            if (index >= Bucket.MaxCapacity || args.TimedOut)
+                ClosestActiveNodes.RemoveAt (index);
 
-                SendQueryEventArgs args = (SendQueryEventArgs)e;
-
-                // We want to keep a list of the top (K) closest nodes which have responded
-                Node target = ((SendQueryTask)args.Task).Target;
-                int index = queriedNodes.Values.IndexOf(target);
-                if (index >= Bucket.MaxCapacity || args.TimedOut)
-                    queriedNodes.RemoveAt(index);
-
-                if (args.TimedOut)
-                    return;
-
-                GetPeersResponse response = (GetPeersResponse)args.Response;
-
-                // Ensure that the local Node object has the token. There may/may not be
-                // an additional copy in the routing table depending on whether or not
-                // it was able to fit into the table.
-                target.Token = response.Token;
-                if (response.Values != null)
-                {
-                    // We have actual peers!
-                    engine.RaisePeersFound(infoHash, MonoTorrent.Client.Peer.Decode(response.Values));
-                }
-                else if (response.Nodes != null)
-                {
-                    if (!Active)
-                        return;
-
-                    // We got a list of nodes which are closer
-                    IEnumerable<Node> newNodes = Node.FromCompactNode(response.Nodes);
-                    foreach (Node n in Node.CloserNodes(infoHash, closestNodes, newNodes, Bucket.MaxCapacity))
-                        SendGetPeers(n);
-                }
-            }
-            finally
-            {
+            if (args.TimedOut) {
                 if (activeQueries == 0)
-                    RaiseComplete(new TaskCompleteEventArgs(this));
-            }
-        }
-
-        protected override void RaiseComplete(TaskCompleteEventArgs e)
-        {
-            if (!Active)
+                    tcs.TrySetResult (new Node[0]);
                 return;
+            }
 
-            Active = false;
-            base.RaiseComplete(e);
+            GetPeersResponse response = (GetPeersResponse)args.Response;
+
+            // Ensure that the local Node object has the token. There may/may not be
+            // an additional copy in the routing table depending on whether or not
+            // it was able to fit into the table.
+            target.Token = response.Token;
+            if (response.Values != null) {
+                // We have actual peers!
+                engine.RaisePeersFound (infoHash, Peer.Decode (response.Values));
+            } else if (response.Nodes != null) {
+                // We got a list of nodes which are closer
+                IEnumerable<Node> newNodes = Node.FromCompactNode (response.Nodes);
+                foreach (Node closer in Node.CloserNodes (infoHash, ClosestNodes, newNodes, Bucket.MaxCapacity))
+                    await SendGetPeers (closer);
+            }
+
+            if (activeQueries == 0)
+                tcs.TrySetResult (ClosestActiveNodes.Values.ToArray ());
         }
     }
 }

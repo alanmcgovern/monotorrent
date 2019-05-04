@@ -207,8 +207,8 @@ namespace MonoTorrent.Client
         private void SwitchToRegular()
         {
             Torrent torrent = Manager.Torrent;
-            foreach (PeerId peer in Manager.Peers.ConnectedPeers)
-                peer.CloseConnection();
+            foreach (PeerId id in new List<PeerId> (Manager.Peers.ConnectedPeers))
+                Manager.Engine.ConnectionManager.CleanupSocket (id);
             Manager.Bitfield = new BitField(torrent.Pieces.Count);
             Manager.PieceManager.ChangePicker(Manager.CreateStandardPicker(), Manager.Bitfield, torrent.Files);
             foreach (TorrentFile file in torrent.Files)

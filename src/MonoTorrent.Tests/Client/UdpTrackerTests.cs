@@ -44,24 +44,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class UdpTrackerTests
     {
-        static void Main(string[] args)
-        {
-            UdpTrackerTests t = new UdpTrackerTests();
-            t.ConnectMessageTest();
-            t.ConnectResponseTest();
-            t.AnnounceMessageTest();
-            t.AnnounceResponseTest();
-            t.ScrapeMessageTest();
-            t.ScrapeResponseTest();
-            t.FixtureSetup();
-
-            t.AnnounceTest();
-            t.Setup();
-            t.ScrapeTest();
-
-            t.FixtureTeardown();
-        }
-
         AnnounceParameters announceparams = new AnnounceParameters(100, 50, int.MaxValue,
             MonoTorrent.Common.TorrentEvent.Completed,
             new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
@@ -69,9 +51,9 @@ namespace MonoTorrent.Client
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Tracker.Listeners.UdpListener listener;
         List<string> keys;
-        string prefix = "udp://localhost:6767/announce/";
+        string prefix = "udp://127.0.0.1:6767/announce/";
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             keys = new List<string>();
@@ -93,7 +75,7 @@ namespace MonoTorrent.Client
             keys.Clear();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             listener.Stop();

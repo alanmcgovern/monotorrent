@@ -32,6 +32,7 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using MonoTorrent.Client.Connections;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Encryption
 {
@@ -42,11 +43,9 @@ namespace MonoTorrent.Client.Encryption
 
         byte[] InitialData { get; }
 
-        IAsyncResult BeginHandshake(IConnection socket, AsyncCallback callback, object state);
+        Task HandshakeAsync(IConnection socket);
 
-        IAsyncResult BeginHandshake(IConnection socket, byte[] initialBuffer, int offset, int count, AsyncCallback callback, object state);
-
-        void EndHandshake(IAsyncResult result);
+        Task HandshakeAsync(IConnection socket, byte[] initialBuffer, int offset, int count);
 
         IEncryption Encryptor { get; }
         IEncryption Decryptor { get; }

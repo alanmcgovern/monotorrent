@@ -377,8 +377,8 @@ namespace MonoTorrent.Client.Tracker
 
        #region async state
 
-       abstract class UdpTrackerAsyncState : AsyncResult
-       {
+       abstract class UdpTrackerAsyncState : Connections.HttpConnection.AsyncResult
+        {
            public byte[] Data;
            public UdpTrackerMessage Message;
 

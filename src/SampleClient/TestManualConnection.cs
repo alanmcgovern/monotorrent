@@ -11,6 +11,7 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.PieceWriters;
 using MonoTorrent.Client.Tracker;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SampleClient
 {
@@ -152,6 +153,20 @@ namespace SampleClient
             Console.WriteLine("{0} - {1}", name, "sent");
             return s.EndSend(result);
         }
+        public Task ConnectAsync()
+        {
+            return Task.Factory.FromAsync(BeginConnect(null, null), EndConnect);
+        }
+
+        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
+        }
+
+        public Task<int> SendAsync(byte[] buffer, int offset, int count)
+        {
+            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
+        }
 
         public void Dispose()
         {
@@ -195,7 +210,7 @@ namespace SampleClient
 
         public ConnectionPair(int port)
         {
-            socketListener = new TcpListener(port);
+            socketListener = new TcpListener(IPAddress.Loopback, port);
             socketListener.Start();
 
             Socket s1a = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -278,7 +293,7 @@ namespace SampleClient
             torrentDict = CreateTorrent(piecelength);
             torrent = Torrent.Load(torrentDict);
             manager = new TorrentManager(torrent, savePath, new TorrentSettings());
-            engine.Register(manager);
+            engine.Register(manager).Wait();
             //manager.Start();
         }
 

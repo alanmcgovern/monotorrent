@@ -11,13 +11,6 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class ConnectionListenerTests
     {
-        //static void Main(string[] args)
-        //{
-        //    ConnectionListenerTests t = new ConnectionListenerTests();
-        //    t.Setup();
-        //    t.AcceptThree();
-        //    t.Teardown();
-        //}
         private SocketListener listener;
         private IPEndPoint endpoint;
         [SetUp]

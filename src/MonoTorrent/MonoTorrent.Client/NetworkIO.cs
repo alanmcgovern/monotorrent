@@ -28,8 +28,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
-
+using System.Threading.Tasks;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Messages;
@@ -37,196 +38,134 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client
 {
-    public delegate void AsyncIOCallback (bool succeeded, int transferred, object state);
-    public delegate void AsyncMessageReceivedCallback (bool succeeded, PeerMessage message, object state);
-
-    internal class AsyncConnectState
+    internal class NetworkIO
     {
-        public AsyncConnectState(TorrentManager manager, Peer peer, IConnection connection)
+        static MainLoop IOLoop = new MainLoop ("NetworkIO Loop");
+
+        public struct QueuedIO
         {
-            Manager = manager;
-            Peer = peer;
-            Connection = connection;
+            public IConnection connection;
+            public byte [] buffer;
+            public int offset;
+            public int count;
+            public IRateLimiter rateLimiter;
+            public TaskCompletionSource<int> tcs;
+
+            public QueuedIO (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, TaskCompletionSource<int> tcs)
+            {
+                this.connection = connection;
+                this.buffer = buffer;
+                this.offset = offset;
+                this.count = count;
+                this.rateLimiter = rateLimiter;
+                this.tcs = tcs;
+            }
         }
 
-        public IConnection Connection;
-        public TorrentManager Manager;
-        public Peer Peer;
-    }
-
-    internal partial class NetworkIO
-    {
         // The biggest message is a PieceMessage which is 16kB + some overhead
         // so send in chunks of 2kB + a little so we do 8 transfers per piece.
         const int ChunkLength = 2048 + 32;
 
-        static Queue<AsyncIOState> receiveQueue = new Queue<AsyncIOState> ();
-        static Queue<AsyncIOState> sendQueue = new Queue<AsyncIOState> ();
+        static readonly Queue<QueuedIO> receiveQueue = new Queue<QueuedIO> ();
+        static readonly Queue<QueuedIO> sendQueue = new Queue<QueuedIO> ();
 
-        static ICache <AsyncConnectState> connectCache = new Cache <AsyncConnectState> (true).Synchronize ();
-        static ICache <AsyncIOState> transferCache = new Cache <AsyncIOState> (true).Synchronize ();
-
-        static AsyncCallback EndConnectCallback = EndConnect;
-        static AsyncCallback EndReceiveCallback = EndReceive;
-        static AsyncCallback EndSendCallback = EndSend;
-
-        static NetworkIO()
+        static NetworkIO ()
         {
-            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
-                lock (sendQueue)
-                {
-                    int count = sendQueue.Count;
-                    for (int i = 0; i < count; i++)
-                         SendOrEnqueue (sendQueue.Dequeue ());
+            IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
+                while (receiveQueue.Count > 0) {
+                    var io = receiveQueue.Peek ();
+                    if (io.rateLimiter.TryProcess (io.count))
+                        ReceiveQueuedAsync (receiveQueue.Dequeue ());
                 }
-                lock (receiveQueue)
-                {
-                    int count = receiveQueue.Count;
-                    for (int i = 0; i < count; i++)
-                        ReceiveOrEnqueue (receiveQueue.Dequeue ());
+                while (sendQueue.Count > 0) {
+                    var io = sendQueue.Peek ();
+                    if (io.rateLimiter.TryProcess (io.count))
+                        SendQueuedAsync (sendQueue.Dequeue ());
                 }
+
                 return true;
             });
         }
 
-        static int halfOpens;
-        public static int HalfOpens {
-            get { return halfOpens; }
-        }
-
-        public static void EnqueueConnect (IConnection connection, AsyncIOCallback callback, object state)
+        static async void ReceiveQueuedAsync (QueuedIO io)
         {
-            var data = connectCache.Dequeue ().Initialise (connection, callback, state);
-
             try {
-                var result = connection.BeginConnect (EndConnectCallback, data);
-                Interlocked.Increment (ref halfOpens);
-                ClientEngine.MainLoop.QueueTimeout (TimeSpan.FromSeconds (10), delegate {
-                    if (!result.IsCompleted)
-                        connection.Dispose ();
-                    return false;
-                });
-            } catch {
-                callback (false, 0, state);
-                connectCache.Enqueue (data);
+                var result = await io.connection.ReceiveAsync (io.buffer, io.offset, io.count).ConfigureAwait (false);
+                io.tcs.SetResult (result);
+            } catch (Exception ex) {
+                io.tcs.SetException (ex);
             }
         }
 
-        public static void EnqueueReceive (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, AsyncIOCallback callback, object state)
+        static async void SendQueuedAsync (QueuedIO io)
         {
-            var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
-            lock (receiveQueue)
-                ReceiveOrEnqueue (data);
-        }
-
-        public static void EnqueueSend (IConnection connection, byte[] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor, AsyncIOCallback callback, object state)
-        {
-            var data = transferCache.Dequeue ().Initialise (connection, buffer, offset, count, callback, state, rateLimiter, peerMonitor, managerMonitor);
-            lock (sendQueue)
-                SendOrEnqueue (data);
-        }
-
-        static void EndConnect (IAsyncResult result)
-        {
-            var data = (AsyncConnectState) result.AsyncState;
             try {
-                Interlocked.Decrement (ref halfOpens);
-                data.Connection.EndConnect (result);
-                data.Callback (true, 0, data.State);
-            } catch {
-                data.Callback (false, 0, data.State);
-            } finally {
-                connectCache.Enqueue (data);
+                var result = await io.connection.SendAsync (io.buffer, io.offset, io.count).ConfigureAwait(false);
+                io.tcs.SetResult (result);
+            } catch (Exception ex) {
+                io.tcs.SetException (ex);
             }
         }
 
-        static void EndReceive (IAsyncResult result)
+        public static async Task ConnectAsync (IConnection connection)
         {
-            var data = (AsyncIOState) result.AsyncState;
-            try {
-                int transferred = data.Connection.EndReceive (result);
-                if (transferred == 0) {
-                    data.Callback (false, 0, data.State);
-                    transferCache.Enqueue (data);
+            await IOLoop;
+
+            await connection.ConnectAsync ();
+        }
+
+        public static async Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+        {
+            await IOLoop;
+
+            int remaining = count;
+            while (remaining > 0) {
+                int transferred;
+                if (rateLimiter != null && !rateLimiter.Unlimited && !rateLimiter.TryProcess (Math.Min (ChunkLength, remaining))) {
+                    var tcs = new TaskCompletionSource<int> ();
+                    await IOLoop;
+                    receiveQueue.Enqueue (new QueuedIO (connection, buffer, offset, Math.Min (ChunkLength, remaining), rateLimiter, tcs));
+                    transferred = await tcs.Task.ConfigureAwait(false);
                 } else {
-                    if (data.PeerMonitor != null)
-                        data.PeerMonitor.BytesReceived (transferred, data.TransferType);
-                    if (data.ManagerMonitor != null)
-                        data.ManagerMonitor.BytesReceived (transferred, data.TransferType);
-
-                    data.Offset += transferred;
-                    data.Remaining -= transferred;
-                    if (data.Remaining == 0) {
-                        data.Callback (true, data.Count, data.State);
-                        transferCache.Enqueue (data);
-                    } else {
-                        lock (receiveQueue)
-                            ReceiveOrEnqueue (data);
-                    }
+                    transferred = await connection.ReceiveAsync(buffer, offset, remaining).ConfigureAwait(false); ;
                 }
-            } catch {
-                data.Callback (false, 0, data.State);
-                transferCache.Enqueue (data);
-            }
+
+                if (transferred == 0)
+                    throw new Exception("Socket is dead");
+
+                peerMonitor?.BytesReceived(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+                managerMonitor?.BytesReceived(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+
+                offset += transferred;
+                remaining -= transferred;
+            } 
         }
 
-        static void EndSend (IAsyncResult result)
+        public static async Task SendAsync (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
         {
-            var data = (AsyncIOState) result.AsyncState;
-            try {
-                int transferred = data.Connection.EndSend (result);
-                if (transferred == 0) {
-                    data.Callback (false, 0, data.State);
-                    transferCache.Enqueue (data);
+            await IOLoop;
+
+            int remaining = count;
+            while (remaining > 0)
+            {
+                int transferred;
+                if (rateLimiter != null && !rateLimiter.Unlimited && !rateLimiter.TryProcess (Math.Min (ChunkLength, remaining))) {
+                    var tcs = new TaskCompletionSource<int> ();
+                    await IOLoop;
+                    sendQueue.Enqueue (new QueuedIO (connection, buffer, offset, Math.Min (ChunkLength, remaining), rateLimiter, tcs));
+                    transferred = await tcs.Task.ConfigureAwait(false);
                 } else {
-                    if (data.PeerMonitor != null)
-                        data.PeerMonitor.BytesSent (transferred, data.TransferType);
-                    if (data.ManagerMonitor != null)
-                        data.ManagerMonitor.BytesSent (transferred, data.TransferType);
-
-                    data.Offset += transferred;
-                    data.Remaining -= transferred;
-                    if (data.Remaining == 0) {
-                        data.Callback (true, data.Count, data.State);
-                        transferCache.Enqueue (data);
-                    } else {
-                        lock (sendQueue)
-                            SendOrEnqueue (data);
-                    }
+                    transferred = await connection.SendAsync(buffer, offset, remaining).ConfigureAwait(false);
                 }
-            } catch {
-                data.Callback (false, 0, data.State);
-                transferCache.Enqueue (data);
-            }
-        }
 
-        static void ReceiveOrEnqueue (AsyncIOState data)
-        {
-            int count = Math.Min (ChunkLength, data.Remaining);
-            if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
-                try {
-                    data.Connection.BeginReceive (data.Buffer, data.Offset, count, EndReceiveCallback, data);
-                } catch {
-                    data.Callback (false, 0, data.State);
-                    transferCache.Enqueue (data);
-                }
-            } else {
-                receiveQueue.Enqueue (data);
-            }
-        }
+                if (transferred == 0)
+                    throw new Exception("Socket is dead");
 
-        static void SendOrEnqueue (AsyncIOState data)
-        {
-            int count = Math.Min (ChunkLength, data.Remaining);
-            if (data.RateLimiter == null || data.RateLimiter.TryProcess (1)) {
-                try {
-                    data.Connection.BeginSend (data.Buffer, data.Offset, count, EndSendCallback, data);
-                } catch {
-                    data.Callback (false, 0, data.State);
-                    transferCache.Enqueue (data);
-                }
-            } else {
-                sendQueue.Enqueue (data);
+                peerMonitor?.BytesSent(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+                managerMonitor?.BytesSent(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+
+                offset += transferred;
+                remaining -= transferred;
             }
         }
     }

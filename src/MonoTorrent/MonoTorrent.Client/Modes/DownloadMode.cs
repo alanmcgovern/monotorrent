@@ -22,7 +22,7 @@ namespace MonoTorrent.Client
         public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
         {
             if (!ShouldConnect(id))
-                id.CloseConnection();
+                this.Manager.Engine.ConnectionManager.CleanupSocket (id);
             base.HandlePeerConnected(id, direction);
         }
 
@@ -42,7 +42,7 @@ namespace MonoTorrent.Client
             }
             for (int i = 0; i < Manager.Peers.ConnectedPeers.Count; i++)
                 if (!ShouldConnect(Manager.Peers.ConnectedPeers[i]))
-                    Manager.Peers.ConnectedPeers[i].CloseConnection();
+                    Manager.Engine.ConnectionManager.CleanupSocket (Manager.Peers.ConnectedPeers[i]);
             base.Tick(counter);
         }
     }

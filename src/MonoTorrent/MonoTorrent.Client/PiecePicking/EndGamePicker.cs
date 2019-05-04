@@ -142,10 +142,9 @@ namespace MonoTorrent.Client
                 {
                     if (p.Blocks[i].Requested)
                         continue;
-                    p.Blocks[i].Requested = true;
-                    Request request = new Request(id, p.Blocks[i]);
-                    requests.Add(request);
-                    return new MessageBundle(request.Block.CreateRequest(id));
+                    var requestMessage = p.Blocks[i].CreateRequest (id);
+                    requests.Add(new Request(id, p.Blocks[i]));
+                    return new MessageBundle(requestMessage);
                 }
             }
 
@@ -172,10 +171,9 @@ namespace MonoTorrent.Client
                             j--;
                         }
                     }
-                    p.Blocks[i].Requested = true;
-                    Request request = new Request(id, p.Blocks[i]);
-                    requests.Add(request);
-                    return new MessageBundle(request.Block.CreateRequest(id));
+                    var requestMessage = p.Blocks[i].CreateRequest(id);
+                    requests.Add(new Request(id, p.Blocks[i]));
+                    return new MessageBundle(requestMessage);
                 }
             }
 
@@ -219,6 +217,12 @@ namespace MonoTorrent.Client
         public override void CancelRequests(PeerId peer)
         {
             CancelWhere(delegate(Request r) { return r.Peer == peer; }, false);
+            foreach (var p in pieces) {
+                for (int i = 0; i < p.BlockCount; i++) {
+                    if (p.Blocks [i].RequestedOff == peer && !p.Blocks [i].Received)
+                        p.Blocks[i].CancelRequest();
+                }
+            }
         }
 
         public override bool ValidatePiece(PeerId peer, int pieceIndex, int startOffset, int length, out Piece piece)

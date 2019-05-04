@@ -45,20 +45,11 @@ namespace MonoTorrent.Client.Tracker
         static Random random = new Random();
         static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
-        Uri scrapeUrl;
-        string key;
         string TrackerId;
 
-        public string Key
-        {
-            get { return key; }
-            private set { key = value; }
-        }
+        public string Key { get; private set; }
 
-        public Uri ScrapeUri
-        {
-            get { return scrapeUrl; }
-        }
+        public Uri ScrapeUri { get; }
 
         public HTTPTracker(Uri announceUrl)
             : base(announceUrl)
@@ -70,7 +61,7 @@ namespace MonoTorrent.Client.Tracker
             {
                 CanScrape = true;
                 Regex r = new Regex("announce");
-                this.scrapeUrl = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
+                ScrapeUri = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
             }
 
             byte[] passwordKey = new byte[8];
@@ -284,7 +275,7 @@ namespace MonoTorrent.Client.Tracker
         {
             try
             {
-                string url = scrapeUrl.OriginalString;
+                string url = ScrapeUri.OriginalString;
 
                 // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
                 if (url.IndexOf('?') == -1)

@@ -12,7 +12,7 @@ namespace MonoTorrent.Client.Connections
         static ConnectionFactory()
         {
             RegisterTypeForProtocol("tcp", typeof(IPV4Connection));
-            RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
+            //RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
             RegisterTypeForProtocol("http", typeof(HttpConnection));
         }
 

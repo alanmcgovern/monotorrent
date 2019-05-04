@@ -6,19 +6,13 @@ using MonoTorrent.Client;
 using MonoTorrent.Common;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Messages;
+using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class EndGamePickerTests
     {
-        //static void Main()
-        //{
-        //    EndGamePickerTests t = new EndGamePickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.CancelTest();
-        //}
         BitField bitfield;
         PeerId id;
         PeerId other;
@@ -26,7 +20,7 @@ namespace MonoTorrent.Client
         List<Piece> pieces;
         TestRig rig;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -49,15 +43,17 @@ namespace MonoTorrent.Client
             });
 
             id = new PeerId(new Peer("peerid", new Uri("tcp://weburl.com")), rig.Manager);
+            id.Encryptor = id.Decryptor = PlainTextEncryption.Instance;
             id.IsChoking = false;
             id.BitField.SetAll(false);
 
             other = new PeerId(new Peer("other", new Uri("tcp://other.com")), rig.Manager);
+            other.Decryptor = other.Encryptor = PlainTextEncryption.Instance;
             other.IsChoking = false;
             other.BitField.SetAll(false);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();
@@ -93,7 +89,7 @@ namespace MonoTorrent.Client
 
             for (int i = 2; i < pieces[0].BlockCount; i++)
             {
-                pieces[0].Blocks[i].Requested = true;
+                pieces[0].Blocks[i].CreateRequest (new PeerId (new Peer ("", new Uri ("http://asd")), null));
                 pieces[0].Blocks[i].Received = true;
             }
             

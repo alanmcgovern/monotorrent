@@ -51,7 +51,6 @@ namespace MonoTorrent.Client
         private bool isSeeder;
         private string peerId;
         private int repeatedHashFails;
-        private DateTime lastConnectionAttempt;
 
         #endregion Private Fields
 
@@ -102,12 +101,6 @@ namespace MonoTorrent.Client
         {
             get { return localPort; }
             set { localPort = value; }
-        }
-
-        internal DateTime LastConnectionAttempt
-        {
-            get { return this.lastConnectionAttempt; }
-            set { this.lastConnectionAttempt = value; }
         }
 
         internal int RepeatedHashFails

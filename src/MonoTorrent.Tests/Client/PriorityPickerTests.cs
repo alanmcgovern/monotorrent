@@ -39,20 +39,12 @@ namespace MonoTorrent.Client
     [TestFixture]
     public class PriorityPickerTests
     {
-        //static void Main()
-        //{
-        //    PriorityPickerTests t = new PriorityPickerTests();
-        //    t.FixtureSetup();
-        //    t.Setup();
-        //    t.PriorityMix();
-        //}
-
         PeerId id;
         PriorityPicker picker;
         TestRig rig;
         TestPicker tester;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
@@ -60,7 +52,7 @@ namespace MonoTorrent.Client
             id.BitField.SetAll(true);
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();

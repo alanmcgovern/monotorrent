@@ -36,14 +36,16 @@ using MonoTorrent.BEncoding;
 
 namespace MonoTorrent.Dht.Messages
 {
-    delegate Message Creator(BEncodedDictionary dictionary);
-    delegate Message ResponseCreator(BEncodedDictionary dictionary, QueryMessage message);
     
-    internal static class MessageFactory
+    static class MessageFactory
     {
-        private static readonly string QueryNameKey = "q";
-        private static BEncodedString MessageTypeKey = "y";
-        private static BEncodedString TransactionIdKey = "t";
+        static readonly string QueryNameKey = "q";
+        static readonly BEncodedString MessageTypeKey = "y";
+        static readonly BEncodedString TransactionIdKey = "t";
+
+        readonly static Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage> ();
+        readonly static Dictionary<BEncodedString, Func<BEncodedDictionary, Message>> queryDecoders = new Dictionary<BEncodedString, Func<BEncodedDictionary, Message>> ();
+
 
         public static int RegisteredMessages
         {
@@ -52,14 +54,12 @@ namespace MonoTorrent.Dht.Messages
 
         static MessageFactory()
         {
-            queryDecoders.Add("announce_peer", delegate(BEncodedDictionary d) { return new AnnouncePeer(d); });
-            queryDecoders.Add("find_node",     delegate(BEncodedDictionary d) { return new FindNode(d); });
-            queryDecoders.Add("get_peers",     delegate(BEncodedDictionary d) { return new GetPeers(d); });
-            queryDecoders.Add("ping",          delegate(BEncodedDictionary d) { return new Ping(d); });
+            queryDecoders.Add("announce_peer", d => new AnnouncePeer(d));
+            queryDecoders.Add("find_node",     d => new FindNode(d));
+            queryDecoders.Add("get_peers",     d => new GetPeers(d));
+            queryDecoders.Add("ping",          d => new Ping(d));
         }
 
-        private static Dictionary<BEncodedValue, QueryMessage> messages = new Dictionary<BEncodedValue, QueryMessage>();
-        private static Dictionary<BEncodedString, Creator> queryDecoders = new Dictionary<BEncodedString, Creator>();
 
         internal static bool IsRegistered(BEncodedValue transactionId)
         {

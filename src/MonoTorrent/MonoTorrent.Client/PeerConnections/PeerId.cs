@@ -29,372 +29,99 @@
 
 
 
-using System.Net.Sockets;
 using System;
-using MonoTorrent.Common;
-using System.Diagnostics;
-using MonoTorrent.Client.Connections;
-using MonoTorrent.Client.Messages;
-using MonoTorrent.Client.Encryption;
-using MonoTorrent.Client.Messages.Libtorrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using MonoTorrent.Common;
+using MonoTorrent.Client.Connections;
+using MonoTorrent.Client.Encryption;
+using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
+
 namespace MonoTorrent.Client
 {
-    public class PeerId //: IComparable<PeerIdInternal>
+    public class PeerId : IDisposable
     {
         #region Choke/Unchoke
-        
-        internal DateTime? LastUnchoked
-        {
-            get { return this.lastUnchoked; }
-            set { this.lastUnchoked = value; }
-        }
 
-        internal long BytesDownloadedAtLastReview
-        {
-            get { return this.bytesDownloadedAtLastReview; }
-            set { this.bytesDownloadedAtLastReview = value; }
-        }
-
-        internal long BytesUploadedAtLastReview
-        {
-            get { return this.bytesUploadedAtLastReview; }
-            set { this.bytesUploadedAtLastReview = value; }
-        }
-
-        public IConnection Connection {
-            get { return connection; }
-            internal set { connection = value; }
-        }
-
-        internal double LastReviewDownloadRate
-        {
-            get { return this.lastReviewDownloadRate; }
-            set { this.lastReviewDownloadRate = value; }
-        }
-
-        internal double LastReviewUploadRate
-        {
-            get { return this.lastReviewUploadRate; }
-            set { this.lastReviewUploadRate = value; }
-        }
-
-		internal bool FirstReviewPeriod
-		{
-			get { return this.firstReviewPeriod; }
-			set { this.firstReviewPeriod = value; }
-		}
-
-		internal DateTime LastBlockReceived
-		{
-			get { return this.lastBlockReceived; }
-			set { this.lastBlockReceived = value; }
-		}
-
-        private DateTime? lastUnchoked = null;        //When this peer was last unchoked, or null if we haven't unchoked it yet
-        private long bytesDownloadedAtLastReview = 0; //Number of bytes downloaded when this peer was last reviewed - allows us to determine number of bytes
-        //downloaded during a review period
-        private long bytesUploadedAtLastReview = 0;   //Ditto for uploaded bytes
-        private double lastReviewDownloadRate = 0;    //Download rate determined at the end of the last full review period when this peer was unchoked
-        private double lastReviewUploadRate = 0;      //Ditto for upload rate
-        private bool firstReviewPeriod;               //Set true if this is the first review period since this peer was last unchoked
-		private DateTime lastBlockReceived = DateTime.Now;
+        internal Stopwatch LastUnchoked { get; } = new Stopwatch ();
+        internal long BytesDownloadedAtLastReview { get; set; } = 0;
+        internal long BytesUploadedAtLastReview { get; set; } = 0;
+        public IConnection Connection { get; internal set; }
+        internal double LastReviewDownloadRate { get; set; } = 0;
+        internal double LastReviewUploadRate { get; set; } = 0;
+        internal bool FirstReviewPeriod { get; set; }
+        internal Stopwatch LastBlockReceived { get; } = new Stopwatch ();
 
         #endregion
 
         #region Member Variables
 
-        public List<PieceMessage> PieceReads = new List<PieceMessage>();
-
-        private MonoTorrentCollection<int> amAllowedFastPieces;
-        private bool amChoking;
-        private bool amInterested;
-        private int amRequestingPiecesCount;
-        private BitField bitField;
-        private Software clientApp;
-        private IConnection connection;
-        private PeerMessage currentlySendingMessage;
-        private IEncryption decryptor;
-        private string disconnectReason;
-        private IEncryption encryptor;
-        private ClientEngine engine;
-        private MonoTorrentCollection<int> isAllowedFastPieces;
-        private bool isChoking;
-        private bool isInterested;
-        private int isRequestingPiecesCount;
-        private DateTime lastMessageReceived;
-        private DateTime lastMessageSent;
-		private DateTime whenConnected;
-        private ExtensionSupports extensionSupports;
-        private int maxPendingRequests;
-        private int maxSupportedPendingRequests;
-        private MessagingCallback messageReceivedCallback;
-        private MessagingCallback messageSentCallback;
-        private ConnectionMonitor monitor;
-        private Peer peer;
-        private PeerExchangeManager pexManager;
-        private int piecesSent;
-        private int piecesReceived;
-        private ushort port;
-        private bool processingQueue;
         private MonoTorrentCollection<PeerMessage> sendQueue;                  // This holds the peermessages waiting to be sent
-        private MonoTorrentCollection<int> suggestedPieces;
-        private bool supportsFastPeer;
-        private bool supportsLTMessages;
         private TorrentManager torrentManager;
 
         #endregion Member Variables
 
         #region Properties
 
-        internal byte[] AddressBytes
-        {
-            get { return Connection.AddressBytes; }
-        }
+        internal byte [] AddressBytes => Connection.AddressBytes;
 
         /// <summary>
         /// The remote peer can request these and we'll fulfill the request if we're choking them
         /// </summary>
-        internal MonoTorrentCollection<int> AmAllowedFastPieces
-        {
-            get { return this.amAllowedFastPieces; }
-            set { this.amAllowedFastPieces = value; }
-        }
-
-        public bool AmChoking
-        {
-            get { return this.amChoking; }
-            internal set { this.amChoking = value; }
-        }
-
-        public bool AmInterested
-        {
-            get { return this.amInterested; }
-            internal set { this.amInterested = value; }
-        }
-
-        public int AmRequestingPiecesCount
-        {
-            get { return this.amRequestingPiecesCount; }
-            set { this.amRequestingPiecesCount = value; }
-        }
-
-        public BitField BitField
-        {
-            get { return this.bitField; }
-            set { this.bitField = value; }
-        }
-
-        public Software ClientApp
-        {
-            get { return this.clientApp; }
-            internal set { this.clientApp = value; }
-        }
-
-        internal ConnectionManager ConnectionManager
-        {
-            get { return this.engine.ConnectionManager; }
-        }
-
-        internal PeerMessage CurrentlySendingMessage
-        {
-            get { return this.currentlySendingMessage; }
-            set { this.currentlySendingMessage = value; }
-        }
-
-        internal IEncryption Decryptor
-        {
-            get { return this.decryptor; }
-            set { this.decryptor = value; }
-        }
-
-        internal string DisconnectReason
-        {
-            get { return this.disconnectReason; }
-            set { this.disconnectReason = value; }
-        }
-
-        public IEncryption Encryptor
-        {
-            get { return this.encryptor; }
-            set { this.encryptor = value; }
-        }
-
-        public ClientEngine Engine
-        {
-            get { return this.engine; ; }
-        }
-
-        internal ExtensionSupports ExtensionSupports
-        {
-            get { return extensionSupports; }
-            set { extensionSupports = value; }
-        }
-
-        public int HashFails
-        {
-            get { return peer.TotalHashFails; }
-        }
-        
-        internal MonoTorrentCollection<int> IsAllowedFastPieces
-        {
-            get { return this.isAllowedFastPieces; }
-            set { this.isAllowedFastPieces = value; }
-        }
-
-        public bool IsChoking
-        {
-            get { return this.isChoking; }
-            internal set { this.isChoking = value; }
-        }
-
-        public bool IsConnected
-        {
-            get { return Connection != null; }
-        }
-        
-        public bool IsInterested
-        {
-            get { return this.isInterested; }
-            internal set { this.isInterested = value; }
-        }
-
-        public bool IsSeeder
-        {
-            get { return bitField.AllTrue || peer.IsSeeder; }
-        }
-        
-        public int IsRequestingPiecesCount
-        {
-            get { return this.isRequestingPiecesCount; }
-            set { this.isRequestingPiecesCount = value; }
-        }
-
-        internal DateTime LastMessageReceived
-        {
-            get { return this.lastMessageReceived; }
-            set { this.lastMessageReceived = value; }
-        }
-
-		internal DateTime LastMessageSent
-		{
-			get { return this.lastMessageSent; }
-			set { this.lastMessageSent = value; }
-		}
-
-		internal DateTime WhenConnected
-		{
-			get { return this.whenConnected; }
-			set { this.whenConnected = value; }
-		}
-
-        internal int MaxPendingRequests
-        {
-            get { return maxPendingRequests; }
-            set { maxPendingRequests = value; }
-        }
-
-        internal int MaxSupportedPendingRequests
-        {
-            get { return maxSupportedPendingRequests; }
-            set { maxSupportedPendingRequests = value; }
-        }
-
-        internal MessagingCallback MessageSentCallback
-        {
-            get { return this.messageSentCallback; }
-            set { this.messageSentCallback = value; }
-        }
-
-        internal MessagingCallback MessageReceivedCallback
-        {
-            get { return this.messageReceivedCallback; }
-            set { this.messageReceivedCallback = value; }
-        }
-
-        public ConnectionMonitor Monitor
-        {
-            get { return this.monitor; }
-        }
-
-        internal Peer Peer
-        {
-            get { return this.peer; }
-            set { this.peer = value; }
-        }
-
-        internal PeerExchangeManager PeerExchangeManager
-        {
-            get { return this.pexManager; }
-            set { this.pexManager = value; }
-        }
-
-        public string PeerID
-        {
-            get { return peer.PeerId; }
-        }
-        
-        public int PiecesSent
-        {
-            get { return this.piecesSent; }
-            internal set { this.piecesSent = value; }
-        }
-
-        public int PiecesReceived
-        {
-            get { return piecesReceived; }
-            internal set { piecesReceived = value; }
-        }
-
-        internal ushort Port
-        {
-            get { return this.port; }
-            set { this.port = value; }
-        }
-
-        internal bool ProcessingQueue
-        {
-            get { return this.processingQueue; }
-            set { this.processingQueue = value; }
-        }
-
-        public bool SupportsFastPeer
-        {
-            get { return this.supportsFastPeer; }
-            internal set { this.supportsFastPeer = value; }
-        }
-
-        public bool SupportsLTMessages
-        {
-            get { return this.supportsLTMessages; }
-            internal set { this.supportsLTMessages = value; }
-        }
-
-        internal MonoTorrentCollection<int> SuggestedPieces
-        {
-            get { return this.suggestedPieces; }
-        }
+        internal MonoTorrentCollection<int> AmAllowedFastPieces { get; set; }
+        public bool AmChoking { get; internal set; }
+        public bool AmInterested { get; internal set; }
+        public int AmRequestingPiecesCount { get; set; }
+        public BitField BitField { get; set; }
+        public Software ClientApp { get; internal set; }
+        ConnectionManager ConnectionManager => Engine.ConnectionManager;
+        internal IEncryption Decryptor { get; set; }
+        internal string DisconnectReason { get; set; }
+        public bool Disposed { get; private set; }
+        public IEncryption Encryptor { get; set; }
+        public ClientEngine Engine { get; private set;}
+        internal ExtensionSupports ExtensionSupports { get; set; }
+        public int HashFails => Peer.TotalHashFails;
+        internal MonoTorrentCollection<int> IsAllowedFastPieces { get; set; }
+        public bool IsChoking { get; internal set; }
+        public bool IsConnected => Connection != null;
+        public bool IsInterested { get; internal set; }
+        public bool IsSeeder => BitField.AllTrue || Peer.IsSeeder;
+        public int IsRequestingPiecesCount { get; set; }
+        internal Stopwatch LastMessageReceived { get; } = new Stopwatch ();
+        internal Stopwatch LastMessageSent { get; } = new Stopwatch ();
+        internal Stopwatch WhenConnected { get; } = new Stopwatch ();
+        internal int MaxPendingRequests { get; set; }
+        internal int MaxSupportedPendingRequests { get; set; }
+        public ConnectionMonitor Monitor { get; }
+        internal Peer Peer { get; set; }
+        internal PeerExchangeManager PeerExchangeManager { get; set; }
+        public string PeerID => Peer.PeerId;
+        public int PiecesSent { get; internal set; }
+        public int PiecesReceived { get; internal set; }
+        internal ushort Port { get; set; }
+        internal bool ProcessingQueue { get; set; }
+        public bool SupportsFastPeer { get; internal set; }
+        public bool SupportsLTMessages { get; internal set; }
+        internal MonoTorrentCollection<int> SuggestedPieces { get; }
 
         public TorrentManager TorrentManager
         {
-            get { return this.torrentManager; }
+            get { return torrentManager; }
             set
             {
-                this.torrentManager = value;
+                torrentManager = value;
                 if (value != null)
                 {
-                    this.engine = value.Engine;
+                    Engine = value.Engine;
                     if(value.HasMetadata)
                         BitField = new BitField(value.Torrent.Pieces.Count);
                 }
             }
         }
-        
-        public Uri Uri
-        {
-            get { return peer.ConnectionUri; }
-        }
+
+        public Uri Uri => Peer.ConnectionUri;
 
         #endregion Properties
 
@@ -402,24 +129,22 @@ namespace MonoTorrent.Client
 
         internal PeerId(Peer peer, TorrentManager manager)
         {
-            if (peer == null)
-                throw new ArgumentNullException("peer");
-
-            this.suggestedPieces = new MonoTorrentCollection<int>();
-            this.amChoking = true;
-            this.isChoking = true;
-
-            this.isAllowedFastPieces = new MonoTorrentCollection<int>();
-            this.amAllowedFastPieces = new MonoTorrentCollection<int>();
-            this.lastMessageReceived = DateTime.Now;
-            this.lastMessageSent = DateTime.Now;
-            this.peer = peer;
-            this.maxPendingRequests = 2;
-            this.maxSupportedPendingRequests = 50;
-            this.monitor = new ConnectionMonitor();
-            this.sendQueue = new MonoTorrentCollection<PeerMessage>(12);
-            ExtensionSupports = new ExtensionSupports();
+            Peer = peer ?? throw new ArgumentNullException(nameof (peer));
             TorrentManager = manager;
+
+
+            SuggestedPieces = new MonoTorrentCollection<int>();
+            AmChoking = true;
+            IsChoking = true;
+
+            IsAllowedFastPieces = new MonoTorrentCollection<int>();
+            AmAllowedFastPieces = new MonoTorrentCollection<int>();
+            MaxPendingRequests = 2;
+            MaxSupportedPendingRequests = 50;
+            Monitor = new ConnectionMonitor();
+            sendQueue = new MonoTorrentCollection<PeerMessage>(12);
+            ExtensionSupports = new ExtensionSupports();
+
             InitializeTyrant();
         }
 
@@ -427,14 +152,14 @@ namespace MonoTorrent.Client
 
         #region Methods
 
-        public void CloseConnection()
+        public void Dispose ()
         {
-            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                if (Connection != null)
-                    Connection.Dispose();
-            });
-        }
+            if (Disposed)
+                return;
 
+            Disposed = true;
+            Connection.Dispose();
+        }
         internal PeerMessage Dequeue()
         {
             return sendQueue.Dequeue();
@@ -443,9 +168,9 @@ namespace MonoTorrent.Client
         internal void Enqueue(PeerMessage msg)
         {
             sendQueue.Add(msg);
-            if (!processingQueue)
+            if (!ProcessingQueue)
             {
-                processingQueue = true;
+                ProcessingQueue = true;
                 ConnectionManager.ProcessQueue(this);
             }
         }
@@ -461,92 +186,57 @@ namespace MonoTorrent.Client
         public override bool Equals(object obj)
         {
             PeerId id = obj as PeerId;
-            return id == null ? false : this.peer.Equals(id.peer);
+            return id == null ? false : Peer.Equals(id.Peer);
         }
 
         public override int GetHashCode()
         {
-            return this.peer.ConnectionUri.GetHashCode();
+            return Peer.ConnectionUri.GetHashCode();
         }
         
         internal int QueueLength
         {
-            get { return this.sendQueue.Count; }
-        }
-
-        public void SendMessage(PeerMessage message)
-        {
-            if (message == null)
-                throw new ArgumentNullException("message");
-
-            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
-                if (Connection == null)
-                    return;
-
-                Enqueue(message);
-            });
+            get { return sendQueue.Count; }
         }
 
         public override string ToString()
         {
-            return this.peer.ConnectionUri.ToString();
+            return Peer.ConnectionUri.ToString();
         }
 
         #endregion
 
         #region BitTyrantasaurus implementation
 
-        private const int MARKET_RATE = 7000;       // taken from reference BitTyrant implementation
-        private RateLimiter rateLimiter;            // used to limit the upload capacity we give this peer
-        private DateTime lastChokedTime;            // last time we looked that we were still choked
-        private DateTime lastRateReductionTime;     // last time we reduced rate of this peer
-        private int lastMeasuredDownloadRate;       // last download rate measured
-        private long startTime;
+        private const int MARKET_RATE = 7000;                                   // taken from reference BitTyrant implementation
+        private Stopwatch LastRateReductionTime { get; } = new Stopwatch ();    // last time we reduced rate of this peer
+        private int lastMeasuredDownloadRate;                                   // last download rate measured
+        private Stopwatch TyrantStartTime { get; } = new Stopwatch ();
 
         // stats
         private int maxObservedDownloadSpeed;
-        private short roundsChoked, roundsUnchoked;     // for stats measurement
 
         private void InitializeTyrant()
         {
-            this.haveMessagesReceived = 0;
-            this.startTime = Stopwatch.GetTimestamp();
+            HaveMessagesReceived = 0;
+            TyrantStartTime.Restart ();
 
-            this.rateLimiter = new RateLimiter();
-            this.uploadRateForRecip = MARKET_RATE;
-            this.lastRateReductionTime = DateTime.Now;
-            this.lastMeasuredDownloadRate = 0;
+            RateLimiter = new RateLimiter();
+            UploadRateForRecip = MARKET_RATE;
+            LastRateReductionTime.Restart ();
+            lastMeasuredDownloadRate = 0;
 
-            this.maxObservedDownloadSpeed = 0;
-            this.roundsChoked = 0;
-            this.roundsUnchoked = 0;
+            maxObservedDownloadSpeed = 0;
+            RoundsChoked = 0;
+            RoundsUnchoked = 0;
         }
 
-        /// <summary>
-        /// Measured from number of Have messages
-        /// </summary>
-        private int haveMessagesReceived;
-
-        /// <summary>
-        /// how much we have to send to this peer to guarantee reciprocation
-        /// TODO: Can't allow upload rate to exceed this
-        /// </summary>
-        private int uploadRateForRecip;
-
-
-        internal int HaveMessagesReceived
-        {
-            get { return this.haveMessagesReceived; }
-            set { this.haveMessagesReceived = value; }
-        }
+        internal int HaveMessagesReceived { get; set; }
 
         /// <summary>
         /// This is Up
         /// </summary>
-        internal int UploadRateForRecip
-        {
-            get { return this.uploadRateForRecip; }
-        }
+        internal int UploadRateForRecip { get; private set; }
 
 
         /// <summary>
@@ -558,8 +248,8 @@ namespace MonoTorrent.Client
         {
             get
             {
-                int timeElapsed = (int)new TimeSpan(Stopwatch.GetTimestamp() - this.startTime).TotalSeconds;
-                return (int) (timeElapsed == 0 ? 0 : ((long) this.haveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
+                int timeElapsed = (int)TyrantStartTime.Elapsed.TotalSeconds;
+                return (int) (timeElapsed == 0 ? 0 : ((long) this.HaveMessagesReceived * this.TorrentManager.Torrent.PieceLength) / timeElapsed);
             }
         }
 
@@ -571,35 +261,23 @@ namespace MonoTorrent.Client
             get
             {
                 float downloadRate = (float)GetDownloadRate();
-                return downloadRate / (float)uploadRateForRecip;
+                return downloadRate / (float)UploadRateForRecip;
             }
         }
 
         /// <summary>
         /// Last time we looked that this peer was choking us
         /// </summary>
-        internal DateTime LastChokedTime
-        {
-            get { return this.lastChokedTime; }
-        }
+        internal Stopwatch LastChokedTime { get; } = new Stopwatch ();
 
         /// <summary>
         /// Used to check how much upload capacity we are giving this peer
         /// </summary>
-        internal RateLimiter RateLimiter
-        {
-            get { return this.rateLimiter; }
-        }
+        internal RateLimiter RateLimiter { get; private set; }
 
-        internal short RoundsChoked
-        {
-            get { return this.roundsChoked; }
-        }
+        internal short RoundsChoked { get; private set; }
 
-        internal short RoundsUnchoked
-        {
-            get { return this.roundsUnchoked; }
-        }
+        internal short RoundsUnchoked { get; private set; }
 
         /// <summary>
         /// Get our download rate from this peer -- this is Dp.
@@ -636,17 +314,17 @@ namespace MonoTorrent.Client
         internal void UpdateTyrantStats()
         {
             // if we're still being choked, set the time of our last choking
-            if (isChoking)
+            if (IsChoking)
             {
-                this.roundsChoked++;
+                RoundsChoked++;
 
-                this.lastChokedTime = DateTime.Now;
+                LastChokedTime.Restart ();
             }
             else
             {
-                this.roundsUnchoked++;
+                this.RoundsUnchoked++;
 
-                if (amInterested)
+                if (AmInterested)
                 {
                     //if we are interested and unchoked, update last measured download rate, unless it is 0
                     if (this.Monitor.DownloadSpeed > 0)
@@ -659,18 +337,18 @@ namespace MonoTorrent.Client
             }
 
             // last rate wasn't sufficient to achieve reciprocation
-            if (!amChoking && isChoking && isInterested) // only increase upload rate if he's interested, otherwise he won't request any pieces
+            if (!AmChoking && IsChoking && IsInterested) // only increase upload rate if he's interested, otherwise he won't request any pieces
             {
-                this.uploadRateForRecip = (this.uploadRateForRecip * 12) / 10;
+                this.UploadRateForRecip = (this.UploadRateForRecip * 12) / 10;
             }
 
             // we've been unchoked by this guy for a while....
-            if (!isChoking && !amChoking
-                    && (DateTime.Now - lastChokedTime).TotalSeconds > 30
-                    && (DateTime.Now - lastRateReductionTime).TotalSeconds > 30)           // only do rate reduction every 30s
+            if (!IsChoking && !AmChoking
+                    && LastChokedTime.Elapsed.TotalSeconds > 30
+                    && LastRateReductionTime.Elapsed.TotalSeconds > 30)           // only do rate reduction every 30s
             {
-                this.uploadRateForRecip = (this.uploadRateForRecip * 9) / 10;
-                lastRateReductionTime = DateTime.Now;
+                this.UploadRateForRecip = (this.UploadRateForRecip * 9) / 10;
+                LastRateReductionTime.Restart ();
             }
         }
 
@@ -681,7 +359,7 @@ namespace MonoTorrent.Client
         /// <returns>True if the upload rate for recip is greater than the actual upload rate</returns>
         internal bool IsUnderUploadLimit()
         {
-            return this.uploadRateForRecip > this.Monitor.UploadSpeed;
+            return this.UploadRateForRecip > this.Monitor.UploadSpeed;
         }
 
 
@@ -711,52 +389,5 @@ namespace MonoTorrent.Client
         }
 
         #endregion BitTyrant
-
-        internal void TryProcessAsyncReads()
-        {
-            foreach (PeerMessage message in PieceReads)
-                Enqueue(message);
-            PieceReads.Clear();
-            return;
-            // We only allow 2 simultaenous PieceMessages in a peers send queue.
-            // This way if the peer requests 100 pieces, we don't bloat our memory
-            // usage unnecessarily. Once the first message is sent, we read data
-            // for the *next* message asynchronously and then add it to the queue.
-            // While this is happening, we send data from the second PieceMessage in
-            // the queue, thus the queue should rarely be empty.
-            int existingReads = 0;
-            if (currentlySendingMessage is PieceMessage)
-                existingReads++;
-
-            for (int i = 0; existingReads < 2 && i < sendQueue.Count; i++)
-                if (sendQueue[i] is PieceMessage)
-                    existingReads++;
-
-            if (existingReads >= 2)
-                return;
-
-            PieceMessage m = null;
-            for (int i = 0; m == null && i < PieceReads.Count; i++)
-                if (PieceReads [i].Data == BufferManager.EmptyBuffer)
-                    m = PieceReads[i];
-
-            if (m == null)
-                return;
-
-            long offset = (long)m.PieceIndex * torrentManager.Torrent.PieceLength + m.StartOffset;
-            ClientEngine.BufferManager.GetBuffer(ref m.Data, m.RequestLength);
-            engine.DiskManager.QueueRead(torrentManager, offset, m.Data, m.RequestLength, delegate {
-                ClientEngine.MainLoop.Queue(delegate {
-                    if (!PieceReads.Contains(m))
-                        ClientEngine.BufferManager.FreeBuffer(ref m.Data);
-                    else
-                    {
-                        PieceReads.Remove(m);
-                        Enqueue(m);
-                    }
-                    TryProcessAsyncReads();
-                });
-            });
-        }
     }
 }

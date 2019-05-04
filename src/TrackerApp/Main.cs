@@ -166,8 +166,6 @@ namespace SampleTracker
 
         public static void Main(string[] args)
         {
-            Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-
             Console.WriteLine("Welcome to the MonoTorrent tracker");
             Console.WriteLine("1. Start the tracker");
             Console.WriteLine("2. Start a benchmark");

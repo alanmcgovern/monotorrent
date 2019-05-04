@@ -23,11 +23,10 @@ namespace MonoTorrent.Client
 			CanAcceptConnections = false;
 		}
 
-		public override void HandlePeerConnected(PeerId id, MonoTorrent.Common.Direction direction)
+		public override void HandlePeerConnected(PeerId id, Direction direction)
 		{
-			id.CloseConnection();
+			Manager.Engine.ConnectionManager.CleanupSocket (id);
 		}
-
 
 		public override void Tick(int counter)
 		{

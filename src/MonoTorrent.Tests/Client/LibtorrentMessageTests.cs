@@ -14,13 +14,13 @@ namespace MonoTorrent.Client
         TestRig rig;
         byte[] buffer;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void GlobalSetup()
         {
             rig = TestRig.CreateMultiFile();
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void GlobalTeardown()
         {
             rig.Dispose();
@@ -88,15 +88,5 @@ namespace MonoTorrent.Client
             Assert.IsTrue(Toolbox.ByteMatch(peer, m.Added), "#1");
             Assert.IsTrue(Toolbox.ByteMatch(supports, m.AddedDotF), "#1");
         }
-
-        /*public static void Main(string[] args)
-        {
-            LibtorrentMessageTests t = new LibtorrentMessageTests();
-            t.GlobalSetup();
-            t.Setup();
-            t.HandshakeDecodeTest();
-            t.LTChatDecodeTest();
-            t.GlobalTeardown();
-        }*/
     }
 }

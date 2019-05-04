@@ -8,6 +8,7 @@ using System;
 using MonoTorrent.Client;
 using System.Net.Sockets;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {
@@ -23,14 +24,11 @@ namespace MonoTorrent.Client.Connections
 
         EndPoint EndPoint { get; }
 
-		IAsyncResult BeginConnect(AsyncCallback callback, object state);
-		void EndConnect(IAsyncResult result);
-		
-		IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state);
-        int EndReceive(IAsyncResult result);
-		
-		IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state);
-		int EndSend(IAsyncResult result);
+        Task ConnectAsync();
+
+        Task<int> ReceiveAsync (byte[] buffer, int offset, int count);
+
+        Task<int> SendAsync (byte[] buffer, int offset, int count);
 
         Uri Uri { get; }
 	}

@@ -7,13 +7,10 @@ using MonoTorrent.Dht.Tasks;
 
 namespace MonoTorrent.Dht
 {
-    class RefreshBucketTask : Task
+    class RefreshBucketTask
     {
         private Bucket bucket;
         private DhtEngine engine;
-        private FindNode message;
-        private Node node;
-        private SendQueryTask task;
 
         public RefreshBucketTask(DhtEngine engine, Bucket bucket)
         {
@@ -21,50 +18,20 @@ namespace MonoTorrent.Dht
             this.bucket = bucket;
         }
 
-        public override void Execute()
+        public async void Execute ()
         {
             if (bucket.Nodes.Count == 0)
-            {
-                RaiseComplete(new TaskCompleteEventArgs(this));
                 return;
-            }
 
-            Console.WriteLine("Choosing first from: {0}", bucket.Nodes.Count);
             bucket.SortBySeen();
-            QueryNode(bucket.Nodes[0]);
-        }
 
-        private void TaskComplete(object o, TaskCompleteEventArgs e)
-        {
-            task.Completed -= TaskComplete;
+            foreach (var node in bucket.Nodes.ToArray ()) {
+                var message = new FindNode (engine.LocalId, node.Id);
 
-            SendQueryEventArgs args = (SendQueryEventArgs)e;
-            if (args.TimedOut)
-            {
-                bucket.SortBySeen();
-                int index = bucket.Nodes.IndexOf(node);
-                if (index == -1 || (++index < bucket.Nodes.Count))
-                {
-                    QueryNode(bucket.Nodes[0]);
-                }
-                else
-                {
-                    RaiseComplete(new TaskCompleteEventArgs(this));
-                }
+                var args = await engine.SendQueryAsync (message, node);
+                if (!args.TimedOut)
+                    return;
             }
-            else
-            {
-                RaiseComplete(new TaskCompleteEventArgs(this));
-            }
-        }
-
-        private void QueryNode(Node node)
-        {
-            this.node = node;
-            message = new FindNode(engine.LocalId, node.Id);
-            task = new SendQueryTask(engine, message, node);
-            task.Completed += TaskComplete;
-            task.Execute();
         }
     }
 }
