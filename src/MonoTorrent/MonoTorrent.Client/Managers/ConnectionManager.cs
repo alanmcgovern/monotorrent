@@ -313,10 +313,7 @@ namespace MonoTorrent.Client
             try
             {
                 // We can reuse this peer if the connection says so and it's not marked as inactive
-                bool canReuse = id.Connection.CanReconnect && !id.TorrentManager.InactivePeerManager.InactivePeerList.Contains(id.Uri);
-                Logger.Log(id.Connection, "Cleanup Reason : " + message);
-
-                Logger.Log(id.Connection, "*******Cleaning up*******");
+                bool canReuse = (id.Connection?.CanReconnect ?? false) && !id.TorrentManager.InactivePeerManager.InactivePeerList.Contains(id.Uri);
                 id.TorrentManager.PieceManager.Picker.CancelRequests(id);
                 id.Peer.CleanedUpCount++;
 
