@@ -3,8 +3,8 @@
 PRE-REQUISITES
 ------------------------------------------------------------------------------------------------------------
 
-To run: A version of the .NET framework which supports the .NET 4.7.2 profile
-To build: Any IDE which can compile C# code.
+* A version of the .NET framework which supports the .NET 4.7.2 profile
+* Any IDE which can compile C# code.
 
 
 BUILDING MONOTORRENT:
