@@ -48,7 +48,7 @@ namespace MonoTorrent.Common
         [Test]
         public void UTF8Test()
         {
-            string s = "ã";
+            string s = "\u0192";
             BEncodedString str = s;
             Assert.AreEqual(s, str.Text);
         }
