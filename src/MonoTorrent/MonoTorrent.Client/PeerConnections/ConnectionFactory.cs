@@ -32,6 +32,9 @@ namespace MonoTorrent.Client.Connections
             if (connectionUri == null)
                 throw new ArgumentNullException("connectionUrl");
 
+            if (connectionUri.Scheme == "tcp" && connectionUri.Port == -1)
+                return null;
+
             Type type;
             lock (locker)
                 if (!trackerTypes.TryGetValue(connectionUri.Scheme, out type))
