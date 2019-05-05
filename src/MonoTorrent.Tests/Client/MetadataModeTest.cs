@@ -97,6 +97,25 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void SendMetadata_ToFile_CorruptFileExists ()
+        {
+            var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
+            File.Create (torrent).Close ();
+            Setup(true, torrent);
+            SendMetadataCore(torrent);
+        }
+
+        [Test]
+        public void SendMetadata_ToFile_RealFileExists ()
+        {
+            var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
+            Setup(true, torrent);
+            File.WriteAllBytes (torrent, rig.Torrent.ToBytes ());
+
+            SendMetadataCore(torrent);
+        }
+
+        [Test]
         public void SendMetadata_ToFolder()
         {
             Setup(true, AppDomain.CurrentDomain.BaseDirectory);

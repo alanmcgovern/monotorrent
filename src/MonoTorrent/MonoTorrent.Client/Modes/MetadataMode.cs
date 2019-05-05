@@ -165,6 +165,7 @@ namespace MonoTorrent.Client
                                 {
                                     if (Directory.Exists(savePath))
                                         savePath = Path.Combine (savePath, Manager.InfoHash.ToHex() + ".torrent");
+                                    File.Delete (savePath);
                                     File.WriteAllBytes(savePath, dict.Encode ());
                                 }
                                 catch (Exception ex)
