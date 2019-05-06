@@ -42,12 +42,12 @@ namespace MonoTorrent.Client
                 new Piece(36, rig.Torrent.PieceLength, rig.Torrent.Size)
             });
 
-            id = new PeerId(new Peer("peerid", new Uri("tcp://weburl.com")), rig.Manager);
+            id = new PeerId(new Peer("peerid", new Uri("ipv4://weburl.com")), rig.Manager);
             id.Encryptor = id.Decryptor = PlainTextEncryption.Instance;
             id.IsChoking = false;
             id.BitField.SetAll(false);
 
-            other = new PeerId(new Peer("other", new Uri("tcp://other.com")), rig.Manager);
+            other = new PeerId(new Peer("other", new Uri("ipv4://other.com")), rig.Manager);
             other.Decryptor = other.Encryptor = PlainTextEncryption.Instance;
             other.IsChoking = false;
             other.BitField.SetAll(false);

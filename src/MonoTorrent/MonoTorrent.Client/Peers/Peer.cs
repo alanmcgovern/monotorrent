@@ -219,7 +219,7 @@ namespace MonoTorrent.Client
             else
                 peerId = string.Empty;
 
-            Uri connectionUri = new Uri("tcp://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
+            Uri connectionUri = new Uri("ipv4://" + dict["ip"].ToString() + ":" + dict["port"].ToString());
             return new Peer(peerId, connectionUri, EncryptionTypes.All);
         }
 
@@ -237,7 +237,7 @@ namespace MonoTorrent.Client
             {
                 sb.Remove(0, sb.Length);
 
-                sb.Append("tcp://");
+                sb.Append("ipv4://");
                 sb.Append(byteOrderedData[i++]);
                 sb.Append('.');
                 sb.Append(byteOrderedData[i++]);

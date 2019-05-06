@@ -1,4 +1,4 @@
-//
+﻿//
 // TCPConnection.cs
 //
 // Authors:
@@ -29,95 +29,68 @@
 
 
 using System;
-using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using MonoTorrent.Client.Encryption;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class IPV4Connection : IConnection
+    public class SocketConnection : IConnection
     {
-        SocketAsyncEventArgs receiveArgs;
-        SocketAsyncEventArgs sendArgs;
-
-        private bool isIncoming;
-        private IPEndPoint endPoint;
-        private Socket socket;
-        private Uri uri;
-
         #region Member Variables
 
-        public bool CanReconnect
+        public byte[] AddressBytes => EndPoint.Address.GetAddressBytes();
+
+        public bool CanReconnect => !IsIncoming;
+
+        public bool Connected => Socket.Connected;
+
+        EndPoint IConnection.EndPoint => EndPoint;
+
+        public IPEndPoint EndPoint { get; }
+
+        public bool IsIncoming { get; }
+
+        SocketAsyncEventArgs ReceiveArgs { get; }
+
+        SocketAsyncEventArgs SendArgs { get; }
+
+        Socket Socket { get; }
+
+        public Uri Uri { get; }
+
+		#endregion
+
+
+		#region Constructors
+
+		protected SocketConnection(Uri uri)
+            : this (new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+                  new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port), false)
+
         {
-            get { return !isIncoming; }
+            Uri = uri;
         }
 
-        public bool Connected
-        {
-            get { return socket.Connected; }
-        }
-
-        EndPoint IConnection.EndPoint
-        {
-            get { return endPoint; }
-        }
-
-        public IPEndPoint EndPoint
-        {
-            get { return this.endPoint; }
-        }
-
-        public bool IsIncoming
-        {
-            get { return isIncoming; }
-        }
-
-        public Uri Uri
-        {
-            get { return uri; }
-        }
-
-        #endregion
-
-
-        #region Constructors
-
-        public IPV4Connection(Uri uri)
-            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), 
-                   new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port),
-                   false)
-        {
-            this.uri = uri;
-        }
-
-        public IPV4Connection(IPEndPoint endPoint)
-            : this(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp), endPoint, false)
-        {
-
-        }
-
-        public IPV4Connection(Socket socket, bool isIncoming)
+        protected SocketConnection(Socket socket, bool isIncoming)
             : this(socket, (IPEndPoint)socket.RemoteEndPoint, isIncoming)
         {
 
         }
 
-
-        private IPV4Connection (Socket socket, IPEndPoint endpoint, bool isIncoming)
+        SocketConnection (Socket socket, IPEndPoint endpoint, bool isIncoming)
         {
-            this.receiveArgs = new SocketAsyncEventArgs {
+            ReceiveArgs = new SocketAsyncEventArgs {
                 RemoteEndPoint = endpoint
             };
-            this.sendArgs = new SocketAsyncEventArgs {
+            SendArgs = new SocketAsyncEventArgs {
                 RemoteEndPoint = endpoint
             };
-            receiveArgs.Completed += HandleOperationCompleted;
-            sendArgs.Completed += HandleOperationCompleted;
-            this.socket = socket;
-            this.endPoint = endpoint;
-            this.isIncoming = isIncoming;
+            ReceiveArgs.Completed += HandleOperationCompleted;
+            SendArgs.Completed += HandleOperationCompleted;
+            Socket = socket;
+            EndPoint = endpoint;
+            IsIncoming = isIncoming;
         }
 
         static void HandleOperationCompleted (object sender, SocketAsyncEventArgs e)
@@ -126,7 +99,6 @@ namespace MonoTorrent.Client.Connections
                 ((TaskCompletionSource<int>)e.UserToken).SetException(new SocketException((int)e.SocketError));
             else
                 ((TaskCompletionSource<int>)e.UserToken).SetResult(e.BytesTransferred);
-
         }
 
         #endregion
@@ -134,46 +106,39 @@ namespace MonoTorrent.Client.Connections
 
         #region Async Methods
 
-        public byte[] AddressBytes
-        {
-            get { return this.endPoint.Address.GetAddressBytes(); }
-        }
-
         public Task ConnectAsync ()
         {
             var tcs = new TaskCompletionSource<int>();
-            receiveArgs.UserToken = tcs;
+            ReceiveArgs.UserToken = tcs;
 
-            socket.ConnectAsync (receiveArgs);
+            Socket.ConnectAsync (ReceiveArgs);
             return tcs.Task;
         }
 
         public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
             var tcs = new TaskCompletionSource<int>();
-            receiveArgs.SetBuffer(buffer, offset, count);
-            receiveArgs.UserToken = tcs;
+            ReceiveArgs.SetBuffer(buffer, offset, count);
+            ReceiveArgs.UserToken = tcs;
 
-            socket.ReceiveAsync(receiveArgs);
+            Socket.ReceiveAsync(ReceiveArgs);
             return tcs.Task;
         }
 
         public Task<int> SendAsync(byte[] buffer, int offset, int count)
         {
             var tcs = new TaskCompletionSource<int>();
-            sendArgs.SetBuffer(buffer, offset, count);
-            sendArgs.UserToken = tcs;
+            SendArgs.SetBuffer(buffer, offset, count);
+            SendArgs.UserToken = tcs;
 
-            socket.SendAsync(sendArgs);
+            Socket.SendAsync(SendArgs);
             return tcs.Task;
         }
 
-
         public void Dispose()
         {
-            ((IDisposable)socket).Dispose();
+            Socket.Dispose ();
         }
-
 
         #endregion
     }

@@ -11,8 +11,8 @@ namespace MonoTorrent.Client.Connections
        
         static ConnectionFactory()
         {
-            RegisterTypeForProtocol("tcp", typeof(IPV4Connection));
-            //RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
+            RegisterTypeForProtocol("ipv4", typeof(IPV4Connection));
+            RegisterTypeForProtocol("ipv6", typeof(IPV6Connection));
             RegisterTypeForProtocol("http", typeof(HttpConnection));
         }
 
@@ -32,7 +32,7 @@ namespace MonoTorrent.Client.Connections
             if (connectionUri == null)
                 throw new ArgumentNullException("connectionUrl");
 
-            if (connectionUri.Scheme == "tcp" && connectionUri.Port == -1)
+            if (connectionUri.Scheme == "ipv4" && connectionUri.Port == -1)
                 return null;
 
             Type type;

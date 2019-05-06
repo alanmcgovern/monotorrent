@@ -15,7 +15,7 @@ namespace MonoTorrent.Client
         [Test]
         public void InvalidPort ()
         {
-            Assert.IsNull (ConnectionFactory.Create(new Uri ("tcp://127.0.1.2")));
+            Assert.IsNull (ConnectionFactory.Create(new Uri ("ipv4://127.0.1.2")));
         }
     }
 }

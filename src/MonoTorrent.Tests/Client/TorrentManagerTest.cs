@@ -72,9 +72,9 @@ namespace MonoTorrent.Client
         public async Task UnregisteredAnnounce()
         {
             await rig.Engine.Unregister(rig.Manager);
-            rig.Tracker.AddPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+            rig.Tracker.AddPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
             Assert.AreEqual(0, rig.Manager.Peers.Available, "#1");
-            rig.Tracker.AddFailedPeer(new Peer("", new Uri("tcp://myCustomTcpSocket")));
+            rig.Tracker.AddFailedPeer(new Peer("", new Uri("ipv4://myCustomTcpSocket")));
             Assert.AreEqual(0, rig.Manager.Peers.Available, "#2");
         }
 

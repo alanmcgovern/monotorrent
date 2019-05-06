@@ -60,7 +60,7 @@ namespace MonoTorrent.Client
                 peerSocket = listener.EndAccept(result);
 
                 IPEndPoint endpoint = (IPEndPoint)peerSocket.RemoteEndPoint;
-                Uri uri = new Uri("tcp://" + endpoint.Address.ToString() + ':' + endpoint.Port);
+                Uri uri = new Uri("ipv4://" + endpoint.Address.ToString() + ':' + endpoint.Port);
                 Peer peer = new Peer("", uri, EncryptionTypes.All);
                 IConnection connection = null;
                 if (peerSocket.AddressFamily == AddressFamily.InterNetwork)

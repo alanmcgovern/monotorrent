@@ -99,9 +99,9 @@ namespace MonoTorrent.Client
         public void AnnounceResponseTest()
         {
             List<Peer> peers = new List<Peer>();
-            peers.Add(new Peer(new string('1', 20), new Uri("tcp://127.0.0.1:1")));
-            peers.Add(new Peer(new string('2', 20), new Uri("tcp://127.0.0.1:2")));
-            peers.Add(new Peer(new string('3', 20), new Uri("tcp://127.0.0.1:3")));
+            peers.Add(new Peer(new string('1', 20), new Uri("ipv4://127.0.0.1:1")));
+            peers.Add(new Peer(new string('2', 20), new Uri("ipv4://127.0.0.1:2")));
+            peers.Add(new Peer(new string('3', 20), new Uri("ipv4://127.0.0.1:3")));
 
             AnnounceResponseMessage m = new AnnounceResponseMessage(12345, TimeSpan.FromSeconds(10), 43, 65, peers);
             AnnounceResponseMessage d = (AnnounceResponseMessage)UdpTrackerMessage.DecodeMessage(m.Encode(), 0, m.ByteLength, MessageType.Response);

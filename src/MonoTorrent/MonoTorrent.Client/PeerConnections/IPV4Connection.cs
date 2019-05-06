@@ -1,5 +1,5 @@
 //
-// IPV6Connection.cs
+// TCPConnection.cs
 //
 // Authors:
 //   Alan McGovern alan.mcgovern@gmail.com
@@ -33,15 +33,15 @@ using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class IPV6Connection : SocketConnection
+    public class IPV4Connection : SocketConnection
     {
-        public IPV6Connection(Uri uri)
+        public IPV4Connection(Uri uri)
             : base(uri)
         {
             
         }
 
-        public IPV6Connection(Socket socket, bool incoming)
+        public IPV4Connection(Socket socket, bool incoming)
             : base(socket, incoming)
         {
             

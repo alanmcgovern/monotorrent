@@ -113,7 +113,7 @@ namespace MonoTorrent.Client
                 if (manager == null)
                     return;
 
-                Uri uri = new Uri("tcp://" + e.Address.ToString() + ':' + match.Groups["port"].Value);
+                Uri uri = new Uri("ipv4://" + e.Address.ToString() + ':' + match.Groups["port"].Value);
                 Peer peer = new Peer("", uri, EncryptionTypes.All);
 
                 // Add new peer to matched Torrent

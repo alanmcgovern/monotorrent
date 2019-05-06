@@ -257,10 +257,10 @@ namespace MonoTorrent.Client
         [Test]
         public void ConnectDisconnect()
         {
-            PeerId a = new PeerId(new Peer(new string('a', 20), new Uri("tcp://127.0.0.5:5353")), rig.Manager);
-            PeerId b = new PeerId(new Peer(new string('b', 20), new Uri("tcp://127.0.0.5:5354")), rig.Manager);
-            PeerId c = new PeerId(new Peer(new string('c', 20), new Uri("tcp://127.0.0.5:5355")), rig.Manager);
-            PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("tcp://127.0.0.5:5356")), rig.Manager);
+            PeerId a = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://127.0.0.5:5353")), rig.Manager);
+            PeerId b = new PeerId(new Peer(new string('b', 20), new Uri("ipv4://127.0.0.5:5354")), rig.Manager);
+            PeerId c = new PeerId(new Peer(new string('c', 20), new Uri("ipv4://127.0.0.5:5355")), rig.Manager);
+            PeerId d = new PeerId(new Peer(new string('d', 20), new Uri("ipv4://127.0.0.5:5356")), rig.Manager);
 
             unchoker.PeerDisconnected(a);
             Assert.AreEqual(1, unchoker.PeerCount, "#1");

@@ -17,20 +17,20 @@ namespace MonoTorrent.Client
             peers = new List<Peer>();
             for (int i=0; i < 10; i++)
             {
-                Uri uri = new Uri(string.Format("tcp://192.168.0.{0}:1", i));
+                Uri uri = new Uri(string.Format("ipv4://192.168.0.{0}:1", i));
                 peers.Add(new Peer(new string(i.ToString()[0], 20), uri));
             }
-            peers.Add(new Peer(new string('a', 20), new Uri("tcp://255.255.255.255:6530")));
-            peers.Add(new Peer(new string('b', 20), new Uri("tcp://255.0.0.0:123")));
-            peers.Add(new Peer(new string('c', 20), new Uri("tcp://0.0.255.0:312")));
-            peers.Add(new Peer(new string('a', 20), new Uri("tcp://0.0.0.255:3454")));
+            peers.Add(new Peer(new string('a', 20), new Uri("ipv4://255.255.255.255:6530")));
+            peers.Add(new Peer(new string('b', 20), new Uri("ipv4://255.0.0.0:123")));
+            peers.Add(new Peer(new string('c', 20), new Uri("ipv4://0.0.255.0:312")));
+            peers.Add(new Peer(new string('a', 20), new Uri("ipv4://0.0.0.255:3454")));
         }
 
         [Test]
         public void CompactPeer()
         {
             string peerId = "12345abcde12345abcde";
-            Uri uri = new Uri("tcp://192.168.0.5:12345");
+            Uri uri = new Uri("ipv4://192.168.0.5:12345");
             Peer p = new Peer(peerId, uri);
 
             byte[] compact = p.CompactPeer();

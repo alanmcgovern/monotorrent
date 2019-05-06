@@ -33,10 +33,10 @@ namespace MonoTorrent.Client
             manager.ChangePicker ((standardPicker = new StandardPicker()), rig.Manager.Bitfield, rig.Manager.Torrent.Files);
             this.picker = manager.Picker;
 
-            peer = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
+            peer = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager);
             for (int i = 0; i < 20; i++)
             {
-                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("tcp://" + i)), rig.Manager);
+                PeerId p = new PeerId(new Peer(new string(i.ToString()[0], 20), new Uri("ipv4://" + i)), rig.Manager);
                 p.SupportsFastPeer = true;
                 peers.Add(p);
             }

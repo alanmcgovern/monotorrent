@@ -241,7 +241,7 @@ namespace MonoTorrent.Client
 
         public Uri Uri
         {
-            get { return new Uri("tcp://127.0.0.1:1234"); }
+            get { return new Uri("ipv4://127.0.0.1:1234"); }
         }
 
 
@@ -296,7 +296,7 @@ namespace MonoTorrent.Client
 
         public void Add(TorrentManager manager, IConnection connection)
         {
-            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("tcp://12.123.123.1:2342"), EncryptionTypes.All);
+            MonoTorrent.Client.Peer p = new MonoTorrent.Client.Peer("", new Uri("ipv4://12.123.123.1:2342"), EncryptionTypes.All);
             base.RaiseConnectionReceived(p, connection, manager);
         }
     }
@@ -426,7 +426,7 @@ namespace MonoTorrent.Client
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 20; i++)
                 sb.Append((char)Random.Next((int)'a', (int)'z'));
-            Peer peer = new Peer(sb.ToString(), new Uri("tcp://127.0.0.1:" + (port++)));
+            Peer peer = new Peer(sb.ToString(), new Uri("ipv4://127.0.0.1:" + (port++)));
             PeerId id = new PeerId(peer, Manager);
             id.SupportsFastPeer = supportsFastPeer;
             id.ProcessingQueue = processingQueue;

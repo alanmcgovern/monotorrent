@@ -48,7 +48,7 @@ namespace MonoTorrent.Client
         public void FixtureSetup()
         {
             rig = TestRig.CreateMultiFile();
-            id = new PeerId(new Peer(new string('a', 20), new Uri("tcp://BLAH")), rig.Manager);
+            id = new PeerId(new Peer(new string('a', 20), new Uri("ipv4://BLAH")), rig.Manager);
             id.BitField.SetAll(true);
         }
 
