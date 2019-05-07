@@ -100,22 +100,22 @@ namespace MonoTorrent.Client.Connections
 
             #region Constructors
 
-            public AsyncResult (AsyncCallback callback, object asyncState)
+            public AsyncResult(AsyncCallback callback, object asyncState)
             {
                 this.asyncState = asyncState;
                 this.callback = callback;
-                this.waitHandle = new ManualResetEvent (false);
+                this.waitHandle = new ManualResetEvent(false);
             }
 
             #endregion Constructors
 
             #region Methods
 
-            protected internal void Complete ()
+            protected internal void Complete()
             {
-                Complete (savedException);
+                Complete(savedException);
             }
-            protected internal void Complete (Exception ex)
+            protected internal void Complete(Exception ex)
             {
                 // Ensure we only complete once - Needed because in encryption there could be
                 // both a pending send and pending receive so if there is an error, both will
@@ -126,10 +126,10 @@ namespace MonoTorrent.Client.Connections
                 savedException = ex;
                 completedSyncronously = false;
                 isCompleted = true;
-                waitHandle.Set ();
+                waitHandle.Set();
 
                 if (callback != null)
-                    callback (this);
+                    callback(this);
             }
 
             #endregion Methods
@@ -137,93 +137,40 @@ namespace MonoTorrent.Client.Connections
 
         static MethodInfo method = typeof(WebHeaderCollection).GetMethod
                                 ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
-        private class HttpResult : AsyncResult
-        {
-            public byte[] Buffer;
-            public int Offset;
-            public int Count;
-            public int BytesTransferred;
-
-            public HttpResult(AsyncCallback callback, object state, byte[] buffer, int offset, int count)
-                : base(callback, state)
-            {
-                Buffer = buffer;
-                Offset = offset;
-                Count = count;
-            }
-
-            public void Complete(int bytes)
-            {
-                this.BytesTransferred = bytes;
-                base.Complete();
-            }
-		}
 
         #region Member Variables
 
-        private TimeSpan connectionTimeout;
-        private byte[] sendBuffer = BufferManager.EmptyBuffer;
-        private int sendBufferCount;
-        private HttpRequestData currentRequest;
-        private Stream dataStream;
-        private bool disposed;
-        private AsyncCallback getResponseCallback;
-        private AsyncCallback receivedChunkCallback;
-        private TorrentManager manager;
-        private HttpResult receiveResult;
-        private List<RequestMessage> requestMessages;
-        private HttpResult sendResult;
-        private int totalExpected;
-        private Uri uri;
-        private Queue<KeyValuePair<WebRequest, int>> webRequests;
+        public byte[] AddressBytes => new byte[4];
 
-        public byte[] AddressBytes
-        {
-            get { return new byte[4]; }
-        }
+        public bool CanReconnect => false;
 
-        public bool CanReconnect
-        {
-            get { return false; }
-        }
+        public bool Connected => true;
 
-        public bool Connected
-        {
-            get { return true; }
-        }
+        internal TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
-        internal TimeSpan ConnectionTimeout
-        {
-            get { return connectionTimeout; }
-            set { connectionTimeout = value; }
-        }
+        HttpRequestData CurrentRequest { get; set; }
 
-        private HttpRequestData CurrentRequest
-        {
-            get { return currentRequest; }
-        }
+        Stream DataStream { get; set; }
 
-        EndPoint IConnection.EndPoint
-        {
-            get { return null; }
-        }
+        int DataStreamCount { get; set; }
 
-        public bool IsIncoming
-        {
-            get { return false; }
-        }
+        private bool Disposed { get; set; }
 
-        public TorrentManager Manager
-        {
-            get { return manager; }
-            set { manager = value; }
-        }
+        EndPoint IConnection.EndPoint => null;
 
-        public Uri Uri
-        {
-            get { return uri; }
-        }
+        public bool IsIncoming => false;
 
+        public TorrentManager Manager { get; set; }
+
+        AutoResetEvent ReceiveWaiter { get; } = new AutoResetEvent(false);
+
+        List<RequestMessage> RequestMessages { get; } = new List<RequestMessage>();
+
+        TaskCompletionSource<object> SendResult { get; set; }
+
+        public Uri Uri { get; }
+
+        Queue<KeyValuePair<WebRequest, int>> WebRequests { get; } = new Queue<KeyValuePair<WebRequest, int>>();
 
         #endregion
 
@@ -237,14 +184,8 @@ namespace MonoTorrent.Client.Connections
             if (!string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase) && !string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Scheme is not http or https");
 
-            this.uri = uri;
-            
-            connectionTimeout = TimeSpan.FromSeconds(10);
-            getResponseCallback = ClientEngine.MainLoop.Wrap(GotResponse);
-            receivedChunkCallback = ClientEngine.MainLoop.Wrap(ReceivedChunk);
-            requestMessages = new List<RequestMessage>();
-            webRequests = new Queue<KeyValuePair<WebRequest, int>>();
-        }
+            Uri = uri;
+         }
 
         #endregion Constructors
 
@@ -254,193 +195,142 @@ namespace MonoTorrent.Client.Connections
             return Task.CompletedTask;
         }
 
-        public Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
         {
-            return Task.Factory.FromAsync(BeginReceive(buffer, offset, count, null, null), EndReceive);
-        }
+            // This is a little tricky, so let's spell it out in comments...
 
-        public Task<int> SendAsync(byte[] buffer, int offset, int count)
-        {
-            return Task.Factory.FromAsync(BeginSend(buffer, offset, count, null, null), EndSend);
-        }
-
-        public IAsyncResult BeginReceive(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (receiveResult != null)
-                throw new InvalidOperationException("Cannot call BeginReceive twice");
-
-            receiveResult = new HttpResult(callback, state, buffer, offset, count);
-            try
+            // If this is the first time ReceiveAsync is invoked, then we should get the first PieceMessage from the queue
+            if (CurrentRequest == null)
             {
-                // BeginReceive has been called *before* we have sent a piece request.
-                // Wait for a piece request to be sent before allowing this to complete.
-                if (dataStream == null)
-                    return receiveResult;
+                // When we call 'SendAsync' with request piece messages, we add them to the list and then toggle the handle.
+                // When this returns it means we have requests ready to go!
+                await Task.Run(() => ReceiveWaiter.WaitOne());
 
-                DoReceive();
-                return receiveResult;
+                // Grab the request. We know the 'SendAsync' call won't return until we process all the queued requests, so
+                // this is threadsafe now.
+                CurrentRequest = new HttpRequestData(RequestMessages[0]);
+                RequestMessages.RemoveAt(0);
             }
-            catch (Exception ex)
-            {
-                if (sendResult != null)
-                    sendResult.Complete(ex);
 
-                if (receiveResult != null)
-                    receiveResult.Complete(ex);
+            // If we have not sent the length header for this message, send it now
+            if (!CurrentRequest.SentLength)
+            {
+                // The message length counts as the first four bytes
+                CurrentRequest.SentLength = true;
+                CurrentRequest.TotalReceived += 4;
+                Message.Write(buffer, offset, CurrentRequest.TotalToReceive - CurrentRequest.TotalReceived);
+                return 4;
             }
-            return receiveResult;
-        }
 
-        public int EndReceive(IAsyncResult result)
-        {
-            int r = CompleteTransfer(result, receiveResult);
-            receiveResult = null;
-            return r;
-        }
-
-        public IAsyncResult BeginSend(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-        {
-            if (sendResult != null)
-                throw new InvalidOperationException("Cannot call BeginSend twice");
-            sendResult = new HttpResult(callback, state, buffer, offset, count);
-
-            try
+            // Once we've sent the length header, the next thing we need to send is the metadata for the 'Piece' message
+            int written = 0;
+            if (!CurrentRequest.SentHeader)
             {
-                List<PeerMessage> bundle = DecodeMessages(buffer, offset, count);
-                if (bundle == null)
-                {
-                    sendResult.Complete(count);
-                }
-                else if (bundle.TrueForAll(delegate(PeerMessage m) { return m is RequestMessage; }))
-                {
-                    requestMessages.AddRange(bundle.ConvertAll<RequestMessage>(delegate(PeerMessage m) { return (RequestMessage)m; }));
-                    // The RequestMessages are always sequential
-                    RequestMessage start = (RequestMessage)bundle[0];
-                    RequestMessage end = (RequestMessage)bundle[bundle.Count - 1];
-                    CreateWebRequests(start, end);
+                CurrentRequest.SentHeader = true;
 
-                    KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
-                    totalExpected = r.Value;
-                    BeginGetResponse(r.Key, getResponseCallback, r.Key);
+                // We have *only* written the messageLength to the stream
+                // Now we need to write the rest of the PieceMessage header
+                written += Message.Write(buffer, offset + written, PieceMessage.MessageId);
+                written += Message.Write(buffer, offset + written, CurrentRequest.Request.PieceIndex);
+                written += Message.Write(buffer, offset + written, CurrentRequest.Request.StartOffset);
+                count -= written;
+                offset += written;
+                CurrentRequest.TotalReceived += written;
+            }
+
+            // Once we have sent the message length, and the metadata, we now need to add the actual data from the HTTP server.
+            // If we have already connected to the server then DataStream will be non-null and we can just read the next bunch
+            // of data from it.
+            if (DataStream != null) {
+                var result = await DataStream.ReadAsync(buffer, offset, count);
+                DataStreamCount -= result;
+                // If result is zero it means we've read the last data from the stream.
+                if (result == 0)
+                {
+                    DataStream.Dispose();
+                    DataStream = null;
+                    // If we requested more data (via the range header) than we were actually given, then it's a truncated
+                    // stream and we can give up immediately.
+                    if (DataStreamCount > 0)
+                        throw new WebException("Unexpected end of stream");
                 }
                 else
                 {
-                    sendResult.Complete(count);
+                    // Otherwise if we have received non-zero data we can accumulate that!
+                    CurrentRequest.TotalReceived += result;
+                    // If the request is complete we should dequeue the next RequestMessage so we can process
+                    // that the next ReceiveAsync is invoked. Otherwise, if we have processed all the queued
+                    // messages we can mark the 'SendAsync' as complete and we can wait for the piece picker
+                    // to add more requests for us to process.
+                    if (CurrentRequest.Complete)
+                    {
+                        if (RequestMessages.Count > 0)
+                        {
+                            CurrentRequest = new HttpRequestData(RequestMessages[0]);
+                            RequestMessages.RemoveAt(0);
+                        }
+                        else
+                        {
+                            CurrentRequest = null;
+                            SendResult.TrySetResult(null);
+                        }
+                    }
+                    return result + written;
                 }
             }
-            catch (Exception ex)
+
+            // Finally, if we have had no datastream what we need to do is execute the next web request in our list,
+            // and then begin reading data from that stream.
+            while (WebRequests.Count > 0)
             {
-                sendResult.Complete(ex);
+                var r = WebRequests.Dequeue();
+                var response = await r.Key.GetResponseAsync();
+                DataStream = response.GetResponseStream();
+                DataStreamCount = r.Value;
+                return await ReceiveAsync(buffer, offset, count) + written;
             }
 
-            return sendResult;
+            // If we reach this point it means that we processed all webrequests and still ended up receiving *less* data than we required,
+            // and we did not throw an unexpected end of stream exception.
+            throw new WebException ("Unable to download the required data from the server");
         }
 
-        private List<PeerMessage> DecodeMessages(byte[] buffer, int offset, int count)
+        public async Task<int> SendAsync(byte[] buffer, int offset, int count)
         {
-            int off = offset;
-            int c = count;
+            SendResult = new TaskCompletionSource<object>();
 
-            try
+            List<RequestMessage> bundle = DecodeMessages(buffer, offset, count);
+            if (bundle.Count > 0)
             {
-                if (sendBuffer != BufferManager.EmptyBuffer)
-                {
-                    Buffer.BlockCopy(buffer, offset, sendBuffer, sendBufferCount, count);
-                    sendBufferCount += count;
+                RequestMessages.AddRange(bundle);
+                // The RequestMessages are always sequential
+                RequestMessage start = (RequestMessage)bundle[0];
+                RequestMessage end = (RequestMessage)bundle[bundle.Count - 1];
+                CreateWebRequests(start, end);
+            }
+            else
+            {
+                return count;
+            }
 
-                    off = 0;
-                    c = sendBufferCount;
-                }
-                List<PeerMessage> messages = new List<PeerMessage>();
-                for (int i = off; i < off + c; )
-                {
-                    PeerMessage message = PeerMessage.DecodeMessage(buffer, i, c + off - i, null);
-                    messages.Add(message);
-                    i += message.ByteLength;
-                }
-                ClientEngine.BufferManager.FreeBuffer(ref sendBuffer);
-                return messages;
-            }
-            catch (Exception)
-            {
-                if (sendBuffer == BufferManager.EmptyBuffer)
-                {
-                    ClientEngine.BufferManager.GetBuffer(ref sendBuffer, 16 * 1024);
-                    Buffer.BlockCopy(buffer, offset, sendBuffer, 0, count);
-                    sendBufferCount = count;
-                }
-                return null;
-            }
+            ReceiveWaiter.Set();
+            await SendResult.Task;
+            return count;
         }
 
-        public int EndSend(IAsyncResult result)
+        static List<RequestMessage> DecodeMessages(byte[] buffer, int offset, int count)
         {
-            int r = CompleteTransfer(result, sendResult);
-            sendResult = null;
-            return r;
-        }
-
-
-
-        private void ReceivedChunk(IAsyncResult result)
-        {
-            if (disposed)
-                return;
-
-            try
+            var messages = new List<RequestMessage>();
+            for (int i = offset; i < offset + count;)
             {
-                int received = dataStream.EndRead(result);
-                if (received == 0)
-                    throw new WebException("No futher data is available");
-
-                receiveResult.BytesTransferred += received;
-                currentRequest.TotalReceived += received;
-
-                // We've received everything for this piece, so null it out
-                if (currentRequest.Complete)
-                    currentRequest = null;
-
-                totalExpected -= received;
-                receiveResult.Complete();
+                PeerMessage message = PeerMessage.DecodeMessage(buffer, i, count + offset - i, null);
+                if (message is RequestMessage msg)
+                    messages.Add(msg);
+                i += message.ByteLength;
             }
-            catch (Exception ex)
-            {
-                receiveResult.Complete(ex);
-            }
-            finally
-            {
-                // If there are no more requests pending, complete the Send call
-                if (currentRequest == null && requestMessages.Count == 0)
-                    RequestCompleted();
-            }
+            return messages;
         }
 
-        private void RequestCompleted()
-        {
-            dataStream.Dispose();
-            dataStream = null;
-
-            // Let MonoTorrent know we've finished requesting everything it asked for
-            if (sendResult != null)
-                sendResult.Complete(sendResult.Count);
-        }
-
-        private int CompleteTransfer(IAsyncResult supplied, HttpResult expected)
-        {
-            if (supplied == null)
-                throw new ArgumentNullException("result");
-
-            if (supplied != expected)
-                throw new ArgumentException("Invalid IAsyncResult supplied");
-
-            if (!expected.IsCompleted)
-                expected.AsyncWaitHandle.WaitOne();
-
-            if (expected.SavedException != null)
-                throw expected.SavedException;
-
-            return expected.BytesTransferred;
-        }
 
         private void CreateWebRequests(RequestMessage start, RequestMessage end)
         {
@@ -453,13 +343,13 @@ namespace MonoTorrent.Client.Connections
 
             // startOffset and endOffset are *inclusive*. I need to subtract '1' from the end index so that i
             // stop at the correct byte when requesting the byte ranges from the server
-            long startOffset = (long)start.PieceIndex * manager.Torrent.PieceLength + start.StartOffset;
-            long endOffset = (long)end.PieceIndex * manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
+            long startOffset = (long)start.PieceIndex * Manager.Torrent.PieceLength + start.StartOffset;
+            long endOffset = (long)end.PieceIndex * Manager.Torrent.PieceLength + end.StartOffset + end.RequestLength;
 
-            foreach (TorrentFile file in manager.Torrent.Files)
+            foreach (TorrentFile file in Manager.Torrent.Files)
             {
                 Uri u = uri;
-                if (manager.Torrent.Files.Length > 1)
+                if (Manager.Torrent.Files.Length > 1)
                     u = new Uri(u, file.Path);
                 if (endOffset == 0)
                     break;
@@ -475,7 +365,7 @@ namespace MonoTorrent.Client.Connections
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
                     AddRange(request, startOffset, file.Length - 1);
-                    webRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
+                    WebRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
                     startOffset = 0;
                     endOffset -= file.Length;
                 }
@@ -484,7 +374,7 @@ namespace MonoTorrent.Client.Connections
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
                     AddRange(request, startOffset, endOffset - 1);
-                    webRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
+                    WebRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
                     endOffset = 0;
                 }
             }
@@ -497,99 +387,13 @@ namespace MonoTorrent.Client.Connections
 
         public void Dispose()
         {
-            if (disposed)
+            if (Disposed)
                 return;
 
-            disposed = true;
-            if (dataStream != null)
-                dataStream.Dispose();
-            dataStream = null;
-        }
-
-        private void DoReceive()
-        {
-            byte[] buffer = receiveResult.Buffer;
-            int offset = receiveResult.Offset;
-            int count = receiveResult.Count;
-
-            if (currentRequest == null && requestMessages.Count > 0)
-            {
-                currentRequest = new HttpRequestData(requestMessages[0]);
-                requestMessages.RemoveAt(0);
-            }
-
-            if (totalExpected == 0)
-            {
-                if (webRequests.Count == 0)
-                {
-                    sendResult.Complete(sendResult.Count);
-                }
-                else
-                {
-                    KeyValuePair<WebRequest, int> r = webRequests.Dequeue();
-                    totalExpected = r.Value;
-                    BeginGetResponse(r.Key, getResponseCallback, r.Key);
-                }
-                return;
-            }
-
-            if (!currentRequest.SentLength)
-            {
-                // The message length counts as the first four bytes
-                currentRequest.SentLength = true;
-                currentRequest.TotalReceived += 4;
-                Message.Write(receiveResult.Buffer, receiveResult.Offset, currentRequest.TotalToReceive - currentRequest.TotalReceived);
-                receiveResult.Complete(4);
-                return;
-            }
-            else if (!currentRequest.SentHeader)
-            {
-                currentRequest.SentHeader = true;
-
-                // We have *only* written the messageLength to the stream
-                // Now we need to write the rest of the PieceMessage header
-                int written = 0;
-                written += Message.Write(buffer, offset + written, PieceMessage.MessageId);
-                written += Message.Write(buffer, offset + written, CurrentRequest.Request.PieceIndex);
-                written += Message.Write(buffer, offset + written, CurrentRequest.Request.StartOffset);
-                count -= written;
-                offset += written;
-                receiveResult.BytesTransferred += written;
-                currentRequest.TotalReceived += written;
-            }
-
-            dataStream.BeginRead(buffer, offset, count, receivedChunkCallback, null);
-        }
-
-        void BeginGetResponse(WebRequest request, AsyncCallback callback, object state)
-        {
-            IAsyncResult result = request.BeginGetResponse(callback, state);
-            ClientEngine.MainLoop.QueueTimeout(ConnectionTimeout, delegate {
-                if (!result.IsCompleted)
-                    request.Abort();
-                return false;
-            });
-        }
-
-        private void GotResponse(IAsyncResult result)
-        {
-            WebRequest r = (WebRequest)result.AsyncState;
-            try
-            {
-                WebResponse response = r.EndGetResponse(result);
-                dataStream = response.GetResponseStream();
-
-                if (receiveResult != null)
-                    DoReceive();
-            }
-            catch (Exception ex)
-            {
-                if (sendResult != null)
-                    sendResult.Complete(ex);
-
-                if (receiveResult != null)
-                    receiveResult.Complete(ex);
-            }
+            Disposed = true;
+            if (DataStream != null)
+                DataStream.Dispose();
+            DataStream = null;
         }
     }
 }
