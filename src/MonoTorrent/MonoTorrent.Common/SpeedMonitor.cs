@@ -34,25 +34,16 @@ namespace MonoTorrent.Common
 {
     public class SpeedMonitor
     {
-        private const int DefaultAveragePeriod = 12;
-
-        private long total;
-        private int speed;
-        private int[] speeds;
+        const int DefaultAveragePeriod = 12;
+        readonly int[] speeds;
         private int speedsIndex;
         private DateTime lastUpdated;
         private long tempRecvCount;
 
 
-        public int Rate
-        {
-            get { return this.speed; }
-        }
+        public int Rate { get; private set; }
 
-        public long Total
-        {
-            get { return this.total; }
-        }
+        public long Total { get; private set; }
 
 
         public SpeedMonitor()
@@ -74,23 +65,23 @@ namespace MonoTorrent.Common
 
         public void AddDelta(int speed)
         {
-            this.total += speed;
-            this.tempRecvCount += speed;
-        }
-
-        public void AddDelta(long speed)
-        {
-            this.total += speed;
-            this.tempRecvCount += speed;
+            lock (speeds)
+            {
+                this.Total += speed;
+                this.tempRecvCount += speed;
+            }
         }
 
         public void Reset()
         {
-            this.total = 0;
-            this.speed = 0;
-            this.tempRecvCount = 0;
-            this.lastUpdated = DateTime.UtcNow;
-            this.speedsIndex = -speeds.Length;
+            lock (speeds)
+            {
+                Total = 0;
+                Rate = 0;
+                tempRecvCount = 0;
+                lastUpdated = DateTime.UtcNow;
+                speedsIndex = -speeds.Length;
+            }
         }
 
         private void TimePeriodPassed(int difference)
@@ -123,7 +114,7 @@ namespace MonoTorrent.Common
             for( int i = 1; i < speedsCount; i++ )
                 total += speeds[i];
 
-            speed = total / speedsCount;
+            Rate = total / speedsCount;
         }
 
 
@@ -143,8 +134,10 @@ namespace MonoTorrent.Common
         // Used purely for unit testing purposes.
         internal void Tick (int difference)
         {
-            lastUpdated = DateTime.UtcNow;
-            TimePeriodPassed (difference);
+            lock (speeds)  {
+                lastUpdated = DateTime.UtcNow;
+                TimePeriodPassed(difference);
+            }
         }
     }
 }
