@@ -114,7 +114,7 @@ namespace MonoTorrent.Client
             await connection.ConnectAsync ();
         }
 
-        public static async Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+        public static async Task ReceiveAsync(IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
@@ -133,15 +133,15 @@ namespace MonoTorrent.Client
                 if (transferred == 0)
                     throw new Exception("Socket is dead");
 
-                peerMonitor?.BytesReceived(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
-                managerMonitor?.BytesReceived(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+                peerMonitor?.AddDelta(transferred);
+                managerMonitor?.AddDelta(transferred);
 
                 offset += transferred;
                 remaining -= transferred;
             } 
         }
 
-        public static async Task SendAsync (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, ConnectionMonitor peerMonitor, ConnectionMonitor managerMonitor)
+        public static async Task SendAsync (IConnection connection, byte [] buffer, int offset, int count, IRateLimiter rateLimiter, SpeedMonitor peerMonitor, SpeedMonitor managerMonitor)
         {
             await IOLoop;
 
@@ -161,8 +161,8 @@ namespace MonoTorrent.Client
                 if (transferred == 0)
                     throw new Exception("Socket is dead");
 
-                peerMonitor?.BytesSent(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
-                managerMonitor?.BytesSent(transferred, count > 8000 ? TransferType.Data : TransferType.Protocol);
+                peerMonitor?.AddDelta(transferred);
+                managerMonitor?.AddDelta(transferred);
 
                 offset += transferred;
                 remaining -= transferred;

@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
             try {
                 int messageLength = 4;
                 ClientEngine.BufferManager.GetBuffer (ref messageLengthBuffer, messageLength);
-                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, monitor, manager?.Monitor).ConfigureAwait (false);
+                await NetworkIO.ReceiveAsync (connection, messageLengthBuffer, 0, messageLength, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageLengthBuffer, 0, messageLength);
 
@@ -81,10 +81,20 @@ namespace MonoTorrent.Client
                 Buffer.BlockCopy (messageLengthBuffer, 0, messageBuffer, 0, messageLength);
                 ClientEngine.BufferManager.FreeBuffer (ref messageLengthBuffer);
 
-                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor, manager?.Monitor).ConfigureAwait (false);
+                // Always assume protocol first, then convert to data when we what message it is!
+                await NetworkIO.ReceiveAsync (connection, messageBuffer, messageLength, messageBody, rateLimiter, monitor?.ProtocolDown, manager?.Monitor.ProtocolDown).ConfigureAwait (false);
 
                 decryptor.Decrypt (messageBuffer, messageLength, messageBody);
-                return PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager);
+                var data = PeerMessage.DecodeMessage (messageBuffer, 0, messageLength + messageBody, manager);
+                if (data is PieceMessage msg)
+                {
+                    monitor?.ProtocolDown.AddDelta(-msg.RequestLength);
+                    manager?.Monitor.ProtocolDown.AddDelta(-msg.RequestLength);
+
+                    monitor?.DataDown.AddDelta(msg.RequestLength);
+                    manager?.Monitor.DataDown.AddDelta(msg.RequestLength);
+                }
+                return data;
             } finally {
                 ClientEngine.BufferManager.FreeBuffer (ref messageLengthBuffer);
                 ClientEngine.BufferManager.FreeBuffer (ref messageBuffer);
@@ -97,10 +107,20 @@ namespace MonoTorrent.Client
             var buffer = ClientEngine.BufferManager.GetBuffer (count);
 
             try {
+                var pieceMessage = message as PieceMessage;
                 message.Encode (buffer, 0);
                 encryptor.Encrypt (buffer, 0, count);
 
-                await NetworkIO.SendAsync (connection, buffer, 0, count, rateLimiter, peerMonitor, managerMonitor).ConfigureAwait (false);
+                // Assume protocol first, then swap it to data once we successfully send the data bytes.
+                await NetworkIO.SendAsync (connection, buffer, 0, count, pieceMessage == null ? null : rateLimiter, peerMonitor?.DataUp, managerMonitor?.DataUp).ConfigureAwait (false);
+                if (pieceMessage != null)
+                {
+                    peerMonitor?.ProtocolUp.AddDelta(-pieceMessage.RequestLength);
+                    managerMonitor?.ProtocolUp.AddDelta(-pieceMessage.RequestLength);
+
+                    peerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
+                    managerMonitor?.DataUp.AddDelta(pieceMessage.RequestLength);
+                }
             } finally {
                 ClientEngine.BufferManager.FreeBuffer (ref buffer);
             }
