@@ -10,6 +10,7 @@ using System.Threading;
 using MonoTorrent.Client.Messages;
 using System.Text.RegularExpressions;
 using MonoTorrent.Common;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -66,48 +67,45 @@ namespace MonoTorrent.Client
         [Test]
         public void TestPartialData()
         {
-            Assert.Throws<WebException> (() =>
-            {
-                partialData = true;
-                RecieveFirst();
-            });
+            partialData = true;
+            Assert.ThrowsAsync<WebException> (() => RecieveFirst());
         }
 
         [Test]
         public void TestInactiveServer()
         {
-            Assert.Throws<WebException> (() =>
-            {
-                connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
-                listener.Stop();
-                RecieveFirst();
-            });
+            connection.ConnectionTimeout = TimeSpan.FromMilliseconds(100);
+            listener.Stop();
+
+            Assert.ThrowsAsync<WebException> (() => RecieveFirst());
         }
 
         [Test]
-        public void RecieveFirst()
+        public async Task RecieveFirst()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
             IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-            IAsyncResult sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
+            var task = Send (requests.Encode (), 0, requests.ByteLength);
             amountSent = requests.ByteLength;
 
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+            CompleteSendOrReceiveFirst(buffer, receiveResult);
+            await task;
         }
 
         [Test]
-        public void SendFirst()
+        public async Task SendFirst()
         {
             byte[] buffer = new byte[1024 * 1024 * 3];
-            IAsyncResult sendResult = connection.BeginSend(requests.Encode(), 0, requests.ByteLength, null, null);
+            var task = Send (requests.Encode (), 0, requests.ByteLength);
             IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
             amountSent = requests.ByteLength;
 
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+            CompleteSendOrReceiveFirst(buffer, receiveResult);
+            await task;
         }
 
         [Test]
-        public void ChunkedRequest()
+        public async Task ChunkedRequest()
         {
             if (requests.Messages.Count != 0)
                 rig.Manager.PieceManager.Picker.CancelRequests(id);
@@ -115,34 +113,35 @@ namespace MonoTorrent.Client
             requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), 256);
 
             byte[] sendBuffer = requests.Encode();
-            int offset = 0;
-            amountSent = Math.Min(sendBuffer.Length - offset, 2048);
-            IAsyncResult sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
-            while (sendResult.AsyncWaitHandle.WaitOne(10, true))
-            {
-                Assert.AreEqual(amountSent, connection.EndSend(sendResult), "#1." + amountSent);
-                offset += amountSent;
-                amountSent = Math.Min(sendBuffer.Length - offset, 2048);
-                if (amountSent == 0)
-                    Assert.Fail("This should never happen");
-                sendResult = connection.BeginSend(sendBuffer, offset, amountSent, null, null);
-            }
+            var sendTask = Send (sendBuffer, 0, sendBuffer.Length, 1);
 
             byte[] buffer = new byte[1024 * 1024 * 3];
             IAsyncResult receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
 
-            CompleteSendOrReceiveFirst(buffer, receiveResult, sendResult);
+            CompleteSendOrReceiveFirst(buffer, receiveResult);
+            await sendTask;
         }
 
         [Test]
-        public void MultipleChunkedRequests()
+        public async Task MultipleChunkedRequests()
         {
-            ChunkedRequest();
-            ChunkedRequest();
-            ChunkedRequest();
+            await ChunkedRequest();
+            await ChunkedRequest();
+            await ChunkedRequest();
         }
 
-        private void CompleteSendOrReceiveFirst(byte[] buffer, IAsyncResult receiveResult, IAsyncResult sendResult)
+        async Task Send (byte[] buffer, int offset, int count, int maxBytes = -1)
+        {
+            while (count > 0) {
+                var toSend = maxBytes == -1 ? count :  Math.Min (maxBytes, count);
+                var transferred = await connection.SendAsync (buffer, offset, toSend);
+                Assert.AreNotEqual (0, transferred);
+                offset += transferred;
+                count -= transferred;
+            }
+        }
+
+        private void CompleteSendOrReceiveFirst(byte[] buffer, IAsyncResult receiveResult)
         {
             int received = 0;
             Wait(receiveResult.AsyncWaitHandle);
@@ -174,9 +173,6 @@ namespace MonoTorrent.Client
 
                 if (requests.Messages.Count == 0)
                 {
-                    //receiveResult = connection.BeginReceive(buffer, 0, 4, null, null);
-                    Wait(sendResult.AsyncWaitHandle);
-                    Assert.AreEqual(connection.EndSend(sendResult), amountSent);
                     break;
                 }
                 else
@@ -260,7 +256,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void SingleFileTorrent()
+        public async Task SingleFileTorrent()
         {
             rig.Dispose();
             rig = TestRig.CreateSingleFile();
@@ -276,7 +272,7 @@ namespace MonoTorrent.Client
             id.MaxPendingRequests = numberOfPieces;
 
             requests = rig.Manager.PieceManager.Picker.PickPiece(id, new List<PeerId>(), numberOfPieces);
-            RecieveFirst();
+            await RecieveFirst();
             Assert.AreEqual(url, requestedUrl[0]);
         }
 

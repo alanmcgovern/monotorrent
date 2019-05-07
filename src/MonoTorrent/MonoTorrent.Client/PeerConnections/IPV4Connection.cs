@@ -33,7 +33,7 @@ using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
 {
-    public class IPV4Connection : SocketConnection
+    sealed class IPV4Connection : SocketConnection
     {
         public IPV4Connection(Uri uri)
             : base(uri)
