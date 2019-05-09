@@ -142,7 +142,7 @@ namespace MonoTorrent.Client
             };
 
             timer = new Timer(state => {
-                ClientEngine.MainLoop.Post(callback, null);
+                Post(callback, null);
             }, null, span, span);
         }
 
