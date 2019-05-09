@@ -74,13 +74,17 @@ namespace MonoTorrent.Client
             IOLoop.QueueTimeout(TimeSpan.FromMilliseconds(100), delegate {
                 while (receiveQueue.Count > 0) {
                     var io = receiveQueue.Peek ();
-                    if (io.rateLimiter.TryProcess (io.count))
-                        ReceiveQueuedAsync (receiveQueue.Dequeue ());
+                    if (io.rateLimiter.TryProcess(io.count))
+                        ReceiveQueuedAsync(receiveQueue.Dequeue());
+                    else
+                        break;
                 }
                 while (sendQueue.Count > 0) {
                     var io = sendQueue.Peek ();
-                    if (io.rateLimiter.TryProcess (io.count))
-                        SendQueuedAsync (sendQueue.Dequeue ());
+                    if (io.rateLimiter.TryProcess(io.count))
+                        SendQueuedAsync(sendQueue.Dequeue());
+                    else
+                        break;
                 }
 
                 return true;
