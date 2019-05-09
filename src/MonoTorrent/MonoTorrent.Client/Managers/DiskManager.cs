@@ -200,7 +200,7 @@ namespace MonoTorrent.Client
             // We want to be sure we've actually written everything so when we go to hash the
             // piece it will be returned to us in our Read call. If the write were still pending
             // we could accidentally end up reporting the piece was corrupt.
-            ProcessBufferedIO (true);
+            await WaitForBufferedWrites();
 
             long startOffset = (long)manager.Torrent.PieceLength * pieceIndex;
             long endOffset = Math.Min(startOffset + manager.Torrent.PieceLength, manager.Torrent.Size);
@@ -226,6 +226,16 @@ namespace MonoTorrent.Client
             hasher.TransformFinalBlock(hashBuffer, 0, 0);
             ClientEngine.BufferManager.FreeBuffer(ref hashBuffer);
             return hasher.Hash;
+        }
+
+        async Task WaitForBufferedWrites ()
+        {
+            if (bufferedWrites.Count > 0)
+            {
+                TaskCompletionSource<bool> flushed = new TaskCompletionSource<bool>();
+                bufferedWrites.Enqueue(new BufferedIO(null, -1, null, -1, flushed));
+                await flushed.Task;
+            }
         }
 
         public async Task CloseFilesAsync(TorrentManager manager)
@@ -329,7 +339,16 @@ namespace MonoTorrent.Client
             BufferedIO io;
 
             while (bufferedWrites.Count > 0) {
-                if (!force && !WriteLimiter.TryProcess (bufferedWrites.Peek ().count))
+                io = bufferedWrites.Peek();
+                // This means we wanted to wait until all the writes had been flushed
+                // before we attempt to generate the hash of a given piece.
+                if (io.manager == null && io.buffer == null)  {
+                    io = bufferedWrites.Dequeue();
+                    io.tcs.SetResult(true);
+                    continue;
+                }
+
+                if (!force && !WriteLimiter.TryProcess (io.count))
                     break;
 
                 io = bufferedWrites.Dequeue ();
