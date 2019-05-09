@@ -111,7 +111,8 @@ namespace MonoTorrent.Client.Connections
             var tcs = new TaskCompletionSource<int>();
             ReceiveArgs.UserToken = tcs;
 
-            Socket.ConnectAsync (ReceiveArgs);
+            if (!Socket.ConnectAsync(ReceiveArgs))
+                return Task.FromResult(true);
             return tcs.Task;
         }
 
@@ -121,7 +122,8 @@ namespace MonoTorrent.Client.Connections
             ReceiveArgs.SetBuffer(buffer, offset, count);
             ReceiveArgs.UserToken = tcs;
 
-            Socket.ReceiveAsync(ReceiveArgs);
+            if (!Socket.ReceiveAsync(ReceiveArgs))
+                return Task.FromResult(ReceiveArgs.BytesTransferred);
             return tcs.Task;
         }
 
@@ -131,7 +133,8 @@ namespace MonoTorrent.Client.Connections
             SendArgs.SetBuffer(buffer, offset, count);
             SendArgs.UserToken = tcs;
 
-            Socket.SendAsync(SendArgs);
+            if (!Socket.SendAsync(SendArgs))
+                return Task.FromResult(SendArgs.BytesTransferred);
             return tcs.Task;
         }
 
