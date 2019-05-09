@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClient", "SampleClien
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackerApp", "TrackerApp\TrackerApp.csproj", "{7A647552-B5F0-419F-9395-4DC24990ED20}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetCoreSample", "DotNetCoreSample\DotNetCoreSample.csproj", "{603EDA39-A83F-48BE-A97A-193C28CAAE86}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{7A647552-B5F0-419F-9395-4DC24990ED20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A647552-B5F0-419F-9395-4DC24990ED20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{603EDA39-A83F-48BE-A97A-193C28CAAE86}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
