@@ -1,0 +1,10 @@
+*.cs text
+*.dll.config text
+*.exe.config text
+*.md text
+*.proj text
+*.props text
+*.resx text
+*.sh text eol=lf
+*.sln text eol=crlf
+*.targets text

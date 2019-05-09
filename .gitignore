@@ -1,6 +1,8 @@
 .DS_Store
 /build/
 /src/.vs
+/src/DotNetCoreSample/bin/
+/src/DotNetCoreSample/obj/
 /src/MonoTorrent.Dht/bin/
 /src/MonoTorrent.Dht/obj/
 /src/MonoTorrent.Tests/bin/
