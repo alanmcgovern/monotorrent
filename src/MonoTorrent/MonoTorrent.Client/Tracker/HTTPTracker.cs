@@ -37,6 +37,7 @@ using System.Net;
 using System.Web;
 using MonoTorrent.Common;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Tracker
 {
@@ -70,7 +71,7 @@ namespace MonoTorrent.Client.Tracker
             Key = UriHelper.UrlEncode(passwordKey);
         }
 
-        public override void Announce(AnnounceParameters parameters, object state)
+        public override async Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
             try
             {
@@ -86,6 +87,7 @@ namespace MonoTorrent.Client.Tracker
                 Status = TrackerState.Offline;
                 FailureMessage = ("Could not initiate announce request: " + ex.Message);
                 RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, false));
+                throw;
             }
         }
 
@@ -271,7 +273,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        public override void Scrape(ScrapeParameters parameters, object state)
+        public override async Task ScrapeAsync(ScrapeParameters parameters, object state)
         {
             try
             {
@@ -290,6 +292,7 @@ namespace MonoTorrent.Client.Tracker
             catch
             {
                 RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, false));
+                throw;
             }
         }
 

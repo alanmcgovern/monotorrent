@@ -17,12 +17,14 @@ namespace MonoTorrent.Client
 
         }
 
-        public override void Announce(AnnounceParameters parameters, object state)
+        public override Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
+            return Task.CompletedTask;
         }
 
-        public override void Scrape(ScrapeParameters parameters, object state)
+        public override Task ScrapeAsync(ScrapeParameters parameters, object state)
         {
+            return Task.CompletedTask;
         }
     }
 

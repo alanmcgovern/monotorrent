@@ -23,14 +23,16 @@ namespace SampleClient
             this.CanScrape = false;
         }
 
-        public override void Announce(AnnounceParameters parameters, object state)
+        public override Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
             RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, true));
+            return Task.CompletedTask;
         }
 
-        public override void Scrape(ScrapeParameters parameters, object state)
+        public override Task ScrapeAsync(ScrapeParameters parameters, object state)
         {
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, true));
+            return Task.CompletedTask;
         }
 
         public void AddPeer(Peer p)
