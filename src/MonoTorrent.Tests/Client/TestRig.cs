@@ -77,18 +77,20 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        public override void Announce(AnnounceParameters parameters, object state)
+        public override Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
             RaiseBeforeAnnounce();
             AnnouncedAt.Add(DateTime.Now);
             RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, !FailAnnounce));
+            return Task.CompletedTask;
         }
 
-        public override void Scrape(ScrapeParameters parameters, object state)
+        public override Task ScrapeAsync(ScrapeParameters parameters, object state)
         {
             RaiseBeforeScrape();
             ScrapedAt.Add(DateTime.Now);
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, !FailScrape));
+            return Task.CompletedTask;
         }
 
         public void AddPeer(Peer p)

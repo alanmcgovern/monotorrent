@@ -30,6 +30,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
@@ -116,8 +117,26 @@ namespace MonoTorrent.Client.Tracker
             this.uri = uri;
         }
 
-        public abstract void Announce(AnnounceParameters parameters, object state);
-        public abstract void Scrape(ScrapeParameters parameters, object state);
+        public async void Announce(AnnounceParameters parameters, object state)
+        {
+            try {
+                await AnnounceAsync (parameters, state);
+            } catch {
+                // Ignore
+			}
+		}
+
+        public async void Scrape(ScrapeParameters parameters, object state)
+        {
+            try {
+                await ScrapeAsync (parameters, state);
+            } catch {
+                // Ignore
+            }
+        }
+
+        public abstract Task AnnounceAsync (AnnounceParameters parameters, object state);
+        public abstract Task ScrapeAsync(ScrapeParameters parameters, object state);
 
         protected virtual void RaiseBeforeAnnounce()
         {
