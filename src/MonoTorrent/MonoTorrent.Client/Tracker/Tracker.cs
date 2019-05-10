@@ -37,9 +37,7 @@ namespace MonoTorrent.Client.Tracker
 {
     public abstract class Tracker : ITracker
     {
-        public event EventHandler BeforeAnnounce;
         public event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        public event EventHandler BeforeScrape; 
         public event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         bool canAnnounce;
@@ -138,24 +136,13 @@ namespace MonoTorrent.Client.Tracker
         public abstract Task AnnounceAsync (AnnounceParameters parameters, object state);
         public abstract Task ScrapeAsync(ScrapeParameters parameters, object state);
 
-        protected virtual void RaiseBeforeAnnounce()
-        {
-            EventHandler h = BeforeAnnounce;
-            if (h != null)
-                h(this, EventArgs.Empty);
-        }
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
             EventHandler<AnnounceResponseEventArgs> h = AnnounceComplete;
             if (h != null)
                 h(this, e);
         }
-        protected virtual void RaiseBeforeScrape()
-        {
-            EventHandler h = BeforeScrape;
-            if (h != null)
-                h(this, EventArgs.Empty);
-        }
+
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
             EventHandler<ScrapeResponseEventArgs> h = ScrapeComplete;

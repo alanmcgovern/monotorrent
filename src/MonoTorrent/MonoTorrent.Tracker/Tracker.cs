@@ -51,7 +51,8 @@ namespace MonoTorrent.Tracker
         internal static readonly BEncodedString MinIntervalKey = "min interval";
         internal static readonly BEncodedString TrackerIdKey = "tracker id";
         internal static readonly BEncodedString CompleteKey = "complete";
-        internal static readonly BEncodedString Incomplete = "incomplete";
+        internal static readonly BEncodedString DownloadedKey = "downloaded";
+        internal static readonly BEncodedString IncompleteKey = "incomplete";
         internal static readonly BEncodedString PeerIdKey = "peer id";
         internal static readonly BEncodedString Port = "port";
         internal static readonly BEncodedString Ip = "ip";
@@ -303,7 +304,8 @@ namespace MonoTorrent.Tracker
             e.Response.Add(Tracker.MinIntervalKey, new BEncodedNumber((int)MinAnnounceInterval.TotalSeconds));
             e.Response.Add(Tracker.TrackerIdKey, trackerId); // FIXME: Is this right?
             e.Response.Add(Tracker.CompleteKey, new BEncodedNumber(manager.Complete));
-            e.Response.Add(Tracker.Incomplete, new BEncodedNumber(manager.Incomplete));
+            e.Response.Add(Tracker.IncompleteKey, new BEncodedNumber(manager.Incomplete));
+            e.Response.Add(Tracker.DownloadedKey, new BEncodedNumber(manager.Downloaded));
 
             //FIXME is this the right behaivour 
             //if (par.TrackerId == null)

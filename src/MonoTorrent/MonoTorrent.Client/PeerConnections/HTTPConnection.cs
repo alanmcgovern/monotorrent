@@ -197,10 +197,13 @@ namespace MonoTorrent.Client.Connections
             while (WebRequests.Count > 0)
             {
                 var r = WebRequests.Dequeue();
-                var response = await r.Key.GetResponseAsync();
-                DataStream = response.GetResponseStream();
-                DataStreamCount = r.Value;
-                return await ReceiveAsync(buffer, offset, count) + written;
+                using (var cts = new CancellationTokenSource (ConnectionTimeout))
+                using (cts.Token.Register (() => r.Key.Abort ())) {
+                    var response = await r.Key.GetResponseAsync();
+                    DataStream = response.GetResponseStream();
+                    DataStreamCount = r.Value;
+                    return await ReceiveAsync(buffer, offset, count) + written;
+                }
             }
 
             // If we reach this point it means that we processed all webrequests and still ended up receiving *less* data than we required,
