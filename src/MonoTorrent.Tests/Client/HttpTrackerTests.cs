@@ -20,7 +20,7 @@ namespace MonoTorrent.Client
         MonoTorrent.Tracker.Tracker server;
         MonoTorrent.Tracker.Listeners.HttpListener listener;
         string ListeningPrefix => "http://127.0.0.1:47124/";
-        Uri AnnounceUrl => new Uri (ListeningPrefix + "/announce");
+        Uri AnnounceUrl => new Uri (ListeningPrefix + "announce");
         HTTPTracker tracker;
         TrackerConnectionID id;
 
@@ -99,8 +99,16 @@ namespace MonoTorrent.Client
         [Test]
         public void Announce_Timeout ()
         {
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (1);
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceParams, id));
+            TaskCompletionSource<bool> s = new TaskCompletionSource<bool>();
+            listener.AnnounceReceived += (o, e) => s.Task.Wait ();
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            try
+            {
+                Assert.ThrowsAsync<TrackerException>(() => tracker.AnnounceAsync(announceParams, id));
+            } finally
+            {
+                s.SetResult(true);
+            }
         }
 
         [Test]
@@ -145,8 +153,17 @@ namespace MonoTorrent.Client
         [Test]
         public void Scrape_Timeout()
         {
-            tracker.RequestTimeout = TimeSpan.FromMilliseconds (1);
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync(scrapeParams, id));
+            var tcs = new TaskCompletionSource<bool>();
+            listener.ScrapeReceived += (o, e) => tcs.Task.Wait();
+            tracker.RequestTimeout = TimeSpan.FromMilliseconds (500);
+            try
+            {
+                Assert.ThrowsAsync<TrackerException>(() => tracker.ScrapeAsync(scrapeParams, id));
+            }
+            finally
+            {
+                tcs.SetResult(true);
+            }
         }
     }
 }

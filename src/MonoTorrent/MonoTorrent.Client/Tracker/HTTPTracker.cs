@@ -108,9 +108,6 @@ namespace MonoTorrent.Client.Tracker
             try
             {
                 string url = ScrapeUri.OriginalString;
-                if (!url.EndsWith ("/"))
-                    url += "/";
-
                 // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
                 if (url.IndexOf('?') == -1)
                     url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
