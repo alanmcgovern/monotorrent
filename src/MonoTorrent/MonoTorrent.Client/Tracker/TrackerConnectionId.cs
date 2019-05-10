@@ -38,7 +38,7 @@ namespace MonoTorrent.Client.Tracker
     internal class TrackerConnectionID
     {
         TorrentEvent torrentEvent;
-        Tracker tracker;
+        ITracker tracker;
         bool trySubsequent;
         ManualResetEvent waitHandle;
 
@@ -47,7 +47,7 @@ namespace MonoTorrent.Client.Tracker
             get { return torrentEvent; }
         }
 
-        public Tracker Tracker
+        public ITracker Tracker
         {
             get { return tracker; }
         }
@@ -63,7 +63,7 @@ namespace MonoTorrent.Client.Tracker
         }
 
 
-        public TrackerConnectionID(Tracker tracker, bool trySubsequent, TorrentEvent torrentEvent, ManualResetEvent waitHandle)
+        public TrackerConnectionID(ITracker tracker, bool trySubsequent, TorrentEvent torrentEvent, ManualResetEvent waitHandle)
         {
             this.tracker = tracker;
             this.trySubsequent = trySubsequent;

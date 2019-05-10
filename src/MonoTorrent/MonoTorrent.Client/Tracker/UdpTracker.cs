@@ -37,7 +37,7 @@ namespace MonoTorrent.Client.Tracker
             } catch (Exception e) {
                 ConnectionIdTask = null;
                 RaiseAnnounceComplete (new AnnounceResponseEventArgs (this, state, false));
-                throw new Exception ("Announce could not be completed", e);
+                throw new TrackerException ("Announce could not be completed", e);
             }
         }
 
@@ -61,7 +61,7 @@ namespace MonoTorrent.Client.Tracker
             } catch (Exception e) {
                 ConnectionIdTask = null;
                 RaiseScrapeComplete (new ScrapeResponseEventArgs (this, state, false));
-                throw new Exception ("Scrape could not be completed", e);
+                throw new TrackerException ("Scrape could not be completed", e);
             }
         }
 

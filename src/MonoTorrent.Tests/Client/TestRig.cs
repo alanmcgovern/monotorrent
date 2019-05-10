@@ -79,7 +79,6 @@ namespace MonoTorrent.Client
 
         public override Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
-            RaiseBeforeAnnounce();
             AnnouncedAt.Add(DateTime.Now);
             RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, !FailAnnounce));
             return Task.CompletedTask;
@@ -87,7 +86,6 @@ namespace MonoTorrent.Client
 
         public override Task ScrapeAsync(ScrapeParameters parameters, object state)
         {
-            RaiseBeforeScrape();
             ScrapedAt.Add(DateTime.Now);
             RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, !FailScrape));
             return Task.CompletedTask;

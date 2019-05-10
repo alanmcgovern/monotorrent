@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 
@@ -8,9 +9,7 @@ namespace MonoTorrent.Client.Tracker
 {
     interface ITracker
     {
-        event EventHandler BeforeAnnounce;
         event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
-        event EventHandler BeforeScrape;
         event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
 
         bool CanAnnounce { get; }
@@ -24,6 +23,9 @@ namespace MonoTorrent.Client.Tracker
         TimeSpan UpdateInterval { get; }
         Uri Uri { get; }
         string WarningMessage { get; }
+
+        Task AnnounceAsync(AnnounceParameters parameters, object state);
+        Task ScrapeAsync(ScrapeParameters parameters, object state);
 
         void Announce(AnnounceParameters parameters, object state);
         void Scrape(ScrapeParameters parameters, object state);

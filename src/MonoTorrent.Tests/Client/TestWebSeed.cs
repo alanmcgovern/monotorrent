@@ -26,7 +26,6 @@ namespace MonoTorrent.Client
         HttpListener listener;
         //private RequestMessage m;
         public const string ListenerURL = "http://127.0.0.1:51423/announce/";
-        int amountSent;
 
         PeerId id;
         MessageBundle requests;
@@ -42,7 +41,7 @@ namespace MonoTorrent.Client
             listener.Prefixes.Add(ListenerURL);
             listener.Start();
 
-            listener.BeginGetContext(GotContext, null);
+            listener.BeginGetContext(GotContext, listener);
             rig = TestRig.CreateMultiFile();
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
@@ -86,7 +85,6 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte[1024 * 1024 * 3];
             var receiveTask = NetworkIO.ReceiveAsync(connection, buffer, 0, 4, null, null, null);
             var task = Send (requests.Encode (), 0, requests.ByteLength);
-            amountSent = requests.ByteLength;
 
             await CompleteSendOrReceiveFirst(buffer, receiveTask.ContinueWith (t=> 4));
             await task;
@@ -98,7 +96,6 @@ namespace MonoTorrent.Client
             byte[] buffer = new byte[1024 * 1024 * 3];
             var task = Send (requests.Encode (), 0, requests.ByteLength);
             var receiveTask  = connection.ReceiveAsync (buffer, 0, 4);
-            amountSent = requests.ByteLength;
 
             await CompleteSendOrReceiveFirst(buffer, receiveTask);
             await task;
@@ -188,7 +185,10 @@ namespace MonoTorrent.Client
         {
             try
             {
-                HttpListenerContext c = listener.EndGetContext(result);
+                if (result.AsyncState != listener)
+                    throw new Exception ("give up");
+
+                HttpListenerContext c = ((HttpListener) result.AsyncState).EndGetContext(result);
                 Console.WriteLine("Got Context");
                 requestedUrl.Add(c.Request.Url.OriginalString);
                 Match match = null;
@@ -241,10 +241,18 @@ namespace MonoTorrent.Client
                     c.Response.Close(data, false);
                 }
 
-                listener.BeginGetContext(GotContext, null);
             }
             catch
             {
+            }
+            finally
+            {
+                try {
+                    if (result.AsyncState == listener)
+                        ((HttpListener)result.AsyncState).BeginGetContext(GotContext, result.AsyncState);
+                } catch {
+
+                }
             }
         }
 

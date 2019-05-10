@@ -43,27 +43,28 @@ namespace MonoTorrent.Client.Tracker
 {
     public class HTTPTracker : Tracker
     {
-        static Random random = new Random();
-        static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+        static readonly Random random = new Random();
+        static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(10);
 
-        string TrackerId;
+        string TrackerId { get; set; }
 
-        public string Key { get; private set; }
+        public string Key { get; }
+
+        internal TimeSpan RequestTimeout { get; set; } = DefaultRequestTimeout;
 
         public Uri ScrapeUri { get; }
 
         public HTTPTracker(Uri announceUrl)
             : base(announceUrl)
         {
+            var uri = announceUrl.OriginalString;
+            if (uri.EndsWith ("/announce", StringComparison.OrdinalIgnoreCase))
+                ScrapeUri = new Uri(uri.Substring (0, uri.Length - "/announce".Length) + "/scrape");
+            else if (uri.EndsWith ("/announce/", StringComparison.OrdinalIgnoreCase))
+                ScrapeUri = new Uri (uri.Substring (0, uri.Length - "/announce/".Length) + "/scrape/");
+
             CanAnnounce = true;
-            int index = announceUrl.OriginalString.LastIndexOf('/');
-            string part = (index + 9 <= announceUrl.OriginalString.Length) ? announceUrl.OriginalString.Substring(index + 1, 8) : "";
-            if (part.Equals("announce", StringComparison.OrdinalIgnoreCase))
-            {
-                CanScrape = true;
-                Regex r = new Regex("announce");
-                ScrapeUri = new Uri(r.Replace(announceUrl.OriginalString, "scrape", 1, index));
-            }
+            CanScrape = ScrapeUri != null;
 
             byte[] passwordKey = new byte[8];
             lock (random)
@@ -73,62 +74,60 @@ namespace MonoTorrent.Client.Tracker
 
         public override async Task AnnounceAsync(AnnounceParameters parameters, object state)
         {
+            // Clear out previous failure state
+            FailureMessage = "";
+            WarningMessage = "";
+            var peers = new List<Peer>();
+
             try
             {
-                Uri announceString = CreateAnnounceString(parameters);
-                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(announceString);
-                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
+                var announceString = CreateAnnounceString(parameters);
+                var request = (HttpWebRequest)WebRequest.Create(announceString);
+                request.UserAgent = VersionInfo.ClientVersion;
                 request.Proxy = new WebProxy();   // If i don't do this, i can't run the webrequest. It's wierd.
-                RaiseBeforeAnnounce();
-                BeginRequest(request, AnnounceReceived, new object[] { request, state });
+
+                using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
+                using (cts.Token.Register (() => request.Abort ()))
+                using (var response = await request.GetResponseAsync ())
+                    peers = AnnounceReceived (request, response);
             }
             catch (Exception ex)
             {
                 Status = TrackerState.Offline;
-                FailureMessage = ("Could not initiate announce request: " + ex.Message);
-                RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, false));
-                throw;
-            }
-        }
-
-        void BeginRequest(WebRequest request, AsyncCallback callback, object state)
-        {
-            IAsyncResult result = request.BeginGetResponse(callback, state);
-            ClientEngine.MainLoop.QueueTimeout(RequestTimeout, delegate
-            {
-                if (!result.IsCompleted)
-                    request.Abort();
-                return false;
-            });
-        }
-
-        void AnnounceReceived(IAsyncResult result)
-        {
-            FailureMessage = "";
-            WarningMessage = "";
-            object[] stateOb = (object[])result.AsyncState;
-            WebRequest request = (WebRequest)stateOb[0];
-            object state = stateOb[1];
-            List<Peer> peers = new List<Peer>();
-            try
-            {
-                BEncodedDictionary dict = DecodeResponse(request, result);
-                HandleAnnounce(dict, peers);
-                Status = TrackerState.Ok;
-            }
-            catch (WebException)
-            {
-                Status = TrackerState.Offline;
                 FailureMessage = "The tracker could not be contacted";
-            }
-            catch
-            {
-                Status = TrackerState.InvalidResponse;
-                FailureMessage = "The tracker returned an invalid or incomplete response";
+                throw new TrackerException (FailureMessage, ex);
             }
             finally
             {
                 RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, string.IsNullOrEmpty(FailureMessage), peers));
+            }
+        }
+        
+        public override async Task ScrapeAsync(ScrapeParameters parameters, object state)
+        {
+            try
+            {
+                string url = ScrapeUri.OriginalString;
+                // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
+                if (url.IndexOf('?') == -1)
+                    url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
+                else
+                    url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
+
+                var request = (HttpWebRequest)WebRequest.Create(url);
+                request.UserAgent = VersionInfo.ClientVersion;
+                request.Proxy = new WebProxy ();
+
+                using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
+                using (cts.Token.Register (() => request.Abort ()))
+                using (var response = await request.GetResponseAsync ())
+                    ScrapeReceived (request, response, state);
+            }
+            catch (Exception ex)
+            {
+                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, false));
+                FailureMessage = "The tracker could not be contacted";
+                throw new TrackerException (FailureMessage, ex);
             }
         }
 
@@ -169,13 +168,12 @@ namespace MonoTorrent.Client.Tracker
             return b.ToUri ();
         }
 
-        BEncodedDictionary DecodeResponse(WebRequest request, IAsyncResult result)
+        BEncodedDictionary DecodeResponse(WebRequest request, WebResponse response)
         {
             int bytesRead = 0;
             int totalRead = 0;
             byte[] buffer = new byte[2048];
 
-            WebResponse response = request.EndGetResponse(result);
             using (MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 256))
             {
 
@@ -219,6 +217,21 @@ namespace MonoTorrent.Client.Tracker
         public override int GetHashCode()
         {
             return Uri.GetHashCode();
+        }
+
+        List<Peer> AnnounceReceived (WebRequest request, WebResponse response)
+        {
+            try {
+                BEncodedDictionary dict = DecodeResponse (request, response);
+                var peers = new List<Peer> ();
+                HandleAnnounce (dict, peers);
+                Status = TrackerState.Ok;
+                return peers;
+            } catch {
+                Status = TrackerState.InvalidResponse;
+                FailureMessage = "The tracker returned an invalid or incomplete response";
+                throw;
+            }
         }
 
         void HandleAnnounce(BEncodedDictionary dict, List<Peer> peers)
@@ -273,40 +286,14 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        public override async Task ScrapeAsync(ScrapeParameters parameters, object state)
-        {
-            try
-            {
-                string url = ScrapeUri.OriginalString;
-
-                // If you want to scrape the tracker for *all* torrents, don't append the info_hash.
-                if (url.IndexOf('?') == -1)
-                    url += "?info_hash=" + parameters.InfoHash.UrlEncode ();
-                else
-                    url += "&info_hash=" + parameters.InfoHash.UrlEncode ();
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.UserAgent = MonoTorrent.Common.VersionInfo.ClientVersion;
-                BeginRequest(request, ScrapeReceived, new object[] { request, state });
-            }
-            catch
-            {
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, false));
-                throw;
-            }
-        }
-
-        void ScrapeReceived(IAsyncResult result)
+        void ScrapeReceived (WebRequest request, WebResponse response, object state)
         {
             string message = "";
-            object[] stateOb = (object[])result.AsyncState;
-            WebRequest request = (WebRequest)stateOb[0];
-            object state = stateOb[1];
 
             try
             {
                 BEncodedDictionary d;
-                BEncodedDictionary dict = DecodeResponse(request, result);
+                BEncodedDictionary dict = DecodeResponse(request, response);
 
                 // FIXME: Log the failure?
                 if (!dict.ContainsKey("files"))
@@ -344,10 +331,12 @@ namespace MonoTorrent.Client.Tracker
             catch (WebException)
             {
                 message = "The tracker could not be contacted";
+                throw;
             }
             catch
             {
                 message = "The tracker returned an invalid or incomplete response";
+                throw;
             }
             finally
             {
