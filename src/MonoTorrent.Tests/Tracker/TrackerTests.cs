@@ -6,6 +6,7 @@ using MonoTorrent.Client.Tracker;
 using MonoTorrent.Client;
 using System.Threading;
 using MonoTorrent.Common;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Tracker
 {
@@ -40,7 +41,7 @@ namespace MonoTorrent.Tracker
         }
 
         [Test]
-        public void MultipleAnnounce()
+        public async Task MultipleAnnounce()
         {
             int announceCount = 0;
             Random r = new Random();
@@ -59,7 +60,7 @@ namespace MonoTorrent.Tracker
                 MonoTorrent.Client.Tracker.AnnounceParameters parameters;
                 parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string('1', 20), "", 1411);
-                tier.Trackers[0].Announce(parameters, id);
+                await tier.Trackers[0].AnnounceAsync(parameters, id);
             }
 
             Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");

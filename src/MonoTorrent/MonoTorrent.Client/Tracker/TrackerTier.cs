@@ -6,13 +6,13 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    public class TrackerTier : IEnumerable<Tracker>
+    public class TrackerTier : IEnumerable<ITracker>
     {
         #region Private Fields
 
         private bool sendingStartedEvent;
         private bool sentStartedEvent;
-        private List<Tracker> trackers;
+        private List<ITracker> trackers;
 
         #endregion Private Fields
 
@@ -31,7 +31,7 @@ namespace MonoTorrent.Client.Tracker
             set { this.sentStartedEvent = value; }
         }
 
-        internal List<Tracker> Trackers
+        internal List<ITracker> Trackers
         {
             get { return this.trackers; }
         }
@@ -44,7 +44,7 @@ namespace MonoTorrent.Client.Tracker
         internal TrackerTier(IEnumerable<string> trackerUrls)
         {
             Uri result;
-            List<Tracker> trackerList = new List<Tracker>();
+            List<ITracker> trackerList = new List<ITracker>();
 
             foreach (string trackerUrl in trackerUrls)
             {
@@ -55,7 +55,7 @@ namespace MonoTorrent.Client.Tracker
                     continue;
                 }
 
-                Tracker tracker = TrackerFactory.Create(result);
+                ITracker tracker = TrackerFactory.Create(result);
                 if (tracker != null)
                 {
                     trackerList.Add(tracker);
@@ -74,12 +74,12 @@ namespace MonoTorrent.Client.Tracker
 
         #region Methods
 
-        internal int IndexOf(Tracker tracker)
+        internal int IndexOf(ITracker tracker)
         {
             return trackers.IndexOf(tracker);
         }
 
-        public IEnumerator<Tracker> GetEnumerator()
+        public IEnumerator<ITracker> GetEnumerator()
         {
             return trackers.GetEnumerator();
         }
@@ -89,9 +89,9 @@ namespace MonoTorrent.Client.Tracker
             return GetEnumerator();
         }
 
-        public List<Tracker> GetTrackers()
+        public List<ITracker> GetTrackers()
         {
-            return new List<Tracker>(trackers);
+            return new List<ITracker>(trackers);
         }
 
         #endregion Methods

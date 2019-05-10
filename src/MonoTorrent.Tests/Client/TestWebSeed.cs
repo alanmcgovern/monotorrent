@@ -31,17 +31,28 @@ namespace MonoTorrent.Client
         MessageBundle requests;
         int numberOfPieces = 50;
 
+        [OneTimeSetUp]
+        public void FixtureSetup ()
+        {
+            listener = new HttpListener();
+            listener.Prefixes.Add(ListenerURL);
+            listener.Start();
+
+            listener.BeginGetContext(GotContext, listener);
+        }
+
+        [OneTimeTearDown]
+        public void FixtureTeardown ()
+        {
+            listener.Close();
+        }
+
         [SetUp]
         public void Setup()
         {
             requestedUrl.Clear();
             partialData = false;
 
-            listener = new HttpListener();
-            listener.Prefixes.Add(ListenerURL);
-            listener.Start();
-
-            listener.BeginGetContext(GotContext, listener);
             rig = TestRig.CreateMultiFile();
             connection = new HttpConnection(new Uri(ListenerURL));
             connection.Manager = rig.Manager;
@@ -59,7 +70,6 @@ namespace MonoTorrent.Client
         [TearDown]
         public void TearDown()
         {
-            listener.Close();
             rig.Dispose();
         }
 

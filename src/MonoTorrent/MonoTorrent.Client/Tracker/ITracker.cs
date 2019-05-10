@@ -7,7 +7,7 @@ using MonoTorrent.Common;
 
 namespace MonoTorrent.Client.Tracker
 {
-    interface ITracker
+    public interface ITracker
     {
         event EventHandler<AnnounceResponseEventArgs> AnnounceComplete;
         event EventHandler<ScrapeResponseEventArgs> ScrapeComplete;
@@ -26,8 +26,5 @@ namespace MonoTorrent.Client.Tracker
 
         Task AnnounceAsync(AnnounceParameters parameters, object state);
         Task ScrapeAsync(ScrapeParameters parameters, object state);
-
-        void Announce(AnnounceParameters parameters, object state);
-        void Scrape(ScrapeParameters parameters, object state);
     }
 }

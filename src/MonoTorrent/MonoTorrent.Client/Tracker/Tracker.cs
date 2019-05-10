@@ -115,24 +115,6 @@ namespace MonoTorrent.Client.Tracker
             this.uri = uri;
         }
 
-        public async void Announce(AnnounceParameters parameters, object state)
-        {
-            try {
-                await AnnounceAsync (parameters, state);
-            } catch {
-                // Ignore
-			}
-		}
-
-        public async void Scrape(ScrapeParameters parameters, object state)
-        {
-            try {
-                await ScrapeAsync (parameters, state);
-            } catch {
-                // Ignore
-            }
-        }
-
         public abstract Task AnnounceAsync (AnnounceParameters parameters, object state);
         public abstract Task ScrapeAsync(ScrapeParameters parameters, object state);
 

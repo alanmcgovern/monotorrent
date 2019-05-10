@@ -543,7 +543,7 @@ namespace MonoTorrent.Client
                 }
             }
 
-            Tracker.Tracker tracker = Manager.TrackerManager.CurrentTracker;
+            Tracker.ITracker tracker = Manager.TrackerManager.CurrentTracker;
             if (tracker != null && (Manager.State == TorrentState.Seeding || Manager.State == TorrentState.Downloading))
             {
                 // If the last connection succeeded, then update at the regular interval

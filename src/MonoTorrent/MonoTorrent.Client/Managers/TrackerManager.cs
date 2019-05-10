@@ -56,7 +56,7 @@ namespace MonoTorrent.Client.Tracker
         /// <summary>
         /// Returns the tracker that is current in use by the engine
         /// </summary>
-        public Tracker CurrentTracker
+        public ITracker CurrentTracker
         {
             get
             {
@@ -171,7 +171,7 @@ namespace MonoTorrent.Client.Tracker
             return Announce(CurrentTracker, clientEvent, true, new ManualResetEvent(false));
         }
 
-        private WaitHandle Announce(Tracker tracker, TorrentEvent clientEvent, bool trySubsequent, ManualResetEvent waitHandle)
+        private WaitHandle Announce(ITracker tracker, TorrentEvent clientEvent, bool trySubsequent, ManualResetEvent waitHandle)
         {
             ClientEngine engine = manager.Engine;
             
@@ -208,11 +208,11 @@ namespace MonoTorrent.Client.Tracker
                                                 ip, port);
             p.SupportsEncryption = supportsEncryption;
             TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, clientEvent, waitHandle);
-            tracker.Announce(p, id);
+            tracker.AnnounceAsync(p, id);
             return waitHandle;
         }
 
-        private bool GetNextTracker(Tracker tracker, out TrackerTier trackerTier, out Tracker trackerReturn)
+        private bool GetNextTracker(ITracker tracker, out TrackerTier trackerTier, out ITracker trackerReturn)
         {
             for (int i = 0; i < this.trackerTiers.Count; i++)
             {
@@ -270,7 +270,7 @@ namespace MonoTorrent.Client.Tracker
                 TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(e.Tracker); });
                 if (tier != null)
                 {
-                    Toolbox.Switch<Tracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
+                    Toolbox.Switch<ITracker>(tier.Trackers, 0, tier.IndexOf(e.Tracker));
                     Toolbox.Switch<TrackerTier>(trackerTiers, 0, trackerTiers.IndexOf(tier));
                 }
                 e.Id.WaitHandle.Set();
@@ -278,7 +278,7 @@ namespace MonoTorrent.Client.Tracker
             else
             {
                 TrackerTier tier;
-                Tracker tracker;
+                ITracker tracker;
 
                 if (!e.Id.TrySubsequent || !GetNextTracker(e.Tracker, out tier, out tracker))
                     e.Id.WaitHandle.Set();
@@ -294,7 +294,7 @@ namespace MonoTorrent.Client.Tracker
             return Scrape(CurrentTracker, false);
         }
 
-        public WaitHandle Scrape(Tracker tracker)
+        public WaitHandle Scrape(ITracker tracker)
         {
             TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });
             if (tier == null)
@@ -303,7 +303,7 @@ namespace MonoTorrent.Client.Tracker
             return Scrape(tracker, false);
         }
 
-        private WaitHandle Scrape(Tracker tracker, bool trySubsequent)
+        private WaitHandle Scrape(ITracker tracker, bool trySubsequent)
         {
             if (tracker == null)
                 throw new ArgumentNullException("tracker");
@@ -312,7 +312,7 @@ namespace MonoTorrent.Client.Tracker
                 throw new TorrentException("This tracker does not support scraping");
 
             TrackerConnectionID id = new TrackerConnectionID(tracker, trySubsequent, TorrentEvent.None, new ManualResetEvent(false));
-            tracker.Scrape(new ScrapeParameters(this.infoHash), id);
+            tracker.ScrapeAsync(new ScrapeParameters(this.infoHash), id);
             return id.WaitHandle;
         }
 
