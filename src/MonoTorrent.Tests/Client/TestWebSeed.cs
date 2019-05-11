@@ -74,6 +74,32 @@ namespace MonoTorrent.Client
         }
 
         [Test]
+        public void Cancel_ReceiveFirst ()
+        {
+            var task = connection.ReceiveAsync (new byte[100], 0, 100);
+            connection.Dispose ();
+            Assert.CatchAsync<OperationCanceledException> (() => task);
+        }
+
+        [Test]
+        public void Cancel_SendFirst ()
+        {
+            var task = connection.SendAsync (requests.Encode (), 0, requests.ByteLength);
+            connection.Dispose ();
+            Assert.CatchAsync<OperationCanceledException> (() => task);
+        }
+
+        [Test]
+        public void Cancel_SendAndReceiveFirst ()
+        {
+            var sendTask = connection.SendAsync (requests.Encode (), 0, requests.ByteLength);
+            var receiveTask = connection.ReceiveAsync (new byte[100000], 0, 100000);
+            connection.Dispose ();
+            Assert.CatchAsync<OperationCanceledException> (() => sendTask);
+            Assert.CatchAsync<OperationCanceledException> (() => receiveTask);
+        }
+
+        [Test]
         public void TestPartialData()
         {
             partialData = true;

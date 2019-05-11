@@ -67,6 +67,8 @@ namespace MonoTorrent.Client.Connections
 
         int DataStreamCount { get; set; }
 
+        WebResponse DataStreamResponse { get; set; }
+
         private bool Disposed { get; set; }
 
         EndPoint IConnection.EndPoint => null;
@@ -118,6 +120,8 @@ namespace MonoTorrent.Client.Connections
                 // When we call 'SendAsync' with request piece messages, we add them to the list and then toggle the handle.
                 // When this returns it means we have requests ready to go!
                 await Task.Run(() => ReceiveWaiter.WaitOne());
+                if (Disposed)
+                    throw new OperationCanceledException ();
 
                 // Grab the request. We know the 'SendAsync' call won't return until we process all the queued requests, so
                 // this is threadsafe now.
@@ -160,8 +164,12 @@ namespace MonoTorrent.Client.Connections
                 // If result is zero it means we've read the last data from the stream.
                 if (result == 0)
                 {
-                    DataStream.Dispose();
+                    using (DataStreamResponse)
+                        DataStream.Dispose();
+
+                    DataStreamResponse = null;
                     DataStream = null;
+
                     // If we requested more data (via the range header) than we were actually given, then it's a truncated
                     // stream and we can give up immediately.
                     if (DataStreamCount > 0)
@@ -184,7 +192,14 @@ namespace MonoTorrent.Client.Connections
                         }
                         else
                         {
+                            using (DataStreamResponse)
+                                DataStream.Dispose();
+
+                            DataStreamResponse = null;
+                            DataStream = null;
+
                             CurrentRequest = null;
+
                             SendResult.TrySetResult(null);
                         }
                     }
@@ -199,8 +214,8 @@ namespace MonoTorrent.Client.Connections
                 var r = WebRequests.Dequeue();
                 using (var cts = new CancellationTokenSource (ConnectionTimeout))
                 using (cts.Token.Register (() => r.Key.Abort ())) {
-                    var response = await r.Key.GetResponseAsync();
-                    DataStream = response.GetResponseStream();
+                    DataStreamResponse = await r.Key.GetResponseAsync();
+                    DataStream = DataStreamResponse.GetResponseStream();
                     DataStreamCount = r.Value;
                     return await ReceiveAsync(buffer, offset, count) + written;
                 }
@@ -307,8 +322,13 @@ namespace MonoTorrent.Client.Connections
                 return;
 
             Disposed = true;
-            if (DataStream != null)
-                DataStream.Dispose();
+
+            ReceiveWaiter.Set ();
+            SendResult?.TrySetCanceled ();
+            DataStreamResponse?.Dispose();
+            DataStream?.Dispose();
+
+            DataStreamResponse = null;
             DataStream = null;
         }
     }
