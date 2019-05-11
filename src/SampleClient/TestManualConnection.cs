@@ -23,34 +23,29 @@ namespace SampleClient
             this.CanScrape = false;
         }
 
-        public override Task AnnounceAsync(AnnounceParameters parameters, object state)
+        List<Peer> peers = new List<Peer>();
+
+        public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
         {
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, true));
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
+            return Task.FromResult (peers);
+        }
+
+        public override Task ScrapeAsync(ScrapeParameters parameters)
+        {
+            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, true));
             return Task.CompletedTask;
         }
 
-        public override Task ScrapeAsync(ScrapeParameters parameters, object state)
+        public void AddPeer(Peer peer)
         {
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, true));
-            return Task.CompletedTask;
+            peers.Add(peer);
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
         }
 
-        public void AddPeer(Peer p)
+        public void AddFailedPeer(Peer peer)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
-            e.Peers.Add(p);
-            e.Successful = true;
-            RaiseAnnounceComplete(e);
-        }
-
-        public void AddFailedPeer(Peer p)
-        {
-            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, null);
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, null, true);
-            e.Peers.Add(p);
-            e.Successful = false;
-            RaiseAnnounceComplete(e);
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, false));
         }
     }
 

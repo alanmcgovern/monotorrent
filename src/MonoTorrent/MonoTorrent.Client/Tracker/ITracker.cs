@@ -24,7 +24,7 @@ namespace MonoTorrent.Client.Tracker
         Uri Uri { get; }
         string WarningMessage { get; }
 
-        Task AnnounceAsync(AnnounceParameters parameters, object state);
-        Task ScrapeAsync(ScrapeParameters parameters, object state);
+        Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters);
+        Task ScrapeAsync(ScrapeParameters parameters);
     }
 }

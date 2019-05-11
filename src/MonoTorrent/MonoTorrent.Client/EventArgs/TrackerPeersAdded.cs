@@ -30,24 +30,18 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using MonoTorrent.Client.Tracker;
+
 namespace MonoTorrent.Client
 {
     public class TrackerPeersAdded : PeersAddedEventArgs
     {
-        MonoTorrent.Client.Tracker.Tracker tracker;
+        public ITracker Tracker { get; }
 
-        public MonoTorrent.Client.Tracker.Tracker Tracker
+        public TrackerPeersAdded(TorrentManager manager, int peersAdded, int total, ITracker tracker)
+            : base (manager, peersAdded, total)
         {
-            get { return tracker; }
-        }
-
-        public TrackerPeersAdded(TorrentManager manager, int peersAdded, int total, MonoTorrent.Client.Tracker.Tracker tracker)
-            :base (manager, peersAdded, total)
-        {
-            if (tracker == null)
-                throw new ArgumentNullException("tracker");
-
-            this.tracker = tracker;
+            Tracker = tracker ?? throw new ArgumentNullException(nameof(tracker));
         }
     }
 }

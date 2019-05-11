@@ -72,7 +72,7 @@ namespace MonoTorrent.Client.Tracker
             Key = UriHelper.UrlEncode(passwordKey);
         }
 
-        public override async Task AnnounceAsync(AnnounceParameters parameters, object state)
+        public override async Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
         {
             // Clear out previous failure state
             FailureMessage = "";
@@ -99,11 +99,12 @@ namespace MonoTorrent.Client.Tracker
             }
             finally
             {
-                RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, string.IsNullOrEmpty(FailureMessage), peers));
+                RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, string.IsNullOrEmpty(FailureMessage), peers));
             }
+            return peers;
         }
         
-        public override async Task ScrapeAsync(ScrapeParameters parameters, object state)
+        public override async Task ScrapeAsync(ScrapeParameters parameters)
         {
             try
             {
@@ -121,11 +122,11 @@ namespace MonoTorrent.Client.Tracker
                 using (CancellationTokenSource cts = new CancellationTokenSource (RequestTimeout))
                 using (cts.Token.Register (() => request.Abort ()))
                 using (var response = await request.GetResponseAsync ())
-                    ScrapeReceived (request, response, state);
+                    ScrapeReceived (request, response);
             }
             catch (Exception ex)
             {
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, false));
+                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, false));
                 FailureMessage = "The tracker could not be contacted";
                 throw new TrackerException (FailureMessage, ex);
             }
@@ -286,7 +287,7 @@ namespace MonoTorrent.Client.Tracker
             }
         }
 
-        void ScrapeReceived (WebRequest request, WebResponse response, object state)
+        void ScrapeReceived (WebRequest request, WebResponse response)
         {
             string message = "";
 
@@ -340,7 +341,7 @@ namespace MonoTorrent.Client.Tracker
             }
             finally
             {
-                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, string.IsNullOrEmpty(message)));
+                RaiseScrapeComplete(new ScrapeResponseEventArgs(this, string.IsNullOrEmpty(message)));
             }
         }
 

@@ -50,7 +50,6 @@ namespace MonoTorrent.Client
             new InfoHash (new byte[] { 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5 }),
             false, new string('a', 20), null, 1515);
         ScrapeParameters scrapeParams = new ScrapeParameters(new InfoHash(new byte[20]));
-        TrackerConnectionID id;
         MonoTorrent.Tracker.Tracker server;
         UdpTracker tracker;
         IgnoringListener listener;
@@ -78,7 +77,6 @@ namespace MonoTorrent.Client
             keys.Clear();
             tracker = (UdpTracker)TrackerFactory.Create(new Uri("udp://127.0.0.1:6767/announce/"));
             tracker.RetryDelay = TimeSpan.FromMilliseconds (50);
-            id = new TrackerConnectionID (tracker, false, TorrentEvent.Started, new ManualResetEvent (false));
 
             listener.IgnoreAnnounces = false;
             listener.IgnoreConnects = false;
@@ -207,47 +205,47 @@ namespace MonoTorrent.Client
         [Test]
         public async Task AnnounceTest()
         {
-            await tracker.AnnounceAsync(announceparams, id);
+            await tracker.AnnounceAsync(announceparams);
         }
 
         [Test]
         public void AnnounceTest_NoConnect()
         {
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
         }
 
         [Test]
         public async Task AnnounceTest_NoConnect_ThenConnect()
         {
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
 
             listener.IgnoreConnects = false;
-            await tracker.AnnounceAsync (announceparams, id);
+            await tracker.AnnounceAsync (announceparams);
         }
 
         [Test]
         public void AnnounceTest_NoAnnounce()
         {
             listener.IgnoreAnnounces = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
         }
 
         [Test]
         public async Task AnnounceTest_NoAnnounce_ThenAnnounce()
         {
             listener.IgnoreAnnounces = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.AnnounceAsync (announceparams));
 
             listener.IgnoreAnnounces = false;
-            await tracker.AnnounceAsync (announceparams, id);
+            await tracker.AnnounceAsync (announceparams);
         }
 
         [Test]
         public async Task ScrapeTest()
         {
-            await tracker.ScrapeAsync (scrapeParams, id);
+            await tracker.ScrapeAsync (scrapeParams);
             Assert.AreEqual(0, tracker.Complete, "#1");
             Assert.AreEqual(0, tracker.Incomplete, "#2");
             Assert.AreEqual(0, tracker.Downloaded, "#3");
@@ -257,34 +255,34 @@ namespace MonoTorrent.Client
         public void ScrapeTest_NoConnect()
         {
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
         }
 
         [Test]
         public async Task ScrapeTest_NoConnect_ThenConnect()
         {
             listener.IgnoreConnects = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
 
             listener.IgnoreConnects = false;
-            await tracker.ScrapeAsync (scrapeParams, id);
+            await tracker.ScrapeAsync (scrapeParams);
         }
 
         [Test]
         public void ScrapeTest_NoScrapes()
         {
             listener.IgnoreScrapes = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
         }
 
         [Test]
         public async Task ScrapeTest_NoScrapes_ThenScrape()
         {
             listener.IgnoreScrapes = true;
-            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams, id));
+            Assert.ThrowsAsync<TrackerException> (() => tracker.ScrapeAsync (scrapeParams));
 
             listener.IgnoreScrapes = false;
-            await tracker.ScrapeAsync (scrapeParams, id);
+            await tracker.ScrapeAsync (scrapeParams);
         }
     }
 

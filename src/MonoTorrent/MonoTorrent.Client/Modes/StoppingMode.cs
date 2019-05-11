@@ -8,8 +8,8 @@ namespace MonoTorrent.Client
 {
 	class StoppingMode : Mode
 	{
-		WaitHandleGroup handle = new WaitHandleGroup();
-        Task stopDiskManagerTask;
+		List<Task> announcingTasks = new List<Task>();
+		Task stopDiskManagerTask;
 
 		public override TorrentState State
 		{
@@ -23,7 +23,7 @@ namespace MonoTorrent.Client
 			ClientEngine engine = manager.Engine;
 
 			if (manager.TrackerManager.CurrentTracker != null && manager.TrackerManager.CurrentTracker.Status == TrackerState.Ok)
-				handle.AddHandle(manager.TrackerManager.Announce(TorrentEvent.Stopped), "Announcing");
+				announcingTasks.Add(manager.TrackerManager.Announce(TorrentEvent.Stopped));
 
 			foreach (PeerId id in manager.Peers.ConnectedPeers)
 				if (id.Connection != null)
@@ -31,7 +31,7 @@ namespace MonoTorrent.Client
 
 			manager.Peers.ClearAll();
 
-            stopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
+			stopDiskManagerTask = engine.DiskManager.CloseFilesAsync (manager);
 
 			manager.Monitor.Reset();
 			manager.PieceManager.Reset();
@@ -46,11 +46,8 @@ namespace MonoTorrent.Client
 
 		public override void Tick(int counter)
 		{
-			if (handle.WaitOne(0, true) && stopDiskManagerTask.IsCompleted)
-			{
-				handle.Close();
+			if (announcingTasks.TrueForAll (t => t.IsCompleted) && stopDiskManagerTask.IsCompleted)
 				Manager.Mode = new StoppedMode(Manager);
-			}
 		}
 	}
 }

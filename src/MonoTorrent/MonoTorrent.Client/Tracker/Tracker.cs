@@ -115,21 +115,17 @@ namespace MonoTorrent.Client.Tracker
             this.uri = uri;
         }
 
-        public abstract Task AnnounceAsync (AnnounceParameters parameters, object state);
-        public abstract Task ScrapeAsync(ScrapeParameters parameters, object state);
+        public abstract Task<List<Peer>> AnnounceAsync (AnnounceParameters parameters);
+        public abstract Task ScrapeAsync(ScrapeParameters parameters);
 
         protected virtual void RaiseAnnounceComplete(AnnounceResponseEventArgs e)
         {
-            EventHandler<AnnounceResponseEventArgs> h = AnnounceComplete;
-            if (h != null)
-                h(this, e);
+            AnnounceComplete?.Invoke (this, e);
         }
 
         protected virtual void RaiseScrapeComplete(ScrapeResponseEventArgs e)
         {
-            EventHandler<ScrapeResponseEventArgs> h = ScrapeComplete;
-            if (h != null)
-                h(this, e);
+            ScrapeComplete?.Invoke (this, e);
         }
     }
 }

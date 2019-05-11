@@ -150,7 +150,7 @@ namespace MonoTorrent.Client
             manager.Stop();
 
             Assert.IsTrue(handle.WaitOne(10000, true), "#1");
-            Assert.IsTrue(manager.TrackerManager.Announce().WaitOne(10000, true), "#2"); ;
+            await manager.TrackerManager.Announce();
         }
 
         [Test]

@@ -70,6 +70,8 @@ namespace MonoTorrent.Client
         public bool FailAnnounce;
         public bool FailScrape;
 
+        List<Peer> peers = new List<Peer>();
+
         public CustomTracker(Uri uri)
             : base(uri)
         {
@@ -77,36 +79,35 @@ namespace MonoTorrent.Client
             CanScrape = true;
         }
 
-        public override Task AnnounceAsync(AnnounceParameters parameters, object state)
+        public override Task<List<Peer>> AnnounceAsync(AnnounceParameters parameters)
         {
             AnnouncedAt.Add(DateTime.Now);
-            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, state, !FailAnnounce));
-            return Task.CompletedTask;
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, !FailAnnounce));
+            if (FailAnnounce)
+                throw new TrackerException ("Deliberately failing announce request", null);
+
+            return Task.FromResult (peers);
         }
 
-        public override Task ScrapeAsync(ScrapeParameters parameters, object state)
+        public override Task ScrapeAsync(ScrapeParameters parameters)
         {
             ScrapedAt.Add(DateTime.Now);
-            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, state, !FailScrape));
+            RaiseScrapeComplete(new ScrapeResponseEventArgs(this, !FailScrape));
+            if (FailScrape)
+                throw new TrackerException ("Deliberately failing scrape request", null);
+
             return Task.CompletedTask;
         }
 
-        public void AddPeer(Peer p)
+        public void AddPeer(Peer peer)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, false, TorrentEvent.None, new ManualResetEvent(false));
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, true);
-            e.Peers.Add(p);
-            RaiseAnnounceComplete(e);
-            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#1 Tracker never raised the AnnounceComplete event");
+            peers.Add (peer);
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, true, peers));
         }
 
-        public void AddFailedPeer(Peer p)
+        public void AddFailedPeer(Peer peer)
         {
-            TrackerConnectionID id = new TrackerConnectionID(this, true, TorrentEvent.None, new ManualResetEvent(false));
-            AnnounceResponseEventArgs e = new AnnounceResponseEventArgs(this, id, false);
-            e.Peers.Add(p);
-            RaiseAnnounceComplete(e);
-            Assert.IsTrue(id.WaitHandle.WaitOne(1000, true), "#2 Tracker never raised the AnnounceComplete event");
+            RaiseAnnounceComplete(new AnnounceResponseEventArgs(this, false));
         }
 
         public override string ToString()

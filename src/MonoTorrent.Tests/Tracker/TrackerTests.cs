@@ -56,11 +56,9 @@ namespace MonoTorrent.Tracker
                     if (++announceCount == 20)
                         handle.Set();
                 };
-                TrackerConnectionID id = new TrackerConnectionID(tier.Trackers[0], false, TorrentEvent.Started, new ManualResetEvent(false));
-                MonoTorrent.Client.Tracker.AnnounceParameters parameters;
-                parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
+                var parameters = new MonoTorrent.Client.Tracker.AnnounceParameters(0, 0, 0, TorrentEvent.Started,
                                                                        infoHash, false, new string('1', 20), "", 1411);
-                await tier.Trackers[0].AnnounceAsync(parameters, id);
+                await tier.Trackers[0].AnnounceAsync(parameters);
             }
 
             Assert.IsTrue(handle.WaitOne(5000, true), "Some of the responses weren't received");
