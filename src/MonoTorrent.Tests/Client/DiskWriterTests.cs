@@ -36,6 +36,7 @@ using MonoTorrent.Common;
 using NUnit.Framework;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -87,7 +88,6 @@ namespace MonoTorrent.Client
     {
         byte [] data = new byte [Piece.BlockSize];
         DiskManager diskManager;
-        ManualResetEvent handle;
         TestRig rig;
         ExceptionWriter writer;
 
@@ -98,83 +98,58 @@ namespace MonoTorrent.Client
             diskManager = rig.Engine.DiskManager;
         }
 
-        [SetUp]
-        public void Setup()
-        {
-            writer = new ExceptionWriter();
-            diskManager.Writer = writer;
-            handle = new ManualResetEvent(false);
-            rig.Manager.Stop();
-        }
-
-        [TearDown]
-        public void Teardown()
-        {
-            handle.Close();
-        }
-
         [OneTimeTearDown]
         public void FixtureTeardown()
         {
             rig.Dispose();
         }
 
+        [SetUp]
+        public void Setup()
+        {
+            writer = new ExceptionWriter();
+            diskManager.Writer = writer;
+            rig.Manager.Stop();
+        }
+
         [Test]
-        public void CloseFail()
+        public async Task CloseFail()
         {
             writer.close = true;
-            Hookup();
-            diskManager.CloseFilesAsync (rig.Manager).Wait();
-            CheckFail();
+            await diskManager.CloseFilesAsync (rig.Manager);
+            Assert.AreEqual (TorrentState.Error, rig.Manager.State);
         }
 
         [Test]
-        public void FlushFail()
+        public async Task FlushFail()
         {
             writer.flush = true;
-            Hookup();
-            diskManager.FlushAsync(rig.Manager, 0).Wait();
-            CheckFail();
+            await diskManager.FlushAsync(rig.Manager, 0);
+            Assert.AreEqual (TorrentState.Error, rig.Manager.State);
         }
 
         [Test]
-        public void MoveFail()
+        public async Task MoveFail()
         {
             writer.move = true;
-            Hookup();
-            diskManager.MoveFilesAsync(rig.Manager, "root", true).Wait();
-            CheckFail();
+            await diskManager.MoveFilesAsync(rig.Manager, "root", true);
+            Assert.AreEqual (TorrentState.Error, rig.Manager.State);
         }
 
         [Test]
         public void ReadFail()
         {
             writer.read = true;
-            Hookup();
             diskManager.ReadAsync (rig.Manager, 0, data, data.Length).Wait ();
-            CheckFail();
+            Assert.AreEqual (TorrentState.Error, rig.Manager.State);
         }
 
         [Test]
-        public void WriteFail()
+        public async Task WriteFail()
         {
             writer.write = true;
-            Hookup();
-            diskManager.WriteAsync(rig.Manager, 0, data, data.Length).Wait ();
-            CheckFail();
-        }
-
-        void Hookup()
-        {
-            rig.Manager.TorrentStateChanged += delegate {
-                if (rig.Manager.State == TorrentState.Error)
-                    handle.Set();
-            };
-        }
-
-        void CheckFail()
-        {
-            Assert.IsTrue(handle.WaitOne(5000, true), "Failure was not handled");
+            await diskManager.WriteAsync(rig.Manager, 0, data, data.Length);
+            Assert.AreEqual (TorrentState.Error, rig.Manager.State);
         }
     }
 }

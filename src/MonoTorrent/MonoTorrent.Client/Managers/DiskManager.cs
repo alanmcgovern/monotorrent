@@ -109,15 +109,14 @@ namespace MonoTorrent.Client
             });
         }
 
-        void SetError (TorrentManager manager, Reason reason, Exception ex)
+        async Task SetError (TorrentManager manager, Reason reason, Exception ex)
         {
-            ClientEngine.MainLoop.Queue (delegate {
-                if (manager.Mode is ErrorMode)
-                    return;
+            await ClientEngine.MainLoop;
+            if (manager.Mode is ErrorMode)
+                return;
 
-                manager.Error = new Error (reason, ex);
-                manager.Mode = new ErrorMode (manager);
-            });
+            manager.Error = new Error (reason, ex);
+            manager.Mode = new ErrorMode (manager);
         }
 
         #endregion
@@ -132,7 +131,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.ReadFailure, ex);
+                await SetError(manager, Reason.ReadFailure, ex);
                 return true;
             }
         }
@@ -149,7 +148,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.ReadFailure, ex);
+                await SetError(manager, Reason.ReadFailure, ex);
                 return true;
             }
             return false;
@@ -173,7 +172,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
         }
 
@@ -189,7 +188,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
         }
 
@@ -250,7 +249,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
         }
 
@@ -266,7 +265,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError (manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
         }
 
@@ -280,7 +279,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
         }
 
@@ -303,7 +302,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.ReadFailure, ex);
+                await SetError(manager, Reason.ReadFailure, ex);
                 return false;
             }
         }
@@ -328,7 +327,7 @@ namespace MonoTorrent.Client
             }
             catch (Exception ex)
             {
-                SetError(manager, Reason.WriteFailure, ex);
+                await SetError(manager, Reason.WriteFailure, ex);
             }
 
             Interlocked.Add(ref bufferedWriteBytes, -count);
