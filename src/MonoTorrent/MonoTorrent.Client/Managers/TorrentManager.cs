@@ -123,7 +123,7 @@ namespace MonoTorrent.Client
 
         public bool HashChecked { get; internal set; }
 
-        public int HashFails { get; private set; }
+        public int HashFails { get; internal set; }
 
         public bool HasMetadata => Torrent != null;
 
@@ -621,14 +621,6 @@ namespace MonoTorrent.Client
                 count += await AddPeerAsync(p) ? 1 : 0;
             return count;
         }
-
-        internal void HashedPiece(PieceHashedEventArgs pieceHashedEventArgs)
-        {
-            if (!pieceHashedEventArgs.HashPassed)
-                HashFails++;
-
-            RaisePieceHashed(pieceHashedEventArgs);
-        }
         
         internal void RaisePeerConnected(PeerConnectionEventArgs args)
         {
@@ -646,23 +638,24 @@ namespace MonoTorrent.Client
             Toolbox.RaiseAsyncEvent<PeersAddedEventArgs>(PeersFound, this, args);
         }
 
-        internal void RaisePieceHashed(PieceHashedEventArgs args)
+        internal void OnPieceHashed(int index, bool hashPassed)
         {
-            int index = args.PieceIndex;
+            Bitfield[index] = hashPassed;
             TorrentFile[] files = this.Torrent.Files;
             
             for (int i = 0; i < files.Length; i++)
                 if (index >= files[i].StartPieceIndex && index <= files[i].EndPieceIndex)
-                    files[i].BitField[index - files[i].StartPieceIndex] = args.HashPassed;
+                    files[i].BitField[index - files[i].StartPieceIndex] = hashPassed;
 
-            if (args.HashPassed)
+            if (hashPassed)
             {
                 List<PeerId> connected = Peers.ConnectedPeers;
                 for (int i = 0; i < connected.Count; i++)
                     connected[i].IsAllowedFastPieces.Remove(index);
             }
 
-            Toolbox.RaiseAsyncEvent<PieceHashedEventArgs>(PieceHashed, this, args);
+            if (PieceHashed != null)
+                Toolbox.RaiseAsyncEvent(PieceHashed, this, new PieceHashedEventArgs (this, index, hashPassed));
         }
 
         internal void RaiseTorrentStateChanged(TorrentStateChangedEventArgs e)
@@ -740,9 +733,8 @@ namespace MonoTorrent.Client
             if (InfoHash != data.Infohash || Torrent.Pieces.Count != data.Bitfield.Length)
                 throw new ArgumentException("The fast resume data does not match this torrent", "fastResumeData");
 
-            Bitfield.From(data.Bitfield);
             for (int i = 0; i < Torrent.Pieces.Count; i++)
-                RaisePieceHashed (new PieceHashedEventArgs (this, i, Bitfield[i]));
+                OnPieceHashed (i, data.Bitfield[i]);
 
             this.HashChecked = true;
         }

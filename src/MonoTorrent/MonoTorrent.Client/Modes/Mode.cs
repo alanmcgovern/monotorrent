@@ -342,9 +342,10 @@ namespace MonoTorrent.Client
             // Hashcheck the piece as we now have all the blocks.
             var hash = await id.Engine.DiskManager.GetHashAsync(id.TorrentManager, piece.Index);
             bool result = hash != null && id.TorrentManager.Torrent.Pieces.IsValid(hash, piece.Index);
-            Manager.Bitfield[message.PieceIndex] = result;
+            Manager.OnPieceHashed(piece.Index, result);
             Manager.PieceManager.UnhashedPieces[piece.Index] = false;
-            Manager.HashedPiece(new PieceHashedEventArgs(id.TorrentManager, piece.Index, result));
+            if (!result)
+                Manager.HashFails++;
 
             for (int i = 0; i < piece.Blocks.Length; i++)
                 if (piece.Blocks[i].RequestedOff != null)

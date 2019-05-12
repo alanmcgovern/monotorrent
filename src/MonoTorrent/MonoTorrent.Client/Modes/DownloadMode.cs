@@ -16,6 +16,7 @@ namespace MonoTorrent.Client
         public DownloadMode(TorrentManager manager)
             : base(manager)
         {
+            manager.HashFails = 0;
             state = manager.Complete ? TorrentState.Seeding : TorrentState.Downloading;
         }
 

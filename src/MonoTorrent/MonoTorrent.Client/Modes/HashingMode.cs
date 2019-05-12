@@ -12,7 +12,7 @@ namespace MonoTorrent.Client
 		CancellationTokenSource cts;
 
 		bool autostart;
-		int index = -1;
+		Task hashingTask;
 
 		public override TorrentState State
 		{
@@ -25,21 +25,25 @@ namespace MonoTorrent.Client
 			CanAcceptConnections = false;
 			cts = new CancellationTokenSource();
 			this.autostart = autostart;
+
+            manager.HashFails = 0;
 		}
 
-		private async void BeginHashing()
+		private async Task BeginHashing()
 		{
 			try
 			{
-				for (index = 0; index < Manager.Torrent.Pieces.Count && Manager.Mode == this; index++)
+				for (int index = 0; index < Manager.Torrent.Pieces.Count; index++)
 				{
 					var hash = await Manager.Engine.DiskManager.GetHashAsync(Manager, index);
 					cts.Token.ThrowIfCancellationRequested();
-					Manager.Bitfield[index] = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
-					Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, index, Manager.Bitfield[index]));
+					var hashPassed = hash == null ? false : Manager.Torrent.Pieces.IsValid((byte[])hash, index);
+					Manager.OnPieceHashed (index, hashPassed);
 				}
 
-				await HashingComplete();
+                cts.Token.ThrowIfCancellationRequested();
+                if (Manager.Mode == this)
+				    await HashingComplete();
 			} catch (OperationCanceledException) {
 
 			}
@@ -47,22 +51,12 @@ namespace MonoTorrent.Client
 
 		private async Task HashingComplete()
 		{
-			Manager.HashChecked = index == Manager.Torrent.Pieces.Count;
-
-			if (Manager.HasMetadata && !Manager.HashChecked)
-			{
-				Manager.Bitfield.SetAll(false);
-				for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-					Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
-			}
+			Manager.HashChecked = true;
 
 			if (Manager.Engine != null && Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
 				await Manager.Engine.DiskManager.CloseFilesAsync (Manager);
 
 			cts.Token.ThrowIfCancellationRequested();
-
-			if (!Manager.HashChecked)
-				return;
 
 			if (autostart)
 			{
@@ -83,21 +77,17 @@ namespace MonoTorrent.Client
 		{
 			try
 			{
-				if (index == -1)
+				if (hashingTask == null)
 				{
-					index++;
-
 					if (Manager.HasMetadata && await Manager.Engine.DiskManager.CheckAnyFilesExistAsync(Manager))
 					{
-						BeginHashing();
+						hashingTask = BeginHashing();
 					}
 					else
 					{
-						Manager.Bitfield.SetAll(false);
 						for (int i = 0; i < Manager.Torrent.Pieces.Count; i++)
-							Manager.RaisePieceHashed(new PieceHashedEventArgs(Manager, i, false));
-						index = Manager.Torrent.Pieces.Count;
-						await HashingComplete();
+							Manager.OnPieceHashed(i, false);
+						hashingTask = HashingComplete();
 					}
 				}
 			} catch (OperationCanceledException)
