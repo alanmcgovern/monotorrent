@@ -463,69 +463,72 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Starts the TorrentManager
         /// </summary>
-        public void Start()
+        public async Task StartAsync()
         {
-            ClientEngine.MainLoop.QueueWait((Action)delegate {
-                CheckRegisteredAndDisposed();
+            await ClientEngine.MainLoop;
 
-                this.Engine.Start();
-                // If the torrent was "paused", then just update the state to Downloading and forcefully
-                // make sure the peers begin sending/receiving again
-                if (this.State == TorrentState.Paused)
-                {
-                    Mode = new DownloadMode(this);
-                    return;
-                }
+            CheckRegisteredAndDisposed();
 
-                if (!HasMetadata)
-                {
-                    Mode = new MetadataMode(this, torrentSave);
-#if !DISABLE_DHT
-                    StartDHT();
-#endif                    
-                    return;
-                }
+            Engine.Start();
+            // If the torrent was "paused", then just update the state to Downloading and forcefully
+            // make sure the peers begin sending/receiving again
+            if (State == TorrentState.Paused)
+            {
+                Mode = new DownloadMode(this);
+                return;
+            }
 
-                VerifyHashState ();
-                // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
-                // before attempting to start again
-                if (!HashChecked)
-                {
-                    if (State != TorrentState.Hashing)
-                        HashCheck(true);
-                    return;
-                }
-
-                if (State == TorrentState.Seeding || State == TorrentState.Downloading)
-                    return;
-
-                if (TrackerManager.CurrentTracker != null)
-                {
-                    if (this.TrackerManager.CurrentTracker.CanScrape)
-                        this.TrackerManager.Scrape();
-                    this.TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
-                }
-
-                if (this.Complete && this.Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
-					Mode = new InitialSeedingMode(this);
-                }
-                else {
-                    Mode = new DownloadMode(this);
-                }
-                Engine.Broadcast(this);
-
+            if (!HasMetadata)
+            {
+                Mode = new MetadataMode(this, torrentSave);
 #if !DISABLE_DHT
                 StartDHT();
-#endif
-                this.StartTime = DateTime.Now;
-                this.PieceManager.Reset();
+#endif                    
+                return;
+            }
 
-                ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
-                    if (State != TorrentState.Downloading && State != TorrentState.Seeding)
-                        return false;
-                    PieceManager.Picker.CancelTimedOutRequests();
-                    return true;
-                });
+            VerifyHashState ();
+            // If the torrent has not been hashed, we start the hashing process then we wait for it to finish
+            // before attempting to start again
+            if (!HashChecked)
+            {
+                if (State != TorrentState.Hashing)
+                    HashCheck(true);
+                return;
+            }
+
+            if (State == TorrentState.Seeding || State == TorrentState.Downloading)
+                return;
+
+            // We need to announce before going into Downloading mode, otherwise we will
+            // send a regular announce instead of a 'Started' announce.
+            if (TrackerManager.CurrentTracker != null)
+            {
+                if (TrackerManager.CurrentTracker.CanScrape)
+                    TrackerManager.Scrape();
+                TrackerManager.Announce(TorrentEvent.Started); // Tell server we're starting
+            }
+
+            if (Complete && Settings.InitialSeedingEnabled && ClientEngine.SupportsInitialSeed) {
+                Mode = new InitialSeedingMode(this);
+            }
+            else {
+                Mode = new DownloadMode(this);
+            }
+
+            Engine.Broadcast(this);
+
+#if !DISABLE_DHT
+            StartDHT();
+#endif
+            StartTime = DateTime.Now;
+            PieceManager.Reset();
+
+            ClientEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(2), delegate {
+                if (State != TorrentState.Downloading && State != TorrentState.Seeding)
+                    return false;
+                PieceManager.Picker.CancelTimedOutRequests();
+                return true;
             });
         }
 
@@ -588,49 +591,38 @@ namespace MonoTorrent.Client
 
         #region Internal Methods
 
-        public void AddPeers (Peer peer)
+        public async Task<bool> AddPeerAsync (Peer peer)
         {
             Check.Peer (peer);
             if (HasMetadata && Torrent.IsPrivate)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            ClientEngine.MainLoop.QueueWait (() => {
-                AddPeersCore (peer);
-            });
+            await ClientEngine.MainLoop;
+
+            if (Peers.Contains(peer))
+                return false;
+
+            // Ignore peers in the inactive list
+            if (InactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
+                return false;
+
+            Peers.AvailablePeers.Add(peer);
+            OnPeerFound?.Invoke(this, new PeerAddedEventArgs(this, peer));
+            // When we successfully add a peer we try to connect to the next available peer
+            return true;
         }
 
-        public void AddPeers (IEnumerable <Peer> peers)
+        public async Task<int> AddPeersAsync (IEnumerable <Peer> peers)
         {
             Check.Peers (peers);
             if (HasMetadata && Torrent.IsPrivate)
                 throw new InvalidOperationException ("You cannot add external peers to a private torrent");
 
-            ClientEngine.MainLoop.QueueWait (() => {
-                AddPeersCore (peers);
-            });
-        }
+            await ClientEngine.MainLoop;
 
-        internal int AddPeersCore(Peer peer)
-        {
-            if (this.Peers.Contains(peer))
-                return 0;
-
-            // Ignore peers in the inactive list
-            if (this.InactivePeerManager.InactivePeerList.Contains(peer.ConnectionUri))
-                return 0;
-
-            this.Peers.AvailablePeers.Add(peer);
-            if (OnPeerFound != null)
-                OnPeerFound(this, new PeerAddedEventArgs(this, peer));
-            // When we successfully add a peer we try to connect to the next available peer
-            return 1;
-        }
-
-        internal int AddPeersCore(IEnumerable<Peer> peers)
-        {
             int count = 0;
             foreach (Peer p in peers)
-                count += AddPeersCore(p);
+                count += await AddPeerAsync(p) ? 1 : 0;
             return count;
         }
 
@@ -732,15 +724,14 @@ namespace MonoTorrent.Client
         }
 
 #if !DISABLE_DHT
-        private void DhtPeersFound(object o, PeersFoundEventArgs e)
+        private async void DhtPeersFound(object o, PeersFoundEventArgs e)
         {
             if (InfoHash != e.InfoHash)
                 return;
-            
-            ClientEngine.MainLoop.Queue (delegate {
-                int count = AddPeersCore(e.Peers);
-                RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
-            });
+
+            await ClientEngine.MainLoop;
+            int count = await AddPeersAsync(e.Peers);
+            RaisePeersFound(new DhtPeersAdded(this, count, e.Peers.Count));
         }
 #endif
 

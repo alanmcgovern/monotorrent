@@ -54,12 +54,12 @@ namespace MonoTorrent.Client
         private TestRig rig;
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
             pair = new ConnectionPair(55432);
             rig = TestRig.CreateMultiFile();
             rig.Manager.HashChecked = true;
-            rig.Manager.Start();
+            await rig.Manager.StartAsync();
         }
 
         [TearDown]

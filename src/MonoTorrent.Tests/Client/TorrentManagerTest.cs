@@ -57,15 +57,13 @@ namespace MonoTorrent.Client
         [Test]
         public void AddPeers_PrivateTorrent ()
         {
-            Assert.Throws< InvalidOperationException> (() =>
-            {
-                // You can't manually add peers to private torrents
-                var dict = (BEncodedDictionary)rig.TorrentDict["info"];
-                dict["private"] = (BEncodedString)"1";
-                Torrent t = Torrent.Load(rig.TorrentDict);
-                TorrentManager manager = new TorrentManager(t, "path", new TorrentSettings());
-                manager.AddPeers(new Peer("id", new Uri("tcp:://whatever.com")));
-            });
+            // You can't manually add peers to private torrents
+            var dict = (BEncodedDictionary)rig.TorrentDict["info"];
+            dict["private"] = (BEncodedString)"1";
+            Torrent t = Torrent.Load(rig.TorrentDict);
+            TorrentManager manager = new TorrentManager(t, "path", new TorrentSettings());
+
+            Assert.ThrowsAsync<InvalidOperationException>(() => manager.AddPeerAsync(new Peer("id", new Uri("tcp:://whatever.com"))));
         }
 
         [Test]
@@ -107,7 +105,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void StopTest()
+        public async Task StopTest()
         {
             bool started = false;
             AutoResetEvent h = new AutoResetEvent(false);
@@ -123,7 +121,7 @@ namespace MonoTorrent.Client
                 }
             };
 
-            rig.Manager.Start();
+            await rig.Manager.StartAsync();
             Assert.IsTrue (h.WaitOne(5000, true), "Started");
             rig.Manager.Stop();
             Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
@@ -144,7 +142,7 @@ namespace MonoTorrent.Client
                 if (e.NewState == TorrentState.Downloading || e.NewState == TorrentState.Stopped)
                     handle.Set();
             };
-            manager.Start();
+            await manager.StartAsync();
             handle.WaitOne();
             System.Threading.Thread.Sleep(1000);
             manager.Stop();
@@ -168,7 +166,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AnnounceWhenComplete()
+        public async Task AnnounceWhenComplete()
         {
             // Check that the engine announces when the download starts, completes
             // and is stopped.
@@ -177,9 +175,14 @@ namespace MonoTorrent.Client
                 handle.Set ();
             };
 
-            rig.Manager.Start();
+            var downloadingState = rig.Manager.WaitForState (TorrentState.Downloading);
+
+            await rig.Manager.StartAsync();
+            await downloadingState;
+
             Assert.IsTrue (handle.WaitOne(5000, false), "Announce on startup");
             Assert.AreEqual(1, rig.Tracker.AnnouncedAt.Count, "#2");
+			Console.WriteLine ("Got start announce. State: {0}. Complete: {1}", rig.Manager.State, rig.Manager.Complete);
 
             rig.Manager.Bitfield.SetAll(true);
             Assert.IsTrue (handle.WaitOne (5000, false), "Announce when download completes");
@@ -192,7 +195,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void InvalidFastResume_NoneExist()
+        public async Task InvalidFastResume_NoneExist()
         {
             var handle = new ManualResetEvent (false);
             var bf = new BitField (rig.Pieces).Not ();
@@ -201,7 +204,7 @@ namespace MonoTorrent.Client
                 if (rig.Manager.State == TorrentState.Downloading)
                     handle.Set ();
             };
-            rig.Manager.Start ();
+            await rig.Manager.StartAsync ();
             Assert.IsTrue(handle.WaitOne(), "#1");
             Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
@@ -209,7 +212,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void InvalidFastResume_SomeExist()
+        public async Task InvalidFastResume_SomeExist()
         {
             rig.Writer.FilesThatExist.AddRange(new[]{
                 rig.Manager.Torrent.Files [0],
@@ -223,7 +226,7 @@ namespace MonoTorrent.Client
                 if (rig.Manager.State == TorrentState.Downloading)
                     handle.Set();
             };
-            rig.Manager.Start();
+            await rig.Manager.StartAsync();
             Assert.IsTrue(handle.WaitOne(), "#1");
             Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)
@@ -231,7 +234,7 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void HashTorrent_ReadZero()
+        public async Task HashTorrent_ReadZero()
         {
             rig.Writer.FilesThatExist.AddRange(new[]{
                 rig.Manager.Torrent.Files [0],
@@ -250,7 +253,7 @@ namespace MonoTorrent.Client
                 if (rig.Manager.State == TorrentState.Downloading)
                     handle.Set();
             };
-            rig.Manager.Start();
+            await rig.Manager.StartAsync();
             Assert.IsTrue(handle.WaitOne(), "#1");
             Assert.IsTrue(rig.Manager.Bitfield.AllFalse, "#2");
             foreach (TorrentFile file in rig.Manager.Torrent.Files)

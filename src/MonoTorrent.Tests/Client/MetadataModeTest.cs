@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -21,7 +22,7 @@ namespace MonoTorrent.Client
         private ConnectionPair pair;
         private TestRig rig;
 
-        public void Setup(bool metadataMode, string metadataPath)
+        public async Task Setup(bool metadataMode, string metadataPath)
         {
             pair = new ConnectionPair(55432);
             rig = TestRig.CreateSingleFile(1024 * 1024 * 1024, 32768, metadataMode);
@@ -29,7 +30,7 @@ namespace MonoTorrent.Client
             rig.RecreateManager().Wait();
 
             rig.Manager.HashChecked = true;
-            rig.Manager.Start();
+            await rig.Manager.StartAsync();
             rig.AddConnection(pair.Outgoing);
 
             var connection = pair.Incoming;
@@ -51,9 +52,9 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void RequestMetadata()
+        public async Task RequestMetadata()
         {
-            Setup(false, "path.torrent");
+            await Setup(false, "path.torrent");
             CustomConnection connection = pair.Incoming;
 
             // 1) Send local handshake. We've already received the remote handshake as part
@@ -89,36 +90,36 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void SendMetadata_ToFile()
+        public async Task SendMetadata_ToFile()
         {
             var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            Setup(true, torrent);
+            await Setup(true, torrent);
             SendMetadataCore(torrent);
         }
 
         [Test]
-        public void SendMetadata_ToFile_CorruptFileExists ()
+        public async Task SendMetadata_ToFile_CorruptFileExists ()
         {
             var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
             File.Create (torrent).Close ();
-            Setup(true, torrent);
+            await Setup(true, torrent);
             SendMetadataCore(torrent);
         }
 
         [Test]
-        public void SendMetadata_ToFile_RealFileExists ()
+        public async Task SendMetadata_ToFile_RealFileExists ()
         {
             var torrent = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file.torrent");
-            Setup(true, torrent);
+            await Setup(true, torrent);
             File.WriteAllBytes (torrent, rig.Torrent.ToBytes ());
 
             SendMetadataCore(torrent);
         }
 
         [Test]
-        public void SendMetadata_ToFolder()
+        public async Task SendMetadata_ToFolder()
         {
-            Setup(true, AppDomain.CurrentDomain.BaseDirectory);
+            await Setup(true, AppDomain.CurrentDomain.BaseDirectory);
             SendMetadataCore(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rig.Torrent.InfoHash.ToHex () + ".torrent"));
         }
 

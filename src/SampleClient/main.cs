@@ -187,7 +187,7 @@ namespace MonoTorrent
                     }
                 }
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                manager.Start();
+                manager.StartAsync().Wait();
             }
 
             // While the torrents are still running, print out some stats to the screen.

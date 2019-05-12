@@ -177,8 +177,8 @@ namespace MonoTorrent.Client.Tracker
 
             using (MemoryStream dataStream = new MemoryStream(response.ContentLength > 0 ? (int)response.ContentLength : 256))
             {
-
-                using (BinaryReader reader = new BinaryReader(response.GetResponseStream()))
+                using (var responseStream = response.GetResponseStream())
+                using (var reader = new BinaryReader(responseStream))
                 {
                     // If there is a ContentLength, use that to decide how much we read.
                     if (response.ContentLength > 0)
@@ -199,7 +199,6 @@ namespace MonoTorrent.Client.Tracker
                             dataStream.Write(buffer, 0, bytesRead);
                     }
                 }
-                response.Close();
                 dataStream.Seek(0, SeekOrigin.Begin);
                 return (BEncodedDictionary)BEncodedValue.Decode(dataStream);
             }

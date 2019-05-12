@@ -175,7 +175,7 @@ namespace MonoTorrent.Client
                 id.AmAllowedFastPieces = AllowedFastAlgorithm.Calculate(id.AddressBytes, id.TorrentManager.InfoHash, (uint)id.TorrentManager.Torrent.Pieces.Count);
         }
 
-        protected virtual void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
+        protected virtual async void HandlePeerExchangeMessage(PeerId id, PeerExchangeMessage message)
         {
             // Ignore peer exchange messages on private torrents
             if (id.TorrentManager.Torrent.IsPrivate || !id.TorrentManager.Settings.EnablePeerExchange)
@@ -185,9 +185,9 @@ namespace MonoTorrent.Client
             if ((Manager.Peers.Available + Manager.OpenConnections) >= Manager.Settings.MaxConnections)
                 return;
 
-            IList<Peer> peers = Peer.Decode((BEncodedString)message.Added);
-            int count = id.TorrentManager.AddPeersCore(peers);
-            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, peers.Count, id));
+            var newPeers = Peer.Decode((BEncodedString)message.Added);
+            int count = await id.TorrentManager.AddPeersAsync(newPeers);
+            id.TorrentManager.RaisePeersFound(new PeerExchangePeersAdded(id.TorrentManager, count, newPeers.Count, id));
         }
 
         protected virtual void HandleLtChat(PeerId id, LTChat message)

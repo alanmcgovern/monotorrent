@@ -241,7 +241,7 @@ namespace MonoTorrent.Client.Tracker
             if (successful)
             {
                 manager.Peers.BusyPeers.Clear ();
-                int count = manager.AddPeersCore(peers);
+                int count = await manager.AddPeersAsync(peers);
                 manager.RaisePeersFound(new TrackerPeersAdded(manager, count, peers.Count, tracker));
 
                 TrackerTier tier = trackerTiers.Find(delegate(TrackerTier t) { return t.Trackers.Contains(tracker); });

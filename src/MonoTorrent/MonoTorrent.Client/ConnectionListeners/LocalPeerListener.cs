@@ -85,7 +85,7 @@ namespace MonoTorrent.Client
                 c.Close();
         }
 
-        private void OnReceiveCallBack(IAsyncResult ar)
+        private async void OnReceiveCallBack(IAsyncResult ar)
         {
             UdpClient u = (UdpClient)ar.AsyncState;
             IPEndPoint e = new IPEndPoint(IPAddress.Any, 0);
@@ -119,10 +119,9 @@ namespace MonoTorrent.Client
                 // Add new peer to matched Torrent
                 if (!manager.HasMetadata || !manager.Torrent.IsPrivate)
                 {
-                    ClientEngine.MainLoop.Queue(delegate {
-                        int count = manager.AddPeersCore (peer);
-                        manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
-                    });
+                    await ClientEngine.MainLoop;
+                    int count = await manager.AddPeerAsync (peer) ? 1 : 0;
+                    manager.RaisePeersFound(new LocalPeersAdded(manager, count, 1));
                 }
             }
             catch

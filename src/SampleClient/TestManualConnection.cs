@@ -330,9 +330,9 @@ namespace SampleClient
         public TestManualConnection()
         {
             rig1 = new EngineTestRig("Downloads1");
-            rig1.Manager.Start();
+            rig1.Manager.StartAsync().Wait ();
             rig2 = new EngineTestRig("Downloads2");
-            rig2.Manager.Start();
+            rig2.Manager.StartAsync().Wait ();
 
             ConnectionPair p = new ConnectionPair(5151);
 

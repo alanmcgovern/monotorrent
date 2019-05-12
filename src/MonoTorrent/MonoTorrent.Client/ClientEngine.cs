@@ -358,8 +358,11 @@ namespace MonoTorrent.Client
             CheckDisposed();
 
             await MainLoop;
+
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < torrents.Count; i++)
-                torrents[i].Start();
+                tasks.Add (torrents[i].StartAsync());
+            await Task.WhenAll (tasks);
         }
 
         public async Task StopAll()

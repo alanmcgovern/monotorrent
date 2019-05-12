@@ -66,7 +66,7 @@ namespace MonoTorrent.Client
 
 			if (autostart)
 			{
-				Manager.Start();
+				await Manager.StartAsync();
 			}
 			else
 			{
