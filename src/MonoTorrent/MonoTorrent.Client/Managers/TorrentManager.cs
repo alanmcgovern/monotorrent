@@ -300,10 +300,6 @@ namespace MonoTorrent.Client
             Mode = new StoppedMode(this);            
             CreateRateLimiters();
 
-            PieceHashed += delegate(object o, PieceHashedEventArgs e) {
-                PieceManager.UnhashedPieces[e.PieceIndex] = false;
-            };
-
             if (HasMetadata) {
                 foreach (TorrentFile file in Torrent.Files)
                     file.FullPath = Path.Combine (SavePath, file.Path);
