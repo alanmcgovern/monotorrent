@@ -5,21 +5,22 @@ using NUnit.Framework;
 using MonoTorrent.Client;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
     [TestFixture]
     public class ConnectionListenerTests
     {
-        private SocketListener listener;
-        private IPEndPoint endpoint;
+        readonly IPEndPoint endpoint = new IPEndPoint(IPAddress.Loopback, 55652);
+
+        SocketListener listener;
+
         [SetUp]
         public void Setup()
         {
-            endpoint = new IPEndPoint(IPAddress.Loopback, 55652);
             listener = new SocketListener(endpoint);
             listener.Start();
-            System.Threading.Thread.Sleep(100);
         }
 
         [TearDown]
@@ -29,30 +30,32 @@ namespace MonoTorrent.Client
         }
 
         [Test]
-        public void AcceptThree()
+        public async Task AcceptTen()
         {
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
-                c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
-                c.Connect(endpoint);
-            using (TcpClient c = new TcpClient(AddressFamily.InterNetwork))
-                c.Connect(endpoint);
+            for (int i = 0; i < 10; i ++) {
+                using (TcpClient c = new TcpClient(AddressFamily.InterNetwork)) {
+                    var task = AcceptSocket ();
+                    c.Connect(endpoint);
+                    (await task).Connection.Dispose ();
+                }
+            }
         }
 
         [Test]
-        public void ChangePortThree()
+        public async Task ChangePortTen()
         {
-            endpoint.Port++;
-            listener.ChangeEndpoint(endpoint);
-            AcceptThree();
+            for (int i = 0; i < 10; i++) {
+                endpoint.Port++;
+                listener.ChangeEndpoint(endpoint);
+                await AcceptTen();
+            }
+        }
 
-            endpoint.Port++;
-            listener.ChangeEndpoint(endpoint);
-            AcceptThree();
-
-            endpoint.Port++;
-            listener.ChangeEndpoint(endpoint);
-            AcceptThree();
+        Task<NewConnectionEventArgs> AcceptSocket ()
+        {
+            var tcs = new TaskCompletionSource<NewConnectionEventArgs>();
+            listener.ConnectionReceived += (o, e) => tcs.TrySetResult (e);
+            return tcs.Task;
         }
     }
 }

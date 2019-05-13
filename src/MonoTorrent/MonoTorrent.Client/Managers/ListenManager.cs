@@ -15,36 +15,22 @@ namespace MonoTorrent.Client
     /// </summary>
     public class ListenManager : IDisposable
     {
-        #region Member Variables
 
-        private ClientEngine engine;
-        private MonoTorrentCollection<PeerListener> listeners;
+		#region Properties
 
-        #endregion Member Variables
+		public MonoTorrentCollection<PeerListener> Listeners { get; }
 
+		ClientEngine Engine { get; set; }
 
-        #region Properties
-
-        public MonoTorrentCollection<PeerListener> Listeners
-        {
-            get { return listeners; }
-        }
-
-        internal ClientEngine Engine
-        {
-            get { return engine; }
-            private set { engine = value; }
-        }
-
-        #endregion Properties
+		#endregion Properties
 
 
-        #region Constructors
+		#region Constructors
 
-        internal ListenManager(ClientEngine engine)
+		internal ListenManager(ClientEngine engine)
         {
             Engine = engine;
-            listeners = new MonoTorrentCollection<PeerListener>();
+            Listeners = new MonoTorrentCollection<PeerListener>();
         }
 
         #endregion Constructors
@@ -76,7 +62,7 @@ namespace MonoTorrent.Client
             await ClientEngine.MainLoop;
             try
             {
-                if (engine.ConnectionManager.ShouldBanPeer(e.Peer))
+                if (Engine.ConnectionManager.ShouldBanPeer(e.Peer))
                 {
                     e.Connection.Dispose();
                     return;
@@ -84,15 +70,15 @@ namespace MonoTorrent.Client
                 var id = new PeerId(e.Peer, e.TorrentManager);
                 id.Connection = e.Connection;
                 if (!e.Connection.IsIncoming) {
-                    engine.ConnectionManager.ProcessFreshConnection(id);
+                    Engine.ConnectionManager.ProcessFreshConnection(id);
                     return;
                 }
 
                 Logger.Log(id.Connection, "ListenManager - ConnectionReceived");
 
                 var skeys = new List<InfoHash>();
-                for (int i = 0; i < engine.Torrents.Count; i++)
-                    skeys.Add(engine.Torrents[i].InfoHash);
+                for (int i = 0; i < Engine.Torrents.Count; i++)
+                    skeys.Add(Engine.Torrents[i].InfoHash);
 
                 var initialData = await EncryptorFactory.CheckEncryptionAsync(id, HandshakeMessage.HandshakeLength, skeys.ToArray());
                 if (initialData != null && initialData.Length != HandshakeMessage.HandshakeLength)
@@ -128,12 +114,12 @@ namespace MonoTorrent.Client
                 return false;
 
             // If we're forcing encrypted connections and this is in plain-text, close it!
-            if (id.Encryptor is PlainTextEncryption && !engine.Settings.AllowedEncryption.HasFlag(EncryptionTypes.PlainText))
+            if (id.Encryptor is PlainTextEncryption && !Engine.Settings.AllowedEncryption.HasFlag(EncryptionTypes.PlainText))
                 return false;
 
-            for (int i = 0; i < engine.Torrents.Count; i++)
-                if (message.infoHash == engine.Torrents[i].InfoHash)
-                    man = engine.Torrents[i];
+            for (int i = 0; i < Engine.Torrents.Count; i++)
+                if (message.infoHash == Engine.Torrents[i].InfoHash)
+                    man = Engine.Torrents[i];
 
             // We're not hosting that torrent
             if (man == null)
@@ -153,9 +139,9 @@ namespace MonoTorrent.Client
 
             id.ClientApp = new Software(message.PeerId);
 
-            message = new HandshakeMessage(id.TorrentManager.InfoHash, engine.PeerId, VersionInfo.ProtocolStringV100);
+            message = new HandshakeMessage(id.TorrentManager.InfoHash, Engine.PeerId, VersionInfo.ProtocolStringV100);
             await PeerIO.SendMessageAsync (id.Connection, id.Encryptor, message, id.TorrentManager.UploadLimiter, id.Monitor, id.TorrentManager.Monitor);
-            engine.ConnectionManager.IncomingConnectionAccepted (id);
+            Engine.ConnectionManager.IncomingConnectionAccepted (id);
             return true;
         }
     }

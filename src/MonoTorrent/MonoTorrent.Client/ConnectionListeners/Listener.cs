@@ -39,29 +39,20 @@ namespace MonoTorrent.Client
     {
         public event EventHandler<EventArgs> StatusChanged;
 
-        private IPEndPoint endpoint;
-        private ListenerStatus status;
+        public IPEndPoint Endpoint { get; private set; }
 
-        public IPEndPoint Endpoint
+		public ListenerStatus Status { get; private set; }
+
+
+		protected Listener(IPEndPoint endpoint)
         {
-            get { return endpoint; }
-        }
-
-        public ListenerStatus Status
-        {
-            get { return status; }
-        }
-
-
-        protected Listener(IPEndPoint endpoint)
-        {
-            this.status = ListenerStatus.NotListening;
-            this.endpoint = endpoint;
+            Status = ListenerStatus.NotListening;
+            Endpoint = endpoint;
         }
 
         public void ChangeEndpoint(IPEndPoint endpoint)
         {
-            this.endpoint = endpoint;
+            Endpoint = endpoint;
             if (Status == ListenerStatus.Listening)
             {
                 Stop();
@@ -71,7 +62,7 @@ namespace MonoTorrent.Client
 
         protected virtual void RaiseStatusChanged(ListenerStatus status)
         {
-            this.status = status;
+            Status = status;
             if (StatusChanged != null)
                 Toolbox.RaiseAsyncEvent<EventArgs>(StatusChanged, this, EventArgs.Empty);
         }

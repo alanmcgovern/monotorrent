@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Net;
 using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
@@ -44,7 +45,8 @@ namespace MonoTorrent.Client.Connections
         public IPV6Connection(Socket socket, bool incoming)
             : base(socket, incoming)
         {
-            
+            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
+            Uri = new Uri("ipv6://" + endpoint.Address + ':' + endpoint.Port);
         }
     }
 }

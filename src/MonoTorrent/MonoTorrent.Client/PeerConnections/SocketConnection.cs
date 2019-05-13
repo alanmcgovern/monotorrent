@@ -57,7 +57,7 @@ namespace MonoTorrent.Client.Connections
 
         Socket Socket { get; }
 
-        public Uri Uri { get; }
+        public Uri Uri { get; protected set; }
 
 		#endregion
 

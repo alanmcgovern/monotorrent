@@ -29,6 +29,7 @@
 
 
 using System;
+using System.Net;
 using System.Net.Sockets;
 
 namespace MonoTorrent.Client.Connections
@@ -44,7 +45,8 @@ namespace MonoTorrent.Client.Connections
         public IPV4Connection(Socket socket, bool incoming)
             : base(socket, incoming)
         {
-            
+            var endpoint = (IPEndPoint)socket.RemoteEndPoint;
+            Uri = new Uri("ipv4://" + endpoint.Address + ':' + endpoint.Port);
         }
     }
 }
