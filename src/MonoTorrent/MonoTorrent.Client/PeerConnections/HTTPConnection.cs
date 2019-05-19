@@ -28,29 +28,20 @@
 
 
 using System;
-using System.Text;
-using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using System.Collections.Generic;
 using System.IO;
 
-using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Common;
-using System.Text.RegularExpressions;
-using System.Reflection;
-using MonoTorrent.BEncoding;
 using System.Threading.Tasks;
 
 namespace MonoTorrent.Client.Connections
 {
     public class HttpConnection : IConnection
     {
-        static MethodInfo method = typeof(WebHeaderCollection).GetMethod
-                                ("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
-
         class HttpRequestData
         {
             public RequestMessage Request;
@@ -316,7 +307,7 @@ namespace MonoTorrent.Client.Connections
                 else if (endOffset >= file.Length)
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-                    AddRange(request, startOffset, file.Length - 1);
+                    request.AddRange(startOffset, file.Length - 1);
                     WebRequests.Enqueue(new KeyValuePair<WebRequest, int>(request, (int)(file.Length - startOffset)));
                     startOffset = 0;
                     endOffset -= file.Length;
@@ -325,16 +316,11 @@ namespace MonoTorrent.Client.Connections
                 else
                 {
                     HttpWebRequest request = (HttpWebRequest)WebRequest.Create(u);
-                    AddRange(request, startOffset, endOffset - 1);
+                    request.AddRange (startOffset, endOffset - 1);
                     WebRequests.Enqueue(new KeyValuePair<WebRequest,int>(request, (int)(endOffset - startOffset)));
                     endOffset = 0;
                 }
             }
-        }
-
-        static void AddRange(HttpWebRequest request, long startOffset, long endOffset)
-        {
-            method.Invoke(request.Headers, new object[] { "Range", string.Format("bytes={0}-{1}", startOffset, endOffset) });
         }
 
         public void Dispose()
