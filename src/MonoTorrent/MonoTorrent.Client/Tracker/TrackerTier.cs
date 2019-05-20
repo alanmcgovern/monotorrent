@@ -8,33 +8,15 @@ namespace MonoTorrent.Client.Tracker
 {
     public class TrackerTier : IEnumerable<ITracker>
     {
-        #region Private Fields
-
-        private bool sendingStartedEvent;
-        private bool sentStartedEvent;
-        private List<ITracker> trackers;
-
-        #endregion Private Fields
-
-
         #region Properties
 
-        internal bool SendingStartedEvent
-        {
-            get { return this.sendingStartedEvent; }
-            set { this.sendingStartedEvent = value; }
-        }
+        List<ITracker> OriginalTrackers { get; }
 
-        internal bool SentStartedEvent
-        {
-            get { return this.sentStartedEvent; }
-            set { this.sentStartedEvent = value; }
-        }
+        internal bool SendingStartedEvent { get; set; }
 
-        internal List<ITracker> Trackers
-        {
-            get { return this.trackers; }
-        }
+        internal bool SentStartedEvent { get; set; }
+
+        internal List<ITracker> Trackers { get; }
 
         #endregion Properties
 
@@ -66,7 +48,8 @@ namespace MonoTorrent.Client.Tracker
                 }
             }
 
-            this.trackers = trackerList;
+            OriginalTrackers = new List<ITracker>(trackerList);
+            Trackers = trackerList;
         }
 
         #endregion Constructors
@@ -76,12 +59,12 @@ namespace MonoTorrent.Client.Tracker
 
         internal int IndexOf(ITracker tracker)
         {
-            return trackers.IndexOf(tracker);
+            return Trackers.IndexOf(tracker);
         }
 
         public IEnumerator<ITracker> GetEnumerator()
         {
-            return trackers.GetEnumerator();
+            return Trackers.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -91,7 +74,7 @@ namespace MonoTorrent.Client.Tracker
 
         public List<ITracker> GetTrackers()
         {
-            return new List<ITracker>(trackers);
+            return new List<ITracker>(OriginalTrackers);
         }
 
         #endregion Methods

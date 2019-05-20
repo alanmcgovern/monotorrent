@@ -13,6 +13,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
+using System.Threading.Tasks;
 
 namespace MonoTorrent
 {
@@ -40,15 +41,15 @@ namespace MonoTorrent
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
             // or an unhandled exception happens
-            Console.CancelKeyPress += delegate { shutdown(); };
-            AppDomain.CurrentDomain.ProcessExit += delegate { shutdown(); };
-            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
-            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
+            Console.CancelKeyPress += delegate { shutdown().Wait(); };
+            AppDomain.CurrentDomain.ProcessExit += delegate { shutdown().Wait(); };
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
+            Thread.GetDomain().UnhandledException += delegate(object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown().Wait(); };
 
-            StartEngine();
+            StartEngine().Wait();
         }
 
-        private static void StartEngine()
+        private static async Task StartEngine()
         {
             int port;
             Torrent torrent = null;
@@ -141,7 +142,7 @@ namespace MonoTorrent
                     // which you then register with the engine.
                     TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                     if (fastResume.ContainsKey(torrent.InfoHash.ToHex ()))
-                        manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
+                        manager.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex ()]));
                     engine.Register(manager);
 
                     // Store the torrent manager in our list so we can access it later
@@ -179,7 +180,7 @@ namespace MonoTorrent
                 // Every time the tracker's state changes, this is fired
                 foreach (TrackerTier tier in manager.TrackerManager)
                 {
-                    foreach (MonoTorrent.Client.Tracker.Tracker t in tier.Trackers)
+                    foreach (MonoTorrent.Client.Tracker.Tracker t in tier.GetTrackers())
                     {
                         t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
                             listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
@@ -225,10 +226,10 @@ namespace MonoTorrent
                         AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
                         AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
                         if (manager.PieceManager != null)
-                            AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+                            AppendFormat(sb, "Current Requests:   {0}", await manager.PieceManager.CurrentRequestCountAsync());
                         
-                        foreach (PeerId p in manager.GetPeers())
-                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+                        foreach (PeerId p in await manager.GetPeersAsync())
+                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Uri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
                                                                                       p.Monitor.UploadSpeed/ 1024.0);
@@ -268,12 +269,12 @@ namespace MonoTorrent
 			sb.AppendLine();
 		}
 
-		private static void shutdown()
+		private static async Task shutdown()
 		{
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
             {
-                torrents[i].Stop(); ;
+                await torrents[i].StopAsync(); ;
                 while (torrents[i].State != TorrentState.Stopped)
                 {
                     Console.WriteLine("{0} is {1}", torrents[i].Torrent.Name, torrents[i].State);

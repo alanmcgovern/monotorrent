@@ -63,9 +63,9 @@ namespace MonoTorrent.Client
         }
 
         [TearDown]
-        public void Teardown()
+        public async Task Teardown()
         {
-            rig.Manager.Stop();
+            await rig.Manager.StopAsync();
             pair.Dispose();
             rig.Dispose();
         }
@@ -259,7 +259,7 @@ namespace MonoTorrent.Client
         public void TestHandshake(byte[] buffer, CustomConnection connection)
         {
             // 1) Send local handshake
-            SendMessage(new HandshakeMessage(rig.Manager.Torrent.infoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false), connection);
+            SendMessage(new HandshakeMessage(rig.Manager.Torrent.InfoHash, new string('g', 20), VersionInfo.ProtocolStringV100, true, false), connection);
 
             // 2) Receive remote handshake
             if (buffer == null || buffer.Length == 0)

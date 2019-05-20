@@ -79,28 +79,19 @@ namespace MonoTorrent.Client
         [Test]
         public async Task ReregisterManager()
         {
-            ManualResetEvent handle = new ManualResetEvent(false);
-            rig.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
-            {
-                if (e.OldState == TorrentState.Hashing)
-                    handle.Set();
-            };
-            rig.Manager.HashCheck(false);
-
-            handle.WaitOne();
-            handle.Reset();
+            var hashingTask = rig.Manager.WaitForState(TorrentState.Stopped);
+            await rig.Manager.HashCheckAsync(false);
+            await hashingTask;
 
             await rig.Engine.Unregister(rig.Manager);
             TestRig rig2 = TestRig.CreateMultiFile (new TestWriter());
             await rig2.Engine.Unregister(rig2.Manager);
             await rig.Engine.Register(rig2.Manager);
-            rig2.Manager.TorrentStateChanged += delegate(object sender, TorrentStateChangedEventArgs e)
-            {
-                if (e.OldState == TorrentState.Hashing)
-                    handle.Set();
-            };
-            rig2.Manager.HashCheck(true);
-            handle.WaitOne();
+
+            hashingTask = rig2.Manager.WaitForState(TorrentState.Stopped);
+            await rig2.Manager.HashCheckAsync(true);
+            await hashingTask;
+
             rig2.Dispose();
         }
 
@@ -123,7 +114,7 @@ namespace MonoTorrent.Client
 
             await rig.Manager.StartAsync();
             Assert.IsTrue (h.WaitOne(5000, true), "Started");
-            rig.Manager.Stop();
+            await rig.Manager.StopAsync();
             Assert.IsTrue (h.WaitOne(5000, true), "Stopped");
         }
 
@@ -145,7 +136,7 @@ namespace MonoTorrent.Client
             await manager.StartAsync();
             handle.WaitOne();
             System.Threading.Thread.Sleep(1000);
-            manager.Stop();
+            await manager.StopAsync();
 
             Assert.IsTrue(handle.WaitOne(10000, true), "#1");
             await manager.TrackerManager.Announce();
@@ -189,7 +180,7 @@ namespace MonoTorrent.Client
             Assert.AreEqual(TorrentState.Seeding, rig.Manager.State, "#3");
             Assert.AreEqual(2, rig.Tracker.AnnouncedAt.Count, "#4");
 
-            rig.Manager.Stop();
+            await rig.Manager.StopAsync();
             Assert.IsTrue (handle.WaitOne (5000, false), "Announce when torrent stops");
             Assert.AreEqual(3, rig.Tracker.AnnouncedAt.Count, "#6");
         }

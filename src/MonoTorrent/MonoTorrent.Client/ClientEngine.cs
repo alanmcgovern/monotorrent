@@ -289,8 +289,11 @@ namespace MonoTorrent.Client
         {
             CheckDisposed();
             await MainLoop;
+
+            var tasks = new List<Task>();
             foreach (TorrentManager manager in torrents)
-                manager.Pause();
+                tasks.Add(manager.PauseAsync());
+            await Task.WhenAll(tasks);
         }
 
         public async Task Register(TorrentManager manager)
@@ -370,8 +373,10 @@ namespace MonoTorrent.Client
             CheckDisposed();
 
             await MainLoop;
+            List<Task> tasks = new List<Task>();
             for (int i = 0; i < torrents.Count; i++)
-                torrents[i].Stop();
+                tasks.Add (torrents[i].StopAsync());
+            await Task.WhenAll(tasks);
         }
 
         public async Task Unregister(TorrentManager manager)

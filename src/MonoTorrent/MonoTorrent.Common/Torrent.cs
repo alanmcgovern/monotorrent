@@ -55,7 +55,7 @@ namespace MonoTorrent.Common
         private DateTime creationDate;
         private byte[] ed2k;
         private string encoding;
-        internal InfoHash infoHash;
+        private InfoHash infoHash;
         private bool isPrivate;
         protected string name;
         private BEncodedList nodes;

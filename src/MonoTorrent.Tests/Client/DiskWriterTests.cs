@@ -105,11 +105,11 @@ namespace MonoTorrent.Client
         }
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
             writer = new ExceptionWriter();
             diskManager.Writer = writer;
-            rig.Manager.Stop();
+            await rig.Manager.StopAsync();
         }
 
         [Test]

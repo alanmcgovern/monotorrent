@@ -38,6 +38,7 @@ using MonoTorrent.Client.Messages.FastPeer;
 using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Connections;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace MonoTorrent.Client
 {
@@ -176,9 +177,10 @@ namespace MonoTorrent.Client
             Picker?.Reset ();
         }
 
-        internal int CurrentRequestCount()
+        public async Task<int> CurrentRequestCountAsync()
         {
-            return (int)ClientEngine.MainLoop.QueueWait(delegate { return Picker.CurrentRequestCount(); });
+            await ClientEngine.MainLoop;
+            return Picker.CurrentRequestCount();
         }
     }
 }

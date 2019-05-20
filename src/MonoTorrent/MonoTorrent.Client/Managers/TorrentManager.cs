@@ -219,7 +219,7 @@ namespace MonoTorrent.Client
         /// <param name="torrent">The torrent to load in</param>
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
-        internal TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings)
             : this(torrent, savePath, settings, torrent.Files.Length == 1 ? "" : torrent.Name)
         {
 
@@ -232,7 +232,7 @@ namespace MonoTorrent.Client
         /// <param name="savePath">The directory to save downloaded files to</param>
         /// <param name="settings">The settings to use for controlling connections</param>
         /// <param name="baseDirectory">In the case of a multi-file torrent, the name of the base directory containing the files. Defaults to Torrent.Name</param>
-        internal TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
+        public TorrentManager(Torrent torrent, string savePath, TorrentSettings settings, string baseDirectory)
         {
             Check.Torrent(torrent);
             Check.SavePath(savePath);
@@ -240,7 +240,7 @@ namespace MonoTorrent.Client
             Check.BaseDirectory(baseDirectory);
 
             this.Torrent = torrent;
-            this.InfoHash = torrent.infoHash;
+            this.InfoHash = torrent.InfoHash;
             this.Settings = settings;
 
             Initialise(savePath, baseDirectory, torrent.AnnounceUrls);
@@ -248,7 +248,7 @@ namespace MonoTorrent.Client
         }
 
 
-        internal TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces)
+        public TorrentManager(InfoHash infoHash, string savePath, TorrentSettings settings, string torrentSave, IList<RawTrackerTier> announces)
         {
             Check.InfoHash(infoHash);
             Check.SavePath(savePath);
@@ -263,7 +263,7 @@ namespace MonoTorrent.Client
             Initialise(savePath, "", announces);
         }
 
-        internal TorrentManager(MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
+        public TorrentManager(MagnetLink magnetLink, string savePath, TorrentSettings settings, string torrentSave)
         {
             Check.MagnetLink(magnetLink);
             Check.InfoHash(magnetLink.InfoHash);
@@ -388,11 +388,10 @@ namespace MonoTorrent.Client
             return InfoHash.GetHashCode();
         }
 
-        public List<PeerId> GetPeers()
+        public async Task<List<PeerId>> GetPeersAsync()
         {
-            return (List<PeerId>)ClientEngine.MainLoop.QueueWait(delegate {
-                return new List<PeerId>(Peers.ConnectedPeers);
-            });
+            await ClientEngine.MainLoop;
+            return new List<PeerId>(Peers.ConnectedPeers);
         }
 
         /// <summary>
@@ -400,17 +399,16 @@ namespace MonoTorrent.Client
         /// before performing a full scan, otherwise fast resume data will be ignored and a full scan will be started
         /// </summary>
         /// <param name="forceFullScan">True if a full hash check should be performed ignoring fast resume data</param>
-        public void HashCheck(bool autoStart)
+        public async Task HashCheckAsync(bool autoStart)
         {
-            ClientEngine.MainLoop.QueueWait((Action)delegate {
-                if (!Mode.CanHashCheck)
-                    throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
+            await ClientEngine.MainLoop;
+            if (!Mode.CanHashCheck)
+                throw new TorrentException(string.Format("A hashcheck can only be performed when the manager is stopped. State is: {0}", State));
 
-                CheckRegisteredAndDisposed();
-                this.StartTime = DateTime.Now;
-                Mode = new HashingMode(this, autoStart);
-                Engine.Start();
-            });
+            CheckRegisteredAndDisposed();
+            this.StartTime = DateTime.Now;
+            Mode = new HashingMode(this, autoStart);
+            Engine.Start();
         }
 
         public async Task MoveFileAsync (TorrentFile file, string path)
@@ -441,18 +439,17 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Pauses the TorrentManager
         /// </summary>
-        public void Pause()
+        public async Task PauseAsync()
         {
-            ClientEngine.MainLoop.QueueWait((Action)delegate {
-                CheckRegisteredAndDisposed();
-                if (State != TorrentState.Downloading && State != TorrentState.Seeding)
-                    return;
+            await ClientEngine.MainLoop;
+            CheckRegisteredAndDisposed();
+            if (State != TorrentState.Downloading && State != TorrentState.Seeding)
+                return;
 
-                // By setting the state to "paused", peers will not be dequeued from the either the
-                // sending or receiving queues, so no traffic will be allowed.
-                Mode = new PausedMode(this);
-                this.SaveFastResume();
-            });
+            // By setting the state to "paused", peers will not be dequeued from the either the
+            // sending or receiving queues, so no traffic will be allowed.
+            Mode = new PausedMode(this);
+            this.SaveFastResume();
         }
 
 
@@ -489,7 +486,7 @@ namespace MonoTorrent.Client
             if (!HashChecked)
             {
                 if (State != TorrentState.Hashing)
-                    HashCheck(true);
+                    await HashCheckAsync(true);
                 return;
             }
 
@@ -560,8 +557,10 @@ namespace MonoTorrent.Client
         /// <summary>
         /// Stops the TorrentManager
         /// </summary>
-        public void Stop()
+        public async Task StopAsync()
         {
+            await ClientEngine.MainLoop;
+
             if (State == TorrentState.Error)
             {
                 Error = null;
@@ -572,14 +571,12 @@ namespace MonoTorrent.Client
 			if (Mode is StoppingMode)
                 return;
 
-            ClientEngine.MainLoop.QueueWait(delegate {
-                if (State != TorrentState.Stopped) {
+            if (State != TorrentState.Stopped) {
 #if !DISABLE_DHT
-                    Engine.DhtEngine.PeersFound -= DhtPeersFound;
+                Engine.DhtEngine.PeersFound -= DhtPeersFound;
 #endif
-					Mode = new StoppingMode(this);
-                }
-            });
+				Mode = new StoppingMode(this);
+            }
         }
 
         #endregion
