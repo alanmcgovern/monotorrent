@@ -4,6 +4,37 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>0.99.0.0</Version>
+
+    <BeforePack>$(BeforePack);SetPackProperties</BeforePack>
   </PropertyGroup>
+
+  <!-- NuGet related properties. We need to run this as part of the 'PackDependsOn' dependencies
+      to ensure our GitInfo related properties have been calculated correctly. -->
+  <Target Name="SetPackProperties" DependsOnTargets="GitInfo">
+    <PropertyGroup>
+      <Authors>Alan McGovern</Authors>
+      <Description>MonoTorrent is a cross platform and open source implementation of the BitTorrent protocol. It supports many advanced features such as Encryption, DHT, Peer Exchange, Web Seeding and Magnet Links</Description>
+      <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+      <Tags>bittorrent;torrent</Tags>
+
+      <IncludeSource>true</IncludeSource>
+      <IncludeSymbols>true</IncludeSymbols>
+
+      <RepositoryType>git</RepositoryType>
+      <RepositoryBranch>$(GitBranch)</RepositoryBranch>
+      <RepositoryCommit>$(GitSha)</RepositoryCommit>
+      <RepositoryUrl>https://github.com/mono/monotorrent</RepositoryUrl>
+      <ProjectUrl>https://github.com/mono/monotorrent</ProjectUrl>
+
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="GitInfo" Version="2.0.20" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
 </Project>
